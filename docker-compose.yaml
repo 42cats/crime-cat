@@ -1,0 +1,164 @@
+services:
+  db:
+    init: true
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=${DB_NAME}
+      - DB_DISCORD=${DB_DISCORD}
+      - DB_BASEDIR=${DB_BASEDIR}
+      - DB_DATADIR=${DB_DATADIR}
+    pull_policy: missing
+    image: db
+    build:
+      context: .
+      dockerfile: docker/mariadb/Dockerfile
+    networks:
+      - discord-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+
+  nginx:
+   container_name: web
+   image: web
+   ports:
+     - "80:80"
+     - "443:443"
+   restart: on-failure
+   build:
+     context: .
+     dockerfile: docker/nginx/Dockerfile
+   environment:
+     - ADMINER_DEFAULT_SERVER=mariadb
+   networks:
+     - discord-network
+   volumes:
+     - web_data:/usr/share/nginx/html:ro
+     - cert:/etc/nginx/certs:ro
+
+
+  redis:
+    build:
+      context: .
+      dockerfile: docker/redis/Dockerfile
+    image: redis
+    restart: on-failure
+    container_name: redis
+    init: true
+    ports:
+      - "6379:6379"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - discord-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    image: spring-backend
+#    restart: always
+    container_name: spring-backend
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/${DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASS}
+      - SERVER_PORT=8080
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - discord-network
+    ports:
+      - "8080:8080"
+#    volumes:
+#      - backend_data:/app
+
+  discord-app:
+    init: true
+    build:
+      context: .
+      dockerfile: docker/discord/Dockerfile
+    depends_on:
+      backend:
+        condition: service_started
+    container_name: discord-app
+    image: discord-app
+    environment:
+      - APP_ID=${APP_ID}
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - PUBLIC_KEY=${PUBLIC_KEY}
+      - API_BASE_URL=http://backend:8080
+      - PORT=3000
+    networks:
+      - discord-network
+    volumes:
+      - app_data:/root/bot
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    image: frontend
+    container_name: frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    networks:
+      - discord-network
+    environment:
+      - VITE_API_BASE_URL=http://spring-backend:8080
+    volumes:
+      - frontend_data:/app
+
+networks:
+  discord-network:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/database/mariadb/data
+  app_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/bot
+  web_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/frontend/dist
+  backend_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/backend
+  frontend_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/frontend
+  cert:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/docker/nginx/certs

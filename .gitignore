@@ -1,0 +1,6 @@
+**/node_modules
+**/.env
+**/database
+docker/caddy/data
+docker/caddy/config
+config.json

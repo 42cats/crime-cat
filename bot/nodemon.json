@@ -1,0 +1,8 @@
+{
+    "watch": ["Commands", "Events", "Response","main.js", "deploy.js"],
+    "ext": "js,json",
+    "exec": "node main.js",
+    "delay": 0.5,
+    "legacyWatch": true,
+    "verbose": true
+}

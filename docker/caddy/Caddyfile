@@ -1,0 +1,12 @@
+{
+    email hoone0802@gmail.com
+}
+
+crimecat.org {
+    root * /root/frontend
+    file_server
+    encode gzip zstd
+    tls {
+        dns cloudflare
+    }
+}

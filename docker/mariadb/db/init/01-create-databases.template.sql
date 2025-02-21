@@ -1,0 +1,11 @@
+CREATE DATABASE IF NOT EXISTS ${DB_DISCORD};
+
+GRANT ALL PRIVILEGES
+ON ${DB_DISCORD}.*
+TO '${DB_USER}'@'%'
+IDENTIFIED BY '${DB_PASS}';
+
+FLUSH PRIVILEGES;
+
+SET GLOBAL innodb_lock_wait_timeout = 120;
+SET SESSION innodb_lock_wait_timeout = 120;

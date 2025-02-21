@@ -1,0 +1,14 @@
+# Base image
+FROM alpine:latest
+
+# Install curl for making HTTP requests
+RUN apk --no-cache add curl
+
+# Copy the entrypoint script
+COPY ./docker/webserver/entrypoint.sh /usr/local/bin/entrypoint.sh
+
+# Set the entrypoint script as executable
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Set the entrypoint script as the container's default command
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
