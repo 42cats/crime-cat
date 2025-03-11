@@ -11,9 +11,12 @@ log() {
 prepare_environment() {
     log "데이터베이스 환경 준비 시작..."
     
-    이미 /var/lib/mysql/mysql 디렉토리가 있으면 -> DB가 존재한다고 판단
+    #이미 /var/lib/mysql/mysql 디렉토리가 있으면 -> DB가 존재한다고 판단
     if [ -d "/var/lib/mysql/mysql" ]; then
         log "데이터베이스가 이미 존재합니다. (초기화 스킵)"
+        chown -R mysql:mysql /var/lib/mysql /run/mysqld
+        chmod -R 750 /var/lib/mysql
+        chmod -R 755 /run/mysqld
         return 0  # 함수 반환값 0은 "건너뛰기"
     fi
     

@@ -169,6 +169,6 @@ CREATE TABLE IF NOT EXISTS grade_code (
     is_used TIMESTAMP  DEFAULT NULL COMMENT '사용 여부'
     CONSTRAINT fk_grade_code_user
         FOREIGN KEY (user_id) REFERENCES user(user_id)
-        ON DELETE SET 0,
+        ON DELETE SET NULL,
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='어트리 뷰트 테이블';

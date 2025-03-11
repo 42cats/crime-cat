@@ -43,6 +43,14 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+task copyYml(type: Copy) {
+	copy {
+		from '../../config'
+		include '*.yml'
+		into 'src/main/resources'
+	}
+}
+
 jar {
 	enabled = false
 }
