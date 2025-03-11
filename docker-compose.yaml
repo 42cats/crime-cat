@@ -28,23 +28,27 @@ services:
       - mariadb_data:/var/lib/mysql
 
 
-  # nginx:
-  #  container_name: web
-  #  image: web
-  #  ports:
-  #    - "80:80"
-  #    - "443:443"
-  #  restart: on-failure
-  #  build:
-  #    context: .
-  #    dockerfile: docker/nginx/Dockerfile
-  #  environment:
-  #    - ADMINER_DEFAULT_SERVER=mariadb
-  #  networks:
-  #    - discord-network
-  #  volumes:
-  #    - web_data:/usr/share/nginx/html:ro
-  #    - cert:/etc/nginx/certs:ro
+  nginx:
+   container_name: web
+   image: web
+   ports:
+     - "80:80"
+     - "443:443"
+   restart: on-failure
+   build:
+     context: .
+     dockerfile: docker/nginx/Dockerfile
+   depends_on:
+    frontend:
+      condition: service_started
+   environment:
+     - ADMINER_DEFAULT_SERVER=mariadb
+   networks:
+     - discord-network
+   volumes:
+    #  - web_data:/usr/share/nginx/html:ro
+     - frontend_data:/web
+     - cert:/etc/nginx/certs:ro
 
 
   redis:
