@@ -78,7 +78,7 @@ run_all_sql_scripts() {
         if [[ "$script" != *.template.sql ]]; then
             log "실행 중: $script"
             mysql -u root < "$script"
-            if [ $? -ne 0 ]; then
+            if [ $? -ne null ]; then
                 log "SQL 스크립트 실행 실패: $script"
                 exit 1
             fi
