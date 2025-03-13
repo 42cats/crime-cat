@@ -4,3 +4,4 @@
 docker/caddy/data
 docker/caddy/config
 config.json
+**/MusicData/**/*
