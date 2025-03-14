@@ -29,6 +29,12 @@ public class PointHistory {
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
+    @Column(name = "POINT", nullable = false)
+    private Integer point;
+
+    @Column(name = "USED_AT", nullable = false)
+    private LocalDateTime usedAt;
+
     @JoinColumn(name = "USER_SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
@@ -36,11 +42,4 @@ public class PointHistory {
     @JoinColumn(name = "PERMISSION_ID")
     @ManyToOne(fetch = FetchType.LAZY)
     private Permission permission;
-
-    @Column(name = "POINT", nullable = false)
-    private Integer point;
-
-    @Column(name = "USED_AT", nullable = false)
-    private LocalDateTime usedAt;
-
 }

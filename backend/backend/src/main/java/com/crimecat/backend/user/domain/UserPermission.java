@@ -28,6 +28,9 @@ public class UserPermission {
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
+    @Column(name = "EXPIRED_AT")
+    private LocalDateTime expiredAt;
+
     @JoinColumn(name = "USER_SNOWFLAKE")
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
@@ -35,7 +38,4 @@ public class UserPermission {
     @JoinColumn(name = "PERMISSION_ID")
     @ManyToOne(fetch = FetchType.LAZY)
     private Permission permission;
-
-    @Column(name = "EXPIRED_AT")
-    private LocalDateTime expiredAt;
 }
