@@ -4,7 +4,7 @@ USE ${DB_DISCORD};
  * users 테이블
  */
 CREATE TABLE IF NOT EXISTS users (
-    id CHAR(36) PRIMARY KEY COMMENT '내부 고유 식별자',
+    id UUID PRIMARY KEY COMMENT '내부 고유 식별자',
     snowflake VARCHAR(50) NOT NULL UNIQUE COMMENT '디스코드 유저 snowflake',
     name VARCHAR(100) NOT NULL COMMENT '디스코드 아이디',
     email VARCHAR(255) DEFAULT NULL UNIQUE COMMENT '이메일',
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
  * guild 테이블
  */
 CREATE TABLE IF NOT EXISTS guilds (
-    id CHAR(36) PRIMARY KEY COMMENT '내부 고유 식별자',
+    id UUID PRIMARY KEY COMMENT '내부 고유 식별자',
     owner_snowflake VARCHAR(50) NOT NULL COMMENT '길드 소유자 user discord id',
     snowflake VARCHAR(50) NOT NULL UNIQUE COMMENT 'snowflake discord 길드 ID',
 		name VARCHAR(255) NOT NULL COMMENT '길드 이름',
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS guilds (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='길드 테이블';
 
 CREATE TABLE IF NOT EXISTS musics (
-    id CHAR(36) PRIMARY KEY COMMENT '내부 고유 식별자',
+    id UUID PRIMARY KEY COMMENT '내부 고유 식별자',
     guild_snowflake VARCHAR(50) NOT NULL COMMENT '디스코드 길드 snowflake',
     title VARCHAR(255) NOT NULL COMMENT '음악 제목',
     youtube_url VARCHAR(2048) NOT NULL COMMENT 'URL 주소',
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS musics (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='길드 music 테이블';
 
 CREATE TABLE IF NOT EXISTS game_histories (
-    id CHAR(36) PRIMARY KEY COMMENT '내부 고유 식별자',
+    id UUID PRIMARY KEY COMMENT '내부 고유 식별자',
     user_snowflake VARCHAR(50) NOT NULL COMMENT '디스코드 user snowflake',
     guild_snowflake VARCHAR(50) NOT NULL COMMENT '디스코드 guild snowflake',
     is_win BOOLEAN NULL DEFAULT NULL COMMENT '승리 여부',
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS game_histories (
  * clean 테이블
  */
 CREATE TABLE IF NOT EXISTS cleans (
-    id CHAR(36) PRIMARY KEY COMMENT '내부 고유 식별자',
+    id UUID PRIMARY KEY COMMENT '내부 고유 식별자',
     guild_snowflake VARCHAR(50) NOT NULL COMMENT '디스코드 길드 snowflake',
     channel_snowflake VARCHAR(50) NOT NULL UNIQUE COMMENT '디스코드 채널 snowflake',
     CONSTRAINT fk_cleans_guilds
@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS cleans (
  * characters (캐릭터) 테이블
  */
 CREATE TABLE IF NOT EXISTS characters (
-    id CHAR(36) PRIMARY KEY COMMENT '내부 고유 식별자',
+    id UUID PRIMARY KEY COMMENT '내부 고유 식별자',
     guild_snowflake VARCHAR(50) NOT NULL COMMENT '문자열 길드 ID',
 		name VARCHAR(50) NOT NULL COMMENT '게임 내 캐릭터 이름',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS characters (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='캐릭터 테이블';
 
 CREATE TABLE character_roles (
-    id CHAR(36) NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
+    id UUID NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
     character_id CHAR(36) NOT NULL COMMENT 'USER 테이블 내부 고유 식별자',
     role_snowflake VARCHAR(50) NOT NULL COMMENT 'discord role snowflake',
     CONSTRAINT fk_character_roles_characters
@@ -103,7 +103,7 @@ CREATE TABLE character_roles (
  * record 테이블
  */
 CREATE TABLE IF NOT EXISTS records (
-    id CHAR(36) PRIMARY KEY COMMENT '내부 고유 식별자',
+    id UUID PRIMARY KEY COMMENT '내부 고유 식별자',
     guild_snowflake VARCHAR(50) NOT NULL COMMENT '디스코드 길드 snowflake',
     channel_snowflake VARCHAR(50) NOT NULL COMMENT '디스코드 채널 snowflake',
     message TEXT NOT NULL COMMENT '메시지 내용(최대 5000자)',
@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS records (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='채널 별 기본 메시지 테이블';
 
 CREATE TABLE IF NOT EXISTS coupons (
-    id CHAR(36) PRIMARY KEY COMMENT '내부 고유 식별자 및 코드',
+    id UUID PRIMARY KEY COMMENT '내부 고유 식별자 및 코드',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '발행 시각',
     used_at TIMESTAMP DEFAULT NULL COMMENT '사용 시각',
     `point` INT NOT NULL DEFAULT 0 COMMENT '발행 포인트',
@@ -126,14 +126,14 @@ CREATE TABLE IF NOT EXISTS coupons (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='쿠폰 테이블';
 
 CREATE TABLE IF NOT EXISTS permissions (
-    id CHAR(36) PRIMARY KEY COMMENT '내부 고유 식별자',
+    id UUID PRIMARY KEY COMMENT '내부 고유 식별자',
     name VARCHAR(255) NOT NULL UNIQUE COMMENT '권한 이름',
     price INT NOT NULL DEFAULT 0 COMMENT '권한 가격',
     duration INT NOT NULL DEFAULT 28 COMMENT '권한 유지기간 (달)'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='권한 테이블';
 
 CREATE TABLE user_permissions (
-    id CHAR(36) NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
+    id UUID NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
     user_snowflake VARCHAR(50) NOT NULL COMMENT 'discord user snowflake',
     permission_id CHAR(36) NOT NULL COMMENT 'permisson table id',
     expire_date TIMESTAMP NOT NULL COMMENT '만료 날짜',
@@ -148,7 +148,7 @@ CREATE TABLE user_permissions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 권한 테이블';
 
 CREATE TABLE IF NOT EXISTS observations (
-    id CHAR(36) NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
+    id UUID NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
     guild_snowflake VARCHAR(50) DEFAULT NULL COMMENT '디스코드 길드 snowflake',
     head_title VARCHAR(10) DEFAULT '- 관전' COMMENT '길드 내의 관전자 이름 앞의 prefix',
     role_snowflake VARCHAR(50) DEFAULT NULL COMMENT '관전자 role snowflake(discord)',
@@ -159,7 +159,7 @@ CREATE TABLE IF NOT EXISTS observations (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='관전 설정 테이블';
 
 CREATE TABLE point_histories  (
-    id CHAR(36) NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
+    id UUID NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
     user_snowflake VARCHAR(50) NOT NULL COMMENT 'discord user snowflake',
     permission_id CHAR(36) NULL COMMENT 'permission table 식별자',
     `point` INT NOT NULL COMMENT '입출 포인트',
