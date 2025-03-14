@@ -110,21 +110,21 @@ services:
     volumes:
       - app_data:/root/bot
 
-  # frontend:
-  #   build:
-  #     context: .
-  #     dockerfile: docker/frontend/Dockerfile
-  #   image: frontend
-  #   container_name: frontend
-  #   restart: always
-  #   ports:
-  #     - "5173:5173"
-  #   networks:
-  #     - discord-network
-  #   environment:
-  #     - VITE_API_BASE_URL=http://spring-backend:8080
-  #   volumes:
-  #     - frontend_data:/app
+  frontend:
+   build:
+     context: .
+     dockerfile: docker/frontend/Dockerfile
+   image: frontend
+   container_name: frontend
+   restart: always
+   ports:
+     - "5173:5173"
+   networks:
+     - discord-network
+   environment:
+     - VITE_API_BASE_URL=http://spring-backend:8080
+   volumes:
+     - frontend_data:/app
 
 networks:
   discord-network:
