@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS `characters`
 CREATE TABLE `character_roles`
 (
     `id`                UUID NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
-    `character_id`      CHAR(36) NOT NULL COMMENT 'USER 테이블 내부 고유 식별자',
+    `character_id`      UUID NOT NULL COMMENT 'USER 테이블 내부 고유 식별자',
     `role_snowflake`    VARCHAR(50) NOT NULL COMMENT 'discord role snowflake',
     CONSTRAINT `fk_character_roles_characters` FOREIGN KEY (`character_id`) REFERENCES `characters`(`id`)
 	    ON DELETE CASCADE
@@ -200,7 +200,7 @@ CREATE TABLE `user_permissions`
 (
     `id`                UUID NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
     `user_snowflake`    VARCHAR(50) NOT NULL COMMENT 'discord user snowflake',
-    `permission_id`     CHAR(36) NOT NULL COMMENT 'permission table id',
+    `permission_id`     UUID NOT NULL COMMENT 'permission table id',
     `expired_at`       TIMESTAMP NOT NULL COMMENT '만료 날짜',
     CONSTRAINT `fk_user_permissions_permissions` FOREIGN KEY (`permission_id`) REFERENCES `permissions`(`id`)
 	    ON DELETE CASCADE
@@ -241,10 +241,13 @@ CREATE TABLE `point_histories`
 (
     `id`                UUID NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
     `user_snowflake`    VARCHAR(50) NOT NULL COMMENT 'discord user snowflake',
-    `permission_id`     CHAR(36) NULL COMMENT 'permission table 식별자',
+    `permission_id`     UUID DEFAULT NULL COMMENT 'permission table 식별자',
     `point`             INT NOT NULL COMMENT '입출 포인트',
     `used_at`           TIMESTAMP NOT NULL COMMENT '포인트 입출 날짜',
     CONSTRAINT `fk_point_histories_users` FOREIGN KEY (`user_snowflake`) REFERENCES `users`(`snowflake`)
+	    ON DELETE CASCADE
+		ON UPDATE CASCADE,
+    CONSTRAINT `fk_point_histories_permissions` FOREIGN KEY (`permission_id`) REFERENCES `permissions`(`id`)
 	    ON DELETE CASCADE
 		ON UPDATE CASCADE
 ) ENGINE=InnoDB
