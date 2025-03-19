@@ -1,19 +1,12 @@
 package com.crimecat.backend.guild.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
 import java.util.UUID;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UuidGenerator;
+import org.openapitools.jackson.nullable.JsonNullable;
 
 @Entity
 @Table(name = "OBSERVATIONS")
@@ -36,4 +29,11 @@ public class Observation {
     @ManyToOne(fetch = FetchType.LAZY)
     private Guild guild;
 
+    public void setHeadTitle(JsonNullable<String> headTitle) {
+        headTitle.ifPresent(v -> this.headTitle = v);
+    }
+
+    public void setRoleSnowflake(JsonNullable<String> roleSnowflake) {
+        roleSnowflake.ifPresent(v -> this.roleSnowflake = v);
+    }
 }
