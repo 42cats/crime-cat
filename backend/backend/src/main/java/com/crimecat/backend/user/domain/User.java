@@ -30,9 +30,6 @@ public class User {
     @Column(name = "NAME", nullable = false)
     private String name;
 
-    @Column(name = "EMAIL")
-    private String email;
-
     @Column(name = "AVATAR", nullable = false)
     private String avatar;
 

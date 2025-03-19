@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS `users`
     `id`            UUID PRIMARY KEY COMMENT '내부 고유 식별자',
     `snowflake`     VARCHAR(50) NOT NULL UNIQUE COMMENT '디스코드 유저 snowflake',
     `name`          VARCHAR(100) NOT NULL COMMENT '디스코드 아이디',
-    `email`         VARCHAR(255) DEFAULT NULL UNIQUE COMMENT '이메일',
     `avatar`        VARCHAR(255) NOT NULL COMMENT '프로필 사진 url',
     `discord_alarm` BOOLEAN NOT NULL COMMENT '디코 봇 알림 설정 여부',
     `point`         INT NOT NULL DEFAULT 0 COMMENT '보유 포인트',
