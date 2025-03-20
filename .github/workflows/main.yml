@@ -1,0 +1,52 @@
+name: Deploy to Dev Server
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔑 Setup SSH Key
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: 🚀 Deploy to Remote Server
+        run: |
+          ssh -o StrictHostKeyChecking=no cats@14.36.34.122 -p 23 << 'EOF'
+          echo "✅ 서버에 접속 완료"
+
+          # crime-cat 저장소 업데이트
+          echo "🔄 crime-cat 저장소 업데이트..."
+          cd /Users/cats/dev/crime-cat
+          git checkout dev || git checkout -b dev origin/dev
+          git pull origin dev
+
+          # config 저장소가 없다면 클론
+          if [ ! -d "config/.git" ]; then
+            echo "⚠️ config 저장소가 없습니다. 새로 클론합니다."
+            rm -rf config
+            git clone git@github.com:chyo1/config.git config
+          fi
+
+          # config 저장소 업데이트
+          echo "🔄 config 저장소 업데이트..."
+          cd config
+          git checkout main || git checkout -b main origin/main
+          git pull origin main
+
+          # 도커 컨테이너 재시작
+          echo "🛠️ 도커 서비스 재시작 중..."
+          cd /Users/cats/dev/crime-cat
+          make down
+          make up
+
+          echo "✅ 배포 완료!"
+          EOF
