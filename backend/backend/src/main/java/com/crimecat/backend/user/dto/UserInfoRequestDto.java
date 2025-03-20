@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public class SaveUserInfoDto {
+public class UserInfoRequestDto {
 	String userSnowflake;
 	String name;
 	String avatar;

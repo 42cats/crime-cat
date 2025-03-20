@@ -1,9 +1,10 @@
 package com.crimecat.backend.user.controller;
 
-import com.crimecat.backend.user.dto.SaveUserInfoDto;
+import com.crimecat.backend.user.dto.UserInfoRequestDto;
 import com.crimecat.backend.user.dto.UserInfoResponseDto;
 import com.crimecat.backend.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,14 +19,14 @@ public class UserController {
 
 	/**
 	 * 유저 정보 저장
-	 * @param saveUserInfoDto
+	 * @param userInfoRequestDto
 	 * @return
 	 */
 	@PostMapping("")
-	public UserInfoResponseDto saveUserInfo(@RequestBody SaveUserInfoDto saveUserInfoDto) {
+	public UserInfoResponseDto saveUserInfo(@RequestBody UserInfoRequestDto userInfoRequestDto) {
 		return userService.registerUserInfo(
-				saveUserInfoDto.getUserSnowflake(),
-				saveUserInfoDto.getName(),
-				saveUserInfoDto.getAvatar());
+				userInfoRequestDto.getUserSnowflake(),
+				userInfoRequestDto.getName(),
+				userInfoRequestDto.getAvatar());
 	}
 }
