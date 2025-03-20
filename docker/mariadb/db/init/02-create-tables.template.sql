@@ -1,174 +1,255 @@
 USE ${DB_DISCORD};
 
 /**
- * users 테이블
- *  - id: 내부 PK (INT AUTO_INCREMENT)
- *  - user_id: Discord 등에서 가져온 식별자(문자열, UNIQUE)
- *  - name: 유저명
- *  - auth_token: 2FA 등 인증토큰 저장
+  사용자 테이블
  */
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY COMMENT '내부 고유 식별자',
-    user_id VARCHAR(50) NOT NULL UNIQUE COMMENT '문자열 형태의 사용자 ID',
-    name VARCHAR(100) DEFAULT NULL COMMENT '유저 이름',
-    auth_token VARCHAR(255) DEFAULT NULL COMMENT '2FA 인증토큰 등 저장',
-    point INT DEFAULT 0 COMMENT '사용자 포인트',
-    grade BIGINT DEFAULT 0 COMMENT '사용자 등급',
-    alert_ok tinyint(4) NOT NULL DEFAULT 0 COMMENT '알림설정',
-    email varchar(255) DEFAULT NULL COMMENT '이메일',
-    password varchar(255) DEFAULT NULL COMMENT '패스워드',
-    provider enum('discord', 'onsite') NOT NULL DEFAULT 'discord' COMMENT '가입경로',
-    last_play_date TIMESTAMP NULL COMMENT '마지막 플레이 시간',
-    last_online TIMESTAMP NULL COMMENT '마지막 접속 시간',
-    created_at TIMESTAMP NOT NULL COMMENT '계정 생성 시간',
-    INDEX idx_last_online (last_online)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 정보 테이블';
+CREATE TABLE IF NOT EXISTS `users`
+(
+    `id`            UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `snowflake`     VARCHAR(50) NOT NULL UNIQUE COMMENT '디스코드 유저 snowflake',
+    `name`          VARCHAR(100) NOT NULL COMMENT '디스코드 아이디',
+    `avatar`        VARCHAR(255) NOT NULL COMMENT '프로필 사진 url',
+    `discord_alarm` BOOLEAN NOT NULL COMMENT '디코 봇 알림 설정 여부',
+    `point`         INT NOT NULL DEFAULT 0 COMMENT '보유 포인트',
+    `created_at`    TIMESTAMP NOT NULL COMMENT '개인정보 동의 시점',
+    `is_withdraw`   BOOLEAN NOT NULL DEFAULT 0 COMMENT '삭제 여부'
+) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8mb4
+    COLLATE=utf8mb4_unicode_ci
+    COMMENT='사용자 정보 테이블';
+
+
 
 /**
- * guild 테이블
- *  - id: 내부 PK (INT AUTO_INCREMENT)
- *  - guild_id: 문자열 형태(UNIQUE)
- *  - owner_id: users.user_id 참조
- *  - name: 길드명
+  길드 테이블
  */
--- 새 guild 테이블
-CREATE TABLE IF NOT EXISTS guild (
-    id INT AUTO_INCREMENT PRIMARY KEY COMMENT '내부 고유 식별자',
-    guild_id VARCHAR(50) NOT NULL UNIQUE COMMENT '문자열 형태의 길드 ID',
-    owner_id VARCHAR(50) NOT NULL COMMENT '길드 소유자(문자열 user_id)',
-    guild_name VARCHAR(255) DEFAULT NULL COMMENT '길드 이름',
-    guild_owner_name VARCHAR(255) DEFAULT NULL COMMENT '길드 오너의 별칭/이름',
-    last_play_date TIMESTAMP NULL COMMENT '길드의 마지막 플레이 시간',
-    created_at TIMESTAMP NOT NULL COMMENT '길드 생성 시간',
-    observer VARCHAR(50) DEFAULT NULL COMMENT '관전역할',
-    head_title VARCHAR(10) DEFAULT NULL COMMENT '관전자 타이틀',
-    CONSTRAINT fk_guild_owner
-        FOREIGN KEY (owner_id) REFERENCES users(user_id)
+CREATE TABLE IF NOT EXISTS `guilds` (
+    `id`               UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `owner_snowflake`  VARCHAR(50) NOT NULL COMMENT '길드 소유자 user discord id',
+    `snowflake`        VARCHAR(50) NOT NULL UNIQUE COMMENT 'snowflake discord 길드 ID',
+    `name`             VARCHAR(255) NOT NULL COMMENT '길드 이름',
+    `is_withdraw`      BOOLEAN NOT NULL DEFAULT 0 COMMENT '삭제여부',
+    CONSTRAINT `fk_guilds_users` FOREIGN KEY (`owner_snowflake`) REFERENCES `users`(`snowflake`)
         ON DELETE RESTRICT
         ON UPDATE CASCADE
-);
+) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8mb4
+    COLLATE=utf8mb4_unicode_ci
+    COMMENT='길드 테이블';
+
 
 
 /**
- * guild_url 테이블
- *  - owner_id: guild.guild_id 참조 (문자열)
+  음악 테이블
  */
-CREATE TABLE IF NOT EXISTS guild_url (
-    id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'URL 고유 식별자',
-    owner_id VARCHAR(50) NOT NULL COMMENT '길드 ID(문자열)',
-    url VARCHAR(2048) NOT NULL COMMENT 'URL 주소',
-    title VARCHAR(255) COMMENT 'URL 제목',
-    thumbnail VARCHAR(2048) COMMENT 'URL 섬네일',
-    duration VARCHAR(255) COMMENT '재생 시간',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '등록 시간',
-    CONSTRAINT fk_guildurl_owner
-        FOREIGN KEY (owner_id) REFERENCES guild(guild_id)
+CREATE TABLE IF NOT EXISTS `musics`
+(
+    `id`                UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `guild_snowflake`   VARCHAR(50) NOT NULL COMMENT '디스코드 길드 snowflake',
+    `title`             VARCHAR(255) NOT NULL COMMENT '음악 제목',
+    `youtube_url`       VARCHAR(2048) NOT NULL COMMENT 'URL 주소',
+    `thumbnail`         VARCHAR(2048) NOT NULL COMMENT 'URL 섬네일',
+    `duration`          VARCHAR(255) NOT NULL COMMENT '재생 시간',
+    `created_at`        TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '등록 시간',
+    CONSTRAINT `fk_musics_guilds` FOREIGN KEY (`guild_snowflake`) REFERENCES `guilds`(`snowflake`)
         ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='길드 URL 테이블';
+        ON UPDATE CASCADE,
+    CONSTRAINT `uk_musics_guild_title` UNIQUE (`guild_snowflake`, `title`)
+) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8mb4
+    COLLATE=utf8mb4_unicode_ci
+    COMMENT='길드 music 테이블';
+
+
 
 /**
- * user_url 테이블
- *  - owner_id: users.user_id 참조
+  게임 기록 테이블
  */
-CREATE TABLE IF NOT EXISTS user_url (
-    id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'URL 고유 식별자',
-    owner_id VARCHAR(50) NOT NULL COMMENT '사용자 ID(문자열)',
-    url VARCHAR(2048) NOT NULL COMMENT 'URL 주소',
-    title VARCHAR(255) COMMENT 'URL 제목',
-    thumbnail VARCHAR(2048) COMMENT 'URL 섬네일',
-    duration VARCHAR(255) COMMENT '재생 시간',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '등록 시간',
-    CONSTRAINT fk_userurl_owner
-        FOREIGN KEY (owner_id) REFERENCES users(user_id)
-        ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='사용자 URL 테이블';
-
-/**
- * history 테이블
- *  - user_id: users.user_id 참조
- *  - guild_id: guild.guild_id 참조
- */
-CREATE TABLE IF NOT EXISTS history (
-    id INT AUTO_INCREMENT PRIMARY KEY COMMENT '기록 고유 식별자',
-    user_id VARCHAR(50) NOT NULL COMMENT '문자열 사용자 ID',
-    guild_id VARCHAR(50) COMMENT '문자열 길드 ID',
-    is_win BOOLEAN NOT NULL DEFAULT FALSE COMMENT '승리 여부',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '기록 생성 시간',
-    CONSTRAINT fk_history_user
-        FOREIGN KEY (user_id) REFERENCES users(user_id)
+CREATE TABLE IF NOT EXISTS `game_histories`
+(
+    `id`                UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `user_snowflake`    VARCHAR(50) NOT NULL COMMENT '디스코드 user snowflake',
+    `guild_snowflake`   VARCHAR(50) NOT NULL COMMENT '디스코드 guild snowflake',
+    `is_win`            BOOLEAN NULL DEFAULT NULL COMMENT '승리 여부',
+    `created_at`        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '기록 생성 시간',
+    `character_name`    VARCHAR(50) DEFAULT NULL COMMENT '캐릭터 이름',
+    CONSTRAINT `fk_game_histories_users` FOREIGN KEY (`user_snowflake`) REFERENCES `users`(`snowflake`)
         ON DELETE CASCADE,
-    CONSTRAINT fk_history_guild
-        FOREIGN KEY (guild_id) REFERENCES guild(guild_id)
-        ON DELETE SET NULL,
-    INDEX idx_user_guild (user_id, guild_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='게임 기록 테이블';
+    CONSTRAINT `fk_game_histories_guilds` FOREIGN KEY (`guild_snowflake`) REFERENCES `guilds`(`snowflake`)
+        ON DELETE CASCADE
+) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8mb4
+    COLLATE=utf8mb4_unicode_ci
+    COMMENT='게임 기록 테이블';
+
+
 
 /**
- * clean 테이블
- *  - guild_id: guild.guild_id 참조
- *  - channel_id: 문자열
- *  - name: 추가된 열 (예: 채널별 별칭)
+  각 길드당 삭제할 채널 테이블
  */
-CREATE TABLE IF NOT EXISTS clean (
-    id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'clean 테이블 고유 식별자',
-    guild_id VARCHAR(50) NOT NULL COMMENT '문자열 길드 ID',
-    channel_id VARCHAR(50) NOT NULL UNIQUE COMMENT '채널 ID(문자열)',
-    name VARCHAR(255) DEFAULT NULL COMMENT '클린 기능에 사용할 이름',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
-    CONSTRAINT fk_clean_guild
-        FOREIGN KEY (guild_id) REFERENCES guild(guild_id)
+CREATE TABLE IF NOT EXISTS `cleans`
+(
+    `id`                UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `guild_snowflake`   VARCHAR(50) NOT NULL COMMENT '디스코드 길드 snowflake',
+    `channel_snowflake` VARCHAR(50) NOT NULL UNIQUE COMMENT '디스코드 채널 snowflake',
+    CONSTRAINT `fk_cleans_guilds` FOREIGN KEY (`guild_snowflake`) REFERENCES `guilds`(`snowflake`)
         ON DELETE CASCADE
-        ON UPDATE CASCADE,
-    INDEX idx_clean_guild_id (guild_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='clean 테이블';
+        ON UPDATE CASCADE
+) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8mb4
+    COLLATE=utf8mb4_unicode_ci
+    COMMENT='청소 테이블';
+
 
 /**
- * characters (캐릭터) 테이블
- *  - guild_id: guild.guild_id 참조
- *  - character_name: 문자열
- *  - role_id: 문자열
+  길드 내 캐릭터 테이블
  */
-CREATE TABLE IF NOT EXISTS characters (
-    id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'characters 테이블 고유 식별자',
-    guild_id VARCHAR(50) NOT NULL COMMENT '문자열 길드 ID',
-    character_name VARCHAR(50) NOT NULL UNIQUE COMMENT '캐릭터 이름',
-    role_id VARCHAR(50) NULL COMMENT '캐릭터 롤(id)',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
-    CONSTRAINT fk_characters_guild
-        FOREIGN KEY (guild_id) REFERENCES guild(guild_id)
+CREATE TABLE IF NOT EXISTS `characters`
+(
+    `id`                UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `guild_snowflake`   VARCHAR(50) NOT NULL COMMENT '문자열 길드 ID',
+    `name`              VARCHAR(50) NOT NULL COMMENT '게임 내 캐릭터 이름',
+    `created_at`        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
+    CONSTRAINT `fk_characters_guilds` FOREIGN KEY (`guild_snowflake`) REFERENCES `guilds`(`snowflake`)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    INDEX idx_characters_guild_id (guild_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='캐릭터 테이블';
+		CONSTRAINT `uk_characters_guild_name` UNIQUE (`guild_snowflake`, `name`)
+) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8mb4
+    COLLATE=utf8mb4_unicode_ci
+    COMMENT='캐릭터 테이블';
+
 
 /**
- * record 테이블
- *  - guild_id: guild.guild_id 참조
+  각 캐릭터 당 discord role 테이블
  */
-CREATE TABLE IF NOT EXISTS record (
-    id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'record 테이블 고유 식별자',
-    guild_id VARCHAR(50) NOT NULL COMMENT '문자열 길드 ID',
-    msg VARCHAR(5000) COMMENT '메시지 내용(최대 5000자)',
-    channel_id VARCHAR(50) COMMENT '채널 ID(문자열)',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
-    CONSTRAINT fk_record_guild
-        FOREIGN KEY (guild_id) REFERENCES guild(guild_id)
+CREATE TABLE `character_roles`
+(
+    `id`                UUID NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
+    `character_id`      UUID NOT NULL COMMENT 'USER 테이블 내부 고유 식별자',
+    `role_snowflake`    VARCHAR(50) NOT NULL COMMENT 'discord role snowflake',
+    CONSTRAINT `fk_character_roles_characters` FOREIGN KEY (`character_id`) REFERENCES `characters`(`id`)
+	    ON DELETE CASCADE
+) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8mb4
+    COLLATE=utf8mb4_unicode_ci
+    COMMENT='캐릭터 role 테이블';
+
+
+
+/**
+ * 채널 별 기본 메시지 테이블
+ */
+CREATE TABLE IF NOT EXISTS `records`
+(
+    `id`                UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `guild_snowflake`   VARCHAR(50) NOT NULL COMMENT '디스코드 길드 snowflake',
+    `channel_snowflake` VARCHAR(50) NOT NULL COMMENT '디스코드 채널 snowflake',
+    `message`           TEXT NOT NULL COMMENT '메시지 내용(최대 5000자)',
+    `index`             INT NOT NULL COMMENT '표출 순서(저장된 순서)',
+    CONSTRAINT `fk_records_guilds` FOREIGN KEY (`guild_snowflake`) REFERENCES `guilds`(`snowflake`)
         ON DELETE CASCADE
-        ON UPDATE CASCADE,
-    INDEX idx_record_guild_id (guild_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='record 테이블';
+) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8mb4
+    COLLATE=utf8mb4_unicode_ci
+    COMMENT='채널 별 기본 메시지 테이블';
 
 
 
-CREATE TABLE IF NOT EXISTS grade_code (
-    code CHAR(12) NOT NULL COMMENT '랜덤 생성된 12자리 코드',
-    id INT AUTO_INCREMENT PRIMARY KEY COMMENT '내부 고유 식별자',
-    price INT NOT NULL DEFAULT 500 COMMENT '가격',
-    user_id VARCHAR(50) NOT NULL COMMENT '문자열 사용자 ID',
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 날짜',
-    is_used TIMESTAMP  DEFAULT NULL COMMENT '사용 여부'
-    CONSTRAINT fk_grade_code_user
-        FOREIGN KEY (user_id) REFERENCES user(user_id)
-        ON DELETE SET 0,
+/**
+  쿠폰 테이블
+ */
+CREATE TABLE IF NOT EXISTS `coupons`
+(
+    `id`                UUID PRIMARY KEY COMMENT '내부 고유 식별자 및 코드',
+    `created_at`        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '발행 시각',
+    `used_at`           TIMESTAMP DEFAULT NULL COMMENT '사용 시각',
+    `point`             INT NOT NULL DEFAULT 0 COMMENT '발행 포인트',
+    `user_snowflake`    VARCHAR(50) DEFAULT NULL COMMENT '디스코드 사용자 snowflake',
+    `expired_at`       TIMESTAMP NOT NULL COMMENT '쿠폰 등록 마감 기한',
+    CONSTRAINT `fk_coupons_users` FOREIGN KEY (`user_snowflake`) REFERENCES `users`(`snowflake`)
+        ON DELETE SET NULL
+) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8mb4
+    COLLATE=utf8mb4_unicode_ci
+    COMMENT='쿠폰 테이블';
 
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='어트리 뷰트 테이블';
+
+
+/**
+  권한 테이블
+ */
+CREATE TABLE IF NOT EXISTS `permissions`
+(
+    `id`        UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `name`      VARCHAR(255) NOT NULL UNIQUE COMMENT '권한 이름',
+    `price`     INT NOT NULL DEFAULT 0 COMMENT '권한 가격',
+    `duration`  INT NOT NULL DEFAULT 28 COMMENT '권한 유지기간 (달)'
+) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8mb4
+    COLLATE=utf8mb4_unicode_ci
+    COMMENT='권한 테이블';
+
+
+
+/**
+  각 유저 별 권한 테이블
+ */
+CREATE TABLE `user_permissions`
+(
+    `id`                UUID NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
+    `user_snowflake`    VARCHAR(50) NOT NULL COMMENT 'discord user snowflake',
+    `permission_id`     UUID NOT NULL COMMENT 'permission table id',
+    `expired_at`       TIMESTAMP NOT NULL COMMENT '만료 날짜',
+    CONSTRAINT `fk_user_permissions_permissions` FOREIGN KEY (`permission_id`) REFERENCES `permissions`(`id`)
+	    ON DELETE CASCADE
+	    ON UPDATE CASCADE,
+    CONSTRAINT `fk_user_permissions_users` FOREIGN KEY (`user_snowflake`) REFERENCES `users`(`snowflake`)
+	    ON DELETE CASCADE
+	    ON UPDATE CASCADE
+) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8mb4
+    COLLATE=utf8mb4_unicode_ci
+    COMMENT='사용자 권한 테이블';
+
+
+
+/**
+  관전자 테이블
+ */
+CREATE TABLE IF NOT EXISTS `observations`
+(
+    `id`                UUID NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
+    `guild_snowflake`   VARCHAR(50) DEFAULT NULL COMMENT '디스코드 길드 snowflake',
+    `head_title`        VARCHAR(10) DEFAULT '- 관전' COMMENT '길드 내의 관전자 이름 앞의 prefix',
+    `role_snowflake`    VARCHAR(50) DEFAULT NULL COMMENT '관전자 role snowflake(discord)',
+    CONSTRAINT `fk_observations_guilds` FOREIGN KEY (`guild_snowflake`) REFERENCES `guilds`(`snowflake`)
+	    ON DELETE CASCADE
+	    ON UPDATE CASCADE
+) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8mb4
+    COLLATE=utf8mb4_unicode_ci
+    COMMENT='관전 설정 테이블';
+
+
+
+/**
+  각 유저 별 기록 테이블
+ */
+CREATE TABLE `point_histories`
+(
+    `id`                UUID NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
+    `user_snowflake`    VARCHAR(50) NOT NULL COMMENT 'discord user snowflake',
+    `permission_id`     UUID DEFAULT NULL COMMENT 'permission table 식별자',
+    `point`             INT NOT NULL COMMENT '입출 포인트',
+    `used_at`           TIMESTAMP NOT NULL COMMENT '포인트 입출 날짜',
+    CONSTRAINT `fk_point_histories_users` FOREIGN KEY (`user_snowflake`) REFERENCES `users`(`snowflake`)
+	    ON DELETE CASCADE
+		ON UPDATE CASCADE,
+    CONSTRAINT `fk_point_histories_permissions` FOREIGN KEY (`permission_id`) REFERENCES `permissions`(`id`)
+	    ON DELETE CASCADE
+		ON UPDATE CASCADE
+) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8mb4
+    COLLATE=utf8mb4_unicode_ci
+    COMMENT='포인트 사용 기록 테이블';
