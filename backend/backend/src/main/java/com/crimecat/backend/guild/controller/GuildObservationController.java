@@ -1,9 +1,8 @@
 package com.crimecat.backend.guild.controller;
 
-import com.crimecat.backend.guild.domain.Observation;
 import com.crimecat.backend.guild.dto.ObservationDto;
 import com.crimecat.backend.guild.dto.ObservationRequestDto;
-import com.crimecat.backend.guild.service.ObservationService;
+import com.crimecat.backend.guild.service.GuildObservationService;
 import com.crimecat.backend.guild.utils.RequestUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,19 +12,17 @@ import org.openapitools.jackson.nullable.JsonNullableModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
-@RequestMapping("/v1/bot/guilds/{guildSnowflake}/observation")
-public class ObservationController {
-    private final ObservationService observationService;
+@RequestMapping("/v1/bot/guilds/{snowflake}/observation")
+public class GuildObservationController {
+    private final GuildObservationService guildObservationService;
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public ObservationController(
-            ObservationService observationService,
+    public GuildObservationController(
+            GuildObservationService guildObservationService,
             ObjectMapper objectMapper) {
-        this.observationService = observationService;
+        this.guildObservationService = guildObservationService;
         this.objectMapper = objectMapper;
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         objectMapper.registerModule(new JsonNullableModule());
@@ -33,14 +30,13 @@ public class ObservationController {
 
     @PatchMapping
     public ObservationDto patch(
-            @PathVariable String guildSnowflake, HttpServletRequest request) throws JsonProcessingException {
-        System.out.println("guild snowflake::: " + guildSnowflake);
+            @PathVariable String snowflake, HttpServletRequest request) throws JsonProcessingException {
         ObservationRequestDto observationRequestDto = objectMapper.readValue(RequestUtil.getBody(request), ObservationRequestDto.class);
-        return observationService.patch(guildSnowflake, observationRequestDto);
+        return guildObservationService.patch(snowflake, observationRequestDto);
     }
 
     @GetMapping
-    public ObservationDto get(@PathVariable String guildSnowflake) {
-        return observationService.get(guildSnowflake);
+    public ObservationDto get(@PathVariable String snowflake) {
+        return guildObservationService.get(snowflake);
     }
 }
