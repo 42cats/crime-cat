@@ -1,0 +1,20 @@
+package com.crimecat.backend.user.service;
+
+import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class UserQueryService {
+
+	private final UserRepository userRepository;
+
+	public User findByUserSnowflake(String userSnowflake) {
+		return userRepository.findBySnowflake(userSnowflake).orElse(null);
+	}
+	public User save(User user) {
+		return userRepository.save(user);
+	}
+}
