@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table(name = "COUPON")
+@Table(name = "COUPONS")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class Coupon {
@@ -52,7 +52,7 @@ public class Coupon {
     /**
      * 쿠폰을 등록/사용한 사용자
      */
-    @JoinColumn(name = "USER_SNOWFLAKE")
+    @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE")
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 

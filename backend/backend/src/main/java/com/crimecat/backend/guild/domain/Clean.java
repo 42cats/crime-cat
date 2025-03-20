@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table(name = "CLEAN")
+@Table(name = "CLEANS")
 @NoArgsConstructor
 @Getter
 public class Clean {
@@ -28,7 +28,7 @@ public class Clean {
     @Column(name = "CHANNEL_SNOWFLAKE", nullable = false)
     private String channelSnowflake;
 
-    @JoinColumn(name = "GUILD_SNOWFLAKE", nullable = false)
+    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Guild guild;
 }

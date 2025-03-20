@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table(name = "CHARACTER")
+@Table(name = "CHARACTERS")
 @NoArgsConstructor
 @Getter
 public class Character {
@@ -32,7 +32,7 @@ public class Character {
     @Column(name = "CREATED_AT", nullable = false)
     private LocalDateTime createdAt;
 
-    @JoinColumn(name = "GUILD_SNOWFLAKE", nullable = false)
+    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Guild guild;
 }

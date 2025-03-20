@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table(name = "RECORD")
+@Table(name = "RECORDS")
 @NoArgsConstructor
 @Getter
 public class Record {
@@ -34,7 +34,7 @@ public class Record {
     @Column(name = "INDEX", nullable = false)
     private Integer index;
 
-    @JoinColumn(name = "GUILD_SNOWFLAKE", nullable = false)
+    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Guild guild;
 }

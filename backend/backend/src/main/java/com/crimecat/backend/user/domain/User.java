@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table(name = "USER")
+@Table(name = "USERS")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class User {

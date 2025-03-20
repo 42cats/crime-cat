@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table(name = "GAME_HISTORY")
+@Table(name = "GAME_HISTORIES")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class GameHistory {
@@ -37,11 +37,11 @@ public class GameHistory {
     @Column(name = "CHARACTER_NAME", nullable = false)
     private String characterName;
 
-    @JoinColumn(name = "USER_SNOWFLAKE", nullable = false)
+    @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
-    @JoinColumn(name = "GUILD_SNOWFLAKE", nullable = false)
+    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Guild guild;
 }

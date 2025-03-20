@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table(name = "GUILD")
+@Table(name = "GUILDS")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class Guild {
@@ -36,7 +36,7 @@ public class Guild {
     @Column(name = "IS_WITHDRAW", nullable = false)
     private boolean isWithdraw;
 
-    @JoinColumn(name = "OWNER_SNOWFLAKE", nullable = false)
+    @JoinColumn(name = "OWNER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 }

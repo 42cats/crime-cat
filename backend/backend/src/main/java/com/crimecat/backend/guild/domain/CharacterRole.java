@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table
+@Table(name = "CHARACTER_ROLES")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class CharacterRole {

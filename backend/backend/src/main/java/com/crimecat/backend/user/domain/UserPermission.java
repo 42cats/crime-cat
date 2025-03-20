@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table(name = "USER_PERMISSION")
+@Table(name = "USER_PERMISSIONS")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class UserPermission {
@@ -31,7 +31,7 @@ public class UserPermission {
     @Column(name = "EXPIRED_AT")
     private LocalDateTime expiredAt;
 
-    @JoinColumn(name = "USER_SNOWFLAKE")
+    @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE")
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 

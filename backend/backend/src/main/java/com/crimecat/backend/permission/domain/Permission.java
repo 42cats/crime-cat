@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table(name = "PERMISSION")
+@Table(name = "PERMISSIONS")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class Permission {

@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table(name = "POINT_HISTORY")
+@Table(name = "POINT_HISTORIES")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class PointHistory {
@@ -35,7 +35,7 @@ public class PointHistory {
     @Column(name = "USED_AT", nullable = false)
     private LocalDateTime usedAt;
 
-    @JoinColumn(name = "USER_SNOWFLAKE", nullable = false)
+    @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
