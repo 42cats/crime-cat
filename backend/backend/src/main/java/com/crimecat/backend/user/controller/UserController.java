@@ -16,6 +16,11 @@ public class UserController {
 
 	private final UserService userService;
 
+	/**
+	 * 유저 정보 저장
+	 * @param saveUserInfoDto
+	 * @return
+	 */
 	@PostMapping("")
 	public UserInfoResponseDto saveUserInfo(@RequestBody SaveUserInfoDto saveUserInfoDto) {
 		return userService.registerUserInfo(
