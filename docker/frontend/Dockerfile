@@ -12,5 +12,6 @@ WORKDIR /app
 COPY --from=build /app/dist ./dist
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm install --production
+RUN npm audit fix
 EXPOSE 5173
 CMD ["npm", "run", "preview"]
