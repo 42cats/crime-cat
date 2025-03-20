@@ -8,6 +8,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface ObservationRepository extends JpaRepository<Observation, UUID> {
+public interface GuildObservationRepository extends JpaRepository<Observation, UUID> {
     Optional<Observation> findByGuildSnowflake(String guildSnowflake);
 }
