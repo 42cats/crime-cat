@@ -13,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Table(name = "CHARACTER_ROLES")
@@ -21,8 +22,7 @@ import org.hibernate.annotations.GenericGenerator;
 public class CharacterRole {
 
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @UuidGenerator
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
