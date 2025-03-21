@@ -5,6 +5,7 @@ import com.crimecat.backend.permission.service.PermissionService;
 import com.crimecat.backend.point.service.PointHistoryService;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.domain.UserPermission;
+import com.crimecat.backend.user.dto.UserHasPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserInfoResponseDto;
 import com.crimecat.backend.user.dto.UserPermissionDto;
 import com.crimecat.backend.user.dto.UserPermissionResponseDto;
@@ -91,5 +92,23 @@ public class UserService {
 				.toList();
 
 		return new UserPermissionResponseDto("Permission granted successfully", userPermissionDtos);
+	}
+
+	public UserHasPermissionResponseDto checkUserHasPermissionByPermissionName(String userSnowflake,
+			String permissionName) {
+		User user = userQueryService.findByUserSnowflake(userSnowflake);
+		if (user == null) {
+			return new UserHasPermissionResponseDto("user not found");
+		}
+
+		Permission permission = permissionService.findPermissionByPermissionName(permissionName);
+		if (permission == null) {
+			return new UserHasPermissionResponseDto("permission not found");
+		}
+
+		if (userPermissionService.getUserPermissionByPermissionId(user, permission) != null) {
+			return new UserHasPermissionResponseDto("Permission has");
+		}
+		return new UserHasPermissionResponseDto("not has Permission");
 	}
 }

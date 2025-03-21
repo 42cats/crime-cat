@@ -1,15 +1,18 @@
 package com.crimecat.backend.user.controller;
 
+import com.crimecat.backend.user.dto.UserHasPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserInfoRequestDto;
 import com.crimecat.backend.user.dto.UserInfoResponseDto;
 import com.crimecat.backend.user.dto.UserPermissionRequestDto;
 import com.crimecat.backend.user.dto.UserPermissionResponseDto;
 import com.crimecat.backend.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -41,5 +44,10 @@ public class UserController {
 	public UserPermissionResponseDto purchaseUserPermission(@PathVariable("user_snowflake") String userSnowflake, @RequestBody
 			UserPermissionRequestDto userPermissionRequestDto) {
 		return userService.purchaseUserPermission(userSnowflake, userPermissionRequestDto.getPermissionName());
+	}
+
+	@GetMapping("/{user_snowflake}/permission")
+	public UserHasPermissionResponseDto hasPermission(@PathVariable("user_snowflake") String userSnowflake, @RequestParam("permission_name") String permissionName) {
+		return userService.checkUserHasPermissionByPermissionName(userSnowflake, permissionName);
 	}
 }
