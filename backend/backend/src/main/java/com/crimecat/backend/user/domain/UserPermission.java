@@ -38,7 +38,7 @@ public class UserPermission {
     private Permission permission;
 
     public void extendPermissionPeriod(Integer duration) {
-        expiredAt.plusDays(duration);
+        expiredAt = expiredAt.plusDays(duration);
     }
 
     public UserPermission(User user, Permission permission) {
