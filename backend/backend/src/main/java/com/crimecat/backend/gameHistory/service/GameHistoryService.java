@@ -2,10 +2,13 @@ package com.crimecat.backend.gameHistory.service;
 
 import com.crimecat.backend.gameHistory.dto.SaveUserGameHistoryRequestDto;
 import com.crimecat.backend.gameHistory.dto.SaveUserHistoryResponseDto;
+import com.crimecat.backend.gameHistory.dto.UserGameHistoryDto;
+import com.crimecat.backend.gameHistory.dto.UserGameHitoryResponseDto;
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.service.GuildService;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.service.UserService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,5 +44,21 @@ public class GameHistoryService {
 				guild);
 
 		return new SaveUserHistoryResponseDto("History recorded successfully");
+	}
+
+	public UserGameHitoryResponseDto getUserGameHistoryByUserSnowflake(String userSnowflake) {
+
+		User user = userService.findUserBySnowflake(userSnowflake);
+		if (user == null) {
+//			return "user not found";
+		}
+
+		List<UserGameHistoryDto> userGameHistoryDtos = gameHistoryQueryService.getGameHistoryByUserSnowflake(
+						userSnowflake)
+				.stream()
+				.map(gh -> new UserGameHistoryDto(gh.getId(), gh.getGuild().getSnowflake(),
+						gh.isWin(), gh.getCreatedAt(), gh.getCharacterName()))
+				.toList();
+		return new UserGameHitoryResponseDto(userSnowflake, userGameHistoryDtos);
 	}
 }

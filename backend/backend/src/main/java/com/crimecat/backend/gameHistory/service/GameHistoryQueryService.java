@@ -5,6 +5,7 @@ import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.user.domain.User;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,5 +18,9 @@ public class GameHistoryQueryService {
 	public void saveUserGameHistory(boolean isWin,
 			LocalDateTime createdAt, String characterName, User user, Guild guild) {
 		gameHistoryRepository.save(new GameHistory(isWin, createdAt, characterName, user, guild));
+	}
+
+	public List<GameHistory> getGameHistoryByUserSnowflake(String userSnowflake) {
+		return gameHistoryRepository.getGameHistoryByUserSnowflake(userSnowflake);
 	}
 }
