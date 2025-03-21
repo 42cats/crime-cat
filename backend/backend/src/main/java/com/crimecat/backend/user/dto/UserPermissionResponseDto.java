@@ -10,5 +10,4 @@ public class UserPermissionResponseDto {
 
 	private String message;
 	private List<UserPermissionDto> permissions;
-
 }

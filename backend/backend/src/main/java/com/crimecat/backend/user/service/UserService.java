@@ -58,25 +58,25 @@ public class UserService {
 
 		User user = userQueryService.findByUserSnowflake(userSnowflake);
 		if (user == null) {
-			// error
+			return new UserPermissionResponseDto("user not found", null);
 		}
 
 		Permission permission = permissionService.findPermissionByPermissionName(permissionName);
 		if (permission == null) {
-			// error
-			return null;
+			return new UserPermissionResponseDto("permission not found", null);
 		}
 
 		Integer userPoint = user.getPoint();
 		Integer permissionPrice = permission.getPrice();
-
 		if (userPoint < permissionPrice) {
 			return null;
+			// TODO : 에러 반환 확인
 //			return new UserPermissionResponseDto("point not enough", );
 		}
 
 		user.usePoints(permissionPrice);
 		pointHistoryService.usePoint(user, permission, permissionPrice);
+
 		UserPermission userPermission = userPermissionService.getUserPermissionByPermissionId(user, permission);
 		if (userPermission != null && LocalDateTime.now().isBefore(userPermission.getExpiredAt())) {
 			userPermission.extendPermissionPeriod(permission.getDuration());
@@ -84,16 +84,6 @@ public class UserService {
 		else {
 			userPermissionService.purchasePermission(user, permission);
 		}
-
-		List<UserPermission> activePermissions = userPermissionService.getActiveUserPermissions(user);
-		System.out.println("Active Permissions: " + activePermissions);
-
-		userPermissionService.getActiveUserPermissions(user)
-				.forEach(up -> {
-					System.out.println("UserPermission: " + up);
-					System.out.println("User: " + up.getUser()); // 여기서 null인지 확인
-				});
-
 
 		List<UserPermissionDto> userPermissionDtos = userPermissionService.getActiveUserPermissions(user)
 				.stream()

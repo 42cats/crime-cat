@@ -35,7 +35,7 @@ public class UserController {
 	/**
 	 * 유저가 특정 권한을 구매
 	 * @param userSnowflake
-	 * @param permissionName
+	 * @param userPermissionRequestDto
 	 */
 	@PostMapping("/{user_snowflake}/permission")
 	public UserPermissionResponseDto purchaseUserPermission(@PathVariable("user_snowflake") String userSnowflake, @RequestBody
