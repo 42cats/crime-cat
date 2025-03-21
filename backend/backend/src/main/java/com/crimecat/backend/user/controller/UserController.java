@@ -46,8 +46,16 @@ public class UserController {
 		return userService.purchaseUserPermission(userSnowflake, userPermissionRequestDto.getPermissionName());
 	}
 
+	/**
+	 * 유저에게 특정 권한이 있는지 확인
+	 * @param userSnowflake
+	 * @param permissionName
+	 * @return
+	 */
 	@GetMapping("/{user_snowflake}/permission")
 	public UserHasPermissionResponseDto hasPermission(@PathVariable("user_snowflake") String userSnowflake, @RequestParam("permission_name") String permissionName) {
 		return userService.checkUserHasPermissionByPermissionName(userSnowflake, permissionName);
 	}
+
+
 }
