@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table(name = "PERMISSION")
+@Table(name = "PERMISSIONS")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class Permission {
@@ -28,6 +28,6 @@ public class Permission {
     @Column(name = "PRICE", nullable = false)
     private Integer price;
 
-    @Column(name = "DURATION", nullable = false)
-    private Integer duration;
+    @Column(name = "DURATION")
+    private Integer duration = 28;
 }

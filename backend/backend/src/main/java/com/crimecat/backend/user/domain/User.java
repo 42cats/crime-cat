@@ -60,4 +60,9 @@ public class User {
     public static User of(String snowflake, String name, String avatar) {
         return new User(snowflake, name, avatar);
     }
+
+    public Integer usePoints(Integer price) {
+        point -= price;
+        return point;
+    }
 }

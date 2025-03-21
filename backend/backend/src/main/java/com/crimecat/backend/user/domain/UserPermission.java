@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table(name = "USER_PERMISSION")
+@Table(name = "USER_PERMISSIONS")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class UserPermission {
@@ -38,4 +38,14 @@ public class UserPermission {
     @JoinColumn(name = "PERMISSION_ID")
     @ManyToOne(fetch = FetchType.LAZY)
     private Permission permission;
+
+    public void extendPermissionPeriod(Integer duration) {
+        expiredAt.plusDays(duration);
+    }
+
+    public UserPermission(User user, Permission permission) {
+        this.user = user;
+        this.permission = permission;
+        this.expiredAt = LocalDateTime.now().plusDays(permission.getDuration());
+    }
 }

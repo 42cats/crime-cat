@@ -5,8 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class UserInfoRequestDto {
-	String userSnowflake;
-	String name;
-	String avatar;
+public class UserPermissionRequestDto {
+
+	private String permissionName;
 }

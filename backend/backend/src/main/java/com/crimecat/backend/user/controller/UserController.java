@@ -2,6 +2,8 @@ package com.crimecat.backend.user.controller;
 
 import com.crimecat.backend.user.dto.UserInfoRequestDto;
 import com.crimecat.backend.user.dto.UserInfoResponseDto;
+import com.crimecat.backend.user.dto.UserPermissionRequestDto;
+import com.crimecat.backend.user.dto.UserPermissionResponseDto;
 import com.crimecat.backend.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,5 +30,16 @@ public class UserController {
 				userInfoRequestDto.getUserSnowflake(),
 				userInfoRequestDto.getName(),
 				userInfoRequestDto.getAvatar());
+	}
+
+	/**
+	 * 유저가 특정 권한을 구매
+	 * @param userSnowflake
+	 * @param permissionName
+	 */
+	@PostMapping("/{user_snowflake}/permission")
+	public UserPermissionResponseDto purchaseUserPermission(@PathVariable("user_snowflake") String userSnowflake, @RequestBody
+			UserPermissionRequestDto userPermissionRequestDto) {
+		return userService.purchaseUserPermission(userSnowflake, userPermissionRequestDto.getPermissionName());
 	}
 }
