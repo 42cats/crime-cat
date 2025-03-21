@@ -3,6 +3,7 @@ package com.crimecat.backend.user.controller;
 import com.crimecat.backend.user.dto.UserHasPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserInfoRequestDto;
 import com.crimecat.backend.user.dto.UserInfoResponseDto;
+import com.crimecat.backend.user.dto.UserGrantedPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserPermissionRequestDto;
 import com.crimecat.backend.user.dto.UserPermissionResponseDto;
 import com.crimecat.backend.user.service.UserService;
@@ -57,5 +58,14 @@ public class UserController {
 		return userService.checkUserHasPermissionByPermissionName(userSnowflake, permissionName);
 	}
 
-
+	/**
+	 * 유저가 가진 모든 권한 조회
+	 * @param userSnowflake
+	 * @return
+	 */
+	@GetMapping("/{user_snowflake}/permissions")
+	public UserGrantedPermissionResponseDto getAllUserPermissions(
+			@PathVariable("user_snowflake") String userSnowflake) {
+		return userService.getAllUserPermissions(userSnowflake);
+	}
 }

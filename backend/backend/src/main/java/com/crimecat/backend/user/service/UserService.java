@@ -5,6 +5,8 @@ import com.crimecat.backend.permission.service.PermissionService;
 import com.crimecat.backend.point.service.PointHistoryService;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.domain.UserPermission;
+import com.crimecat.backend.user.dto.UserGrantedPermissionDto;
+import com.crimecat.backend.user.dto.UserGrantedPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserHasPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserInfoResponseDto;
 import com.crimecat.backend.user.dto.UserPermissionDto;
@@ -110,5 +112,29 @@ public class UserService {
 			return new UserHasPermissionResponseDto("Permission has");
 		}
 		return new UserHasPermissionResponseDto("not has Permission");
+	}
+
+	/**
+	 * 유저가 가진 모든 권한 조회
+	 * 유저 조회, 유저의 권한 목록 조회
+	 * @param userSnowflake
+	 * @return
+	 */
+	public UserGrantedPermissionResponseDto getAllUserPermissions(String userSnowflake) {
+		User user = userQueryService.findByUserSnowflake(userSnowflake);
+		if (user == null) {
+			return new UserGrantedPermissionResponseDto("user not found", null);
+		}
+
+		List<UserGrantedPermissionDto> userGrantedPermissions
+				= userPermissionService.getActiveUserPermissions(user)
+				.stream()
+				.map(aup -> new UserGrantedPermissionDto(
+						aup.getPermission().getId(),
+						aup.getPermission().getName(),
+						aup.getExpiredAt()))
+				.toList();
+
+		return new UserGrantedPermissionResponseDto(userSnowflake, userGrantedPermissions);
 	}
 }
