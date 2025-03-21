@@ -1,10 +1,10 @@
-package com.crimecat.backend.guild.domain;
+package com.crimecat.backend.gameHistory.domain;
 
+import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.user.domain.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -14,7 +14,6 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UuidGenerator;
 
 @Entity
@@ -28,8 +27,8 @@ public class GameHistory {
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @Column(name = "IS_WIN", nullable = false)
-    private boolean isWin;
+    @Column(name = "IS_WIN")
+    private boolean isWin = false;
 
     @Column(name = "CREATED_AT", nullable = false)
     private LocalDateTime createdAt;
@@ -44,4 +43,12 @@ public class GameHistory {
     @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Guild guild;
+
+    public GameHistory(boolean isWin, LocalDateTime createdAt, String characterName, User user, Guild guild) {
+        this.isWin = isWin;
+        this.createdAt = createdAt;
+        this.characterName = characterName;
+        this.user = user;
+        this.guild = guild;
+    }
 }
