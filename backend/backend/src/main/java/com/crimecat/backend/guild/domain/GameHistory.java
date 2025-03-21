@@ -15,16 +15,16 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.UuidGenerator;
 
 @Entity
-@Table(name = "GAME_HISTORY")
+@Table(name = "GAME_HISTORIES")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class GameHistory {
 
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @UuidGenerator
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
@@ -37,11 +37,11 @@ public class GameHistory {
     @Column(name = "CHARACTER_NAME", nullable = false)
     private String characterName;
 
-    @JoinColumn(name = "USER_SNOWFLAKE", nullable = false)
+    @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
-    @JoinColumn(name = "GUILD_SNOWFLAKE", nullable = false)
+    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Guild guild;
 }

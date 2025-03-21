@@ -11,19 +11,20 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.util.UUID;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.UuidGenerator;
 
 @Entity
-@Table(name = "GUILD")
+@Table(name = "GUILDS")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class Guild {
 
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @UuidGenerator
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
@@ -36,7 +37,7 @@ public class Guild {
     @Column(name = "IS_WITHDRAW", nullable = false)
     private boolean isWithdraw;
 
-    @JoinColumn(name = "OWNER_SNOWFLAKE", nullable = false)
+    @JoinColumn(name = "OWNER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 }

@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table(name = "MUSIC")
+@Table(name = "MUSICS")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class Music {
@@ -27,7 +27,7 @@ public class Music {
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @JoinColumn(name = "GUILD_SNOWFLAKE", nullable = false)
+    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Guild guild;
 
