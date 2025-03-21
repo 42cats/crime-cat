@@ -2,6 +2,7 @@ package com.crimecat.backend.user.service;
 
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.dto.UserInfoResponseDto;
+import com.crimecat.backend.user.dto.UserPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,9 +17,9 @@ public class UserService {
 	@Transactional
 	public UserInfoResponseDto registerUserInfo(String userSnowflake, String userName, String userAvatar) {
 		String message = "Already User registered";
-		User user = findUser(userSnowflake);
+		User user = userQueryService.findByUserSnowflake(userSnowflake);
 		if (user == null) {
-			user = saveUser(userSnowflake, userName, userAvatar);
+			user = userQueryService.save(User.of(userSnowflake, userName, userAvatar));
 			message = "User registered";
 		}
 
