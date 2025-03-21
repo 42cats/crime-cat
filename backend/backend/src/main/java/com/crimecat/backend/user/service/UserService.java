@@ -90,7 +90,7 @@ public class UserService {
 
 		List<UserPermissionDto> userPermissionDtos = userPermissionService.getActiveUserPermissions(user)
 				.stream()
-				.map(up -> new UserPermissionDto(up.getUser().getName(), up.getExpiredAt()))
+				.map(up -> new UserPermissionDto(up.getPermission().getName(), up.getExpiredAt()))
 				.toList();
 
 		return new UserPermissionResponseDto("Permission granted successfully", userPermissionDtos);
