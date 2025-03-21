@@ -102,6 +102,7 @@ public class UserService {
 		return new UserPermissionResponseDto("Permission granted successfully", userPermissionDtos);
 	}
 
+	@Transactional(readOnly = true)
 	public UserHasPermissionResponseDto checkUserHasPermissionByPermissionName(String userSnowflake,
 			String permissionName) {
 		User user = findUserBySnowflake(userSnowflake);
@@ -126,6 +127,7 @@ public class UserService {
 	 * @param userSnowflake
 	 * @return
 	 */
+	@Transactional(readOnly = true)
 	public UserGrantedPermissionResponseDto getAllUserPermissions(String userSnowflake) {
 		User user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
