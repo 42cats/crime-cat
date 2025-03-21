@@ -27,10 +27,16 @@ public class UserService {
 	private final PermissionService permissionService;
 	private final UserPermissionService userPermissionService;
 
+
+	@Transactional(readOnly = true)
+	public User findUserBySnowflake(String userSnowflake) {
+		return userQueryService.findByUserSnowflake(userSnowflake);
+	}
+
 	@Transactional
 	public UserInfoResponseDto registerUserInfo(String userSnowflake, String userName, String userAvatar) {
 		String message = "Already User registered";
-		User user = userQueryService.findByUserSnowflake(userSnowflake);
+		User user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
 			user = userQueryService.save(User.of(userSnowflake, userName, userAvatar));
 			message = "User registered";
@@ -59,7 +65,7 @@ public class UserService {
 	public UserPermissionResponseDto purchaseUserPermission(String userSnowflake,
 			String permissionName) {
 
-		User user = userQueryService.findByUserSnowflake(userSnowflake);
+		User user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
 			return new UserPermissionResponseDto("user not found", null);
 		}
@@ -98,7 +104,7 @@ public class UserService {
 
 	public UserHasPermissionResponseDto checkUserHasPermissionByPermissionName(String userSnowflake,
 			String permissionName) {
-		User user = userQueryService.findByUserSnowflake(userSnowflake);
+		User user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
 			return new UserHasPermissionResponseDto("user not found");
 		}
@@ -121,7 +127,7 @@ public class UserService {
 	 * @return
 	 */
 	public UserGrantedPermissionResponseDto getAllUserPermissions(String userSnowflake) {
-		User user = userQueryService.findByUserSnowflake(userSnowflake);
+		User user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
 			return new UserGrantedPermissionResponseDto("user not found", null);
 		}
