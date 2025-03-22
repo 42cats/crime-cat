@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class UserPermissionDto {
+public class UserPermissionPurchaseDto {
 
 	private String name;
 	private LocalDateTime duration;

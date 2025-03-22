@@ -15,8 +15,10 @@ import com.crimecat.backend.user.dto.UserGrantedPermissionDto;
 import com.crimecat.backend.user.dto.UserGrantedPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserHasPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserInfoResponseDto;
-import com.crimecat.backend.user.dto.UserPermissionDto;
-import com.crimecat.backend.user.dto.UserPermissionResponseDto;
+import com.crimecat.backend.user.dto.UserPermissionPurchaseDto;
+import com.crimecat.backend.user.dto.UserPermissionPurchaseFailedResponseDto;
+import com.crimecat.backend.user.dto.UserPermissionPurchaseResponseDto;
+import com.crimecat.backend.user.dto.UserPermissionPurchaseSuccessResponseDto;
 import com.crimecat.backend.user.dto.UserRankingResponseDto;
 import com.crimecat.backend.user.dto.UserResponseDto;
 import java.time.LocalDateTime;
@@ -80,25 +82,23 @@ public class UserService {
 			저장
 		 */
 	@Transactional
-	public UserPermissionResponseDto purchaseUserPermission(String userSnowflake,
+	public UserPermissionPurchaseResponseDto purchaseUserPermission(String userSnowflake,
 			String permissionName) {
 
 		User user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
-			return new UserPermissionResponseDto("user not found", null);
+			return new UserPermissionPurchaseFailedResponseDto("user not found", null, null);
 		}
 
 		Permission permission = permissionService.findPermissionByPermissionName(permissionName);
 		if (permission == null) {
-			return new UserPermissionResponseDto("permission not found", null);
+			return new UserPermissionPurchaseFailedResponseDto("permission not found", null, null);
 		}
 
 		Integer userPoint = user.getPoint();
 		Integer permissionPrice = permission.getPrice();
 		if (userPoint < permissionPrice) {
-			return null;
-			// TODO : 에러 반환 확인
-//			return new UserPermissionResponseDto("point not enough", );
+			return new UserPermissionPurchaseFailedResponseDto("point not enough", permissionPrice, userPoint);
 		}
 
 		user.usePoints(permissionPrice);
@@ -112,12 +112,13 @@ public class UserService {
 			userPermissionService.purchasePermission(user, permission);
 		}
 
-		List<UserPermissionDto> userPermissionDtos = userPermissionService.getActiveUserPermissions(user)
+		List<UserPermissionPurchaseDto> userPermissionPurchaseDtos = userPermissionService.getActiveUserPermissions(user)
 				.stream()
-				.map(up -> new UserPermissionDto(up.getPermission().getName(), up.getExpiredAt()))
+				.map(up -> new UserPermissionPurchaseDto(up.getPermission().getName(), up.getExpiredAt()))
 				.toList();
 
-		return new UserPermissionResponseDto("Permission granted successfully", userPermissionDtos);
+		return new UserPermissionPurchaseSuccessResponseDto("Permission granted successfully",
+				userPermissionPurchaseDtos);
 	}
 
 	@Transactional(readOnly = true)

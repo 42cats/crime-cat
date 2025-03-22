@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class UserPermissionRequestDto {
+public class UserPermissionPurchaseRequestDto {
 
 	private String permissionName;
 }

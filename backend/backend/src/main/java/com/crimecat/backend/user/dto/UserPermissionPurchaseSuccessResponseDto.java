@@ -6,8 +6,9 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class UserPermissionResponseDto {
+public class UserPermissionPurchaseSuccessResponseDto implements
+		UserPermissionPurchaseResponseDto {
 
 	private String message;
-	private List<UserPermissionDto> permissions;
+	private List<UserPermissionPurchaseDto> permissions;
 }

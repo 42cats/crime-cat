@@ -5,8 +5,8 @@ import com.crimecat.backend.user.dto.UserGrantedPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserHasPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserInfoRequestDto;
 import com.crimecat.backend.user.dto.UserInfoResponseDto;
-import com.crimecat.backend.user.dto.UserPermissionRequestDto;
-import com.crimecat.backend.user.dto.UserPermissionResponseDto;
+import com.crimecat.backend.user.dto.UserPermissionPurchaseRequestDto;
+import com.crimecat.backend.user.dto.UserPermissionPurchaseResponseDto;
 import com.crimecat.backend.user.dto.UserRankingResponseDto;
 import com.crimecat.backend.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -43,12 +43,12 @@ public class UserController {
 	/**
 	 * 유저가 특정 권한을 구매
 	 * @param userSnowflake
-	 * @param userPermissionRequestDto
+	 * @param userPermissionPurchaseRequestDto
 	 */
 	@PostMapping("/{user_snowflake}/permission")
-	public UserPermissionResponseDto purchaseUserPermission(@PathVariable("user_snowflake") String userSnowflake, @RequestBody
-			UserPermissionRequestDto userPermissionRequestDto) {
-		return userService.purchaseUserPermission(userSnowflake, userPermissionRequestDto.getPermissionName());
+	public UserPermissionPurchaseResponseDto purchaseUserPermission(@PathVariable("user_snowflake") String userSnowflake, @RequestBody
+	UserPermissionPurchaseRequestDto userPermissionPurchaseRequestDto) {
+		return userService.purchaseUserPermission(userSnowflake, userPermissionPurchaseRequestDto.getPermissionName());
 	}
 
 	/**
