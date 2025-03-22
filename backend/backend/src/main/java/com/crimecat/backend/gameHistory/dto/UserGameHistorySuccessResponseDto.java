@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public class UserGameHitoryResponseDto {
+public class UserGameHistorySuccessResponseDto implements UserGameHistoryResponseDto {
 
 	private String userSnowflake;
 	private List<UserGameHistoryDto> userGameHistoryDtos;

@@ -2,7 +2,7 @@ package com.crimecat.backend.gameHistory.controller;
 
 import com.crimecat.backend.gameHistory.dto.SaveUserGameHistoryRequestDto;
 import com.crimecat.backend.gameHistory.dto.SaveUserHistoryResponseDto;
-import com.crimecat.backend.gameHistory.dto.UserGameHitoryResponseDto;
+import com.crimecat.backend.gameHistory.dto.UserGameHistoryResponseDto;
 import com.crimecat.backend.gameHistory.service.GameHistoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,7 +36,7 @@ public class GameHistoryController {
 	 * @return
 	 */
 	@GetMapping("{user_snowflake}")
-	public UserGameHitoryResponseDto getUserGameHistoryByUserSnowflake(@PathVariable("user_snowflake") String userSnowflake) {
+	public UserGameHistoryResponseDto getUserGameHistoryByUserSnowflake(@PathVariable("user_snowflake") String userSnowflake) {
 		return gameHistoryService.getUserGameHistoryByUserSnowflake(userSnowflake);
 	}
 }

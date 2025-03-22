@@ -3,7 +3,9 @@ package com.crimecat.backend.gameHistory.service;
 import com.crimecat.backend.gameHistory.dto.SaveUserGameHistoryRequestDto;
 import com.crimecat.backend.gameHistory.dto.SaveUserHistoryResponseDto;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryDto;
-import com.crimecat.backend.gameHistory.dto.UserGameHitoryResponseDto;
+import com.crimecat.backend.gameHistory.dto.UserGameHistoryFailedResponseDto;
+import com.crimecat.backend.gameHistory.dto.UserGameHistoryResponseDto;
+import com.crimecat.backend.gameHistory.dto.UserGameHistorySuccessResponseDto;
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.service.GuildService;
 import com.crimecat.backend.user.domain.User;
@@ -47,11 +49,11 @@ public class GameHistoryService {
 	}
 
 	@Transactional(readOnly = true)
-	public UserGameHitoryResponseDto getUserGameHistoryByUserSnowflake(String userSnowflake) {
+	public UserGameHistoryResponseDto getUserGameHistoryByUserSnowflake(String userSnowflake) {
 
 		User user = userService.findUserBySnowflake(userSnowflake);
 		if (user == null) {
-			return new UserGameHitoryResponseDto("user not found", null);
+			return new UserGameHistoryFailedResponseDto("user not found");
 		}
 
 		List<UserGameHistoryDto> userGameHistoryDtos = gameHistoryQueryService.getGameHistoryByUserSnowflake(
@@ -60,6 +62,6 @@ public class GameHistoryService {
 				.map(gh -> new UserGameHistoryDto(gh.getId(), gh.getGuild().getSnowflake(),
 						gh.isWin(), gh.getCreatedAt(), gh.getCharacterName()))
 				.toList();
-		return new UserGameHitoryResponseDto(userSnowflake, userGameHistoryDtos);
+		return new UserGameHistorySuccessResponseDto(userSnowflake, userGameHistoryDtos);
 	}
 }
