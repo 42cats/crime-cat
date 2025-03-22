@@ -51,8 +51,7 @@ public class GameHistoryService {
 
 		User user = userService.findUserBySnowflake(userSnowflake);
 		if (user == null) {
-			return null;
-//			return "user not found";
+			return new UserGameHitoryResponseDto("user not found", null);
 		}
 
 		List<UserGameHistoryDto> userGameHistoryDtos = gameHistoryQueryService.getGameHistoryByUserSnowflake(
