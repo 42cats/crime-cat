@@ -17,4 +17,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
 	@Query("SELECT u FROM User u WHERE u.point > :point")
 	List<User> getUsersWithPointGreaterThan(@Param("point") Integer point);
+
 }

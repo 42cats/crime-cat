@@ -46,10 +46,12 @@ public class GameHistoryService {
 		return new SaveUserHistoryResponseDto("History recorded successfully");
 	}
 
+	@Transactional(readOnly = true)
 	public UserGameHitoryResponseDto getUserGameHistoryByUserSnowflake(String userSnowflake) {
 
 		User user = userService.findUserBySnowflake(userSnowflake);
 		if (user == null) {
+			return null;
 //			return "user not found";
 		}
 

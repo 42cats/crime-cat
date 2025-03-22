@@ -1,12 +1,14 @@
 package com.crimecat.backend.gameHistory.service;
 
 import com.crimecat.backend.gameHistory.domain.GameHistory;
+import com.crimecat.backend.gameHistory.dto.IGameHistoryRankingDto;
 import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.user.domain.User;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,5 +28,9 @@ public class GameHistoryQueryService {
 
 	public List<GameHistory> getGameHistoryWithPlayCountGreaterThan(Integer playCount) {
 		return gameHistoryRepository.getGameHistoryWithPlayCountGreaterThan(playCount);
+	}
+
+	public List<IGameHistoryRankingDto> getGameHistoryWithPagination(Pageable pageable) {
+		  return gameHistoryRepository.getGameHistoryWithPagination(pageable);
 	}
 }

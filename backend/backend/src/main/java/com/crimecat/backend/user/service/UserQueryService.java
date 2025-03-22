@@ -4,6 +4,8 @@ import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.repository.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -25,5 +27,9 @@ public class UserQueryService {
 
 	public Integer getUserCount() {
 		return (int) userRepository.count();
+	}
+
+	public Page<User> getUserWithPagination(Pageable pageable) {
+		return userRepository.findAll(pageable);
 	}
 }

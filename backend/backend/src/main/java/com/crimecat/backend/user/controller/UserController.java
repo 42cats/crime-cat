@@ -1,14 +1,17 @@
 package com.crimecat.backend.user.controller;
 
+import com.crimecat.backend.user.dto.TotalUserRankingResponseDto;
+import com.crimecat.backend.user.dto.UserGrantedPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserHasPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserInfoRequestDto;
 import com.crimecat.backend.user.dto.UserInfoResponseDto;
-import com.crimecat.backend.user.dto.UserGrantedPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserPermissionRequestDto;
 import com.crimecat.backend.user.dto.UserPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserRankingResponseDto;
 import com.crimecat.backend.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -80,5 +83,22 @@ public class UserController {
 	public UserRankingResponseDto getUserRanking(
 			@PathVariable("user_snowflake") String userSnowflake) {
 		return userService.getUserRanking(userSnowflake);
+	}
+
+
+	/**
+	 * 전체 유저의 target 조건에 따른 순위를 반환
+	 * @param sortingCondition
+	 * @param size
+	 * @param page
+	 * @return
+	 */
+	@GetMapping("/ranks")
+	public TotalUserRankingResponseDto getTotalUserRankingByParamCondition(
+			@RequestParam("target") String sortingCondition,
+			@RequestParam(value = "limit", defaultValue = "10") int size,
+			@RequestParam(value = "page", defaultValue = "0") int page) {
+		Pageable pageable = PageRequest.of(page, size);
+		return userService.getTotalUserRankingByParamCondition(pageable, sortingCondition);
 	}
 }
