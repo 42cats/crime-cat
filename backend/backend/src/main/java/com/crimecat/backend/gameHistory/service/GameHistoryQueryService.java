@@ -23,4 +23,8 @@ public class GameHistoryQueryService {
 	public List<GameHistory> getGameHistoryByUserSnowflake(String userSnowflake) {
 		return gameHistoryRepository.getGameHistoryByUserSnowflake(userSnowflake);
 	}
+
+	public List<GameHistory> getGameHistoryWithPlayCountGreaterThan(Integer playCount) {
+		return gameHistoryRepository.getGameHistoryWithPlayCountGreaterThan(playCount);
+	}
 }

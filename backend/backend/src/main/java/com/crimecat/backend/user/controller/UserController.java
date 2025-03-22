@@ -6,6 +6,7 @@ import com.crimecat.backend.user.dto.UserInfoResponseDto;
 import com.crimecat.backend.user.dto.UserGrantedPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserPermissionRequestDto;
 import com.crimecat.backend.user.dto.UserPermissionResponseDto;
+import com.crimecat.backend.user.dto.UserRankingResponseDto;
 import com.crimecat.backend.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -67,5 +68,17 @@ public class UserController {
 	public UserGrantedPermissionResponseDto getAllUserPermissions(
 			@PathVariable("user_snowflake") String userSnowflake) {
 		return userService.getAllUserPermissions(userSnowflake);
+	}
+
+
+	/**
+	 * 유저의 플레이 횟수, 보유 포인트 별 현재 랭킹을 반환
+	 * @param userSnowflake
+	 * @return
+	 */
+	@GetMapping("/{user_snowflake}/rank")
+	public UserRankingResponseDto getUserRanking(
+			@PathVariable("user_snowflake") String userSnowflake) {
+		return userService.getUserRanking(userSnowflake);
 	}
 }

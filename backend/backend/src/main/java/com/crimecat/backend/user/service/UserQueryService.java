@@ -2,6 +2,7 @@ package com.crimecat.backend.user.service;
 
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.repository.UserRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,5 +17,13 @@ public class UserQueryService {
 	}
 	public User save(User user) {
 		return userRepository.save(user);
+	}
+
+	public List<User> getUsersWithPointGreaterThan(Integer point) {
+		return userRepository.getUsersWithPointGreaterThan(point);
+	}
+
+	public Integer getUserCount() {
+		return (int) userRepository.count();
 	}
 }

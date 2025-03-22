@@ -13,4 +13,7 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 
 	@Query("SELECT gh FROM GameHistory gh JOIN FETCH gh.user JOIN FETCH gh.guild WHERE gh.user.snowflake = :userSnowflake")
 	List<GameHistory> getGameHistoryByUserSnowflake(@Param("userSnowflake") String userSnowflake);
+
+	@Query("SELECT gh FROM GameHistory gh JOIN FETCH gh.user u GROUP BY u.snowflake HAVING COUNT(*) > :playCount")
+	List<GameHistory> getGameHistoryWithPlayCountGreaterThan(@Param("playCount") Integer playCount);
 }

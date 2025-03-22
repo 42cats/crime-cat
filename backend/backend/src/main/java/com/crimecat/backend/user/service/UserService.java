@@ -1,5 +1,6 @@
 package com.crimecat.backend.user.service;
 
+import com.crimecat.backend.gameHistory.service.GameHistoryQueryService;
 import com.crimecat.backend.permission.domain.Permission;
 import com.crimecat.backend.permission.service.PermissionService;
 import com.crimecat.backend.point.service.PointHistoryService;
@@ -11,6 +12,7 @@ import com.crimecat.backend.user.dto.UserHasPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserInfoResponseDto;
 import com.crimecat.backend.user.dto.UserPermissionDto;
 import com.crimecat.backend.user.dto.UserPermissionResponseDto;
+import com.crimecat.backend.user.dto.UserRankingResponseDto;
 import com.crimecat.backend.user.dto.UserResponseDto;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +28,7 @@ public class UserService {
 	private final PointHistoryService pointHistoryService;
 	private final PermissionService permissionService;
 	private final UserPermissionService userPermissionService;
+	private final GameHistoryQueryService gameHistoryQueryService;
 
 
 	@Transactional(readOnly = true)
@@ -144,5 +147,39 @@ public class UserService {
 				.toList();
 
 		return new UserGrantedPermissionResponseDto(userSnowflake, userGrantedPermissions);
+	}
+
+	/**
+	 * 유저의 현재 랭킹 반환
+	 * 플레이 횟수 순, 보유 포인트 순
+	 * @param userSnowflake
+	 * @return
+	 */
+	public UserRankingResponseDto getUserRanking(String userSnowflake) {
+		User user = userQueryService.findByUserSnowflake(userSnowflake);
+		if (user == null) {
+//			return new UserRankingResponseDto("user not found");
+		}
+
+		// 플레이 횟수 순위
+		Integer gameHistoryCountByUserSnowflake
+				 = gameHistoryQueryService.getGameHistoryByUserSnowflake(userSnowflake).size();
+		Integer gameHistoryCountWithPlayCountGreaterThan
+				= gameHistoryQueryService.getGameHistoryWithPlayCountGreaterThan(gameHistoryCountByUserSnowflake).size() + 1;
+
+		// 보유 포인트 순위
+		Integer usersWithPointGreaterThanCount = userQueryService.getUsersWithPointGreaterThan(user.getPoint()).size() + 1;
+
+		Integer totalUserCount = userQueryService.getUserCount();
+
+		return new UserRankingResponseDto(
+				"user info find successfully",
+				userSnowflake,
+				gameHistoryCountByUserSnowflake,
+				gameHistoryCountWithPlayCountGreaterThan,
+				user.getPoint(),
+				usersWithPointGreaterThanCount,
+				totalUserCount
+				);
 	}
 }
