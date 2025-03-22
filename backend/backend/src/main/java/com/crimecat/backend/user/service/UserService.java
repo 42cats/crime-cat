@@ -175,7 +175,7 @@ public class UserService {
 	public UserRankingResponseDto getUserRanking(String userSnowflake) {
 		User user = userQueryService.findByUserSnowflake(userSnowflake);
 		if (user == null) {
-//			return new UserRankingResponseDto("user not found");
+			return new UserRankingResponseDto("user not found", null, null, null, null, null, null);
 		}
 
 		// 플레이 횟수 순위
