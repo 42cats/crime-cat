@@ -10,7 +10,9 @@ import com.crimecat.backend.user.domain.UserPermission;
 import com.crimecat.backend.user.dto.TotalUserRankingByPlayTimeDto;
 import com.crimecat.backend.user.dto.TotalUserRankingByPointDto;
 import com.crimecat.backend.user.dto.TotalUserRankingDto;
+import com.crimecat.backend.user.dto.TotalUserRankingFailedResponseDto;
 import com.crimecat.backend.user.dto.TotalUserRankingResponseDto;
+import com.crimecat.backend.user.dto.TotalUserRankingSuccessResponseDto;
 import com.crimecat.backend.user.dto.UserGrantedPermissionDto;
 import com.crimecat.backend.user.dto.UserGrantedPermissionResponseDto;
 import com.crimecat.backend.user.dto.UserHasPermissionResponseDto;
@@ -226,7 +228,8 @@ public class UserService {
 
 
 		} else if (sortingCondition.equals(SORT_BY_PLAY_TIME)) {
-			List<IGameHistoryRankingDto> gameHistoryWithPagination = gameHistoryQueryService.getGameHistoryWithPagination(pageable);
+			List<IGameHistoryRankingDto> gameHistoryWithPagination = gameHistoryQueryService.getGameHistoryWithPagination(
+					pageable);
 			AtomicInteger rank = new AtomicInteger(1);
 			ranking = gameHistoryWithPagination.stream()
 					.map(ghp -> new TotalUserRankingByPlayTimeDto(
@@ -235,7 +238,9 @@ public class UserService {
 							ghp.getPlayCount()))
 					.collect(Collectors.toList());
 
+		} else {
+			return new TotalUserRankingFailedResponseDto("params type error");
 		}
-		return new TotalUserRankingResponseDto(pageable.getPageNumber(), ranking.size(), totalUserCount, ranking);
+		return new TotalUserRankingSuccessResponseDto(pageable.getPageNumber(), ranking.size(), totalUserCount, ranking);
 	}
 }
