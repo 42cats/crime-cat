@@ -21,7 +21,9 @@ import com.crimecat.backend.user.dto.UserPermissionPurchaseDto;
 import com.crimecat.backend.user.dto.UserPermissionPurchaseFailedResponseDto;
 import com.crimecat.backend.user.dto.UserPermissionPurchaseResponseDto;
 import com.crimecat.backend.user.dto.UserPermissionPurchaseSuccessResponseDto;
+import com.crimecat.backend.user.dto.UserRankingFailedResponseDto;
 import com.crimecat.backend.user.dto.UserRankingResponseDto;
+import com.crimecat.backend.user.dto.UserRankingSuccessResponseDto;
 import com.crimecat.backend.user.dto.UserResponseDto;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -177,8 +179,7 @@ public class UserService {
 	public UserRankingResponseDto getUserRanking(String userSnowflake) {
 		User user = userQueryService.findByUserSnowflake(userSnowflake);
 		if (user == null) {
-			return new UserRankingResponseDto(
-					"user not found", null, null, null, null, null, null);
+			return new UserRankingFailedResponseDto("user not found");
 		}
 
 		// 플레이 횟수 순위
@@ -192,7 +193,7 @@ public class UserService {
 
 		Integer totalUserCount = userQueryService.getUserCount();
 
-		return new UserRankingResponseDto(
+		return new UserRankingSuccessResponseDto(
 				"user info find successfully",
 				userSnowflake,
 				gameHistoryCountByUserSnowflake,
