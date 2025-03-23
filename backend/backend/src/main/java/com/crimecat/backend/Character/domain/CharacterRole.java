@@ -24,7 +24,7 @@ public class CharacterRole {
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @JoinColumn(name = "CHARACTER", nullable = false)
+    @JoinColumn(name = "CHARACTER_ID", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Character character;
 
