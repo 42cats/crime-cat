@@ -24,10 +24,11 @@ public class PermissionService {
 		Permission permissionByPermissionName = permissionQueryService.findPermissionByPermissionName(name);
 
 		if (permissionByPermissionName != null) {
-			return new SavePermissionResponseDto("Failed to save");
+			return new SavePermissionResponseDto("permission not found");
 		}
 
 		permissionQueryService.savePermission(name, price, duration);
+		return new SavePermissionResponseDto("permission saved");
 	}
 
 	public DeletePermissionResponseDto deletePermissionByName(String name) {
