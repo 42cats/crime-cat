@@ -31,6 +31,7 @@ public class PermissionService {
 		return new SavePermissionResponseDto("permission saved");
 	}
 
+	@Transactional
 	public DeletePermissionResponseDto deletePermissionByName(String name) {
 		Permission permission = permissionQueryService.findPermissionByPermissionName(name);
 
