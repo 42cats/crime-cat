@@ -6,11 +6,16 @@ import com.crimecat.backend.Character.dto.CharacterRoleResponseDto;
 import com.crimecat.backend.Character.dto.CharactersFailedResponseDto;
 import com.crimecat.backend.Character.dto.CharactersResponseDto;
 import com.crimecat.backend.Character.dto.CharactersSuccessResponseDto;
+import com.crimecat.backend.Character.dto.SaveCharacterDto;
+import com.crimecat.backend.Character.dto.SaveCharacterFailedResponseDto;
+import com.crimecat.backend.Character.dto.SaveCharacterResponseDto;
+import com.crimecat.backend.Character.dto.SaveCharacterSuccessfulResponseDto;
 import com.crimecat.backend.Character.repository.CharacterRepository;
-import com.crimecat.backend.Character.repository.CharacterRoleRepository;
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.service.GuildService;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +48,7 @@ public class CharacterService {
 				.map(Character::getId)
 				.toList();
 		List<CharacterRole> characterRoles
-				= characterRoleQueryService.findCharacterRoleByCharacterId(characterIds);
+				= characterRoleQueryService.findCharacterRoleByCharacterIds(characterIds);
 		if (characterRoles.isEmpty()) {
 			List<CharacterRoleResponseDto> characterRoleByCharacterName = characters.stream()
 					.map(character -> new CharacterRoleResponseDto(character.getName(), null))
@@ -63,5 +68,41 @@ public class CharacterService {
 
 		return new CharactersSuccessResponseDto("character list founded", guildSnowflake,
 				characterRoleByCharacterName);
+	}
+
+	@Transactional
+	public SaveCharacterResponseDto saveCharacter(String guildSnowflake, String characterName, List<String> requestedRoles) {
+		Guild guild = guildService.findGuildByGuildSnowflake(guildSnowflake);
+		if (guild == null) {
+			return new SaveCharacterFailedResponseDto("guild not found");
+		}
+
+		Character character = characterQueryService.getCharacterByCharacterName(characterName);
+		if (character != null) {
+			List<CharacterRole> existingCharacterRoles
+					= characterRoleQueryService.findCharacterRoleByCharacterId(character.getId());
+			Set<String> existingRoleSnowflakes = existingCharacterRoles.stream()
+					.map(CharacterRole::getRoleSnowflake)
+					.collect(Collectors.toSet());
+
+			List<CharacterRole> newRoles = new ArrayList<>();
+			for (String requestedRole : requestedRoles) {
+				if (!existingRoleSnowflakes.contains(requestedRole)) {
+					newRoles.add(new CharacterRole(character, requestedRole));
+				}
+			}
+
+			if (!newRoles.isEmpty()) {
+				characterRoleQueryService.saveAll(newRoles);
+			}
+		}
+		else {
+			character = characterQueryService.saveCharacter(characterName, guild);
+			characterRoleQueryService.saveCharacterRolesByCharacterId(character, requestedRoles);
+		}
+
+		return new SaveCharacterSuccessfulResponseDto(
+				"Character added successfully",
+				new SaveCharacterDto(character.getId(), guildSnowflake, characterName, requestedRoles, character.getCreatedAt()));
 	}
 }

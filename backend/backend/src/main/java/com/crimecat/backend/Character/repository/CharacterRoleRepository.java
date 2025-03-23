@@ -12,6 +12,9 @@ import org.springframework.stereotype.Repository;
 public interface CharacterRoleRepository extends JpaRepository<CharacterRole, UUID> {
 
 	@Query("SELECT cr FROM CharacterRole cr WHERE cr.character.id IN :characterIds")
-	List<CharacterRole> findCharacterRoleByCharacterId(@Param("characterIds") List<UUID> characterIds);
+	List<CharacterRole> findCharacterRoleByCharacterIds(@Param("characterIds") List<UUID> characterIds);
+
+	@Query("SELECT cr FROM CharacterRole cr WHERE cr.character.id = :characterId")
+	List<CharacterRole> findCharacterRoleByCharacterId(@Param("characterId") UUID characterId);
 
 }

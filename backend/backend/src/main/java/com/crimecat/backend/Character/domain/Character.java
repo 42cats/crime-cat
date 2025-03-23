@@ -3,6 +3,7 @@ package com.crimecat.backend.Character.domain;
 import com.crimecat.backend.guild.domain.Guild;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -13,11 +14,14 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(name = "CHARACTERS")
 @NoArgsConstructor
 @Getter
+@EntityListeners(AuditingEntityListener.class)
 public class Character {
 
     @Id
@@ -29,9 +33,15 @@ public class Character {
     private String name;
 
     @Column(name = "CREATED_AT", nullable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
 
     @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Guild guild;
+
+    public Character(String name, Guild guild) {
+        this.name = name;
+        this.guild = guild;
+    }
 }

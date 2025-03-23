@@ -13,4 +13,7 @@ public interface CharacterRepository extends JpaRepository<Character, UUID> {
 
 	@Query("SELECT ch FROM Character ch where ch.guild.snowflake = :guildSnowflake")
 	List<Character> getCharactersByGuildSnowflake(@Param("guildSnowflake") String guildSnowflake);
+
+	@Query("SELECT ch FROM Character ch where ch.name = :characterName")
+	Character getCharacterByCharacterName(@Param("characterName")String characterName);
 }

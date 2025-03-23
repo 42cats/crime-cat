@@ -30,4 +30,9 @@ public class CharacterRole {
 
     @Column(name = "ROLE_SNOWFLAKE", nullable = false)
     private String roleSnowflake;
+
+    public CharacterRole(Character character, String roleSnowflake) {
+        this.character = character;
+        this.roleSnowflake = roleSnowflake;
+    }
 }
