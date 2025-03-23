@@ -15,7 +15,7 @@ public class GuildService {
 		gameHistory 저장 확인용 임시 메서드
 	 */
 	private final GuildRepository guildRepository;
-	public Guild findGuildByGuildName(String guildSnowflake) {
+	public Guild findGuildByGuildSnowflake(String guildSnowflake) {
 		return guildRepository.findGuildByGuildSnowflake(guildSnowflake).orElse(null);
 	}
 

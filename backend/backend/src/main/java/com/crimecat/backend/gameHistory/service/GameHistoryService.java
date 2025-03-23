@@ -32,7 +32,7 @@ public class GameHistoryService {
 			return new SaveUserHistoryResponseDto("History recorded failed");
 		}
 
-		Guild guild = guildService.findGuildByGuildName(saveUserGameHistoryRequestDto.getGuildSnowflake());
+		Guild guild = guildService.findGuildByGuildSnowflake(saveUserGameHistoryRequestDto.getGuildSnowflake());
 		if (guild == null) {
 			return new SaveUserHistoryResponseDto("History recorded failed");
 		}
