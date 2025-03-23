@@ -23,7 +23,8 @@ public class CharacterService {
 
 	private final CharacterRepository characterRepository;
 	private final GuildService guildService;
-	private final CharacterRoleRepository characterRoleRepository;
+	private final CharacterRoleQueryService characterRoleQueryService;
+	private final CharacterQueryService characterQueryService;
 
 	@Transactional(readOnly = true)
 	public CharactersResponseDto getCharactersByGuildSnowflake(String guildSnowflake) {
@@ -32,7 +33,8 @@ public class CharacterService {
 			return new CharactersFailedResponseDto("guild not found");
 		}
 
-		List<Character> characters = characterRepository.getCharactersByGuildSnowflake(guildSnowflake);
+		List<Character> characters =
+				characterQueryService.getCharactersByGuildSnowflake(guildSnowflake);
 		if (characters.isEmpty()) {
 			return new CharactersSuccessResponseDto("character list founded", guildSnowflake, null);
 		}
@@ -41,7 +43,7 @@ public class CharacterService {
 				.map(Character::getId)
 				.toList();
 		List<CharacterRole> characterRoles
-				= characterRoleRepository.findCharacterRoleByCharacterId(characterIds);
+				= characterRoleQueryService.findCharacterRoleByCharacterId(characterIds);
 		if (characterRoles.isEmpty()) {
 			List<CharacterRoleResponseDto> characterRoleByCharacterName = characters.stream()
 					.map(character -> new CharacterRoleResponseDto(character.getName(), null))
