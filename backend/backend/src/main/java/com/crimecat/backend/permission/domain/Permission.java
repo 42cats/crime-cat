@@ -34,4 +34,16 @@ public class Permission {
         this.price = price;
         this.duration = duration;
     }
+
+    public void modifyPermission(String name, Integer price, Integer duration) {
+        if (name != null) {
+            this.name = name;
+        }
+        if (price != null) {
+            this.price = price;
+        }
+        if (duration != null) {
+            this.duration = duration;
+        }
+    }
 }
