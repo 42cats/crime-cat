@@ -18,4 +18,8 @@ public class PermissionQueryService {
 	public void savePermission(String name, Integer price, Integer duration) {
 		permissionRepository.save(new Permission(name, price, duration));
 	}
+
+	public void deletePermission(Permission permission) {
+		permissionRepository.delete(permission);
+	}
 }

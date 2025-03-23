@@ -1,9 +1,12 @@
 package com.crimecat.backend.permission.controller;
 
+import com.crimecat.backend.permission.dto.DeletePermissionResponseDto;
 import com.crimecat.backend.permission.dto.SavePermissionRequestDto;
 import com.crimecat.backend.permission.dto.SavePermissionResponseDto;
 import com.crimecat.backend.permission.service.PermissionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,5 +31,14 @@ public class PermissionController {
 				savePermissionRequestDto.getName(),
 				savePermissionRequestDto.getPrice(),
 				savePermissionRequestDto.getDuration());
+	}
+
+	/**
+	 * 특정 권한 삭제
+	 * @return
+	 */
+	@DeleteMapping("/{permission_name}")
+	public DeletePermissionResponseDto deletePermission(@PathVariable("permission_name") String permissionName) {
+		return permissionService.deletePermissionByName(permissionName);
 	}
 }

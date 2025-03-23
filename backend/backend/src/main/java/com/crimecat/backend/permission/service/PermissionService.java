@@ -1,6 +1,7 @@
 package com.crimecat.backend.permission.service;
 
 import com.crimecat.backend.permission.domain.Permission;
+import com.crimecat.backend.permission.dto.DeletePermissionResponseDto;
 import com.crimecat.backend.permission.dto.SavePermissionResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,16 @@ public class PermissionService {
 		}
 
 		permissionQueryService.savePermission(name, price, duration);
-		return new SavePermissionResponseDto("Save successful");
+	}
+
+	public DeletePermissionResponseDto deletePermissionByName(String name) {
+		Permission permission = permissionQueryService.findPermissionByPermissionName(name);
+
+		if (permission == null) {
+			return new DeletePermissionResponseDto("permission not found");
+		}
+
+		permissionQueryService.deletePermission(permission);
+		return new DeletePermissionResponseDto("permission deleted");
 	}
 }
