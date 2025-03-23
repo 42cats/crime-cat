@@ -15,6 +15,11 @@ public class CharacterController {
 
 	private final CharacterService characterService;
 
+	/**
+	 * 캐릭터와 역할 정보 반환
+	 * @param guildSnowflake
+	 * @return
+	 */
 	@GetMapping("/{guild_snowflake}/characters")
 	public CharactersResponseDto getCharactersByGuildSnowflake(@PathVariable("guild_snowflake") String guildSnowflake) {
 		return characterService.getCharactersByGuildSnowflake(guildSnowflake);
