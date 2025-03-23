@@ -15,6 +15,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +25,7 @@ public class CharacterService {
 	private final GuildService guildService;
 	private final CharacterRoleRepository characterRoleRepository;
 
+	@Transactional(readOnly = true)
 	public CharactersResponseDto getCharactersByGuildSnowflake(String guildSnowflake) {
 		Guild guild = guildService.findGuildByGuildSnowflake(guildSnowflake);
 		if (guild == null) {
