@@ -46,7 +46,12 @@ public class CharacterController {
 
 	}
 
-
+	/**
+	 * 캐릭터 및 해당 캐릭터 롤 삭제
+	 * @param guildSnowflake
+	 * @param characterName
+	 * @return
+	 */
 	@DeleteMapping("{guild_snowflake}/characters/{character_name}")
 	public deleteCharacterResponseDto deleteCharacter(
 			@PathVariable("guild_snowflake") String guildSnowflake,
