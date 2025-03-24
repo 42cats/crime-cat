@@ -10,7 +10,9 @@ import com.crimecat.backend.Character.dto.SaveCharacterDto;
 import com.crimecat.backend.Character.dto.SaveCharacterFailedResponseDto;
 import com.crimecat.backend.Character.dto.SaveCharacterResponseDto;
 import com.crimecat.backend.Character.dto.SaveCharacterSuccessfulResponseDto;
-import com.crimecat.backend.Character.repository.CharacterRepository;
+import com.crimecat.backend.Character.dto.deleteCharacterFailedResponseDto;
+import com.crimecat.backend.Character.dto.deleteCharacterResponseDto;
+import com.crimecat.backend.Character.dto.deleteCharacterSuccessfulResponseDto;
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.service.GuildService;
 import java.util.ArrayList;
@@ -26,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CharacterService {
 
-	private final CharacterRepository characterRepository;
 	private final GuildService guildService;
 	private final CharacterRoleQueryService characterRoleQueryService;
 	private final CharacterQueryService characterQueryService;
@@ -104,5 +105,22 @@ public class CharacterService {
 		return new SaveCharacterSuccessfulResponseDto(
 				"Character added successfully",
 				new SaveCharacterDto(character.getId(), guildSnowflake, characterName, requestedRoles, character.getCreatedAt()));
+	}
+
+	@Transactional
+	public deleteCharacterResponseDto deleteCharacter(String guildSnowflake, String characterName) {
+		Guild guild = guildService.findGuildByGuildSnowflake(guildSnowflake);
+		if (guild == null) {
+			return new deleteCharacterFailedResponseDto("guild not found");
+		}
+
+		Character character = characterQueryService.getCharacterByCharacterName(characterName);
+		if (character == null) {
+			return new deleteCharacterFailedResponseDto("character not found");
+		}
+
+		characterQueryService.deleteCharacter(character);
+		return new deleteCharacterSuccessfulResponseDto(
+				"Character deleted successfully", guildSnowflake, characterName);
 	}
 }

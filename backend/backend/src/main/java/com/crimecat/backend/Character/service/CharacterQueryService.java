@@ -24,4 +24,8 @@ public class CharacterQueryService {
 	public Character saveCharacter(String characterName, Guild guild) {
 		return characterRepository.save(new Character(characterName, guild));
 	}
+
+	public void deleteCharacter(Character character) {
+		characterRepository.delete(character);
+	}
 }
