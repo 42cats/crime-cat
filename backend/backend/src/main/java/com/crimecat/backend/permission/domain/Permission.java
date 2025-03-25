@@ -17,7 +17,7 @@ import org.hibernate.annotations.UuidGenerator;
 public class Permission {
     @Id
     @UuidGenerator
-    @Column(name = "ID", columnDefinition = "BINARY(16)")
+    @Column(name = "ID", columnDefinition = "BINARY(16)", updatable = false)
     private UUID id;
 
     @Column(name = "NAME", nullable = false)
