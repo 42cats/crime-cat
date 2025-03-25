@@ -54,10 +54,10 @@ public class PermissionController {
 	 * @return
 	 */
 	@PatchMapping("/{permission_name}")
-	public ModifyPermissionResponseDto patchPermission(
+	public ModifyPermissionResponseDto modifyPermission(
 			@PathVariable("permission_name") String beforePermissionName,
 			@RequestBody ModifyPermissionRequestDto modifyPermissionRequestDto) {
-		return permissionService.patchPermission(
+		return permissionService.modifyPermission(
 				beforePermissionName,
 				modifyPermissionRequestDto.getName(),
 				modifyPermissionRequestDto.getPrice(),
