@@ -38,8 +38,11 @@ public class PermissionService {
 
 	@Transactional
 	public DeletePermissionResponseDto deletePermissionByName(String name) {
-		Permission permission = permissionQueryService.findPermissionByPermissionName(name);
+		if (StringUtils.isBlank(name)) {
+			return new DeletePermissionResponseDto("Invalid request format");
+		}
 
+		Permission permission = permissionQueryService.findPermissionByPermissionName(name);
 		if (permission == null) {
 			return new DeletePermissionResponseDto("permission not found");
 		}
