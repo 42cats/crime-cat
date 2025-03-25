@@ -34,6 +34,9 @@ public class CharacterService {
 
 	@Transactional(readOnly = true)
 	public CharactersResponseDto getCharactersByGuildSnowflake(String guildSnowflake) {
+		if (guildSnowflake == null) {
+			return new CharactersFailedResponseDto("Invalid request format");
+		}
 
 		Guild guild = guildService.findGuildByGuildSnowflake(guildSnowflake);
 		if (guild == null) {
