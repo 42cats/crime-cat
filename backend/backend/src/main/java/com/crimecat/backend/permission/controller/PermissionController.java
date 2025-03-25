@@ -47,6 +47,12 @@ public class PermissionController {
 		return permissionService.deletePermissionByName(permissionName);
 	}
 
+	/**
+	 * 권한 수정
+	 * @param beforePermissionName
+	 * @param modifyPermissionRequestDto
+	 * @return
+	 */
 	@PatchMapping("/{permission_name}")
 	public ModifyPermissionResponseDto patchPermission(
 			@PathVariable("permission_name") String beforePermissionName,
