@@ -4,6 +4,7 @@ import com.crimecat.backend.permission.domain.Permission;
 import com.crimecat.backend.permission.dto.DeletePermissionResponseDto;
 import com.crimecat.backend.permission.dto.SavePermissionResponseDto;
 import com.crimecat.backend.permission.dto.ModifyPermissionResponseDto;
+import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,10 +23,13 @@ public class PermissionService {
 	// TODO : 권한 이미 존재할 때 덮어쓰기? 튕기기? 일단 튕기기로 처리함
 	@Transactional
 	public SavePermissionResponseDto savePermission(String name, Integer price, Integer duration) {
-		Permission permissionByPermissionName = permissionQueryService.findPermissionByPermissionName(name);
+		if (StringUtils.isBlank(name) || price == null || price <= 0) {
+			return new SavePermissionResponseDto("Invalid request format");
+		}
 
+		Permission permissionByPermissionName = permissionQueryService.findPermissionByPermissionName(name);
 		if (permissionByPermissionName != null) {
-			return new SavePermissionResponseDto("permission not found");
+			return new SavePermissionResponseDto("permission already exists");
 		}
 
 		permissionQueryService.savePermission(name, price, duration);
