@@ -68,8 +68,7 @@ public class CharacterService {
 
 		Character character = characterQueryService.getCharacterByCharacterName(characterName);
 		if (character != null) {
-			List<CharacterRole> existingCharacterRoles
-					= characterRoleQueryService.findCharacterRoleByCharacterId(character.getId());
+			List<CharacterRole> existingCharacterRoles = character.getCharacterRoles();
 			Set<String> existingRoleSnowflakes = existingCharacterRoles.stream()
 					.map(CharacterRole::getRoleSnowflake)
 					.collect(Collectors.toSet());
