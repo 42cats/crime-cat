@@ -103,6 +103,10 @@ public class CharacterService {
 
 	@Transactional
 	public deleteCharacterResponseDto deleteCharacter(String guildSnowflake, String characterName) {
+		if (guildSnowflake == null || characterName == null) {
+			return new deleteCharacterFailedResponseDto("Invalid request format");
+		}
+
 		Guild guild = guildService.findGuildByGuildSnowflake(guildSnowflake);
 		if (guild == null) {
 			return new deleteCharacterFailedResponseDto("guild not found");
