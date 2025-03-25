@@ -61,6 +61,10 @@ public class CharacterService {
 
 	@Transactional
 	public SaveCharacterResponseDto saveCharacter(String guildSnowflake, String characterName, List<String> requestedRoles) {
+		if (guildSnowflake == null || characterName == null) {
+			return new SaveCharacterFailedResponseDto("Invalid request format");
+		}
+
 		Guild guild = guildService.findGuildByGuildSnowflake(guildSnowflake);
 		if (guild == null) {
 			return new SaveCharacterFailedResponseDto("guild not found");
