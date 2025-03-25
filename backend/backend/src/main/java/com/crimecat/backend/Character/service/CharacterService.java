@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,6 +34,7 @@ public class CharacterService {
 
 	@Transactional(readOnly = true)
 	public CharactersResponseDto getCharactersByGuildSnowflake(String guildSnowflake) {
+
 		Guild guild = guildService.findGuildByGuildSnowflake(guildSnowflake);
 		if (guild == null) {
 			return new CharactersFailedResponseDto("guild not found");
@@ -47,27 +47,13 @@ public class CharacterService {
 					Collections.emptyList());
 		}
 
-		List<UUID> characterIds = characters.stream()
-				.map(Character::getId)
-				.toList();
-		List<CharacterRole> characterRoles
-				= characterRoleQueryService.findCharacterRoleByCharacterIds(characterIds);
-		if (characterRoles.isEmpty()) {
-			List<CharacterRoleResponseDto> characterRoleByCharacterName = characters.stream()
-					.map(character -> new CharacterRoleResponseDto(character.getName(), null))
-					.toList();
-			return new CharactersSuccessResponseDto("character list founded", guildSnowflake,
-					characterRoleByCharacterName);
-		}
-		
-		List<CharacterRoleResponseDto> characterRoleByCharacterName = characterRoles.stream()
-				.collect(Collectors.groupingBy(
-						CharacterRole::getCharacter, // 캐릭터 이름 기준으로 그룹화
-						Collectors.mapping(CharacterRole::getRoleSnowflake, Collectors.toList()) // Role 이름 리스트 생성
+		List<CharacterRoleResponseDto> characterRoleByCharacterName = characters.stream()
+				.map(character -> new CharacterRoleResponseDto(character.getName(),
+						character.getCharacterRoles().stream()
+								.map(CharacterRole::getRoleSnowflake)
+								.toList()
 				))
-				.entrySet().stream()
-				.map(entry -> new CharacterRoleResponseDto(entry.getKey().getName(), entry.getValue())) // DTO로 변환
-				.collect(Collectors.toList());
+				.toList();
 
 		return new CharactersSuccessResponseDto("character list founded", guildSnowflake,
 				characterRoleByCharacterName);
