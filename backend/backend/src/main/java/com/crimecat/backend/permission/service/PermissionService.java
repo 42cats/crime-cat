@@ -52,8 +52,11 @@ public class PermissionService {
 	}
 
 	@Transactional
-	public ModifyPermissionResponseDto patchPermission(String beforeName, String afterName, Integer price,
+	public ModifyPermissionResponseDto modifyPermission(String beforeName, String afterName, Integer price,
 			Integer duration) {
+		if (StringUtils.isBlank(beforeName) || (price != null && price <= 0) || (duration != null && duration <= 0)) {
+			return new ModifyPermissionResponseDto("Invalid request format");
+		}
 		Permission beforePermission = permissionQueryService.findPermissionByPermissionName(beforeName);
 		if (beforePermission == null) {
 			return new ModifyPermissionResponseDto("permission not found");
