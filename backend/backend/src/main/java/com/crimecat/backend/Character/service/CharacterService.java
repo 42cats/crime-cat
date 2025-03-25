@@ -15,6 +15,7 @@ import com.crimecat.backend.Character.dto.deleteCharacterResponseDto;
 import com.crimecat.backend.Character.dto.deleteCharacterSuccessfulResponseDto;
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.service.GuildService;
+import io.micrometer.common.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,7 +35,7 @@ public class CharacterService {
 
 	@Transactional(readOnly = true)
 	public CharactersResponseDto getCharactersByGuildSnowflake(String guildSnowflake) {
-		if (guildSnowflake == null) {
+		if (StringUtils.isBlank(guildSnowflake)) {
 			return new CharactersFailedResponseDto("Invalid request format");
 		}
 
@@ -64,7 +65,7 @@ public class CharacterService {
 
 	@Transactional
 	public SaveCharacterResponseDto saveCharacter(String guildSnowflake, String characterName, List<String> requestedRoles) {
-		if (guildSnowflake == null || characterName == null) {
+		if (StringUtils.isBlank(guildSnowflake) || StringUtils.isBlank(characterName)) {
 			return new SaveCharacterFailedResponseDto("Invalid request format");
 		}
 
@@ -103,7 +104,7 @@ public class CharacterService {
 
 	@Transactional
 	public deleteCharacterResponseDto deleteCharacter(String guildSnowflake, String characterName) {
-		if (guildSnowflake == null || characterName == null) {
+		if (StringUtils.isBlank(guildSnowflake) || StringUtils.isBlank(characterName)) {
 			return new deleteCharacterFailedResponseDto("Invalid request format");
 		}
 
