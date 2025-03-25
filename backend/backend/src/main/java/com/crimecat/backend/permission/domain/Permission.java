@@ -32,7 +32,9 @@ public class Permission {
     public Permission(String name, Integer price, Integer duration) {
         this.name = name;
         this.price = price;
-        this.duration = duration;
+        if (duration != null) {
+            this.duration = duration;
+        }
     }
 
     public void modifyPermission(String name, Integer price, Integer duration) {

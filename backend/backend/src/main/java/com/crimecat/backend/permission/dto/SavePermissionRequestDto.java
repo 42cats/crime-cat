@@ -10,5 +10,5 @@ import lombok.NoArgsConstructor;
 public class SavePermissionRequestDto {
 	private String name;
 	private Integer price;
-	private Integer duration = 28;
+	private Integer duration;
 }

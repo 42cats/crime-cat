@@ -23,7 +23,7 @@ public class PermissionService {
 	// TODO : 권한 이미 존재할 때 덮어쓰기? 튕기기? 일단 튕기기로 처리함
 	@Transactional
 	public SavePermissionResponseDto savePermission(String name, Integer price, Integer duration) {
-		if (StringUtils.isBlank(name) || price == null || price <= 0 || duration <= 0) {
+		if (StringUtils.isBlank(name) || (price == null || price <= 0) || (duration != null && duration <= 0)) {
 			return new SavePermissionResponseDto("Invalid request format");
 		}
 
