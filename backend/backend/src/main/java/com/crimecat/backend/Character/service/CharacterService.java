@@ -16,6 +16,7 @@ import com.crimecat.backend.Character.dto.deleteCharacterSuccessfulResponseDto;
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.service.GuildService;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -42,7 +43,8 @@ public class CharacterService {
 		List<Character> characters =
 				characterQueryService.getCharactersByGuildSnowflake(guildSnowflake);
 		if (characters.isEmpty()) {
-			return new CharactersSuccessResponseDto("character list founded", guildSnowflake, null);
+			return new CharactersSuccessResponseDto("guild has no character", guildSnowflake,
+					Collections.emptyList());
 		}
 
 		List<UUID> characterIds = characters.stream()
