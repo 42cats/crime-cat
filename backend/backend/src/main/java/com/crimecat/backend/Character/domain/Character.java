@@ -29,17 +29,17 @@ public class Character {
 
     @Id
     @UuidGenerator
-    @Column(name = "ID", columnDefinition = "BINARY(16)")
+    @Column(name = "ID", columnDefinition = "BINARY(16)", updatable = false)
     private UUID id;
 
-    @Column(name = "NAME", nullable = false)
+    @Column(name = "NAME", nullable = false, updatable = false)
     private String name;
 
-    @Column(name = "CREATED_AT", nullable = false)
+    @Column(name = "CREATED_AT", nullable = false, updatable = false)
     @CreatedDate
     private LocalDateTime createdAt;
 
-    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
+    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false, updatable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Guild guild;
 
