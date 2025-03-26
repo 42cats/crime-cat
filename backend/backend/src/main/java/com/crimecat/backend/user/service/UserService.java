@@ -25,6 +25,7 @@ import com.crimecat.backend.user.dto.UserRankingFailedResponseDto;
 import com.crimecat.backend.user.dto.UserRankingResponseDto;
 import com.crimecat.backend.user.dto.UserRankingSuccessResponseDto;
 import com.crimecat.backend.user.dto.UserResponseDto;
+import io.micrometer.common.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +60,10 @@ public class UserService {
 
 	@Transactional
 	public UserInfoResponseDto registerUserInfo(String userSnowflake, String userName, String userAvatar) {
+		if (StringUtils.isBlank(userSnowflake) || StringUtils.isBlank(userName)
+				|| StringUtils.isBlank(userAvatar)) {
+			return new UserInfoResponseDto("Invalid request format", null);
+		}
 		String message = "Already User registered";
 		User user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
