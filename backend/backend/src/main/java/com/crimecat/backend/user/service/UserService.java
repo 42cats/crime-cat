@@ -115,7 +115,7 @@ public class UserService {
 		user.usePoints(permissionPrice);
 		pointHistoryService.usePoint(user, permission, permissionPrice);
 
-		UserPermission userPermission = userPermissionService.getUserPermissionByPermissionId(user, permission);
+		UserPermission userPermission = userPermissionService.getUserPermissionByPermissionIdInActive(user, permission);
 		if (userPermission != null && LocalDateTime.now().isBefore(userPermission.getExpiredAt())) {
 			userPermission.extendPermissionPeriod(permission.getDuration());
 		}
@@ -150,7 +150,7 @@ public class UserService {
 			return new UserHasPermissionResponseDto("permission not found");
 		}
 
-		if (userPermissionService.getUserPermissionByPermissionId(user, permission) != null) {
+		if (userPermissionService.getUserPermissionByPermissionIdInActive(user, permission) != null) {
 			return new UserHasPermissionResponseDto("Permission has");
 		}
 		return new UserHasPermissionResponseDto("not has Permission");

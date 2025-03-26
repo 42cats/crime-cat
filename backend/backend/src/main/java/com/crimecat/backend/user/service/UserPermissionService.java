@@ -13,9 +13,9 @@ public class UserPermissionService {
 
 	private final UserPermissionQueryService userPermissionQueryService;
 
-	public UserPermission getUserPermissionByPermissionId(User user,
+	public UserPermission getUserPermissionByPermissionIdInActive(User user,
 			Permission permission) {
-		return userPermissionQueryService.findUserPermissionByPermissionId(user, permission).orElse(null);
+		return userPermissionQueryService.findUserPermissionByPermissionIdInActive(user, permission).orElse(null);
 	}
 
 	public void purchasePermission(User user, Permission permission) {

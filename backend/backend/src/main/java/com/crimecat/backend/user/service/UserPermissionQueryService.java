@@ -16,9 +16,9 @@ public class UserPermissionQueryService {
 
 	private final UserPermissionRepository userPermissionRepository;
 
-	public Optional<UserPermission> findUserPermissionByPermissionId(User user, Permission permission) {
-		return userPermissionRepository.findUserPermissionByPermissionName(user.getSnowflake(),
-				permission);
+	public Optional<UserPermission> findUserPermissionByPermissionIdInActive(User user, Permission permission) {
+		return userPermissionRepository.findUserPermissionByPermissionNameInActive(user.getSnowflake(),
+				permission, LocalDateTime.now());
 	}
 
 	public void purchasePermission(User user, Permission permission) {
