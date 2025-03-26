@@ -23,4 +23,9 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 		"GROUP BY gh.user.snowflake " +
 		"ORDER BY playCount DESC")
 	List<IGameHistoryRankingDto> getGameHistoryWithPagination(Pageable pageable);
+
+
+	@Query("SELECT gh FROM GameHistory gh WHERE gh.user.snowflake = :userSnowflake AND gh.guild.snowflake = :guildSnowflake")
+	GameHistory findGameHistoryByUserSnowFlakeAndGuildSnowflake(@Param("userSnowflake") String userSnowflake, @Param("guildSnowflake") String guildSnowflake);
+
 }

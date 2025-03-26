@@ -1,5 +1,6 @@
 package com.crimecat.backend.gameHistory.service;
 
+import com.crimecat.backend.gameHistory.domain.GameHistory;
 import com.crimecat.backend.gameHistory.dto.SaveUserGameHistoryRequestDto;
 import com.crimecat.backend.gameHistory.dto.SaveUserHistoryResponseDto;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryDto;
@@ -37,7 +38,13 @@ public class GameHistoryService {
 			return new SaveUserHistoryResponseDto("History recorded failed");
 		}
 
-		// TODO : 유저, 길드, 캐릭터 다 같은데 결과만 다른 기록은 새로운 기록으로 저장?
+		GameHistory gameHistoryByUserSnowFlakeAndGuildSnowflake = gameHistoryQueryService.findGameHistoryByUserSnowFlakeAndGuildSnowflake(
+				user.getSnowflake(),
+				guild.getSnowflake());
+		if (gameHistoryByUserSnowFlakeAndGuildSnowflake != null) {
+			return new SaveUserHistoryResponseDto("History already recorded");
+		}
+
 		gameHistoryQueryService.saveUserGameHistory(
 				saveUserGameHistoryRequestDto.isWin(),
 				saveUserGameHistoryRequestDto.getCreatedAt(),

@@ -33,4 +33,9 @@ public class GameHistoryQueryService {
 	public List<IGameHistoryRankingDto> getGameHistoryWithPagination(Pageable pageable) {
 		  return gameHistoryRepository.getGameHistoryWithPagination(pageable);
 	}
+
+	public GameHistory findGameHistoryByUserSnowFlakeAndGuildSnowflake(String userSnowflake, String guildSnowflake) {
+		return gameHistoryRepository.findGameHistoryByUserSnowFlakeAndGuildSnowflake(userSnowflake,
+				guildSnowflake);
+	}
 }
