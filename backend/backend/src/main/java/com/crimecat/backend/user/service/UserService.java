@@ -164,6 +164,9 @@ public class UserService {
 	 */
 	@Transactional(readOnly = true)
 	public UserGrantedPermissionResponseDto getAllUserPermissions(String userSnowflake) {
+		if (StringUtils.isBlank(userSnowflake)) {
+			return new UserGrantedPermissionResponseDto("Invalid request format", null);
+		}
 		User user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
 			return new UserGrantedPermissionResponseDto("user not found", null);
