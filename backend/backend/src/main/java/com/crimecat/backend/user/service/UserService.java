@@ -93,15 +93,17 @@ public class UserService {
 	@Transactional
 	public UserPermissionPurchaseResponseDto purchaseUserPermission(String userSnowflake,
 			String permissionName) {
-
+		if (StringUtils.isBlank(userSnowflake) || StringUtils.isBlank(permissionName)) {
+			return new UserPermissionPurchaseFailedResponseDto("Invalid request format", 0, 0);
+		}
 		User user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
-			return new UserPermissionPurchaseFailedResponseDto("user not found", null, null);
+			return new UserPermissionPurchaseFailedResponseDto("user not found", 0, 0);
 		}
 
 		Permission permission = permissionService.findPermissionByPermissionName(permissionName);
 		if (permission == null) {
-			return new UserPermissionPurchaseFailedResponseDto("permission not found", null, null);
+			return new UserPermissionPurchaseFailedResponseDto("permission not found", 0, 0);
 		}
 
 		Integer userPoint = user.getPoint();
@@ -121,7 +123,8 @@ public class UserService {
 			userPermissionService.purchasePermission(user, permission);
 		}
 
-		List<UserPermissionPurchaseDto> userPermissionPurchaseDtos = userPermissionService.getActiveUserPermissions(user)
+		List<UserPermissionPurchaseDto> userPermissionPurchaseDtos
+				= userPermissionService.getActiveUserPermissions(user)
 				.stream()
 				.map(up -> new UserPermissionPurchaseDto(up.getPermission().getName(), up.getExpiredAt()))
 				.toList();
