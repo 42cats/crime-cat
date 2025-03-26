@@ -136,6 +136,10 @@ public class UserService {
 	@Transactional(readOnly = true)
 	public UserHasPermissionResponseDto checkUserHasPermissionByPermissionName(String userSnowflake,
 			String permissionName) {
+		if (StringUtils.isBlank(userSnowflake) || StringUtils.isBlank(permissionName)) {
+			return new UserHasPermissionResponseDto("Invalid request format");
+		}
+
 		User user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
 			return new UserHasPermissionResponseDto("user not found");
