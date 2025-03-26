@@ -59,7 +59,7 @@ public class UserService {
 	}
 
 	@Transactional
-	public UserInfoResponseDto registerUserInfo(String userSnowflake, String userName, String userAvatar) {
+	public UserInfoResponseDto saveUserInfo(String userSnowflake, String userName, String userAvatar) {
 		if (StringUtils.isBlank(userSnowflake) || StringUtils.isBlank(userName)
 				|| StringUtils.isBlank(userAvatar)) {
 			return new UserInfoResponseDto("Invalid request format", null);

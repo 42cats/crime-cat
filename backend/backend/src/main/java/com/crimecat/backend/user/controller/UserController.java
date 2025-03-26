@@ -34,7 +34,7 @@ public class UserController {
 	 */
 	@PostMapping("")
 	public UserInfoResponseDto saveUserInfo(@RequestBody UserInfoRequestDto userInfoRequestDto) {
-		return userService.registerUserInfo(
+		return userService.saveUserInfo(
 				userInfoRequestDto.getUserSnowflake(),
 				userInfoRequestDto.getName(),
 				userInfoRequestDto.getAvatar());
