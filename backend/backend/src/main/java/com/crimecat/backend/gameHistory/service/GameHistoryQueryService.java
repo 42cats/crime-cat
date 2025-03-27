@@ -30,8 +30,8 @@ public class GameHistoryQueryService {
 		return gameHistoryRepository.getGameHistoryWithPlayCountGreaterThan(playCount);
 	}
 
-	public List<IGameHistoryRankingDto> getGameHistoryWithPagination(Pageable pageable) {
-		  return gameHistoryRepository.getGameHistoryWithPagination(pageable);
+	public List<IGameHistoryRankingDto> getGameHistorySortingByPlayTimeWithPagination(Pageable pageable) {
+		  return gameHistoryRepository.getGameHistorySortingByPlayTimeWithPagination(pageable);
 	}
 
 	public GameHistory findGameHistoryByUserSnowFlakeAndGuildSnowflake(String userSnowflake, String guildSnowflake) {

@@ -19,10 +19,11 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	@Query("SELECT gh FROM GameHistory gh JOIN FETCH gh.user u GROUP BY u.snowflake HAVING COUNT(*) > :playCount")
 	List<GameHistory> getGameHistoryWithPlayCountGreaterThan(@Param("playCount") Integer playCount);
 
-@Query(value = "SELECT gh.user.snowflake as userSnowflake, COUNT(gh) as playCount FROM GameHistory gh " +
+@Query(value = "SELECT gh.user.snowflake as userSnowflake, COUNT(gh) as playCount "
+		+ "FROM GameHistory gh " +
 		"GROUP BY gh.user.snowflake " +
 		"ORDER BY playCount DESC")
-	List<IGameHistoryRankingDto> getGameHistoryWithPagination(Pageable pageable);
+	List<IGameHistoryRankingDto> getGameHistorySortingByPlayTimeWithPagination(Pageable pageable);
 
 
 	@Query("SELECT gh FROM GameHistory gh WHERE gh.user.snowflake = :userSnowflake AND gh.guild.snowflake = :guildSnowflake")

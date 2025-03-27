@@ -229,11 +229,15 @@ public class UserService {
 	@Transactional(readOnly = true)
 	public TotalUserRankingResponseDto getTotalUserRankingByParamCondition(Pageable pageable,
 			String sortingCondition) {
+		if (StringUtils.isBlank(sortingCondition)) {
+			return new TotalUserRankingFailedResponseDto("Invalid request format");
+		}
 
 		Integer totalUserCount = userQueryService.getUserCount();
 
 		List<TotalUserRankingDto> ranking = new ArrayList<>();
 
+		// 보유 포인트 기준 랭킹
 		if (sortingCondition.equals(SORT_BY_POINT)) {
 			pageable = PageRequest.of(
 					pageable.getPageNumber(),
@@ -250,9 +254,11 @@ public class UserService {
 					.collect(Collectors.toList());
 
 
+			// 게임 횟수 별 랭킹
 		} else if (sortingCondition.equals(SORT_BY_PLAY_TIME)) {
-			List<IGameHistoryRankingDto> gameHistoryWithPagination = gameHistoryQueryService.getGameHistoryWithPagination(
-					pageable);
+			List<IGameHistoryRankingDto> gameHistoryWithPagination
+					= gameHistoryQueryService.getGameHistorySortingByPlayTimeWithPagination(pageable);
+
 			AtomicInteger rank = new AtomicInteger(1);
 			ranking = gameHistoryWithPagination.stream()
 					.map(ghp -> new TotalUserRankingByPlayTimeDto(
