@@ -1,6 +1,5 @@
 package com.crimecat.backend.user.repository;
 
-import com.crimecat.backend.permission.domain.Permission;
 import com.crimecat.backend.user.domain.UserPermission;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,8 +13,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserPermissionRepository extends JpaRepository<UserPermission, UUID> {
 
-	@Query("SELECT up FROM UserPermission up JOIN FETCH up.user WHERE up.user.snowflake = :snowflake AND up.permission = :permission AND :now < up.expiredAt")
-	Optional<UserPermission> findUserPermissionByPermissionNameInActive(@Param("snowflake") String userSnowflake, @Param("permission") Permission permission, @Param("now") LocalDateTime now);
+	@Query("SELECT up FROM UserPermission up JOIN FETCH up.user WHERE up.user.snowflake = :snowflake AND up.permission.id = :permissionId")
+	Optional<UserPermission> findUserPermissionByPermissionId(@Param("snowflake") String userSnowflake, @Param("permissionId") UUID permissionId);
 
 	@Query("SELECT up FROM UserPermission up JOIN FETCH up.user WHERE up.user.snowflake = :snowflake AND up.expiredAt > :now")
 	List<UserPermission> getActiveUserPermissions(@Param("snowflake") String userSnowflake, @Param("now") LocalDateTime now);

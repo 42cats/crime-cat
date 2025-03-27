@@ -4,6 +4,7 @@ import com.crimecat.backend.permission.domain.Permission;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.domain.UserPermission;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,9 +14,9 @@ public class UserPermissionService {
 
 	private final UserPermissionQueryService userPermissionQueryService;
 
-	public UserPermission getUserPermissionByPermissionIdInActive(User user,
-			Permission permission) {
-		return userPermissionQueryService.findUserPermissionByPermissionIdInActive(user, permission).orElse(null);
+	public UserPermission getUserPermissionByPermissionId(User user,
+			UUID permissionId) {
+		return userPermissionQueryService.findUserPermissionByPermissionId(user, permissionId).orElse(null);
 	}
 
 	public void purchasePermission(User user, Permission permission) {

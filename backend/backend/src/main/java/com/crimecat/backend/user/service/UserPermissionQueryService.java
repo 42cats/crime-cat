@@ -7,6 +7,7 @@ import com.crimecat.backend.user.repository.UserPermissionRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,9 +17,9 @@ public class UserPermissionQueryService {
 
 	private final UserPermissionRepository userPermissionRepository;
 
-	public Optional<UserPermission> findUserPermissionByPermissionIdInActive(User user, Permission permission) {
-		return userPermissionRepository.findUserPermissionByPermissionNameInActive(user.getSnowflake(),
-				permission, LocalDateTime.now());
+	public Optional<UserPermission> findUserPermissionByPermissionId(User user, UUID permissionId) {
+		return userPermissionRepository.findUserPermissionByPermissionId(user.getSnowflake(),
+				permissionId);
 	}
 
 	public void purchasePermission(User user, Permission permission) {
