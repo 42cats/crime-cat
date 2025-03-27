@@ -150,7 +150,10 @@ public class UserService {
 			return new UserHasPermissionResponseDto("permission not found");
 		}
 
-		if (userPermissionService.getUserPermissionByPermissionId(user, permission.getId()) != null) {
+		UserPermission userPermissionByPermissionId = userPermissionService.getUserPermissionByPermissionId(
+				user, permission.getId());
+
+		if (userPermissionByPermissionId != null && LocalDateTime.now().isBefore(userPermissionByPermissionId.getExpiredAt())) {
 			return new UserHasPermissionResponseDto("Permission has");
 		}
 		return new UserHasPermissionResponseDto("not has Permission");
