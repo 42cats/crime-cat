@@ -207,11 +207,11 @@ public class UserService {
 		// 플레이 횟수 순위
 		Integer gameHistoryCountByUserSnowflake
 				 = gameHistoryQueryService.getGameHistoryByUserSnowflake(userSnowflake).size();
-		Integer gameHistoryCountWithPlayCountGreaterThan
+		Integer userRankByGameHistoryCount
 				= gameHistoryQueryService.getGameHistoryWithPlayCountGreaterThan(gameHistoryCountByUserSnowflake).size() + 1;
 
 		// 보유 포인트 순위
-		Integer usersWithPointGreaterThanCount = userQueryService.getUsersWithPointGreaterThan(user.getPoint()).size() + 1;
+		Integer userRankByPoint = userQueryService.getUsersWithPointGreaterThan(user.getPoint()).size() + 1;
 
 		Integer totalUserCount = userQueryService.getUserCount();
 
@@ -219,9 +219,9 @@ public class UserService {
 				"user info find successfully",
 				userSnowflake,
 				gameHistoryCountByUserSnowflake,
-				gameHistoryCountWithPlayCountGreaterThan,
+				userRankByGameHistoryCount,
 				user.getPoint(),
-				usersWithPointGreaterThanCount,
+				userRankByPoint,
 				totalUserCount
 				);
 	}
