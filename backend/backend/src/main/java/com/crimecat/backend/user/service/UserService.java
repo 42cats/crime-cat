@@ -195,6 +195,10 @@ public class UserService {
 	 */
 	@Transactional(readOnly = true)
 	public UserRankingResponseDto getUserRanking(String userSnowflake) {
+		if (StringUtils.isBlank(userSnowflake)) {
+			return new UserRankingFailedResponseDto("Invalid request format");
+		}
+
 		User user = userQueryService.findByUserSnowflake(userSnowflake);
 		if (user == null) {
 			return new UserRankingFailedResponseDto("user not found");
