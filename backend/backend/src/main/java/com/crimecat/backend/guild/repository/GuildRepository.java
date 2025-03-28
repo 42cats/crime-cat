@@ -10,4 +10,6 @@ public interface GuildRepository extends JpaRepository<Guild, UUID> {
     Optional<Guild> findBySnowflake(String snowflake);
 
     Long deleteBySnowflake(String snowflake);
+
+    boolean existsBySnowflake(String snowflake);
 }

@@ -1,6 +1,7 @@
 package com.crimecat.backend.guild.dto;
 
 import com.crimecat.backend.guild.domain.Observation;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -9,11 +10,11 @@ import lombok.Getter;
 public class ObservationDto {
     private String guildSnowflake;
     private String headTitle;
+    @JsonInclude(value = JsonInclude.Include.ALWAYS)
     private String roleSnowFlake;
 
     public ObservationDto(Observation observation) {
-        // TODO: is really required?
-        this.guildSnowflake = observation.getGuild().getSnowflake();
+        this.guildSnowflake = observation.getGuildSnowflake();
         this.headTitle = observation.getHeadTitle();
         this.roleSnowFlake = observation.getRoleSnowflake();
     }

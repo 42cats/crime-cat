@@ -10,4 +10,6 @@ import java.util.UUID;
 @Repository
 public interface GuildObservationRepository extends JpaRepository<Observation, UUID> {
     Optional<Observation> findByGuildSnowflake(String guildSnowflake);
+
+    boolean existsByGuildSnowflake(String guildSnowflake);
 }

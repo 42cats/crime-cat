@@ -1,7 +1,9 @@
 package com.crimecat.backend.guild.controller;
 
+import com.crimecat.backend.guild.dto.MessageDto;
 import com.crimecat.backend.guild.dto.ObservationDto;
-import com.crimecat.backend.guild.dto.ObservationRequestDto;
+import com.crimecat.backend.guild.dto.ObservationPatchRequestDto;
+import com.crimecat.backend.guild.dto.ObservationPostRequestDto;
 import com.crimecat.backend.guild.service.GuildObservationService;
 import com.crimecat.backend.guild.utils.RequestUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -13,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/v1/bot/guilds/{snowflake}/observation")
+@RequestMapping("/v1/bot/guilds/{guildSnowflake}/observation")
 public class GuildObservationController {
     private final GuildObservationService guildObservationService;
     private final ObjectMapper objectMapper;
@@ -28,15 +30,27 @@ public class GuildObservationController {
         objectMapper.registerModule(new JsonNullableModule());
     }
 
+    @PostMapping
+    public MessageDto<ObservationDto> postObservation(@PathVariable String guildSnowflake,
+                                              @RequestBody ObservationPostRequestDto observationPostRequestDto) {
+        ObservationDto observationDto = guildObservationService.addObservation(guildSnowflake,
+                observationPostRequestDto.getRoleSnowflake(),
+                observationPostRequestDto.getHeadTitle());
+        return new MessageDto<>("Observer role created successfully", observationDto);
+    }
+
     @PatchMapping
-    public ObservationDto patch(
-            @PathVariable String snowflake, HttpServletRequest request) throws JsonProcessingException {
-        ObservationRequestDto observationRequestDto = objectMapper.readValue(RequestUtil.getBody(request), ObservationRequestDto.class);
-        return guildObservationService.patch(snowflake, observationRequestDto);
+    public MessageDto<ObservationDto> patchObservation(
+            @PathVariable String guildSnowflake, HttpServletRequest request) throws JsonProcessingException {
+        ObservationPatchRequestDto observationPatchRequestDto
+                = objectMapper.readValue(RequestUtil.getBody(request), ObservationPatchRequestDto.class);
+        return new MessageDto<>("Observer role edited successfully",
+                guildObservationService.patchObservation(guildSnowflake, observationPatchRequestDto));
     }
 
     @GetMapping
-    public ObservationDto get(@PathVariable String snowflake) {
-        return guildObservationService.get(snowflake);
+    public MessageDto<ObservationDto> getObservation(@PathVariable String guildSnowflake) {
+        return new MessageDto<>("Observer role found successfully",
+                guildObservationService.getObservation(guildSnowflake));
     }
 }
