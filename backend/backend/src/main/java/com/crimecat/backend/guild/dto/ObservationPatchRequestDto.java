@@ -6,7 +6,7 @@ import org.openapitools.jackson.nullable.JsonNullable;
 
 @Getter
 @AllArgsConstructor
-public class ObservationRequestDto {
+public class ObservationPatchRequestDto {
     private JsonNullable<String> headTitle;
     private JsonNullable<String> roleSnowFlake;
 }
