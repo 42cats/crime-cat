@@ -26,22 +26,14 @@ public class ChannelRecordController {
     @PostMapping
     public MessageDto<?> postRecord(@PathVariable String guildSnowflake,
                                     @RequestBody ChannelRecordRequestDto channelRecordRequestDto) {
-        try {
-            channelRecordService.addRecord(guildSnowflake, channelRecordRequestDto);
-            return new MessageDto<>("record update success");
-        } catch (Exception e) {
-            return new MessageDto<>("record update failed");
-        }
+        channelRecordService.addRecord(guildSnowflake, channelRecordRequestDto);
+        return new MessageDto<>("record update success");
     }
 
     @DeleteMapping("/{channelSnowflake}")
     public MessageDto<?> deleteRecord(@PathVariable String guildSnowflake,
                                       @PathVariable String channelSnowflake) {
-        try {
-            channelRecordService.deleteRecord(guildSnowflake, channelSnowflake);
-            return new MessageDto<>("record delete success");
-        } catch (Exception e) {
-            return new MessageDto<>("error occurred");
-        }
+        channelRecordService.deleteRecord(guildSnowflake, channelSnowflake);
+        return new MessageDto<>("record delete success");
     }
 }

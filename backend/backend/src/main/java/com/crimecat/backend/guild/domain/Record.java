@@ -9,14 +9,19 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.util.UUID;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Table(name = "RECORDS")
 @NoArgsConstructor
 @Getter
+@ToString
 public class Record {
 
     @Id
@@ -24,15 +29,18 @@ public class Record {
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
+    @NotBlank
     @Column(name = "CHANNEL_SNOWFLAKE", nullable = false)
     private String channelSnowflake;
 
+    @NotNull
     @Column(name = "MESSAGE", nullable = false)
     private String message;
 
-    @Column(name = "INDEX", nullable = false)
+    @Column(name = "`INDEX`", nullable = false)
     private Integer index;
 
+    @NotBlank
     @Column(name = "GUILD_SNOWFLAKE", nullable = false)
     private String guildSnowflake;
 
@@ -47,8 +55,7 @@ public class Record {
         this.guildSnowflake = guildSnowflake;
     }
 
-    public Record(ChannelRecordRequestDto channelRecordRequestDto, int index,
-                  String guildSnowflake) {
+    public Record(ChannelRecordRequestDto channelRecordRequestDto, int index, String guildSnowflake) {
         this(channelRecordRequestDto.getChannelSnowflake(), channelRecordRequestDto.getMessage(),
                 index, guildSnowflake);
     }
