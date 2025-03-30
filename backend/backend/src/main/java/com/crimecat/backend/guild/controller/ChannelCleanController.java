@@ -13,31 +13,19 @@ public class ChannelCleanController {
 
     @GetMapping
     public MessageDto<?> getCleans(@PathVariable String guildSnowflake) {
-        try {
-            return new MessageDto<>("Channel list founded successfully",
-                    channelCleanService.getCleans(guildSnowflake));
-        } catch (Exception e) {
-            return new MessageDto<>("error occurred");
-        }
+        return new MessageDto<>("Channel list founded successfully",
+                channelCleanService.getCleans(guildSnowflake));
     }
 
     @PostMapping("/{channelSnowflake}")
     public MessageDto<?> postClean(@PathVariable String guildSnowflake, @PathVariable String channelSnowflake) {
-        try {
-            return new MessageDto<>("Channel added successfully",
-                    channelCleanService.addCleanChannel(guildSnowflake, channelSnowflake));
-        } catch (Exception e) {
-            return new MessageDto<>("error occurred");
-        }
+        return new MessageDto<>("Channel added successfully",
+                channelCleanService.addCleanChannel(guildSnowflake, channelSnowflake));
     }
 
     @DeleteMapping("/{channelSnowflake}")
     public MessageDto<?> deleteClean(@PathVariable String guildSnowflake, @PathVariable String channelSnowflake) {
-        try {
-            return new MessageDto<>("Channel deleted successfully",
-                    channelCleanService.deleteClean(guildSnowflake, channelSnowflake));
-        } catch (Exception e) {
-            return new MessageDto<>("error occurred");
-        }
+        return new MessageDto<>("Channel deleted successfully",
+                channelCleanService.deleteClean(guildSnowflake, channelSnowflake));
     }
 }
