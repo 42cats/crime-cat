@@ -14,7 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class GuildObservationService {
     private final GuildObservationRepository guildObservationRepository;
-    private final GuildRepository guildRepository;
+    private final GuildQueryService guildQueryService;
 
     /**
      * 관전 정보 부분 업데이트
@@ -25,7 +25,7 @@ public class GuildObservationService {
     public ObservationDto patchObservation(String guildSnowflake,
                                            ObservationPatchRequestDto observationPatchRequestDto) {
         Observation observation = guildObservationRepository.findByGuildSnowflake(guildSnowflake)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guild not exists"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guild observation not exists"));
         observation.setHeadTitle(observationPatchRequestDto.getHeadTitle());
         observation.setRoleSnowflake(observationPatchRequestDto.getRoleSnowFlake());
         guildObservationRepository.save(observation);
@@ -39,7 +39,7 @@ public class GuildObservationService {
      */
     public ObservationDto getObservation(String guildSnowflake) {
         Observation observation = guildObservationRepository.findByGuildSnowflake(guildSnowflake)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guild not exists"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guild observation not exists"));
         return new ObservationDto(observation);
     }
 
@@ -55,7 +55,7 @@ public class GuildObservationService {
         if (observation != null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guild Observation information already exists");
         }
-        if (!guildRepository.existsBySnowflake(guildSnowflake)) {
+        if (!guildQueryService.existsBySnowflake(guildSnowflake)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guild not exists");
         }
         observation = new Observation(guildSnowflake, roleSnowflake, headTitle);

@@ -50,4 +50,8 @@ public class Guild {
         guild.ownerSnowflake = guildDto.getOwnerSnowflake();
         return guild;
     }
+
+    public void setIsWithdraw(boolean isWithdraw) {
+        this.isWithdraw = isWithdraw;
+    }
 }
