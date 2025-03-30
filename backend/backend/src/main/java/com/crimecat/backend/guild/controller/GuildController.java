@@ -1,6 +1,7 @@
 package com.crimecat.backend.guild.controller;
 
 import com.crimecat.backend.guild.dto.GuildDto;
+import com.crimecat.backend.guild.dto.GuildResponseDto;
 import com.crimecat.backend.guild.dto.MessageDto;
 import com.crimecat.backend.guild.service.GuildService;
 import lombok.RequiredArgsConstructor;
@@ -15,25 +16,20 @@ public class GuildController {
     private final GuildService guildService;
 
     @PostMapping
-    public ResponseEntity<?> addGuild(@RequestBody GuildDto guildDto) {
-        GuildDto guildResponseDto = guildService.addGuild(guildDto);
-        if (guildResponseDto == null) {
+    public ResponseEntity<MessageDto<GuildResponseDto>> addGuild(@RequestBody GuildDto guildDto) {
+
+        MessageDto<GuildResponseDto> messageDto = guildService.addGuild(guildDto);
+        if (messageDto == null) {
             // TODO: use exception to handle error
-            return new ResponseEntity<>(guildDto, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new MessageDto<>("already created", new GuildResponseDto(guildDto)),
+                    HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>(guildResponseDto, HttpStatus.OK);
+        return new ResponseEntity<>(messageDto, HttpStatus.OK);
     }
 
     @DeleteMapping("/{snowflake}")
     public MessageDto<?> deleteGuild(@PathVariable String snowflake) {
-        try {
-            guildService.deleteGuild(snowflake);
-        } catch (Exception e) {
-            // TODO: make custom exception
-            return new MessageDto<>("Guild not found");
-        }
+        guildService.deleteGuild(snowflake);
         return new MessageDto<>("Guild deleted successfully");
     }
-
-
 }
