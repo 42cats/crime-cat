@@ -50,6 +50,7 @@ public class GuildMusicService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "music already exists");
         }
         Music music = new Music(guildSnowflake, guildMusicRequestDto);
+        // TODO: ConstraintViolationException 처리 (validation 처리)
         try {
             guildMusicRepository.save(music);
         } catch (Exception e) {
