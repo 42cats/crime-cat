@@ -58,4 +58,8 @@ public class GuildService {
         guild.setIsWithdraw(true);
         guildRepository.save(guild);
     }
+
+    public Guild getGuild(String snowflake) {
+        return guildRepository.findBySnowflake(snowflake).orElse(null);
+    }
 }

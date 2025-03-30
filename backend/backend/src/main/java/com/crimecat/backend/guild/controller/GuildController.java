@@ -32,4 +32,9 @@ public class GuildController {
         guildService.deleteGuild(snowflake);
         return new MessageDto<>("Guild deleted successfully");
     }
+
+    @GetMapping("/{snowflake}")
+    public MessageDto<?> getGuild(@PathVariable String snowflake) {
+        return new MessageDto<>("", guildService.getGuild(snowflake));
+    }
 }
