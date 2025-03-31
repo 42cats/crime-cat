@@ -1,4 +1,60 @@
 package com.crimecat.backend.coupon.service;
 
+import com.crimecat.backend.coupon.domain.Coupon;
+import com.crimecat.backend.coupon.dto.*;
+import com.crimecat.backend.coupon.repository.CouponRepository;
+import com.crimecat.backend.point.domain.PointHistory;
+import com.crimecat.backend.point.repository.PointHistoryRepository;
+import com.crimecat.backend.point.service.PointHistoryService;
+import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.apache.el.stream.Stream;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
 public class CouponService {
+    private final CouponRepository couponRepository;
+    private final UserRepository userRepository;
+    private final PointHistoryService pointHistoryService;
+
+    public MessageDto<List<CouponResponseDto>> createCoupon(CouponCreateRequestDto requestDto){
+        List<Coupon> coupons = IntStream.range(0, requestDto.getCount())
+                .mapToObj(i -> Coupon.create(requestDto.getValue(), requestDto.getDuration()))
+                .toList();
+
+        // 저장
+        couponRepository.saveAll(coupons);
+
+        // DTO 변환
+        List<CouponResponseDto> responseDtos = coupons.stream()
+                .map(c -> new CouponResponseDto(
+                        c.getId().toString(),
+                        c.getPoint(),
+                        c.getExpiredAt() // 그대로 주거나 계산 가능
+                ))
+                .toList();
+        return new MessageDto<>("created successfully", responseDtos);
+    }
+    public MessageDto<?> redeemCoupon(CouponRedeemRequestDto request){
+        Optional<Coupon> optionalCoupon = couponRepository.findById(UUID.fromString(request.getCode()));
+        Optional<User> optionalUser = userRepository.findBySnowflake(request.getUserSnowflake());
+        if(optionalCoupon.isEmpty()) throw  new RuntimeException("유효한 코드가 아닙니다.");
+        if(optionalUser.isEmpty()) throw  new RuntimeException("유저 정보가 없습니다.");
+        Coupon coupon  = optionalCoupon.get();
+        User user = optionalUser.get();
+        coupon.use(user);
+        user.addPoint(coupon.getPoint());
+        pointHistoryService.usePoint(user,null,coupon.getPoint());
+        return new MessageDto<>("Coupon redeemed successfully", new CouponRedeemResponseDto(user.getPoint()));
+    }
 }

@@ -63,4 +63,8 @@ public class User {
         point -= price;
         return point;
     }
+    public Integer addPoint(Integer point){
+        this.point += point;
+        return point;
+    }
 }
