@@ -38,6 +38,10 @@ dependencies {
 	testImplementation 'org.mockito:mockito-inline:5.2.0'
 //	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	implementation("org.openapitools:jackson-databind-nullable:0.2.4")
+	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-validation
+	implementation("org.springframework.boot:spring-boot-starter-validation:3.4.3")
 }
 
 tasks.named('test') {

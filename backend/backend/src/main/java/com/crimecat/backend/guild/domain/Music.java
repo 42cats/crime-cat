@@ -1,19 +1,22 @@
 package com.crimecat.backend.guild.domain;
 
+import com.crimecat.backend.guild.dto.GuildMusicRequestDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Table(name = "MUSICS")
@@ -22,27 +25,43 @@ import org.hibernate.annotations.GenericGenerator;
 public class Music {
 
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @UuidGenerator
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
+    @Column(name = "GUILD_SNOWFLAKE", nullable = false)
+    private String guildSnowflake;
+
+    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", insertable = false, updatable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Guild guild;
 
+    @NotBlank
     @Column(name = "TITLE", nullable = false)
     private String title;
 
+    @NotBlank
     @Column(name = "YOUTUBE_URL", nullable = false)
     private String youtubeUrl;
 
+    @NotBlank
     @Column(name = "THUMBNAIL", nullable = false)
     private String thumbnail;
 
+    @NotBlank
     @Column(name = "DURATION", nullable = false)
     private String duration;
 
+    @NotNull
     @Column(name = "CREATED_AT", nullable = false)
     private LocalDateTime createdAt;
+
+    public Music(String guildSnowflake, GuildMusicRequestDto guildMusicRequestDto) {
+        this.guildSnowflake = guildSnowflake;
+        this.title = guildMusicRequestDto.getTitle();
+        this.youtubeUrl = guildMusicRequestDto.getUrl();
+        this.thumbnail = guildMusicRequestDto.getThumbnail();
+        this.duration = guildMusicRequestDto.getDuration();
+        this.createdAt = LocalDateTime.now();
+    }
 }

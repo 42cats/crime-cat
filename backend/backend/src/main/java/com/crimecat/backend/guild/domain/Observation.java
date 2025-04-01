@@ -1,19 +1,15 @@
 package com.crimecat.backend.guild.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import com.crimecat.backend.user.domain.User;
+import jakarta.persistence.*;
+
 import java.util.UUID;
-import lombok.AllArgsConstructor;
+
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UuidGenerator;
+import org.openapitools.jackson.nullable.JsonNullable;
 
 @Entity
 @Table(name = "OBSERVATIONS")
@@ -27,13 +23,31 @@ public class Observation {
     private UUID id;
 
     @Column(name = "HEAD_TITLE", nullable = false)
+    @NotNull
     private String headTitle;
 
     @Column(name = "ROLE_SNOWFLAKE")
     private String roleSnowflake;
 
-    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
+    @Column(name = "GUILD_SNOWFLAKE", nullable = false)
+    @NotNull
+    private String guildSnowflake;
+
+    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", insertable = false, updatable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Guild guild;
 
+    public Observation(String snowflake, String roleSnowflake, String headTitle) {
+        this.guildSnowflake = snowflake;
+        this.roleSnowflake = roleSnowflake;
+        this.headTitle = headTitle;
+    }
+
+    public void setHeadTitle(JsonNullable<String> headTitle) {
+        headTitle.ifPresent(v -> this.headTitle = v);
+    }
+
+    public void setRoleSnowflake(JsonNullable<String> roleSnowflake) {
+        roleSnowflake.ifPresent(v -> this.roleSnowflake = v);
+    }
 }
