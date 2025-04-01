@@ -41,8 +41,8 @@ public class CouponApiTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("created successfully"))
-                .andExpect(jsonPath("$.innerDto").isArray())
-                .andExpect(jsonPath("$.innerDto.length()").value(3));
+                .andExpect(jsonPath("$.coupons").isArray())
+                .andExpect(jsonPath("$.coupons.length()").value(3));
     }
 
     @Test

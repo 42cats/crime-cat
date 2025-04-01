@@ -1,9 +1,6 @@
 package com.crimecat.backend.coupon.controller;
 
-import com.crimecat.backend.coupon.dto.CouponCreateRequestDto;
-import com.crimecat.backend.coupon.dto.CouponRedeemRequestDto;
-import com.crimecat.backend.coupon.dto.CouponResponseDto;
-import com.crimecat.backend.coupon.dto.MessageDto;
+import com.crimecat.backend.coupon.dto.*;
 import com.crimecat.backend.coupon.service.CouponService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +19,7 @@ public class CouponController{
      *
      */
     @PostMapping
-    public ResponseEntity<MessageDto<List<CouponResponseDto>>> createCoupons(@RequestBody CouponCreateRequestDto request){
+    public ResponseEntity<MessageDto<CouponListResponse>> createCoupons(@RequestBody CouponCreateRequestDto request){
         return ResponseEntity.ok(couponService.createCoupon(request));
 
     };
