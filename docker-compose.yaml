@@ -86,8 +86,8 @@ services:
       - discord-network
     ports:
       - "8080:8080"
-#    volumes:
-#      - backend_data:/app
+  #  volumes:
+  #    - backend_data:/app
 
   discord-app:
     init: true

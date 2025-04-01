@@ -15,6 +15,7 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -57,4 +58,29 @@ public class Coupon {
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
+
+    public Coupon(Integer point, Integer duration) {
+        this.point = point;
+        this.createdAt = LocalDateTime.now();
+        this.usedAt = null;
+        this.expiredAt = this.createdAt.plusDays(duration);
+        this.user = null;
+    }
+
+    public static Coupon create(Integer point, Integer duration){
+        return new Coupon(point,duration);
+    }
+    public boolean isExpired(){
+        return this.expiredAt.isBefore(LocalDateTime.now());
+    }
+    public boolean isUsed(){
+        return (this.user != null);
+    }
+    public void use(User user) {
+        if(isUsed()) throw new IllegalStateException("이미 사용된 쿠폰입니다.");
+        if(isExpired()) throw new IllegalStateException("이미 만료된 쿠폰입니다");
+
+        this.user = user;
+        this.usedAt = LocalDateTime.now();
+    }
 }

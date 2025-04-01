@@ -2,6 +2,8 @@ package com.crimecat.backend.guild.repository;
 
 import com.crimecat.backend.guild.domain.Guild;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -12,4 +14,10 @@ public interface GuildRepository extends JpaRepository<Guild, UUID> {
     Long deleteBySnowflake(String snowflake);
 
     boolean existsBySnowflake(String snowflake);
+
+    /*
+        gameHistory 저장 확인용 임시 메서드
+     */
+    @Query("SELECT g FROM Guild g WHERE g.snowflake = :snowflake")
+    Optional<Guild> findGuildByGuildSnowflake(@Param("snowflake") String guildSnowflake);
 }

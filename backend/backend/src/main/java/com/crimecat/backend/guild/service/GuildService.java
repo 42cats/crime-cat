@@ -1,13 +1,13 @@
 package com.crimecat.backend.guild.service;
 
 import com.crimecat.backend.guild.domain.Guild;
+
 import com.crimecat.backend.guild.dto.GuildDto;
 import com.crimecat.backend.guild.dto.GuildResponseDto;
 import com.crimecat.backend.guild.dto.MessageDto;
 import com.crimecat.backend.guild.repository.GuildRepository;
 import com.crimecat.backend.user.service.UserQueryService;
 import lombok.RequiredArgsConstructor;
-import org.aspectj.bridge.Message;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -57,5 +57,12 @@ public class GuildService {
         }
         guild.setIsWithdraw(true);
         guildRepository.save(guild);
+    }
+
+    /*
+		gameHistory 저장 확인용 임시 메서드
+	 */
+    public Guild findGuildByGuildSnowflake(String guildSnowflake) {
+        return guildRepository.findGuildByGuildSnowflake(guildSnowflake).orElse(null);
     }
 }
