@@ -2,14 +2,12 @@ package com.crimecat.backend.permission.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UuidGenerator;
 
 @Entity
@@ -19,7 +17,7 @@ import org.hibernate.annotations.UuidGenerator;
 public class Permission {
     @Id
     @UuidGenerator
-    @Column(name = "ID", columnDefinition = "BINARY(16)")
+    @Column(name = "ID", columnDefinition = "BINARY(16)", updatable = false)
     private UUID id;
 
     @Column(name = "NAME", nullable = false)
@@ -28,6 +26,26 @@ public class Permission {
     @Column(name = "PRICE", nullable = false)
     private Integer price;
 
-    @Column(name = "DURATION", nullable = false)
-    private Integer duration;
+    @Column(name = "DURATION")
+    private Integer duration = 28;
+
+    public Permission(String name, Integer price, Integer duration) {
+        this.name = name;
+        this.price = price;
+        if (duration != null) {
+            this.duration = duration;
+        }
+    }
+
+    public void modifyPermission(String name, Integer price, Integer duration) {
+        if (name != null) {
+            this.name = name;
+        }
+        if (price != null) {
+            this.price = price;
+        }
+        if (duration != null) {
+            this.duration = duration;
+        }
+    }
 }
