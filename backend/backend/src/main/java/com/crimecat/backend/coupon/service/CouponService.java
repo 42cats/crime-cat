@@ -46,6 +46,10 @@ public class CouponService {
         return new MessageDto<>("created successfully", responseDtos);
     }
     public MessageDto<?> redeemCoupon(CouponRedeemRequestDto request){
+        if (request.getUserSnowflake() == null || request.getUserSnowflake().isEmpty())
+            throw new RuntimeException("유저 정보가 없습니다.");
+        if (request.getCode() == null || request.getCode().isEmpty())
+            throw new RuntimeException("유효한 코드가 아닙니다.");
         Optional<Coupon> optionalCoupon = couponRepository.findById(UUID.fromString(request.getCode()));
         Optional<User> optionalUser = userRepository.findBySnowflake(request.getUserSnowflake());
         if(optionalCoupon.isEmpty()) throw  new RuntimeException("유효한 코드가 아닙니다.");
