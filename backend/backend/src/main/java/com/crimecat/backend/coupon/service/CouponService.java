@@ -27,7 +27,7 @@ public class CouponService {
     private final UserRepository userRepository;
     private final PointHistoryService pointHistoryService;
 
-    public MessageDto<List<CouponResponseDto>> createCoupon(CouponCreateRequestDto requestDto){
+    public MessageDto<CouponListResponse> createCoupon(CouponCreateRequestDto requestDto){
         List<Coupon> coupons = IntStream.range(0, requestDto.getCount())
                 .mapToObj(i -> Coupon.create(requestDto.getValue(), requestDto.getDuration()))
                 .toList();
@@ -43,7 +43,7 @@ public class CouponService {
                         c.getExpiredAt() // 그대로 주거나 계산 가능
                 ))
                 .toList();
-        return new MessageDto<>("created successfully", responseDtos);
+        return new MessageDto<>("created successfully", new CouponListResponse(responseDtos));
     }
     public MessageDto<?> redeemCoupon(CouponRedeemRequestDto request){
         if (request.getUserSnowflake() == null || request.getUserSnowflake().isEmpty())
