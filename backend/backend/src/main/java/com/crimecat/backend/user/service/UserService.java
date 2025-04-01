@@ -67,7 +67,7 @@ public class UserService {
 		String message = "Already User registered";
 		User user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
-			user = userQueryService.save(User.of(userSnowflake, userName, userAvatar));
+			user = userQueryService.saveUser(User.of(userSnowflake, userName, userAvatar));
 			message = "User registered";
 		}
 

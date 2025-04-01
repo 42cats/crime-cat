@@ -17,7 +17,7 @@ public class UserQueryService {
 	public User findByUserSnowflake(String userSnowflake) {
 		return userRepository.findBySnowflake(userSnowflake).orElse(null);
 	}
-	public User save(User user) {
+	public User saveUser(User user) {
 		return userRepository.save(user);
 	}
 
