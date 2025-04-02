@@ -11,11 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout Repository (with submodules)
-        uses: actions/checkout@v4
-        with:
-          submodules: true  # 서브모듈도 함께 체크아웃
-
       - name: 🔑 Setup SSH Key
         uses: webfactory/ssh-agent@v0.8.0
         with:
@@ -46,12 +41,14 @@ jobs:
           ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP -p $SERVER_PORT << EOF
           echo "✅ 서버에 접속 완료"
 
+          echo ${{ secrets.CATS_USER_PASSWORD }} | security -v unlock-keychain ~/Library/Keychains/login.keychain-db
+
           # crime-cat 디렉토리 이동
           cd /Users/$SERVER_USER/dev/crime-cat
 
           # 서브모듈(config) 업데이트
           echo "🔄 서브모듈 업데이트..."
-          git submodule update --init --recursive
+          git submodule update --init --remote
 
           # crime-cat 저장소 업데이트
           echo "🔄 crime-cat 저장소 업데이트..."
