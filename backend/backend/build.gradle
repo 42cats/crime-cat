@@ -48,12 +48,14 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
-task copyYml(type: Copy) {
-	copy {
-		from '../../config'
-		include '*.yml'
-		into 'src/main/resources'
-	}
+tasks.register('copyMainConfig', Copy) {
+	from '../../config'
+	include '*.yml'
+	into 'src/main/resources'
+}
+
+tasks.named('processResources') {
+	dependsOn 'copyMainConfig'
 }
 
 jar {
