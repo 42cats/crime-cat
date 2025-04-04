@@ -1,30 +1,15 @@
 package com.crimecat.backend.user.service;
 
+import com.crimecat.backend.gameHistory.domain.GameHistory;
 import com.crimecat.backend.gameHistory.dto.IGameHistoryRankingDto;
 import com.crimecat.backend.gameHistory.service.GameHistoryQueryService;
+import com.crimecat.backend.guild.service.GuildQueryService;
 import com.crimecat.backend.permission.domain.Permission;
 import com.crimecat.backend.permission.service.PermissionService;
 import com.crimecat.backend.point.service.PointHistoryService;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.domain.UserPermission;
-import com.crimecat.backend.user.dto.TotalUserRankingByPlayTimeDto;
-import com.crimecat.backend.user.dto.TotalUserRankingByPointDto;
-import com.crimecat.backend.user.dto.TotalUserRankingDto;
-import com.crimecat.backend.user.dto.TotalUserRankingFailedResponseDto;
-import com.crimecat.backend.user.dto.TotalUserRankingResponseDto;
-import com.crimecat.backend.user.dto.TotalUserRankingSuccessResponseDto;
-import com.crimecat.backend.user.dto.UserGrantedPermissionDto;
-import com.crimecat.backend.user.dto.UserGrantedPermissionResponseDto;
-import com.crimecat.backend.user.dto.UserHasPermissionResponseDto;
-import com.crimecat.backend.user.dto.UserInfoResponseDto;
-import com.crimecat.backend.user.dto.UserPermissionPurchaseDto;
-import com.crimecat.backend.user.dto.UserPermissionPurchaseFailedResponseDto;
-import com.crimecat.backend.user.dto.UserPermissionPurchaseResponseDto;
-import com.crimecat.backend.user.dto.UserPermissionPurchaseSuccessResponseDto;
-import com.crimecat.backend.user.dto.UserRankingFailedResponseDto;
-import com.crimecat.backend.user.dto.UserRankingResponseDto;
-import com.crimecat.backend.user.dto.UserRankingSuccessResponseDto;
-import com.crimecat.backend.user.dto.UserResponseDto;
+import com.crimecat.backend.user.dto.*;
 import io.micrometer.common.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -36,8 +21,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +38,7 @@ public class UserService {
 	private final PermissionService permissionService;
 	private final UserPermissionService userPermissionService;
 	private final GameHistoryQueryService gameHistoryQueryService;
+	private final GuildQueryService guildQueryService;
 
 
 	@Transactional(readOnly = true)
@@ -271,5 +259,27 @@ public class UserService {
 			return new TotalUserRankingFailedResponseDto("params type error");
 		}
 		return new TotalUserRankingSuccessResponseDto(pageable.getPageNumber(), ranking.size(), totalUserCount, ranking);
+	}
+
+	public UserListResponseDto getUserList(String guildSnowflake, Boolean discordAlarm) {
+		if (!guildQueryService.existsBySnowflake(guildSnowflake)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "guild not exists");
+		}
+		return new UserListResponseDto(
+				gameHistoryQueryService.findUsersByGuildSnowflakeAndDiscordAlarm(guildSnowflake, discordAlarm).stream()
+						.map(GameHistory::getUser)
+						.map(User::getSnowflake)
+						.toList()
+		);
+	}
+
+	public UserPatchResponseDto updateUserInfo(String userSnowflake, String avatar, Boolean discordAlarm) {
+		User user = userQueryService.findByUserSnowflake(userSnowflake);
+		if (user == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user not exists");
+		}
+		user.setAvatar(avatar);
+		user.setDiscordAlarm(discordAlarm);
+		return new UserPatchResponseDto(new UserPatchDto(userQueryService.saveUser(user)));
 	}
 }

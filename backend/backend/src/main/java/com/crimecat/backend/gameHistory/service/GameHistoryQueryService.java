@@ -38,4 +38,8 @@ public class GameHistoryQueryService {
 		return gameHistoryRepository.findGameHistoryByUserSnowFlakeAndGuildSnowflake(userSnowflake,
 				guildSnowflake);
 	}
+
+	public List<GameHistory> findUsersByGuildSnowflakeAndDiscordAlarm(String guildSnowflake, Boolean discordAlarm) {
+		return gameHistoryRepository.findUsersByGuildSnowflakeAndDiscordAlarm(guildSnowflake, discordAlarm);
+	}
 }
