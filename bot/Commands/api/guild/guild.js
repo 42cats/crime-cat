@@ -28,7 +28,7 @@ async function addGuild({ id, name, ownerId }) {
 			console.log("⛔ 이미 등록된 길드, 처리 생략");
 			return { status: 200, data: error.response.data.guild }; // ✅ 응답 모양 맞춰서 반환
 		}
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 		return null;
 	}
 }
@@ -50,7 +50,6 @@ async function guildMembersAdd(client, guild) {
 		}
 	 	catch (err) {
 			console.error("Error inserting users from guild:", err.response.data.message);
-		throw err;
 	}
 }
 

@@ -1,11 +1,13 @@
 
+const { deleteChannelClean } = require('../api/channel/channel');
 const delayedDeleteMessage = require('./deleteMsg');
-async function deleteAllMessages(channelId, client) {
+async function deleteAllMessages(guildId,channelId, client) {
 	try {
 		const channel = await client.channels.fetch(channelId);
 
 		if (!channel || !channel.isTextBased()) {
 			const msg = await channel.send('찾을 수 없는 채널이거나 텍스트 채널이 아닙니다.');
+			await deleteChannelClean(guildId, channelId);
 			await delayedDeleteMessage(msg, 1);
 			return;
 		}
@@ -60,12 +62,13 @@ async function deleteAllMessages(channelId, client) {
 
 
 
-async function deleteRecentMessages(channelId, client, limit = null) {
+async function deleteRecentMessages(guildId,channelId, client, limit = null) {
 	try {
 		const channel = await client.channels.fetch(channelId);
 
 		if (!channel || !channel.isTextBased()) {
-			console.log('Invalid channel ID or the channel is not a text channel.');
+			console.log('찾을 수 없는 채널이거나 텍스트 채널이 아닙니다.');
+			await deleteChannelClean(guildId, channelId);
 			return;
 		}
 

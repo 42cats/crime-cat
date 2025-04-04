@@ -47,7 +47,7 @@ async function deleteGuildMusic(guildId, title) {
 		console.log('응답 데이터:', response.status, response.data);
 		return response.data;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 	}
 }
 
@@ -66,7 +66,8 @@ async function 	getGuildMusic(guildId) {
 		console.log('응답 데이터:', response.status, response.data);
 		return response.data.musicList ? response.data.musicList:[];
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		return [];
 	}
 }
 

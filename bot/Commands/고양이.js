@@ -43,7 +43,7 @@ async function deleteChannelMsg(guildId, client) {
 	const list = await getChannelClean(guildId);
 	if (list.length <= 0) return;
 	list.map(async v => {
-		deleteAllMessages(v, client);
+		deleteAllMessages(guildId,v, client);
 	})
 
 }

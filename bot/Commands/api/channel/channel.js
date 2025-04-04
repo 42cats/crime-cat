@@ -20,7 +20,7 @@ async function addChannelClean(guildId, channelId) {
 		console.log('응답 데이터:', response.status, response.data);
 		return response.data.message;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 	}
 }
 
@@ -36,10 +36,11 @@ async function deleteChannelClean(guildId, channelId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		console.log('응답 데이터:', response.status, response.data, response.data.message);
 		return response.data.message;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		return error.response.message;
 	}
 }
 
@@ -58,7 +59,7 @@ async function getChannelClean(guildId) {
 		console.log('응답 데이터:', response.status, response.data);
 		return response.data.channels;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 	}
 }
 

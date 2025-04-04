@@ -30,7 +30,7 @@ async function addGuildObserverSet(guildId, headTitle = "-관전", roleId = null
 		console.log('응답 데이터:', response.status, response.data);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 	}
 }
 
@@ -50,7 +50,7 @@ async function addGuildObserverSet(guildId, headTitle = "-관전", roleId = null
 // 		console.log('응답 데이터:', response.status, response.data);
 // 		return response.data;
 // 	} catch (error) {
-// 		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+// 		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 // 	}
 // }
 
@@ -69,7 +69,7 @@ async function 	getGuildObserverSet(guildId) {
 		console.log('응답 데이터:', response.status, response.data);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 	}
 }
 

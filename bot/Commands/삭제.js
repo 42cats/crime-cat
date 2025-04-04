@@ -51,7 +51,7 @@ module.exports = {
 				return;
 			}
 			console.log(args);
-			await deleteRecentMessages(channelId, client, amount);
+			await deleteRecentMessages(guildId,channelId, client, amount);
 		}
 	},
 	upload: true,

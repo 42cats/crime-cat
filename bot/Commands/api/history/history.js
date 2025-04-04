@@ -27,7 +27,7 @@ async function addUserHistory({ id: userID }, { id: guildID }, characterName, is
 		});
 		console.log('응답 데이터:', response.status, response.data);
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 	}
 }
 
@@ -46,7 +46,7 @@ async function getUserHistory(userId) {
 		console.log('응답 데이터:', response.status, response.data);
 		return response.data?.userGameHistoryDtos || [];
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.message);
+		console.error('API 요청 실패:', error.response?.data || error.response.data.message);
 		return []; // ✅ 에러 발생 시에도 항상 빈 배열 반환
 	}
 }

@@ -17,7 +17,7 @@ async function addUser(user) {
 
 	const body = {
 		userSnowflake: userObj.id,
-		name: userObj.globalName ?? userObj.username,
+		name: userObj.username,
 		avatar: userObj.avatar ? userObj.avatarURL() : "https://cdn.discordapp.com/embed/avatars/0.png"
 	};
 
@@ -30,7 +30,7 @@ async function addUser(user) {
 		});
 		console.log('응답 데이터:', response.data.message);
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 	}
 }
 
@@ -57,7 +57,7 @@ async function addUserPermisson(user, permissionName) {
 		console.log('응답 데이터:', response.data.message);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 	}
 }
 
@@ -77,13 +77,33 @@ async function getUserRank(userId) {
 		console.log('응답 데이터:', response.data.message, response.data);
 		return response.data;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 	}
 }
+ 
+/**
+ * @param {String} userId 
+ */
+async function getUserPermissons(userId) {
+	const API_URL = `${baseUrl}/v1/bot/users/${userId}/permissions`;
 
-
+	// GuildMember 또는 User 객체 구분
+	try {
+		const response = await axios.get(API_URL, {
+			headers: {
+				'Authorization': `Bearer ${BEARER_TOKEN}`,
+			}
+		});
+		console.log('응답 데이터:', response.data.message, response.data);
+		return response.data;
+	} catch (error) {
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+	}
+}
+ 
 module.exports={
 	addUser,
 	addUserPermisson,
-	getUserRank
+	getUserRank,
+	getUserPermissons
 }

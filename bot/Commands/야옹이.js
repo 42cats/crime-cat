@@ -46,7 +46,7 @@ async function deleteChannelMsg(guildId, client) {
 	console.log(list);
 	if (list.length <= 0) return;
 	list.map(async v => {
-		await deleteRecentMessages(v, client);
+		await deleteRecentMessages(guildId,v, client);
 	})
 
 }
