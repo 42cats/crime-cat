@@ -31,7 +31,14 @@ async function createUserEmbed(userData) {
 	let permissionFieldValue = '없음';
 	if (permissionList.length > 0) {
 		permissionFieldValue = permissionList
-			.map(p => `• ${p.permissionName} (만료일: ${new Date(p.expiredDate).toLocaleDateString('ko-KR')})`)
+			.map(p => `• ${p.permissionName} (만료일: ${new Date(p.expiredDate).toLocaleString('ko-KR', {
+				year: 'numeric',
+				month: '2-digit',
+				day: '2-digit',
+				hour: '2-digit',
+				minute: '2-digit',
+				second: '2-digit',
+			})})`)
 			.join('\n');
 	}
 
