@@ -38,4 +38,7 @@ public class GameHistoryQueryService {
 		return gameHistoryRepository.findGameHistoryByUserSnowFlakeAndGuildSnowflake(userSnowflake,
 				guildSnowflake);
 	}
+	public List<GameHistory> getAllGameHistory(){
+		return gameHistoryRepository.findAll();
+	}
 }
