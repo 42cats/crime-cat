@@ -5,6 +5,7 @@ const { getDeleteChannel } = require('./utility/discord_db');
 const { deleteAllMessages } = require('./utility/cleaner');
 const dotenv = require('dotenv');
 const path = require('path');
+const { getChannelClean } = require('./api/channel/channel');
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 const API = process.env.GOOGLE_API;
 
@@ -39,10 +40,10 @@ module.exports = {
 };
 
 async function deleteChannelMsg(guildId, client) {
-	const list = await getDeleteChannel(guildId);
+	const list = await getChannelClean(guildId);
 	if (list.length <= 0) return;
 	list.map(async v => {
-		deleteAllMessages(v.channel_id, client);
+		deleteAllMessages(v, client);
 	})
 
 }

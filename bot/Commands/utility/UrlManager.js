@@ -22,14 +22,15 @@ const {
 
 const { AudioPlayerManager } = require('./AudioPlayerManager');
 const Debounce = require('./Debounce');
-const { hasPermission, USER_PERMISSION } = require('./UserGrade');
+const { encodeToString } = require('./delimiterGeter');
+const { isPermissionHas } = require('../api/user/permission');
 
 class GuildURLManager {
-    constructor(guildId, client) {
+    constructor(guildId, client,user) {
         if (!guildId) {
             throw new Error('guildId가 필요합니다.');
         }
-        
+
         // youTubeEmoji
         this.youtubeEmoji = client.emojis.cache.get('1336990634573172747') || "🌐";
         this.guildId = guildId;
@@ -47,7 +48,7 @@ class GuildURLManager {
         this.audioPlayerManager = new AudioPlayerManager(this);
         this.interactionMsg = null;
         // 명령 수행자
-        this.operater = null;
+        this.operater = user;
         // UI 버튼 관리 (기존 버튼들은 buttonName 접두사를 사용)
         this.buttons = [];
         this.embed = null;
@@ -58,59 +59,60 @@ class GuildURLManager {
             new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
-                        .setCustomId(`${this.guildId + this.buttonName}volumeUp`)
+                        .setCustomId(encodeToString(this.guildId, "musicPlayerButton", "volumeUp"))
                         .setEmoji("🔊")
                         .setStyle(ButtonStyle.Primary),
                     new ButtonBuilder()
-                        .setCustomId(`${this.guildId + this.buttonName}prev`)
+                        .setCustomId(encodeToString(this.guildId, "musicPlayerButton", "prev"))
                         .setEmoji('⏮️')
                         .setStyle(ButtonStyle.Primary),
                     new ButtonBuilder()
-                        .setCustomId(`${this.guildId + this.buttonName}playpause`)
+                        .setCustomId(encodeToString(this.guildId, "musicPlayerButton", "playpause"))
                         .setEmoji('⏯️')
                         .setStyle(ButtonStyle.Primary),
                     new ButtonBuilder()
-                        .setCustomId(`${this.guildId + this.buttonName}playstop`)
+                        .setCustomId(encodeToString(this.guildId, "musicPlayerButton", "playstop"))
                         .setEmoji('⏹️')
                         .setStyle(ButtonStyle.Primary),
                     new ButtonBuilder()
-                        .setCustomId(`${this.guildId + this.buttonName}next`)
+                        .setCustomId(encodeToString(this.guildId, "musicPlayerButton", "next"))
                         .setEmoji('⏭️')
                         .setStyle(ButtonStyle.Primary)
                 ),
             new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
-                        .setCustomId(`${this.guildId + this.buttonName}volumeDown`)
+                        .setCustomId(encodeToString(this.guildId, "musicPlayerButton", "volumeDown"))
                         .setEmoji("🔉")
                         .setStyle(ButtonStyle.Primary),
                     new ButtonBuilder()
-                        .setCustomId(`${this.guildId + this.buttonName}sort`)
+                        .setCustomId(encodeToString(this.guildId, "musicPlayerButton", "sort"))
                         .setEmoji(this.playlistManager.getEmoji(this.playlistManager.sort))
                         .setStyle(ButtonStyle.Primary),
                     new ButtonBuilder()
-                        .setCustomId(`${this.guildId + this.buttonName}mode`)
+                        .setCustomId(encodeToString(this.guildId, "musicPlayerButton", "mode"))
                         .setEmoji(this.playlistManager.getEmoji(this.playlistManager.playMode))
                         .setStyle(ButtonStyle.Primary),
                     new ButtonBuilder()
-                        .setCustomId(`${this.guildId + this.buttonName}onOff`)
+                        .setCustomId(encodeToString(this.guildId, "musicPlayerButton", "onOff"))
                         .setEmoji("✅")
                         .setStyle(ButtonStyle.Primary),
                     new ButtonBuilder()
-                        .setCustomId(`${this.guildId + this.buttonName}exit`)
+                        .setCustomId(encodeToString(this.guildId, "musicPlayerButton", "exit"))
                         .setEmoji("❌")
                         .setStyle(ButtonStyle.Danger)
                 )
         ];
+        this.playlistManager.refresh();
     }
 
     // 볼륨 버튼 활성/비활성 업데이트
     updateVolumeButton() {
         this.buttons[1].components.forEach(v => {
-            if (v.data.custom_id === `${this.guildId + this.buttonName}volumeUp`) {
+            if (v.data.custom_id === encodeToString(this.guildId, "musicPlayerButton", "volumeUp")) {
                 v.setDisabled(this.audioPlayerManager.volume >= 1);
             }
-            if (v.data.custom_id === `${this.guildId + this.buttonName}volumeDown`) {
+            if (v.data.custom_id === encodeToString(this.guildId, "musicPlayerButton", "volumeDown")) {
                 v.setDisabled(this.audioPlayerManager.volume <= 0);
             }
         });
@@ -185,7 +187,7 @@ class GuildURLManager {
     // 재생 모드 변경
     setPlayMode() {
         this.playlistManager.setPlayMode();
-        const targetCustomId = String(this.guildId + this.buttonName) + "mode";
+        const targetCustomId = encodeToString(this.guildId, "musicPlayerButton", "mode");
         this.buttons[0].components.map(v => {
             if (v.data.custom_id === targetCustomId) {
                 v.setEmoji(this.playlistManager.getEmoji(this.playlistManager.playMode));
@@ -211,7 +213,7 @@ class GuildURLManager {
         } else if (!this.audioPlayerManager.connection) {
             if (this.operater) this.audioPlayerManager.join(this.operater);
         }
-        const target = `${this.guildId + this.buttonName}onOff`;
+        const target = encodeToString(this.guildId, "musicPlayerButton", "onOff");
         this.buttons[1].components.map(v => {
             if (v.data.custom_id === target) {
                 v.setEmoji(this.audioPlayerManager.connection ? "✅" : "☑");
@@ -222,7 +224,7 @@ class GuildURLManager {
     // 정렬
     sortList() {
         this.playlistManager.sortList();
-        const targetCustomId = String(this.guildId + this.buttonName) + "sort";
+        const targetCustomId = encodeToString(this.guildId, "musicPlayerButton", "sort");
         this.buttons[1].components.map(v => {
             if (v.data.custom_id === targetCustomId) {
                 v.setEmoji(this.playlistManager.getEmoji(this.playlistManager.sort));
@@ -267,12 +269,13 @@ class GuildURLManager {
         this.playlistManager.currentPage = this.playlistManager.maxPage;
     }
     async getPermissionButton() {
-        const check = await hasPermission(this.operater, USER_PERMISSION.LOCAL_MUSIC);
+        console.log("operaters = ", this.operater?.user?.id);
+        const check = await isPermissionHas(this.operater?.user?.id, "LOCAL_MUSIC");
         if (!check) return [];
         const primeumRow = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
-                    .setCustomId(`${this.guildId + this.buttonName}Local`)
+                    .setCustomId(encodeToString(this.guildId, "musicPlayerButton", "Local"))
                     .setEmoji(this.local ? this.youtubeEmoji : "📁")
                     .setStyle(ButtonStyle.Success)
             )
@@ -287,31 +290,30 @@ class GuildURLManager {
         }
         const currentPage = this.playlistManager.currentPage;
         const maxPage = this.playlistManager.maxPage;
-        const page_id = `${this.guildId}_pageNation:`
         const paginationRow = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
-                    .setCustomId(`${page_id}pageFirst`)
+                    .setCustomId(encodeToString(this.guildId, "pageNation", "pageFirst"))
                     .setLabel("<<")
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(currentPage === 0),
                 new ButtonBuilder()
-                    .setCustomId(`${page_id}pagePrev`)
+                    .setCustomId(encodeToString(this.guildId, "pageNation", "pagePrev"))
                     .setLabel("<")
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(currentPage === 0),
                 new ButtonBuilder()
-                    .setCustomId(`${page_id}pageCurrent`)
+                    .setCustomId(encodeToString(this.guildId, "pageNation", "pageCurrent"))
                     .setLabel(`Page ${currentPage + 1}/${maxPage + 1}`)
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(true),
                 new ButtonBuilder()
-                    .setCustomId(`${page_id}pageNext`)
+                    .setCustomId(encodeToString(this.guildId, "pageNation", "pageNext"))
                     .setLabel(">")
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(currentPage === maxPage),
                 new ButtonBuilder()
-                    .setCustomId(`${page_id}pageLast`)
+                    .setCustomId(encodeToString(this.guildId, "pageNation", "pageLast"))
                     .setLabel(">>")
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(currentPage === maxPage)
@@ -347,24 +349,28 @@ class GuildURLManager {
     // → 페이지 관련 옵션은 제거하고, 현재 페이지의 곡 목록만 표시
     async requestComponent() {
         const currentPageItems = this.playlistManager.getCurrentPage();
+        const originalList = this.playlistManager.playlist;
         const menuMsg = (this.audioPlayerManager.player.state.status === AudioPlayerStatus.Playing)
             ? `🎵 Now Playing: ${this.playlistManager.getCurrent()?.title}`
             : "재생할곡을 선택해 주세요.";
         const valuestr = this.guildId + "_playListUrl:";
         let options = [];
         if (currentPageItems.length > 0) {
-            options = currentPageItems.map((item, index) => ({
-                label: `${String(index).padStart(2, '0')}_${item.title.length > 10 ? item.title.slice(0, 10) : item.title} ${item?.duration}`,
-                value: valuestr + String(index + (this.playlistManager.currentPage) * this.playlistManager.pageSize),
-            }));
+            options = currentPageItems.map((item) => {
+                const originalIndex = originalList.findIndex(o => o.url === item.url); // 또는 id 기준
+                return {
+                    label: `${item.title.slice(0, 15)} ${item.duration}`,
+                    value: encodeToString(this.guildId, "playListUrl", originalIndex), // 🔥 원본 인덱스
+                };
+            });
         } else {
             options.push({
                 label: "현재 페이지에 표시할 곡이 없습니다.",
-                value: valuestr + 'none'
+                value: encodeToString(this.guildId, "playListUrl", "none"),
             });
         }
         const selectMenu = new StringSelectMenuBuilder()
-            .setCustomId(`${this.guildId}_selectMenu`)
+            .setCustomId(encodeToString(this.guildId, "selectMenu"))
             .setPlaceholder(menuMsg)
             .addOptions(options);
 

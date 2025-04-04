@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, CommandInteraction, Message, ButtonBuilder, ActionRowBuilder, ButtonStyle } = require('discord.js');
 const { getCharacterName } = require('./utility/discord_db');
+const { encodeToString } = require('./utility/delimiterGeter');
 const nameOfCommand = "투표";
 const description = "투표 폼을 호출합니다.";
 
@@ -58,7 +59,7 @@ async function voteFormMaker(client, guildId, user) {
         const chunk = characters.slice(i, i + 5);
         const buttons = chunk.map(name =>
             new ButtonBuilder()
-                .setCustomId(`${user.id}_voteChoice:${name}?${chunk.length}`)
+                .setCustomId(encodeToString(user.id,"voteChoice",name,chunk.length))
                 .setLabel(name)
                 .setStyle(ButtonStyle.Primary)
         );
@@ -67,7 +68,7 @@ async function voteFormMaker(client, guildId, user) {
 
     // 투표 종료 버튼 추가
     const endButton = new ButtonBuilder()
-        .setCustomId(`${user.id}_endVote`)
+        .setCustomId(encodeToString(user.id,"endVote"))
         .setLabel('투표 종료')
         .setStyle(ButtonStyle.Danger);
     const endRow = new ActionRowBuilder().addComponents(endButton);

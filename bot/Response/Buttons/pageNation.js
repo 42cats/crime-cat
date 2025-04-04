@@ -3,7 +3,7 @@ const { Client, StringSelectMenuInteraction } = require('discord.js');
 const dotenv = require('dotenv');
 const delayedDeleteMessage = require('../../Commands/utility/deleteMsg');
 dotenv.config();
-const delimiterGeter = require('../../Commands/utility/delimiterGeter');
+const { decodeFromString } = require('../../Commands/utility/delimiterGeter');
 
 module.exports = {
     name: "pageNation",
@@ -22,14 +22,14 @@ module.exports = {
             // 커스텀 아이디가 단순 형식이므로 endsWith()로 판별합니다.
             if (interaction.isButton()) {
                 const customId = interaction.customId;
-                const {option} = delimiterGeter(customId);
-                if (option ==="pageFirst") {
+                const { option } = decodeFromString(customId);
+                if (option === "pageFirst") {
                     musicData.firstPage();
-                } else if (option ==="pagePrev") {
+                } else if (option === "pagePrev") {
                     musicData.prevPage();
-                } else if (option ==="pageNext") {
+                } else if (option === "pageNext") {
                     musicData.nextPage();
-                } else if (option ==="pageLast") {
+                } else if (option === "pageLast") {
                     musicData.lastPage();
                 }
             }

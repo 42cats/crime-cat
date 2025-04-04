@@ -2,6 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits, Role, Client, Guild, ChannelTy
 const { USER_PERMISSION, PRICE_PERMISSION ,KO_PERMISSION ,getUserGrade, showPermisson, hasPermission,setPermisson } = require('./utility/UserGrade');
 const { User :DbUser} = require('./utility/db');
 const UserInfoImage = require('./utility/userInfoToImage');
+const { addUserPermisson } = require('./api/user/user');
 const nameOfCommand = "권한업글";
 const description = "포인트 사용으로 추가 권한 획득";
 
@@ -29,8 +30,8 @@ module.exports = {
             interaction.reply({embeds: [await UserInfoImage(interaction.user)]});
         }
         else{
-            const {success, message} = await buyPermission(interaction.user, botPermission);
-            interaction.reply(`${success ? "✅" : "❌"} ${message}`);
+            const response = await addUserPermisson(interaction.user, botPermission);
+            interaction.reply(`${response.ok ? "✅" : "❌"} ${response.data.message} ${response.data.permissions ? `${response.data.permissions}` : ""}`);
         }
     },
 
@@ -56,44 +57,7 @@ module.exports = {
  */
 async function buyPermission(user, permission) {
     try {
-        const { id } = user;
-        const permissionPrice = PRICE_PERMISSION[permission];
-
-        if (!permissionPrice) {
-            return { success: false, message: '유효하지 않은 권한입니다.' };
-        }
-
-        // 사용자 정보 조회
-        const targetUser = await DbUser.findOne({ where: { user_id: id } });
-
-        if (!targetUser) {
-            return { success: false, message: '사용자 정보를 찾을 수 없습니다.' };
-        }
-
-        // 사용자의 현재 포인트 확인
-        const currentPoints = targetUser.point || 0;
-
-        if (currentPoints < permissionPrice) {
-            return { success: false, message: '포인트가 부족합니다.' };
-        }
-        if(permission === USER_PERMISSION.LOCAL_MUSIC_UP){
-            const prePermissionHas = await hasPermission(user,USER_PERMISSION.LOCAL_MUSIC);
-            if(!prePermissionHas)
-				return { success: false, message: '선행 권한을 먼저 얻으셔야 합니다!.' };
-
-        }
-        // 포인트 차감 및 권한 부여를 트랜잭션으로 처리
-        await DbUser.sequelize.transaction(async (transaction) => {
-            // 포인트 차감
-            await targetUser.update(
-                { point: currentPoints - permissionPrice },
-                { transaction }
-            );
-
-            // 권한 부여
-            await setPermisson(user, permission, transaction);
-        });
-
+            const response = await addUserPermisson(user,permission);
         return { success: true, message: `${KO_PERMISSION[permission]} 권한이 성공적으로 부여되었습니다.` };
     } catch (error) {
         console.error('buyPermission error:', error);

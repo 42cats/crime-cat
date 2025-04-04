@@ -1,5 +1,5 @@
 const { Client, InteractionResponse, AutocompleteInteraction } = require('discord.js');
-const { findHistory } = require('../../Commands/utility/discord_db');
+const { getUserHistory, addUserHistory } = require('../../Commands/api/history/history');
 module.exports = {
 	name: "길드",
 	/**
@@ -13,11 +13,11 @@ module.exports = {
 
 		if (focusedOption.name === '길드') {
 			// 사용자의 길드 히스토리를 가져옴
-			const userHistoryData = await findHistory(user);
+			const userHistoryData = await getUserHistory(user.id);
 
 			// guild_id와 created_at을 맵 형태로 변환
 			const guildMap = userHistoryData.reduce((acc, v) => {
-				acc[v.dataValues.guild_id] = v.dataValues.created_at;
+				acc[v.guildSnowflake] = v.createdAt;
 				return acc;
 			}, {});
 

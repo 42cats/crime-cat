@@ -1,5 +1,5 @@
 const { Client } = require('discord.js');
-const { Guild } = require('./db');
+const { getGuildObserverSet } = require('../api/guild/observer');
 
 /**
  * 관전자 역할을 부여하고 닉네임을 변경하는 함수
@@ -15,14 +15,13 @@ async function addObserverPermission(client, guildId, ...users) {
         }
 
         // 길드 정보 가져오기
-        const guildData = await Guild.findOne({ where: { guild_id: guildId } });
-        if (!guildData) throw new Error("길드를 찾을 수 없습니다.");
+        const guildData = await getGuildObserverSet(guildId);
+        if (!guildData.status === 200) throw new Error("길드를 찾을 수 없습니다.");
 
-        console.log("users =", users);
-
+        console.log("guild data = ", guildData);
         // head_title이 없으면 기본값 "-관전" 설정
-        const head_title = guildData.head_title || "-관전";
-        const observer = guildData.observer;
+        const head_title = guildData.data.headTitle || "-관전";
+        const observer = guildData.data.roleSnowFlake;
 
         // 클라이언트에서 길드 가져오기
         const guild = await client.guilds.fetch(guildId);
@@ -46,16 +45,24 @@ async function addObserverPermission(client, guildId, ...users) {
                     console.warn(`⚠️ 유저 ${userId}를 찾을 수 없습니다.`);
                     continue;
                 }
-
-                // 역할 부여 (observer가 있을 경우에만 실행)
-                if (role && !member.roles.cache.has(role.id)) {
-                    console.log(`🟢 ${userId}에게 관전 역할을 부여 중...`);
-                    await member.roles.add(role);
+                try {
+                    if (role && !member.roles.cache.has(role.id)) {
+                        console.log(`🟢 ${userId}에게 관전 역할을 부여 중...`);
+                        await member.roles.add(role);
+                    }
+                } catch (error) {
+                    console.error("add observer add role", error.stack);
                 }
+                // 역할 부여 (observer가 있을 경우에만 실행)
 
                 // 기존 닉네임 앞에 head_title 추가 (최대 32자 제한)
-                const newNickname = `${head_title} ${member.displayName}`.slice(0, 32);
-                await member.setNickname(newNickname);
+                const newNickname = `${head_title} ${member.user.globalName}`.slice(0, 32);
+                try {
+                    await member.setNickname(newNickname);
+
+                } catch (error) {
+                    console.log("add observer set nick name ", error.stack);
+                }
 
                 console.log(`✅ 유저 ${userId}에게 닉네임 변경 완료: ${newNickname}`);
             } catch (err) {

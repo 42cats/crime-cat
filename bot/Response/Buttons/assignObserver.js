@@ -1,5 +1,5 @@
 const { PermissionFlagsBits, Client, ButtonInteraction, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const delimiterGeter = require('../../Commands/utility/delimiterGeter');
+const {decodeFromString} = require('../../Commands/utility/delimiterGeter');
 const addObserverPermission = require('../../Commands/utility/addObserverPemission');
 
 module.exports = {
@@ -14,7 +14,7 @@ module.exports = {
         try {
             const { customId } = interaction;
             console.log("custom_id", customId);
-            const { head: guild_Id } = delimiterGeter(customId);
+            const { head: guild_Id } = decodeFromString(customId);
             const users = Array.from(client.voteStorage.get(guild_Id).keys());
             await addObserverPermission(client, guild_Id, users);
             client.voteStorage.delete(guild_Id);

@@ -18,29 +18,29 @@ module.exports = {
 		const newChannel = newState.channel;
 
 		// Redis 키로 guild.id를 추천 (guild.name은 변경 가능)
-		const redisKey = guild.name;
+		const redisKey = guild.id;
 
 		// ───────────────────────────────────
 		// 1) "새 채널"이 존재하면 -> 유저가 들어옴 (또는 이동)
 		// ───────────────────────────────────
-		if (newChannel && newChannel.type === ChannelType.GuildVoice) {
-			// 봇 제외 멤버 수
-			const nonBotMembers = newChannel.members.filter(m => !m.user.bot);
-			const count = nonBotMembers.size;
+		// if (newChannel && newChannel.type === ChannelType.GuildVoice) {
+		// 	// 봇 제외 멤버 수
+		// 	const nonBotMembers = newChannel.members.filter(m => !m.user.bot);
+		// 	const count = nonBotMembers.size;
 
-			// 인원이 2명 이상이라면 Redis에 저장
-			if (count >= 4) {
-				await client.redis.set(redisKey, count);
-				console.log(`[INFO] '${newChannel.name}' 멤버 수(${count}) → Redis 저장`);
-			}
-			else {
-				// 인원이 1명 이하라면 Redis에서 삭제
-				if (await client.redis.exists(redisKey)) {
-					await client.redis.del(redisKey);
-					console.log(`[INFO] '${newChannel.name}' 멤버 ${count}명 → Redis에서 키(${redisKey}) 삭제`);
-				}
-			}
-		}
+		// 	// 인원이 2명 이상이라면 Redis에 저장
+		// 	if (count >= 4) {
+		// 		await client.redis.set(redisKey, count);
+		// 		console.log(`[INFO] '${newChannel.name}' 멤버 수(${count}) → Redis 저장`);
+		// 	}
+		// 	else {
+		// 		// 인원이 1명 이하라면 Redis에서 삭제
+		// 		if (await client.redis.exists(redisKey)) {
+		// 			await client.redis.del(redisKey);
+		// 			console.log(`[INFO] '${newChannel.name}' 멤버 ${count}명 → Redis에서 키(${redisKey}) 삭제`);
+		// 		}
+		// 	}
+		// }
 
 		// ───────────────────────────────────
 		// 2) "옛 채널"이 존재하면 -> 유저가 떠남 (또는 이동)
@@ -49,16 +49,10 @@ module.exports = {
 			const nonBotMembers = oldChannel.members.filter(m => !m.user.bot);
 			const count = nonBotMembers.size;
 
-			if (count >= 4) {
-				await client.redis.set(redisKey, count);
-				console.log(`[INFO] '${oldChannel.name}' 멤버 수(${count}) → Redis 저장`);
-			}
-			else {
-				// 인원이 1명 이하라면 Redis에서 삭제
-				if (await client.redis.exists(redisKey)) {
-					await client.redis.del(redisKey);
+			if (count <= 2) {
+				// 인원이 2명 이하라면 Redis에서 삭제
+				await client.redis.deleteField("players",redisKey);
 					console.log(`[INFO] '${oldChannel.name}' 멤버 ${count}명 → Redis에서 키(${redisKey}) 삭제`);
-				}
 			}
 		}
 

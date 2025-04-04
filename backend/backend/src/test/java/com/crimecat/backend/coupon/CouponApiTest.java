@@ -7,17 +7,24 @@ import com.crimecat.backend.coupon.repository.CouponRepository;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.Commit;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -134,5 +141,57 @@ public class CouponApiTest {
                         .content(objectMapper.writeValueAsString(allDtoNull)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("유저 정보가 없습니다."));
+    }
+
+    @Test
+    void 쿠폰_동시_등록_테스트() throws Exception {
+        Coupon coupon = couponRepository.save(Coupon.create(1000, 7));
+        String couponId = coupon.getId().toString();
+
+        int threadCount = 10;
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        AtomicInteger successCount = new AtomicInteger(0); // ✅ 성공 응답 카운터
+
+        for (int i = 0; i < threadCount; i++) {
+            new Thread(() -> {
+                try {
+                    String snowflake = String.valueOf(ThreadLocalRandom.current().nextInt(10000000, 100000000));
+                    User user = userRepository.save(User.of(snowflake, "user" + snowflake, "avatar"));
+
+                    CouponRedeemRequestDto dto = new CouponRedeemRequestDto(user.getSnowflake(), couponId);
+
+                    mockMvc.perform(patch("/v1/bot/coupons")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(dto)))
+                            .andDo(result -> {
+                                String body = result.getResponse().getContentAsString();
+                                System.out.println("Thread response: " + body);
+                                if (body.contains("Coupon redeemed successfully")) {
+                                    successCount.incrementAndGet();
+                                }
+                            });
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    latch.countDown();
+                }
+            }).start();
+        }
+
+        latch.await();
+
+        // ✅ 검증: 단 하나의 성공만 있어야 한다
+        assertThat(successCount.get()).isEqualTo(1);
+
+        // ✅ 쿠폰이 실제로 사용되었는지도 검증
+        Coupon usedCoupon = couponRepository.findById(UUID.fromString(couponId)).orElseThrow();
+        assertThat(usedCoupon.isUsed()).isTrue();
+    }
+
+    @AfterEach
+    void cleanUp() {
+        couponRepository.deleteAll();
+        userRepository.deleteAll();
     }
 }

@@ -21,14 +21,9 @@ const client = new Client({
 	partials: [Partials.Channel]
 });
 
-client.redis = require("./Commands/utility/redis");
+client.redis = require('./Commands/utility/redis');
 (async () => {
-	// await client.redis.set('aa', "5");
-	// await client.redis.set('bb', "4");
-	// await client.redis.set('cc', "7");
-	// await client.redis.set('dd', "6");
-	// const data = await client.redis.get('aa');
-	// console.log("redis = ", data);
+	await client.redis.connect();
 
 })();
 
@@ -111,6 +106,7 @@ for (const file of autoCompleteResponseFiles) {
 let currentIndex = 0;
 let messege = [];
 const updateActivity = require("./Commands/utility/updateActivity");
+const redisManager = require('./Commands/utility/redis');
 // It makes some properties non-nullable.
 client.once(Events.ClientReady, async (readyClient) => {
 	console.log(`Ready! Logged in as !!${readyClient.user.tag}`);
@@ -134,24 +130,23 @@ client.on(Events.GuildCreate, async (guild) => {
 		const list = [...client.guilds.cache.values()];
 		const owner = await client.users.fetch(guild.ownerId);
 		const tagetGuild = await client.guilds.cache.get(guild.id);
-		const ownerGrade = await getUserGrade(owner);
-		console.log("owner", ownerGrade, "  ");
-		if (hasPermission(owner, USER_PERMISSION.ADD_GUILD_ABLE)) {
-			await processGuildAndUsersWithHistory(client, tagetGuild);
-			return;
-		}
+		// const ownerGrade = await getUserGrade(owner);
+		// if (hasPermission(owner, USER_PERMISSION.ADD_GUILD_ABLE)) {
+		// 	await processGuildAndUsersWithHistory(client, tagetGuild);
+		// 	return;
+		// }
 		const matchingGuilds = list.filter(v => v.ownerId === guild.ownerId);  // 일치하는 guild 객체들 필터링
 
-		if (matchingGuilds.length >= 2) {
-			console.log("이미 한 개 이상의 길드에 오너로 등록됨:", guild.ownerId, matchingGuilds);
-			if (tagetGuild) {
-				await tagetGuild.leave();
-				if (owner.dmChannel) {
-					await owner.send('이미 당신이 오너로 된 길드가 2개 이상 추가되어 있습니다. 협조 감사드립니다! :)');
-				}
-			}
-			return;
-		}
+		// if (matchingGuilds.length >= 2) {
+		// 	console.log("이미 한 개 이상의 길드에 오너로 등록됨:", guild.ownerId, matchingGuilds);
+		// 	if (tagetGuild) {
+		// 		await tagetGuild.leave();
+
+		// 		owner && await owner.send('이미 당신이 오너로 된 길드가 2개 이상 추가되어 있습니다. 협조 감사드립니다! :)');
+
+		// 	}
+		// 	return;
+		// }
 		console.log("약관 전송");
 		termsReply.execute(client, owner, guild, 1);
 		owner && await owner.send('짭냥이 개발에 협조해 주셔서 감사합니다 :)');

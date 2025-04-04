@@ -88,12 +88,13 @@ module.exports = {
 async function musicLogic(client, guild, user) {
 	const guildId = guild.id;
 
+	let musicData = null;
 	if (!client.serverMusicData.has(guildId)) {
-		await client.serverMusicData.set(guildId, new GuildURLManager(guildId, client));
+		musicData = new GuildURLManager(guildId, client, user); 
+		await client.serverMusicData.set(guildId, musicData);
 	}
-	const musicData = client.serverMusicData.get(guildId);
-	if (!musicData.operater || (musicData.operater !== user)) {
-		musicData.operater = user;
+	else{
+		musicData = client.serverMusicData.get(guildId);
 	}
 	await musicData.playlistManager.refresh();
 	await musicData.audioPlayerManager.join(musicData.operater);

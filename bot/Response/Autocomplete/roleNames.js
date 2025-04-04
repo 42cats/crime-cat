@@ -1,31 +1,41 @@
-const { Client, InteractionResponse, AutocompleteInteraction } = require('discord.js');
-const { findHistory, getCharacterName } = require('../../Commands/utility/discord_db');
+const { Client, AutocompleteInteraction } = require('discord.js');
+const { getCharacterNames } = require('../../Commands/api/character/character');
+
 module.exports = {
 	name: "캐릭터이름",
 	/**
 	 * @param {Client} client 
 	 * @param {AutocompleteInteraction} interaction 
-	 * @returns 
 	 */
 	execute: async (client, interaction) => {
-		const { user, guildId } = interaction;
-		console.log("guild id ", guildId);
+		const { guildId } = interaction;
 		const focusedOption = interaction.options.getFocused(true);
+
 		if (focusedOption.name === '캐릭터이름') {
-			// 클라이언트의 guilds.cache에서 모든 길드를 가져와 선택지로 변환
-			const guildIdMap = await getCharacterName(guildId);
-			const values = guildIdMap.map(v => v.dataValues);
-			console.log("guildmap = ", values);
-			const choices = values
-				.map(role => ({
-					name: role.character_name,
-					value: role.character_name
+			try {
+				const result = await getCharacterNames(guildId);
+
+				// API 응답에서 characters 배열 추출
+				const characters = result?.characters || [];
+
+				// 캐릭터 이름을 선택지로 변환
+				const choices = characters.map(char => ({
+					name: char.name,
+					value: char.name
 				}));
-			// 사용자가 입력한 값과 시작하는 길드 이름을 필터링 (대소문자 구분 없이)
-			const filteredChoices = choices.filter(choice =>
-				choice.name.toLowerCase().startsWith(focusedOption.value.toLowerCase())
-			).slice(0, 25); // Discord는 최대 25개 선택지를 반환
-			await interaction.respond(filteredChoices);
+
+				// 입력값으로 필터링
+				const filteredChoices = choices
+					.filter(choice =>
+						choice.name.toLowerCase().startsWith(focusedOption.value.toLowerCase())
+					)
+					.slice(0, 25); // Discord 제한
+
+				await interaction.respond(filteredChoices);
+			} catch (err) {
+				console.error("오토컴플리트 에러:", err);
+				await interaction.respond([]); // 실패 시 빈 선택지 반환
+			}
 		}
-	},
+	}
 };

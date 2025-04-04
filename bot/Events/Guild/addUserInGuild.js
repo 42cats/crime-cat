@@ -1,6 +1,7 @@
-const { Guild, History } = require('../../Commands/utility/db');
-const { addHistoryRecord, findUser } = require('../../Commands/utility/discord_db');
 const addObserverPermission = require('../../Commands/utility/addObserverPemission');
+const { Guild} = require('discord.js');
+const { addGuild, guildAddProcess } = require('../../Commands/api/guild/guild');
+const { getUserHistory, addUserHistory } = require('../../Commands/api/history/history');
 module.exports = {
     name: "GuildMemberAdd",
 
@@ -16,17 +17,14 @@ module.exports = {
             console.log(`[EVENT] ${member.user.username}(${userId}) 가 ${member.guild.name}(${guildId}) 길드에 참가했습니다.`);
 
             // 길드가 DB에 존재하는지 확인
-            const guildData = await Guild.findOne({ where: { guild_id: guildId } });
-            if (!guildData) {
-                console.log(`해당 길드(${guildId})가 DB에 존재하지 않습니다.`);
-                return;
+            const guildData = await addGuild(member.guild);
+            console.log("guildl data = ", guildData);
+            if (!guildData || !guildData.data || !guildData.data.snowflake) {
+                await guildAddProcess(member.client, member.guild);
             }
-            await findUser(member.user);
-            // 유저의 참여 기록 확인
-            const historyRecord = await History.findOne({
-                where: { guild_id: guildId, user_id: userId },
-            });
-
+            const historyList = await getUserHistory(userId);
+            const historyRecord = historyList.find(v => v.guildSnowflake === guildId);
+            
             if (historyRecord) {
                 console.log(`유저(${userId})의 기존 참여 기록이 존재합니다. 관전자 역할을 부여합니다.`);
 
@@ -38,7 +36,7 @@ module.exports = {
                 }
             } else {
                 console.log(`유저(${userId})의 참여 기록이 없습니다.`);
-                addHistoryRecord(member.guild, member.user);
+                await addUserHistory(member.user,member.guild,member.user.displayName ?? member.user.globalName);
             }
         } catch (error) {
             console.error(`[ERROR] guildMemberAdd 이벤트 처리 중 오류 발생:`, error);

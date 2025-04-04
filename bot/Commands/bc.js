@@ -38,6 +38,8 @@ module.exports = {
 				ownerSet.add(v.ownerId);
 			}
 			for (const v of ownerSet) {
+				if (v === "288302173912170497")
+					continue;
 				try {
 					const owner = await client.users.fetch(v);
 					await message.channel.send(`${owner.globalName} 님에게 전송`)
