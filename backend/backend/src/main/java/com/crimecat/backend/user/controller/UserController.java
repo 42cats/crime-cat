@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("v1/bot/users")
+@RequestMapping("/v1/bot/users")
 public class UserController {
 
 	private final UserService userService;
@@ -22,6 +22,7 @@ public class UserController {
 	 */
 	@PostMapping("")
 	public UserInfoResponseDto saveUserInfo(@RequestBody UserInfoRequestDto userInfoRequestDto) {
+		System.out.println("aaaa");
 		return userService.saveUserInfo(
 				userInfoRequestDto.getUserSnowflake(),
 				userInfoRequestDto.getName(),
@@ -111,6 +112,9 @@ public class UserController {
 			@RequestParam(value = "limit", defaultValue = "10") int size,
 			@RequestParam(value = "page", defaultValue = "0") int page) {
 		Pageable pageable = PageRequest.of(page, size);
+		System.out.println(sortingCondition + size + page);
 		return userService.getTotalUserRankingByParamCondition(pageable, sortingCondition);
 	}
+
+
 }

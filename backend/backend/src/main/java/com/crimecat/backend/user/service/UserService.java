@@ -3,6 +3,8 @@ package com.crimecat.backend.user.service;
 import com.crimecat.backend.gameHistory.domain.GameHistory;
 import com.crimecat.backend.gameHistory.dto.IGameHistoryRankingDto;
 import com.crimecat.backend.gameHistory.service.GameHistoryQueryService;
+import com.crimecat.backend.guild.domain.Guild;
+import com.crimecat.backend.guild.service.GuildService;
 import com.crimecat.backend.guild.service.GuildQueryService;
 import com.crimecat.backend.permission.domain.Permission;
 import com.crimecat.backend.permission.service.PermissionService;
@@ -14,6 +16,7 @@ import io.micrometer.common.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -32,12 +35,15 @@ public class UserService {
 
 	private final static String SORT_BY_POINT = "point";
 	private final static String SORT_BY_PLAY_TIME = "playtime";
+	private final static String SORT_BY_MAKERS = "makers";
+	private final static String SORT_BY_BEST_THEME = "theme";
 
 	private final UserQueryService userQueryService;
 	private final PointHistoryService pointHistoryService;
 	private final PermissionService permissionService;
 	private final UserPermissionService userPermissionService;
 	private final GameHistoryQueryService gameHistoryQueryService;
+	private final GuildService guildService;
 	private final GuildQueryService guildQueryService;
 
 
@@ -255,7 +261,49 @@ public class UserService {
 							ghp.getPlayCount()))
 					.collect(Collectors.toList());
 
-		} else {
+		} else if (sortingCondition.equals(SORT_BY_MAKERS)) {
+			List<Guild> allGuild = guildService.findAllGuild();
+
+			// ownerSnowflake -> guild count 매핑
+			Map<String, Long> guildCountMap = allGuild.stream()
+					.collect(Collectors.groupingBy(Guild::getOwnerSnowflake, Collectors.counting()));
+
+			AtomicInteger rank = new AtomicInteger(1);
+
+			ranking = guildCountMap.entrySet().stream()
+					.sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+					.map(entry -> new TotalUserRankingByMakerDto(
+							entry.getKey(),
+							rank.getAndIncrement(),
+							entry.getValue().intValue()
+					))
+					.skip((long) pageable.getPageNumber() * pageable.getPageSize()) // 페이징 처리
+					.limit(pageable.getPageSize())
+					.collect(Collectors.toList());
+		}
+		else if(sortingCondition.equals(SORT_BY_BEST_THEME)){
+			List<GameHistory> allGameHistory = gameHistoryQueryService.getAllGameHistory();
+
+			// 길드별 플레이 수 집계
+			Map<String, Long> guildPlayCountMap = allGameHistory.stream()
+					.collect(Collectors.groupingBy(
+							gh -> gh.getGuild().getSnowflake(),
+							Collectors.counting()
+					));
+			AtomicInteger rank = new AtomicInteger(1);
+
+			ranking = guildPlayCountMap.entrySet().stream()
+					.sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+					.map(entry -> new TotalGuildRankingByPlayCountDto(
+							entry.getKey(),
+							rank.getAndIncrement(),
+							entry.getValue().intValue()
+					))
+					.skip((long) pageable.getPageNumber() * pageable.getPageSize())
+					.limit(pageable.getPageSize())
+					.collect(Collectors.toList());
+		}
+		else {
 			return new TotalUserRankingFailedResponseDto("params type error");
 		}
 		return new TotalUserRankingSuccessResponseDto(pageable.getPageNumber(), ranking.size(), totalUserCount, ranking);
