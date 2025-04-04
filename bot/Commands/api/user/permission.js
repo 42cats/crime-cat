@@ -22,7 +22,7 @@ async function isPermissionHas(userId, permissionName) {
 		console.log('응답 데이터:', response.status);
 		return response.status === 200;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.message);
+		console.error('API 요청 실패:', error.response?.data || error.response.data.message);
 		return false; // ✅ 반드시 false 반환
 	}
 }
@@ -51,7 +51,7 @@ async function addUserPermisson(user, permissionName) {
 		console.log('응답 데이터:', response.data.message);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 	}
 }
 
@@ -81,7 +81,7 @@ async function addPermisson(name, price, duration = 28) {
 		console.log('응답 데이터:', response.data.message, response.data);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 	}
 }
 
@@ -111,7 +111,7 @@ async function editPermisson(name, price, duration = 28) {
 		console.log('응답 데이터:', response.data.message, response.data);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 	}
 }
 
@@ -130,7 +130,7 @@ async function deletePermisson(name) {
 		console.log('응답 데이터:', response.data.message, response.data);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.message);
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 	}
 }
 

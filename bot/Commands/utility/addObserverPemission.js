@@ -1,5 +1,5 @@
 const { Client } = require('discord.js');
-const { getGuildObserverSet } = require('../api/guild/observer');
+const { getGuildObserverSet, addGuildObserverSet } = require('../api/guild/observer');
 
 /**
  * 관전자 역할을 부여하고 닉네임을 변경하는 함수
@@ -33,6 +33,7 @@ async function addObserverPermission(client, guildId, ...users) {
         if (observer) {
             role = guild.roles.cache.get(observer) || await guild.roles.fetch(observer).catch(() => null);
             if (!role) {
+                await addGuildObserverSet(guildId, head_title);
                 console.warn(`⚠️ 관전 역할(${observer})을 찾을 수 없습니다.`);
             }
         }

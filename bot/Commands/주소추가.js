@@ -169,7 +169,7 @@ async function addUrl(guildId, title, url, user) {
 
 
 		// Add URL, thumbnail, and duration to the GuildURL table
-		await addGuildMusic("123",{
+		await addGuildMusic(guildId,{
 			title,
 			url,
 			thumbnail,
