@@ -1,14 +1,16 @@
 package com.crimecat.backend.gameHistory.repository;
 
-import com.crimecat.backend.gameHistory.domain.GameHistory;
-import com.crimecat.backend.gameHistory.dto.IGameHistoryRankingDto;
 import java.util.List;
 import java.util.UUID;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import com.crimecat.backend.gameHistory.domain.GameHistory;
+import com.crimecat.backend.gameHistory.dto.IGameHistoryRankingDto;
 
 @Repository
 public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> {
@@ -31,4 +33,10 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 
 	@Query("SELECT gh FROM GameHistory gh")
 	List<GameHistory> findAllGameHistories();
+
+	@Query("SELECT gh FROM GameHistory gh " +
+			"WHERE (:guildSnowflake IS NULL OR gh.guild.snowflake = :guildSnowflake) " +
+			"AND (:discordAlarm IS NULL OR gh.user.discordAlarm = :discordAlarm)")
+	List<GameHistory> findUsersByGuildSnowflakeAndDiscordAlarm(@Param("guildSnowflake") String guildSnowflake,
+														 @Param("discordAlarm") Boolean discordAlarm);
 }

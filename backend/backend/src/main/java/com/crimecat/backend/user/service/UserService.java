@@ -4,8 +4,8 @@ import com.crimecat.backend.gameHistory.domain.GameHistory;
 import com.crimecat.backend.gameHistory.dto.IGameHistoryRankingDto;
 import com.crimecat.backend.gameHistory.service.GameHistoryQueryService;
 import com.crimecat.backend.guild.domain.Guild;
-import com.crimecat.backend.guild.repository.GuildRepository;
 import com.crimecat.backend.guild.service.GuildService;
+import com.crimecat.backend.guild.service.GuildQueryService;
 import com.crimecat.backend.permission.domain.Permission;
 import com.crimecat.backend.permission.service.PermissionService;
 import com.crimecat.backend.point.service.PointHistoryService;
@@ -24,8 +24,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +44,7 @@ public class UserService {
 	private final UserPermissionService userPermissionService;
 	private final GameHistoryQueryService gameHistoryQueryService;
 	private final GuildService guildService;
+	private final GuildQueryService guildQueryService;
 
 
 	@Transactional(readOnly = true)
@@ -304,5 +307,27 @@ public class UserService {
 			return new TotalUserRankingFailedResponseDto("params type error");
 		}
 		return new TotalUserRankingSuccessResponseDto(pageable.getPageNumber(), ranking.size(), totalUserCount, ranking);
+	}
+
+	public UserListResponseDto getUserList(String guildSnowflake, Boolean discordAlarm) {
+		if (!guildQueryService.existsBySnowflake(guildSnowflake)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "guild not exists");
+		}
+		return new UserListResponseDto(
+				gameHistoryQueryService.findUsersByGuildSnowflakeAndDiscordAlarm(guildSnowflake, discordAlarm).stream()
+						.map(GameHistory::getUser)
+						.map(User::getSnowflake)
+						.toList()
+		);
+	}
+
+	public UserPatchResponseDto updateUserInfo(String userSnowflake, String avatar, Boolean discordAlarm) {
+		User user = userQueryService.findByUserSnowflake(userSnowflake);
+		if (user == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user not exists");
+		}
+		user.setAvatar(avatar);
+		user.setDiscordAlarm(discordAlarm);
+		return new UserPatchResponseDto(new UserPatchDto(userQueryService.saveUser(user)));
 	}
 }
