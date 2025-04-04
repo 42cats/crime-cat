@@ -8,10 +8,9 @@
  */
 
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { GradeCode } = require("./utility/db");
+const { createCoupon } = require('./api/coupon/coupon');
 const nameOfCommand = "코드생성";
 const description = "등급업 코드 생성";
-
 module.exports = {
 	// 명령어 별칭(필요 시 추가)
 	aliases: [],
@@ -54,38 +53,9 @@ module.exports = {
 				// 가격과 생성할 코드 수 설정
 				let price = args[0] ? Number(args[0]) : 500;
 				let count = args[1] ? Number(args[1]) : 1;
-				console.log("count = " ,count, args);
-				// 생성된 코드를 저장할 배열
-				const generatedCodes = [];
-
-				for (let i = 0; i < count; i++) {
-					let code;
-					let exists = true;
-					let attempts = 0;
-
-					// 고유한 코드를 생성하기 위해 최대 10번 시도
-					while (exists && attempts < 10) {
-						code = generateRandomCode(12);
-						const found = await GradeCode.findOne({ where: { code } });
-						if (!found) {
-							exists = false;
-						}
-						attempts++;
-					}
-
-					if (exists) {
-						return message.channel.send("고유 코드를 생성하지 못했습니다. 나중에 다시 시도해주세요.");
-					}
-
-					// 고유 코드가 생성되면 DB에 저장
-					await GradeCode.create({ code, price });
-					generatedCodes.push(code);
-					console.log(code );
-				}
-
-				// 생성된 모든 코드를 메시지로 전송
-				const codeList = generatedCodes.map((code, index) => `${index + 1}. **${code}**  price **${price}**`).join('\n');
-				message.channel.send(`생성된 고유 코드:\n${codeList}`);
+				let duration = args[2] ? Number(args[2]) : 28;
+				const msg = await getCoupons(price,count,duration);
+				message.channel.send(`생성된 고유 코드:\n${msg}`);
 			} catch (error) {
 				console.error("코드생성 명령어 오류:", error);
 				message.channel.send("코드 생성 중 오류가 발생했습니다.");
@@ -99,17 +69,12 @@ module.exports = {
 	permissionLevel: PermissionFlagsBits.Administrator // 예시: 메시지 전송 권한 (필요에 따라 수정)
 };
 
-
-		/**
-		 * 지정된 길이의 랜덤 코드를 생성합니다.
-		 * @param {number} length - 생성할 코드의 길이
-		 * @returns {string} - 생성된 랜덤 코드
-		 */
-		function generateRandomCode(length = 12) {
-			const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-			let result = '';
-			for (let i = 0; i < length; i++) {
-				result += chars.charAt(Math.floor(Math.random() * chars.length));
-			}
-			return result;
-		}
+async function getCoupons(value, count, duration = 28) {
+	const data = await createCoupon(value,count,duration);
+	if(!data?.coupons)
+		return data.message;
+	const codeList = data.coupons.map((data, index) => {
+		console.log(data);
+		return`${index + 1}. \`\`\`${data.code}\`\`\`  price **${data.point}** duration **${String(data.expireDate).slice(0,10)}**`}).join('\n');
+	return codeList
+}

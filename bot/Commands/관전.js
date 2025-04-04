@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, Role, Client, Guild, ChannelType, PermissionsBitField, User, InteractionResponse } = require('discord.js');
 const { USER_PERMISSION, getUserGrade, showPermisson, hasPermission } = require('./utility/UserGrade');
+const { isPermissionHas } = require('./api/user/permission');
 const nameOfCommand = "관전";
 const description = "참여했던 크씬에 관전자로 참가합니다.";
 
@@ -29,8 +30,8 @@ module.exports = {
         const isAnyGuildOwner = interaction.client.guilds.cache.some(guild => guild.ownerId === interaction.user.id);
         if (!isAnyGuildOwner) {
             // 길드장이 아니라면 일반 사용자 권한 레벨 체크 수행
-            if (! await hasPermission(interaction.user, USER_PERMISSION.OBSERVER)) {
-                return await interaction.reply(`해당 권한이 없습니다.  \n당신이 가진 권한은 [${await showPermisson(interaction.user)}]`);
+            if (! await isPermissionHas(interaction.user.id, "관전")) {
+                return await interaction.reply(`해당 권한이 없습니다.`);
             }
         }
         if (!targetGuild) {

@@ -1,4 +1,4 @@
-const delimiterGeter = require('../../Commands/utility/delimiterGeter');
+const { decodeFromString } = require('../../Commands/utility/delimiterGeter');
 const { Client, StringSelectMenuInteraction } = require('discord.js');
 module.exports = {
     name: 'SELECT_MENU',
@@ -8,7 +8,7 @@ module.exports = {
      */
     execute: async (client, interaction) => {
         if (interaction.isStringSelectMenu()) {
-            const {command} = delimiterGeter(interaction.values[0]);
+            const { command } = decodeFromString(interaction.values[0]);
             console.log(`Command: ${command}`);
 
             // Response 실행

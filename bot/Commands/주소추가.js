@@ -1,9 +1,9 @@
 const { SlashCommandBuilder, PermissionFlagsBits, Message, Client } = require('discord.js');
 const axios = require('axios');
-const { GuildURL, User } = require('./utility/db');
 const dotenv = require('dotenv');
 const path = require('path');
 const { USER_PERMISSION, getUserGrade, hasPermission } = require('./utility/UserGrade');
+const { getGuildMusic, addGuildMusic } = require('./api/guild/music');
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 const API = process.env.GOOGLE_API;
 
@@ -33,7 +33,7 @@ module.exports = {
 		try {
 			const endMsg = await addUrl(guildId, title, url, interaction.user);
 			await interaction.reply({ content: endMsg, ephemeral: true });
-			updatePlayer(interaction.client,guildId);
+			updatePlayer(interaction.client, guildId);
 		}
 		catch (e) {
 			await interaction.reply({ content: String(e), ephemeral: true });
@@ -49,11 +49,11 @@ module.exports = {
 		 * @returns 
 		 */
 		async execute(message, args) {
-			if (message.guildId === '1328921864252293130') {
-				await bulkAddUrls();
-				message.channel.send("추가 완료");
-				return;
-			}
+			// if (message.guildId === '1328921864252293130') {
+			// 	await bulkAddUrls();
+			// 	message.channel.send("추가 완료");
+			// 	return;
+			// }
 			if (args.length != 2) {
 				if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
 				await message.channel.send({ content: "타이틀과 Ulr 두개의 인자가 필요합니다.", ephemeral: true });
@@ -66,7 +66,7 @@ module.exports = {
 				const endMsg = await addUrl(guildId, args[0], args[1], client.author);
 				// const endMsg = bulkAddUrls();
 				await message.channel.send({ content: endMsg, ephemeral: true });
-				updatePlayer(client,guildId);
+				updatePlayer(client, guildId);
 			}
 			catch (e) {
 				await message.channel.send({ content: String(e), ephemeral: true });
@@ -102,14 +102,13 @@ async function bulkAddUrls() {
 	];
 	const promises = urls.map(async ({ guildId, title, url, thumbnail, duration }) => {
 		try {
-			const result = await GuildURL.create({
-				owner_id: guildId,
+			const result = await addGuildMusic(guildId,{
 				title,
 				url,
 				thumbnail,
 				duration,
 			});
-			console.log(`URL added successfully: ${title}`);
+			console.log(`URL added successfully: ${title}`, result);
 		} catch (error) {
 			console.error(`Failed to add URL: ${url}`, error.message);
 		}
@@ -129,7 +128,7 @@ async function addUrl(guildId, title, url, user) {
 		throw Error('길드아이디 오류. 관리자에게 문의');
 	}
 
-	const count = await GuildURL.findAndCountAll({ where: { owner_id: guildId } });
+	const count = await getGuildMusic(guildId);
 	if (count.count > 14) {
 		if (!await hasPermission(user, USER_PERMISSION.URL_UNLIMIT))
 			throw Error(`기본 사용자의 최대 추가목록은 15개 입니다. 당신은 ${count.count}개의 목록을 가지고 있습니다.`);
@@ -170,8 +169,7 @@ async function addUrl(guildId, title, url, user) {
 
 
 		// Add URL, thumbnail, and duration to the GuildURL table
-		await GuildURL.create({
-			owner_id: guildId,
+		await addGuildMusic("123",{
 			title,
 			url,
 			thumbnail,
@@ -191,8 +189,8 @@ async function addUrl(guildId, title, url, user) {
  * 
  * @param {Client} client 
  */
-async function updatePlayer(client,guildId) {
-	if (!client.serverMusicData.has(guildId)) {
+async function updatePlayer(client, guildId) {
+	if (!client.serverMusicData?.has(guildId)) {
 		return;
 	}
 	const musicData = client.serverMusicData.get(guildId);

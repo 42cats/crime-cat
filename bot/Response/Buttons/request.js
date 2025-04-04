@@ -2,7 +2,7 @@ const { Client, ButtonInteraction } = require('discord.js');
 const dotenv = require('dotenv');
 const delayedDeleteMessage = require('../../Commands/utility/deleteMsg');
 dotenv.config();
-const delimiterGeter = require('../../Commands/utility/delimiterGeter');
+const {decodeFromString} = require('../../Commands/utility/delimiterGeter');
 const {
 	AudioPlayerStatus,
 } = require('@discordjs/voice');
@@ -18,7 +18,7 @@ module.exports = {
 	 * @returns 
 	*/
 	execute: async (client, interaction) => {
-		const { head, command, option } = delimiterGeter(interaction.customId);
+		const { head, command, option } = decodeFromString(interaction.customId);
 		if (option === 'accept') {
 			if (interaction.message.deletable)
 				interaction.message.delete();

@@ -1,7 +1,7 @@
 // PlaylistManager.js
-const { GuildURL } = require('./db');
 const fs = require('fs');
 const path = require('path');
+const { getGuildMusic } = require('../api/guild/music');
 /**
  * 플레이리스트 관리 전담 클래스
  * (정렬, 페이징, 데이터 로드, 셔플 등)
@@ -113,16 +113,14 @@ class PlaylistManager {
 				}));
 			} else {
 				// Fetch entries from the database
-				const urls = await GuildURL.findAll({
-					where: { owner_id: this.guildId },
-				});
+				const urls = await getGuildMusic(this.guildId);
 				this.playlist = urls.map((url, i) => ({
 					id: i,
-					title: url.dataValues.title,
-					url: url.dataValues.url,
-					thumbnail: url.dataValues.thumbnail,
-					duration: url.dataValues.duration,
-					createdAt: url.dataValues.created_at.valueOf(),
+					title: url.title,
+					url: url.youtubeUrl,
+					thumbnail: url.thumbnail,
+					duration: url.duration,
+					createdAt: url.createdAt,
 				}));
 			}
 	
@@ -137,10 +135,10 @@ class PlaylistManager {
 	// 정렬 변경 (날짜 ↔ 알파벳)
 	sortList() {
 		if (this.sort === ABC) {
-			this.playlist = this.playlist.sort((a, b) => a.createdAt - b.createdAt);
+			// this.playlist = this.playlist.sort((a, b) => a.createdAt - b.createdAt);
 			this.sort = DATE;
 		} else if (this.sort === DATE) {
-			this.playlist = this.playlist.sort((a, b) => a.title.localeCompare(b.title));
+			// this.playlist = this.playlist.sort((a, b) => a.title.localeCompare(b.title));
 			this.sort = ABC;
 		}
 	}
@@ -203,13 +201,24 @@ class PlaylistManager {
 		this.currentIndex = (this.currentIndex - 1 + this.playlist.length) % this.playlist.length;
 		await playCallback(this.currentIndex);
 	}
-
+	getSortedList() {
+		if (this.sort === ABC) {
+			return [...this.playlist].sort((a, b) => a.title.localeCompare(b.title));
+		}
+		if (this.sort === DATE) {
+			return [...this.playlist].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+		}
+		return [...this.playlist];
+	}
+	
 	// 현재 페이지 계산
 	getCurrentPage() {
+		const sorted = this.getSortedList();
 		const start = this.currentPage * this.pageSize;
 		const end = start + this.pageSize;
-		return this.playlist.slice(start, end);
+		return sorted.slice(start, end);
 	}
+	
 
 	nextPage() {
 		if (this.currentPage < this.maxPage) {

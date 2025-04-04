@@ -1,43 +1,57 @@
 
 const delayedDeleteMessage = require('./deleteMsg');
-// 모든 메시지 삭제 함수
 async function deleteAllMessages(channelId, client) {
 	try {
 		const channel = await client.channels.fetch(channelId);
 
 		if (!channel || !channel.isTextBased()) {
-			const msg = await channel.send('찾을수 없는 채널이거나 택스트 채널이 아닙니다.');
+			const msg = await channel.send('찾을 수 없는 채널이거나 텍스트 채널이 아닙니다.');
 			await delayedDeleteMessage(msg, 1);
 			return;
 		}
 
 		let totalDeleted = 0;
 		let lastMessageId = null;
+		const now = Date.now();
+		const limitDays = 15 * 24 * 60 * 60 * 1000; // 15일(밀리초)
 
 		while (true) {
-			const fetchedMessages = await channel.messages.fetch({
-				limit: 100,
-				...(lastMessageId ? { before: lastMessageId } : {}),
-			});
+			// 최신 메시지 최대 100개 가져오기
+			const fetchedMessages = await channel.messages.fetch({ limit: 100, before: lastMessageId });
 
-			if (fetchedMessages.size === 0) break; // 더 이상 가져올 메시지가 없으면 종료
+			if (fetchedMessages.size === 0) break;
 
-			await Promise.all(
-				fetchedMessages.map(async (message) => {
-					try {
-						await message.delete();
-						totalDeleted++;
-					} catch (error) {
-						console.error(`Failed to delete message ${message.id}:`, error);
-					}
-				})
-			);
+			// 15일 이내 메시지만 필터링
+			const recentMessages = fetchedMessages.filter(msg => now - msg.createdTimestamp <= limitDays);
+			const oldMessages = fetchedMessages.filter(msg => now - msg.createdTimestamp > limitDays);
 
-			lastMessageId = fetchedMessages.lastKey(); // 마지막 메시지 ID 저장
-			console.log(`Deleted ${fetchedMessages.size} messages so far.`);
+			if (recentMessages.size > 0) {
+				try {
+					await channel.bulkDelete(recentMessages, true); // 최신 메시지 대량 삭제
+					totalDeleted += recentMessages.size;
+				} catch (error) {
+					console.error('bulkDelete() 실행 오류:', error);
+				}
+			}
+
+			// 15일 이상 지난 메시지는 개별 삭제 (느림)
+			for (const msg of oldMessages.values()) {
+				try {
+					msg.delete();
+					totalDeleted++;
+				} catch (error) {
+					console.error(`Failed to delete old message ${msg.id}:`, error);
+				}
+			}
+
+			lastMessageId = fetchedMessages.last()?.id;
+
+			// 1초 대기 (디스코드 API 제한 방지)
+			await new Promise(resolve => setTimeout(resolve, 1000));
 		}
 
-		const msg = await channel.send(`${channel.name}의  ${totalDeleted}개 메시지 삭제함`);
+		// 삭제 완료 메시지 전송
+		const msg = await channel.send(`${channel.name}의 ${totalDeleted}개 메시지 삭제 완료`);
 		await delayedDeleteMessage(msg, 1);
 	} catch (error) {
 		console.error('Error deleting messages:', error);
@@ -73,9 +87,13 @@ async function deleteRecentMessages(channelId, client, limit = null) {
 			const recentMessages = fetchedMessages.filter(msg => now - msg.createdTimestamp <= limitDays);
 
 			if (recentMessages.size === 0) break;
-
+			try {
+				channel.bulkDelete(recentMessages, true);
+				
+			} catch (error) {
+				console.error("삭제중 에러.",error.stack);	
+			}	
 			// 메시지 삭제
-			await channel.bulkDelete(recentMessages, true);
 			deletedCount += recentMessages.size;
 
 			// 다음 반복을 위한 마지막 메시지 ID 저장

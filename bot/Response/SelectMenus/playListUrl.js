@@ -1,9 +1,9 @@
-// playListUrl.js
+ // playListUrl.js
 const { Client, StringSelectMenuInteraction } = require('discord.js');
 const dotenv = require('dotenv');
 const delayedDeleteMessage = require('../../Commands/utility/deleteMsg');
 dotenv.config();
-const delimiterGeter = require('../../Commands/utility/delimiterGeter');
+const { decodeFromString } = require('../../Commands/utility/delimiterGeter');
 
 module.exports = {
     name: "playListUrl",
@@ -22,7 +22,7 @@ module.exports = {
             // select menu 처리: 곡 선택만 처리 (페이지 관련 항목은 제거됨)
             if (interaction.isStringSelectMenu()) {
                 const selectedValues = interaction.values[0];
-                const { command, option, otherOption } = delimiterGeter(selectedValues);
+                const { command, option, otherOption } = decodeFromString(selectedValues);
                 await musicData.play(parseInt(option), true);
             }
             musicData.interactionMsg = interaction.message;

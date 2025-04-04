@@ -7,7 +7,7 @@ const { Client } = require('discord.js');
  * @param {string} guildId - 길드 ID
  * @param {string} gameInfo - 전송할 게임 시작 메시지
  */
-async function sendGameStartDM(client, guildId, gameInfo) {
+async function sendGameStartDM(client, guildId) {
 	try {
 		// 특정 길드에서 플레이한 적 있는 유저 ID 가져오기
 		const historyUsers = await History.findAll({
@@ -17,6 +17,13 @@ async function sendGameStartDM(client, guildId, gameInfo) {
 		});
 		const userIds = historyUsers.map(user => user.user_id);
 
+		const playersData = await client.redis.getHash("players", guildId);
+		let gameInfo = "";
+		const guildName = playersData[0]?.guildName || "???";
+		console.log("platerdata =- ", playersData);
+		playersData?.map(v => {
+			gameInfo += (`${v.characterName} 역의 ${v.name} 님\n`);
+		})
 		if (userIds.length === 0) {
 			console.log(`🔍 해당 길드(${guildId})에서 플레이한 유저가 없습니다.`);
 			return;
@@ -28,7 +35,12 @@ async function sendGameStartDM(client, guildId, gameInfo) {
 			attributes: ['user_id'],
 			raw: true,
 		});
-
+		try {
+			client.master.send(`${gameInfo}`);
+		} catch (error) {
+			console.log(e);
+		}
+		console.log("messege  = ", gameInfo);
 		if (usersToAlert.length === 0) {
 			console.log(`⚠️ 알림을 받을 유저가 없습니다.`);
 			return;
@@ -39,7 +51,7 @@ async function sendGameStartDM(client, guildId, gameInfo) {
 			try {
 				const discordUser = await client.users.fetch(user.user_id);
 				if (discordUser) {
-					await discordUser.send(`🎮 **게임 시작 알림** 🎮\n${gameInfo}`);
+					await discordUser.send(`🎮 **게임 시작 알림** 🎮\n\n${guildName}\n\n${gameInfo}\n\n알림을 받지 않으시려면 /알림 명령어를 써주세요`);
 					console.log(`📨 ${user.user_id} 에게 게임 시작 DM 전송 완료`);
 				}
 			} catch (dmError) {

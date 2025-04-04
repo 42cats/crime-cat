@@ -50,7 +50,7 @@ public class CouponService {
             throw new RuntimeException("유저 정보가 없습니다.");
         if (request.getCode() == null || request.getCode().isEmpty())
             throw new RuntimeException("유효한 코드가 아닙니다.");
-        Optional<Coupon> optionalCoupon = couponRepository.findById(UUID.fromString(request.getCode()));
+        Optional<Coupon> optionalCoupon = couponRepository.findByIdForUpdate(UUID.fromString(request.getCode()));
         Optional<User> optionalUser = userRepository.findBySnowflake(request.getUserSnowflake());
         if(optionalCoupon.isEmpty()) throw  new RuntimeException("유효한 코드가 아닙니다.");
         if(optionalUser.isEmpty()) throw  new RuntimeException("유저 정보가 없습니다.");

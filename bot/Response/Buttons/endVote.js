@@ -1,5 +1,5 @@
 const { PermissionFlagsBits, Client, ButtonInteraction, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const delimiterGeter = require('../../Commands/utility/delimiterGeter');
+const { decodeFromString,encodeToString } = require('../../Commands/utility/delimiterGeter');
 
 module.exports = {
     name: "endVote",
@@ -12,7 +12,7 @@ module.exports = {
     async execute(client, interaction) {
         const { guild, member, customId } = interaction;
         console.log("custom_id", customId);
-        const { head: user_Id } = delimiterGeter(customId);
+        const { head: user_Id } = decodeFromString(customId);
 
         // 권한 확인
         if (!member.permissions.has(PermissionFlagsBits.Administrator) &&
@@ -63,7 +63,7 @@ module.exports = {
             resultMsg += "투표가 동점이라면 다시 진행하세요 아래 버튼을 누르지 않는이상 관전 권한은 부여되지 않습니다.";
             // 관전 역할 부여 버튼 추가
             const observerButton = new ButtonBuilder()
-                .setCustomId(`${guild.id}_assignObserver:`)
+                .setCustomId(encodeToString(guild.id, "assignObserver"))
                 .setLabel("관전자 역할 부여")
                 .setStyle(ButtonStyle.Primary);
 

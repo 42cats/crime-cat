@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, CommandInteraction, Role } = require('discord.js');
 const { Guild, sequelize } = require('./utility/db');
+const { addGuildObserverSet } = require('./api/guild/observer');
 const nameOfCommand = "관전설정";
 const description = "길드에 관전역할 설정(투표및, 관전명령어에 사용됨)";
 
@@ -53,28 +54,15 @@ module.exports = {
 async function ObserverSet(interaction, { title, role }) {
 	const { guildId } = interaction;
 
-	// 트랜잭션 생성
-	const transaction = await sequelize.transaction();
+	const response = await addGuildObserverSet(guildId, title, role?.id);
 
-	try {
-		// 길드 찾기
-		const guild = await Guild.findOne({ where: { guild_id: guildId }, transaction });
-
-		if (!guild) {
-			await transaction.rollback();
-			return interaction.reply({ content: "해당 길드를 찾을 수 없습니다.", ephemeral: true });
-		}
-
-		// 데이터 업데이트
-		await guild.update({ head_title: title, observer: role.id }, { transaction });
-
-		// 트랜잭션 커밋
-		await transaction.commit();
-		return interaction.reply({ content: `관전 역할이 성공적으로 설정되었습니다.\ntitle: ${title}\n role: ${role?.name ? role.name : "설정 없음"}`, ephemeral: true });
-	} catch (error) {
-		// 오류 발생 시 롤백
-		await transaction.rollback();
-		console.error(error);
-		return interaction.reply({ content: "관전 역할 설정 중 오류가 발생했습니다.", ephemeral: true });
+	if (response?.status === 200) {
+		const roleId = response.data.roleSnowflake;
+		const foundRole = interaction.guild.roles.cache.get(roleId);
+		
+		console.log("찾은 역할 객체: ", foundRole);
+		await interaction.reply(`관전설정 성공 ✅\n타이틀: ${response.data.headTitle}\n설정 역할: ${foundRole?.name || "없음"}`);
+	} else {
+		await interaction.reply(`❌ 관전설정 실패\n사유: ${response?.data?.message || "알 수 없는 오류"}`);
 	}
 }
