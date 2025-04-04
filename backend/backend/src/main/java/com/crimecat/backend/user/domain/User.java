@@ -67,4 +67,18 @@ public class User {
         this.point += point;
         return point;
     }
+
+    public void setAvatar(String avatar) {
+        if (avatar == null) {
+            return;
+        }
+        this.avatar = avatar;
+    }
+
+    public void setDiscordAlarm(Boolean discordAlarm) {
+        if (discordAlarm == null) {
+            return;
+        }
+        this.discordAlarm = discordAlarm;
+    }
 }

@@ -29,4 +29,10 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	@Query("SELECT gh FROM GameHistory gh WHERE gh.user.snowflake = :userSnowflake AND gh.guild.snowflake = :guildSnowflake")
 	GameHistory findGameHistoryByUserSnowFlakeAndGuildSnowflake(@Param("userSnowflake") String userSnowflake, @Param("guildSnowflake") String guildSnowflake);
 
+
+	@Query("SELECT gh FROM GameHistory gh " +
+			"WHERE (:guildSnowflake IS NULL OR gh.guild.snowflake = :guildSnowflake) " +
+			"AND (:discordAlarm IS NULL OR gh.user.discordAlarm = :discordAlarm)")
+	List<GameHistory> findUsersByGuildSnowflakeAndDiscordAlarm(@Param("guildSnowflake") String guildSnowflake,
+														 @Param("discordAlarm") Boolean discordAlarm);
 }
