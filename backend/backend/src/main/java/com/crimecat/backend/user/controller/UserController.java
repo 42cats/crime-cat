@@ -1,28 +1,16 @@
 package com.crimecat.backend.user.controller;
 
-import com.crimecat.backend.user.dto.TotalUserRankingResponseDto;
-import com.crimecat.backend.user.dto.UserGrantedPermissionResponseDto;
-import com.crimecat.backend.user.dto.UserHasPermissionResponseDto;
-import com.crimecat.backend.user.dto.UserInfoRequestDto;
-import com.crimecat.backend.user.dto.UserInfoResponseDto;
-import com.crimecat.backend.user.dto.UserPermissionPurchaseRequestDto;
-import com.crimecat.backend.user.dto.UserPermissionPurchaseResponseDto;
-import com.crimecat.backend.user.dto.UserRankingResponseDto;
+import com.crimecat.backend.guild.dto.MessageDto;
+import com.crimecat.backend.user.dto.*;
 import com.crimecat.backend.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("v1/bot/users")
+@RequestMapping("/v1/bot/users")
 public class UserController {
 
 	private final UserService userService;
@@ -34,6 +22,7 @@ public class UserController {
 	 */
 	@PostMapping("")
 	public UserInfoResponseDto saveUserInfo(@RequestBody UserInfoRequestDto userInfoRequestDto) {
+		System.out.println("aaaa");
 		return userService.saveUserInfo(
 				userInfoRequestDto.getUserSnowflake(),
 				userInfoRequestDto.getName(),
@@ -49,6 +38,30 @@ public class UserController {
 	public UserPermissionPurchaseResponseDto purchaseUserPermission(@PathVariable("user_snowflake") String userSnowflake, @RequestBody
 	UserPermissionPurchaseRequestDto userPermissionPurchaseRequestDto) {
 		return userService.purchaseUserPermission(userSnowflake, userPermissionPurchaseRequestDto.getPermissionName());
+	}
+
+	/**
+	 * 조건에 맞는 유저 snowflake 목록 반환
+	 * @param guildSnowflake 유저가 플레이한 길드 snowflake
+	 * @param discordAlarm discord alarm 설정
+	 */
+	@GetMapping
+	public MessageDto<UserListResponseDto> getUserList(@RequestParam(value = "guildSnowflake", required = false) String guildSnowflake,
+														 @RequestParam(value = "discordAlarm", required = false) Boolean discordAlarm) {
+		return new MessageDto<>("User List founded", userService.getUserList(guildSnowflake, discordAlarm));
+	}
+
+	/**
+	 * 유저 정보 수정
+	 * @param userSnowflake 수정할 유저 discord snowflake
+	 * @param userPatchRequestDto 유저 설정
+	 * @return
+	 */
+	@PatchMapping("/{user_snowflake}")
+	public MessageDto<?> updateUserInfo(@PathVariable("user_snowflake") String userSnowflake,
+										@RequestBody UserPatchRequestDto userPatchRequestDto) {
+		return new MessageDto<>("User updated",
+				userService.updateUserInfo(userSnowflake, userPatchRequestDto.getAvatar(), userPatchRequestDto.getDiscordAlarm()));
 	}
 
 	/**
@@ -99,6 +112,9 @@ public class UserController {
 			@RequestParam(value = "limit", defaultValue = "10") int size,
 			@RequestParam(value = "page", defaultValue = "0") int page) {
 		Pageable pageable = PageRequest.of(page, size);
+		System.out.println(sortingCondition + size + page);
 		return userService.getTotalUserRankingByParamCondition(pageable, sortingCondition);
 	}
+
+
 }

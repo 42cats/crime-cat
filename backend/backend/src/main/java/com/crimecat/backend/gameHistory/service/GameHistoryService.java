@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class GameHistoryService {
 
 	private final GameHistoryQueryService gameHistoryQueryService;
+
 	private final UserService userService;
 	private final GuildService guildService;
 
@@ -71,4 +72,5 @@ public class GameHistoryService {
 				.toList();
 		return new UserGameHistorySuccessResponseDto(userSnowflake, userGameHistoryDtos);
 	}
+
 }

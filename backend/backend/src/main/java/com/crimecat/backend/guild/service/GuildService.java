@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class GuildService {
@@ -64,5 +66,13 @@ public class GuildService {
 	 */
     public Guild findGuildByGuildSnowflake(String guildSnowflake) {
         return guildRepository.findGuildByGuildSnowflake(guildSnowflake).orElse(null);
+    }
+
+    public List<Guild> findGuildByOwnerId(String ownerSnowFlake){
+        return guildRepository.findActiveGuildsByOwner(ownerSnowFlake);
+    }
+
+    public List<Guild> findAllGuild(){
+        return guildRepository.findAllActiveGuilds();
     }
 }
