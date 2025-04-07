@@ -3,6 +3,7 @@ package com.crimecat.backend.guild.controller;
 import com.crimecat.backend.guild.dto.GuildDto;
 import com.crimecat.backend.guild.dto.GuildResponseDto;
 import com.crimecat.backend.guild.dto.MessageDto;
+import com.crimecat.backend.guild.exception.GuildAlreadyExistsException;
 import com.crimecat.backend.guild.service.GuildService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,14 +18,14 @@ public class GuildController {
 
     @PostMapping
     public ResponseEntity<MessageDto<GuildResponseDto>> addGuild(@RequestBody GuildDto guildDto) {
-
-        MessageDto<GuildResponseDto> messageDto = guildService.addGuild(guildDto);
-        if (messageDto == null) {
+        try {
+            MessageDto<GuildResponseDto> messageDto = guildService.addGuild(guildDto);
+            return new ResponseEntity<>(messageDto, HttpStatus.OK);
+        } catch (GuildAlreadyExistsException e) {
             // TODO: use exception to handle error
-            return new ResponseEntity<>(new MessageDto<>("already created", new GuildResponseDto(guildDto)),
+            return new ResponseEntity<>(new MessageDto<>(e.getMessage(), new GuildResponseDto(e.getGuild())),
                     HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>(messageDto, HttpStatus.OK);
     }
 
     @DeleteMapping("/{snowflake}")
