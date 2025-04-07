@@ -22,7 +22,7 @@ module.exports = {
 					} else if (interaction.componentType === ComponentType.StringSelect) {
 						const command = client.events.get('SELECT_MENU');
 						await command?.execute(client, interaction);
-					}
+					} 
 					break;
 				case InteractionType.ApplicationCommandAutocomplete:
 					const focusedOption = interaction.options.getFocused(true);
@@ -32,8 +32,14 @@ module.exports = {
 					if (isOptionAutoComplete)
 						await isOptionAutoComplete.execute(client, interaction);
 					break;
+				case InteractionType.ModalSubmit:
+					{
+						const command = client.events.get('MODAL_SUBMIT');
+						await command?.execute(client,interaction);
+					}
+					break;
 				default:
-					console.log('Unhandled interaction type:', interaction.type);
+					console.log('Unhandled interaction type:', interaction.type, interaction.componentType);
 			}
 		} catch (err) {
 			console.error('Error handling interaction:', err);

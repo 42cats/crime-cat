@@ -1,5 +1,5 @@
 const addObserverPermission = require('../../Commands/utility/addObserverPemission');
-const { Guild} = require('discord.js');
+const { Guild } = require('discord.js');
 const { addGuild, guildAddProcess } = require('../../Commands/api/guild/guild');
 const { getUserHistory, addUserHistory } = require('../../Commands/api/history/history');
 module.exports = {
@@ -24,7 +24,7 @@ module.exports = {
             }
             const historyList = await getUserHistory(userId);
             const historyRecord = historyList.find(v => v.guildSnowflake === guildId);
-            
+
             if (historyRecord) {
                 console.log(`유저(${userId})의 기존 참여 기록이 존재합니다. 관전자 역할을 부여합니다.`);
 
@@ -36,7 +36,7 @@ module.exports = {
                 }
             } else {
                 console.log(`유저(${userId})의 참여 기록이 없습니다.`);
-                await addUserHistory(member.user,member.guild,member.user.displayName ?? member.user.globalName);
+                await addUserHistory(member.user, member.guild, member.user.displayName ?? member.user.globalName, member.joinedAt);
             }
         } catch (error) {
             console.error(`[ERROR] guildMemberAdd 이벤트 처리 중 오류 발생:`, error);

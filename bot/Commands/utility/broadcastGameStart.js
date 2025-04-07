@@ -1,3 +1,4 @@
+const { getGmaePlayedUser } = require('../api/history/history');
 const { User, History } = require('./db');
 const { Client } = require('discord.js');
 
@@ -9,13 +10,7 @@ const { Client } = require('discord.js');
  */
 async function sendGameStartDM(client, guildId) {
 	try {
-		// 특정 길드에서 플레이한 적 있는 유저 ID 가져오기
-		const historyUsers = await History.findAll({
-			where: { guild_id: guildId },
-			attributes: ['user_id'],
-			raw: true,
-		});
-		const userIds = historyUsers.map(user => user.user_id);
+		const userIds = await getGmaePlayedUser(guildId, true);;
 
 		const playersData = await client.redis.getHash("players", guildId);
 		let gameInfo = "";
@@ -25,29 +20,17 @@ async function sendGameStartDM(client, guildId) {
 			gameInfo += (`${v.characterName} 역의 ${v.name} 님\n`);
 		})
 		if (userIds.length === 0) {
-			console.log(`🔍 해당 길드(${guildId})에서 플레이한 유저가 없습니다.`);
+			console.log(`🔍 해당 길드(${guildId})에서 플레이 또는 알람설정한 유저가 없습니다.\n${gameInfo}`);
 			return;
 		}
-
-		// 알림이 활성화된(`alert_ok = 1`) 유저 필터링
-		const usersToAlert = await User.findAll({
-			where: { user_id: userIds, alert_ok: 1 },
-			attributes: ['user_id'],
-			raw: true,
-		});
 		try {
 			client.master.send(`${gameInfo}`);
 		} catch (error) {
 			console.log(e);
 		}
-		console.log("messege  = ", gameInfo);
-		if (usersToAlert.length === 0) {
-			console.log(`⚠️ 알림을 받을 유저가 없습니다.`);
-			return;
-		}
 
 		// 유저에게 DM 전송
-		for (const user of usersToAlert) {
+		for (const user of userIds) {
 			try {
 				const discordUser = await client.users.fetch(user.user_id);
 				if (discordUser) {
