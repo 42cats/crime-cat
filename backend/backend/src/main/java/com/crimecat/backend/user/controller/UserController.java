@@ -22,11 +22,20 @@ public class UserController {
 	 */
 	@PostMapping("")
 	public UserInfoResponseDto saveUserInfo(@RequestBody UserInfoRequestDto userInfoRequestDto) {
-		System.out.println("aaaa");
 		return userService.saveUserInfo(
 				userInfoRequestDto.getUserSnowflake(),
 				userInfoRequestDto.getName(),
 				userInfoRequestDto.getAvatar());
+	}
+
+	/**
+	 * 유저 정보 저장
+	 * @param userSnowflake
+	 * @return
+	 */
+	@GetMapping("/{user_snowflake}")
+	public UserDbInfoResponseDto getUserInfo(@PathVariable("user_snowflake") String userSnowflake) {
+		return userService.getUserDbInfo(userSnowflake);
 	}
 
 	/**
