@@ -330,4 +330,14 @@ public class UserService {
 		user.setDiscordAlarm(discordAlarm);
 		return new UserPatchResponseDto(new UserPatchDto(userQueryService.saveUser(user)));
 	}
+
+	@Transactional(readOnly = true)
+	public UserDbInfoResponseDto getUserDbInfo(String userSnowflake){
+		User byUserSnowflake = userQueryService.findByUserSnowflake(userSnowflake);
+		if (byUserSnowflake == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user not exists");
+		}
+		UserDbInfoDto userDbInfoDto = UserDbInfoDto.from(byUserSnowflake);
+		return new UserDbInfoResponseDto("user info founded",userDbInfoDto);
+	}
 }
