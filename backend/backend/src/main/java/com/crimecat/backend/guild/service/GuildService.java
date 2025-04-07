@@ -5,6 +5,7 @@ import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.dto.GuildDto;
 import com.crimecat.backend.guild.dto.GuildResponseDto;
 import com.crimecat.backend.guild.dto.MessageDto;
+import com.crimecat.backend.guild.exception.GuildAlreadyExistsException;
 import com.crimecat.backend.guild.repository.GuildRepository;
 import com.crimecat.backend.user.service.UserQueryService;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +36,7 @@ public class GuildService {
         if (guild != null) {
             if (!guild.isWithdraw()) {
                 // TODO: use throw to handle error
-                return null;
+                throw new GuildAlreadyExistsException(new GuildDto(guild));
             }
             guild.setIsWithdraw(false);
             guildRepository.save(guild);
