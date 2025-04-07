@@ -1,5 +1,5 @@
 const { Client, InteractionResponse, AutocompleteInteraction } = require('discord.js');
-const { getUserHistory, addUserHistory } = require('../../Commands/api/history/history');
+const { getUserHistory } = require('../../Commands/api/history/history');
 module.exports = {
 	name: "길드",
 	/**

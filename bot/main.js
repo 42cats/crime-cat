@@ -1,12 +1,10 @@
 const { Client, Events, GatewayIntentBits, ChannelType, Partials, PermissionFlagsBits } = require('discord.js');
-const { processGuildAndUsersWithHistory, addUser } = require('./Commands/utility/discord_db');
 const termsReply = require('./Commands/utility/termsSender');
 const fs = require('node:fs');
 const path = require('node:path');
 const dotenv = require('dotenv');
 dotenv.config();
 const prefix = process.env.PRIFIX;
-const { USER_PERMISSION, getUserGrade, hasPermission } = require('./Commands/utility/UserGrade');
 
 // 연결 설정
 const client = new Client({
@@ -27,86 +25,22 @@ client.redis = require('./Commands/utility/redis');
 
 })();
 
-//music data map
-client.serverMusicData = new Map();
-client.slashCommands = new Map();
-client.prefixCommands = new Map();
-client.Events = new Map();
-client.playEvent = new Map();
-client.replyUserDm = null;
-client.aliasesMap = new Map();
-client.events = new Map();
-client.voteStorage = new Map();
-const commandFiles = fs.readdirSync('./Commands').filter(file => file.endsWith('.js'));
-for (const file of commandFiles) {
-	const command = require(`./Commands/${file}`);
-	// 슬래시용
-	client.slashCommands.set(command.data.name, command);
-	// 프리픽스용
-	// console.log(command);
-	client.prefixCommands.set(command.data.name, command);
-	command.aliases?.map(element => {
-		client.aliasesMap.set(element, command.data.name);
-	});
-}
-
-// ./Events 디렉토리의 모든 폴더 읽기
-const folders = fs.readdirSync('./Events', { withFileTypes: true })
-	.filter(dirent => dirent.isDirectory()) // 폴더만 선택
-	.map(dirent => dirent.name);
-
-for (const folder of folders) {
-	const eventFiles = fs.readdirSync(`./Events/${folder}`).filter(file => file.endsWith('.js')); // 폴더 내 JS 파일 탐색
-
-	for (const file of eventFiles) {
-		const event = require(`./Events/${folder}/${file}`);
-		if (!client.events.has(event.name)) {
-			console.log("event save as ", event.name);
-			client.events.set(event.name, event); // 이벤트 이름으로 저장
-		}
-	}
-}
-client.responses = {
-	buttons: new Map(),
-	selectMenus: new Map(),
-	autoComplete: new Map(),
-};
-
-// 버튼 Response 로드
-const buttonResponseFiles = fs.readdirSync('./Response/Buttons').filter(file => file.endsWith('.js'));
-for (const file of buttonResponseFiles) {
-	const response = require(`./Response/Buttons/${file}`);
-	client.responses.buttons.set(response.name, response);
-}
-
-// 셀렉트 메뉴 Response 로드
-const selectMenuResponseFiles = fs.readdirSync('./Response/SelectMenus').filter(file => file.endsWith('.js'));
-for (const file of selectMenuResponseFiles) {
-	const response = require(`./Response/SelectMenus/${file}`);
-	client.responses.selectMenus.set(response.name, response);
-}
-
-// 자동완성 Response 로드
-const autoCompleteResponseFiles = fs.readdirSync('./Response/Autocomplete').filter(file => file.endsWith('.js'));
-for (const file of autoCompleteResponseFiles) {
-	const response = require(`./Response/Autocomplete/${file}`);
-	client.responses.autoComplete.set(response.name, response);
-}
-
-
-
-
-/////////
-
-
-
-
-
+const { loadResponses } = require('./Commands/utility/loadResponse');
+loadResponses(client,path.join(__dirname, 'Response'));
 
 let currentIndex = 0;
 let messege = [];
 const updateActivity = require("./Commands/utility/updateActivity");
 const redisManager = require('./Commands/utility/redis');
+const { initClientVariables } = require('./Commands/utility/clientVariables');
+const { loadSlashAndPrefixCommands } = require('./Commands/utility/loadCommand');
+const { loadEvents } = require('./Commands/utility/loadEvent');
+
+initClientVariables(client);
+loadSlashAndPrefixCommands(client, path.join(__dirname, 'Commands'));
+loadResponses(client, path.join(__dirname, 'Response'));
+loadEvents(client, path.join(__dirname, 'Events'));
+
 // It makes some properties non-nullable.
 client.once(Events.ClientReady, async (readyClient) => {
 	console.log(`Ready! Logged in as !!${readyClient.user.tag}`);

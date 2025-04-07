@@ -5,6 +5,7 @@ const { User: UserDb } = require('./utility/db');
 const dotenv = require('dotenv');
 const UserInfoImage = require('./utility/userInfoToImage');
 const delayedDeleteMessage = require('./utility/deleteMsg');
+const { setUserAlarm } = require('./api/user/user');
 dotenv.config();
 const prefix = process.env.PRIFIX;
 const nameOfCommand = "알림";
@@ -21,7 +22,7 @@ module.exports = {
 	async execute(interaction) {
 		const image = await UserInfoImage(interaction.user);
 		try {
-			const msg = await alertToggle(interaction.user);
+			const msg = await setUserAlarm(interaction.user.id);
 			await interaction.reply(msg);
 		} catch (error) {
 			console.log("interaction userinfo error ", error.stack);
