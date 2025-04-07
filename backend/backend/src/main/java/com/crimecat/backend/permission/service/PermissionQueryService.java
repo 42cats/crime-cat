@@ -5,6 +5,8 @@ import com.crimecat.backend.permission.repository.PermissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PermissionQueryService {
@@ -21,5 +23,9 @@ public class PermissionQueryService {
 
 	public void deletePermission(Permission permission) {
 		permissionRepository.delete(permission);
+	}
+
+	public List<Permission> findAll(){
+		return permissionRepository.findAll();
 	}
 }
