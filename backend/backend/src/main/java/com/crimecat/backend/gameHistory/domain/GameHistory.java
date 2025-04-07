@@ -33,7 +33,7 @@ public class GameHistory {
     @Column(name = "CREATED_AT", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "CHARACTER_NAME", nullable = false, updatable = false)
+    @Column(name = "CHARACTER_NAME", nullable = true, updatable = true)
     private String characterName;
 
     @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false, updatable = false)
