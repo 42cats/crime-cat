@@ -96,10 +96,12 @@ public class CharacterService {
 			character = characterQueryService.saveCharacter(characterName, guild);
 			characterRoleQueryService.saveCharacterRolesByCharacterId(character, requestedRoles);
 		}
-
+		List<String> charactersByGuildSnowflake = characterQueryService.getCharactersByGuildSnowflake(guildSnowflake)
+				.stream().map(Character::getName)
+				.toList();
 		return new SaveCharacterSuccessfulResponseDto(
 				"Character added successfully",
-				new SaveCharacterDto(character.getId(), guildSnowflake, characterName, requestedRoles, character.getCreatedAt()));
+				new SaveCharacterDto(character.getId(), guildSnowflake, characterName, charactersByGuildSnowflake, character.getCreatedAt()));
 	}
 
 	@Transactional
