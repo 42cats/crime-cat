@@ -18,7 +18,6 @@ public class GuildDto {
     private String snowflake;
     private String name;
     private String ownerSnowflake;
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime createdAt;
 
     public GuildDto(Guild guild) {
