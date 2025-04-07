@@ -29,7 +29,7 @@ public class UserController {
 	}
 
 	/**
-	 * 유저 정보 저장
+	 * 유저 정보 반환
 	 * @param userSnowflake
 	 * @return
 	 */
