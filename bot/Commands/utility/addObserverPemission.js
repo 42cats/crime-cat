@@ -8,7 +8,7 @@ const { getGuildObserverSet, addGuildObserverSet } = require('../api/guild/obser
  * @param {String} guildId 
  * @param  {...String} users 
  */
-async function addObserverPermission(client, guildId, ...users) {
+async function addObserverPemission(client, guildId, ...users) {
     try {
         if (users.length === 1 && Array.isArray(users[0])) {
             users = users[0]; // 배열이 중첩된 경우 한 단계 풀어줌
@@ -23,7 +23,7 @@ async function addObserverPermission(client, guildId, ...users) {
 
         // 클라이언트에서 길드 가져오기
         const guild = await client.guilds.fetch(guildId);
-        
+
         let role = null;
 
         // observer 역할 ID가 있는 경우만 역할 가져오기
@@ -68,8 +68,8 @@ async function addObserverPermission(client, guildId, ...users) {
             }
         }
     } catch (error) {
-        console.error("❌ addObserverPermission 함수 실행 중 오류 발생:", error);
+        console.error("❌ addObserverPemission 함수 실행 중 오류 발생:", error);
     }
 }
 
-module.exports = addObserverPermission;
+module.exports = addObserverPemission;

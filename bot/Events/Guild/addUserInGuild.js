@@ -1,7 +1,7 @@
-const addObserverPermission = require('../../Commands/utility/addObserverPemission');
 const { Guild } = require('discord.js');
 const { addGuild, guildAddProcess } = require('../../Commands/api/guild/guild');
 const { getUserHistory, addUserHistory } = require('../../Commands/api/history/history');
+const addObserverPemission = require('../../Commands/utility/addObserverPemission');
 module.exports = {
     name: "GuildMemberAdd",
 
@@ -30,7 +30,7 @@ module.exports = {
 
                 // 관전자 역할 부여 함수 실행
                 try {
-                    await addObserverPermission(member.client, guildId, userId);
+                    await addObserverPemission(member.client, guildId, userId);
                 } catch (error) {
                     console.log(error.stack);
                 }
