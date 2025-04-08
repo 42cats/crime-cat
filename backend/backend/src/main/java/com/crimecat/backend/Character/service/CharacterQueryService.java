@@ -17,8 +17,8 @@ public class CharacterQueryService {
 		return characterRepository.getCharactersByGuildSnowflake(guildSnowflake);
 	}
 
-	public Character getCharacterByCharacterName(String characterName) {
-		return characterRepository.getCharacterByCharacterName(characterName);
+	public Character getCharacterByCharacterName(String guildSnowflake ,String characterName) {
+		return characterRepository.getCharacterByCharacterName(guildSnowflake, characterName);
 	}
 
 	public Character saveCharacter(String characterName, Guild guild) {
