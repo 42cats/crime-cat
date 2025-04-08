@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS `guilds` (
     `snowflake`        VARCHAR(50) NOT NULL UNIQUE COMMENT 'snowflake discord 길드 ID',
     `name`             VARCHAR(255) NOT NULL COMMENT '길드 이름',
     `is_withdraw`      BOOLEAN NOT NULL DEFAULT 0 COMMENT '삭제여부',
+    `created_at`       TIMESTAMP NOT NULL COMMENT '길드 생성시점(discord 에서 최초생성시기)',
     CONSTRAINT `fk_guilds_users` FOREIGN KEY (`owner_snowflake`) REFERENCES `users`(`snowflake`)
         ON DELETE RESTRICT
         ON UPDATE CASCADE

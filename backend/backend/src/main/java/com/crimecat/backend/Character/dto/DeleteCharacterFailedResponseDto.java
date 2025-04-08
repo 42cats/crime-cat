@@ -5,9 +5,7 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public class deleteCharacterSuccessfulResponseDto implements deleteCharacterResponseDto {
+public class DeleteCharacterFailedResponseDto implements DeleteCharacterResponseDto {
 
 	private String message;
-	private String guildSnowflake;
-	private String characterName;
 }

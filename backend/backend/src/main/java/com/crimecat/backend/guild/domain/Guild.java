@@ -9,7 +9,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+
+import java.time.LocalDateTime;
 import java.util.UUID;
+
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -42,12 +46,17 @@ public class Guild {
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
+    @NotNull
+    @Column(name = "CREATED_AT", nullable = false)
+    private LocalDateTime createdAt;
+
     public static Guild of(GuildDto guildDto) {
         Guild guild = new Guild();
         guild.snowflake = guildDto.getSnowflake();
         guild.name = guildDto.getName();
         guild.isWithdraw = false;
         guild.ownerSnowflake = guildDto.getOwnerSnowflake();
+        guild.createdAt = guildDto.getCreatedAt();
         return guild;
     }
 
