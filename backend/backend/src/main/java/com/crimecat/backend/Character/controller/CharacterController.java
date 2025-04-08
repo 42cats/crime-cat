@@ -3,7 +3,7 @@ package com.crimecat.backend.Character.controller;
 import com.crimecat.backend.Character.dto.CharactersResponseDto;
 import com.crimecat.backend.Character.dto.SaveCharacterRequestDto;
 import com.crimecat.backend.Character.dto.SaveCharacterResponseDto;
-import com.crimecat.backend.Character.dto.deleteCharacterResponseDto;
+import com.crimecat.backend.Character.dto.DeleteCharacterResponseDto;
 import com.crimecat.backend.Character.service.CharacterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -53,7 +53,7 @@ public class CharacterController {
 	 * @return
 	 */
 	@DeleteMapping("{guild_snowflake}/characters/{character_name}")
-	public deleteCharacterResponseDto deleteCharacter(
+	public DeleteCharacterResponseDto deleteCharacter(
 			@PathVariable("guild_snowflake") String guildSnowflake,
 			@PathVariable("character_name") String characterName) {
 		return characterService.deleteCharacter(guildSnowflake, characterName);
