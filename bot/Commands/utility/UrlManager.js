@@ -26,7 +26,7 @@ const { encodeToString } = require('./delimiterGeter');
 const { isPermissionHas } = require('../api/user/permission');
 
 class GuildURLManager {
-    constructor(guildId, client,user) {
+    constructor(guildId, client, user) {
         if (!guildId) {
             throw new Error('guildId가 필요합니다.');
         }
@@ -48,7 +48,7 @@ class GuildURLManager {
         this.audioPlayerManager = new AudioPlayerManager(this);
         this.interactionMsg = null;
         // 명령 수행자
-        this.operater = user;
+        this.operator = user;
         // UI 버튼 관리 (기존 버튼들은 buttonName 접두사를 사용)
         this.buttons = [];
         this.embed = null;
@@ -126,7 +126,7 @@ class GuildURLManager {
     // 음성 채널 접속
     async join() {
         if (!this.audioPlayerManager.isInVoiceChannel()) {
-            await this.audioPlayerManager.join(this.operater);
+            await this.audioPlayerManager.join(this.operator);
         }
     }
 
@@ -134,7 +134,7 @@ class GuildURLManager {
     async play(index, isSelect = false) {
         try {
             if (!this.audioPlayerManager.isInVoiceChannel()) {
-                await this.audioPlayerManager.join(this.operater);
+                await this.audioPlayerManager.join(this.operator);
             }
             if (this.playlistManager.playlist.length === 0) {
                 throw new Error("재생목록이 없습니다!");
@@ -211,7 +211,7 @@ class GuildURLManager {
                 this.audioPlayerManager.connection = null;
             }
         } else if (!this.audioPlayerManager.connection) {
-            if (this.operater) this.audioPlayerManager.join(this.operater);
+            if (this.operator) this.audioPlayerManager.join(this.operator);
         }
         const target = encodeToString(this.guildId, "musicPlayerButton", "onOff");
         this.buttons[1].components.map(v => {
@@ -269,8 +269,8 @@ class GuildURLManager {
         this.playlistManager.currentPage = this.playlistManager.maxPage;
     }
     async getPermissionButton() {
-        console.log("operaters = ", this.operater?.user?.id);
-        const check = await isPermissionHas(this.operater?.user?.id, "LOCAL_MUSIC");
+        console.log("operators = ", this.operator?.user?.id);
+        const check = await isPermissionHas(this.operator?.user?.id, "LOCAL_MUSIC");
         if (!check) return [];
         const primeumRow = new ActionRowBuilder()
             .addComponents(

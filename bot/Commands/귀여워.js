@@ -96,7 +96,7 @@ async function musicLogic(client, guild, user) {
 		musicData = client.serverMusicData.get(guildId);
 	}
 	await musicData.playlistManager.refresh();
-	await musicData.audioPlayerManager.join(musicData.operater);
+	await musicData.audioPlayerManager.join(musicData.operator);
 	const componentData = await musicData.reply();
 	if (componentData)
 		return componentData;

@@ -84,24 +84,24 @@ class PlaylistManager {
 		try {
 			if (this.parent.local) {
 				// Define the directory containing local audio files
-				const localDirectory = path.join(__dirname, '../..//MusicData', this.parent.operater.id.toString());
-	
+				const localDirectory = path.join(__dirname, '../..//MusicData', this.parent.operator.id.toString());
+
 				// Check if the directory exists
 				if (!fs.existsSync(localDirectory)) {
 					console.error(`Local directory not found: ${localDirectory}`);
 					this.playlist = [];
 					return;
 				}
-	
+
 				// Read all files in the directory
 				const files = fs.readdirSync(localDirectory);
-	
+
 				// Filter audio files based on allowed extensions
 				const audioFiles = files.filter(file => {
 					const ext = path.extname(file).toLowerCase();
 					return ['.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.opus'].includes(ext);
 				});
-	
+
 				// Map files to playlist entries
 				this.playlist = audioFiles.map((file, i) => ({
 					id: i,
@@ -123,7 +123,7 @@ class PlaylistManager {
 					createdAt: url.createdAt,
 				}));
 			}
-	
+
 			// Calculate the maximum number of pages
 			this.maxPage = Math.ceil(this.playlist.length / this.pageSize) - 1;
 		} catch (error) {
@@ -210,7 +210,7 @@ class PlaylistManager {
 		}
 		return [...this.playlist];
 	}
-	
+
 	// 현재 페이지 계산
 	getCurrentPage() {
 		const sorted = this.getSortedList();
@@ -218,7 +218,7 @@ class PlaylistManager {
 		const end = start + this.pageSize;
 		return sorted.slice(start, end);
 	}
-	
+
 
 	nextPage() {
 		if (this.currentPage < this.maxPage) {

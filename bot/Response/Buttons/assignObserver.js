@@ -1,6 +1,6 @@
 const { PermissionFlagsBits, Client, ButtonInteraction, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const {decodeFromString} = require('../../Commands/utility/delimiterGeter');
-const addObserverPermission = require('../../Commands/utility/addObserverPemission');
+const { decodeFromString } = require('../../Commands/utility/delimiterGeter');
+const addObserverPemission = require('../../Commands/utility/addObserverPemission');
 
 module.exports = {
     name: "assignObserver",
@@ -16,7 +16,7 @@ module.exports = {
             console.log("custom_id", customId);
             const { head: guild_Id } = decodeFromString(customId);
             const users = Array.from(client.voteStorage.get(guild_Id).keys());
-            await addObserverPermission(client, guild_Id, users);
+            await addObserverPemission(client, guild_Id, users);
             client.voteStorage.delete(guild_Id);
             await interaction.reply({
                 content: "✅ 정상적으로 권한이 관전 권한이 부여되었습니다..",

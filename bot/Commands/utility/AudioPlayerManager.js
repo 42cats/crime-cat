@@ -42,7 +42,7 @@ class AudioPlayerManager {
   }
 
   // 음성 채널 연결
-  async join(operater) {
+  async join(operator) {
     console.log("조인1");
     console.log(
       this.connection?.state.status === VoiceConnectionStatus.Disconnected
@@ -52,7 +52,7 @@ class AudioPlayerManager {
       this.connection?.state.status === VoiceConnectionStatus.Disconnected
     ) {
       console.log("조인2");
-      const voiceChannel = operater.voice.channel;
+      const voiceChannel = operator.voice.channel;
       if (!voiceChannel) throw new Error("음성채널에 접속해 있지 않음!");
 
       this.connection = joinVoiceChannel({
@@ -117,14 +117,14 @@ class AudioPlayerManager {
       resource.volume.setVolume(this.volume);
     } else {
       // Assume the track URL is a YouTube URL and use yt-dlp
-      console.log("audio operater = ", this.parent?.operater?.user?.id);
+      console.log("audio operator = ", this.parent?.operator?.user?.id);
       const beatRate = await isPermissionHas(
-        this.parent?.operater?.user?.id,
+        this.parent?.operator?.user?.id,
         "고음질"
       )
         ? "bestaudio"
         : "bestaudio[abr<=128]";
-        console.log("bitrate" , beatRate);
+      console.log("bitrate", beatRate);
       this.process = spawn("yt-dlp", [
         "-f",
         beatRate,
@@ -146,7 +146,7 @@ class AudioPlayerManager {
         console.error(`yt-dlp stderr: ${errorMessage}`);
         if (errorMessage.includes("Requested format is not available")) {
           this.parent.interactionMsg.channel.send(
-            `Format error: The requested format is not supported.\nRegular users can only play YouTube videos with a bitrate of 128 or lower.\n${track.title}\nThis video does not have a suitable bitrate.\nYour permission level is ${this.parent.operaterGrade}.`
+            `Format error: The requested format is not supported.\nRegular users can only play YouTube videos with a bitrate of 128 or lower.\n${track.title}\nThis video does not have a suitable bitrate.\nYour permission level is ${this.parent.operatorGrade}.`
           );
         }
       });
