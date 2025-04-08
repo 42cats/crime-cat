@@ -3,7 +3,6 @@ const {
   PermissionFlagsBits,
   Role,
 } = require("discord.js");
-const { addCharacterName } = require("./utility/discord_db");
 const delayedDeleteMessage = require("./utility/deleteMsg");
 const nameOfCommand = "계산";
 const description = "수학 계산기 입력 예)14+(21*34) -1 /2 **2";

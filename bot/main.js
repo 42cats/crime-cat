@@ -65,7 +65,7 @@ client.on(Events.GuildCreate, async (guild) => {
 		const owner = await client.users.fetch(guild.ownerId);
 		const tagetGuild = await client.guilds.cache.get(guild.id);
 		// const ownerGrade = await getUserGrade(owner);
-		// if (hasPermission(owner, USER_PERMISSION.ADD_GUILD_ABLE)) {
+		// if (isPermission(owner, USER_PERMISSION.ADD_GUILD_ABLE)) {
 		// 	await processGuildAndUsersWithHistory(client, tagetGuild);
 		// 	return;
 		// }

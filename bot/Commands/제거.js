@@ -1,5 +1,4 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { delDeleteChannel } = require('./utility/discord_db');
 const dotenv = require('dotenv');
 const path = require('path');
 const delayedDeleteMessage = require('./utility/deleteMsg');
@@ -21,15 +20,15 @@ module.exports = {
 				.setRequired(true) // 필수 옵션 여부
 				.setAutocomplete(true)
 		)
-		,
-		async execute(interaction) {
-			const guildId = interaction.guildId;
-			const channelId = interaction.options.getString('채널이름'); // 선택한 채널 ID 가져오기
-	
-			const replydata = await delChannelForDelete(guildId, channelId);
-			const msg = await interaction.reply(`${interaction.guild.channels.cache.get(channelId)?.name} 제거 ${replydata}`);
-			await delayedDeleteMessage(msg, 1);
-		},
+	,
+	async execute(interaction) {
+		const guildId = interaction.guildId;
+		const channelId = interaction.options.getString('채널이름'); // 선택한 채널 ID 가져오기
+
+		const replydata = await delChannelForDelete(guildId, channelId);
+		const msg = await interaction.reply(`${interaction.guild.channels.cache.get(channelId)?.name} 제거 ${replydata}`);
+		await delayedDeleteMessage(msg, 1);
+	},
 	prefixCommand: {
 		name: nameOfCommand,
 		description,

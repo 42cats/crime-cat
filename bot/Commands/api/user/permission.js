@@ -26,32 +26,45 @@ async function isPermissionHas(userId, permissionName) {
 		return false; // ✅ 반드시 false 반환
 	}
 }
-
-
 /**
- * @param {User | GuildMember} user 
+ * 특정 유저가 해당 권한을 가지고 있는지 확인합니다.
+ * @param {String} userId 
+ * @param {String} permissionName 
+ * @returns {Boolean} 권한 여부
  */
-async function addUserPermisson(user, permissionName) {
-	const API_URL = `${baseUrl}/v1/bot/users/${user.id}/permission`;
-
-	// GuildMember 또는 User 객체 구분
-	const userObj = user.user ?? user;
-
-	const body = {
-		permissionName
-	};
-
+async function isPermissionHas(userId, permissionName) {
+	const API_URL = `${baseUrl}/v1/bot/users/${userId}/permission/${encodeURI(permissionName)}`;
 	try {
-		const response = await axios.post(API_URL, body, {
+		const response = await axios.get(API_URL, {
 			headers: {
-				'Authorization': `Bearer ${BEARER_TOKEN}`,
-				'Content-Type': 'application/json'
+				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
 		});
-		console.log('응답 데이터:', response.data.message);
-		return response;
+		console.log('응답 데이터:', response.status);
+		return response.status === 200;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response.data.message);
+		return false; // ✅ 반드시 false 반환
+	}
+}
+
+
+
+async function getPermissons() {
+	const API_URL = `${baseUrl}/v1/bot/permissions`;
+
+	// GuildMember 또는 User 객체 구분
+	try {
+		const response = await axios.get(API_URL, {
+			headers: {
+				'Authorization': `Bearer ${BEARER_TOKEN}`,
+			}
+		});
+		console.log('응답 데이터 전체 퍼미션:', response?.data?.permissionList);
+		return response?.data?.permissionList ?? [];
+	} catch (error) {
+		console.error('API 요청 실패 전체퍼미션:', error.response.data);
+		return [];
 	}
 }
 
@@ -136,9 +149,8 @@ async function deletePermisson(name) {
 
 module.exports={
 	isPermissionHas,
-	addUserPermisson,
 	editPermisson,
 	addPermisson,
-	deletePermisson
-
+	deletePermisson,
+	getPermissons
 }

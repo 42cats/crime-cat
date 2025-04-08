@@ -1,6 +1,5 @@
 // commands/ping.js
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { processGuildAndUsersWithHistory } = require('./utility/discord_db');
 const dotenv = require('dotenv');
 const { guildAddProcess } = require('./api/guild/guild');
 dotenv.config();
@@ -30,7 +29,7 @@ module.exports = {
 			const list = client.guilds.cache;
 			for (const v of list.values()) {
 				try {
-					await guildAddProcess(client,v);
+					await guildAddProcess(client, v);
 				} catch (err) {
 					console.error('Error processing guild:', err);
 					break; // 에러 발생 시 즉시 루프 중단

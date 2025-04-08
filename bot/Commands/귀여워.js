@@ -1,7 +1,6 @@
 // commands/ping.js
-const { Client, Message, CommandInteraction, SlashCommandBuilder, PermissionFlagsBits, User, Guild, ApplicationEmoji } = require('discord.js');
+const { Client, Message, CommandInteraction, SlashCommandBuilder, PermissionFlagsBits, User, Guild } = require('discord.js');
 const { GuildURLManager } = require('./utility/UrlManager');
-const { USER_PERMISSION, getUserGrade, showPermisson } = require('./utility/UserGrade');
 // dotenv.config();
 // const prefix = process.env.PRIFIX;
 
@@ -90,10 +89,10 @@ async function musicLogic(client, guild, user) {
 
 	let musicData = null;
 	if (!client.serverMusicData.has(guildId)) {
-		musicData = new GuildURLManager(guildId, client, user); 
+		musicData = new GuildURLManager(guildId, client, user);
 		await client.serverMusicData.set(guildId, musicData);
 	}
-	else{
+	else {
 		musicData = client.serverMusicData.get(guildId);
 	}
 	await musicData.playlistManager.refresh();

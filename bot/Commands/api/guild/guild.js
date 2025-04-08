@@ -6,19 +6,24 @@ const { addUserHistory } = require('../history/history');
 dotenv.config();
 const BEARER_TOKEN = process.env.API_TOKEN;
 const baseUrl = process.env.BASE_URL
-
-async function addGuild({ id, name, ownerId }) {
+/**
+ * 
+ * @param {Guild} param0 
+ * @returns 
+ */
+async function addGuild({ id, name, ownerId ,createdAt}) {
 	const API_URL = `${baseUrl}/v1/bot/guilds`;
 	const body = {
 		snowflake: id,
 		name,
-		ownerSnowflake: ownerId
+		ownerSnowflake: ownerId,
+		createdAt : createdAt.toISOString()
 	};
 
 	try {
 		const response = await axios.post(API_URL, body, {
 			headers: {
-				Authorization: `Bearer ${BEARER_TOKEN}`,
+				'Authorization': `Bearer ${BEARER_TOKEN}`,
 				'Content-Type': 'application/json'
 			}
 		});

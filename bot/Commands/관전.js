@@ -1,5 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, Role, Client, Guild, ChannelType, PermissionsBitField, User, InteractionResponse } = require('discord.js');
-const { USER_PERMISSION, getUserGrade, showPermisson, hasPermission } = require('./utility/UserGrade');
+const { SlashCommandBuilder, PermissionFlagsBits, Client, Guild, ChannelType, PermissionsBitField, User } = require('discord.js');
 const { isPermissionHas } = require('./api/user/permission');
 const nameOfCommand = "관전";
 const description = "참여했던 크씬에 관전자로 참가합니다.";

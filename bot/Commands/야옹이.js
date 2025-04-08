@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const axios = require('axios');
-const { getDeleteChannel } = require('./utility/discord_db');
 const delayedDeleteMessage = require('./utility/deleteMsg');
 const { deleteRecentMessages } = require('./utility/cleaner');
 const dotenv = require('dotenv');
@@ -46,7 +45,7 @@ async function deleteChannelMsg(guildId, client) {
 	console.log(list);
 	if (list.length <= 0) return;
 	list.map(async v => {
-		await deleteRecentMessages(guildId,v, client);
+		await deleteRecentMessages(guildId, v, client);
 	})
 
 }

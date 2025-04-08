@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const axios = require('axios');
-const { getDeleteChannel } = require('./utility/discord_db');
 const delayedDeleteMessage = require('./utility/deleteMsg');
 const { deleteMessagesFromChannel, deleteRecentMessages } = require('./utility/cleaner');
 const dotenv = require('dotenv');
@@ -51,7 +50,7 @@ module.exports = {
 				return;
 			}
 			console.log(args);
-			await deleteRecentMessages(guildId,channelId, client, amount);
+			await deleteRecentMessages(guildId, channelId, client, amount);
 		}
 	},
 	upload: true,

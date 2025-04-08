@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const axios = require('axios');
 const delayedDeleteMessage = require('./utility/deleteMsg');
-const { getDeleteChannel } = require('./utility/discord_db');
 const { deleteAllMessages } = require('./utility/cleaner');
 const dotenv = require('dotenv');
 const path = require('path');
@@ -22,7 +21,7 @@ module.exports = {
 		const client = interaction.client;
 		const channelId = interaction.channelId;
 		const msg = await interaction.reply("메시지가 삭제중입니다.");
-		await deleteChannelMsg(guildId,channelId, client);
+		await deleteChannelMsg(guildId, channelId, client);
 		await delayedDeleteMessage(msg, 1);
 	},
 	prefixCommand: {
@@ -33,13 +32,13 @@ module.exports = {
 			const guildId = message.guildId;
 			const client = message.client;
 			const channelId = message.channelId;
-			await deleteChannelMsg(guildId,channelId, client);
+			await deleteChannelMsg(guildId, channelId, client);
 		}
 	},
 	upload: true,
 	permissionLevel: PermissionFlagsBits.Administrator
 };
 
-async function deleteChannelMsg(guildId,channelId, client) {
-	deleteAllMessages(guildId,channelId, client);
+async function deleteChannelMsg(guildId, channelId, client) {
+	deleteAllMessages(guildId, channelId, client);
 }

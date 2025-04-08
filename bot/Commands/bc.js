@@ -1,6 +1,5 @@
 // commands/ping.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('@discordjs/builders');
-const { processGuildAndUsersWithHistory } = require('./utility/discord_db');
 const dotenv = require('dotenv');
 dotenv.config();
 const prefix = process.env.PRIFIX;

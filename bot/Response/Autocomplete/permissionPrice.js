@@ -1,29 +1,42 @@
-const { Client, InteractionResponse, AutocompleteInteraction } = require('discord.js');
-const { getPermissionPrice, PRICE_PERMISSION } = require('../../Commands/utility/UserGrade');
+const { Client, AutocompleteInteraction } = require('discord.js');
+const { getUserPermissons } = require('../../Commands/api/user/user');
+const { getPermissons } = require('../../Commands/api/user/permission');
+
 module.exports = {
 	name: "봇권한",
 	/**
 	 * @param {Client} client 
 	 * @param {AutocompleteInteraction} interaction 
-	 * @returns 
 	 */
 	execute: async (client, interaction) => {
-		const { user } = interaction;
 		const focusedOption = interaction.options.getFocused(true);
+
 		if (focusedOption.name === '봇권한') {
-			// 클라이언트의 guilds.cache에서 모든 길드를 가져와 선택지로 변환
-			const missingPermission = await getPermissionPrice(interaction.user);
-			console.log("missing permission - ", missingPermission);
-			const choices = missingPermission
-				.map(v => ({
-					name: v.permission,
-					value: v.permissionName
+			try {
+				const userPermissions = await getUserPermissons(interaction.user.id);
+				const allPermissions = await getPermissons();
+
+
+				const ownedIds = new Set(userPermissions.map(p => p.permissionId));
+
+				const missingPermissions = allPermissions.filter(
+					perm => !ownedIds.has(perm.id)
+				);
+				const choices = missingPermissions.map(perm => ({
+					name: perm.name,
+					value: perm.name
 				}));
-			// 사용자가 입력한 값과 시작하는 길드 이름을 필터링 (대소문자 구분 없이)
-			const filteredChoices = choices.filter(choice =>
-				choice.name.toLowerCase().startsWith(focusedOption.value.toLowerCase())
-			).slice(0, 25); // Discord는 최대 25개 선택지를 반환
-			await interaction.respond(filteredChoices);
+				const inputValue = focusedOption.value.normalize("NFC").toLowerCase();
+				const filteredChoices = choices
+				.filter(permission => 
+					permission.name.normalize("NFC").toLowerCase().includes(inputValue)
+				)
+				.slice(0, 25);
+
+				await interaction.respond(filteredChoices);
+			} catch (error) {
+				console.error('봇권한 자동완성 오류:', error);
+			}
 		}
-	},
+	}
 };

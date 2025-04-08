@@ -120,7 +120,7 @@ class AudioPlayerManager {
       console.log("audio operater = ", this.parent?.operater?.user?.id);
       const beatRate = await isPermissionHas(
         this.parent?.operater?.user?.id,
-        "AUDIO_BIT_RATE"
+        "고음질"
       )
         ? "bestaudio"
         : "bestaudio[abr<=128]";
