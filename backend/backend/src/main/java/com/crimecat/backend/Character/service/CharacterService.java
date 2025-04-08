@@ -67,7 +67,7 @@ public class CharacterService {
 
 		Character character = characterQueryService.getCharacterByCharacterName(guildSnowflake, characterName);
 
-		List<String> allRoleSnowflakes; // 최종 반환용 리스트
+		List<String> allRoleSnowflakes;
 
 		if (character != null) {
 			List<CharacterRole> existingCharacterRoles = character.getCharacterRoles();
@@ -77,7 +77,7 @@ public class CharacterService {
 
 			List<CharacterRole> newRoles = new ArrayList<>();
 			for (String requestedRole : requestedRoles) {
-				if (!existingRoleSnowflakes.contains(requestedRole)) {
+				if (existingRoleSnowflakes.add(requestedRole)) {
 					CharacterRole newRole = new CharacterRole(character, requestedRole);
 					newRoles.add(newRole);
 					existingCharacterRoles.add(newRole);
@@ -88,14 +88,12 @@ public class CharacterService {
 				characterRoleQueryService.saveAll(newRoles);
 			}
 
-			allRoleSnowflakes = existingCharacterRoles.stream()
-					.map(CharacterRole::getRoleSnowflake)
-					.toList();
+			allRoleSnowflakes = new ArrayList<>(existingRoleSnowflakes);
 		} else {
 			character = characterQueryService.saveCharacter(characterName, guild);
 			characterRoleQueryService.saveCharacterRolesByCharacterId(character, requestedRoles);
 
-			allRoleSnowflakes = new ArrayList<>(requestedRoles);
+			allRoleSnowflakes = requestedRoles.stream().distinct().toList();
 		}
 
 		return new SaveCharacterSuccessfulResponseDto(
@@ -103,6 +101,7 @@ public class CharacterService {
 				new SaveCharacterDto(character.getId(), guildSnowflake, characterName, allRoleSnowflakes, character.getCreatedAt())
 		);
 	}
+
 
 
 	@Transactional
