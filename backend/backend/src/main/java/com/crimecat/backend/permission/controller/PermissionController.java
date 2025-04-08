@@ -31,7 +31,7 @@ public class PermissionController {
 	 */
 	@GetMapping("")
 	public PermissionsResponseDto getPermissions() {
-		return permissionService.getAllpermissions();
+		return permissionService.getAllPermissions();
 	}
 	/**
 	 * 특정 권한 삭제

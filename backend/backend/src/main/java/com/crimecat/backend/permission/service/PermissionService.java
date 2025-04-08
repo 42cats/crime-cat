@@ -77,8 +77,8 @@ public class PermissionService {
 	}
 
 	@Transactional(readOnly = true)
-	public PermissionsResponseDto getAllpermissions(){
+	public PermissionsResponseDto getAllPermissions(){
 		List<Permission> all = permissionQueryService.findAll();
-		return new PermissionsResponseDto("permissions founded", all);
+		return new PermissionsResponseDto("permissions retrieved", all);
 	}
 }

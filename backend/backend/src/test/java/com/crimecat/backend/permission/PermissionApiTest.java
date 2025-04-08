@@ -48,12 +48,18 @@ public class PermissionApiTest {
 
     @Test
     void 권한_목록_조회() throws Exception {
+
+        mockMvc.perform(get("/v1/bot/permissions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("permissions retrieved"))
+                .andExpect(jsonPath("$.permissionList.length()").value(0));
+
         permissionRepository.save(new Permission("Admin", 3000, 90));
         permissionRepository.save(new Permission("User", 1000, 30));
 
-        mockMvc.perform(get("/v1/bot/permissions")) // GET 아님
+        mockMvc.perform(get("/v1/bot/permissions"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("permissions founded"))
+                .andExpect(jsonPath("$.message").value("permissions retrieved"))
                 .andExpect(jsonPath("$.permissionList.length()").value(2));
     }
 
