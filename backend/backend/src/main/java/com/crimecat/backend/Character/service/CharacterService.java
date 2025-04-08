@@ -2,17 +2,8 @@ package com.crimecat.backend.Character.service;
 
 import com.crimecat.backend.Character.domain.Character;
 import com.crimecat.backend.Character.domain.CharacterRole;
-import com.crimecat.backend.Character.dto.CharacterRoleResponseDto;
-import com.crimecat.backend.Character.dto.CharactersFailedResponseDto;
-import com.crimecat.backend.Character.dto.CharactersResponseDto;
-import com.crimecat.backend.Character.dto.CharactersSuccessResponseDto;
-import com.crimecat.backend.Character.dto.SaveCharacterDto;
-import com.crimecat.backend.Character.dto.SaveCharacterFailedResponseDto;
-import com.crimecat.backend.Character.dto.SaveCharacterResponseDto;
-import com.crimecat.backend.Character.dto.SaveCharacterSuccessfulResponseDto;
-import com.crimecat.backend.Character.dto.deleteCharacterFailedResponseDto;
-import com.crimecat.backend.Character.dto.deleteCharacterResponseDto;
-import com.crimecat.backend.Character.dto.deleteCharacterSuccessfulResponseDto;
+import com.crimecat.backend.Character.dto.*;
+import com.crimecat.backend.Character.dto.DeleteCharacterSuccessfulResponseDto;
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.service.GuildService;
 import io.micrometer.common.util.StringUtils;
@@ -115,23 +106,23 @@ public class CharacterService {
 
 
 	@Transactional
-	public deleteCharacterResponseDto deleteCharacter(String guildSnowflake, String characterName) {
+	public DeleteCharacterResponseDto deleteCharacter(String guildSnowflake, String characterName) {
 		if (StringUtils.isBlank(guildSnowflake) || StringUtils.isBlank(characterName)) {
-			return new deleteCharacterFailedResponseDto("Invalid request format");
+			return new DeleteCharacterFailedResponseDto("Invalid request format");
 		}
 
 		Guild guild = guildService.findGuildByGuildSnowflake(guildSnowflake);
 		if (guild == null) {
-			return new deleteCharacterFailedResponseDto("guild not found");
+			return new DeleteCharacterFailedResponseDto("guild not found");
 		}
 
 		Character character = characterQueryService.getCharacterByCharacterName(guildSnowflake, characterName);
 		if (character == null) {
-			return new deleteCharacterFailedResponseDto("character not found");
+			return new DeleteCharacterFailedResponseDto("character not found");
 		}
 
 		characterQueryService.deleteCharacter(character);
-		return new deleteCharacterSuccessfulResponseDto(
+		return new DeleteCharacterSuccessfulResponseDto(
 				"Character deleted successfully", guildSnowflake, characterName);
 	}
 }
