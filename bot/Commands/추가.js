@@ -1,5 +1,4 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { addDeleteChannel } = require('./utility/discord_db');
 const dotenv = require('dotenv');
 const path = require('path');
 const delayedDeleteMessage = require('./utility/deleteMsg');

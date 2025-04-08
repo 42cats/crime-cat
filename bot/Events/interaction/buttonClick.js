@@ -1,3 +1,4 @@
+// handlers/button/BUTTON_CLICK.js
 const { Client, ButtonInteraction } = require('discord.js');
 const { decodeFromString } = require('../../Commands/utility/delimiterGeter');
 
@@ -8,23 +9,24 @@ module.exports = {
      * @param {ButtonInteraction} interaction
      */
     execute: async (client, interaction) => {
-        if (interaction.isButton()) {
-            if (!interaction.customId) return;
-            let result = await client.redis.getValue(interaction.customId);
-            if(!result)
-                result = decodeFromString(interaction.customId);
-            const { command } = result;
-            console.log(`Command: ${command}, custtome id ${interaction.customId} Interaction ${interaction}`);
+        if (!interaction.isButton() || !interaction.customId) return;
 
-            // Response 실행
-            if (client.responses.buttons.has(command)) {
-                const responseHandler = client.responses.buttons.get(command);
-                await responseHandler.execute(client, interaction);
-            } else {
-                // await interaction.reply("만료된 버튼입니다");
-                console.log('Unknown button command:', command, client.responses.buttons);
-                // await interaction.reply({ content: 'Unknown button command.', ephemeral: true });
+        let data = await client.redis.getValue(interaction.customId);
+        if (!data) {
+            data = decodeFromString(interaction.customId); // fallback 방식
+            if (!data?.command) {
+                console.log('❌ Unknown or expired button:', interaction.customId);
+                return;
             }
         }
-    },
+
+        console.log(`🔘 버튼 클릭 감지 → Command: ${data.command}, customId: ${interaction.customId}`);
+
+        const handler = client.responses.buttons.get(data.command);
+        if (handler) {
+            await handler.execute(client, interaction, data); // Redis에 저장된 데이터 전달
+        } else {
+            console.log('❌ Unknown button command:', data.command);
+        }
+    }
 };

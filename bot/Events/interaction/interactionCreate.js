@@ -27,7 +27,7 @@ module.exports = {
 				case InteractionType.ApplicationCommandAutocomplete:
 					const focusedOption = interaction.options.getFocused(true);
 					const optionName = focusedOption.name;
-					const isOptionAutoComplete = client.responses.autoComplete.get(optionName);
+					const isOptionAutoComplete = client.responses.autocomplete.get(optionName);
 					console.log("옵션네임 ", optionName);
 					if (isOptionAutoComplete)
 						await isOptionAutoComplete.execute(client, interaction);

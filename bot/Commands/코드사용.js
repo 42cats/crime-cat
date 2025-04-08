@@ -1,6 +1,4 @@
 const { SlashCommandBuilder, PermissionFlagsBits, User, Message } = require('discord.js');
-const { GradeCode, User: UserDb } = require('./utility/db'); // GradeCode 모델의 실제 경로에 맞게 수정
-const { getUserInfo } = require('./utility/discord_db');
 const { redeemCoupon } = require('./api/coupon/coupon');
 const nameOfCommand = "코드사용";
 const description = "입력한 12자리 코드를 사용 처리합니다. (미사용 코드에 한해 현재 시점으로 사용 처리)";
@@ -26,7 +24,7 @@ module.exports = {
 		const codeInput = interaction.options.getString('코드');
 		try {
 			const data = await redeemCoupon(interaction.user.id, codeInput);
-			if(data?.message)
+			if (data?.message)
 				return await interaction.reply({ content: `${data.message} \n현재 포인트 ${data.point}`, ephemeral: true });
 			return await interaction.reply({ content: `${data}`, ephemeral: true });
 		} catch (error) {
@@ -50,7 +48,7 @@ module.exports = {
 			if (!codeInput) return message.channel.send("사용할 코드를 입력해주세요.");
 			try {
 				const data = await redeemCoupon(message.author.id, codeInput);
-				if(data?.message)
+				if (data?.message)
 					return await message.reply({ content: `${data.message} \n현재 포인트 ${data.point}`, ephemeral: true });
 				return await message.reply({ content: `${data}`, ephemeral: true });
 			} catch (error) {

@@ -94,12 +94,34 @@ async function getUserPermissons(userId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}
 		});
-		console.log('응답 데이터:', response.data.message, response.data);
-		return response.data;
+		console.log('응답 데이터 유저 퍼미션:', response.data?.permissions);
+		return response?.data?.permissions ?? [];
 	} catch (error) {
 		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		return [];
 	}
 }
+
+/**
+ * @param {String} userId 
+ */
+async function getUserDbInfo(userId) {
+	const API_URL = `${baseUrl}/v1/bot/users/${userId}`;
+
+	try {
+		const response = await axios.get(API_URL, {
+			headers: {
+				'Authorization': `Bearer ${BEARER_TOKEN}`,
+			}
+		});
+		console.log('응답 데이터:', response.data.message, response.data);
+		return response.data.user ?? {};
+	} catch (error) {
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		return {}
+	}
+}
+
  /**
  * @param {String} userId 
  */
@@ -109,13 +131,13 @@ async function setUserAlarm(userId,alarm = null, avatarUrl = null) {
 	if (!alarm) body.discordAlarm = alarm;
 	if (!avatarUrl) body.avatar = avatarUrl;
 	try {
-		const response = await axios.get(API_URL, body, {
+		const response = await axios.patch(API_URL, body, {
 			headers: {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}
 		});
 		console.log('응답 데이터:', response.data.message, response.data);
-		return response?.data?.user ?? response.data.message;
+		return response?.data?.message ?? "알림 설정 실패";
 	} catch (error) {
 		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 		return error.response.data.message;
@@ -126,5 +148,6 @@ module.exports={
 	addUserPermisson,
 	getUserRank,
 	getUserPermissons,
-	setUserAlarm
+	setUserAlarm,
+	getUserDbInfo
 }

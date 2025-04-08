@@ -2,8 +2,8 @@ const { SlashCommandBuilder, PermissionFlagsBits, Message, Client } = require('d
 const axios = require('axios');
 const dotenv = require('dotenv');
 const path = require('path');
-const { USER_PERMISSION, getUserGrade, hasPermission } = require('./utility/UserGrade');
 const { getGuildMusic, addGuildMusic } = require('./api/guild/music');
+const { isPermissionHas } = require('./api/user/permission');
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 const API = process.env.GOOGLE_API;
 
@@ -102,7 +102,7 @@ async function bulkAddUrls() {
 	];
 	const promises = urls.map(async ({ guildId, title, url, thumbnail, duration }) => {
 		try {
-			const result = await addGuildMusic(guildId,{
+			const result = await addGuildMusic(guildId, {
 				title,
 				url,
 				thumbnail,
@@ -130,7 +130,7 @@ async function addUrl(guildId, title, url, user) {
 
 	const count = await getGuildMusic(guildId);
 	if (count.count > 14) {
-		if (!await hasPermission(user, USER_PERMISSION.URL_UNLIMIT))
+		if (!await isPermissionHas(user.id, "주소추가"))
 			throw Error(`기본 사용자의 최대 추가목록은 15개 입니다. 당신은 ${count.count}개의 목록을 가지고 있습니다.`);
 	}
 
@@ -169,7 +169,7 @@ async function addUrl(guildId, title, url, user) {
 
 
 		// Add URL, thumbnail, and duration to the GuildURL table
-		await addGuildMusic(guildId,{
+		await addGuildMusic(guildId, {
 			title,
 			url,
 			thumbnail,

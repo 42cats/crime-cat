@@ -31,8 +31,41 @@ async function addGuildObserverSet(guildId, headTitle = "-관전", roleId = null
 		return response;
 	} catch (error) {
 		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		return error.response;
 	}
 }
+
+
+/**
+ * @param {Guild} guild
+ * @param {String} channelId  
+ */
+async function editGuildObserverSet(guildId, headTitle = "-관전", roleId = null) {
+	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/observation`;  // 요청할 API 엔드포인트
+
+	const body = {
+		headTitle
+	};
+
+	if (roleId) {
+		body.roleSnowflake = roleId;
+	}
+	console.log("body = ", body);
+	try {
+		const response = await axios.patch(API_URL,body,{
+			headers: {
+				'Authorization': `Bearer ${BEARER_TOKEN}`,
+				'Content-Type': 'application/json'  // JSON 형식 요청
+			}
+		});
+		console.log('응답 데이터:', response.status, response.data);
+		return response;
+	} catch (error) {
+		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		return error.response;
+	}
+}
+
 
 // /**
 //  * @param {Guild} guild
@@ -70,10 +103,12 @@ async function 	getGuildObserverSet(guildId) {
 		return response;
 	} catch (error) {
 		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		return error.response;
 	}
 }
 
 module.exports = {
 	addGuildObserverSet,
-	getGuildObserverSet
+	getGuildObserverSet,
+	editGuildObserverSet
 }

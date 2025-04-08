@@ -1,5 +1,4 @@
 const { getGmaePlayedUser } = require('../api/history/history');
-const { User, History } = require('./db');
 const { Client } = require('discord.js');
 
 /**

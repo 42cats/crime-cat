@@ -1,5 +1,4 @@
 const { Client, Interaction } = require('discord.js');
-const { getDeleteChannel } = require('../../Commands/utility/discord_db');
 const { getChannelClean } = require('../../Commands/api/channel/channel');
 
 module.exports = {
@@ -29,10 +28,10 @@ module.exports = {
 					return channel ? { name: channel.name, id: v } : null;
 				})
 				.filter(v => v !== null); // 존재하는 채널만 필터링
-				console.log("after map = ", channelData);
+			console.log("after map = ", channelData);
 			// 부분 일치 검색 (한글, 영어 등 모든 문자 비교 가능하도록 정규화 적용)
 			const filteredChannels = channelData
-				.filter(channel => 
+				.filter(channel =>
 					channel.name.normalize("NFC").toLowerCase().includes(inputValue)
 				)
 				.slice(0, 25);

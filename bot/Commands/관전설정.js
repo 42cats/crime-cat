@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, CommandInteraction, Role } = require('discord.js');
-const { Guild, sequelize } = require('./utility/db');
-const { addGuildObserverSet } = require('./api/guild/observer');
+const { addGuildObserverSet, editGuildObserverSet } = require('./api/guild/observer');
 const nameOfCommand = "관전설정";
 const description = "길드에 관전역할 설정(투표및, 관전명령어에 사용됨)";
 
@@ -27,7 +26,7 @@ module.exports = {
 		const title = interaction.options.getString('수식어'); // 캐릭터이름 옵션 값 가져오기
 		const role = interaction.options.getRole('권한'); // 권한 역할 옵션 값 가져오기
 		console.log("role = ", role);
-		const isAdd = await ObserverSet(interaction, { title, role });
+		const isAdd = await ObserverSet(interaction,  title, role );
 	},
 	prefixCommand: {
 		name: nameOfCommand,
@@ -45,24 +44,35 @@ module.exports = {
 
 
 /**
- * 
+ * 관전 역할 설정 로직
  * @param {CommandInteraction} interaction 
- * @param {Object} param1 
- * @param {String} param1.title 
- * @param {Role} param1.role 
+ * @param {String} title - 관전자 타이틀
+ * @param {Role} role - 설정할 역할 객체
  */
-async function ObserverSet(interaction, { title, role }) {
+async function ObserverSet(interaction, title, role) {
 	const { guildId } = interaction;
+	let response = await addGuildObserverSet(guildId, title, role?.id);
 
-	const response = await addGuildObserverSet(guildId, title, role?.id);
+	// 관전 정보 이미 존재 시 수정 요청
+	if (response?.status === 400 && response.data?.message === "Guild Observation information already exists") {
+		response = await editGuildObserverSet(guildId, title, role?.id);
+	}
 
+	// 성공 처리
 	if (response?.status === 200) {
-		const roleId = response.data.roleSnowflake;
+		const roleId = response.data.roleSnowFlake;
 		const foundRole = interaction.guild.roles.cache.get(roleId);
-		
+
 		console.log("찾은 역할 객체: ", foundRole);
-		await interaction.reply(`관전설정 성공 ✅\n타이틀: ${response.data.headTitle}\n설정 역할: ${foundRole?.name || "없음"}`);
+		await interaction.reply(
+			`✅ 관전설정 성공\n` +
+			`타이틀: ${response.data.headTitle}\n` +
+			`설정 역할: ${foundRole?.name || "없음"}`
+		);
 	} else {
-		await interaction.reply(`❌ 관전설정 실패\n사유: ${response?.data?.message || "알 수 없는 오류"}`);
+		await interaction.reply(
+			`❌ 관전설정 실패\n` +
+			`사유: ${response?.data?.message || "알 수 없는 오류"}`
+		);
 	}
 }

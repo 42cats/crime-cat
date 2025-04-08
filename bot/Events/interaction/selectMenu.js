@@ -12,8 +12,8 @@ module.exports = {
             console.log(`Command: ${command}`);
 
             // Response 실행
-            if (client.responses.selectMenus.has(command)) {
-                const responseHandler = client.responses.selectMenus.get(command);
+            if (client.responses.selectmenus.has(command)) {
+                const responseHandler = client.responses.selectmenus.get(command);
                 await responseHandler.execute(client, interaction);
             } else {
                 console.log('Unknown select menu command:', command);

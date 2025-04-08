@@ -16,17 +16,14 @@ async function addObserverPermission(client, guildId, ...users) {
 
         // 길드 정보 가져오기
         const guildData = await getGuildObserverSet(guildId);
-        if (!guildData.status === 200) throw new Error("길드를 찾을 수 없습니다.");
-
         console.log("guild data = ", guildData);
         // head_title이 없으면 기본값 "-관전" 설정
-        const head_title = guildData.data.headTitle || "-관전";
-        const observer = guildData.data.roleSnowFlake;
+        const head_title = guildData?.data?.headTitle ?? "-관전";
+        const observer = guildData?.data?.roleSnowFlake ?? null;
 
         // 클라이언트에서 길드 가져오기
         const guild = await client.guilds.fetch(guildId);
-        if (!guild) throw new Error("봇이 해당 길드에 속해 있지 않습니다.");
-
+        
         let role = null;
 
         // observer 역할 ID가 있는 경우만 역할 가져오기

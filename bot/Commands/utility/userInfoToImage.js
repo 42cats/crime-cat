@@ -27,7 +27,7 @@ async function createUserEmbed(userData) {
 	const themeColor = userData.themeColor ?? "#2C2F33";
 
 	// 권한 처리
-	const permissionList = permissions?.permissions ?? [];
+	const permissionList = permissions ?? [];
 	let permissionFieldValue = '없음';
 	if (permissionList.length > 0) {
 		permissionFieldValue = permissionList
