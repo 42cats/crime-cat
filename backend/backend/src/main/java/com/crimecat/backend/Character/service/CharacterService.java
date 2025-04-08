@@ -74,7 +74,10 @@ public class CharacterService {
 			return new SaveCharacterFailedResponseDto("guild not found");
 		}
 
-		Character character = characterQueryService.getCharacterByCharacterName(characterName);
+		Character character = characterQueryService.getCharacterByCharacterName(guildSnowflake, characterName);
+
+		List<String> allRoleSnowflakes; // 최종 반환용 리스트
+
 		if (character != null) {
 			List<CharacterRole> existingCharacterRoles = character.getCharacterRoles();
 			Set<String> existingRoleSnowflakes = existingCharacterRoles.stream()
@@ -84,25 +87,32 @@ public class CharacterService {
 			List<CharacterRole> newRoles = new ArrayList<>();
 			for (String requestedRole : requestedRoles) {
 				if (!existingRoleSnowflakes.contains(requestedRole)) {
-					newRoles.add(new CharacterRole(character, requestedRole));
+					CharacterRole newRole = new CharacterRole(character, requestedRole);
+					newRoles.add(newRole);
+					existingCharacterRoles.add(newRole);
 				}
 			}
 
 			if (!newRoles.isEmpty()) {
 				characterRoleQueryService.saveAll(newRoles);
 			}
-		}
-		else {
+
+			allRoleSnowflakes = existingCharacterRoles.stream()
+					.map(CharacterRole::getRoleSnowflake)
+					.toList();
+		} else {
 			character = characterQueryService.saveCharacter(characterName, guild);
 			characterRoleQueryService.saveCharacterRolesByCharacterId(character, requestedRoles);
+
+			allRoleSnowflakes = new ArrayList<>(requestedRoles);
 		}
-		List<String> charactersByGuildSnowflake = characterQueryService.getCharactersByGuildSnowflake(guildSnowflake)
-				.stream().map(Character::getName)
-				.toList();
+
 		return new SaveCharacterSuccessfulResponseDto(
 				"Character added successfully",
-				new SaveCharacterDto(character.getId(), guildSnowflake, characterName, charactersByGuildSnowflake, character.getCreatedAt()));
+				new SaveCharacterDto(character.getId(), guildSnowflake, characterName, allRoleSnowflakes, character.getCreatedAt())
+		);
 	}
+
 
 	@Transactional
 	public deleteCharacterResponseDto deleteCharacter(String guildSnowflake, String characterName) {
@@ -115,7 +125,7 @@ public class CharacterService {
 			return new deleteCharacterFailedResponseDto("guild not found");
 		}
 
-		Character character = characterQueryService.getCharacterByCharacterName(characterName);
+		Character character = characterQueryService.getCharacterByCharacterName(guildSnowflake, characterName);
 		if (character == null) {
 			return new deleteCharacterFailedResponseDto("character not found");
 		}
