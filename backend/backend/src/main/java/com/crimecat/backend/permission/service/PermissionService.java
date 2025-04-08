@@ -2,12 +2,15 @@ package com.crimecat.backend.permission.service;
 
 import com.crimecat.backend.permission.domain.Permission;
 import com.crimecat.backend.permission.dto.DeletePermissionResponseDto;
+import com.crimecat.backend.permission.dto.PermissionsResponseDto;
 import com.crimecat.backend.permission.dto.SavePermissionResponseDto;
 import com.crimecat.backend.permission.dto.ModifyPermissionResponseDto;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -71,5 +74,11 @@ public class PermissionService {
 
 		beforePermission.modifyPermission(afterName, price, duration);
 		return new ModifyPermissionResponseDto("permission modified");
+	}
+
+	@Transactional(readOnly = true)
+	public PermissionsResponseDto getAllPermissions(){
+		List<Permission> all = permissionQueryService.findAll();
+		return new PermissionsResponseDto("permissions retrieved", all);
 	}
 }
