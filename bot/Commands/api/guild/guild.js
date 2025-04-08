@@ -11,13 +11,13 @@ const baseUrl = process.env.BASE_URL
  * @param {Guild} param0 
  * @returns 
  */
-async function addGuild({ id, name, ownerId ,createdAt}) {
+async function addGuild({ id, name, ownerId, createdAt }) {
 	const API_URL = `${baseUrl}/v1/bot/guilds`;
 	const body = {
 		snowflake: id,
 		name,
 		ownerSnowflake: ownerId,
-		createdAt : createdAt.toISOString()
+		createdAt: createdAt.toISOString()
 	};
 
 	try {
@@ -88,7 +88,7 @@ async function guildAddProcess(client, guild) {
 	await addUser(guildOwner);
 	console.log("added owner ");
 	await addGuild(guild);
-	console.log("added guuild");
+	console.log("added guild");
 	await guildMembersAdd(client, guild);
 	console.log("all guild add process done");
 
