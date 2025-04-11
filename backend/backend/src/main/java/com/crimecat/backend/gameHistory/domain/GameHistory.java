@@ -27,13 +27,13 @@ public class GameHistory {
     @Column(name = "ID", columnDefinition = "BINARY(16)", updatable = false)
     private UUID id;
 
-    @Column(name = "IS_WIN", updatable = false)
+    @Column(name = "IS_WIN")
     private boolean isWin = false;
 
     @Column(name = "CREATED_AT", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "CHARACTER_NAME", nullable = true, updatable = true)
+    @Column(name = "CHARACTER_NAME")
     private String characterName;
 
     @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false, updatable = false)
@@ -50,5 +50,19 @@ public class GameHistory {
         this.characterName = characterName;
         this.user = user;
         this.guild = guild;
+    }
+
+    public void setIsWin(Boolean isWin) {
+        if (isWin == null) {
+            return;
+        }
+        this.isWin = isWin;
+    }
+
+    public void setCharacterName(String characterName) {
+        if (characterName == null) {
+            return;
+        }
+        this.characterName = characterName;
     }
 }

@@ -48,4 +48,8 @@ public class GameHistoryQueryService {
 	public List<GameHistory> findUsersByGuildSnowflakeAndDiscordAlarm(String guildSnowflake, Boolean discordAlarm) {
 		return gameHistoryRepository.findUsersByGuildSnowflakeAndDiscordAlarm(guildSnowflake, discordAlarm);
 	}
+
+	public void save(GameHistory gameHistory) {
+		gameHistoryRepository.save(gameHistory);
+	}
 }

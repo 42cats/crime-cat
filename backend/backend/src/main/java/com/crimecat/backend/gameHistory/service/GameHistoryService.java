@@ -1,20 +1,18 @@
 package com.crimecat.backend.gameHistory.service;
 
 import com.crimecat.backend.gameHistory.domain.GameHistory;
-import com.crimecat.backend.gameHistory.dto.SaveUserGameHistoryRequestDto;
-import com.crimecat.backend.gameHistory.dto.SaveUserHistoryResponseDto;
-import com.crimecat.backend.gameHistory.dto.UserGameHistoryDto;
-import com.crimecat.backend.gameHistory.dto.UserGameHistoryFailedResponseDto;
-import com.crimecat.backend.gameHistory.dto.UserGameHistoryResponseDto;
-import com.crimecat.backend.gameHistory.dto.UserGameHistorySuccessResponseDto;
+import com.crimecat.backend.gameHistory.dto.*;
 import com.crimecat.backend.guild.domain.Guild;
+import com.crimecat.backend.guild.service.GuildQueryService;
 import com.crimecat.backend.guild.service.GuildService;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.service.UserService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +22,7 @@ public class GameHistoryService {
 
 	private final UserService userService;
 	private final GuildService guildService;
+	private final GuildQueryService guildQueryService;
 
 	@Transactional
 	public SaveUserHistoryResponseDto saveUserGameHistory(
@@ -73,4 +72,21 @@ public class GameHistoryService {
 		return new UserGameHistorySuccessResponseDto(userSnowflake, userGameHistoryDtos);
 	}
 
+    public void updateGameHistory(String userSnowflake, String guildSnowflake,
+								  GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
+		if (userService.findUserBySnowflake(userSnowflake) == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user not exists");
+		}
+		if (!guildQueryService.existsBySnowflake(guildSnowflake)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "guild not exists");
+		}
+		GameHistory gameHistory = gameHistoryQueryService.findGameHistoryByUserSnowFlakeAndGuildSnowflake(
+				userSnowflake, guildSnowflake);
+		if (gameHistory == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "game history not exists");
+		}
+		gameHistory.setIsWin(gameHistoryUpdateRequestDto.getIsWin());
+		gameHistory.setCharacterName(gameHistoryUpdateRequestDto.getCharacterName());
+		gameHistoryQueryService.save(gameHistory);
+    }
 }
