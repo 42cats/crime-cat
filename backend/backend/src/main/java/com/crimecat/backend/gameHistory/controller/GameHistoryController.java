@@ -1,16 +1,13 @@
 package com.crimecat.backend.gameHistory.controller;
 
+import com.crimecat.backend.gameHistory.dto.GameHistoryUpdateRequestDto;
 import com.crimecat.backend.gameHistory.dto.SaveUserGameHistoryRequestDto;
 import com.crimecat.backend.gameHistory.dto.SaveUserHistoryResponseDto;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryResponseDto;
 import com.crimecat.backend.gameHistory.service.GameHistoryService;
+import com.crimecat.backend.guild.dto.MessageDto;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -38,5 +35,13 @@ public class GameHistoryController {
 	@GetMapping("{user_snowflake}")
 	public UserGameHistoryResponseDto getUserGameHistoryByUserSnowflake(@PathVariable("user_snowflake") String userSnowflake) {
 		return gameHistoryService.getUserGameHistoryByUserSnowflake(userSnowflake);
+	}
+
+	@PatchMapping("{user_snowflake}/guild/{guild_snowflake}")
+	public MessageDto<?> updateUserGameHistory(@PathVariable("user_snowflake") String userSnowflake,
+											   @PathVariable("guild_snowflake") String guildSnowflake,
+											   @RequestBody GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
+		gameHistoryService.updateGameHistory(userSnowflake, guildSnowflake, gameHistoryUpdateRequestDto);
+		return new MessageDto<>("History updated successfully");
 	}
 }
