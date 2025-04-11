@@ -12,4 +12,6 @@ public interface GuildMusicRepository extends JpaRepository<Music, UUID> {
     Long deleteByGuildSnowflakeAndTitle(String guildSnowflake, String title);
 
     boolean existsByGuildSnowflakeAndTitle(String guildSnowflake, String title);
+
+    boolean existsByGuildSnowflakeAndYoutubeUrl(String guildSnowflake, String youtubeUrl);
 }

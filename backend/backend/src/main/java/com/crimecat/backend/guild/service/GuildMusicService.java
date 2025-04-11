@@ -46,7 +46,8 @@ public class GuildMusicService {
         if (!guildQueryService.existsBySnowflake(guildSnowflake)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "guild not exists");
         }
-        if (guildMusicRepository.existsByGuildSnowflakeAndTitle(guildSnowflake, guildMusicRequestDto.getTitle())) {
+        if (guildMusicRepository.existsByGuildSnowflakeAndTitle(guildSnowflake, guildMusicRequestDto.getTitle())
+        || guildMusicRepository.existsByGuildSnowflakeAndYoutubeUrl(guildSnowflake, guildMusicRequestDto.getUrl())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "music already exists");
         }
         Music music = new Music(guildSnowflake, guildMusicRequestDto);
