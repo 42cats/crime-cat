@@ -77,7 +77,7 @@ public class PasswordNoteController {
     @PatchMapping
     public ResponseEntity<?> updateNote(
             @PathVariable String guildId,
-            @RequestBody SavePasswordNoteRequestDto request) {
+            @RequestBody PatchPasswordNoteRequestDto request) {
 
         PasswordNoteDto updated = passwordNoteService.update(guildId, request);
 
