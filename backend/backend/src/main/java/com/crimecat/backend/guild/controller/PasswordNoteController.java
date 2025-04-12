@@ -73,7 +73,7 @@ public class PasswordNoteController {
         );
     }
 
-    // 🔐 수정 (PUT)
+    // 🔐 수정 (PATCH)
     @PatchMapping
     public ResponseEntity<?> updateNote(
             @PathVariable String guildId,
