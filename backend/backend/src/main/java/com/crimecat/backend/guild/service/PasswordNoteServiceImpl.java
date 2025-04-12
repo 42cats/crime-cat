@@ -70,26 +70,31 @@ public class PasswordNoteServiceImpl implements PasswordNoteService {
         return toDto(note);
     }
 
-    @Override
-    public PasswordNoteDto update(String guildId, PatchPasswordNoteRequestDto request) {
-        Optional<PasswordNote> existingNote = passwordNoteRepository.findByGuildSnowflakeAndPasswordKey(guildId, request.getPasswordKey());
-        if (existingNote.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "수정할 컨텐츠가 존재하지 않습니다.");
-        }
-        PasswordNote note = existingNote.get();
-        if (!note.getId().equals(request.getUuid())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 존재하는 비밀번호입니다.");
-        }
-        if (request.getContent().length() > 2000) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "컨텐츠 2000자 제한오류");
-        }
+@Override
+public PasswordNoteDto update(String guildId, PatchPasswordNoteRequestDto request) {
+    // 1. 현재 passwordKey로 등록된 노트 조회
+    PasswordNote existingNote = passwordNoteRepository
+            .findByGuildSnowflakeAndPasswordKey(guildId, request.getPasswordKey())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "수정할 컨텐츠가 존재하지 않습니다."));
 
-        note.setContent(request.getContent());
-        note.setChannelSnowflake(request.getChannelSnowflake());
-        note.setPasswordKey(request.getPasswordKey());
-
-        return toDto(note);
+    // 2. UUID가 다르다면 이미 다른 노트에서 사용 중인 키
+    if (!existingNote.getId().equals(request.getUuid())) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 존재하는 비밀번호입니다.");
     }
+
+    // 3. 콘텐츠 길이 검사
+    if (request.getContent().length() > 2000) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "컨텐츠 2000자 제한오류");
+    }
+
+    // 4. 실제 수정
+    existingNote.setContent(request.getContent());
+    existingNote.setChannelSnowflake(request.getChannelSnowflake());
+    existingNote.setPasswordKey(request.getPasswordKey());
+
+    return toDto(existingNote);
+}
+
 
     private PasswordNoteDto toDto(PasswordNote note) {
         return PasswordNoteDto.builder()
