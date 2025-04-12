@@ -11,5 +11,5 @@ public interface PasswordNoteRepository extends JpaRepository<PasswordNote, UUID
     boolean existsByGuildSnowflakeAndPasswordKey(String guildSnowflake, String passwordKey);
     Optional<PasswordNote> findByGuildSnowflakeAndPasswordKey(String guildSnowflake, String passwordKey);
     List<PasswordNote> findAllByGuildSnowflake(String guildSnowflake);
-    boolean existsById(UUID uuid);
+    Optional<PasswordNote> findById(UUID id);
 }

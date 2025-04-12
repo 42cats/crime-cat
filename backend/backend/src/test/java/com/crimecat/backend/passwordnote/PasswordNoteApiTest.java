@@ -218,7 +218,8 @@ public class PasswordNoteApiTest {
     @Test
     void 패스워드노트_수정_실패_존재X() throws Exception {
         Guild guild = prepareGuild();
-        SavePasswordNoteRequestDto update = new SavePasswordNoteRequestDto("1234", "없는키", "내용");
+        UUID uuid = UUID.randomUUID();
+        PatchPasswordNoteRequestDto update = new PatchPasswordNoteRequestDto(uuid,"1234", "없는키", "내용");
 
         MvcResult mvcResult = mockMvc.perform(patch("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -232,12 +233,23 @@ public class PasswordNoteApiTest {
     @Test
     void 패스워드노트_수정_실패_2000자초과() throws Exception {
         Guild guild = prepareGuild();
-        SavePasswordNoteRequestDto request = new SavePasswordNoteRequestDto("1234", "감자", "내용");
+        SavePasswordNoteRequestDto request = new SavePasswordNoteRequestDto("1234", "고구마", "초기내용");
 
         // 1. 노트 생성 및 ID 추출
-        MvcResult createResult = mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        MvcResult result = mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String json = result.getResponse().getContentAsString();
+        UUID id = UUID.fromString(objectMapper.readTree(json).get("passwordNote").get("uuid").asText());
+        PatchPasswordNoteRequestDto request1 = new PatchPasswordNoteRequestDto(id,"1234", "고구마", "내용");
+
+        // 1. 노트 생성 및 ID 추출
+        MvcResult createResult = mockMvc.perform(patch("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request1)))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -246,7 +258,7 @@ public class PasswordNoteApiTest {
 
         // 2. 2000자 초과 내용으로 PATCH 요청
         String longContent = "a".repeat(2001);
-        PatchPasswordNoteRequestDto update = new PatchPasswordNoteRequestDto(noteId, "1234", "감자", longContent);
+        PatchPasswordNoteRequestDto update = new PatchPasswordNoteRequestDto(noteId, "1234", "고구마", longContent);
 
         MvcResult errorResult = mockMvc.perform(patch("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
