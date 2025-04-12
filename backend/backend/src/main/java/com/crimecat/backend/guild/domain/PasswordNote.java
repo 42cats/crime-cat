@@ -13,7 +13,12 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "PASSWORD_NOTE")
+@Table(
+        name = "PASSWORD_NOTE",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_guild_password_key", columnNames = {"GUILD_SNOWFLAKE", "PASSWORD_KEY"})
+        }
+)
 @NoArgsConstructor
 @Getter
 @Setter
@@ -26,7 +31,7 @@ public class PasswordNote {
     @Column(name = "GUILD_SNOWFLAKE", nullable = false)
     private String guildSnowflake;
 
-    @Column(name = "CHANNEL_SNOWFLAKE", nullable = false, unique = false)
+    @Column(name = "CHANNEL_SNOWFLAKE", nullable = false)
     private String channelSnowflake;
 
     @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", insertable = false, updatable = false)
@@ -34,11 +39,11 @@ public class PasswordNote {
     private Guild guild;
 
     @NotBlank
-    @Column(name = "PASSWORD_KEY", nullable = false, unique = true)
+    @Column(name = "PASSWORD_KEY", nullable = false) // 🔥 unique 제거됨
     private String passwordKey;
 
     @NotBlank
-    @Column(name = "CONTENT", nullable = false, updatable = true)
+    @Column(name = "CONTENT", nullable = false)
     private String content;
 
     @NotNull
