@@ -70,6 +70,7 @@ public class PasswordNoteServiceImpl implements PasswordNoteService {
 
     @Override
     public PasswordNoteDto update(String guildId, SavePasswordNoteRequestDto request) {
+        System.out.println("request = " + request);
         PasswordNote note = passwordNoteRepository.findByGuildSnowflakeAndPasswordKey(guildId, request.getPasswordKey())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "수정할 컨텐츠가 존재하지 않습니다."));
 

@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 @RestController
-@RequestMapping("/api/guilds/{guildId}/password-notes")
+@RequestMapping("/v1/bot/guilds/{guildId}/password-notes")
 @RequiredArgsConstructor
 public class PasswordNoteController {
 

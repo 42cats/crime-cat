@@ -67,37 +67,37 @@ services:
     networks:
       - discord-network
 
-  backend:
-    build:
-      context: .
-      dockerfile: docker/backend/Dockerfile
-    image: spring-backend
-#    restart: always
-    container_name: spring-backend
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mariadb://cat_db:3306/${DB_NAME}
-      - SPRING_DATASOURCE_USERNAME=${DB_USER}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASS}
-      - SERVER_PORT=8080
-      - SPRING_PROFILES_ACTIVE=${SPRING_ACTIVE_PROFILES}
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - discord-network
-    ports:
-      - "8080:8080"
-  #  volumes:
-  #    - backend_data:/app
+#   backend:
+#     build:
+#       context: .
+#       dockerfile: docker/backend/Dockerfile
+#     image: spring-backend
+# #    restart: always
+#     container_name: spring-backend
+#     environment:
+#       - SPRING_DATASOURCE_URL=jdbc:mariadb://cat_db:3306/${DB_NAME}
+#       - SPRING_DATASOURCE_USERNAME=${DB_USER}
+#       - SPRING_DATASOURCE_PASSWORD=${DB_PASS}
+#       - SERVER_PORT=8080
+#       - SPRING_PROFILES_ACTIVE=${SPRING_ACTIVE_PROFILES}
+#     depends_on:
+#       db:
+#         condition: service_healthy
+#     networks:
+#       - discord-network
+#     ports:
+#       - "8080:8080"
+#   #  volumes:
+#   #    - backend_data:/app
 
   discord-app:
     init: true
     build:
       context: .
       dockerfile: docker/discord/Dockerfile
-    depends_on:
-      backend:
-        condition: service_started
+    # depends_on:
+    #   backend:
+    #     condition: service_started
     container_name: discord-app
     image: discord-app
     environment:
