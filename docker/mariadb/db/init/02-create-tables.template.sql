@@ -38,6 +38,26 @@ CREATE TABLE IF NOT EXISTS `guilds` (
     COLLATE=utf8mb4_unicode_ci
     COMMENT='길드 테이블';
 
+/**
+  비번 테이블
+*/
+CREATE TABLE IF NOT EXISTS `password_note` (
+    `id` UUID NOT NULL PRIMARY KEY COMMENT 'UUID 형식의 고유 식별자',
+    `guild_snowflake` VARCHAR(50) NOT NULL COMMENT '연결된 길드의 Snowflake ID',
+    `channel_snowflake` VARCHAR(50) NOT NULL COMMENT '길드의 채널 Snowflake ID',
+    `password_key` VARCHAR(255) NOT NULL UNIQUE COMMENT '비번 키 (고유값)',
+    `content` TEXT NOT NULL COMMENT '저장된 내용',
+    `created_at` TIMESTAMP NOT NULL COMMENT '생성 시간',
+    
+    CONSTRAINT `fk_password_note_guild`
+        FOREIGN KEY (`guild_snowflake`)
+        REFERENCES `guilds`(`snowflake`)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='비밀번호 노트 저장 테이블';
 
 
 /**
