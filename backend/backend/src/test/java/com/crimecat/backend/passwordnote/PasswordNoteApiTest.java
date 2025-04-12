@@ -2,6 +2,7 @@ package com.crimecat.backend.passwordnote;
 
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.dto.GuildDto;
+import com.crimecat.backend.guild.dto.PatchPasswordNoteRequestDto;
 import com.crimecat.backend.guild.dto.SavePasswordNoteRequestDto;
 import com.crimecat.backend.guild.repository.GuildRepository;
 import com.crimecat.backend.guild.repository.PasswordNoteRepository;
@@ -21,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -188,15 +190,22 @@ public class PasswordNoteApiTest {
     }
 
     @Test
-    void 패스워드노트_수정_성공() throws Exception {
+    void 패스워드노트_수정_성공_UUID기반() throws Exception {
         Guild guild = prepareGuild();
         SavePasswordNoteRequestDto request = new SavePasswordNoteRequestDto("1234", "감자", "초기내용");
 
-        mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
+        // 1. 노트 생성 및 ID 추출
+        MvcResult result = mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andReturn();
 
-        SavePasswordNoteRequestDto update = new SavePasswordNoteRequestDto("1234", "감자", "업데이트된 내용");
+        String json = result.getResponse().getContentAsString();
+        UUID id = UUID.fromString(objectMapper.readTree(json).get("passwordNote").get("uuid").asText());
+
+        // 2. 수정 요청 (UUID 기반)
+        PatchPasswordNoteRequestDto update = new PatchPasswordNoteRequestDto(id, "1234", "감자", "업데이트된 내용");
         mockMvc.perform(patch("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(update)))
@@ -204,6 +213,7 @@ public class PasswordNoteApiTest {
                 .andExpect(jsonPath("$.message").value("수정 완료하였습니다."))
                 .andExpect(jsonPath("$.passwordNote.content").value("업데이트된 내용"));
     }
+
 
     @Test
     void 패스워드노트_수정_실패_존재X() throws Exception {
@@ -224,19 +234,64 @@ public class PasswordNoteApiTest {
         Guild guild = prepareGuild();
         SavePasswordNoteRequestDto request = new SavePasswordNoteRequestDto("1234", "감자", "내용");
 
-        mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
+        // 1. 노트 생성 및 ID 추출
+        MvcResult createResult = mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andReturn();
 
+        UUID noteId = UUID.fromString(objectMapper.readTree(createResult.getResponse().getContentAsString())
+                .get("passwordNote").get("uuid").asText());
+
+        // 2. 2000자 초과 내용으로 PATCH 요청
         String longContent = "a".repeat(2001);
-        SavePasswordNoteRequestDto update = new SavePasswordNoteRequestDto("1234", "감자", longContent);
+        PatchPasswordNoteRequestDto update = new PatchPasswordNoteRequestDto(noteId, "1234", "감자", longContent);
 
-        MvcResult mvcResult = mockMvc.perform(patch("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        MvcResult errorResult = mockMvc.perform(patch("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(update)))
                 .andExpect(status().isBadRequest())
                 .andReturn();
-        String errorMessage = mvcResult.getResponse().getErrorMessage();
+
+        String errorMessage = errorResult.getResponse().getErrorMessage();
         Assertions.assertThat(errorMessage).isEqualTo("컨텐츠 2000자 제한오류");
     }
+
+    @Test
+    void 패스워드노트_수정_실패_중복키_UUID기반() throws Exception {
+        Guild guild = prepareGuild();
+
+        // A - 감자
+        SavePasswordNoteRequestDto noteA = new SavePasswordNoteRequestDto("1234", "감자", "내용A");
+        mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(noteA)))
+                .andExpect(status().isOk());
+
+        // B - 고구마
+        SavePasswordNoteRequestDto noteB = new SavePasswordNoteRequestDto("1234", "고구마", "내용B");
+        MvcResult result = mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(noteB)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        UUID idB = UUID.fromString(objectMapper.readTree(result.getResponse().getContentAsString())
+                .get("passwordNote").get("uuid").asText());
+
+        // B를 '감자'로 수정 시도
+        PatchPasswordNoteRequestDto update = new PatchPasswordNoteRequestDto(idB, "1234", "감자", "중복시도");
+
+        MvcResult errorResult = mockMvc.perform(patch("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(update)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String errorMessage = errorResult.getResponse().getErrorMessage();
+        assertThat(errorMessage).isEqualTo("이미 존재하는 비밀번호입니다.");
+    }
+
+
 }
