@@ -72,28 +72,30 @@ public class PasswordNoteServiceImpl implements PasswordNoteService {
 
 @Override
 public PasswordNoteDto update(String guildId, PatchPasswordNoteRequestDto request) {
-    // 1. 현재 passwordKey로 등록된 노트 조회
-    PasswordNote existingNote = passwordNoteRepository
-            .findByGuildSnowflakeAndPasswordKey(guildId, request.getPasswordKey())
+    // 1. 수정 대상 노트 조회
+    PasswordNote targetNote = passwordNoteRepository.findById(request.getUuid())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "수정할 컨텐츠가 존재하지 않습니다."));
 
-    // 2. UUID가 다르다면 이미 다른 노트에서 사용 중인 키
-    if (!existingNote.getId().equals(request.getUuid())) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 존재하는 비밀번호입니다.");
-    }
+    // 2. 동일 guild 내에 다른 노트가 같은 키를 사용 중인지 확인
+    passwordNoteRepository.findByGuildSnowflakeAndPasswordKey(guildId, request.getPasswordKey())
+            .filter(note -> !note.getId().equals(request.getUuid()))
+            .ifPresent(conflict -> {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 존재하는 비밀번호입니다.");
+            });
 
-    // 3. 콘텐츠 길이 검사
+    // 3. 길이 제한 체크
     if (request.getContent().length() > 2000) {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "컨텐츠 2000자 제한오류");
     }
 
     // 4. 실제 수정
-    existingNote.setContent(request.getContent());
-    existingNote.setChannelSnowflake(request.getChannelSnowflake());
-    existingNote.setPasswordKey(request.getPasswordKey());
+    targetNote.setContent(request.getContent());
+    targetNote.setChannelSnowflake(request.getChannelSnowflake());
+    targetNote.setPasswordKey(request.getPasswordKey());
 
-    return toDto(existingNote);
+    return toDto(targetNote);
 }
+
 
 
     private PasswordNoteDto toDto(PasswordNote note) {
