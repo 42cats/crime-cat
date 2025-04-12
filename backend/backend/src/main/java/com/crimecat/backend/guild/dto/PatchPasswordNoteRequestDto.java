@@ -12,7 +12,7 @@ import java.util.UUID;
 public class PatchPasswordNoteRequestDto {
 
     @NotBlank
-    private UUID id;
+    private UUID uuid;
 
     @NotBlank
     private String channelSnowflake;

@@ -77,7 +77,7 @@ public class PasswordNoteServiceImpl implements PasswordNoteService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "수정할 컨텐츠가 존재하지 않습니다.");
         }
         PasswordNote note = existingNote.get();
-        if (!note.getId().equals(request.getId())) {
+        if (!note.getId().equals(request.getUuid())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 존재하는 비밀번호입니다.");
         }
         if (request.getContent().length() > 2000) {
