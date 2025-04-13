@@ -6,11 +6,11 @@ const BOT_TOKEN = process.env.KOREAN_DISCORD_TOKEN;
 const BOT_ID = process.env.KOREAN_DISCORD_ID;
 
 /**
- * 특정 유저가 해당 권한을 가지고 있는지 확인합니다.
+ * 한국 디스코드 리스트에 서버 정보를 전송 
  * @param {Client} client
  */
 async function postBotStatus(client) {
-	const serverCount = client.guilds.cache.size;
+	const serverCount = client.guilds.cache.size송
 	const shardCount = client.shard?.count || 1;
 	const API_URL = `https://koreanbots.dev/api/v2/bots/${BOT_ID}/stats`;
 	const body = {
