@@ -48,12 +48,12 @@ client.once(Events.ClientReady, async (readyClient) => {
 	updateActivity(client, messege, currentIndex);
 	client.master = await client.users.fetch('317655426868969482');
 	postBotStatus(client)
-  .then(() => {
-    console.log("✅ 한국 디스코드 서버에 등록 성공");
-  })
-  .catch((err) => {
-    console.error("❌ 한국 디스코드 서버에 등록 실패:", err);
-  });
+		.then(() => {
+			console.log("✅ 한국 디스코드 서버에 등록 성공");
+		})
+		.catch((err) => {
+			console.error("❌ 한국 디스코드 서버에 등록 실패:", err);
+		});
 
 });
 
@@ -92,14 +92,14 @@ client.on(Events.GuildCreate, async (guild) => {
 		// }
 		console.log("약관 전송");
 		termsReply.execute(client, owner, guild, 1);
-		owner && await owner.send('짭냥이 개발에 협조해 주셔서 감사합니다 :)');s
+		owner && await owner.send('짭냥이 개발에 협조해 주셔서 감사합니다 :)');
 		postBotStatus(client)
-  .then(() => {
-    console.log("✅ 한국 디스코드 서버에 등록 성공");
-  })
-  .catch((err) => {
-    console.error("❌ 한국 디스코드 서버에 등록 실패:", err);
-  });
+			.then(() => {
+				console.log("✅ 한국 디스코드 서버에 등록 성공");
+			})
+			.catch((err) => {
+				console.error("❌ 한국 디스코드 서버에 등록 실패:", err);
+			});
 
 		// await processGuildAndUsersWithHistory(client, tagetGuild);
 	}
