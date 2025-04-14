@@ -19,7 +19,9 @@ const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const redirectUri = import.meta.env.VITE_AUTH_REDIRECT_URI;
+  const loginWith = (provider: string) => {
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/oauth2/authorize/${provider}`;
+  };
 
   // 리디렉션 대상 URL (기본은 /dashboard)
   const from = location.state?.from?.pathname || '/dashboard';
@@ -116,9 +118,7 @@ const Login: React.FC = () => {
                 type="button"
                 variant="secondary"
                 className="w-full flex items-center justify-center gap-2"
-                onClick={() => {
-                    window.location.href = redirectUri;
-                }}
+                onClick={() => loginWith('discord')}
               >
                 <FaDiscord className="h-4 w-4" />
                 Discord로 로그인

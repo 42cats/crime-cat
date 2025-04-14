@@ -23,6 +23,9 @@ import TermsPage from '@/pages/TermsPage';
 import PrivacyPage from "./pages/PrivacyPage";
 import ContactPage from '@/pages/ContactPage';
 import DonationPage from '@/pages/DonationPage';
+// OAuth2 Pages
+import OAuthCallback from "@/pages/OAuthCallback";
+import OAuthLoading from "@/pages/OAuthLoading";
 // Dashboard Pages
 import Dashboard from "@/pages/Dashboard";
 import Guilds from "@/pages/Guilds";
@@ -53,6 +56,10 @@ const App = () => (
                   <Route path="/donate" element={<DonationPage />} />
 
                 </Route>
+
+				{/*OAuth Layout Routes */}
+				<Route path="/login/oauth2/callback" element={<OAuthCallback />} />
+				<Route path="/login/oauth2/loading" element={<OAuthLoading />} />
 
                 {/* Dashboard Layout Routes */}
                 <Route path="/dashboard" element={<DashboardLayout />}>
