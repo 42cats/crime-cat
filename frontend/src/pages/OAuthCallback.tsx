@@ -9,9 +9,13 @@ const OAuthCallback = () => {
     const code = params.get('code');
     const stateRaw = params.get('state');
 
+    const errorProcess = () => {
+        alert('로그인 처리 중 오류가 발생했습니다.');
+        navigate('/login');
+    }
+
     if (!code || !stateRaw) {
-      alert('로그인 처리 중 오류가 발생했습니다.');
-      navigate('/login');
+      errorProcess();
       return;
     }
 
@@ -21,8 +25,7 @@ const OAuthCallback = () => {
       navigate(`/login/oauth2/loading?code=${code}&provider=${provider}`);
     } catch (err) {
       console.error('Error : ', err);
-      alert('로그인 처리 중 오류가 발생했습니다.');
-      navigate('/login');
+      errorProcess();
     }
 
   }, []);
