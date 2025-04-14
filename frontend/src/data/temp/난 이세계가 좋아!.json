@@ -1,0 +1,24 @@
+{
+    "id": "87",
+    "title": "난 이세계가 좋아!",
+    "thumbnail": "/content/image/default.png",
+    "description": "",
+    "recommendations": 0,
+    "content": "",
+    "tags": [
+        "추리"
+    ],
+    "password": "",
+    "makers": [
+        "시안"
+    ],
+    "players": "5",
+    "characters": [],
+    "price": 2000,
+    "time": 90,
+    "contact": "https://open.kakao.com/me/ftfr",
+    "createdBy": "system",
+    "updatedBy": "system",
+    "createdAt": "2025-04-13T00:00:00.000Z",
+    "updatedAt": "2025-04-13T00:00:00.000Z"
+}

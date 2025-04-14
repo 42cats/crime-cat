@@ -1,0 +1,28 @@
+{
+    "id": "133",
+    "title": "쥬토피아",
+    "thumbnail": "/content/image/default.png",
+    "description": "합작 (오리모죵 : Owen, 리앗골, 김네모, 죠죠)",
+    "recommendations": 0,
+    "content": "",
+    "tags": [
+        "합작",
+        "추리"
+    ],
+    "password": "",
+    "makers": [
+        "Owen",
+        "리앗골",
+        "김네모",
+        "죠죠"
+    ],
+    "players": "6",
+    "characters": [],
+    "price": 5000,
+    "time": 180,
+    "contact": "https://open.kakao.com/o/skxElLyf",
+    "createdBy": "system",
+    "updatedBy": "system",
+    "createdAt": "2025-04-13T00:00:00.000Z",
+    "updatedAt": "2025-04-13T00:00:00.000Z"
+}
