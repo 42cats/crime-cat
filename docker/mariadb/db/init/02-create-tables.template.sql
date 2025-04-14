@@ -283,3 +283,40 @@ CREATE TABLE `point_histories`
     DEFAULT CHARSET=utf8mb4
     COLLATE=utf8mb4_unicode_ci
     COMMENT='포인트 사용 기록 테이블';
+
+
+CREATE TABLE `web_users` (
+  `id` UUID NOT NULL PRIMARY KEY,                -- UUID
+  `web_user_id` UUID DEFAULT NULL,                   -- 디스코드 연동 UUID
+
+  `login_method` ENUM('local', 'oauth') NOT NULL DEFAULT 'local',
+  `email` VARCHAR(100) UNIQUE DEFAULT NULL,          -- ✅ NULL 허용 + UNIQUE
+  `email_verified` BOOLEAN DEFAULT FALSE,
+  `password_hash` VARCHAR(255),
+  `nickname` VARCHAR(50) NOT NULL,
+  `profile_image_path` VARCHAR(255),
+  `bio` TEXT,
+
+  `role` ENUM('user', 'admin') NOT NULL DEFAULT 'user',
+  `is_active` BOOLEAN NOT NULL DEFAULT TRUE,
+  `last_login_at` DATETIME DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  `settings` JSON DEFAULT NULL,
+  `social_links` JSON DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `user_tokens` (
+  `id` UUID NOT NULL PRIMARY KEY,                 -- UUID
+  `web_user_id` UUID NOT NULL,                        -- FK → web_users(id)
+  `provider` VARCHAR(20) NOT NULL DEFAULT 'discord',  -- 로그인 제공자 (discord, local 등)
+  `refresh_token` TEXT NOT NULL,                      -- 암호화된 Refresh Token
+  `jti` VARCHAR(255) NOT NULL,                        -- JWT 고유 식별자
+  `expires_at` TIMESTAMP NOT NULL,                    -- 만료 시각
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,   -- 생성 시각
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- 수정 시각
+
+  CONSTRAINT `FK_user_tokens_user_id` FOREIGN KEY (`user_id`) REFERENCES `web_users` (`id`) ON DELETE CASCADE,
+  INDEX (`user_id`),
+  INDEX (`jti`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
