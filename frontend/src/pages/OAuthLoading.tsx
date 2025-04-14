@@ -10,9 +10,13 @@ const OAuthLoading = () => {
     const code = params.get('code');
     const provider = params.get('provider');
 
+    const errorProcess = () => {
+        alert('로그인 처리 중 오류가 발생했습니다.');
+        navigate('/login');
+    }
+
     if (!code || !provider) {
-      alert('로그인 처리 중 오류가 발생했습니다.');
-      navigate('/login');
+      errorProcess();
       return;
     }
 
@@ -36,8 +40,7 @@ const OAuthLoading = () => {
           navigate('/');
         } catch (err) {
           console.error('Error : ', err);
-          alert('로그인 처리 중 오류가 발생했습니다.');
-          navigate('/login');
+          errorProcess();
         }
     };
 
