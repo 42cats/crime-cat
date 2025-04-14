@@ -10,7 +10,7 @@ const BOT_ID = process.env.KOREAN_DISCORD_ID;
  * @param {Client} client
  */
 async function postBotStatus(client) {
-	const serverCount = client.guilds.cache.size송
+	const serverCount = client.guilds.cache.size
 	const shardCount = client.shard?.count || 1;
 	const API_URL = `https://koreanbots.dev/api/v2/bots/${BOT_ID}/stats`;
 	const body = {
