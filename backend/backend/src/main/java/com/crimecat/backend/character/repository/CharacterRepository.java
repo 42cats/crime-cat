@@ -1,6 +1,6 @@
-package com.crimecat.backend.character.repository;
+package com.crimecat.backend.Character.repository;
 
-import com.crimecat.backend.character.domain.Character;
+import com.crimecat.backend.Character.domain.Character;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;

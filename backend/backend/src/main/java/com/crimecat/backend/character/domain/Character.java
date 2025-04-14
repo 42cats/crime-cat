@@ -1,4 +1,4 @@
-package com.crimecat.backend.character.domain;
+package com.crimecat.backend.Character.domain;
 
 import com.crimecat.backend.guild.domain.Guild;
 import jakarta.persistence.CascadeType;

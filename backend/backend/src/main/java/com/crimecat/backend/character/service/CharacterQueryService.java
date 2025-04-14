@@ -1,7 +1,7 @@
-package com.crimecat.backend.character.service;
+package com.crimecat.backend.Character.service;
 
-import com.crimecat.backend.character.domain.Character;
-import com.crimecat.backend.character.repository.CharacterRepository;
+import com.crimecat.backend.Character.domain.Character;
+import com.crimecat.backend.Character.repository.CharacterRepository;
 import com.crimecat.backend.guild.domain.Guild;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
