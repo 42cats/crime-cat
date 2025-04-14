@@ -1,8 +1,8 @@
-package com.crimecat.backend.character.service;
+package com.crimecat.backend.Character.service;
 
-import com.crimecat.backend.character.domain.Character;
-import com.crimecat.backend.character.domain.CharacterRole;
-import com.crimecat.backend.character.repository.CharacterRoleRepository;
+import com.crimecat.backend.Character.domain.Character;
+import com.crimecat.backend.Character.domain.CharacterRole;
+import com.crimecat.backend.Character.repository.CharacterRoleRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;

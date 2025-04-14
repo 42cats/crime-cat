@@ -1,4 +1,4 @@
-package com.crimecat.backend.character.domain;
+package com.crimecat.backend.Character.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

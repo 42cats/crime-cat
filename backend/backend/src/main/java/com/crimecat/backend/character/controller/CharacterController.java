@@ -1,10 +1,10 @@
-package com.crimecat.backend.character.controller;
+package com.crimecat.backend.Character.controller;
 
-import com.crimecat.backend.character.dto.CharactersResponseDto;
-import com.crimecat.backend.character.dto.SaveCharacterRequestDto;
-import com.crimecat.backend.character.dto.SaveCharacterResponseDto;
-import com.crimecat.backend.character.dto.DeleteCharacterResponseDto;
-import com.crimecat.backend.character.service.CharacterService;
+import com.crimecat.backend.Character.dto.CharactersResponseDto;
+import com.crimecat.backend.Character.dto.SaveCharacterRequestDto;
+import com.crimecat.backend.Character.dto.SaveCharacterResponseDto;
+import com.crimecat.backend.Character.dto.DeleteCharacterResponseDto;
+import com.crimecat.backend.Character.service.CharacterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
