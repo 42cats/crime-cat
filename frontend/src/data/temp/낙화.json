@@ -1,0 +1,20 @@
+{
+    "id": "128",
+    "title": "낙화",
+    "thumbnail": "/content/image/default.png",
+    "description": "전체탐정, 합작 (한탄준생 : 한국사람, 가탄, 준형, 생크림빵)",
+    "recommendations": 0,
+    "content": "",
+    "tags": ["추리", "합작"],
+    "password": "",
+    "makers": ["가탄", "한국사람", "준형", "생크림빵"],
+    "players": "4",
+    "characters": [],
+    "price": 7000,
+    "time": 150,
+    "contact": "https://open.kakao.com/o/s96H8Hxd",
+    "createdBy": "system",
+    "updatedBy": "system",
+    "createdAt": "2025-04-13T00:00:00.000Z",
+    "updatedAt": "2025-04-13T00:00:00.000Z"
+}

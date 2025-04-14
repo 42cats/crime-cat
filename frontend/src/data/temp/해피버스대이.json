@@ -1,0 +1,24 @@
+{
+    "id": "50",
+    "title": "해피버스대이",
+    "thumbnail": "/content/image/default.png",
+    "description": "",
+    "recommendations": 0,
+    "content": "",
+    "tags": [
+        "머더 미스터리"
+    ],
+    "password": "",
+    "makers": [
+        "톡톡"
+    ],
+    "players": "5",
+    "characters": [],
+    "price": 2000,
+    "time": 120,
+    "contact": "https://open.kakao.com/o/swXrEkIb",
+    "createdBy": "system",
+    "updatedBy": "system",
+    "createdAt": "2025-04-13T00:00:00.000Z",
+    "updatedAt": "2025-04-13T00:00:00.000Z"
+}
