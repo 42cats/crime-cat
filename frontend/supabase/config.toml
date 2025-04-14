@@ -1,8 +1,0 @@
-
-project_id = "pilpxdimraerkypqaska"
-
-[functions.discord-auth]
-verify_jwt = false
-
-[functions.discord-oauth-url]
-verify_jwt = false
