@@ -1,4 +1,4 @@
-package com.crimecat.backend.character.dto;
+package com.crimecat.backend.Character.dto;
 
 import java.time.LocalDateTime;
 import java.util.List;

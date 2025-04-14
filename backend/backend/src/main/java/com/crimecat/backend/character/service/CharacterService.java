@@ -1,9 +1,9 @@
-package com.crimecat.backend.character.service;
+package com.crimecat.backend.Character.service;
 
-import com.crimecat.backend.character.domain.Character;
-import com.crimecat.backend.character.domain.CharacterRole;
-import com.crimecat.backend.character.dto.*;
-import com.crimecat.backend.character.dto.DeleteCharacterSuccessfulResponseDto;
+import com.crimecat.backend.Character.domain.Character;
+import com.crimecat.backend.Character.domain.CharacterRole;
+import com.crimecat.backend.Character.dto.*;
+import com.crimecat.backend.Character.dto.DeleteCharacterSuccessfulResponseDto;
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.service.GuildService;
 import io.micrometer.common.util.StringUtils;
