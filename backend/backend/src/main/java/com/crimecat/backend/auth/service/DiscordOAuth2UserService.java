@@ -1,8 +1,8 @@
 package com.crimecat.backend.auth.service;
 
-import com.crimecat.backend.webUser.domain.WebUser;
-import com.crimecat.backend.webUser.service.WebUserService;
-import lombok.RequiredArgsConstructor;
+import java.util.Collections;
+import java.util.Map;
+
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -12,8 +12,10 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.Map;
+import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.service.WebUserService;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
