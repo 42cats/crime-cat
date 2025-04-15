@@ -31,11 +31,11 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/login/**").permitAll()
+                        .requestMatchers("/api/oauth2/**","/auth/**", "/login/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .loginPage("/auth/discord")
+                        .loginPage("/login")
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(discordOAuth2UserService) // ✅ 여기 사용
                         )

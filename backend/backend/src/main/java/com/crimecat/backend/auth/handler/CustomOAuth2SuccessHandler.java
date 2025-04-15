@@ -69,7 +69,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         log.info("✅ 로그인 성공 - userId: {}, nickname: {}", user.getDiscordUserId(), user.getNickname());
 
         // 원하는 페이지로 리다이렉트
-        response.sendRedirect("/login/success"); // 클라이언트 쪽 처리에 맞춰 조정
+        response.sendRedirect("/login"); // 클라이언트 쪽 처리에 맞춰 조정
     }
 
 }
