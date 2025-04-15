@@ -1,11 +1,13 @@
 package com.crimecat.backend.auth.service;
 
-import com.crimecat.backend.auth.jwt.JwtTokenProvider;
-import lombok.RequiredArgsConstructor;
+import java.time.Duration;
+
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
+import com.crimecat.backend.auth.jwt.JwtTokenProvider;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
