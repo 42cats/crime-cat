@@ -5,7 +5,7 @@ USE ${DB_DISCORD};
  */
 CREATE TABLE IF NOT EXISTS `users`
 (
-    `id`            UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `id`            BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     `snowflake`     VARCHAR(50) NOT NULL UNIQUE COMMENT '디스코드 유저 snowflake',
     `name`          VARCHAR(100) NOT NULL COMMENT '디스코드 아이디',
     `avatar`        VARCHAR(255) NOT NULL COMMENT '프로필 사진 url',
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `users`
   길드 테이블
  */
 CREATE TABLE IF NOT EXISTS `guilds` (
-    `id`               UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `id`               BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     `owner_snowflake`  VARCHAR(50) NOT NULL COMMENT '길드 소유자 user discord id',
     `snowflake`        VARCHAR(50) NOT NULL UNIQUE COMMENT 'snowflake discord 길드 ID',
     `name`             VARCHAR(255) NOT NULL COMMENT '길드 이름',
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS `guilds` (
   비번 테이블
 */
 CREATE TABLE `password_note` (
-    `id` UUID NOT NULL COMMENT 'UUID 형식의 고유 식별자',
+    `id` BINARY(16) NOT NULL COMMENT 'BINARY(16) 형식의 고유 식별자',
     `guild_snowflake` VARCHAR(50) NOT NULL COMMENT '연결된 길드의 Snowflake ID',
     `channel_snowflake` VARCHAR(50) NOT NULL COMMENT '길드의 채널 Snowflake ID',
     `password_key` VARCHAR(255) NOT NULL COMMENT '비번 키 (고유값)',
@@ -74,7 +74,7 @@ COMMENT = '비밀번호 노트 저장 테이블';
  */
 CREATE TABLE IF NOT EXISTS `musics`
 (
-    `id`                UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `id`                BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     `guild_snowflake`   VARCHAR(50) NOT NULL COMMENT '디스코드 길드 snowflake',
     `title`             VARCHAR(255) NOT NULL COMMENT '음악 제목',
     `youtube_url`       VARCHAR(2048) NOT NULL COMMENT 'URL 주소',
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS `musics`
  */
 CREATE TABLE IF NOT EXISTS `game_histories`
 (
-    `id`                UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `id`                BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     `user_snowflake`    VARCHAR(50) NOT NULL COMMENT '디스코드 user snowflake',
     `guild_snowflake`   VARCHAR(50) NOT NULL COMMENT '디스코드 guild snowflake',
     `is_win`            BOOLEAN NULL DEFAULT NULL COMMENT '승리 여부',
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS `game_histories`
  */
 CREATE TABLE IF NOT EXISTS `cleans`
 (
-    `id`                UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `id`                BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     `guild_snowflake`   VARCHAR(50) NOT NULL COMMENT '디스코드 길드 snowflake',
     `channel_snowflake` VARCHAR(50) NOT NULL UNIQUE COMMENT '디스코드 채널 snowflake',
     CONSTRAINT `fk_cleans_guilds` FOREIGN KEY (`guild_snowflake`) REFERENCES `guilds`(`snowflake`)
@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS `cleans`
  */
 CREATE TABLE IF NOT EXISTS `characters`
 (
-    `id`                UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `id`                BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     `guild_snowflake`   VARCHAR(50) NOT NULL COMMENT '문자열 길드 ID',
     `name`              VARCHAR(50) NOT NULL COMMENT '게임 내 캐릭터 이름',
     `created_at`        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
@@ -155,8 +155,8 @@ CREATE TABLE IF NOT EXISTS `characters`
  */
 CREATE TABLE `character_roles`
 (
-    `id`                UUID NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
-    `character_id`      UUID NOT NULL COMMENT 'USER 테이블 내부 고유 식별자',
+    `id`                BINARY(16) NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
+    `character_id`      BINARY(16) NOT NULL COMMENT 'USER 테이블 내부 고유 식별자',
     `role_snowflake`    VARCHAR(50) NOT NULL COMMENT 'discord role snowflake',
     CONSTRAINT `fk_character_roles_characters` FOREIGN KEY (`character_id`) REFERENCES `characters`(`id`)
 	    ON DELETE CASCADE
@@ -172,7 +172,7 @@ CREATE TABLE `character_roles`
  */
 CREATE TABLE IF NOT EXISTS `records`
 (
-    `id`                UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `id`                BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     `guild_snowflake`   VARCHAR(50) NOT NULL COMMENT '디스코드 길드 snowflake',
     `channel_snowflake` VARCHAR(50) NOT NULL COMMENT '디스코드 채널 snowflake',
     `message`           TEXT NOT NULL COMMENT '메시지 내용(최대 5000자)',
@@ -191,7 +191,7 @@ CREATE TABLE IF NOT EXISTS `records`
  */
 CREATE TABLE IF NOT EXISTS `coupons`
 (
-    `id`                UUID PRIMARY KEY COMMENT '내부 고유 식별자 및 코드',
+    `id`                BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자 및 코드',
     `created_at`        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '발행 시각',
     `used_at`           TIMESTAMP DEFAULT NULL COMMENT '사용 시각',
     `point`             INT NOT NULL DEFAULT 0 COMMENT '발행 포인트',
@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS `coupons`
  */
 CREATE TABLE IF NOT EXISTS `permissions`
 (
-    `id`        UUID PRIMARY KEY COMMENT '내부 고유 식별자',
+    `id`        BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     `name`      VARCHAR(255) NOT NULL UNIQUE COMMENT '권한 이름',
     `price`     INT NOT NULL DEFAULT 0 COMMENT '권한 가격',
     `duration`  INT NOT NULL DEFAULT 28 COMMENT '권한 유지기간 (달)'
@@ -227,9 +227,9 @@ CREATE TABLE IF NOT EXISTS `permissions`
  */
 CREATE TABLE `user_permissions`
 (
-    `id`                UUID NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
+    `id`                BINARY(16) NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
     `user_snowflake`    VARCHAR(50) NOT NULL COMMENT 'discord user snowflake',
-    `permission_id`     UUID NOT NULL COMMENT 'permission table id',
+    `permission_id`     BINARY(16) NOT NULL COMMENT 'permission table id',
     `expired_at`       TIMESTAMP NOT NULL COMMENT '만료 날짜',
     CONSTRAINT `fk_user_permissions_permissions` FOREIGN KEY (`permission_id`) REFERENCES `permissions`(`id`)
 	    ON DELETE CASCADE
@@ -249,7 +249,7 @@ CREATE TABLE `user_permissions`
  */
 CREATE TABLE IF NOT EXISTS `observations`
 (
-    `id`                UUID NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
+    `id`                BINARY(16) NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
     `guild_snowflake`   VARCHAR(50) DEFAULT NULL COMMENT '디스코드 길드 snowflake',
     `head_title`        VARCHAR(10) DEFAULT '- 관전' COMMENT '길드 내의 관전자 이름 앞의 prefix',
     `role_snowflake`    VARCHAR(50) DEFAULT NULL COMMENT '관전자 role snowflake(discord)',
@@ -268,9 +268,9 @@ CREATE TABLE IF NOT EXISTS `observations`
  */
 CREATE TABLE `point_histories`
 (
-    `id`                UUID NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
+    `id`                BINARY(16) NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
     `user_snowflake`    VARCHAR(50) NOT NULL COMMENT 'discord user snowflake',
-    `permission_id`     UUID DEFAULT NULL COMMENT 'permission table 식별자',
+    `permission_id`     BINARY(16) DEFAULT NULL COMMENT 'permission table 식별자',
     `point`             INT NOT NULL COMMENT '입출 포인트',
     `used_at`           TIMESTAMP NOT NULL COMMENT '포인트 입출 날짜',
     CONSTRAINT `fk_point_histories_users` FOREIGN KEY (`user_snowflake`) REFERENCES `users`(`snowflake`)
@@ -286,18 +286,18 @@ CREATE TABLE `point_histories`
 
 
 CREATE TABLE `web_users` (
-  `id` UUID NOT NULL PRIMARY KEY,                -- UUID
-  `web_user_id` UUID DEFAULT NULL,                   -- 디스코드 연동 UUID
+  `id` BINARY(16) NOT NULL PRIMARY KEY,                           -- 내부BINARY(16) 
+  `discord_user_id` VARCHAR(50) UNIQUE DEFAULT NULL,               -- 디스코드 연동 snowflake (널 허용, 유니크)
 
-  `login_method` ENUM('local', 'oauth') NOT NULL DEFAULT 'local',
-  `email` VARCHAR(100) UNIQUE DEFAULT NULL,          -- ✅ NULL 허용 + UNIQUE
+  `login_method` ENUM('LOCAL', 'OAUTH') NOT NULL DEFAULT 'LOCAL',
+  `email` VARCHAR(100) UNIQUE DEFAULT NULL,                 -- ✅ NULL 허용 + UNIQUE
   `email_verified` BOOLEAN DEFAULT FALSE,
   `password_hash` VARCHAR(255),
   `nickname` VARCHAR(50) NOT NULL,
   `profile_image_path` VARCHAR(255),
   `bio` TEXT,
 
-  `role` ENUM('user', 'admin') NOT NULL DEFAULT 'user',
+  `role` ENUM('USER', 'ADMIN') NOT NULL DEFAULT 'USER',
   `is_active` BOOLEAN NOT NULL DEFAULT TRUE,
   `last_login_at` DATETIME DEFAULT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -306,9 +306,11 @@ CREATE TABLE `web_users` (
   `social_links` JSON DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+
+
 CREATE TABLE `user_tokens` (
-  `id` UUID NOT NULL PRIMARY KEY,                 -- UUID
-  `web_user_id` UUID NOT NULL,                        -- FK → web_users(id)
+  `id` BINARY(16) NOT NULL PRIMARY KEY,                 -- BINARY(16) 
+  `web_user_id` BINARY(16) NOT NULL,                        -- FK → web_users(id)
   `provider` VARCHAR(20) NOT NULL DEFAULT 'discord',  -- 로그인 제공자 (discord, local 등)
   `refresh_token` TEXT NOT NULL,                      -- 암호화된 Refresh Token
   `jti` VARCHAR(255) NOT NULL,                        -- JWT 고유 식별자
@@ -316,7 +318,7 @@ CREATE TABLE `user_tokens` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,   -- 생성 시각
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- 수정 시각
 
-  CONSTRAINT `FK_user_tokens_user_id` FOREIGN KEY (`user_id`) REFERENCES `web_users` (`id`) ON DELETE CASCADE,
-  INDEX (`user_id`),
+  CONSTRAINT `FK_user_tokens_web_user_id` FOREIGN KEY (`web_user_id`) REFERENCES `web_users` (`id`) ON DELETE CASCADE,
+  INDEX (`web_user_id`),
   INDEX (`jti`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

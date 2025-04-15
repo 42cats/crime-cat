@@ -1,0 +1,64 @@
+package com.crimecat.backend.webUser.service;
+
+import com.crimecat.backend.webUser.LoginMethod;
+import com.crimecat.backend.webUser.UserRole;
+import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.repository.WebUserRepository;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class WebUserService {
+
+    private final WebUserRepository webUserRepository;
+
+    /**
+     * OAuth 로그인 시 사용자 정보를 기준으로 신규 생성 또는 기존 유저 반환
+     * @param discordUserId Discord OAuth에서 받아온 ID
+     * @param email 사용자 이메일
+     * @param nickname 글로벌 닉네임
+     * @return 저장 또는 업데이트된 WebUser
+     */
+    @Transactional
+    public WebUser processOAuthUser(String discordUserId, String email, String nickname) {
+        log.debug("🔍 [OAuth 처리 시작] discordUserId={}, email={}, nickname={}", discordUserId, email, nickname);
+
+        Optional<WebUser> userByEmail = webUserRepository.findWebUserByEmail(email);
+
+        WebUser user = userByEmail.orElseGet(() -> {
+            log.info("🆕 [신규 사용자] 이메일로 조회된 유저 없음 → 새로 생성");
+            WebUser newUser = WebUser.builder()
+                    .discordUserId(discordUserId)
+                    .email(email)
+                    .nickname(nickname)
+                    .emailVerified(true)
+                    .isActive(true)
+                    .loginMethod(LoginMethod.OAUTH)
+                    .role(UserRole.USER)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            log.debug("📦 [신규 유저 객체 생성] {}", newUser);
+            return webUserRepository.save(newUser);
+        });
+
+        // Discord ID 업데이트 여부 확인
+        if (user.getDiscordUserId() == null || !user.getDiscordUserId().equals(discordUserId)) {
+            log.warn("🔁 [디스코드 ID 변경] 기존={}, 새 ID={}", user.getDiscordUserId(), discordUserId);
+            user.setDiscordUserId(discordUserId);
+            webUserRepository.save(user);
+        } else {
+            log.debug("✅ [기존 사용자] ID 업데이트 불필요");
+        }
+
+        log.info("🎉 [OAuth 처리 완료] userId={}, nickname={}", user.getDiscordUserId(), user.getNickname());
+        return user;
+    }
+}

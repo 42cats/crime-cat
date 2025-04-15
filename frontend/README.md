@@ -1,4 +1,3 @@
-
 # Welcome to your Lovable project
 
 ## Project info
@@ -29,6 +28,7 @@ VITE_ENABLE_PREMIUM_FEATURES=false
 This application uses a Java Spring Backend API with the following data models:
 
 ### Users
+
 ```
 {
   id: string               // Primary key
@@ -42,6 +42,7 @@ This application uses a Java Spring Backend API with the following data models:
 ```
 
 ### Commands
+
 ```
 {
   id: string               // Primary key
@@ -59,6 +60,7 @@ This application uses a Java Spring Backend API with the following data models:
 ```
 
 ### Themes
+
 ```
 {
   id: string               // Primary key
@@ -77,6 +79,7 @@ This application uses a Java Spring Backend API with the following data models:
 ```
 
 ### Message Formats
+
 ```
 {
   id: string               // Primary key
@@ -96,56 +99,63 @@ This application uses a Java Spring Backend API with the following data models:
 The application uses the following API endpoints:
 
 ### Auth
-- `GET /auth/me` - Get current user
-- `GET /users/:userId` - Get user profile
-- `POST /auth/login` - Login with Discord
-- `POST /auth/logout` - Logout
-- `GET /auth/guilds` - Get user's Discord guilds
+
+-   `GET /auth/me` - Get current user
+-   `GET /users/:userId` - Get user profile
+-   `POST /auth/login` - Login with Discord
+-   `POST /auth/logout` - Logout
+-   `GET /auth/guilds` - Get user's Discord guilds
 
 ### Commands
-- `GET /commands` - Get all commands
-- `GET /commands/:id` - Get command by ID
-- `POST /commands` - Create new command (admin/super only)
-- `PUT /commands/:id` - Update command (admin/super only)
-- `DELETE /commands/:id` - Delete command (admin/super only)
+
+-   `GET /commands` - Get all commands
+-   `GET /commands/:id` - Get command by ID
+-   `POST /commands` - Create new command (admin/super only)
+-   `PUT /commands/:id` - Update command (admin/super only)
+-   `DELETE /commands/:id` - Delete command (admin/super only)
 
 ### Themes
-- `GET /themes` - Get all themes
-- `GET /themes/:id` - Get theme by ID
-- `POST /themes` - Create new theme (any authenticated user)
-- `PUT /themes/:id` - Update theme (by password or admin/super)
-- `DELETE /themes/:id` - Delete theme (by password or admin/super)
+
+-   `GET /themes` - Get all themes
+-   `GET /themes/:id` - Get theme by ID
+-   `POST /themes` - Create new theme (any authenticated user)
+-   `PUT /themes/:id` - Update theme (by password or admin/super)
+-   `DELETE /themes/:id` - Delete theme (by password or admin/super)
 
 ### Message Formats
-- `GET /guilds/:guildId/message-formats` - Get all message formats for a guild
-- `GET /guilds/:guildId/message-formats/:id` - Get message format by ID
-- `POST /guilds/:guildId/message-formats` - Create new message format
-- `PUT /guilds/:guildId/message-formats/:id` - Update message format
-- `DELETE /guilds/:guildId/message-formats/:id` - Delete message format
+
+-   `GET /guilds/:guildId/message-formats` - Get all message formats for a guild
+-   `GET /guilds/:guildId/message-formats/:id` - Get message format by ID
+-   `POST /guilds/:guildId/message-formats` - Create new message format
+-   `PUT /guilds/:guildId/message-formats/:id` - Update message format
+-   `DELETE /guilds/:guildId/message-formats/:id` - Delete message format
 
 ## User Roles and Permissions
 
 The application supports the following user roles:
 
 1. **Admin**
-   - Full access to all features
-   - Can create, edit, and delete all content
-   - Can access all administration pages
+
+    - Full access to all features
+    - Can create, edit, and delete all content
+    - Can access all administration pages
 
 2. **Super User**
-   - Can create, edit, and delete commands
-   - Can edit and delete themes (no password required)
-   - Cannot access user management
+
+    - Can create, edit, and delete commands
+    - Can edit and delete themes (no password required)
+    - Cannot access user management
 
 3. **Regular User**
-   - Can view all content
-   - Can create themes with password protection
-   - Can edit/delete own themes with password
-   - Cannot create, edit, or delete commands
+
+    - Can view all content
+    - Can create themes with password protection
+    - Can edit/delete own themes with password
+    - Cannot create, edit, or delete commands
 
 4. **Visitor**
-   - Can view all public content
-   - Cannot create, edit, or delete any content
+    - Can view all public content
+    - Cannot create, edit, or delete any content
 
 ## How can I edit this code?
 
@@ -181,27 +191,27 @@ npm run dev
 
 **Edit a file directly in GitHub**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+-   Navigate to the desired file(s).
+-   Click the "Edit" button (pencil icon) at the top right of the file view.
+-   Make your changes and commit the changes.
 
 **Use GitHub Codespaces**
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+-   Navigate to the main page of your repository.
+-   Click on the "Code" button (green button) near the top right.
+-   Select the "Codespaces" tab.
+-   Click on "New codespace" to launch a new Codespace environment.
+-   Edit files directly within the Codespace and commit and push your changes once you're done.
 
 ## What technologies are used for this project?
 
 This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+-   Vite
+-   TypeScript
+-   React
+-   shadcn-ui
+-   Tailwind CSS
 
 ## How can I deploy this project?
 
@@ -210,4 +220,3 @@ Simply open [Lovable](https://lovable.dev/projects/32c06fd0-e17a-4bdf-b85f-d5269
 ## I want to use a custom domain - is that possible?
 
 We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
-
