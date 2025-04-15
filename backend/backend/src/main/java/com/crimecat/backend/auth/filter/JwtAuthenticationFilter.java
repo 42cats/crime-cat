@@ -20,40 +20,40 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Component
 @Slf4j
 @RequiredArgsConstructor
-@Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
     private final JwtTokenProvider jwtTokenProvider;
     private final WebUserRepository webUserRepository;
     private final JwtBlacklistService jwtBlacklistService;
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request,
-                                    @NonNull HttpServletResponse response,
-                                    @NonNull FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
             throws ServletException, IOException {
 
-        // 1. 쿠키에서 JWT(Authorization) 추출
+        // 쿠키에서 AccessToken (Authorization) 추출
         String token = TokenCookieUtil.getCookieValue(request, "Authorization");
 
-        // 2. 토큰 유효성 검사
-        if (token != null && jwtTokenProvider.validateToken(token) && ! jwtBlacklistService.isBlacklisted(token)) {
+        // 토큰 검증 & 블랙리스트 검사
+        if (token != null && jwtTokenProvider.validateToken(token) && !jwtBlacklistService.isBlacklisted(token)) {
             String userId = jwtTokenProvider.getUserIdFromToken(token);
 
             WebUser user = webUserRepository.findWebUserByDiscordUserId(userId)
                     .orElseThrow(() -> new RuntimeException("유저 정보 없음"));
 
-            // 3. 인증 객체 생성 (Spring Security에 사용자 정보 설정)
             UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userId, null, user.getAuthorities());
-
+                    new UsernamePasswordAuthenticationToken(
+                            userId,
+                            null,
+                            user.getAuthorities()
+                    );
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
-        // 4. 다음 필터로 진행
         filterChain.doFilter(request, response);
     }
 }

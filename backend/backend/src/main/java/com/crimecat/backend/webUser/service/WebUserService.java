@@ -28,7 +28,7 @@ public class WebUserService {
      */
     @Transactional
     public WebUser processOAuthUser(String discordUserId, String email, String nickname) {
-        log.debug("🔍 [OAuth 처리 시작] discordUserId={}, email={}, nickname={}", discordUserId, email, nickname);
+        log.info("🔍 [OAuth 처리 시작] discordUserId={}, email={}, nickname={}", discordUserId, email, nickname);
 
         Optional<WebUser> userByEmail = webUserRepository.findWebUserByEmail(email);
 
@@ -45,17 +45,17 @@ public class WebUserService {
                     .createdAt(LocalDateTime.now())
                     .build();
 
-            log.debug("📦 [신규 유저 객체 생성] {}", newUser);
+            log.info("📦 [신규 유저 객체 생성] {}", newUser);
             return webUserRepository.save(newUser);
         });
 
         // Discord ID 업데이트 여부 확인
         if (user.getDiscordUserId() == null || !user.getDiscordUserId().equals(discordUserId)) {
-            log.warn("🔁 [디스코드 ID 변경] 기존={}, 새 ID={}", user.getDiscordUserId(), discordUserId);
+            log.info("🔁 [디스코드 ID 변경] 기존={}, 새 ID={}", user.getDiscordUserId(), discordUserId);
             user.setDiscordUserId(discordUserId);
             webUserRepository.save(user);
         } else {
-            log.debug("✅ [기존 사용자] ID 업데이트 불필요");
+            log.info("✅ [기존 사용자] ID 업데이트 불필요");
         }
 
         log.info("🎉 [OAuth 처리 완료] userId={}, nickname={}", user.getDiscordUserId(), user.getNickname());

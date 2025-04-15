@@ -1,10 +1,5 @@
 package com.crimecat.backend.auth.service;
 
-import com.crimecat.backend.user.domain.User;
-import com.crimecat.backend.user.repository.UserRepository;
-import com.crimecat.backend.webUser.LoginMethod;
-import com.crimecat.backend.webUser.domain.WebUser;
-import com.crimecat.backend.webUser.repository.WebUserRepository;
 import com.crimecat.backend.webUser.service.WebUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +32,7 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
         String username = (String) attributes.get("global_name");
 
         // 유저 저장 또는 업데이트
-        WebUser user = webUserService.processOAuthUser(discordId, email, username);        // 리턴 (Spring Security가 자동 로그인 처리)
+         webUserService.processOAuthUser(discordId, email, username);        // 리턴 (Spring Security가 자동 로그인 처리)
         return new DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_USER")),
                 attributes,

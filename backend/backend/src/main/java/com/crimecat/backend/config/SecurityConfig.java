@@ -1,14 +1,10 @@
 package com.crimecat.backend.config;
 
 import com.crimecat.backend.auth.filter.JwtAuthenticationFilter;
-import com.crimecat.backend.auth.handler.CustomOAuth2SuccessHandler;
-import com.crimecat.backend.auth.jwt.JwtTokenProvider;
 import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
-import com.crimecat.backend.webUser.repository.WebUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -31,11 +27,12 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/oauth2/**","/auth/**", "/login/**").permitAll()
+                        .requestMatchers("/oauth2/**" ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
+                        .defaultSuccessUrl("/auth/login-success", true)
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(discordOAuth2UserService) // ✅ 여기 사용
                         )
