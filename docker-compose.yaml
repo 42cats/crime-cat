@@ -117,7 +117,7 @@ services:
      dockerfile: docker/frontend/Dockerfile
    image: frontend
    container_name: frontend
-   restart: always
+  #  restart: always
    ports:
      - "5173:5173"
    networks:
