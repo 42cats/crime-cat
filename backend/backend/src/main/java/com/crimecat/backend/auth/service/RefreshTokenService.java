@@ -13,7 +13,6 @@ public class RefreshTokenService {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final JwtTokenProvider jwtTokenProvider;
-
     private static final String PREFIX = "refresh:";
 
     // 저장

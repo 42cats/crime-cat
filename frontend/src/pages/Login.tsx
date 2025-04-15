@@ -26,28 +26,27 @@ const Login: React.FC = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
 
-    const loginWith = (provider: string) => {
-        // window.location.href = `${import.meta.env.VITE_API_BASE_URL}/oauth2/authorize/${provider}`;
-        window.location.href = `http://localhost:8080/oauth2/authorization/discord`;
+    const loginWithDiscord = () => {
+        const state = encodeURIComponent(
+            JSON.stringify({ provider: "discord" })
+        );
+        window.location.href = `http://localhost:8080/oauth2/authorization/discord?state=${state}`;
     };
 
-    // 리디렉션 대상 URL (기본은 /dashboard)
     const from = location.state?.from?.pathname || "/dashboard";
 
-    // 이미 로그인 상태라면 바로 이동
     useEffect(() => {
         if (isAuthenticated) {
             navigate(from, { replace: true });
         }
     }, [isAuthenticated, navigate, from]);
 
-    // 로그인 시도
     const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoggingIn(true);
 
         try {
-            await login(username, password); // 로그인 시도
+            await login(username, password);
         } catch (error: any) {
             console.error("로그인 오류:", error);
             toast({
@@ -91,9 +90,6 @@ const Login: React.FC = () => {
                                         required
                                     />
                                 </div>
-                                <p className="text-xs text-muted-foreground">
-                                    예시: admin, superuser, user
-                                </p>
                             </div>
 
                             <div className="space-y-2">
@@ -127,13 +123,12 @@ const Login: React.FC = () => {
                             </Button>
                         </form>
 
-                        {/* Discord 로그인 버튼 */}
                         <div className="mt-4">
                             <Button
                                 type="button"
                                 variant="secondary"
                                 className="w-full flex items-center justify-center gap-2"
-                                onClick={() => loginWith("discord")}
+                                onClick={loginWithDiscord}
                             >
                                 <FaDiscord className="h-4 w-4" />
                                 Discord로 로그인
