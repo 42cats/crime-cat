@@ -46,7 +46,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         System.out.println("userId = " + userId);
         Optional<WebUser> webUserByDiscordUserId = webUserRepository.findWebUserByDiscordUserId(userId);
         webUserByDiscordUserId.ifPresent(v->{
-            String accessToken = jwtTokenProvider.createAccessToken(v.getId(), v.getNickname());
+            String accessToken = jwtTokenProvider.createAccessToken(v.getId().toString(), v.getNickname());
             int cookieDay = 7;
             Cookie cookie = new Cookie("Authorization", accessToken);
             cookie.setHttpOnly(true);
