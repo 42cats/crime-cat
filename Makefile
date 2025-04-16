@@ -48,6 +48,14 @@ dev: update_config
 	@echo "${BLUE}개발 환경 설정 중 (config/.env.dev → .env)...${NC}"
 	@cp config/.env.dev .env
 	@$(MAKE) copy_env
+	@if [ -d "config/certs" ]; then \
+		echo "${BLUE}certs 디렉토리 복사 중...${NC}"; \
+		mkdir -p docker/nginx/certs; \
+		cp -r config/certs/* docker/nginx/certs/; \
+		echo "${GREEN}certs 복사 완료: config/certs → docker/nginx/certs${NC}"; \
+	else \
+		echo "${YELLOW}config/certs 디렉토리가 없습니다. certs 복사 생략.${NC}"; \
+	fi
 	@$(MAKE) up
 
 # 운영 환경 설정
