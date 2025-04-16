@@ -4,7 +4,6 @@ import com.crimecat.backend.webUser.LoginMethod;
 import com.crimecat.backend.webUser.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
-<<<<<<< Updated upstream
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
@@ -15,15 +14,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
-=======
 import org.hibernate.annotations.UuidGenerator;
 import java.time.LocalDateTime;
->>>>>>> Stashed changes
 import java.util.UUID;
 
 @Entity
 @Table(name = "web_users")
-<<<<<<< Updated upstream
 @Getter
 @Setter
 @Builder
@@ -43,37 +39,17 @@ public class WebUser implements UserDetails {
     private String discordUserId;
 
     // ✅ 로그인 방식 (local, google, discord 등)
-=======
-@Getter @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class WebUser {
-
-    @Id
-    @UuidGenerator
-    @Column(name = "id", columnDefinition = "BINARY(16)")
-    private UUID id;  // ✅ UUID (BINARY 16)
-
-    @Column(name = "discord_user_id", length = 50, unique = true)
-    private String discordUserId;  // ✅ Discord Snowflake ID
-
->>>>>>> Stashed changes
     @Enumerated(EnumType.STRING)
     @Column(name = "login_method", nullable = false)
     private LoginMethod loginMethod = LoginMethod.LOCAL;
 
-<<<<<<< Updated upstream
     // ✅ 이메일 정보 및 인증 여부
     @Column(name = "email", unique = true, length = 100)
-=======
-    @Column(unique = true, length = 100)
->>>>>>> Stashed changes
     private String email;
 
     @Column(name = "email_verified", nullable = false)
     private Boolean emailVerified = false;
 
-<<<<<<< Updated upstream
     // ✅ 해시된 비밀번호 (LOCAL 로그인만 사용)
     @Column(name = "password_hash")
     private String passwordHash;
@@ -91,25 +67,10 @@ public class WebUser {
     private String bio;
 
     // ✅ 사용자 역할 (ADMIN, USER 등)
-=======
-    @Column(name = "password_hash")
-    private String passwordHash;
-
-    @Column(nullable = false, length = 50)
-    private String nickname;
-
-    @Column(name = "profile_image_path")
-    private String profileImagePath;
-
-    @Column(columnDefinition = "TEXT")
-    private String bio;
-
->>>>>>> Stashed changes
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role = UserRole.USER;
 
-<<<<<<< Updated upstream
     // ✅ 계정 활성 여부 (정지 여부)
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
@@ -179,26 +140,5 @@ public class WebUser {
     @Override
     public boolean isEnabled() {
         return Boolean.TRUE.equals(isActive);
-=======
-    @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true;
-
-    @Column(name = "last_login_at")
-    private LocalDateTime lastLoginAt;
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(columnDefinition = "JSON")
-    private String settings;
-
-    @Column(name = "social_links", columnDefinition = "JSON")
-    private String socialLinks;
-
-    // ✅ created_at 자동 세팅
-    @PrePersist
-    public void prePersist() {
-        this.createdAt = LocalDateTime.now();
->>>>>>> Stashed changes
     }
 }
