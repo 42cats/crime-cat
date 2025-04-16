@@ -1,4 +1,4 @@
-.PHONY: build up down clean fclean logs help create_dirs copy_env dev prod
+.PHONY: build up down clean fclean logs help create_dirs copy_env dev prod update_config
 
 # 출력용 색상 정의 
 BLUE	= \033[0;34m
@@ -13,6 +13,14 @@ DB_BASE_DIR  = database
 
 # 기본 타겟 설정
 .DEFAULT_GOAL := help
+
+# config 서브모듈 자동 등록 및 업데이트
+update_config:
+	@if [ ! -d "config" ] || [ -z "$$(ls -A config 2>/dev/null)" ]; then \
+		echo "${YELLOW}config 서브모듈이 없거나 비어 있습니다. 등록 또는 초기화 중...${NC}"; \
+		git submodule add git@github.com:42cats/config.git config || true; \
+	fi
+	@git submodule update --init --recursive --remote
 
 # 디렉토리 생성
 create_dirs:
@@ -36,14 +44,14 @@ copy_env:
 	@echo "${GREEN}복사 완료: .env → frontend/.env, backend/.env, bot/.env${NC}"
 
 # 개발 환경 설정
-dev:
+dev: update_config
 	@echo "${BLUE}개발 환경 설정 중 (config/.env.dev → .env)...${NC}"
 	@cp config/.env.dev .env
 	@$(MAKE) copy_env
 	@$(MAKE) up
 
 # 운영 환경 설정
-prod:
+prod: update_config
 	@echo "${BLUE}운영 환경 설정 중 (config/.env.prod → .env)...${NC}"
 	@cp config/.env.prod .env
 	@$(MAKE) copy_env
