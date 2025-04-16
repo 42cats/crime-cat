@@ -12,7 +12,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class DiscordBotTokenFilter extends OncePerRequestFilter {
 
-	@Value("${token.discord-token}")
+	@Value("${token.discord-bot-secret-token}")
 	private String DISCORD_BOT_TOKEN;
 
 	@Override
