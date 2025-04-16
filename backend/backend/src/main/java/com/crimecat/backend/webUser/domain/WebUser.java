@@ -40,6 +40,7 @@ public class WebUser implements UserDetails {
 
     // ✅ 로그인 방식 (local, google, discord 등)
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     @Column(name = "login_method", nullable = false)
     private LoginMethod loginMethod = LoginMethod.LOCAL;
 
@@ -47,6 +48,7 @@ public class WebUser implements UserDetails {
     @Column(name = "email", unique = true, length = 100)
     private String email;
 
+    @Builder.Default
     @Column(name = "email_verified", nullable = false)
     private Boolean emailVerified = false;
 
@@ -67,14 +69,17 @@ public class WebUser implements UserDetails {
     private String bio;
 
     // ✅ 사용자 역할 (ADMIN, USER 등)
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role = UserRole.USER;
 
     // ✅ 계정 활성 여부 (정지 여부)
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    @Builder.Default
     @Column(name ="is_Banned", nullable = false)
     private Boolean isBanned = false;
 
