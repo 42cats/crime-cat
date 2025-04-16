@@ -48,15 +48,18 @@ dev: update_config
 	@echo "${BLUE}개발 환경 설정 중 (config/.env.dev → .env)...${NC}"
 	@cp config/.env.dev .env
 	@$(MAKE) copy_env
-	@if [ -d "config/certs" ]; then \
-		echo "${BLUE}certs 디렉토리 복사 중...${NC}"; \
-		mkdir -p docker/nginx/certs; \
-		cp -r config/certs/* docker/nginx/certs/; \
-		echo "${GREEN}certs 복사 완료: config/certs → docker/nginx/certs${NC}"; \
-	else \
-		echo "${YELLOW}config/certs 디렉토리가 없습니다. certs 복사 생략.${NC}"; \
-	fi
+
+	@echo "${BLUE}인증서 디렉토리 및 self-signed 인증서 생성 중...${NC}"
+	@mkdir -p docker/nginx/certs
+	@openssl req -x509 -nodes -days 365 \
+		-newkey rsa:2048 \
+		-keyout docker/nginx/certs/dev.crimecat.org-key.pem \
+		-out docker/nginx/certs/dev.crimecat.org.pem \
+		-subj "/C=KR/ST=Seoul/L=Seoul/O=CrimeCat/OU=Dev/CN=dev.crimecat.org" > /dev/null 2>&1
+	@echo "${GREEN}✅ self-signed 인증서 생성 완료: docker/nginx/certs/dev.crimecat.org*.pem${NC}"
+
 	@$(MAKE) up
+
 
 # 운영 환경 설정
 prod: update_config
