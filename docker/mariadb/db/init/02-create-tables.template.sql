@@ -285,25 +285,35 @@ CREATE TABLE `point_histories`
     COMMENT='포인트 사용 기록 테이블';
 
 
-### 📁 2. `oauth_tokens` – Refresh Token 저장 테이블
-CREATE TABLE `web_users` (
-  `id` BINARY(16) NOT NULL PRIMARY KEY,                           -- 내부BINARY(16) 
-  `discord_user_id` VARCHAR(50) UNIQUE DEFAULT NULL,               -- 디스코드 연동 snowflake (널 허용, 유니크)
+/*
+    버튼 매크로용 테이블
+*/
+CREATE TABLE groups (
+    id BINARY(16) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    guild_snowflake VARCHAR(30) NOT NULL,  -- 외부 Discord 기준, FK 아님
+    `index` INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE(guild_snowflake, name)
+);
 
-  `login_method` ENUM('LOCAL', 'GOOGLE', 'DISCORD') NOT NULL DEFAULT 'local',
-  `email` VARCHAR(100) UNIQUE DEFAULT NULL,                 -- ✅ NULL 허용 + UNIQUE
-  `email_verified` BOOLEAN DEFAULT FALSE,
-  `password_hash` VARCHAR(255),
-  `nickname` VARCHAR(50) NOT NULL,
-  `profile_image_path` VARCHAR(255),
-  `bio` TEXT,
 
-  `role` ENUM('USER', 'ADMIN', 'MANAGER') NOT NULL DEFAULT 'USER',
-  `is_active` BOOLEAN NOT NULL DEFAULT TRUE,
-  `is_banned` BOOLEAN NOT NULL DEFAULT FALSE,
-  `last_login_at` DATETIME DEFAULT NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+/*
+    버튼 그룹 내부 버튼, 콘텐츠 테이블
+*/
 
-  `settings` JSON DEFAULT NULL,
-  `social_links` JSON DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE group_items (
+    id BINARY(16) PRIMARY KEY,                          -- UUID (BINARY 16)
+    group_id BINARY(16) NOT NULL,                       -- 상위 그룹 ID (FK)
+    type ENUM('BUTTON', 'CONTENT') NOT NULL,            -- 항목 구분
+    parent_id BINARY(16),                               -- BUTTON: NULL, CONTENT: 버튼 ID
+    name VARCHAR(255),                                  -- 버튼용
+    text TEXT,                                          -- 콘텐츠용
+    channel_id VARCHAR(36),                             -- CONTENT 전용: Discord 채널 ID
+    `index` INT NOT NULL,                               -- 정렬용 인덱스
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
+);
