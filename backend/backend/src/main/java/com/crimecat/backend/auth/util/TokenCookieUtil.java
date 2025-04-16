@@ -55,9 +55,4 @@ public class TokenCookieUtil {
         return cookie;
     }
 
-    // ✅ 한번에 설정
-    public static void setAuthCookies(Cookie accessCookie, Cookie refreshCookie) {
-        // 이 메서드를 부르는 쪽(Controller)에서 response.addCookie(...)를 호출할 수도 있음
-        // 상황에 따라 바로 적용하려면 인자에 HttpServletResponse response도 받으면 됨
-    }
 }

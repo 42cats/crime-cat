@@ -26,7 +26,7 @@ public class User {
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @Column(name = "SNOWFLAKE", nullable = false)
+    @Column(name = "SNOWFLAKE", nullable = false, unique = true)
     private String snowflake;
 
     @Column(name = "NAME", nullable = false)

@@ -29,7 +29,7 @@ public class UserPermission {
     @Column(name = "EXPIRED_AT")
     private LocalDateTime expiredAt;
 
-    @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE")
+    @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
