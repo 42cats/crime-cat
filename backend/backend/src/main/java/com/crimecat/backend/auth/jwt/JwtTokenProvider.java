@@ -1,14 +1,18 @@
 package com.crimecat.backend.auth.jwt;
-<<<<<<< Updated upstream
 
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
+import java.util.Date;
+
+import javax.crypto.SecretKey;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
-import java.util.Date;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
@@ -93,41 +97,11 @@ public class JwtTokenProvider {
     private Claims getClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
-=======
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.stereotype.Component;
-
-import java.security.Key;
-import java.util.Date;
-import java.util.UUID;
-
-@Component
-public class JwtTokenProvider {
-
-    private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    private final long accessTokenValidityInMs = 1000 * 60 * 15; // 15분
-
-    public String createAccessToken(UUID userId, String username) {
-        return Jwts.builder()
-                .setSubject(userId.toString())
-                .claim("username", username)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + accessTokenValidityInMs))
-                .signWith(secretKey)
-                .compact();
-    }
-
-    public Claims validateToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(secretKey)
->>>>>>> Stashed changes
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
     }
 
-<<<<<<< Updated upstream
     private SecretKey getSigningKey() {
         // base64 디코딩 + hmacShaKeyFor
         return Keys.hmacShaKeyFor(secretKeyString.getBytes());
@@ -141,9 +115,4 @@ public class JwtTokenProvider {
         return accessTokenValidity;
     }
 
-=======
-    public UUID getUserIdFromToken(String token) {
-        return UUID.fromString(validateToken(token).getSubject());
-    }
->>>>>>> Stashed changes
 }
