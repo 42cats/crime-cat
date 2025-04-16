@@ -12,8 +12,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class DiscordBotTokenFilter extends OncePerRequestFilter {
 
-	@Value("${token.discord-bot-secret-token}")
-	private String DISCORD_BOT_TOKEN;
+	@Value("${spring.security.bot-auth.discord-bot-secret-token}")
+	private String DISCORD_BOT_SECRET_TOKEN;
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request,
@@ -35,7 +35,7 @@ public class DiscordBotTokenFilter extends OncePerRequestFilter {
 		}
 
 		String discordBotToken = authHeader.substring(7);
-		if (!discordBotToken.equals(DISCORD_BOT_TOKEN)) {
+		if (!discordBotToken.equals(DISCORD_BOT_SECRET_TOKEN)) {
 			reject(response, "Invalid bot token");
 			return;
 		}
