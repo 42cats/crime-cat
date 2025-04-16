@@ -39,7 +39,7 @@ create_dirs:
 copy_env:
 	@echo "${BLUE}.env 파일을 하위 디렉토리로 복사 중...${NC}"
 	@cp .env frontend/.env
-	@cp .env backend/.env
+	@cp .env backend/backend/.env
 	@cp .env bot/.env
 	@echo "${GREEN}복사 완료: .env → frontend/.env, backend/.env, bot/.env${NC}"
 
