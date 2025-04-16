@@ -58,11 +58,6 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
         });
 
-        // 이 부분에서 인증된 사용자 정보 등을 활용할 수 있음
         // 예) authentication.getPrincipal() 로 OAuth2User 등의 객체 확인 가능
-
-        System.out.println("success~~~~~~~~~~~~~~~~~");
-        // 예: 인증 성공 후 특정 페이지로 리다이렉트
-        response.sendRedirect("/");
     }
 }
