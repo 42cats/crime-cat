@@ -1,11 +1,11 @@
-.PHONY: build up down clean fclean logs help create_dirs copy_init_files
+.PHONY: build up down clean fclean logs help create_dirs copy_env dev prod
 
 # 출력용 색상 정의 
 BLUE	= \033[0;34m
-GREEN= \033[0;32m
-RED	 = \033[0;31m
+GREEN	= \033[0;32m
+RED	    = \033[0;31m
 YELLOW  = \033[1;33m
-NC	  = \033[0m # 색상 초기화
+NC	    = \033[0m # 색상 초기화
 
 # 디렉토리 경로 정의
 DB_DATA_DIR  = database/mariadb/data
@@ -14,29 +14,53 @@ DB_BASE_DIR  = database
 # 기본 타겟 설정
 .DEFAULT_GOAL := help
 
-# 디렉토리 생성 및 SQL 파일 복사
-create_dirs: copy_init_files
+# 디렉토리 생성
+create_dirs:
 	@echo "${BLUE}필요한 디렉토리 확인 및 생성 중...${NC}"
 	@for dir in $(DB_DATA_DIR); do \
-			if [ ! -d $$dir ]; then \
-					echo "${YELLOW}디렉토리 생성 중: $$dir${NC}"; \
-					mkdir -p $$dir; \
-					chmod 777 $$dir; \
-			else \
-					echo "${GREEN}디렉토리가 이미 존재합니다: $$dir${NC}"; \
-			fi \
+		if [ ! -d $$dir ]; then \
+			echo "${YELLOW}디렉토리 생성 중: $$dir${NC}"; \
+			mkdir -p $$dir; \
+			chmod 777 $$dir; \
+		else \
+			echo "${GREEN}디렉토리가 이미 존재합니다: $$dir${NC}"; \
+		fi \
 	done
+
+# 환경변수 파일 복사 (루트 + frontend + backend + bot)
+copy_env:
+	@echo "${BLUE}.env 파일을 하위 디렉토리로 복사 중...${NC}"
+	@cp .env frontend/.env
+	@cp .env backend/.env
+	@cp .env bot/.env
+	@echo "${GREEN}복사 완료: .env → frontend/.env, backend/.env, bot/.env${NC}"
+
+# 개발 환경 설정
+dev:
+	@echo "${BLUE}개발 환경 설정 중 (config/.env.dev → .env)...${NC}"
+	@cp config/.env.dev .env
+	@$(MAKE) copy_env
+	@$(MAKE) up
+
+# 운영 환경 설정
+prod:
+	@echo "${BLUE}운영 환경 설정 중 (config/.env.prod → .env)...${NC}"
+	@cp config/.env.prod .env
+	@$(MAKE) copy_env
+	@$(MAKE) up
 
 # 도움말 표시
 help:
 	@echo "${BLUE}사용 가능한 명령어:${NC}"
-	@echo "${GREEN}make build${NC}	- Docker 이미지 빌드"
-	@echo "${GREEN}make up${NC}	- 모든 서비스 시작"
-	@echo "${GREEN}make up [서비스명]${NC} - 특정 서비스만 시작 (예: make up discord)"
-	@echo "${GREEN}make down${NC}	 - 서비스 중지"
-	@echo "${GREEN}make clean${NC}	- 컨테이너와 볼륨 제거"
-	@echo "${GREEN}make fclean${NC}- 모든 Docker 리소스 제거"
-	@echo "${GREEN}make logs${NC}	 - 로그 보기"
+	@echo "${GREEN}make dev${NC}     - 개발 환경 구성 및 실행"
+	@echo "${GREEN}make prod${NC}    - 운영 환경 구성 및 실행"
+	@echo "${GREEN}make build${NC}   - Docker 이미지 빌드"
+	@echo "${GREEN}make up${NC}      - 모든 서비스 시작"
+	@echo "${GREEN}make up [서비스명]${NC} - 특정 서비스만 시작"
+	@echo "${GREEN}make down${NC}    - 서비스 중지"
+	@echo "${GREEN}make clean${NC}   - 컨테이너와 볼륨 제거"
+	@echo "${GREEN}make fclean${NC}  - 모든 Docker 리소스 제거"
+	@echo "${GREEN}make logs${NC}    - 로그 보기"
 
 # Docker 이미지 빌드
 build: create_dirs
@@ -47,11 +71,11 @@ build: create_dirs
 up: create_dirs
 	@echo "${BLUE}서비스 시작 중...${NC}"
 	@if [ "$(filter-out $@,$(MAKECMDGOALS))" = "" ]; then \
-			echo "${GREEN}모든 서비스를 시작합니다...${NC}"; \
-			docker compose up -d --build; \
+		echo "${GREEN}모든 서비스를 시작합니다...${NC}"; \
+		docker compose up -d --build; \
 	else \
-			echo "${GREEN}$(filter-out $@,$(MAKECMDGOALS)) 서비스를 시작합니다...${NC}"; \
-			docker compose up -d --build discord-app; \
+		echo "${GREEN}$(filter-out $@,$(MAKECMDGOALS)) 서비스를 시작합니다...${NC}"; \
+		docker compose up -d --build $(filter-out $@,$(MAKECMDGOALS)); \
 	fi
 	@echo "${GREEN}서비스가 시작되었습니다. 'make logs'로 로그를 확인하세요${NC}"
 
@@ -60,7 +84,7 @@ down:
 	@echo "${BLUE}서비스 중지 중...${NC}"
 	docker compose down
 
-# 재시작 명령어
+# 재시작
 re: clean
 	make build
 	make up
@@ -71,7 +95,7 @@ clean:
 	@echo "${RED}컨테이너와 볼륨을 제거합니다...${NC}"
 	docker compose down -v
 
-# 모든 Docker 리소스 제거
+# 전체 Docker 리소스 제거
 fclean: clean
 	@echo "${RED}모든 Docker 리소스를 제거합니다...${NC}"
 	docker volume prune -f

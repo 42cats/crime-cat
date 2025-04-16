@@ -27,7 +27,7 @@ public class WebUserService {
      * @return 저장 또는 업데이트된 WebUser
      */
     @Transactional
-    public WebUser processOAuthUser(String discordUserId, String email, String nickname) {
+    public WebUser processOAuthUser(String discordUserId, String email, String nickname, String provider) {
         log.info("🔍 [OAuth 처리 시작] discordUserId={}, email={}, nickname={}", discordUserId, email, nickname);
 
         Optional<WebUser> userByEmail = webUserRepository.findWebUserByEmail(email);
@@ -38,9 +38,10 @@ public class WebUserService {
                     .discordUserId(discordUserId)
                     .email(email)
                     .nickname(nickname)
-                    .emailVerified(true)
+                    .emailVerified(false)
                     .isActive(true)
-                    .loginMethod(LoginMethod.OAUTH)
+                    .isBanned(false)
+                    .loginMethod(LoginMethod.valueOf(provider.toUpperCase()))
                     .role(UserRole.USER)
                     .createdAt(LocalDateTime.now())
                     .build();

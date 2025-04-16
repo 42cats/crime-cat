@@ -1,5 +1,5 @@
 package com.crimecat.backend.webUser;
 
 public enum LoginMethod {
-    LOCAL, OAUTH
+    LOCAL, GOOGLE,DISCORD
 }

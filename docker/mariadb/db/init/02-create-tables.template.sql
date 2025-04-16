@@ -250,7 +250,7 @@ CREATE TABLE `user_permissions`
 CREATE TABLE IF NOT EXISTS `observations`
 (
     `id`                BINARY(16) NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
-    `guild_snowflake`   VARCHAR(50) DEFAULT NULL COMMENT '디스코드 길드 snowflake',
+    `guild_snowflake`   VARCHAR(50) NOT NULL COMMENT '디스코드 길드 snowflake',
     `head_title`        VARCHAR(10) DEFAULT '- 관전' COMMENT '길드 내의 관전자 이름 앞의 prefix',
     `role_snowflake`    VARCHAR(50) DEFAULT NULL COMMENT '관전자 role snowflake(discord)',
     CONSTRAINT `fk_observations_guilds` FOREIGN KEY (`guild_snowflake`) REFERENCES `guilds`(`snowflake`)
@@ -289,7 +289,7 @@ CREATE TABLE `web_users` (
   `id` BINARY(16) NOT NULL PRIMARY KEY,                           -- 내부BINARY(16) 
   `discord_user_id` VARCHAR(50) UNIQUE DEFAULT NULL,               -- 디스코드 연동 snowflake (널 허용, 유니크)
 
-  `login_method` ENUM('LOCAL', 'OAUTH') NOT NULL DEFAULT 'LOCAL',
+  `login_method` ENUM('LOCAL', 'GOOGLE', 'DISCORD') NOT NULL DEFAULT 'local',
   `email` VARCHAR(100) UNIQUE DEFAULT NULL,                 -- ✅ NULL 허용 + UNIQUE
   `email_verified` BOOLEAN DEFAULT FALSE,
   `password_hash` VARCHAR(255),
@@ -297,28 +297,12 @@ CREATE TABLE `web_users` (
   `profile_image_path` VARCHAR(255),
   `bio` TEXT,
 
-  `role` ENUM('USER', 'ADMIN') NOT NULL DEFAULT 'USER',
+  `role` ENUM('USER', 'ADMIN', 'MANAGER') NOT NULL DEFAULT 'USER',
   `is_active` BOOLEAN NOT NULL DEFAULT TRUE,
+  `is_banned` BOOLEAN NOT NULL DEFAULT FALSE,
   `last_login_at` DATETIME DEFAULT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   `settings` JSON DEFAULT NULL,
   `social_links` JSON DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-
-
-CREATE TABLE `user_tokens` (
-  `id` BINARY(16) NOT NULL PRIMARY KEY,                 -- BINARY(16) 
-  `web_user_id` BINARY(16) NOT NULL,                        -- FK → web_users(id)
-  `provider` VARCHAR(20) NOT NULL DEFAULT 'discord',  -- 로그인 제공자 (discord, local 등)
-  `refresh_token` TEXT NOT NULL,                      -- 암호화된 Refresh Token
-  `jti` VARCHAR(255) NOT NULL,                        -- JWT 고유 식별자
-  `expires_at` TIMESTAMP NOT NULL,                    -- 만료 시각
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,   -- 생성 시각
-  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- 수정 시각
-
-  CONSTRAINT `FK_user_tokens_web_user_id` FOREIGN KEY (`web_user_id`) REFERENCES `web_users` (`id`) ON DELETE CASCADE,
-  INDEX (`web_user_id`),
-  INDEX (`jti`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

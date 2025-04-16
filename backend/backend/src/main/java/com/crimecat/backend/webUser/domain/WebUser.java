@@ -36,7 +36,7 @@ public class WebUser implements UserDetails {
     @Column(name = "discord_user_id", length = 50, unique = true)
     private String discordUserId;
 
-    // ✅ 로그인 방식 (LOCAL, GOOGLE, DISCORD 등)
+    // ✅ 로그인 방식 (local, google, discord 등)
     @Enumerated(EnumType.STRING)
     @Column(name = "login_method", nullable = false)
     private LoginMethod loginMethod = LoginMethod.LOCAL;
@@ -73,6 +73,9 @@ public class WebUser implements UserDetails {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    @Column(name ="is_Banned", nullable = false)
+    private Boolean isBanned = false;
+
     // ✅ 마지막 로그인 시각
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
@@ -98,7 +101,7 @@ public class WebUser implements UserDetails {
     // ✅ Spring Security 용 권한 반환
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.name()));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     // ✅ 비밀번호 반환 (LOCAL 로그인일 경우에만 의미 있음)
@@ -116,13 +119,13 @@ public class WebUser implements UserDetails {
     // ✅ 계정 만료 여부 (true면 만료 안됨)
     @Override
     public boolean isAccountNonExpired() {
-        return true;
+        return isActive;
     }
 
     // ✅ 계정 잠김 여부 (true면 잠김 아님)
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !isBanned;
     }
 
     // ✅ 자격 증명 만료 여부 (true면 만료 아님)
