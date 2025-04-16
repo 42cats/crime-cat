@@ -22,7 +22,7 @@ public class TokenService {
 
     public TokenResponse generateTokens(WebUser user) {
         // AccessToken 생성
-        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getNickname());
+        String accessToken = jwtTokenProvider.createAccessToken(user.getId().toString(), user.getNickname());
 
         // RefreshToken 생성
         String refreshToken = UUID.randomUUID().toString();
