@@ -1,13 +1,40 @@
 package com.crimecat.backend.auth.util;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
+import org.springframework.stereotype.Component;
+
+import static org.springframework.web.servlet.function.RequestPredicates.path;
+
 public class TokenCookieUtil {
 
-    private static final int ACCESS_TOKEN_EXPIRE_SEC = 60 * 60;           // 1시간
-    private static final int REFRESH_TOKEN_EXPIRE_SEC = 7 * 24 * 60 * 60; // 7일
 
+    private static int ACCESS_TOKEN_EXPIRE_MINUTES;           // 분
+    private static int REFRESH_TOKEN_EXPIRE_DAY; // 일
+
+    private static String appDomain;
+
+    @Component
+    public static class DomainHolder {
+        @Value("${spring.domain}")
+        private String domain;
+        @Value("${spring.oauth.refresh-token-expire-days}")
+        private int refreshTokenExpireDay;
+        @Value("${spring.oauth.access-token-expire-minutes}")
+        private int accessTokenExpireMinutes;
+
+        @PostConstruct
+        public void init() {
+            TokenCookieUtil.appDomain = domain;
+            TokenCookieUtil.ACCESS_TOKEN_EXPIRE_MINUTES = accessTokenExpireMinutes;
+            TokenCookieUtil.REFRESH_TOKEN_EXPIRE_DAY = refreshTokenExpireDay;
+
+        }
+    }
     // ✅ 쿠키에서 특정 이름의 값 꺼내기
     public static String getCookieValue(HttpServletRequest request, String name) {
         if (request.getCookies() == null) return null;
@@ -36,23 +63,27 @@ public class TokenCookieUtil {
     }
 
     // ✅ Access 토큰 쿠키 생성
-    public static Cookie createAccessCookie(String accessToken) {
-        Cookie cookie = new Cookie("Authorization", accessToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(ACCESS_TOKEN_EXPIRE_SEC);
-        return cookie;
+    public static String createAccessCookie(String accessToken) {
+        ResponseCookie cookie = ResponseCookie.from("Authorization", accessToken)
+            .httpOnly(true)
+            .secure(true)
+            .path("/")
+            .maxAge(ACCESS_TOKEN_EXPIRE_MINUTES)
+                .domain(appDomain)
+            .build();
+        return cookie.toString();
     }
 
     // ✅ Refresh 토큰 쿠키 생성
-    public static Cookie createRefreshCookie(String refreshToken) {
-        Cookie cookie = new Cookie("RefreshToken", refreshToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(REFRESH_TOKEN_EXPIRE_SEC);
-        return cookie;
+    public static String createRefreshCookie(String refreshToken) {
+        ResponseCookie cookie = ResponseCookie.from("RefreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(REFRESH_TOKEN_EXPIRE_DAY)
+                .domain(appDomain)
+                .build();
+        return cookie.toString();
     }
 
 }

@@ -11,12 +11,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -30,7 +32,7 @@ public class AuthController {
     private final WebUserRepository webUserRepository;
 
     @GetMapping("/login-success")
-    public void redirectLoginSuccess(HttpServletResponse response, Principal principal) throws IOException {
+    public ResponseEntity<?> redirectLoginSuccess(HttpServletResponse response, Principal principal) throws IOException {
         String discordUserId = principal.getName();
         log.info("🔐 [OAuth 로그인 성공] 사용자 ID: {}", discordUserId);
 
@@ -45,12 +47,13 @@ public class AuthController {
         refreshTokenService.saveRefreshToken(discordUserId, refreshToken);
         log.info("💾 [RefreshToken 저장 완료]");
 
-        response.addCookie(TokenCookieUtil.createAccessCookie(accessToken));
-        response.addCookie(TokenCookieUtil.createRefreshCookie(refreshToken));
+        response.addHeader(HttpHeaders.SET_COOKIE,TokenCookieUtil.createAccessCookie(accessToken));
+        response.addHeader(HttpHeaders.SET_COOKIE,TokenCookieUtil.createRefreshCookie(refreshToken));
         log.info("🍪 [쿠키 설정 완료]");
-
-        response.sendRedirect("http://localhost:8081/");
-        log.info("➡️ [프론트로 리다이렉트] http://localhost:8081/");
+        return ResponseEntity.ok(Map.of(
+                "nickname", webUser.getNickname(),
+                "message", "로그인 성공"
+        ));
     }
 
     @PostMapping("/login-success")
@@ -68,11 +71,14 @@ public class AuthController {
         refreshTokenService.saveRefreshToken(discordUserId, refreshToken);
         log.info("💾 [RefreshToken 저장 완료]");
 
-        response.addCookie(TokenCookieUtil.createAccessCookie(accessToken));
-        response.addCookie(TokenCookieUtil.createRefreshCookie(refreshToken));
+        response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createAccessCookie(accessToken));
+        response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createRefreshCookie(refreshToken));
         log.info("🍪 [쿠키 설정 완료]");
 
-        return ResponseEntity.ok("https://localhost:8081");
+        return ResponseEntity.ok(Map.of(
+                "nickname", webUser.getNickname(),
+                "message", "토큰 발급 완료"
+        ));
     }
 
     @GetMapping("/me")
@@ -89,7 +95,10 @@ public class AuthController {
                 .orElseThrow(() -> new RuntimeException("유저 정보 없음"));
 
         log.info("🙋 [현재 로그인 유저 요청] ID={}, nickname={}", userId, user.getNickname());
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(Map.of(
+                "nickname", user.getNickname(),
+                "message", "인증 성공"
+        ));
     }
 
 
@@ -119,11 +128,14 @@ public class AuthController {
         log.info("✅ [새 토큰 발급 완료]");
 
         TokenCookieUtil.clearAuthCookies(response);
-        response.addCookie(TokenCookieUtil.createAccessCookie(newAccessToken));
-        response.addCookie(TokenCookieUtil.createRefreshCookie(newRefreshToken));
-        log.info("🍪 [새 쿠키 설정 완료]");
+        response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createAccessCookie(newAccessToken));
+        response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createRefreshCookie(newRefreshToken));
+        log.info("🍪 [쿠키 설정 완료]");
 
-        return ResponseEntity.ok("https://example.com/home");
+        return ResponseEntity.ok(Map.of(
+                "nickname", webUser.getNickname(),
+                "message", "토큰 갱신 성공"
+        ));
     }
 
     @PostMapping("/logout")
@@ -131,8 +143,10 @@ public class AuthController {
         log.info("🚪 [로그아웃 요청]");
         String accessToken = TokenCookieUtil.getCookieValue(request, "Authorization");
 
+        String nickname = "";
         if (accessToken != null && jwtTokenProvider.validateToken(accessToken)) {
             String userId = jwtTokenProvider.getUserIdFromToken(accessToken);
+            nickname = jwtTokenProvider.getNicknameFromToken(accessToken);
             refreshTokenService.deleteRefreshToken(userId);
             long expiration = jwtTokenProvider.getRemainingTime(accessToken);
             jwtBlacklistService.blacklistToken(accessToken, expiration);
@@ -144,6 +158,9 @@ public class AuthController {
         TokenCookieUtil.clearAuthCookies(response);
         log.info("🧹 [쿠키 제거 완료]");
 
-        return ResponseEntity.ok("https://example.com/logout-complete");
+        return ResponseEntity.ok(Map.of(
+                "nickname", nickname,
+                "message", "로그아웃 성공"
+        ));
     }
 }

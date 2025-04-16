@@ -84,6 +84,14 @@ public class JwtTokenProvider {
     }
 
     /**
+     * 토큰에서 nickname 추출
+     */
+    public String getNicknameFromToken(String token) {
+        Claims claims = getClaims(token);
+        return claims.get("nickname", String.class);
+    }
+
+    /**
      * 만료까지 남은 시간
      */
     public long getRemainingTime(String token) {
