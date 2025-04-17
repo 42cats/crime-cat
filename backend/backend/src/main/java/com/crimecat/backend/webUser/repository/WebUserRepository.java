@@ -14,4 +14,5 @@ public interface WebUserRepository extends JpaRepository<WebUser, UUID> {
     Optional<WebUser> findWebUserByDiscordUserId(String discordUserId);
 
     Optional<WebUser> findWebUserByEmail(String email);
+
 }

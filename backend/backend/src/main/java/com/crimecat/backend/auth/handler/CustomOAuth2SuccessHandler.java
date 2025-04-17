@@ -54,10 +54,8 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
             cookie.setPath("/");
             cookie.setMaxAge(cookieDay * 24 * 60 * 60);
             response.addCookie(cookie);
-//            response.sendRedirect();
-
         });
-
+        response.sendRedirect("http://localhost:5173");
         // 예) authentication.getPrincipal() 로 OAuth2User 등의 객체 확인 가능
     }
 }

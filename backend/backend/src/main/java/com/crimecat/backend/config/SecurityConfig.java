@@ -1,5 +1,6 @@
 package com.crimecat.backend.config;
 
+import com.crimecat.backend.auth.handler.CustomOAuth2SuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -23,6 +24,7 @@ public class SecurityConfig {
 
     private final DiscordOAuth2UserService discordOAuth2UserService; // ✅ 생성자 주입
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomOAuth2SuccessHandler successHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -32,15 +34,15 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) /// 세션인증 끔
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/oauth2/**", "/login/oauth2/**" ).permitAll()
+                        .requestMatchers("/oauth2/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .loginPage("/login") // 로그인 경로 설정
-                        .defaultSuccessUrl("/auth/login-success", true) // 트루 반환(성공)시에 리다이렉트 될 경로
+                        .successHandler(successHandler)
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(discordOAuth2UserService) // 디스코드에서 반환하는 유저정보 처리 하는곳
                         )
+                        .failureUrl("http://localhost:5173/failed")
                 )
                 .addFilterBefore(jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class);

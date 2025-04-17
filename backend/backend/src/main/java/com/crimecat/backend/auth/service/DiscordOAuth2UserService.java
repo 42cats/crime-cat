@@ -25,14 +25,17 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest request) throws OAuth2AuthenticationException {
+        System.out.println("=============================DiscordOAuth2UserService.loadUser");
         OAuth2User oauth2User = new DefaultOAuth2UserService().loadUser(request);
         String provider = request.getClientRegistration().getRegistrationId();
+        System.out.println("oauth2User: " + oauth2User + " provider " + provider);
         // Discord 사용자 정보 가져오기
         Map<String, Object> attributes = oauth2User.getAttributes();
         System.out.println("attributes = " + attributes);
         String discordId = (String) attributes.get("id");
         String email = (String) attributes.get("email");
         String username = (String) attributes.get("global_name");
+        System.out.println("info::::::::::::::::"+discordId +" " +email + " " + username);
 
         // 유저 저장 또는 업데이트
         WebUser webUser = webUserService.processOAuthUser(discordId, email, username,provider);// 리턴 (Spring Security가 자동 로그인 처리)
