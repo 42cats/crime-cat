@@ -1,4 +1,4 @@
-package com.crimecat.backend.guild.domain;
+package com.crimecat.backend.messagemacro.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
