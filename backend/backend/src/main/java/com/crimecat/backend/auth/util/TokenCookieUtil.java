@@ -1,5 +1,7 @@
 package com.crimecat.backend.auth.util;
 
+import java.time.Duration;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
@@ -67,8 +69,8 @@ public class TokenCookieUtil {
             .httpOnly(true)
             .secure(true)
             .path("/")
-            .maxAge(ACCESS_TOKEN_EXPIRE_MINUTES)
-                .domain(appDomain)
+            .maxAge(Duration.ofMinutes(ACCESS_TOKEN_EXPIRE_MINUTES))
+//                .domain(appDomain) /// 개발시 제외 서비스시 활성
             .build();
         return cookie.toString();
     }
@@ -79,8 +81,8 @@ public class TokenCookieUtil {
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .maxAge(REFRESH_TOKEN_EXPIRE_DAY)
-                .domain(appDomain)
+                .maxAge(Duration.ofDays(REFRESH_TOKEN_EXPIRE_DAY))
+//                .domain(appDomain)/// 개발시 제외 서비스시 활성
                 .build();
         return cookie.toString();
     }

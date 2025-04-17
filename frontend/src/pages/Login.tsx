@@ -30,7 +30,9 @@ const Login: React.FC = () => {
         const state = encodeURIComponent(
             JSON.stringify({ provider: "discord" })
         );
-        window.location.href = `http://localhost:8080/oauth2/authorization/discord?state=${state}`;
+        window.location.href =
+            `${window.location.origin}` +
+            `/oauth2/authorization/discord?state=${state}`;
     };
 
     const from = location.state?.from?.pathname || "/dashboard";
