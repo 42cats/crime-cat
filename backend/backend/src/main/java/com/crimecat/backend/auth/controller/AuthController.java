@@ -3,6 +3,7 @@ package com.crimecat.backend.auth.controller;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -28,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -96,7 +97,7 @@ public class AuthController {
         }
 
         String userId = jwtTokenProvider.getUserIdFromToken(accessToken);
-        WebUser user = webUserRepository.findWebUserByDiscordUserId(userId)
+        WebUser user = webUserRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new RuntimeException("유저 정보 없음"));
 
         log.info("🙋 [현재 로그인 유저 요청] ID={}, nickname={}", userId, user.getNickname());

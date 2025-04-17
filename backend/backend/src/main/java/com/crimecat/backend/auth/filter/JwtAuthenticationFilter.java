@@ -1,6 +1,7 @@
 package com.crimecat.backend.auth.filter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -41,8 +42,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 토큰 검증 & 블랙리스트 검사
         if (token != null && jwtTokenProvider.validateToken(token) && !jwtBlacklistService.isBlacklisted(token)) {
             String userId = jwtTokenProvider.getUserIdFromToken(token);
+            System.out.println("token: " + token.toString() +" and userId: "+userId);
 
-            WebUser user = webUserRepository.findWebUserByDiscordUserId(userId)
+            WebUser user = webUserRepository.findById(UUID.fromString(userId))
                     .orElseThrow(() -> new RuntimeException("유저 정보 없음"));
 
             UsernamePasswordAuthenticationToken authentication =
