@@ -5,7 +5,7 @@ docker/caddy/data
 docker/caddy/config
 config.json
 **/MusicData/**/*
-
+**/*.pem
 ### IntelliJ IDEA ###
 .idea
 *.iws

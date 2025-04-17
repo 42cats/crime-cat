@@ -47,6 +47,8 @@ copy_env:
 dev: update_config
 	@echo "${BLUE}개발 환경 설정 중 (config/.env.dev → .env)...${NC}"
 	@cp config/.env.dev .env
+	@cp config/dockercompose/docker-compose.dev.yaml docker-compose.yaml
+	@cp config/nginx/dev.nginx.conf docker/nginx/conf/http.d/nginx.conf
 	@$(MAKE) copy_env
 
 	@echo "${BLUE}인증서 디렉토리 및 self-signed 인증서 생성 중...${NC}"
@@ -65,6 +67,8 @@ dev: update_config
 prod: update_config
 	@echo "${BLUE}운영 환경 설정 중 (config/.env.prod → .env)...${NC}"
 	@cp config/.env.prod .env
+	@cp config/dockercompose/docker-compose.prod.yaml docker-compose.yaml
+	@cp config/nginx/prod.nginx.conf docker/nginx/conf/http.d/nginx.conf
 	@$(MAKE) copy_env
 	@$(MAKE) up
 
