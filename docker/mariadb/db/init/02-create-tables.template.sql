@@ -288,32 +288,37 @@ CREATE TABLE `point_histories`
 /*
     버튼 매크로용 테이블
 */
-CREATE TABLE groups (
-    id BINARY(16) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    guild_snowflake VARCHAR(30) NOT NULL,  -- 외부 Discord 기준, FK 아님
-    `index` INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE(guild_snowflake, name)
-);
+CREATE TABLE IF NOT EXISTS `groups` (
+  `id` BINARY(16)       NOT NULL,
+  `name` VARCHAR(255)   NOT NULL,
+  `guild_snowflake` VARCHAR(30) NOT NULL,
+  `index` INT           NOT NULL,
+  `created_at` DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_at` DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_groups_guild_name` (`guild_snowflake`, `name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 
 /*
     버튼 그룹 내부 버튼, 콘텐츠 테이블
 */
 
-CREATE TABLE group_items (
-    id BINARY(16) PRIMARY KEY,                          -- UUID (BINARY 16)
-    group_id BINARY(16) NOT NULL,                       -- 상위 그룹 ID (FK)
-    type ENUM('BUTTON', 'CONTENT') NOT NULL,            -- 항목 구분
-    parent_id BINARY(16),                               -- BUTTON: NULL, CONTENT: 버튼 ID
-    name VARCHAR(255),                                  -- 버튼용
-    text TEXT,                                          -- 콘텐츠용
-    channel_id VARCHAR(36),                             -- CONTENT 전용: Discord 채널 ID
-    `index` INT NOT NULL,                               -- 정렬용 인덱스
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
-);
+CREATE TABLE IF NOT EXISTS `group_items` (
+  `id` BINARY(16)       NOT NULL,
+  `group_id` BINARY(16) NOT NULL,
+  `type` ENUM('BUTTON','CONTENT') NOT NULL,
+  `parent_id` BINARY(16) NULL,
+  `name` VARCHAR(255)   NULL,
+  `text` TEXT           NULL,
+  `channel_id` VARCHAR(36) NULL,
+  `index` INT           NOT NULL,
+  `created_at` DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_at` DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_group_items_group_type_name` (`group_id`, `type`, `name`),
+  CONSTRAINT `fk_group_items_group`
+    FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
