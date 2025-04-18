@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import AuthInitializer from "@/components/AuthInitializer";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
@@ -25,6 +26,7 @@ import DonationPage from '@/pages/DonationPage';
 // Dashboard Pages
 import Dashboard from "@/pages/Dashboard";
 import Guilds from "@/pages/Guilds";
+import Profile from "@/pages/Profile";
 import MessageFormat from "@/pages/MessageButtonEditor";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+		<AuthInitializer />
           <AnimatePresence mode="wait">
             <Routes>
               {/* Main Layout Routes */}
@@ -56,6 +59,7 @@ const App = () => (
                 <Route index element={<Dashboard />} />
                 <Route path="guilds" element={<Guilds />} />
                 <Route path="guilds/:guildId/message-format" element={<MessageFormat />} />
+				<Route path="profile" element={<Profile />} />
               </Route>
 
               {/* 404 Route */}

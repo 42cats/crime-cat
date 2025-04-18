@@ -5,7 +5,8 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { 
   LayoutDashboard, 
   Server, 
-  Users, 
+  Users,
+  UserCog,
   Settings, 
   LogOut, 
   ChevronLeft, 
@@ -37,8 +38,9 @@ const DashboardContent = ({ user, logout, location }: { user: any, logout: () =>
   const { isMobile, toggleSidebar } = useSidebar();
 
   const navItems = [
-    { name: '개요', path: '/dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'MANAGER'] },
+    { name: '대시보드', path: '/dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'MANAGER', 'USER'] },
     { name: '길드', path: '/dashboard/guilds', icon: Server, roles: ['ADMIN', 'MANAGER', 'USER'] },
+	{ name: '프로필', path: '/dashboard/profile', icon: UserCog, roles: ['ADMIN', 'MANAGER', 'USER'] },
     { name: '사용자 관리', path: '/dashboard/users', icon: Users, roles: ['ADMIN'] },
     { name: '설정', path: '/dashboard/settings', icon: Settings, roles: ['ADMIN', 'MANEGER'] },
   ];
