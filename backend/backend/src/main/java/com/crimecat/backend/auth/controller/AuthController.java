@@ -5,6 +5,7 @@ import java.security.Principal;
 import java.util.Map;
 import java.util.UUID;
 
+import com.crimecat.backend.auth.service.DiscordRedisTokenService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +37,7 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final JwtBlacklistService jwtBlacklistService;
     private final WebUserRepository webUserRepository;
+    private final DiscordRedisTokenService discordRedisTokenService;
 
     @GetMapping("/login-success")
     public ResponseEntity<?> redirectLoginSuccess(HttpServletResponse response, Principal principal) throws IOException {
@@ -158,6 +160,8 @@ public class AuthController {
             long expiration = jwtTokenProvider.getRemainingTime(accessToken);
             jwtBlacklistService.blacklistToken(accessToken, expiration);
             log.info("✅ [토큰 블랙리스트 처리 완료] userId: {}", userId);
+            discordRedisTokenService.deleteAllTokens(userId);
+            log.info("✅ [디스코드 토큰 삭제 처리 완료] userId: {}", userId);
         } else {
             log.warn("⚠️ [유효한 액세스 토큰 없음]");
         }

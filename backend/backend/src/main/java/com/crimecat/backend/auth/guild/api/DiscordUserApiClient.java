@@ -1,5 +1,6 @@
-package com.crimecat.backend.auth.util;
+package com.crimecat.backend.auth.guild.api;
 
+import com.crimecat.backend.auth.guild.dto.GuildBotInfoDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -12,6 +13,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class DiscordUserApiClient {
+
+
 
     private final WebClient discordWebClient = WebClient.builder()
             .baseUrl("https://discord.com/api")
@@ -47,4 +50,16 @@ public class DiscordUserApiClient {
                 .doOnError(err -> log.error("❌ [디스코드 초대 실패] 유저ID={}, 원인={}", userId, err.getMessage()))
                 .block();
     }
+
+    public GuildBotInfoDto getGuildInfoFromBot(String guildId, String botToken) {
+        return discordWebClient.get()
+                .uri("/guilds/{guildId}?with_counts=true", guildId)
+                .header("Authorization", "Bot " + botToken)
+                .retrieve()
+                .bodyToMono(GuildBotInfoDto.class)
+                .doOnSuccess(res -> log.info("✅ [길드 정보 조회 성공] guildId={}, 인원수={}", guildId, res.getApproximate_member_count()))
+                .doOnError(err -> log.error("❌ [길드 정보 조회 실패] guildId={}, 에러={}", guildId, err.getMessage()))
+                .block();
+    }
+
 }
