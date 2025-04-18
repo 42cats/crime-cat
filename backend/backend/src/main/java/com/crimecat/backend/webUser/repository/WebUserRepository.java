@@ -11,7 +11,7 @@ public interface WebUserRepository extends JpaRepository<WebUser, UUID> {
     @Override
     Optional<WebUser> findById(UUID uuid);
 
-    Optional<WebUser> findWebUserByDiscordUserId(String discordUserId);
+    Optional<WebUser> findWebUserByDiscordUserSnowflake(String discordUserId);
 
     Optional<WebUser> findWebUserByEmail(String email);
 

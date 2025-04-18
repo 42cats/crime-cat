@@ -35,15 +35,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-
+        if (request.getRequestURI().startsWith("/login/oauth2/")) {
+            filterChain.doFilter(request, response);
+            return;
+        } // successHandeler 로 가는거 막는 부분
+        log.info("request = {}", request);
         // 쿠키에서 AccessToken (Authorization) 추출
         String token = TokenCookieUtil.getCookieValue(request, "Authorization");
-
+        System.out.println("token = " + token);
         // 토큰 검증 & 블랙리스트 검사
         if (token != null && jwtTokenProvider.validateToken(token) && !jwtBlacklistService.isBlacklisted(token)) {
             String userId = jwtTokenProvider.getUserIdFromToken(token);
-            System.out.println("token: " + token.toString() +" and userId: "+userId);
-
+            log.info("✅ Extracted userId: {}", userId);
             WebUser user = webUserRepository.findById(UUID.fromString(userId))
                     .orElseThrow(() -> new RuntimeException("유저 정보 없음"));
 

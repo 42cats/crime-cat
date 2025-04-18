@@ -30,14 +30,14 @@ public class WebUserService {
      */
     @Transactional
     public WebUser processOAuthUser(String discordUserId, String email, String nickname, String provider) {
-        log.info("🔍 [OAuth 처리 시작] discordUserId={}, email={}, nickname={}", discordUserId, email, nickname);
+        log.info("🔍 [OAuth 처리 시작] discordUserId={}, email={}, nickname={}, provider={}, LoginMethod.valueOf(provider.toUpperCase())= {}", discordUserId, email, nickname , provider ,LoginMethod.valueOf(provider.toUpperCase()) );
 
         Optional<WebUser> userByEmail = webUserRepository.findWebUserByEmail(email);
 
         WebUser user = userByEmail.orElseGet(() -> {
             log.info("🆕 [신규 사용자] 이메일로 조회된 유저 없음 → 새로 생성");
             WebUser newUser = WebUser.builder()
-                    .discordUserId(discordUserId)
+                    .discordUserSnowflake(discordUserId)
                     .email(email)
                     .nickname(nickname)
                     .emailVerified(false)
@@ -46,6 +46,7 @@ public class WebUserService {
                     .loginMethod(LoginMethod.valueOf(provider.toUpperCase()))
                     .role(UserRole.USER)
                     .createdAt(LocalDateTime.now())
+                    .lastLoginAt(LocalDateTime.now())
                     .build();
 
             log.info("📦 [신규 유저 객체 생성] {}", newUser);
@@ -53,15 +54,15 @@ public class WebUserService {
         });
 
         // Discord ID 업데이트 여부 확인
-        if (user.getDiscordUserId() == null || !user.getDiscordUserId().equals(discordUserId)) {
-            log.info("🔁 [디스코드 ID 변경] 기존={}, 새 ID={}", user.getDiscordUserId(), discordUserId);
-            user.setDiscordUserId(discordUserId);
+        if (user.getDiscordUserSnowflake() == null || !user.getDiscordUserSnowflake().equals(discordUserId)) {
+            log.info("🔁 [디스코드 ID 변경] 기존={}, 새 ID={}", user.getDiscordUserSnowflake(), discordUserId);
+            user.setDiscordUserSnowflake(discordUserId);
             webUserRepository.save(user);
         } else {
             log.info("✅ [기존 사용자] ID 업데이트 불필요");
         }
-
-        log.info("🎉 [OAuth 처리 완료] userId={}, nickname={}", user.getDiscordUserId(), user.getNickname());
+        user.setLastLoginAt(LocalDateTime.now());
+        log.info("🎉 [OAuth 처리 완료] userId={}, nickname={}", user.getDiscordUserSnowflake(), user.getNickname());
         return user;
     }
 }
