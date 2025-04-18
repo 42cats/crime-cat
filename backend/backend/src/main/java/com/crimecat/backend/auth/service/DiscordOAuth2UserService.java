@@ -4,10 +4,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -28,13 +30,13 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest request) throws OAuth2AuthenticationException {
-        System.out.println("=============================DiscordOAuth2UserService.loadUser");
         OAuth2User oauth2User = new DefaultOAuth2UserService().loadUser(request);
         String provider = request.getClientRegistration().getRegistrationId();
-        System.out.println("oauth2User: " + oauth2User + " provider " + provider);
+        OAuth2AccessToken discordAccessToken = request.getAccessToken();
+        String refreshToken = (String) request.getAdditionalParameters().get("refresh_token");
+
         // Discord 사용자 정보 가져오기
         Map<String, Object> attributes = oauth2User.getAttributes();
-        System.out.println("attributes = " + attributes);
         String discordId = (String) attributes.get("id");
         String email = (String) attributes.get("email");
         String username = (String) attributes.get("global_name");
@@ -55,5 +57,6 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
                 newAttributes,
                 "userId" // WebUser UUID
         );
+        return new DiscordOAuth2User(defaultAuth2User, discordAccessToken.getTokenValue(),refreshToken,discordAccessToken.getExpiresAt());
     }
 }
