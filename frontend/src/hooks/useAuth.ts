@@ -1,15 +1,10 @@
 import { useRecoilState } from 'recoil';
 import { userState, isLoadingState } from '@/atoms/auth';
 import { authService } from '@/api/authService';
-import { useEffect } from 'react';
 
 export const useAuth = () => {
   const [user, setUser] = useRecoilState(userState);
   const [isLoading, setIsLoading] = useRecoilState(isLoadingState);
-
-  useEffect(() => {
-    getCurrentUser();
-  }, []);
 
   const getCurrentUser = async () => {
     setIsLoading(true);

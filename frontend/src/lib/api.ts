@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { resetUserState } from "@/utils/authUtils";
 
 const API_BASE_URL = "/api/v1";
 const API_TIMEOUT = 30000;
@@ -53,6 +54,7 @@ instance.interceptors.response.use(
         return instance(originalRequest);
       } catch (err) {
         processQueue(err);
+        resetUserState();
         window.location.href = '/login';
         return Promise.reject(err);
       } finally {
