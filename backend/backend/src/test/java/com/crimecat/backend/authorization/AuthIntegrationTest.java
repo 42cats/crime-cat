@@ -10,9 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 
@@ -78,7 +75,7 @@ class AuthIntegrationTest {
     @Test
     void test4_인증_필터가_사용자_등록_성공() throws Exception {
         WebUser user = createUser();
-        String token = jwtTokenProvider.createAccessToken(user.getDiscordUserId(), user.getNickname());
+        String token = jwtTokenProvider.createAccessToken(user.getDiscordUserSnowflake(), user.getNickname());
 
         mockMvc.perform(get("/some/protected/api") // 실제 보호된 엔드포인트
                         .cookie(new Cookie("Authorization", token)))
@@ -88,7 +85,7 @@ class AuthIntegrationTest {
     @Test
     void test5_블랙리스트_토큰_거부_확인() throws Exception {
         WebUser user = createUser();
-        String token = jwtTokenProvider.createAccessToken(user.getDiscordUserId(), user.getNickname());
+        String token = jwtTokenProvider.createAccessToken(user.getDiscordUserSnowflake(), user.getNickname());
         jwtBlacklistService.blacklistToken(token, jwtTokenProvider.getRemainingTime(token));
 
         mockMvc.perform(get("/some/protected/api")

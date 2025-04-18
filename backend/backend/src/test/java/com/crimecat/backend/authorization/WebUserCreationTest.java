@@ -9,9 +9,6 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.util.Optional;
-import java.util.UUID;
-
 import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
@@ -39,7 +36,7 @@ class WebUserCreationTest {
     void test1_정상_유저_생성() {
         WebUser user = userService.processOAuthUser(discordId, email, nickname, provider);
 
-        assertThat(user.getDiscordUserId()).isEqualTo(discordId);
+        assertThat(user.getDiscordUserSnowflake()).isEqualTo(discordId);
         assertThat(user.getEmail()).isEqualTo(email);
         assertThat(user.getNickname()).isEqualTo(nickname);
         assertThat(user.getLoginMethod()).isEqualTo(LoginMethod.DISCORD);

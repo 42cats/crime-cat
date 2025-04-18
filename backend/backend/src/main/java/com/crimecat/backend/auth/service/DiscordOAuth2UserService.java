@@ -1,6 +1,7 @@
 package com.crimecat.backend.auth.service;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -16,7 +17,9 @@ import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.service.WebUserService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
@@ -35,14 +38,22 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
         String discordId = (String) attributes.get("id");
         String email = (String) attributes.get("email");
         String username = (String) attributes.get("global_name");
-        System.out.println("info::::::::::::::::"+discordId +" " +email + " " + username);
+        if (username == null || username.isBlank()) {
+            username = (String) attributes.get("username"); // fallback
+        }
 
         // 유저 저장 또는 업데이트
-        WebUser webUser = webUserService.processOAuthUser(discordId, email, username,provider);// 리턴 (Spring Security가 자동 로그인 처리)
+        WebUser webUser = webUserService.processOAuthUser(discordId, email, username ,provider);// 리턴
+        Map<String,Object> newAttributes = new HashMap<>();
+        newAttributes.put("discordSnowFlake", discordId);
+        newAttributes.put("email", email);
+        newAttributes.put("username", username);
+        newAttributes.put("userId", webUser.getId().toString());
+        log.debug("여기까진 잘오나?={} new attribute={}",webUser.toString(), newAttributes.toString());
         return new DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_" + webUser.getRole())),
-                attributes,
-                "id" // 유저의 고유 속성 (username 같은)
+                newAttributes,
+                "userId" // WebUser UUID
         );
     }
 }

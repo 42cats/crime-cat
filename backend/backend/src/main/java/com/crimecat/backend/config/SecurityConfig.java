@@ -1,6 +1,5 @@
 package com.crimecat.backend.config;
 
-import com.crimecat.backend.auth.handler.CustomOAuth2SuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -12,6 +11,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.crimecat.backend.auth.filter.JwtAuthenticationFilter;
+import com.crimecat.backend.auth.handler.CustomOAuth2SuccessHandler;
 import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
 
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ public class SecurityConfig {
 
     private final DiscordOAuth2UserService discordOAuth2UserService; // ✅ 생성자 주입
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final CustomOAuth2SuccessHandler successHandler;
+    private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -38,7 +38,9 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .successHandler(successHandler)
+                        .loginPage("http://localhost:5173/login") // 로그인 경로 설정
+                        .successHandler(customOAuth2SuccessHandler)
+//                        .defaultSuccessUrl("/auth/login-success", true) // 트루 반환(성공)시에 리다이렉트 될 경로
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(discordOAuth2UserService) // 디스코드에서 반환하는 유저정보 처리 하는곳
                         )

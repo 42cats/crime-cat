@@ -39,18 +39,18 @@ public class AuthController {
 
     @GetMapping("/login-success")
     public ResponseEntity<?> redirectLoginSuccess(HttpServletResponse response, Principal principal) throws IOException {
-        String discordUserId = principal.getName();
-        log.info("🔐 [OAuth 로그인 성공] 사용자 ID: {}", discordUserId);
+        String webUserId = principal.getName();
+        log.info("🔐 [OAuth 로그인 성공] 사용자 ID: {}", webUserId);
 
-        WebUser webUser = webUserRepository.findWebUserByDiscordUserId(discordUserId)
+        WebUser webUser = webUserRepository.findById(UUID.fromString(webUserId))
                 .orElseThrow(() -> new IllegalArgumentException("해당 유저 없음"));
         log.info("🔍 [유저 확인 완료] 닉네임: {}", webUser.getNickname());
-
-        String accessToken = jwtTokenProvider.createAccessToken(discordUserId, webUser.getNickname());
-        String refreshToken = jwtTokenProvider.createRefreshToken(discordUserId);
+        
+        String accessToken = jwtTokenProvider.createAccessToken(webUserId, webUser.getNickname(),webUser.getDiscordUserSnowflake());
+        String refreshToken = jwtTokenProvider.createRefreshToken(webUserId);
         log.info("✅ [토큰 발급 완료]");
 
-        refreshTokenService.saveRefreshToken(discordUserId, refreshToken);
+        refreshTokenService.saveRefreshToken(webUserId, refreshToken);
         log.info("💾 [RefreshToken 저장 완료]");
 
         response.addHeader(HttpHeaders.SET_COOKIE,TokenCookieUtil.createAccessCookie(accessToken));
@@ -63,18 +63,19 @@ public class AuthController {
     }
 
     @PostMapping("/login-success")
-    public ResponseEntity<?> issueToken(HttpServletResponse response, @RequestParam String discordUserId) {
-        log.info("🔐 [토큰 요청] 사용자 ID: {}", discordUserId);
+    public ResponseEntity<?> issueToken(HttpServletResponse response, Principal principal) {
+        String webUserId = principal.getName();
+        log.info("🔐 [토큰 요청] 사용자 ID: {}", principal.getName());
 
-        WebUser webUser = webUserRepository.findWebUserByDiscordUserId(discordUserId)
+        WebUser webUser = webUserRepository.findById(UUID.fromString(webUserId))
                 .orElseThrow(() -> new IllegalArgumentException("해당 유저 없음"));
         log.info("🔍 [유저 확인 완료] 닉네임: {}", webUser.getNickname());
 
-        String accessToken = jwtTokenProvider.createAccessToken(discordUserId, webUser.getNickname());
-        String refreshToken = jwtTokenProvider.createRefreshToken(discordUserId);
+        String accessToken = jwtTokenProvider.createAccessToken(webUserId, webUser.getNickname(),webUser.getDiscordUserSnowflake());
+        String refreshToken = jwtTokenProvider.createRefreshToken(webUserId);
         log.info("✅ [토큰 발급 완료]");
 
-        refreshTokenService.saveRefreshToken(discordUserId, refreshToken);
+        refreshTokenService.saveRefreshToken(webUserId, refreshToken);
         log.info("💾 [RefreshToken 저장 완료]");
 
         response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createAccessCookie(accessToken));
@@ -125,10 +126,10 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("RefreshToken 불일치");
         }
 
-        WebUser webUser = webUserRepository.findWebUserByDiscordUserId(userId)
+        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new RuntimeException("유저 정보 없음"));
 
-        String newAccessToken = jwtTokenProvider.createAccessToken(userId, webUser.getNickname());
+        String newAccessToken = jwtTokenProvider.createAccessToken(userId, webUser.getNickname(),webUser.getDiscordUserSnowflake());
         String newRefreshToken = jwtTokenProvider.createRefreshToken(userId);
         refreshTokenService.saveRefreshToken(userId, newRefreshToken);
         log.info("✅ [새 토큰 발급 완료]");

@@ -46,7 +46,7 @@ public class WebUser implements UserDetails {
 
     // ✅ Discord OAuth 연동용 ID (Snowflake 문자열)
     @Column(name = "discord_user_id", length = 50, unique = true)
-    private String discordUserId;
+    private String discordUserSnowflake;
 
     // ✅ 로그인 방식 (local, google, discord 등)
     @Enumerated(EnumType.STRING)

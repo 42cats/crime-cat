@@ -32,13 +32,14 @@ public class JwtTokenProvider {
     /**
      * Access 토큰 생성
      */
-    public String createAccessToken(String userId, String nickname) {
+    public String createAccessToken(String userId, String nickname, String discordUserSnowflake) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + accessTokenValidity);
 
         return Jwts.builder()
                 .setSubject(userId)
                 .claim("nickname", nickname)
+                .claim("UserDiscordSnowflake", discordUserSnowflake)
                 .setIssuedAt(now)
                 .setExpiration(expiry)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -89,6 +90,11 @@ public class JwtTokenProvider {
     public String getNicknameFromToken(String token) {
         Claims claims = getClaims(token);
         return claims.get("nickname", String.class);
+    }
+
+    public String getUserDiscordSnowflakeFromToken(String token) {
+        Claims claims = getClaims(token);
+        return claims.get("UserDiscordSnowflake", String.class);
     }
 
     /**
