@@ -52,7 +52,7 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
         newAttributes.put("username", username);
         newAttributes.put("userId", webUser.getId().toString());
         log.debug("여기까진 잘오나?={} new attribute={}",webUser.toString(), newAttributes.toString());
-        return new DefaultOAuth2User(
+        DefaultOAuth2User defaultAuth2User = new DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_" + webUser.getRole())),
                 newAttributes,
                 "userId" // WebUser UUID
