@@ -1,6 +1,5 @@
 package com.crimecat.backend.auth.oauthUser;
 
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 
