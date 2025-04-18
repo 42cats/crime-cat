@@ -2,7 +2,6 @@ package com.crimecat.backend.auth.filter;
 
 import java.io.IOException;
 
-import com.crimecat.backend.config.ServiceUrlConfig;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -10,8 +9,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import com.crimecat.backend.auth.service.DiscordRedisTokenService;
-import com.crimecat.backend.auth.service.DiscordTokenService;
 import com.crimecat.backend.auth.util.TokenCookieUtil;
+import com.crimecat.backend.config.ServiceUrlConfig;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
