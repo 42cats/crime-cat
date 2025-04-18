@@ -11,6 +11,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.crimecat.backend.auth.filter.JwtAuthenticationFilter;
+import com.crimecat.backend.auth.filter.OAuth2TokenRefreshFilter;
 import com.crimecat.backend.auth.handler.CustomOAuth2SuccessHandler;
 import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
 
@@ -27,6 +28,7 @@ public class SecurityConfig {
     private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
     private final ServiceUrlConfig serviceUrlConfig;
 
+    private final OAuth2TokenRefreshFilter oAuth2TokenRefreshFilter;
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -48,6 +50,8 @@ public class SecurityConfig {
 //                        .failureUrl("http://localhost:5173/failed")
                 )
                 .addFilterBefore(jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(oAuth2TokenRefreshFilter,
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -18,6 +18,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+import com.crimecat.backend.auth.service.DiscordTokenService;
+import com.crimecat.backend.auth.dto.DiscordTokenResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
+
 
 @Slf4j
 @Component
