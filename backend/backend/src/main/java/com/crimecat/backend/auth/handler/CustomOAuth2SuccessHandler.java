@@ -66,7 +66,5 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
             }
 
         });
-        response.sendRedirect("http://localhost:5173");
-        // 예) authentication.getPrincipal() 로 OAuth2User 등의 객체 확인 가능
     }
 }
