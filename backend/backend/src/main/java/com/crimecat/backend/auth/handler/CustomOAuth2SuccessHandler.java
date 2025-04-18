@@ -47,9 +47,9 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
             throws IOException, ServletException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         System.out.println("oAuth2User = " + oAuth2User);
-        String WebUserId = Objects.requireNonNull(oAuth2User.getName());
-        System.out.println("userId = " + WebUserId);
-        Optional<WebUser> webUserByDiscordUserId = webUserRepository.findById(UUID.fromString(WebUserId));
+        String webUserId = Objects.requireNonNull(oAuth2User.getName());
+        System.out.println("userId = " + webUserId);
+        Optional<WebUser> webUserByDiscordUserId = webUserRepository.findById(UUID.fromString(webUserId));
         webUserByDiscordUserId.ifPresent(v->{
             String accessToken = jwtTokenProvider.createAccessToken(v.getId().toString(), v.getNickname(),v.getDiscordUserSnowflake());
             String refreshToken = jwtTokenProvider.createRefreshToken(v.getId().toString());
