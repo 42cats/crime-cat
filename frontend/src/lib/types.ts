@@ -1,9 +1,9 @@
-export type UserRole = "admin" | "super" | "regular" | "visitor";
+export type UserRole = "USER" | "ADMIN" | "MANAGER";
 
 export interface User {
     id: string;
-    discordId: string;
-    displayName: string;
+    discordUserId: string;
+    nickname: string;
     avatar: string;
     role: UserRole;
 }
