@@ -3,20 +3,18 @@ package com.crimecat.backend.auth.service;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
-import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.service.WebUserService;
 
@@ -44,6 +42,7 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
             username = (String) attributes.get("username"); // fallback
         }
 
+        attributes.put("discordAccessToken", discordAccessToken);
         // 유저 저장 또는 업데이트
         WebUser webUser = webUserService.processOAuthUser(discordId, email, username ,provider);// 리턴
         Instant expiresAt = discordAccessToken.getExpiresAt();
