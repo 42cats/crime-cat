@@ -5,7 +5,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.crimecat.backend.config.ServiceUrlConfig;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -15,6 +14,7 @@ import org.springframework.stereotype.Component;
 import com.crimecat.backend.auth.jwt.JwtTokenProvider;
 import com.crimecat.backend.auth.service.RefreshTokenService;
 import com.crimecat.backend.auth.util.TokenCookieUtil;
+import com.crimecat.backend.config.ServiceUrlConfig;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 
