@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -12,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.crimecat.backend.auth.jwt.JwtTokenProvider;
+import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import com.crimecat.backend.auth.service.JwtBlacklistService;
 import com.crimecat.backend.auth.util.TokenCookieUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
