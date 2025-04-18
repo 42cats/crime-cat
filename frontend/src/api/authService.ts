@@ -83,7 +83,8 @@ export const authService = {
 
     getUserGuilds: async (): Promise<any[]> => {
         try {
-            return await apiClient.get<any[]>("/auth/guilds");
+            const res = await apiClient.get<{ guilds: any[] }>("/auth/guilds");
+            return res.guilds;
         } catch (error) {
             console.error("Error in getUserGuilds:", error);
 

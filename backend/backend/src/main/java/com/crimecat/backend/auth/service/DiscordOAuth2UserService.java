@@ -28,7 +28,6 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
 
     private final WebUserService webUserService;
     private final DiscordRedisTokenService discordRedisTokenService;
-
     @Override
     public OAuth2User loadUser(OAuth2UserRequest request) throws OAuth2AuthenticationException {
         OAuth2User oauth2User = new DefaultOAuth2UserService().loadUser(request);
@@ -42,12 +41,10 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
             username = (String) attributes.get("username"); // fallback
         }
 
-        attributes.put("discordAccessToken", discordAccessToken);
         // 유저 저장 또는 업데이트
         WebUser webUser = webUserService.processOAuthUser(discordId, email, username ,provider);// 리턴
         Instant expiresAt = discordAccessToken.getExpiresAt();
         long expiresInSeconds = Duration.between(Instant.now(), expiresAt).getSeconds();
-
         discordRedisTokenService.saveAccessToken(
                 webUser.getId().toString(),
                 discordAccessToken.getTokenValue(),
