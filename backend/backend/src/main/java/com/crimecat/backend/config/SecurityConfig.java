@@ -29,7 +29,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-//                .csrf(AbstractHttpConfigurer::disable)  // crsf 사이트간 위조공격 보호 해제.
+                .csrf(AbstractHttpConfigurer::disable)  // crsf 사이트간 위조공격 보호 해제.
                 .formLogin(AbstractHttpConfigurer::disable)         // ← 기본 /login 폼 비활성화
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) /// 세션인증 끔

@@ -26,13 +26,10 @@ const Login: React.FC = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
 
+    const oauthBaseUri = `/oauth2/authorization`;
+
     const loginWithDiscord = () => {
-        const state = encodeURIComponent(
-            JSON.stringify({ provider: "discord" })
-        );
-        window.location.href =
-            `${window.location.origin}` +
-            `/oauth2/authorization/discord?state=${state}`;
+        window.location.href = oauthBaseUri + "/discord";
     };
 
     const from = location.state?.from?.pathname || "/dashboard";

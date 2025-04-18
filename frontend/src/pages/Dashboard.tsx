@@ -69,7 +69,7 @@ const Dashboard: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold">대시보드</h1>
-          <p className="text-muted-foreground">{user?.displayName}님, 환영합니다!</p>
+          <p className="text-muted-foreground">{user?.nickname}님, 환영합니다!</p>
         </div>
       </div>
 
