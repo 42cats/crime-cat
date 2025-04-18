@@ -33,6 +33,10 @@ public class OAuth2TokenRefreshFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if(authentication != null && authentication.isAuthenticated()
+            && authentication.getPrincipal() instanceof DiscordOAuth2User){
+            DiscordOAuth2User user = (DiscordOAuth2User) authentication.getPrincipal();
+            Instant expiresAt = user.getExpiresAt();
 
         if (authentication != null && authentication.isAuthenticated()
                 && authentication.getPrincipal() instanceof DiscordOAuth2User) {
