@@ -2,8 +2,6 @@ package com.crimecat.backend.auth.guild.controller;
 
 import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import com.crimecat.backend.auth.service.DiscordRedisTokenService;
-import com.crimecat.backend.auth.guild.service.WebGuildService;
-import com.crimecat.backend.auth.guild.api.DiscordUserApiClient;
 import com.crimecat.backend.guild.repository.GuildRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,9 +22,9 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class WebGuildController {
 
-    private final DiscordUserApiClient discordUserApiClient;
+//    private final DiscordUserApiClient discordUserApiClient;
     private final DiscordRedisTokenService discordRedisTokenService;
-    private final WebGuildService webGuildService;
+//    private final WebGuildService webGuildService;
     private final GuildRepository guildRepository;
 
     @GetMapping("")

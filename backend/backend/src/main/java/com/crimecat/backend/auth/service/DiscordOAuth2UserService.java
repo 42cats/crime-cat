@@ -1,5 +1,6 @@
 package com.crimecat.backend.auth.service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,16 +29,13 @@ import lombok.extern.slf4j.Slf4j;
 public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
     private final WebUserService webUserService;
-    private final
+    private final DiscordRedisTokenService discordRedisTokenService;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest request) throws OAuth2AuthenticationException {
         OAuth2User oauth2User = new DefaultOAuth2UserService().loadUser(request);
         String provider = request.getClientRegistration().getRegistrationId();
         OAuth2AccessToken discordAccessToken = request.getAccessToken();
-        String refreshToken = (String) request.getAdditionalParameters().get("refresh_token");
-
-        // Discord 사용자 정보 가져오기
         Map<String, Object> attributes = oauth2User.getAttributes();
         String discordId = (String) attributes.get("id");
         String email = (String) attributes.get("email");
@@ -50,29 +48,17 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
         WebUser webUser = webUserService.processOAuthUser(discordId, email, username ,provider);// 리턴
         Instant expiresAt = discordAccessToken.getExpiresAt();
         long expiresInSeconds = Duration.between(Instant.now(), expiresAt).getSeconds();
+
         discordRedisTokenService.saveAccessToken(
                 webUser.getId().toString(),
                 discordAccessToken.getTokenValue(),
                 expiresInSeconds
         );
 
-        // ⬇️ RefreshToken 저장 (필요하면 따로 만료 설정 가능)
-        if(refreshToken != null){
-            try{
-                discordRedisTokenService.saveRefreshToken(
-                        webUser.getId().toString(),
-                        refreshToken);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
         log.debug("여기까진 잘오나?={} ",webUser.toString());
         return new DiscordOAuth2User(
                 webUser,
                 attributes,
-                Collections.singleton(new SimpleGrantedAuthority("ROLE_" + webUser.getRole())),
-                discordAccessToken.getTokenValue(),
-                refreshToken,
-                discordAccessToken.getExpiresAt());
+                Collections.singleton(new SimpleGrantedAuthority("ROLE_" + webUser.getRole())));
     }
 }

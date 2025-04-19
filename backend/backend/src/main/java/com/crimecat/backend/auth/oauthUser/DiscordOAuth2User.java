@@ -20,10 +20,6 @@ public class DiscordOAuth2User implements OAuth2User {
     private final Map<String, Object> attributes;
     private final Collection<? extends GrantedAuthority> authorities;
 
-    private final String accessToken;
-    private final String refreshToken;
-    private final Instant expiresAt;
-
     @Override
     public Map<String, Object> getAttributes() {
         return attributes;
