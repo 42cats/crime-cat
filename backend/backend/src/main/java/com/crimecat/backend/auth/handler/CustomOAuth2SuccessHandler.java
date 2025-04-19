@@ -5,11 +5,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -39,10 +36,12 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     private final WebUserRepository webUserRepository;
     private final RefreshTokenService refreshTokenService;
     private final ServiceUrlConfig serviceUrlConfig;
+
     /**
      * 인증 성공 시 후속 처리를 담당
-     * @param request       HTTP 요청
-     * @param response      HTTP 응답
+     *
+     * @param request        HTTP 요청
+     * @param response       HTTP 응답
      * @param authentication Spring Security 인증 정보
      */
     @Override
@@ -52,26 +51,34 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
             throws IOException, ServletException {
 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        System.out.println("oAuth2User = " + oAuth2User);
+        log.info("🧾 [OAuth2User 정보] {}", oAuth2User);
+
         String webUserId = Objects.requireNonNull(oAuth2User.getName());
-        System.out.println("userId = " + webUserId);
+        log.info("🆔 [WebUser UUID] {}", webUserId);
+
         Optional<WebUser> webUserByDiscordUserId = webUserRepository.findById(UUID.fromString(webUserId));
-        webUserByDiscordUserId.ifPresent(v->{
-            String accessToken = jwtTokenProvider.createAccessToken(v.getId().toString(), v.getNickname(),v.getDiscordUserSnowflake());
-            String refreshToken = jwtTokenProvider.createRefreshToken(v.getId().toString());
-            log.info("✅ [토큰 발급 완료]");
-            refreshTokenService.saveRefreshToken(v.getId().toString(), refreshToken);
+        webUserByDiscordUserId.ifPresent(user -> {
+            String accessToken = jwtTokenProvider.createAccessToken(user.getId().toString(), user.getNickname(), user.getDiscordUserSnowflake());
+            String refreshToken = jwtTokenProvider.createRefreshToken(user.getId().toString());
+
+            log.info("✅ [AccessToken 생성 완료]");
+            log.info("✅ [RefreshToken 생성 완료]");
+
+            refreshTokenService.saveRefreshToken(user.getId().toString(), refreshToken);
             log.info("💾 [RefreshToken 저장 완료]");
 
             response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createAccessCookie(accessToken));
-            response.addHeader(HttpHeaders.SET_COOKIE,TokenCookieUtil.createRefreshCookie(refreshToken));
+            response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createRefreshCookie(refreshToken));
+
             try {
                 String baseUrl = serviceUrlConfig.getDomain();
+                log.info("🔁 [리다이렉트 수행 → {}]", baseUrl);
                 response.sendRedirect(baseUrl);
             } catch (IOException e) {
+                log.error("❌ [리다이렉트 실패]", e);
                 throw new RuntimeException(e);
             }
-
         });
     }
 }
+

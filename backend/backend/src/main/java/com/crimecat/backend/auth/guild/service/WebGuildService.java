@@ -2,18 +2,15 @@ package com.crimecat.backend.auth.guild.service;
 
 import com.crimecat.backend.auth.guild.api.DiscordUserApiClient;
 import com.crimecat.backend.auth.guild.dto.GuildBotInfoDto;
-import com.crimecat.backend.auth.guild.dto.GuildInfoDTO;
 import com.crimecat.backend.auth.guild.dto.GuildResponseDto;
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.repository.GuildRepository;
 import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.*;
 import java.util.stream.IntStream;
 

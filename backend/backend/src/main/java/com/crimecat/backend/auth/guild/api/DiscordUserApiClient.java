@@ -1,7 +1,6 @@
 package com.crimecat.backend.auth.guild.api;
 
 import com.crimecat.backend.auth.guild.dto.GuildBotInfoDto;
-import com.crimecat.backend.auth.guild.dto.GuildInfoDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
