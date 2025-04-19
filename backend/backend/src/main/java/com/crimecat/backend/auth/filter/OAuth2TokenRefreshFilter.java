@@ -1,43 +1,32 @@
 package com.crimecat.backend.auth.filter;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
 
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import com.crimecat.backend.config.ServiceUrlConfig;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.crimecat.backend.auth.dto.DiscordTokenResponse;
 import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
-import com.crimecat.backend.auth.service.DiscordTokenService;
 import com.crimecat.backend.auth.service.DiscordRedisTokenService;
-import com.crimecat.backend.auth.dto.DiscordTokenResponse;
+import com.crimecat.backend.auth.service.DiscordTokenService;
 import com.crimecat.backend.auth.util.TokenCookieUtil;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
-import java.time.Instant;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class OAuth2TokenRefreshFilter extends OncePerRequestFilter {
 
-    private final DiscordTokenService discordTokenService;
     private final DiscordRedisTokenService discordRedisTokenService;
+    private final ServiceUrlConfig serviceUrlConfig;
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -63,7 +52,8 @@ public class OAuth2TokenRefreshFilter extends OncePerRequestFilter {
                     TokenCookieUtil.clearAuthCookies(response);
 
                     // 🌐 프론트 로그인 페이지로 리디렉션
-                    response.sendRedirect("http://localhost:5173/login");
+                    String baseUrl = serviceUrlConfig.getDomain();
+                    response.sendRedirect(baseUrl + "/login");
                     return;
 
                 } catch (Exception e) {

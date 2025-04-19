@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.crimecat.backend.config.ServiceUrlConfig;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -34,6 +35,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     private final JwtTokenProvider jwtTokenProvider;
     private final WebUserRepository webUserRepository;
     private final RefreshTokenService refreshTokenService;
+    private final ServiceUrlConfig serviceUrlConfig;
     /**
      * 인증 성공 시 후속 처리를 담당
      * @param request       HTTP 요청
@@ -60,7 +62,8 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
             response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createAccessCookie(accessToken));
             response.addHeader(HttpHeaders.SET_COOKIE,TokenCookieUtil.createRefreshCookie(refreshToken));
             try {
-                response.sendRedirect("http://localhost:5173");
+                String baseUrl = serviceUrlConfig.getDomain();
+                response.sendRedirect(baseUrl);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
