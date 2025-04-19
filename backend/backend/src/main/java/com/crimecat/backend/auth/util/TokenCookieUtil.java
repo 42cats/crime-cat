@@ -16,11 +16,13 @@ public class TokenCookieUtil {
 
     private static int ACCESS_TOKEN_EXPIRE_MINUTES;           // 분
     private static int REFRESH_TOKEN_EXPIRE_DAY; // 일
-
     private static String appDomain;
+
 
     @Component
     public static class DomainHolder {
+        @Value("${spring.domain}")
+        private String appDomain;
         @Value("${spring.oauth.refresh-token-expire-days}")
         private int refreshTokenExpireDay;
         @Value("${spring.oauth.access-token-expire-minutes}")
@@ -30,7 +32,7 @@ public class TokenCookieUtil {
         public void init() {
             TokenCookieUtil.ACCESS_TOKEN_EXPIRE_MINUTES = accessTokenExpireMinutes;
             TokenCookieUtil.REFRESH_TOKEN_EXPIRE_DAY = refreshTokenExpireDay;
-
+            TokenCookieUtil.appDomain = appDomain;
         }
     }
     // ✅ 쿠키에서 특정 이름의 값 꺼내기
