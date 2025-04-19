@@ -183,10 +183,12 @@ class AudioPlayerManager {
     if (this.connection) {
       this.connection.subscribe(this.player);
     }
+    this.fadeIn(this.volume, 2000, 0.05); // 2초 동안 0.05씩 증가
   }
-  pause() {
+  async pause() {
     if (this.player?.state?.status === AudioPlayerStatus.Playing) {
       console.log("Pausing the track");
+      await this.fadeOut(1500, 0.05); // 1.5초 동안 점점 줄이기
       this.player.pause();
     }
   }
@@ -198,12 +200,13 @@ class AudioPlayerManager {
     }
   }
 
-  stop() {
+  async stop() {
     if (
       this.player?.state?.status === AudioPlayerStatus.Playing ||
       this.player?.state?.status === AudioPlayerStatus.Paused
     ) {
       console.log("Stopping the track");
+      await this.fadeOut(1500, 0.05);
       this.player.stop();
     }
   }
@@ -236,6 +239,39 @@ class AudioPlayerManager {
       this.setVolume(newVolume);
     }
   }
+
+  // 점점 볼륨을 키우는 페이드인
+  fadeIn(targetVolume = 0.5, duration = 2000, step = 0.05) {
+    let currentVolume = 0;
+    this.player.state.resource.volume.setVolume(currentVolume);
+    const intervalTime = duration * step / targetVolume;
+    const interval = setInterval(() => {
+      currentVolume = Math.min(currentVolume + step, targetVolume);
+      this.player.state.resource.volume.setVolume(currentVolume);
+      if (currentVolume >= targetVolume) {
+        clearInterval(interval);
+      }
+    }, intervalTime);
+  }
+
+  // 점점 볼륨을 줄이는 페이드아웃
+  fadeOut(duration = 2000, step = 0.05) {
+    return new Promise((resolve) => {
+      let currentVolume = this.volume;
+      const intervalTime = duration * step / currentVolume;
+      const interval = setInterval(() => {
+        currentVolume = Math.max(currentVolume - step, 0);
+        if (this.player?.state?.resource?.volume) {
+          this.player.state.resource.volume.setVolume(currentVolume);
+        }
+        if (currentVolume <= 0) {
+          clearInterval(interval);
+          resolve(); // 볼륨 0 되면 완료
+        }
+      }, intervalTime);
+    });
+  }
+
 
   destroy() {
     try {
