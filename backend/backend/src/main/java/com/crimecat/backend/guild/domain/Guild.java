@@ -17,16 +17,21 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "GUILDS")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
+@ToString
 public class Guild {
 
     @Id
     @UuidGenerator
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 

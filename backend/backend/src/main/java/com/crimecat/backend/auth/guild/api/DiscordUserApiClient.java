@@ -1,8 +1,10 @@
 package com.crimecat.backend.auth.guild.api;
 
 import com.crimecat.backend.auth.guild.dto.GuildBotInfoDto;
+import com.crimecat.backend.auth.guild.dto.GuildInfoDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -14,10 +16,11 @@ import java.util.Map;
 @Slf4j
 public class DiscordUserApiClient {
 
-
+    @Value("${spring.security.bot-auth.discord-bot-secret-tokens}")
+    private List<String> botTokens;
 
     private final WebClient discordWebClient = WebClient.builder()
-            .baseUrl("https://discord.com/api")
+            .baseUrl("https://discord.com/api/v10")
             .defaultHeader("Content-Type", "application/json")
             .build();
 
@@ -38,6 +41,19 @@ public class DiscordUserApiClient {
                 .bodyToMono(List.class)
                 .block();
     }
+
+    public GuildBotInfoDto getGuildBotInfoDto(int botTokenIndex, String guildSnowflake) {
+        return discordWebClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/guilds/{guildId}")
+                        .queryParam("with_counts", "true")
+                        .build(guildSnowflake))
+                .header("Authorization", "Bot " + botTokens.get(botTokenIndex))
+                .retrieve()
+                .bodyToMono(GuildBotInfoDto.class)
+                .block();
+    }
+
 
     public void inviteUserToGuild(String botToken, String userId, String userAccessToken, String guildId) {
         discordWebClient.put()
@@ -61,5 +77,4 @@ public class DiscordUserApiClient {
                 .doOnError(err -> log.error("❌ [길드 정보 조회 실패] guildId={}, 에러={}", guildId, err.getMessage()))
                 .block();
     }
-
 }

@@ -37,7 +37,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) /// 세션인증 끔
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/oauth2/**", "login/**").permitAll()
+                        .requestMatchers("/oauth2/**", "login/**","/v1/bot/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

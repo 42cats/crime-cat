@@ -160,7 +160,7 @@ public class AuthController {
             long expiration = jwtTokenProvider.getRemainingTime(accessToken);
             jwtBlacklistService.blacklistToken(accessToken, expiration);
             log.info("✅ [토큰 블랙리스트 처리 완료] userId: {}", userId);
-            discordRedisTokenService.deleteAllTokens(userId);
+            discordRedisTokenService.deleteAccessToken(userId);
             log.info("✅ [디스코드 토큰 삭제 처리 완료] userId: {}", userId);
         } else {
             log.warn("⚠️ [유효한 액세스 토큰 없음]");

@@ -151,11 +151,19 @@ const Guilds: React.FC = () => {
                                         <Users className="h-4 w-4" />
                                         <span>
                                             온라인{" "}
-                                            {guild.approximate_presence_count ||
-                                                "???"}
+                                            {guild.approximate_presence_count !==
+                                                null &&
+                                            guild.approximate_presence_count !==
+                                                undefined
+                                                ? guild.approximate_presence_count
+                                                : "???"}
                                             명 총{" "}
-                                            {guild.approximate_member_count ||
-                                                "???"}{" "}
+                                            {guild.approximate_member_count !==
+                                                null &&
+                                            guild.approximate_member_count !==
+                                                undefined
+                                                ? guild.approximate_member_count
+                                                : "???"}
                                             명
                                         </span>
                                     </div>

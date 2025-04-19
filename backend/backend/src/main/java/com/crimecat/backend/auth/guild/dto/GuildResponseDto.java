@@ -9,5 +9,5 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GuildResponseDto {
-    private List<GuildInfoDTO> guilds;
+    private List<GuildBotInfoDto> guilds;
 }
