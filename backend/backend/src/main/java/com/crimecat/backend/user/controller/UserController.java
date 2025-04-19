@@ -4,10 +4,12 @@ import com.crimecat.backend.guild.dto.MessageDto;
 import com.crimecat.backend.user.dto.*;
 import com.crimecat.backend.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/bot/users")
@@ -22,6 +24,7 @@ public class UserController {
 	 */
 	@PostMapping("")
 	public UserInfoResponseDto saveUserInfo(@RequestBody UserInfoRequestDto userInfoRequestDto) {
+		log.info("save user {}", userInfoRequestDto.toString());
 		return userService.saveUserInfo(
 				userInfoRequestDto.getUserSnowflake(),
 				userInfoRequestDto.getName(),

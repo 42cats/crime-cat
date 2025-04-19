@@ -1,6 +1,13 @@
 package com.crimecat.backend.guild.domain;
 
+import java.util.UUID;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
+
 import com.crimecat.backend.guild.dto.ChannelRecordRequestDto;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -8,14 +15,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.util.UUID;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Table(name = "RECORDS")
@@ -26,6 +30,7 @@ public class Record {
 
     @Id
     @UuidGenerator
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 

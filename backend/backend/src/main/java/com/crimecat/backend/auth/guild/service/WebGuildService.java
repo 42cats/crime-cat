@@ -4,16 +4,18 @@ import com.crimecat.backend.auth.guild.api.DiscordUserApiClient;
 import com.crimecat.backend.auth.guild.dto.GuildBotInfoDto;
 import com.crimecat.backend.auth.guild.dto.GuildInfoDTO;
 import com.crimecat.backend.auth.guild.dto.GuildResponseDto;
+import com.crimecat.backend.guild.domain.Guild;
+import com.crimecat.backend.guild.repository.GuildRepository;
+import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
+import java.util.concurrent.*;
+import java.util.stream.IntStream;
 
 @Slf4j
 @Service
@@ -21,52 +23,41 @@ import java.util.stream.Collectors;
 public class WebGuildService {
 
     private final DiscordUserApiClient discordUserApiClient;
+    private final GuildRepository guildRepository;
 
-    @Value("${spring.security.bot-auth.discord-bot-secret-tokens}")
-    private List<String> botTokens;
+    public GuildResponseDto guildBotInfoDTOS(WebUser webUser) {
+        String discordUserSnowflake = webUser.getDiscordUserSnowflake();
+        List<Guild> guildList = guildRepository.findActiveGuildsByOwner(discordUserSnowflake);
+        log.info("guild list {}", guildList.toString());
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        ConcurrentMap<String, GuildBotInfoDto> resultMap = new ConcurrentHashMap<>();
 
-    public GuildResponseDto guildInfoDTOS(List<Map<String, Object>> allGuilds) {
-        List<GuildInfoDTO> simplifiedGuilds = allGuilds.stream()
-                .filter(guild -> Boolean.TRUE.equals(guild.get("owner")))
-                .map(guild -> {
-                    String id = (String) guild.get("id");
-                    String name = (String) guild.get("name");
-                    String iconHash = (String) guild.get("icon");
-                    boolean owner = true;
-                    Number permissions = (Number) guild.get("permissions");
+        List<CompletableFuture<Void>> futures = IntStream.range(0, 4)
+                .mapToObj(botIndex -> CompletableFuture.runAsync(() -> {
+                    for (Guild guild : guildList) {
+                        String guildId = guild.getSnowflake();
 
-                    String iconUrl = (iconHash != null)
-                            ? "https://cdn.discordapp.com/icons/" + id + "/" + iconHash + ".png"
-                            : null;
+                        // 이미 성공적으로 처리된 길드는 스킵
+                        if (resultMap.containsKey(guildId)) continue;
 
-                    List<String> features = (List<String>) guild.get("features");
+                        try {
+                            GuildBotInfoDto info = discordUserApiClient.getGuildBotInfoDto(botIndex, guildId);
+                            if (info != null) {
+                                // 동시에 여러 스레드가 성공할 수 있으므로 putIfAbsent
+                                resultMap.putIfAbsent(guildId, info);
+                                log.info("✅ [길드 정보 획득 성공] guildId={}, by botTokenIndex={}", guildId, botIndex);
+                            }
+                        } catch (Exception e) {
+                            log.warn("❌ [길드 정보 가져오기 실패] guildId={}, botTokenIndex={}, 원인={}", guildId, botIndex, e.toString());
+                        }
+                    }
+                }, executor))
+                .toList();
 
-                    GuildBotInfoDto botInfo = botTokens.stream()
-                            .map(token -> {
-                                try {
-                                    return discordUserApiClient.getGuildInfoFromBot(id, token);
-                                } catch (Exception e) {
-                                    log.debug("❌ 봇 '{}'이 '{}' 길드 접근 실패: {}", token.substring(0, 10), id, e.getMessage());
-                                    return null;
-                                }
-                            })
-                            .filter(dto -> dto != null)
-                            .findFirst()
-                            .orElse(null);
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        executor.shutdown();
 
-                    return new GuildInfoDTO(
-                            id,
-                            name,
-                            iconUrl,
-                            owner,
-                            botInfo != null ? botInfo.getApproximate_member_count() : null,
-                            botInfo != null ? botInfo.getApproximate_presence_count() : null,
-                            permissions != null ? permissions.longValue() : 0L,
-                            features != null ? features : List.of()
-                    );
-                })
-                .collect(Collectors.toList());
 
-        return new GuildResponseDto(simplifiedGuilds);
+        return new GuildResponseDto(resultMap.values().stream().toList());
     }
 }
