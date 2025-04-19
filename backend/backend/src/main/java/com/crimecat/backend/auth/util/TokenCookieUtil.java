@@ -21,8 +21,6 @@ public class TokenCookieUtil {
 
     @Component
     public static class DomainHolder {
-        @Value("${spring.domain}")
-        private String domain;
         @Value("${spring.oauth.refresh-token-expire-days}")
         private int refreshTokenExpireDay;
         @Value("${spring.oauth.access-token-expire-minutes}")
@@ -30,7 +28,6 @@ public class TokenCookieUtil {
 
         @PostConstruct
         public void init() {
-            TokenCookieUtil.appDomain = domain;
             TokenCookieUtil.ACCESS_TOKEN_EXPIRE_MINUTES = accessTokenExpireMinutes;
             TokenCookieUtil.REFRESH_TOKEN_EXPIRE_DAY = refreshTokenExpireDay;
 

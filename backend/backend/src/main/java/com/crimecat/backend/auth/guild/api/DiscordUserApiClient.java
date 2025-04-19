@@ -16,7 +16,7 @@ import java.util.Map;
 @Slf4j
 public class DiscordUserApiClient {
 
-    @Value("${spring.security.bot-auth.discord-bot-secret-tokens}")
+    @Value("${spring.security.bot-auth.discord-bot-secret-token}")
     private List<String> botTokens;
 
     private final WebClient discordWebClient = WebClient.builder()
