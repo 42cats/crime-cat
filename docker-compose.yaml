@@ -48,7 +48,7 @@ services:
    volumes:
     #  - web_data:/usr/share/nginx/html:ro
      - frontend_data:/web
-     - cert:/etc/nginx/certs:ro
+     - cert:/etc/nginx/ssl
 
 
   redis:
