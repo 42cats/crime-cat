@@ -25,7 +25,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class UserPermission {
-    git restore --source=590da6ed55e9304e82cb28b6e83286a18c815798 backend/backend/src/main/java/com/crimecat/backend/character/
     @Id
     @UuidGenerator
     @JdbcTypeCode(SqlTypes.BINARY)
