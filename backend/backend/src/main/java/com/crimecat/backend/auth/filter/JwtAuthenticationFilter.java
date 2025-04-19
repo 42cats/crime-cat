@@ -3,6 +3,7 @@ package com.crimecat.backend.auth.filter;
 import java.io.IOException;
 import java.util.UUID;
 
+import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -52,7 +53,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
-                            userId,
+                            new DiscordOAuth2User(user,null,null,null,null,null),
                             null,
                             user.getAuthorities()
                     );
