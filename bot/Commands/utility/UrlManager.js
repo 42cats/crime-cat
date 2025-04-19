@@ -166,8 +166,8 @@ class GuildURLManager {
         }
     }
 
-    pause() {
-        this.audioPlayerManager.pause();
+    async pause() {
+        await this.audioPlayerManager.pause();
     }
 
     resume() {
@@ -195,12 +195,12 @@ class GuildURLManager {
         });
     }
 
-    stop() {
+    async stop() {
         if (this.audioPlayerManager.player.state.status === AudioPlayerStatus.Playing ||
             this.audioPlayerManager.player.state.status === AudioPlayerStatus.Buffering ||
             this.audioPlayerManager.player.state.status === AudioPlayerStatus.Paused) {
             this.stopped = true;
-            this.audioPlayerManager.stop();
+            await this.audioPlayerManager.stop();
         }
     }
 
