@@ -1,8 +1,10 @@
 package com.crimecat.backend.auth.filter;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.UUID;
 
+import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -47,14 +49,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null && jwtTokenProvider.validateToken(token) && !jwtBlacklistService.isBlacklisted(token)) {
             String userId = jwtTokenProvider.getUserIdFromToken(token);
             log.info("✅ Extracted userId: {}", userId);
-            WebUser user = webUserRepository.findById(UUID.fromString(userId))
-                    .orElseThrow(() -> new RuntimeException("유저 정보 없음"));
+            Optional<WebUser> user = webUserRepository.findById(UUID.fromString(userId));
+                    if(user.isEmpty()){
+                        log.warn("유저 디비에 없음, 인증패스");
+                        SecurityContextHolder.clearContext();
 
+                        // 🧹 쿠키까지 삭제
+                        TokenCookieUtil.clearAuthCookies(response);
+                        filterChain.doFilter(request,response);
+                        return;
+                    }
+            WebUser webUser = user.get();
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
-                            userId,
+                            new DiscordOAuth2User(webUser,null,null),
                             null,
-                            user.getAuthorities()
+                            webUser.getAuthorities()
                     );
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);

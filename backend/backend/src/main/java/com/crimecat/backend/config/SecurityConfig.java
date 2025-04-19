@@ -25,6 +25,7 @@ public class SecurityConfig {
     private final DiscordOAuth2UserService discordOAuth2UserService; // ✅ 생성자 주입
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
+    private final ServiceUrlConfig serviceUrlConfig;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -38,7 +39,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .loginPage("http://localhost:5173/login") // 로그인 경로 설정
+                        .loginPage(serviceUrlConfig.getDomain() + "/login") // 로그인 경로 설정
                         .successHandler(customOAuth2SuccessHandler)
 //                        .defaultSuccessUrl("/auth/login-success", true) // 트루 반환(성공)시에 리다이렉트 될 경로
                         .userInfoEndpoint(userInfo -> userInfo

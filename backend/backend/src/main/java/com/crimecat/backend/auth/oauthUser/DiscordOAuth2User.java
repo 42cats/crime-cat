@@ -1,51 +1,53 @@
 package com.crimecat.backend.auth.oauthUser;
 
-import lombok.Data;
-import org.springframework.security.oauth2.core.user.OAuth2User;
-
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
+
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
-@Data
+import com.crimecat.backend.webUser.domain.WebUser;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
 public class DiscordOAuth2User implements OAuth2User {
-    private final OAuth2User delegate;
-    private final String accessToken;
-    private final String refreshToken;
-    private final Instant expiresAt;
 
-    public DiscordOAuth2User(OAuth2User delegate, String accessToken, String refreshToken, Instant expiresAt) {
-        this.delegate = delegate;
-        this.accessToken = accessToken;
-        this.refreshToken = refreshToken;
-        this.expiresAt = expiresAt;
-    }
-
-    public String getAccessToken() {
-        return accessToken;
-    }
-
-    public String getRefreshToken() {
-        return refreshToken;
-    }
-
-    public Instant getExpiresAt() {
-        return expiresAt;
-    }
+    private final WebUser webUser;
+    private final Map<String, Object> attributes;
+    private final Collection<? extends GrantedAuthority> authorities;
 
     @Override
     public Map<String, Object> getAttributes() {
-        return delegate.getAttributes();
+        return attributes;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return delegate.getAuthorities();
+        return authorities;
     }
 
     @Override
     public String getName() {
-        return delegate.getName();
+        return webUser.getId().toString(); // 또는 webUser.getDiscordId()
+    }
+
+    /**
+     * attributes에 존재하는 키의 값을 문자열로 반환 (없으면 null)
+     */
+    public String getAttribute(String key) {
+        Object value = attributes.get(key);
+        return value != null ? value.toString() : null;
+    }
+
+    /**
+     * attributes에 존재하는 키의 값을 타입 그대로 반환 (Generic)
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getAttributeAs(String key) {
+        return (T) attributes.get(key);
     }
 }
