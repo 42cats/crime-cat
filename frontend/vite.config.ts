@@ -16,8 +16,8 @@ export default defineConfig({
                             "X-Forwarded-Host",
                             "localhost:5173"
                         );
-					});
-				},
+                    });
+                },
             },
             "/oauth2": {
                 target: "http://localhost:8080",

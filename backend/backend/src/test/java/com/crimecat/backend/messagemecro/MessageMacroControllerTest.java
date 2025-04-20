@@ -57,9 +57,9 @@ class MessageMacroControllerTest {
                 .index(0)
                 .buttons(Collections.emptyList())
                 .build());
-        when(service.findByGuild(GUILD_ID)).thenReturn(dummy);
+        when(service.getGroups(GUILD_ID)).thenReturn(dummy);
 
-        ResponseEntity<List<GroupDto>> response = controller.getMacros(GUILD_ID, principal);
+        ResponseEntity<List<GroupDto>> response = controller.getMacros(GUILD_ID);
         assertEquals(dummy, response.getBody());
     }
 
@@ -70,7 +70,7 @@ class MessageMacroControllerTest {
                 .thenReturn(false);
 
         ControllerException ex = assertThrows(ControllerException.class,
-                () -> controller.getMacros(GUILD_ID, principal));
+                () -> controller.getMacros(GUILD_ID));
         assertEquals(ErrorStatus.GUILD_ALREADY_EXISTS.getMessage(), ex.getMessage());
     }
 
@@ -80,7 +80,7 @@ class MessageMacroControllerTest {
         when(guildRepository.existsBySnowflakeAndOwnerSnowflake(GUILD_ID, "user123"))
                 .thenReturn(true);
 
-        ResponseEntity<Void> response = controller.syncMacros(GUILD_ID, Collections.emptyList(), principal);
+        ResponseEntity<Void> response = controller.syncMacros(GUILD_ID, Collections.emptyList());
         assertEquals(204, response.getStatusCodeValue());
         verify(service).syncMacroData(GUILD_ID, Collections.emptyList());
     }
@@ -92,7 +92,7 @@ class MessageMacroControllerTest {
                 .thenReturn(false);
 
         ControllerException ex = assertThrows(ControllerException.class,
-                () -> controller.syncMacros(GUILD_ID, Collections.emptyList(), principal));
+                () -> controller.syncMacros(GUILD_ID, Collections.emptyList()));
         assertEquals(ErrorStatus.GUILD_ALREADY_EXISTS.getMessage(), ex.getMessage());
     }
 }

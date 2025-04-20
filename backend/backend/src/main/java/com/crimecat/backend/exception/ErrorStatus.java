@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatus;
 public enum ErrorStatus {
     GUILD_ALREADY_EXISTS("Guild already exists", HttpStatus.BAD_REQUEST),
     GUILD_NOT_EXISTS("Guild not exists", HttpStatus.BAD_REQUEST),
-    GROUP_NAME_EXISTS("Group Name exists", HttpStatus.BAD_REQUEST);
+    GROUP_NAME_EXISTS("Group Name exists", HttpStatus.BAD_REQUEST),
+    NOT_GUILD_OWNER("Not the owner of the guild", HttpStatus.FORBIDDEN);
+
 
     private final String message;
     private final HttpStatus status;

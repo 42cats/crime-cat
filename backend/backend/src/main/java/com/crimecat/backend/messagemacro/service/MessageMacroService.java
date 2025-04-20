@@ -23,7 +23,7 @@ public class MessageMacroService {
     private final GroupItemRepository groupItemRepository;
 
     @Transactional(readOnly = true)
-    public List<GroupDto> findByGuild(String guildId) {
+    public List<GroupDto> getGroups(String guildId) {
         List<Group> groups = groupRepository.findAllByGuildSnowflakeOrderByIndex(guildId);
         return groups.stream()
                 .map(this::toGroupDto)

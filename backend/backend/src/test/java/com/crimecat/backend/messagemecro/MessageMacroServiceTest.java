@@ -56,7 +56,7 @@ class MessageMacroServiceTest {
 
     @Test
     @DisplayName("findByGuild가 DTO 매핑을 올바르게 반환한다")
-    void testFindByGuild() {
+    void testGetGroups() {
         Group group = new Group();
         group.setId(groupId);
         group.setName("GroupName");
@@ -84,7 +84,7 @@ class MessageMacroServiceTest {
         when(groupItemRepository.findAllByGroupIdOrderByIndex(groupId))
                 .thenReturn(List.of(button, content));
 
-        List<GroupDto> dtos = service.findByGuild(GUILD_ID);
+        List<GroupDto> dtos = service.getGroups(GUILD_ID);
 
         assertEquals(1, dtos.size());
         GroupDto dto = dtos.get(0);
@@ -106,11 +106,11 @@ class MessageMacroServiceTest {
 
     @Test
     @DisplayName("findByGuild는 그룹이 없으면 빈 리스트를 반환한다")
-    void testFindByGuildEmpty() {
+    void testGetGroupsEmpty() {
         when(groupRepository.findAllByGuildSnowflakeOrderByIndex(GUILD_ID))
                 .thenReturn(Collections.emptyList());
 
-        List<GroupDto> dtos = service.findByGuild(GUILD_ID);
+        List<GroupDto> dtos = service.getGroups(GUILD_ID);
         assertTrue(dtos.isEmpty());
         verify(groupItemRepository, never()).findAllByGroupIdOrderByIndex(any());
     }
