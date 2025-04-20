@@ -1,25 +1,10 @@
-# Node.js 기반 빌드
-FROM node:18-alpine AS build
+# docker/frontend/Dockerfile
+FROM node:20-alpine
 WORKDIR /app
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm install
-COPY frontend ./
-RUN npm run build
+COPY ./frontend .
+RUN npm install && npm run build
+# 빌드 결과를 nginx로 넘기기 위해 결과물을 volume에 둠
 
-# 실행 단계 (개발용)
-FROM node:18-alpine
-WORKDIR /app
-
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm install
-
-# Vite 전역 설치 (해결 핵심)
-RUN npm install -g vite
-
-COPY frontend ./
-
-EXPOSE 5173
-CMD ["vite"]
 
 
 

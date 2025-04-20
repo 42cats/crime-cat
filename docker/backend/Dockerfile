@@ -10,6 +10,6 @@ WORKDIR /app
 COPY --from=builder /app/backend/build/libs/*.jar app.jar
 #RUN #chmod +x app.jar
 EXPOSE 8080
-ENTRYPOINT ["java" ,"-jar", "app.jar", "--server.port=${SERVER_PORT}"]
+ENTRYPOINT ["java" ,"-jar", "app.jar", "--server.port=8080"]
 ##ENTRYPOINT ["/bin/sh"]
 #ENTRYPOINT ["sh", "-c", "while :; do sleep 1; done"]
