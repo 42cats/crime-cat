@@ -11,7 +11,7 @@ const client = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.GuildMessages,
-		GatewayIntentBits.MessageContent,
+		// GatewayIntentBits.MessageContent,
 		GatewayIntentBits.GuildMembers,
 		GatewayIntentBits.GuildVoiceStates,
 		GatewayIntentBits.DirectMessages,
@@ -62,10 +62,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
 	event?.execute(client, interaction);
 });
 
-client.on(Events.MessageCreate, async (message) => {
-	const event = client.events.get('MessageHandler');
-	event?.execute(client, message);
-});
+// client.on(Events.MessageCreate, async (message) => {
+// 	const event = client.events.get('MessageHandler');
+// 	event?.execute(client, message);
+// });
 
 
 client.on(Events.GuildCreate, async (guild) => {
