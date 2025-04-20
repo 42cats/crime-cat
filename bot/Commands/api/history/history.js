@@ -14,7 +14,7 @@ const baseUrl = process.env.BASE_URL
  * @param {Date} createdAt   
  */
 async function addUserHistory({ id: userID }, { id: guildID }, characterName, createdAt = null, isWin = false) {
-	const API_URL = `${baseUrl}/v1/bot/histories`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/histories`;  // 요청할 API 엔드포인트
 	const body = {
 		"guildSnowflake": guildID, // discord guild_id 
 		"userSnowflake": userID,  // discord user_id
@@ -40,7 +40,7 @@ async function addUserHistory({ id: userID }, { id: guildID }, characterName, cr
  * @returns {Array} 유저 히스토리 배열 (없으면 빈 배열)
  */
 async function getUserHistory(userId) {
-	const API_URL = `${baseUrl}/v1/bot/histories/${userId}`;
+	const API_URL = `${baseUrl}/bot/v1/histories/${userId}`;
 	try {
 		const response = await axios.get(API_URL, {
 			headers: {
@@ -60,7 +60,7 @@ async function getUserHistory(userId) {
  * @returns {Array} 유저 히스토리 배열 (없으면 빈 배열)
  */
 async function getGmaePlayedUser(guildId, alarm = true) {
-	const API_URL = `${baseUrl}/v1/bot/users?guildSnowflake=${guildId}&discordAlarm=${alarm}`;
+	const API_URL = `${baseUrl}/bot/v1/users?guildSnowflake=${guildId}&discordAlarm=${alarm}`;
 	try {
 		const response = await axios.get(API_URL, {
 			headers: {

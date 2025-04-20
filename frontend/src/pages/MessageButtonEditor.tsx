@@ -67,6 +67,7 @@ const MessageButtonEditor = () => {
 
     const handleSave = async () => {
         setIsSaving(true);
+        console.log("now data ", groups);
         try {
             const payload = groups.map((g, gi) => ({
                 ...g,

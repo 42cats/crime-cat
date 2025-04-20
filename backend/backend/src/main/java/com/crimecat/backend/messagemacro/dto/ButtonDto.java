@@ -19,6 +19,5 @@ public class ButtonDto {
     private String name;
     @Min(0)
     private int index;
-    @NotEmpty
     private List<ContentDto> contents;
 }

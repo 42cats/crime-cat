@@ -14,7 +14,7 @@ const baseUrl = process.env.BASE_URL
  * @param {String} passwordKey 
  */
 async function addPasswordContent(guildId, channelId, passwordKey, content) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/password-notes`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/password-notes`;  // 요청할 API 엔드포인트
 	const body = {
 		"channelSnowflake": channelId,
 		passwordKey,
@@ -43,8 +43,8 @@ async function addPasswordContent(guildId, channelId, passwordKey, content) {
  * @param {String} uuid   
  * @param {String} passwordKey 
  */
-async function editPasswordContent(guildId, channelId, uuid ,passwordKey, content) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/password-notes`;  // 요청할 API 엔드포인트
+async function editPasswordContent(guildId, channelId, uuid, passwordKey, content) {
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/password-notes`;  // 요청할 API 엔드포인트
 	const body = {
 		uuid,
 		"channelSnowflake": channelId,
@@ -73,7 +73,7 @@ async function editPasswordContent(guildId, channelId, uuid ,passwordKey, conten
  * @param {String} passwordKey 
  */
 async function deletePasswordContent(guildId, passwordKey) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/password-notes/${passwordKey}`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/password-notes/${passwordKey}`;  // 요청할 API 엔드포인트
 	try {
 		const response = await axios.delete(API_URL, {
 			headers: {
@@ -95,7 +95,7 @@ async function deletePasswordContent(guildId, passwordKey) {
  * @param {String} passwordKey 
  */
 async function getPasswordContents(guildId) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/password-notes`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/password-notes`;  // 요청할 API 엔드포인트
 	try {
 		const response = await axios.get(API_URL, {
 			headers: {
@@ -117,7 +117,7 @@ async function getPasswordContents(guildId) {
  * @param {String} passwordKey 
  */
 async function matchPasswordContent(guildId, passwordKey) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/password-notes/${passwordKey}`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/password-notes/${passwordKey}`;  // 요청할 API 엔드포인트
 	try {
 		const response = await axios.get(API_URL, {
 			headers: {

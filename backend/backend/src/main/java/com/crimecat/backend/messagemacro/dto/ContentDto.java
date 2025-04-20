@@ -15,7 +15,6 @@ import java.util.UUID;
 public class ContentDto {
     @NotNull
     private UUID id;
-    @NotBlank
     private String text;
     @NotBlank
     private String channelId;

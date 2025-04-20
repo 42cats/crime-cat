@@ -12,7 +12,7 @@ const baseUrl = process.env.BASE_URL
  * @returns 
  */
 async function addGuild({ id, name, ownerId, createdAt }) {
-	const API_URL = `${baseUrl}/v1/bot/guilds`;
+	const API_URL = `${baseUrl}/bot/v1/guilds`;
 	const body = {
 		snowflake: id,
 		name,
@@ -61,7 +61,7 @@ async function guildMembersAdd(client, guild) {
  * @param {string} guildId
  */
 async function deleteGuild(guildId) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}`;  // 요청할 API 엔드포인트
 	try {
 		const response = await axios.delete(API_URL, {
 			headers: {

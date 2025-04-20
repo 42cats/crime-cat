@@ -10,7 +10,7 @@ const baseUrl = process.env.BASE_URL
  * @param {String} channelId  
  */
 async function addChannelClean(guildId, channelId) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/channels/cleans/${channelId}`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/channels/cleans/${channelId}`;  // 요청할 API 엔드포인트
 	try {
 		const response = await axios.post(API_URL, {
 			headers: {
@@ -28,11 +28,11 @@ async function addChannelClean(guildId, channelId) {
  * @param {String} channelId  
  */
 async function addChannelMessage(guildId, channelId, input) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/records`;  // 요청할 API 엔드포인트
-	const body ={
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/records`;  // 요청할 API 엔드포인트
+	const body = {
 		"channelSnowflake": channelId,  // discord channel_id snowflake, 봇에서 확인
 		"message": input,  //string
-		
+
 	};
 	try {
 		const response = await axios.post(API_URL, body, {
@@ -51,7 +51,7 @@ async function addChannelMessage(guildId, channelId, input) {
  * @param {String} channelId  
  */
 async function deleteChannelClean(guildId, channelId) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/channels/cleans/${channelId}`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/channels/cleans/${channelId}`;  // 요청할 API 엔드포인트
 	try {
 		const response = await axios.delete(API_URL, {
 			headers: {
@@ -71,7 +71,7 @@ async function deleteChannelClean(guildId, channelId) {
  * @param {String} channelId  
  */
 async function deleteChannelMessage(guildId, channelId) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/records/${channelId}`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/records/${channelId}`;  // 요청할 API 엔드포인트
 	try {
 		const response = await axios.delete(API_URL, {
 			headers: {
@@ -91,7 +91,7 @@ async function deleteChannelMessage(guildId, channelId) {
  * @param {String} channelId  
  */
 async function getChannelClean(guildId) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/channels/cleans`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/channels/cleans`;  // 요청할 API 엔드포인트
 	try {
 		const response = await axios.get(API_URL, {
 			headers: {
@@ -110,7 +110,7 @@ async function getChannelClean(guildId) {
  * @param {String} channelId  
  */
 async function getGuildChannelMessage(guildId) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/records`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/records`;  // 요청할 API 엔드포인트
 	try {
 		const response = await axios.get(API_URL, {
 			headers: {

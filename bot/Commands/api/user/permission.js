@@ -12,7 +12,7 @@ const baseUrl = process.env.BASE_URL
  * @returns {Boolean} 권한 여부
  */
 async function isPermissionHas(userId, permissionName) {
-	const API_URL = `${baseUrl}/v1/bot/users/${userId}/permission/${encodeURI(permissionName)}`;
+	const API_URL = `${baseUrl}/bot/v1/users/${userId}/permission/${encodeURI(permissionName)}`;
 	try {
 		const response = await axios.get(API_URL, {
 			headers: {
@@ -33,7 +33,7 @@ async function isPermissionHas(userId, permissionName) {
  * @returns {Boolean} 권한 여부
  */
 async function isPermissionHas(userId, permissionName) {
-	const API_URL = `${baseUrl}/v1/bot/users/${userId}/permission/${encodeURI(permissionName)}`;
+	const API_URL = `${baseUrl}/bot/v1/users/${userId}/permission/${encodeURI(permissionName)}`;
 	try {
 		const response = await axios.get(API_URL, {
 			headers: {
@@ -51,7 +51,7 @@ async function isPermissionHas(userId, permissionName) {
 
 
 async function getPermissons() {
-	const API_URL = `${baseUrl}/v1/bot/permissions`;
+	const API_URL = `${baseUrl}/bot/v1/permissions`;
 
 	// GuildMember 또는 User 객체 구분
 	try {
@@ -75,7 +75,7 @@ async function getPermissons() {
  * @param {number} [duration=28]   
  */
 async function addPermisson(name, price, duration = 28) {
-	const API_URL = `${baseUrl}/v1/bot/permissions`;
+	const API_URL = `${baseUrl}/bot/v1/permissions`;
 
 
 	const body = {
@@ -105,7 +105,7 @@ async function addPermisson(name, price, duration = 28) {
  * @param {number} [duration=28]   
  */
 async function editPermisson(name, price, duration = 28) {
-	const API_URL = `${baseUrl}/v1/bot/permissions/${encodeURI(name)}`;
+	const API_URL = `${baseUrl}/bot/v1/permissions/${encodeURI(name)}`;
 
 
 	const body = {
@@ -132,7 +132,7 @@ async function editPermisson(name, price, duration = 28) {
  * @param {string} permissionName
  */
 async function deletePermisson(name) {
-	const API_URL = `${baseUrl}/v1/bot/permissions/${encodeURI(name)}`;
+	const API_URL = `${baseUrl}/bot/v1/permissions/${encodeURI(name)}`;
 
 	try {
 		const response = await axios.delete(API_URL, {
@@ -147,7 +147,7 @@ async function deletePermisson(name) {
 	}
 }
 
-module.exports={
+module.exports = {
 	isPermissionHas,
 	editPermisson,
 	addPermisson,

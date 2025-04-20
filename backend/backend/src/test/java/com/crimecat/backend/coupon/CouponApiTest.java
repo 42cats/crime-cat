@@ -1,5 +1,24 @@
 package com.crimecat.backend.coupon;
 
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.crimecat.backend.coupon.domain.Coupon;
 import com.crimecat.backend.coupon.dto.CouponCreateRequestDto;
 import com.crimecat.backend.coupon.dto.CouponRedeemRequestDto;
@@ -7,27 +26,6 @@ import com.crimecat.backend.coupon.repository.CouponRepository;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.annotation.Commit;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -43,7 +41,7 @@ public class CouponApiTest {
     void 쿠폰_생성_성공() throws Exception {
         CouponCreateRequestDto requestDto = new CouponCreateRequestDto(3000, 3, 7);
 
-        mockMvc.perform(post("/v1/bot/coupons")
+        mockMvc.perform(post("/bot/v1/coupons")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk())
@@ -61,13 +59,13 @@ public class CouponApiTest {
 
         CouponRedeemRequestDto dto = new CouponRedeemRequestDto(user.getSnowflake(), coupon.getId().toString());
 
-        mockMvc.perform(patch("/v1/bot/coupons")
+        mockMvc.perform(patch("/bot/v1/coupons")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Coupon redeemed successfully"))
                 .andExpect(jsonPath("$.point").value(5000));
-        mockMvc.perform(patch("/v1/bot/coupons")
+        mockMvc.perform(patch("/bot/v1/coupons")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
@@ -81,7 +79,7 @@ public class CouponApiTest {
 
         CouponRedeemRequestDto dto = new CouponRedeemRequestDto(user.getSnowflake(), UUID.randomUUID().toString());
 
-        mockMvc.perform(patch("/v1/bot/coupons")
+        mockMvc.perform(patch("/bot/v1/coupons")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
@@ -94,7 +92,7 @@ public class CouponApiTest {
 
         CouponRedeemRequestDto dto = new CouponRedeemRequestDto("999999999999", coupon.getId().toString());
 
-        mockMvc.perform(patch("/v1/bot/coupons")
+        mockMvc.perform(patch("/bot/v1/coupons")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
@@ -108,7 +106,7 @@ public class CouponApiTest {
         Coupon coupon = couponRepository.save(Coupon.create(5000,-1));
 
         CouponRedeemRequestDto dto = new CouponRedeemRequestDto(snowflake,coupon.getId().toString());
-        mockMvc.perform(patch("/v1/bot/coupons")
+        mockMvc.perform(patch("/bot/v1/coupons")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
@@ -122,21 +120,21 @@ public class CouponApiTest {
 
         //usersnowfalke null
         CouponRedeemRequestDto userSnowflakeDtoNull = new CouponRedeemRequestDto(null, coupon.getId().toString());
-        mockMvc.perform(patch("/v1/bot/coupons")
+        mockMvc.perform(patch("/bot/v1/coupons")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userSnowflakeDtoNull)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("유저 정보가 없습니다."));
         //codId null
         CouponRedeemRequestDto codeDtoNull = new CouponRedeemRequestDto(snowflake, null);
-        mockMvc.perform(patch("/v1/bot/coupons")
+        mockMvc.perform(patch("/bot/v1/coupons")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(codeDtoNull)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("유효한 코드가 아닙니다."));
         //allNull
         CouponRedeemRequestDto allDtoNull = new CouponRedeemRequestDto(null, null);
-        mockMvc.perform(patch("/v1/bot/coupons")
+        mockMvc.perform(patch("/bot/v1/coupons")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(allDtoNull)))
                 .andExpect(status().isBadRequest())
@@ -160,7 +158,7 @@ public class CouponApiTest {
 
                     CouponRedeemRequestDto dto = new CouponRedeemRequestDto(user.getSnowflake(), couponId);
 
-                    mockMvc.perform(patch("/v1/bot/coupons")
+                    mockMvc.perform(patch("/bot/v1/coupons")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(objectMapper.writeValueAsString(dto)))
                             .andDo(result -> {
