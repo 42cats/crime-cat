@@ -1,19 +1,15 @@
-import axios from "axios";
 import { Channel, GroupData, ButtonData, ContentData } from "@/lib/types";
+import { apiClient } from "@/lib/api";
 
-const axiosInstance = axios.create({
-    baseURL:
-        import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1",
-    timeout: 30000,
-});
-
-const mockChannels: Channel[] = [{ id: "", name: "채널없음" }];
+const mockChannels: Channel[] = [{ id: "none", name: "현재채널" }];
 
 // 채널 리스트 가져오기
-export async function fetchChannels(guildId?: string): Promise<Channel[]> {
+export async function fetchChannels(guildId?: string): Promise<any> {
     try {
-        const endpoint = guildId ? `/channels?guildId=${guildId}` : "/channels";
-        const { data } = await axiosInstance.get<Channel[]>(endpoint);
+        console.log("채널 호출 ", guildId);
+        const endpoint = `auth/guilds/channels/${guildId}`;
+        const data = await apiClient.get<Channel[]>(endpoint);
+        console.log("data", data);
         return [...mockChannels, ...data];
     } catch (error) {
         console.error("Error fetching channels:", error);
@@ -27,7 +23,7 @@ export async function fetchChannelById(
     id: string
 ): Promise<string[]> {
     try {
-        const { data } = await axiosInstance.get<{ id: string; name: string }>(
+        const data = await apiClient.get<{ id: string; name: string }>(
             `/channels/${id}`
         );
         return [data.name];
@@ -37,91 +33,39 @@ export async function fetchChannelById(
     }
 }
 
-// 그룹/버튼/콘텐츠 불러오기
+/**
+ * 특정 guild의 메시지 매크로 그룹 리스트를 가져옵니다.
+ * GET /api/v1/messageMacros/{guildSnowflake}
+ */
 export async function fetchGroupsFromServer(
     guildId: string
 ): Promise<GroupData[]> {
     try {
-        const [groupsRes, buttonsRes, contentsRes] = await Promise.all([
-            axiosInstance.get<GroupData[]>(`/groups?guildId=${guildId}`),
-            axiosInstance.get<ButtonData[]>(`/buttons?guildId=${guildId}`),
-            axiosInstance.get<ContentData[]>(`/contents?guildId=${guildId}`),
-        ]);
-
-        const groups = groupsRes.data;
-        const buttons = buttonsRes.data;
-        const contents = contentsRes.data;
-
-        return groups
-            .map((group) => {
-                const groupButtons = buttons
-                    .filter((button) => button.groupId === group.id)
-                    .sort((a, b) => a.index - b.index);
-
-                const buttonsWithContents = groupButtons.map((button) => {
-                    const buttonContents = contents
-                        .filter((content) => content.buttonId === button.id)
-                        .sort((a, b) => a.index - b.index);
-                    return { ...button, contents: buttonContents };
-                });
-
-                return { ...group, buttons: buttonsWithContents };
-            })
-            .sort((a, b) => a.index - b.index);
+        // apiClient.get<T> 은 바로 res.data 를 반환하도록 구현되어 있음
+        const groups = await apiClient.get<GroupData[]>(
+            `/messageMacros/${guildId}`
+        );
+        return groups;
     } catch (error) {
-        console.error("Failed to load data:", error);
+        console.error("Failed to fetch groups:", error);
         return [];
     }
 }
 
-// 저장
+/**
+ * 특정 guild의 메시지 매크로 그룹 리스트를 동기화(저장)합니다.
+ * POST /api/v1/messageMacros/{guildSnowflake}
+ */
 export async function saveData(
     guildId: string,
     groups: GroupData[]
 ): Promise<boolean> {
     try {
-        for (const group of groups) {
-            const groupWithGuild = { ...group, guildId };
-
-            try {
-                await axiosInstance.get(`/groups/${group.id}`);
-                await axiosInstance.put(`/groups/${group.id}`, groupWithGuild);
-            } catch {
-                await axiosInstance.post(`/groups`, groupWithGuild);
-            }
-
-            for (const button of group.buttons) {
-                const buttonWithGuild = { ...button, guildId };
-
-                try {
-                    await axiosInstance.get(`/buttons/${button.id}`);
-                    await axiosInstance.put(
-                        `/buttons/${button.id}`,
-                        buttonWithGuild
-                    );
-                } catch {
-                    await axiosInstance.post(`/buttons`, buttonWithGuild);
-                }
-
-                for (const content of button.contents) {
-                    const contentWithGuild = { ...content, guildId };
-
-                    try {
-                        await axiosInstance.get(`/contents/${content.id}`);
-                        await axiosInstance.put(
-                            `/contents/${content.id}`,
-                            contentWithGuild
-                        );
-                    } catch {
-                        await axiosInstance.post(`/contents`, contentWithGuild);
-                    }
-                }
-            }
-        }
-
+        // POST 요청은 Void 반환이므로 <void>
+        await apiClient.post<void>(`/messageMacros/${guildId}`, groups);
         return true;
     } catch (error) {
-        console.error("Error saving data:", error);
+        console.error("Error saving groups:", error);
         return false;
     }
 }

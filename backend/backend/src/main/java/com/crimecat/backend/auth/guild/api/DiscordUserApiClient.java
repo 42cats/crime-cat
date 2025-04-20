@@ -1,5 +1,7 @@
 package com.crimecat.backend.auth.guild.api;
 
+import com.crimecat.backend.auth.guild.dto.ApiGetGuildInfoDto;
+import com.crimecat.backend.auth.guild.dto.ChannelDto;
 import com.crimecat.backend.auth.guild.dto.GuildBotInfoDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +43,7 @@ public class DiscordUserApiClient {
                 .block();
     }
 
-    public GuildBotInfoDto getGuildBotInfoDto(int botTokenIndex, String guildSnowflake) {
+    public ApiGetGuildInfoDto getApiGetGuildInfoDto(int botTokenIndex, String guildSnowflake) {
         return discordWebClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/guilds/{guildId}")
@@ -49,9 +51,22 @@ public class DiscordUserApiClient {
                         .build(guildSnowflake))
                 .header("Authorization", "Bot " + botTokens.get(botTokenIndex))
                 .retrieve()
-                .bodyToMono(GuildBotInfoDto.class)
+                .bodyToMono(ApiGetGuildInfoDto.class)
                 .block();
     }
+
+    public List<ChannelDto> getGuildChannels(int botTokenIndex, String guildSnowflake) {
+        return discordWebClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/guilds/{guildId}/channels")
+                        .build(guildSnowflake))
+                .header("Authorization", "Bot " + botTokens.get(botTokenIndex))
+                .retrieve()
+                .bodyToFlux(ChannelDto.class)
+                .collectList()
+                .block();
+    }
+
 
 
     public void inviteUserToGuild(String botToken, String userId, String userAccessToken, String guildId) {
