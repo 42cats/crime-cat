@@ -16,6 +16,7 @@ import Index from "@/pages/Index";
 import Commands from "@/pages/Commands";
 import Themes from "@/pages/Themes";
 import ThemeDetail from "@/pages/ThemeDetail";
+import CreateTheme from "@/pages/CreateTheme";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/NotFound";
 import TermsPage from '@/pages/TermsPage';
@@ -47,6 +48,7 @@ const App = () => (
                 <Route path="/commands" element={<Commands />} />
                 <Route path="/themes" element={<Themes />} />
                 <Route path="/themes/:id" element={<ThemeDetail />} />
+                <Route path="/themes/new" element={<CreateTheme />} />
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/login" element={<Login />} />
