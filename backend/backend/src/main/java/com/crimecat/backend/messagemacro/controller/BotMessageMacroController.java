@@ -44,6 +44,9 @@ public class BotMessageMacroController {
         Group group = groupRepository.findGroupByGuildSnowflakeAndName(guildSnowflake, targetGroupName)
                 .orElseThrow(() -> ErrorStatus.GROUP_NAME_NOT_EXISTS.asControllerException());
 
+        if(!guildSnowflake.equals(group.getGuildSnowflake())) {
+            throw ErrorStatus.GROUP_NAME_NOT_EXISTS.asControllerException();
+        }
         GroupDto groupDto = messageMacroService.getButtons(group);
         return ResponseEntity.ok(groupDto);
     }

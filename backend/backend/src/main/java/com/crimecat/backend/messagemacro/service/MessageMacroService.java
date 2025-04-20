@@ -174,6 +174,7 @@ public class MessageMacroService {
                 .toList();
 
         return ButtonDto.builder()
+                .name(button.getName())
                 .contents(contentDtos)
                 .build();
 
