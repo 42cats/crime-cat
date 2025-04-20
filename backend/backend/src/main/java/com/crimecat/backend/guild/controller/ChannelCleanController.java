@@ -1,13 +1,20 @@
 package com.crimecat.backend.guild.controller;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.crimecat.backend.guild.dto.MessageDto;
 import com.crimecat.backend.guild.service.ChannelCleanService;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1/bot/guilds/{guildSnowflake}/channels/cleans")
+@RequestMapping("/bot/v1/guilds/{guildSnowflake}/channels/cleans")
 public class ChannelCleanController {
     private final ChannelCleanService channelCleanService;
 

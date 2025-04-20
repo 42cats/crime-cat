@@ -11,8 +11,8 @@ const baseUrl = process.env.BASE_URL
  * @param {int} count
  * @param {int} duration 
  */
-async function createCoupon(value,count, duration) {
-	const API_URL = `${baseUrl}/v1/bot/coupons`;  // 요청할 API 엔드포인트
+async function createCoupon(value, count, duration) {
+	const API_URL = `${baseUrl}/bot/v1/coupons`;  // 요청할 API 엔드포인트
 	console.log("API URL = ", API_URL);
 	const body = {
 		"value": value,  // coupon price
@@ -39,11 +39,11 @@ async function createCoupon(value,count, duration) {
  * @param {String} userId
  * @param {String} code
  */
-async function redeemCoupon(userId,code) {
-	const API_URL = `${baseUrl}/v1/bot/coupons`;  // 요청할 API 엔드포인트
+async function redeemCoupon(userId, code) {
+	const API_URL = `${baseUrl}/bot/v1/coupons`;  // 요청할 API 엔드포인트
 	const body = {
-		"userSnowflake" : userId, //discord user_id
-		"code" : code // 쿠폰생성으로 반환된 코드값
+		"userSnowflake": userId, //discord user_id
+		"code": code // 쿠폰생성으로 반환된 코드값
 	}
 	try {
 		const response = await axios.patch(API_URL, body, {

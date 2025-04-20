@@ -10,7 +10,7 @@ const baseUrl = process.env.BASE_URL
  * @param {String} channelId  
  */
 async function addGuildMusic(guildId, { title, url, thumbnail, duration }) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/music`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/music`;  // 요청할 API 엔드포인트
 	const body = {
 		title,
 		url,
@@ -36,7 +36,7 @@ async function addGuildMusic(guildId, { title, url, thumbnail, duration }) {
  * @param {String} channelId  
  */
 async function deleteGuildMusic(guildId, title) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/music`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/music`;  // 요청할 API 엔드포인트
 	try {
 		const response = await axios.delete(API_URL, {
 			headers: {
@@ -56,7 +56,7 @@ async function deleteGuildMusic(guildId, title) {
  * @param {String} channelId  
  */
 async function getGuildMusic(guildId) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/music`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/music`;  // 요청할 API 엔드포인트
 	try {
 		const response = await axios.get(API_URL, {
 			headers: {

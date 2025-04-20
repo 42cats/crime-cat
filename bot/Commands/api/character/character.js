@@ -11,7 +11,7 @@ const baseUrl = process.env.BASE_URL
  *@param {String} roleId    
  */
 async function addCharacterInfo(guildId, characterName, roleId) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/characters`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/characters`;  // 요청할 API 엔드포인트
 	console.log("API URL = ", API_URL);
 	const body = {
 		"guildSnowflake": guildId,
@@ -37,9 +37,9 @@ async function addCharacterInfo(guildId, characterName, roleId) {
  * @param {String} characterName  
  */
 async function deleteCharacter(guildId, characterName) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/characters/${characterName}`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/characters/${characterName}`;  // 요청할 API 엔드포인트
 	try {
-		const response = await axios.delete(API_URL,{
+		const response = await axios.delete(API_URL, {
 			headers: {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
@@ -55,9 +55,9 @@ async function deleteCharacter(guildId, characterName) {
  * @param {String} guildId
  */
 async function getCharacterNames(guildId) {
-	const API_URL = `${baseUrl}/v1/bot/guilds/${guildId}/characters`;  // 요청할 API 엔드포인트
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/characters`;  // 요청할 API 엔드포인트
 	try {
-		const response = await axios.get(API_URL,{
+		const response = await axios.get(API_URL, {
 			headers: {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}

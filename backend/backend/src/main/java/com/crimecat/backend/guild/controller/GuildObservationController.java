@@ -1,5 +1,15 @@
 package com.crimecat.backend.guild.controller;
 
+import org.openapitools.jackson.nullable.JsonNullableModule;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.crimecat.backend.guild.dto.MessageDto;
 import com.crimecat.backend.guild.dto.ObservationDto;
 import com.crimecat.backend.guild.dto.ObservationPatchRequestDto;
@@ -9,13 +19,11 @@ import com.crimecat.backend.guild.utils.RequestUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.servlet.http.HttpServletRequest;
-import org.openapitools.jackson.nullable.JsonNullableModule;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/v1/bot/guilds/{guildSnowflake}/observation")
+@RequestMapping("/bot/v1/guilds/{guildSnowflake}/observation")
 public class GuildObservationController {
     private final GuildObservationService guildObservationService;
     private final ObjectMapper objectMapper;

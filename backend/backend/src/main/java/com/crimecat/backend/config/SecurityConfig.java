@@ -1,6 +1,5 @@
 package com.crimecat.backend.config;
 
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -16,6 +15,7 @@ import com.crimecat.backend.auth.filter.OAuth2TokenRefreshFilter;
 import com.crimecat.backend.auth.handler.CustomOAuth2SuccessHandler;
 import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -38,7 +38,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) /// 세션인증 끔
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/oauth2/**", "login/**","/v1/bot/**", "/api/v1/**").permitAll()
+                        .requestMatchers("/oauth2/**", "login/**","/bot/v1/**", "/api/v1/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex

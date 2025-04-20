@@ -1,10 +1,6 @@
 package com.crimecat.backend.permission;
 
-import com.crimecat.backend.permission.domain.Permission;
-import com.crimecat.backend.permission.dto.ModifyPermissionRequestDto;
-import com.crimecat.backend.permission.dto.SavePermissionRequestDto;
-import com.crimecat.backend.permission.repository.PermissionRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,11 +9,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.crimecat.backend.permission.domain.Permission;
+import com.crimecat.backend.permission.dto.ModifyPermissionRequestDto;
+import com.crimecat.backend.permission.dto.SavePermissionRequestDto;
+import com.crimecat.backend.permission.repository.PermissionRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -37,7 +40,7 @@ public class PermissionApiTest {
     void 권한_생성() throws Exception {
         SavePermissionRequestDto dto = new SavePermissionRequestDto("VIP", 1000, 30);
 
-        mockMvc.perform(post("/v1/bot/permissions")
+        mockMvc.perform(post("/bot/v1/permissions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -49,7 +52,7 @@ public class PermissionApiTest {
     @Test
     void 권한_목록_조회() throws Exception {
 
-        mockMvc.perform(get("/v1/bot/permissions"))
+        mockMvc.perform(get("/bot/v1/permissions"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("permissions retrieved"))
                 .andExpect(jsonPath("$.permissionList.length()").value(0));
@@ -57,7 +60,7 @@ public class PermissionApiTest {
         permissionRepository.save(new Permission("Admin", 3000, 90));
         permissionRepository.save(new Permission("User", 1000, 30));
 
-        mockMvc.perform(get("/v1/bot/permissions"))
+        mockMvc.perform(get("/bot/v1/permissions"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("permissions retrieved"))
                 .andExpect(jsonPath("$.permissionList.length()").value(2));
@@ -69,7 +72,7 @@ public class PermissionApiTest {
 
         ModifyPermissionRequestDto dto = new ModifyPermissionRequestDto("Pro", 1500, 30);
 
-        mockMvc.perform(patch("/v1/bot/permissions/Basic")
+        mockMvc.perform(patch("/bot/v1/permissions/Basic")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -82,7 +85,7 @@ public class PermissionApiTest {
     void 권한_삭제() throws Exception {
         permissionRepository.save(new Permission("DeleteMe", 100, 1));
 
-        mockMvc.perform(delete("/v1/bot/permissions/DeleteMe"))
+        mockMvc.perform(delete("/bot/v1/permissions/DeleteMe"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("permission deleted"));
 

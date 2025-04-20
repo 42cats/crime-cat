@@ -10,7 +10,7 @@ const baseUrl = process.env.BASE_URL
  * @param {User | GuildMember} user 
  */
 async function addUser(user) {
-	const API_URL = `${baseUrl}/v1/bot/users`;
+	const API_URL = `${baseUrl}/bot/v1/users`;
 
 	// GuildMember 또는 User 객체 구분
 	const userObj = user.user ?? user;
@@ -38,7 +38,7 @@ async function addUser(user) {
  * @param {User | GuildMember} user 
  */
 async function addUserPermisson(user, permissionName) {
-	const API_URL = `${baseUrl}/v1/bot/users/${user.id}/permission`;
+	const API_URL = `${baseUrl}/bot/v1/users/${user.id}/permission`;
 
 	// GuildMember 또는 User 객체 구분
 	const userObj = user.user ?? user;
@@ -65,7 +65,7 @@ async function addUserPermisson(user, permissionName) {
  * @param {String} userId 
  */
 async function getUserRank(userId) {
-	const API_URL = `${baseUrl}/v1/bot/users/${userId}/rank`;
+	const API_URL = `${baseUrl}/bot/v1/users/${userId}/rank`;
 
 	// GuildMember 또는 User 객체 구분
 	try {
@@ -80,12 +80,12 @@ async function getUserRank(userId) {
 		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
 	}
 }
- 
+
 /**
  * @param {String} userId 
  */
 async function getUserPermissons(userId) {
-	const API_URL = `${baseUrl}/v1/bot/users/${userId}/permissions`;
+	const API_URL = `${baseUrl}/bot/v1/users/${userId}/permissions`;
 
 	// GuildMember 또는 User 객체 구분
 	try {
@@ -106,7 +106,7 @@ async function getUserPermissons(userId) {
  * @param {String} userId 
  */
 async function getUserDbInfo(userId) {
-	const API_URL = `${baseUrl}/v1/bot/users/${userId}`;
+	const API_URL = `${baseUrl}/bot/v1/users/${userId}`;
 
 	try {
 		const response = await axios.get(API_URL, {
@@ -122,11 +122,11 @@ async function getUserDbInfo(userId) {
 	}
 }
 
- /**
- * @param {String} userId 
- */
-async function setUserAlarm(userId,alarm = null, avatarUrl = null) {
-	const API_URL = `${baseUrl}/v1/bot/users/${userId}`;
+/**
+* @param {String} userId 
+*/
+async function setUserAlarm(userId, alarm = null, avatarUrl = null) {
+	const API_URL = `${baseUrl}/bot/v1/users/${userId}`;
 	const body = {};
 	if (!alarm) body.discordAlarm = alarm;
 	if (!avatarUrl) body.avatar = avatarUrl;
@@ -143,7 +143,7 @@ async function setUserAlarm(userId,alarm = null, avatarUrl = null) {
 		return error.response.data.message;
 	}
 }
-module.exports={
+module.exports = {
 	addUser,
 	addUserPermisson,
 	getUserRank,

@@ -3,6 +3,7 @@ package com.crimecat.backend.messagemacro.service;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.messagemacro.domain.Group;
 import com.crimecat.backend.messagemacro.domain.GroupItem;
+import com.crimecat.backend.messagemacro.dto.BotGroupResponseDto;
 import com.crimecat.backend.messagemacro.dto.GroupDto;
 import com.crimecat.backend.messagemacro.dto.ButtonDto;
 import com.crimecat.backend.messagemacro.dto.ContentDto;
@@ -139,5 +140,42 @@ public class MessageMacroService {
                 .index(group.getIndex())
                 .buttons(buttons)
                 .build();
+    }
+
+    public GroupDto getButtons(Group group) {
+        UUID groupId = group.getId();
+        List<GroupItem> allIdsByGroupId = groupItemRepository.findAllButtonsByGroupId(groupId);
+
+        // GroupItem → ButtonDto 변환
+        List<ButtonDto> buttonDtos = allIdsByGroupId.stream()
+                .map(item -> ButtonDto.builder()
+                        .id(item.getId())
+                        .name(item.getName())
+                        .index(item.getIndex())
+                        // 필요 시 더 많은 필드 매핑
+                        .build())
+                .toList();
+
+        return GroupDto.builder()
+                .name(group.getName())
+                .buttons(buttonDtos)
+                .build();
+    }
+
+    public ButtonDto getContents(GroupItem button) {
+        UUID buttonId = button.getId();
+        List<GroupItem> allContentByParentId = groupItemRepository.findAllContentsByParentId(buttonId);
+
+        List<ContentDto> contentDtos = allContentByParentId.stream()
+                .map(content -> ContentDto.builder()
+                        .channelId(content.getChannelId())
+                        .text(content.getText())
+                        .build())
+                .toList();
+
+        return ButtonDto.builder()
+                .contents(contentDtos)
+                .build();
+
     }
 }

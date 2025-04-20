@@ -1,16 +1,11 @@
 package com.crimecat.backend.passwordnote;
 
-import com.crimecat.backend.guild.domain.Guild;
-import com.crimecat.backend.guild.dto.GuildDto;
-import com.crimecat.backend.guild.dto.PatchPasswordNoteRequestDto;
-import com.crimecat.backend.guild.dto.SavePasswordNoteRequestDto;
-import com.crimecat.backend.guild.repository.GuildRepository;
-import com.crimecat.backend.guild.repository.PasswordNoteRepository;
-import com.crimecat.backend.user.domain.User;
-import com.crimecat.backend.user.repository.UserRepository;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDateTime;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.assertj.core.api.Assertions;
+import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,15 +15,22 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.crimecat.backend.guild.domain.Guild;
+import com.crimecat.backend.guild.dto.GuildDto;
+import com.crimecat.backend.guild.dto.PatchPasswordNoteRequestDto;
+import com.crimecat.backend.guild.dto.SavePasswordNoteRequestDto;
+import com.crimecat.backend.guild.repository.GuildRepository;
+import com.crimecat.backend.guild.repository.PasswordNoteRepository;
+import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.user.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -62,7 +64,7 @@ public class PasswordNoteApiTest {
         Guild guild = prepareGuild();
         SavePasswordNoteRequestDto request = new SavePasswordNoteRequestDto("1234", "감자", "감자에서 싹이났다");
 
-        mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        mockMvc.perform(post("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -76,7 +78,7 @@ public class PasswordNoteApiTest {
         String longContent = "a".repeat(2001);
         SavePasswordNoteRequestDto request = new SavePasswordNoteRequestDto("1234", "감자", longContent);
 
-        MvcResult mvcResult = mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        MvcResult mvcResult = mockMvc.perform(post("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -91,13 +93,13 @@ public class PasswordNoteApiTest {
         SavePasswordNoteRequestDto request = new SavePasswordNoteRequestDto("1234", "감자", "감자입니다");
 
         // first save
-        mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        mockMvc.perform(post("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
 
         // second with same key
-        MvcResult mvcResult = mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        MvcResult mvcResult = mockMvc.perform(post("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -111,12 +113,12 @@ public class PasswordNoteApiTest {
         Guild guild = prepareGuild();
         SavePasswordNoteRequestDto request = new SavePasswordNoteRequestDto("1234", "감자", "내용");
 
-        mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        mockMvc.perform(post("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/v1/bot/guilds/{guildId}/password-notes/{key}", guild.getSnowflake(), "감자"))
+        mockMvc.perform(get("/bot/v1/guilds/{guildId}/password-notes/{key}", guild.getSnowflake(), "감자"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("비밀번호를 맞췄습니다."))
                 .andExpect(jsonPath("$.passwordNote.content").value("내용"));
@@ -126,7 +128,7 @@ public class PasswordNoteApiTest {
     void 패스워드노트_단건조회_실패() throws Exception {
         Guild guild = prepareGuild();
 
-        MvcResult mvcResult = mockMvc.perform(get("/v1/bot/guilds/{guildId}/password-notes/{key}", guild.getSnowflake(), "없는키"))
+        MvcResult mvcResult = mockMvc.perform(get("/bot/v1/guilds/{guildId}/password-notes/{key}", guild.getSnowflake(), "없는키"))
                 .andExpect(status().isBadRequest())
                 .andReturn();
         String errorMessage = mvcResult.getResponse().getErrorMessage();
@@ -140,14 +142,14 @@ public class PasswordNoteApiTest {
         SavePasswordNoteRequestDto request1 = new SavePasswordNoteRequestDto("1234", "감자", "감자에서 싹이났다");
         SavePasswordNoteRequestDto request2 = new SavePasswordNoteRequestDto("1234", "고구마", "고구마는 맛있다");
 
-        mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        mockMvc.perform(post("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request1)));
-        mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        mockMvc.perform(post("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request2)));
 
-        mockMvc.perform(get("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake()))
+        mockMvc.perform(get("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("패스워드노트 반환성공"))
                 .andExpect(jsonPath("$.passwordNotes.length()").value(2));
@@ -157,7 +159,7 @@ public class PasswordNoteApiTest {
     void 패스워드노트_전체조회_없음() throws Exception {
         Guild guild = prepareGuild();
 
-        mockMvc.perform(get("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake()))
+        mockMvc.perform(get("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("패스워드노트 기록 없음"))
                 .andExpect(jsonPath("$.passwordNotes").isEmpty());
@@ -168,12 +170,12 @@ public class PasswordNoteApiTest {
         Guild guild = prepareGuild();
         SavePasswordNoteRequestDto request = new SavePasswordNoteRequestDto("1234", "감자", "감자에서 싹이났다");
 
-        mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        mockMvc.perform(post("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(delete("/v1/bot/guilds/{guildId}/password-notes/{key}", guild.getSnowflake(), "감자"))
+        mockMvc.perform(delete("/bot/v1/guilds/{guildId}/password-notes/{key}", guild.getSnowflake(), "감자"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("삭제완료"));
     }
@@ -182,7 +184,7 @@ public class PasswordNoteApiTest {
     void 패스워드노트_삭제_실패() throws Exception {
         Guild guild = prepareGuild();
 
-        MvcResult mvcResult = mockMvc.perform(delete("/v1/bot/guilds/{guildId}/password-notes/{key}", guild.getSnowflake(), "없는키"))
+        MvcResult mvcResult = mockMvc.perform(delete("/bot/v1/guilds/{guildId}/password-notes/{key}", guild.getSnowflake(), "없는키"))
                 .andExpect(status().isBadRequest())
                 .andReturn();
         String errorMessage = mvcResult.getResponse().getErrorMessage();
@@ -195,7 +197,7 @@ public class PasswordNoteApiTest {
         SavePasswordNoteRequestDto request = new SavePasswordNoteRequestDto("1234", "감자", "초기내용");
 
         // 1. 노트 생성 및 ID 추출
-        MvcResult result = mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        MvcResult result = mockMvc.perform(post("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -206,7 +208,7 @@ public class PasswordNoteApiTest {
 
         // 2. 수정 요청 (UUID 기반)
         PatchPasswordNoteRequestDto update = new PatchPasswordNoteRequestDto(id, "1234", "감자", "업데이트된 내용");
-        mockMvc.perform(patch("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        mockMvc.perform(patch("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(update)))
                 .andExpect(status().isOk())
@@ -221,7 +223,7 @@ public class PasswordNoteApiTest {
         UUID uuid = UUID.randomUUID();
         PatchPasswordNoteRequestDto update = new PatchPasswordNoteRequestDto(uuid,"1234", "없는키", "내용");
 
-        MvcResult mvcResult = mockMvc.perform(patch("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        MvcResult mvcResult = mockMvc.perform(patch("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(update)))
                 .andExpect(status().isBadRequest())
@@ -236,7 +238,7 @@ public class PasswordNoteApiTest {
         SavePasswordNoteRequestDto request = new SavePasswordNoteRequestDto("1234", "고구마", "초기내용");
 
         // 1. 노트 생성 및 ID 추출
-        MvcResult result = mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        MvcResult result = mockMvc.perform(post("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -247,7 +249,7 @@ public class PasswordNoteApiTest {
         PatchPasswordNoteRequestDto request1 = new PatchPasswordNoteRequestDto(id,"1234", "고구마", "내용");
 
         // 1. 노트 생성 및 ID 추출
-        MvcResult createResult = mockMvc.perform(patch("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        MvcResult createResult = mockMvc.perform(patch("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request1)))
                 .andExpect(status().isOk())
@@ -260,7 +262,7 @@ public class PasswordNoteApiTest {
         String longContent = "a".repeat(2001);
         PatchPasswordNoteRequestDto update = new PatchPasswordNoteRequestDto(noteId, "1234", "고구마", longContent);
 
-        MvcResult errorResult = mockMvc.perform(patch("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        MvcResult errorResult = mockMvc.perform(patch("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(update)))
                 .andExpect(status().isBadRequest())
@@ -276,14 +278,14 @@ public class PasswordNoteApiTest {
 
         // A - 감자
         SavePasswordNoteRequestDto noteA = new SavePasswordNoteRequestDto("1234", "감자", "내용A");
-        mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        mockMvc.perform(post("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(noteA)))
                 .andExpect(status().isOk());
 
         // B - 고구마
         SavePasswordNoteRequestDto noteB = new SavePasswordNoteRequestDto("1234", "고구마", "내용B");
-        MvcResult result = mockMvc.perform(post("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        MvcResult result = mockMvc.perform(post("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(noteB)))
                 .andExpect(status().isOk())
@@ -295,7 +297,7 @@ public class PasswordNoteApiTest {
         // B를 '감자'로 수정 시도
         PatchPasswordNoteRequestDto update = new PatchPasswordNoteRequestDto(idB, "1234", "감자", "중복시도");
 
-        MvcResult errorResult = mockMvc.perform(patch("/v1/bot/guilds/{guildId}/password-notes", guild.getSnowflake())
+        MvcResult errorResult = mockMvc.perform(patch("/bot/v1/guilds/{guildId}/password-notes", guild.getSnowflake())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(update)))
                 .andExpect(status().isBadRequest())
