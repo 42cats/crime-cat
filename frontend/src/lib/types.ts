@@ -107,3 +107,16 @@ export interface MessageFormat {
     createdAt: string;
     updatedAt: string;
 }
+
+export interface Place {
+    title: string;
+    address: string;
+    roadAddress: string;
+    link: string;
+    lat?: number;
+    lng?: number;
+  }
+
+export interface LocalSearchModalProps {
+    onSelect: (place: Place) => void;
+  }

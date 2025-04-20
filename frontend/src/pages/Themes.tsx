@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from "@tanstack/react-query";
 import PageTransition from "@/components/PageTransition";
 import ThemeCard from "@/components/ThemeCard";
@@ -45,6 +46,9 @@ function hasOverlap(
 type SortOption = "none" | "recDesc" | "recAsc";
 
 const Themes: React.FC = () => {
+
+    const navigate = useNavigate();
+
     // 검색/필터 상태
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -350,7 +354,12 @@ const Themes: React.FC = () => {
                         </div>
                     </div>
                 )}
-
+                {/* 글쓰기 버튼 - 테마 카드 위 */}
+                <div className="max-w-6xl mx-auto mb-6 text-right">
+                    <Button onClick={() => navigate('/themes/new')}>
+                        글쓰기
+                    </Button>
+                </div>
                 {/* 최종 결과 목록 */}
                 <div className="max-w-6xl mx-auto">
                     {sortedThemes.length > 0 ? (
