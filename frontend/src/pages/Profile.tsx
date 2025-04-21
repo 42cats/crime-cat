@@ -22,9 +22,11 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Instagram, Twitter, MessageCircleMore } from "lucide-react";
+import { Instagram, X, MessageCircleMore } from "lucide-react";
+import { useAuth } from '@/hooks/useAuth';
 
 const Profile: React.FC = () => {
+    const { user, isAuthenticated, isLoading } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
 
@@ -41,33 +43,27 @@ const Profile: React.FC = () => {
     const [selectedBadge, setSelectedBadge] = useState<string | null>(null);
     const [notifyByEmail, setNotifyByEmail] = useState(true);
     const [notifyByDiscord, setNotifyByDiscord] = useState(true);
-    const [instagram, setInstagram] = useState("https://instagram.com/");
-    const [twitter, setTwitter] = useState("https://twitter.com/");
-    const [discord, setDiscord] = useState("https://discord.com/");
+    const [instagram, setInstagram] = useState("");
+    const [twitter, setTwitter] = useState("");
+    const [discord, setDiscord] = useState("");
 
     const badgeList = ["개발자", "디자이너", "기여자", "운영자"];
 
     const [originalData, setOriginalData] = useState<any>({});
 
     useEffect(() => {
-      const profile = {
-        nickname: "성훈짱",
-        bio: "열심히 개발 중인 사람입니다.",
-        badge: "기여자",
-        instagram: "https://instagram.com/",
-        twitter: "https://twitter.com/",
-        discord: "https://discord.com/",
-      };
-
-      setNickname(profile.nickname);
-      setBio(profile.bio);
-      setSelectedBadge(profile.badge);
-      setInstagram(profile.instagram);
-      setTwitter(profile.twitter);
-      setDiscord(profile.discord);
+      if (!isLoading && !isAuthenticated) {
+        navigate('/login');
+      }
+      setNickname(user?.nickname);
+      setBio(user?.bio);
+      setSelectedBadge(user?.badge);
+      setInstagram(user.social_links?.instagram);
+      setTwitter(user.social_links?.x);
+      setDiscord(user.social_links?.openkakao);
       setCroppedImageUrl("/default-profile.jpg");
-      setOriginalData(profile);
-    }, []);
+      setOriginalData(user);
+    }, [isAuthenticated, isLoading, navigate]);
 
     const getDiff = (original: any, updated: any) => {
       const diff: any = {};
@@ -220,7 +216,7 @@ const Profile: React.FC = () => {
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                        <Twitter className="w-5 h-5" />
+                        <X className="w-5 h-5" />
                         <Input
                           placeholder="Twitter 링크 입력"
                           value={twitter}

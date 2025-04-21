@@ -1,25 +1,40 @@
 export type UserRole = "USER" | "ADMIN" | "MANAGER";
 
+export interface UserSetting {
+    notifyByEmail: boolean;
+    notifyByDiscord: boolean;
+}
+
+export interface SocialLinks {
+    instagram?: string;
+    x?: string;
+    openkakao?: string;
+}
+
 export interface User {
     id: string;
-    discordUserId: string;
     nickname: string;
-    avatar: string;
+    profile_image_path: string;
+    setting: UserSetting;
+    social_links?: SocialLinks;
+    bio: string;
     role: UserRole;
+    title?: string;
+    badge?: string;
 }
 
 export interface Channel {
     id: string;
     name: string;
-  }
+}
   
-  export interface ContentData {
+export interface ContentData {
     id: string;
     channelId: string;
     text: string;
     index: number;      // Added index for order tracking
     buttonId: string;  // Added reference to parent button
-  }
+}
 
 
 export interface ButtonData {
@@ -29,28 +44,28 @@ export interface ButtonData {
     index: number;     // Added index for order tracking
     groupId: string;   // Added reference to parent group
     guildId: string;
-  }
+}
   
-  export interface GroupData {
+export interface GroupData {
     id: string;
     name: string;
     buttons: ButtonData[];
     index: number;     // Added index for order tracking
-  }
+}
   
-  export interface DraggableItem {
+export interface DraggableItem {
     id: string;
     type: 'group' | 'button';
     index: number;
     parentId?: string; // For buttons, this is the groupId
-  }
+}
   
-  export type ItemPosition = {
+export type ItemPosition = {
     id: string;
     type: 'group' | 'button';
     newIndex: number;
     newParentId?: string;
-  }
+}
 
 export interface Command {
     id: string;
@@ -115,8 +130,8 @@ export interface Place {
     link: string;
     lat?: number;
     lng?: number;
-  }
+}
 
 export interface LocalSearchModalProps {
     onSelect: (place: Place) => void;
-  }
+}

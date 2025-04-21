@@ -18,7 +18,6 @@ import { authService } from "@/api/authService";
 import { useAuth } from "@/hooks/useAuth";
 
 const Guilds: React.FC = () => {
-    const { hasRole } = useAuth();
     const [searchQuery, setSearchQuery] = useState("");
     const navigate = useNavigate();
 

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import LocalSearchModal from '@/components/LocalSearchModal';
 import { Place } from '@/lib/types';
+import { useAuth } from '@/hooks/useAuth';
 
 const WritePreviewToggle = () => {
   const { preview, dispatch } = useContext(EditorContext);
@@ -43,6 +44,25 @@ const CreateTheme: React.FC = () => {
   const [isComposing, setIsComposing] = useState(false);
   const [type, setType] = useState('');
   const [extraFields, setExtraFields] = useState<any>({});
+
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  const [thumbnail, setThumbnail] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setThumbnail(file);
+      setThumbnailPreview(URL.createObjectURL(file));
+    }
+  };
 
   const addItemsFromInput = (input: string, setItems: (items: string[]) => void, currentItems: string[]) => {
     const parts = input.split(',').map((t) => t.trim()).filter((t) => t.length > 0 && !currentItems.includes(t));
@@ -85,14 +105,48 @@ const CreateTheme: React.FC = () => {
   const handleCompositionEnd = () => setIsComposing(false);
 
   const handleSubmit = async () => {
-    console.log('✅ 제출됨:', { title, tags, characters, players, duration, price, difficulty, description, server, content, type, extraFields });
-    navigate('/themes');
+    try {
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('tags', JSON.stringify(tags));
+        formData.append('characters', JSON.stringify(characters));
+        formData.append('players', players);
+        formData.append('duration', duration);
+        formData.append('price', price.toString());
+        formData.append('difficulty', difficulty);
+        formData.append('description', description);
+        formData.append('server', server);
+        formData.append('content', content);
+        formData.append('type', type);
+        formData.append('extraFields', JSON.stringify(extraFields));
+        if (thumbnail) formData.append('thumbnail', thumbnail);
+  
+        const res = await fetch('/api/themes', {
+          method: 'POST',
+          body: formData,
+        });
+  
+        if (!res.ok) throw new Error('업로드 실패');
+  
+        console.log('✅ 제출됨:', { title, tags, characters, players, duration, price, difficulty, description, server, content, type, extraFields });
+        navigate('/themes');
+      } catch (err) {
+        console.error('테마 저장 실패:', err);
+      }
   };
 
   return (
     <PageTransition>
       <div className="container mx-auto px-6 py-20 max-w-3xl space-y-6">
         <h1 className="text-3xl font-bold mb-8">새 테마 만들기</h1>
+
+        <div>
+          <Label className="font-bold">썸네일 이미지</Label>
+          {thumbnailPreview && (
+            <img src={thumbnailPreview} alt="썸네일 미리보기" className="w-40 h-40 object-cover rounded mb-2" />
+          )}
+          <Input type="file" accept="image/*" onChange={handleThumbnailChange} />
+        </div>
 
         <div>
           <Label className="font-bold mb-1 block">제목 *</Label>
