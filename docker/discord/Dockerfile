@@ -16,14 +16,15 @@ RUN apk update && apk add --no-cache \
 RUN python3 -m pip install --no-cache-dir yt-dlp
 RUN pip install -U yt-dlp
 # 소스 코드 복사
-COPY .env /root/bot
-COPY bot /root/bot
+# COPY .env /root/bot
+# COPY bot /root/bot
 
-VOLUME ["/root/bot"]
+# VOLUME ["/root/bot"]
 # 엔트리포인트 스크립트 설정
 COPY docker/discord/entrypoint.sh /root/
 RUN chmod +x /root/entrypoint.sh
 
+RUN mkdir -p /root/bot
 # 작업 디렉토리 설정
 WORKDIR /root/bot
 

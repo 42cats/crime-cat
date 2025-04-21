@@ -3,6 +3,7 @@
 **/database
 docker/caddy/data
 docker/caddy/config
+docker/nginx/certs/**
 config.json
 **/MusicData/**/*
 **/*.pem

@@ -1,23 +1,12 @@
 FROM alpine:latest
 
 RUN apk update && apk add nginx && apk add openssl
-RUN apk add --update nodejs npm
 
 COPY docker/nginx/conf/nginx.conf /etc/nginx/nginx.conf
-RUN mkdir -p /etc/nginx/ssl/
-COPY docker/nginx/certs/dev.crimecat.org-key.pem /etc/nginx/ssl/dev.crimecat.org-key.pem
-COPY docker/nginx/certs/dev.crimecat.org.pem /etc/nginx/ssl/dev.crimecat.org.pem
 
 COPY docker/nginx/conf/http.d /etc/nginx/http.d
 RUN mkdir -p /usr/share/nginx/html
-RUN mkdir -p /web
-COPY frontend/package.json frontend/package-lock.json ./web/
-COPY frontend ./web
-WORKDIR /web
-RUN npm install
-RUN npm run build
-RUN cp -r ./dist/* /usr/share/nginx/html/
-
+# COPY frontend/dist /usr/share/nginx/html
 
 # RUN chmod +rwx /etc/nginx/tools/nginx.sh
 
