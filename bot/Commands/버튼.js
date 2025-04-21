@@ -22,23 +22,28 @@ module.exports = {
 				.setDescription('버튼 그룹 이름을 입력하세요')
 				.setRequired(true))
 		.addBooleanOption(option =>
-			option.setName('one_time')
+			option.setName('한번만')
 				.setDescription('버튼을 1회만 누를 수 있도록 제한할까요? (기본값: false)'))
 		.addBooleanOption(option =>
-			option.setName('admin_only')
+			option.setName('관리자만')
 				.setDescription('길드 관리자만 버튼을 누를 수 있도록 제한할까요? (기본값: false)'))
 		.addBooleanOption(option =>
-			option.setName('show_press_detail')
-				.setDescription('누가 몇 번 눌렀는지 표시할까요? (기본값: false)')),
+			option.setName('누가눌렀어')
+				.setDescription('누가 몇 번 눌렀는지 표시할까요? (기본값: false)'))
+		.addBooleanOption(option =>
+			option.setName('색변경')
+				.setDescription('버튼을 누르면 전체 버튼 색깔이 바뀌도록 할까요? (기본값: false)')),
+
 
 	/**
 	 * @param {import('discord.js').CommandInteraction} interaction
 	 */
 	async execute(interaction) {
 		const groupName = interaction.options.getString('groupname');
-		const isOneTime = interaction.options.getBoolean('one_time') ?? false;
-		const isAdminOnly = interaction.options.getBoolean('admin_only') ?? false;
-		const showPressDetail = interaction.options.getBoolean('show_press_detail') ?? false;
+		const isOneTime = interaction.options.getBoolean('한번만') ?? false;
+		const isAdminOnly = interaction.options.getBoolean('admin_only관리자만') ?? false;
+		const showPressDetail = interaction.options.getBoolean('누가눌렀어') ?? false;
+		const changeColor = interaction.options.getBoolean('색변경') ?? false;
 
 		try {
 			const group = await getButtons(interaction.guildId, groupName);
@@ -53,7 +58,8 @@ module.exports = {
 			await sendButtonGroupWithPagination(interaction, group, {
 				isOneTime,
 				isAdminOnly,
-				showPressDetail
+				showPressDetail,
+				changeColor
 			});
 		} catch (error) {
 			console.error("버튼 명령어 에러", error);
@@ -76,7 +82,8 @@ async function sendButtonGroupWithPagination(interaction, group, options = {}) {
 	const {
 		isOneTime = false,
 		isAdminOnly = false,
-		showPressDetail = false
+		showPressDetail = false,
+		changeColor = false
 	} = options;
 
 	const rows = [];
@@ -86,7 +93,7 @@ async function sendButtonGroupWithPagination(interaction, group, options = {}) {
 		const row = new ActionRowBuilder();
 
 		for (const button of slice) {
-			const optionBits = `${+isOneTime}${+isAdminOnly}${+showPressDetail}`; // e.g. "101"
+			const optionBits = `${+isOneTime}${+isAdminOnly}${+showPressDetail}${+changeColor}`; // e.g. "101"
 			const customId = encodeToString(button.id, "messageMacro", optionBits);
 
 			row.addComponents(

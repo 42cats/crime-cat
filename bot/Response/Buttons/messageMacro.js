@@ -1,5 +1,14 @@
+// handlers/messageMacro.js
 const { PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getContents } = require('../../Commands/api/messageMacro/messageMacro');
+
+const COLORS = [ButtonStyle.Primary, ButtonStyle.Danger, ButtonStyle.Success];
+function getNextColor(currentStyle) {
+	const index = COLORS.indexOf(currentStyle);
+	if (index === -1) return COLORS[0]; // fallback
+	return COLORS[(index + 1) % COLORS.length];
+}
+
 
 module.exports = {
 	name: 'messageMacro',
@@ -15,9 +24,10 @@ module.exports = {
 		const isOneTime = option?.[0] === '1';
 		const isAdminOnly = option?.[1] === '1';
 		const showPressDetail = option?.[2] === '1';
+		const changeColor = option?.[3] === '1';
 		const buttonName = interaction.component.label;
 
-		// 관리자만 접근 허용
+		// 관리자 제한
 		if (isAdminOnly && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
 			return await interaction.reply({
 				content: '🚫 관리자만 사용할 수 있는 버튼입니다.',
@@ -25,16 +35,14 @@ module.exports = {
 			});
 		}
 
-		// 로그 표시 기능
+		// 로그 남기기
 		if (showPressDetail) {
 			const originalContent = interaction.message.content || '';
 			const lines = originalContent.split('\n');
-
-			const userName = interaction.member.displayName;;
+			const userName = interaction.member.displayName;
 			const userLogLines = lines.filter(line => line.startsWith('👤'));
 
 			let updated = false;
-
 			const updatedLogLines = userLogLines.map(line => {
 				if (line.includes(userName)) {
 					const match = line.match(/: (\d+)/);
@@ -51,27 +59,38 @@ module.exports = {
 
 			const headerLine = lines.find(line => !line.startsWith('👤')) || '**버튼 로그**';
 			const newContent = [headerLine, ...updatedLogLines].join('\n');
-
 			await interaction.message.edit({ content: newContent });
 		}
 
-		// 버튼 비활성화
-		if (isOneTime) {
-			const oldComponents = interaction.message.components;
-			const newComponents = oldComponents.map(row => {
+		if (changeColor || isOneTime) {
+			const newComponents = interaction.message.components.map(row => {
 				const newRow = ActionRowBuilder.from(row);
 				newRow.components = row.components.map(button => {
-					if (button.customId === interaction.customId) {
-						return ButtonBuilder.from(button).setDisabled(true);
+					// 링크 버튼은 skip
+					if (button.style === ButtonStyle.Link) return button;
+
+					let builder = ButtonBuilder.from(button);
+
+					// 모든 버튼에 색상 순환 적용
+					if (changeColor) {
+						builder = builder.setStyle(getNextColor(button.style));
 					}
-					return button;
+
+					// 클릭된 버튼만 비활성화
+					if (isOneTime && button.customId === interaction.customId) {
+						builder = builder.setDisabled(true);
+					}
+
+					return builder;
 				});
 				return newRow;
 			});
 			await interaction.message.edit({ components: newComponents });
 		}
 
-		// 콘텐츠 출력 처리
+
+
+		// 실제 메시지 전송
 		try {
 			const contents = await getContents(head);
 			for (const content of contents) {
@@ -79,23 +98,19 @@ module.exports = {
 				const channelId = content.channelId;
 				if (!text || text.trim().length === 0) continue;
 
-				// 현재 채널에 전송
 				if (!channelId || channelId === 'none') {
 					await interaction.channel.send(text);
 					continue;
 				}
 
-				// 채널 조회 및 전송
 				try {
 					const channel = await client.channels.fetch(channelId);
-					if (!channel || !channel.isTextBased()) {
-						throw new Error('텍스트 채널이 아닙니다.');
-					}
+					if (!channel || !channel.isTextBased()) throw new Error('텍스트 채널 아님');
 					await channel.send(text);
 				} catch (err) {
-					console.error(`채널 전송 실패 [${channelId}]:`, err);
+					console.error(`❌ 채널 전송 실패: ${channelId}`, err);
 					await interaction.followUp({
-						content: `❌ 채널 \`${channelId}\`에 메시지를 전송할 수 없습니다. (존재하지 않거나 권한 부족)`,
+						content: `❌ 채널 \`${channelId}\`에 메시지를 전송할 수 없습니다.`,
 						ephemeral: true
 					});
 				}

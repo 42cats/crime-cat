@@ -33,7 +33,8 @@ for (const entry of entries) {
 
 // 디스코드 REST API 인스턴스
 const rest = new REST().setToken(process.env.DISCORD_TOKEN);
-
+console.log("discord token = ", process.env.DISCORD_TOKEN);
+console.log("discord app id = ", process.env.APP_ID);
 // 등록 실행 함수
 (async () => {
 	try {
