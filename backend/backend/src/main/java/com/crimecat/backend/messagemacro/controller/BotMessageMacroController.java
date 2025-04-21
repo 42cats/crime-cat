@@ -42,7 +42,7 @@ public class BotMessageMacroController {
             @PathVariable @NonNull String targetGroupName) {
         log.info("targetGroupName: " + targetGroupName);
         Group group = groupRepository.findGroupByGuildSnowflakeAndName(guildSnowflake, targetGroupName)
-                .orElseThrow(() -> ErrorStatus.GROUP_NAME_NOT_EXISTS.asControllerException());
+                .orElseThrow(() -> ErrorStatus.GROUP_NOT_EXISTS.asControllerException());
 
         if(!guildSnowflake.equals(group.getGuildSnowflake())) {
             throw ErrorStatus.GROUP_NAME_NOT_EXISTS.asControllerException();

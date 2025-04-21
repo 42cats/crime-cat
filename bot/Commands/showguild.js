@@ -1,61 +1,69 @@
-// commands/ping.js
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { Message } = require('discord.js')
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const dotenv = require('dotenv');
 dotenv.config();
-const prefix = process.env.PRIFIX;
 
 const nameOfCommand = "showguild";
-const description = "길드표출";
+const description = "봇이 참여한 길드를 오너별로 정리해 출력합니다.";
+
 module.exports = {
-	// 슬래시 명령어 정의
 	data: new SlashCommandBuilder()
 		.setName(nameOfCommand)
 		.setDescription(description),
 
-	// 슬래시 명령어 실행
 	async execute(interaction) {
-		await interaction.reply('dbcreate! 슬래시 명령어');
-	},
-	prefixCommand: {
-		name: nameOfCommand,
-		description,
-		/**
-		 * 
-		 * @param {Message} message 
-		 * @param {*} args 
-		 * @returns 
-		 */
-		async execute(message, args) {
-			// 명령어 사용 권한 확인
-			if (message.author.id !== '317655426868969482') return;
+		if (interaction.user.id !== '317655426868969482') {
+			return await interaction.reply({ content: '⛔ 이 명령어는 개발자 전용입니다.', ephemeral: true });
+		}
 
-			const guildMaps = new Map();
-			const client = message.client;
+		await interaction.reply({ content: `📋 길드 정보를 오너별로 정리 중입니다...`, ephemeral: true });
 
-			await message.reply('길드목록 가져오는 중...');
+		const client = interaction.client;
+		const guilds = client.guilds.cache;
 
-			// 모든 길드 가져오기
-			const list = client.guilds.cache;
-			for (const guild of list.values()) {
-				// 길드 소유자 정보 가져오기
-				const guildOwner = await client.users.fetch(guild.ownerId);
+		const ownerMap = new Map();
 
-				// 길드맵에 추가
-				if (!guildMaps.has(guildOwner.tag)) {
-					guildMaps.set(guildOwner.tag, []);
+		for (const guild of guilds.values()) {
+			try {
+				const owner = await client.users.fetch(guild.ownerId);
+				const ownerId = owner.id;
+
+				if (!ownerMap.has(ownerId)) {
+					ownerMap.set(ownerId, {
+						ownerTag: owner.tag,
+						ownerId,
+						guilds: []
+					});
 				}
-				guildMaps.get(guildOwner.tag).push(guild.name);
+
+				ownerMap.get(ownerId).guilds.push({
+					name: guild.name,
+					id: guild.id,
+					memberCount: guild.memberCount,
+					createdAt: `<t:${Math.floor(guild.createdTimestamp / 1000)}:F>`
+				});
+			} catch (err) {
+				console.error(`❌ ${guild.name} 정보 조회 실패:`, err);
+			}
+		}
+
+		for (const { ownerTag, ownerId, guilds } of ownerMap.values()) {
+			const embed = new EmbedBuilder()
+				.setTitle(`👑 ${ownerTag} (${ownerId})`)
+				.setDescription(`관리 중인 길드 수: **${guilds.length}개**`)
+				.setColor(0x9b59b6);
+
+			for (const g of guilds) {
+				embed.addFields({
+					name: `📘 ${g.name}`,
+					value: `🆔 ${g.id}\n👥 ${g.memberCount}명\n📆 ${g.createdAt}`,
+					inline: false
+				});
 			}
 
-			// 최종 결과 출력
-			for (const [ownerName, guildList] of guildMaps.entries()) {
-				await message.channel.send(`길드 마스터: ${ownerName}\n길드 목록: ${guildList.join(', ')}`);
-			}
-
-			await message.reply(`총 ${list.size}개의 길드 정보를 가져왔습니다.`);
+			await interaction.followUp({ embeds: [embed], ephemeral: true });
 		}
 	},
-	upload: false,
+
+	upload: true,
 	permissionLevel: -1
 };

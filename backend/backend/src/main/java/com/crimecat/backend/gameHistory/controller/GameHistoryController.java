@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("v1/bot/histories")
+@RequestMapping("/bot/v1/histories")
 public class GameHistoryController {
 
 	private final GameHistoryService gameHistoryService;
