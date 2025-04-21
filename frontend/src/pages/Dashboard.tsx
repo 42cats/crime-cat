@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -8,11 +8,18 @@ import {
 } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { CommandIcon, Gamepad2, Users, Activity, Bot } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   const isAdmin = user?.role === 'ADMIN';
 
@@ -176,17 +183,21 @@ const Dashboard: React.FC = () => {
             <CardDescription>회원님의 프로필 정보를 확인하세요.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground">닉네임</p>
-              <p className="text-lg font-semibold">{user.nickname}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">이메일</p>
-              <p className="text-lg font-medium">{user.email}</p>
-            </div>
+            {user.nickname && (
+              <div>
+                <p className="text-sm text-muted-foreground">닉네임</p>
+                <p className="text-lg font-semibold">{user.nickname}</p>
+              </div>
+            )}
+            {user.title && (
+              <div>
+                <p className="text-sm text-muted-foreground">타이틀</p>
+                <p className="text-lg font-semibold">{user.title}</p>
+              </div>
+            )}
             {user.badge && (
               <div>
-                <p className="text-sm text-muted-foreground">칭호</p>
+                <p className="text-sm text-muted-foreground">뱃지</p>
                 <Badge>{user.badge}</Badge>
               </div>
             )}
@@ -196,42 +207,42 @@ const Dashboard: React.FC = () => {
                 <p className="text-base whitespace-pre-line">{user.bio}</p>
               </div>
             )}
-            {user.instagram && (
+            {user.social_links?.instagram && (
               <div>
                 <p className="text-sm text-muted-foreground">Instagram</p>
                 <a
-                  href={user.instagram}
+                  href={`https://www.instagram.com/${user.social_links.instagram}`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-blue-500 hover:underline"
                 >
-                  {user.instagram}
+                  {user.social_links.instagram}
                 </a>
               </div>
             )}
-            {user.twitter && (
+            {user.social_links?.x && (
               <div>
-                <p className="text-sm text-muted-foreground">Twitter</p>
+                <p className="text-sm text-muted-foreground">X</p>
                 <a
-                  href={user.twitter}
+                  href={`https://www.x.com/${user.social_links.x}`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-blue-500 hover:underline"
                 >
-                  {user.twitter}
+                  {user.social_links.x}
                 </a>
               </div>
             )}
-            {user.discord && (
+            {user.social_links?.openkakao && (
               <div>
-                <p className="text-sm text-muted-foreground">Discord</p>
+                <p className="text-sm text-muted-foreground">OpenChatting</p>
                 <a
-                  href={user.discord}
+                  href={`https://open.kakao.com/o/${user.social_links.openkakao}`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-blue-500 hover:underline"
                 >
-                  {user.discord}
+                  {user.social_links.openkakao}
                 </a>
               </div>
             )}
