@@ -1,57 +1,45 @@
+// commands/dm.js
 const { SlashCommandBuilder } = require('discord.js');
 
 const nameOfCommand = "dm";
-const description = "dmToUser";
+const description = "개발자 전용: 유저에게 DM 전송";
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName(nameOfCommand)
-		.setDescription(description),
+		.setDescription(description)
+		.addUserOption(option =>
+			option.setName('user')
+				.setDescription('DM을 보낼 대상 유저')
+				.setRequired(true))
+		.addStringOption(option =>
+			option.setName('message')
+				.setDescription('전송할 메시지')
+				.setRequired(true)),
+
 	async execute(interaction) {
-		console.log(interaction);
-	},
-	prefixCommand: {
-		name: nameOfCommand,
-		description,
-		async execute(message, args) {
-			if (message.author.id !== '317655426868969482') return;
+		// 개발자 인증
+		if (interaction.user.id !== '317655426868969482') {
+			return await interaction.reply({ content: '⛔ 이 명령어는 개발자 전용입니다.', ephemeral: true });
+		}
 
-			// args가 비어있으면 종료
-			if (args.length === 0) {
-				return message.reply("❌ 메시지를 입력해주세요.");
-			}
+		const targetUser = interaction.options.getUser('user');
+		const messageContent = interaction.options.getString('message');
 
-			console.log("message =", message);
-			console.log("client =", message.client);
+		if (!targetUser) {
+			return await interaction.reply({ content: '❌ 유저를 찾을 수 없습니다.', ephemeral: true });
+		}
 
-			const client = message.client;
-			const targetUserId = args[0];
-			const msgContent = args.slice(1).join(" ");
-
-			// args[0]이 숫자로만 구성된 경우 유저 ID로 간주
-			if (/^\d+$/.test(targetUserId)) {
-				try {
-					const user = await client.users.fetch(targetUserId);
-					if (!user) {
-						return message.reply("⚠️ 해당 유저를 찾을 수 없습니다.");
-					}
-					client.replyUserDm = user;
-					await user.send(msgContent);
-					console.log(`📨 ${user.username} (${user.id}) 에게 DM 전송: ${msgContent}`);
-					return message.reply(`✅ **${user.username}**에게 DM을 전송했습니다.`);
-				} catch (error) {
-					console.error("❌ 유저 찾기 오류:", error);
-					return message.reply("⚠️ 유저를 찾을 수 없습니다.");
-				}
-			}
-
-			// 기존 방식 (args[0]이 숫자가 아닐 경우)
-			if (client.replyUserDm) {
-				client.replyUserDm.send(args.join(" "));
-				console.log("📨 replyUserDm 에게 DM 전송:", args.join(" "));
-			}
+		try {
+			await targetUser.send(messageContent);
+			console.log(`📨 ${targetUser.username} (${targetUser.id}) 에게 DM 전송: ${messageContent}`);
+			await interaction.reply({ content: `✅ ${targetUser.username}에게 DM을 전송했습니다.`, ephemeral: true });
+		} catch (error) {
+			console.error("❌ DM 전송 실패:", error);
+			await interaction.reply({ content: `⚠️ ${targetUser.username}에게 DM 전송에 실패했습니다.`, ephemeral: true });
 		}
 	},
-	upload: false,
-	permissionLevel: -1
+
+	upload: true,
+	permissionLevel: -1 // 길드 전용
 };
