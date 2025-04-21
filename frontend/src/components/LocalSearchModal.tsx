@@ -3,8 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Place, LocalSearchModalProps } from '@/lib/types';
+import { Place } from '@/lib/types';
 import { naverMapService } from '@/api/naverMapService';
+
+interface LocalSearchModalProps {
+  onSelect: (place: Place) => void;
+}
 
 const LocalSearchModal: React.FC<LocalSearchModalProps> = ({ onSelect }) => {
   const [isOpen, setIsOpen] = useState(false);

@@ -74,11 +74,20 @@ export interface Command {
     usage: string;
     category: string;
     requiredPermissions: string[];
-    content?: string; // Markdown content
+    content?: string;
     createdBy: string;
     updatedBy: string;
     createdAt: string;
     updatedAt: string;
+}
+
+export interface CommandInput {
+    name: string;
+    description: string;
+    usage: string;
+    category: string;
+    requiredPermissions: string[];
+    content: string;
 }
 
 export interface Theme {
@@ -130,8 +139,4 @@ export interface Place {
     link: string;
     lat?: number;
     lng?: number;
-}
-
-export interface LocalSearchModalProps {
-    onSelect: (place: Place) => void;
 }

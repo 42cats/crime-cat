@@ -23,6 +23,11 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { commandsService } from '@/api/commandsService';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from "@/hooks/useAuth";
 
 interface CommandListProps {
   commands: Command[];
@@ -31,6 +36,9 @@ interface CommandListProps {
 const CommandList: React.FC<CommandListProps> = ({ commands }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCommand, setSelectedCommand] = useState<Command | null>(null);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { hasRole } = useAuth();
 
   const categories = ['전체', ...new Set(commands.map(cmd => cmd.category))];
 
@@ -43,8 +51,15 @@ const CommandList: React.FC<CommandListProps> = ({ commands }) => {
     });
   };
 
-  const handleCommandClick = (command: Command) => {
-    setSelectedCommand(command);
+  const handleDelete = async (id: string) => {
+    if (!confirm('정말 삭제하시겠습니까?')) return;
+    try {
+      await commandsService.deleteCommand(id);
+      queryClient.invalidateQueries({ queryKey: ['commands'] });
+      setSelectedCommand(null);
+    } catch (err) {
+      console.error('삭제 실패:', err);
+    }
   };
 
   return (
@@ -76,7 +91,7 @@ const CommandList: React.FC<CommandListProps> = ({ commands }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredCommands(category).length > 0 ? (
                 filteredCommands(category).map((command) => (
-                  <Card key={command.id} className="card-hover overflow-hidden cursor-pointer" onClick={() => handleCommandClick(command)}>
+                  <Card key={command.id} className="card-hover overflow-hidden cursor-pointer" onClick={() => setSelectedCommand(command)}>
                     <CardHeader className="pb-2">
                       <CardTitle className="flex justify-between items-start">
                         <span className="text-lg">/{command.name}</span>
@@ -118,9 +133,35 @@ const CommandList: React.FC<CommandListProps> = ({ commands }) => {
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           {selectedCommand && (
             <>
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-bold">/{selectedCommand.name}</DialogTitle>
-                <DialogDescription className="text-base">{selectedCommand.description}</DialogDescription>
+              <DialogHeader className="relative">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <DialogTitle className="text-2xl font-bold">/{selectedCommand.name}</DialogTitle>
+                    <DialogDescription className="text-base text-muted-foreground">
+                      {selectedCommand.description}
+                    </DialogDescription>
+                  </div>
+                  {hasRole(['ADMIN', 'MANAGER']) && (
+                  <div className="flex gap-2 mt-1 -translate-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                      navigate(`/commands/edit/${selectedCommand.id}`);
+                      }}
+                    >
+                      수정
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(selectedCommand.id)}
+                    >
+                      삭제
+                    </Button>
+                  </div>
+                  )}
+                </div>
               </DialogHeader>
 
               <div className="space-y-4 mt-4">
@@ -150,7 +191,7 @@ const CommandList: React.FC<CommandListProps> = ({ commands }) => {
                     <MarkdownRenderer content={selectedCommand.content} />
                   </div>
                 )}
-                </div>
+              </div>
             </>
           )}
         </DialogContent>

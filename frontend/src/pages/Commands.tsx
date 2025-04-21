@@ -1,16 +1,21 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import CommandList from '@/components/CommandList';
 import PageTransition from '@/components/PageTransition';
 import { commandsService } from '@/api/commandsService';
 import { Card } from '@/components/ui/card';
+import { Button } from "@/components/ui/button";
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/hooks/useAuth';
 
 const Commands: React.FC = () => {
+  const navigate = useNavigate();
   const { data: commands, isLoading, error } = useQuery({
     queryKey: ['commands'],
     queryFn: commandsService.getCommands,
   });
+  const { hasRole } = useAuth();
 
   if (isLoading) {
     return (
@@ -73,7 +78,13 @@ const Commands: React.FC = () => {
             짭냥이 봇에서 사용할 수 있는 모든 명령어를 확인해보세요. 원하는 명령어를 검색하거나 카테고리로 필터링할 수 있습니다.
           </p>
         </div>
-
+        {hasRole(['ADMIN', 'MANAGER']) && (
+        <div className="max-w-6xl mx-auto mb-6 text-right">
+            <Button onClick={() => navigate('/commands/new')}>
+                등록
+            </Button>
+        </div>
+        )}
         <div className="max-w-4xl mx-auto">
           <CommandList commands={commands || []} />
         </div>
