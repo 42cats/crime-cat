@@ -21,4 +21,6 @@ public interface GroupRepository extends JpaRepository<Group, UUID> {
             @Param("guildSnowflake") String guildSnowflake,
             @Param("targetGroupName") String targetGroupName
     );
+
+    List<Group> findAllByGuildSnowflake(String guildSnowflake);
 }

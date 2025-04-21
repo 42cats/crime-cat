@@ -1,212 +1,48 @@
 services:
-  db:
-    init: true
-    container_name: cat_db
-    env_file:
-      - .env
-    pull_policy: missing
-    image: db
-    build:
-      context: .
-      dockerfile: docker/mariadb/Dockerfile
-    networks:
-      - discord-network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    ports:
-      - "3306:3306"
-    volumes:
-      - mariadb_data:/var/lib/mysql
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    db:
+        container_name: dev_mariadb
+        image: mariadb:10.11
+        env_file:
+            - .env
+        environment:
+            MYSQL_ROOT_PASSWORD: ${DB_PASS}
+            MYSQL_DATABASE: ${DB_NAME}
+            MYSQL_USER: ${DB_USER}
+            MYSQL_PASSWORD: ${DB_PASS}
+        ports:
+            - "3307:3306"
+        volumes:
+            - mariadb_data:/var/lib/mysql
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 30s
 
-  redis:
-    build:
-      context: .
-      dockerfile: docker/redis/Dockerfile
-    image: redis
-    restart: on-failure
-    container_name: redis
-    init: true
-    ports:
-      - "6379:6379"
-    depends_on:
-      db:
-        condition: service_healthy
-    env_file:
-      - .env
-    networks:
-      - discord-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "3"
+    redis:
+        container_name: dev_redis
+        image: redis:7-alpine
+        ports:
+            - "6379:6379"
+        depends_on:
+            db:
+                condition: service_healthy
 
-  backend:
-    build:
-      context: .
-      dockerfile: docker/backend/Dockerfile
-    image: spring-backend
-    container_name: spring-backend
-    restart: on-failure
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mariadb://cat_db:3306/${DB_NAME}
-      - SPRING_DATASOURCE_USERNAME=${DB_USER}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASS}
-      - SERVER_PORT=8080
-      - DOMAIN=${DOMAIN}
-      - SPRING_SECRET_KEY=${SPRING_SECRET_KEY}
-      - TEST_DB=${TEST_DB}
-      - APP_ID=${APP_ID}
-      - SPRING_PROFILES_ACTIVE=${SPRING_ACTIVE_PROFILES}
-      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
-      - DISCORD_BOT_SECRET_TOKENS=${DISCORD_BOT_SECRET_TOKENS}
-    env_file:
-      - .env
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - discord-network
-    ports:
-      - "8080:8080"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
-
-  discord-app:
-    init: true
-    build:
-      context: .
-      dockerfile: docker/discord/Dockerfile
-    container_name: discord-app
-    image: discord-app
-    env_file:
-      - .env
-    networks:
-      - discord-network
-    volumes:
-      - app_data:/root/bot
-    depends_on:
-      backend:
-        condition: service_healthy
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
-
-  frontend:
-    build:
-      context: .
-      dockerfile: docker/frontend/Dockerfile
-    image: frontend
-    container_name: frontend
-    networks:
-      - discord-network
-    env_file:
-      - .env
-    volumes:
-      - frontend_data:/app
-    depends_on:
-      backend:
-        condition: service_healthy
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
-
-  nginx:
-    container_name: nginx
-    image: nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    restart: on-failure
-    build:
-      context: .
-      dockerfile: docker/nginx/Dockerfile
-    env_file:
-      - .env
-    networks:
-      - discord-network
-    volumes:
-      - web_data:/usr/share/nginx/html:ro
-      - cert:/etc/nginx/certs:ro
-    extra_hosts:
-      - "dev.crimecat.org:127.0.0.1"
-    depends_on:
-      frontend:
-        condition: service_completed_successfully
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
+    nginx:
+        container_name: dev_web
+        image: nginx:stable-alpine
+        ports:
+            - "80:80"
+        depends_on:
+            - db
+            - redis
+        networks:
+            - discord-network
 
 networks:
-  discord-network:
-    driver: bridge
+    discord-network:
+        driver: bridge
 
 volumes:
-  mariadb_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/database/mariadb/data
-  app_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/bot
-  web_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/frontend/dist
-  backend_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/backend
-  frontend_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/frontend
-  cert:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/docker/nginx/certs
+    mariadb_data:

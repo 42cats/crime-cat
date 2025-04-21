@@ -7,14 +7,45 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 @Getter
 public enum ErrorStatus {
-    GUILD_ALREADY_EXISTS("Guild already exists", HttpStatus.BAD_REQUEST),
-    GUILD_NOT_EXISTS("Guild not exists", HttpStatus.BAD_REQUEST),
-    GROUP_NAME_EXISTS("Group Name Not exists", HttpStatus.BAD_REQUEST),
-    GROUP_NOT_EXISTS("Group Not exists", HttpStatus.BAD_REQUEST),
-    GROUP_NAME_NOT_EXISTS("Group Name Not exists", HttpStatus.BAD_REQUEST),
-    BUTTON_ID_NOT_EXISTS("Button Id Not exists", HttpStatus.BAD_REQUEST),
-    NOT_GUILD_OWNER("Not the owner of the guild", HttpStatus.FORBIDDEN);
 
+
+    // 🔐 인증/인가 관련
+    NOT_GUILD_OWNER("길드의 오너가 아닙니다.", HttpStatus.FORBIDDEN),
+    UNAUTHORIZED("인증이 필요합니다.", HttpStatus.UNAUTHORIZED),                     // 401
+    FORBIDDEN("접근 권한이 없습니다.", HttpStatus.FORBIDDEN),                          // 403
+    INVALID_ACCESS("유효하지 않은 접근입니다.", HttpStatus.FORBIDDEN),               // 403
+    LOGIN_REQUIRED("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED),                 // 401
+
+    // 🔎 조회 실패
+    BUTTON_ID_NOT_EXISTS("버튼을 찾을 수 없습니다.", HttpStatus.BAD_REQUEST),
+    USER_NOT_FOUND("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),              // 404
+    GUILD_NOT_FOUND("길드를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),              // 404
+    GROUP_NOT_FOUND("그룹을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),              // 404
+    GROUP_NAME_NOT_FOUND("그룹을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),              // 404
+    RESOURCE_NOT_FOUND("요청한 리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),   // 404
+
+    // ❌ 중복/충돌
+    GROUP_NAME_EXISTS("이미 존재하는 그룹이름입니다.", HttpStatus.BAD_REQUEST),
+    USER_ALREADY_EXISTS("이미 존재하는 사용자입니다.", HttpStatus.CONFLICT),         // 409
+    GUILD_ALREADY_EXISTS("이미 존재하는 길드입니다.", HttpStatus.CONFLICT),          // 409
+    GROUP_ALREADY_EXISTS("이미 존재하는 그룹 이름입니다.", HttpStatus.CONFLICT),      // 409
+    EMAIL_ALREADY_REGISTERED("이미 등록된 이메일입니다.", HttpStatus.CONFLICT),      // 409
+
+    // 🛑 잘못된 요청
+    INVALID_INPUT("잘못된 요청입니다.", HttpStatus.BAD_REQUEST),                    // 400
+    INVALID_PARAMETER("요청 파라미터가 잘못되었습니다.", HttpStatus.BAD_REQUEST),     // 400
+    MISSING_REQUIRED_FIELD("필수 항목이 누락되었습니다.", HttpStatus.BAD_REQUEST),   // 400
+
+    // ⚠️ 처리 불가
+    UNSUPPORTED_OPERATION("지원하지 않는 작업입니다.", HttpStatus.METHOD_NOT_ALLOWED), // 405
+    UNPROCESSABLE_ENTITY("요청을 처리할 수 없습니다.", HttpStatus.UNPROCESSABLE_ENTITY), // 422
+
+    // 💬 버튼/매크로 관련
+    BUTTON_ID_NOT_FOUND("버튼 ID가 존재하지 않습니다.", HttpStatus.BAD_REQUEST),
+    MACRO_EXECUTION_FAILED("매크로 실행에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    // 🧱 서버 내부 오류
+    INTERNAL_ERROR("서버 내부 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR); // 500
 
     private final String message;
     private final HttpStatus status;
