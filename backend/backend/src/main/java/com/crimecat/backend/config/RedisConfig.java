@@ -1,5 +1,6 @@
 package com.crimecat.backend.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -10,9 +11,17 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class RedisConfig {
 
+    // application.yml 또는 Compose environment 에 설정된 값 주입
+    @Value("${spring.redis.host}")
+    private String redisHost;
+
+    @Value("${spring.redis.port}")
+    private int redisPort;
+
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        return new LettuceConnectionFactory(); // localhost:6379 기본설정
+        // Docker 네트워크 상의 'redis:6379' 로 연결
+        return new LettuceConnectionFactory(redisHost, redisPort);
     }
 
     @Bean
