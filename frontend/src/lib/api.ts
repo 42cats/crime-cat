@@ -82,6 +82,11 @@ export const apiClient = {
     return res.data;
   },
 
+  patch: async <T>(endpoint: string, data?: any, config = {}): Promise<T> => {
+    const res = await instance.patch<T>(endpoint, data, config);
+    return res.data;
+  },
+
   delete: async <T>(endpoint: string, config = {}): Promise<T> => {
     const res = await instance.delete<T>(endpoint, config);
     return res.data;

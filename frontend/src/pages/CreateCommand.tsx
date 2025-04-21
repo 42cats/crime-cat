@@ -1,39 +1,28 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import CommandForm from '@/components/CommandForm';
 import { commandsService } from '@/api/commandsService';
-import { useToast } from '@/components/ui/use-toast';
-import { Button, Input } from '@/components/ui/button';
+import { Command } from '@/lib/types';
 
 const CreateCommand: React.FC = () => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (data: Omit<Command, 'id' | 'createdBy' | 'updatedBy' | 'createdAt' | 'updatedAt'>) => {
     try {
-      const userRole = 'user'; // 실제 사용자 역할을 가져와야 함
-      await commandsService.createCommand({ name, description }, userRole);
-      toast({ title: '커맨드가 성공적으로 생성되었습니다!' });
-    } catch (error) {
-      toast({ title: '커맨드 생성 오류', description: error.message, variant: 'destructive' });
+      await commandsService.createCommand(data);
+      navigate('/commands');
+    } catch (err) {
+      console.error('명령어 생성 실패:', err);
     }
   };
 
   return (
-    <div>
-      <h1>커맨드 생성</h1>
-      <Input 
-        value={name} 
-        onChange={(e) => setName(e.target.value)} 
-        placeholder="커맨드 이름" 
-      />
-      <Input 
-        value={description} 
-        onChange={(e) => setDescription(e.target.value)} 
-        placeholder="설명" 
-      />
-      <Button onClick={handleSubmit}>생성</Button>
-    </div>
+    <CommandForm
+      mode='create'
+      title='새 테마 작성'
+      onSubmit={handleSubmit}
+    />
   );
 };
 
-export default CreateCommand; 
+export default CreateCommand;
