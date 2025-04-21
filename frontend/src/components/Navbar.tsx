@@ -90,8 +90,8 @@ const Navbar: React.FC = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative rounded-full">
                     <img 
-                      src={user?.avatar} 
-                      alt={user?.displayName} 
+                      src={user?.profile_image_path}
+                      alt={user?.nickname} 
                       className="w-8 h-8 rounded-full"
                     />
                   </Button>

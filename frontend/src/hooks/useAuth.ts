@@ -13,6 +13,9 @@ export const useAuth = () => {
     try {
       const user = await authService.getCurrentUser();
       if (isUser(user)) {
+        if (!user?.profile_image_path) {
+            user.profile_image_path = 'https://cdn.discordapp.com/embed/avatars/1.png';
+        }
         setUser(user);
       }
     } catch {
