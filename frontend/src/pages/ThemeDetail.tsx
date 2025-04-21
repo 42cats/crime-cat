@@ -99,7 +99,7 @@ const ThemeDetail: React.FC = () => {
     });
 
     // 사용자 권한 확인
-    const canAdminEdit = hasRole(["admin", "super"]);
+    const canAdminEdit = hasRole(["ADMIN", "MANAGER"]);
 
     const handleEdit = () => {
         if (!theme) return;

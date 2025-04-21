@@ -25,8 +25,8 @@ export const useAuth = () => {
     }
   };
 
-  const hasRole = (role: UserRole): boolean => {
-    return !!user && user.role === role;
+  const hasRole = (roles: string[]) => {
+    return user != null && roles.includes(user.role);
   };
 
   const login = async (username?: string, password?: string) => {
