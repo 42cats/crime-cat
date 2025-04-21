@@ -110,7 +110,7 @@ const DashboardContent = ({ user, logout, location }: { user: any, logout: () =>
 
                 <div className="px-3 py-2">
                   <div className="flex items-center gap-x-3">
-                    <img src={user?.avatar} alt={user?.nickname} className="h-8 w-8 rounded-full" />
+                    <img src={user?.profile_image_path} alt={user?.nickname} className="h-8 w-8 rounded-full" />
                     <div className="flex flex-col">
                       <p className="text-sm font-medium">{user?.nickname}</p>
                       <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
