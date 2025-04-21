@@ -3,19 +3,17 @@ package com.crimecat.backend.messagemacro.service;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.messagemacro.domain.Group;
 import com.crimecat.backend.messagemacro.domain.GroupItem;
-import com.crimecat.backend.messagemacro.dto.BotGroupResponseDto;
-import com.crimecat.backend.messagemacro.dto.GroupDto;
 import com.crimecat.backend.messagemacro.dto.ButtonDto;
 import com.crimecat.backend.messagemacro.dto.ContentDto;
+import com.crimecat.backend.messagemacro.dto.GroupDto;
 import com.crimecat.backend.messagemacro.repository.GroupItemRepository;
 import com.crimecat.backend.messagemacro.repository.GroupRepository;
+import java.util.*;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -178,5 +176,12 @@ public class MessageMacroService {
                 .contents(contentDtos)
                 .build();
 
+    }
+    
+    public List<GroupDto> getAllGroups(String guildSnowflake){
+        List<Group> allByGuildSnowflake = groupRepository.findAllByGuildSnowflake(guildSnowflake);
+        if(allByGuildSnowflake.isEmpty())
+            return new ArrayList<>();
+        return allByGuildSnowflake.stream().map(this::getButtons).toList();
     }
 }
