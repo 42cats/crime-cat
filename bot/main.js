@@ -36,6 +36,7 @@ const { initClientVariables } = require('./Commands/utility/clientVariables');
 const { loadSlashAndPrefixCommands } = require('./Commands/utility/loadCommand');
 const { loadEvents } = require('./Commands/utility/loadEvent');
 const { postBotStatus } = require('./Commands/api/koreanDiscord/updateBotStatus');
+const { guildAddProcess } = require('./Commands/api/guild/guild');
 
 initClientVariables(client);
 loadSlashAndPrefixCommands(client, path.join(__dirname, 'Commands'));
@@ -70,15 +71,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 client.on(Events.GuildCreate, async (guild) => {
 	try {
-		const list = [...client.guilds.cache.values()];
-		const owner = await client.users.fetch(guild.ownerId);
+		// const list = [...client.guilds.cache.values()];
+		// const owner = await client.users.fetch(guild.ownerId);
 		const tagetGuild = await client.guilds.cache.get(guild.id);
 		// const ownerGrade = await getUserGrade(owner);
 		// if (isPermission(owner, USER_PERMISSION.ADD_GUILD_ABLE)) {
 		// 	await processGuildAndUsersWithHistory(client, tagetGuild);
 		// 	return;
 		// }
-		const matchingGuilds = list.filter(v => v.ownerId === guild.ownerId);  // 일치하는 guild 객체들 필터링
+		// const matchingGuilds = list.filter(v => v.ownerId === guild.ownerId);  // 일치하는 guild 객체들 필터링
 
 		// if (matchingGuilds.length >= 2) {
 		// 	console.log("이미 한 개 이상의 길드에 오너로 등록됨:", guild.ownerId, matchingGuilds);
@@ -90,18 +91,17 @@ client.on(Events.GuildCreate, async (guild) => {
 		// 	}
 		// 	return;
 		// }
-		console.log("약관 전송");
-		termsReply.execute(client, owner, guild, 1);
-		owner && await owner.send('짭냥이 개발에 협조해 주셔서 감사합니다 :)');
-		postBotStatus(client)
-			.then(() => {
-				console.log("✅ 한국 디스코드 서버에 등록 성공");
-			})
-			.catch((err) => {
-				console.error("❌ 한국 디스코드 서버에 등록 실패:", err);
-			});
-
-		// await processGuildAndUsersWithHistory(client, tagetGuild);
+		// console.log("약관 전송");
+		// termsReply.execute(client, owner, guild, 1);
+		// owner && await owner.send('짭냥이 개발에 협조해 주셔서 감사합니다 :)');
+		// postBotStatus(client)
+		// 	.then(() => {
+		// 		console.log("✅ 한국 디스코드 서버에 등록 성공");
+		// 	})
+		// 	.catch((err) => {
+		// 		console.error("❌ 한국 디스코드 서버에 등록 실패:", err);
+		// 	});
+		await guildAddProcess(client, tagetGuild);
 	}
 	catch (err) {
 		console.log(err.stack);
