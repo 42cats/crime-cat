@@ -11,7 +11,9 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "CHARACTER_ROLES")
@@ -20,6 +22,7 @@ import org.hibernate.annotations.UuidGenerator;
 public class CharacterRole {
 
     @Id
+    @JdbcTypeCode(SqlTypes.BINARY)
     @UuidGenerator
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;

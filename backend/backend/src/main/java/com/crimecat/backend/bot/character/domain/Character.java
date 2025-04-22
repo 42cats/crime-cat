@@ -16,7 +16,9 @@ import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -28,6 +30,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 public class Character {
 
     @Id
+    @JdbcTypeCode(SqlTypes.BINARY)
     @UuidGenerator
     @Column(name = "ID", columnDefinition = "BINARY(16)", updatable = false)
     private UUID id;
