@@ -8,7 +8,7 @@ import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 
 import com.crimecat.backend.bot.guild.domain.Guild;
-import com.crimecat.backend.bot.user.domain.User;
+import com.crimecat.backend.bot.user.domain.DiscordUser;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,13 +44,13 @@ public class GameHistory {
 
     @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false, updatable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    private User user;
+    private DiscordUser user;
 
     @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false, updatable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Guild guild;
 
-    public GameHistory(boolean isWin, LocalDateTime createdAt, String characterName, User user, Guild guild) {
+    public GameHistory(boolean isWin, LocalDateTime createdAt, String characterName, DiscordUser user, Guild guild) {
         this.isWin = isWin;
         this.createdAt = createdAt;
         this.characterName = characterName;

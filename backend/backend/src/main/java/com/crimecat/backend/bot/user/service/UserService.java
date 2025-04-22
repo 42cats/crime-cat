@@ -6,6 +6,7 @@ import com.crimecat.backend.bot.guild.service.GuildService;
 import com.crimecat.backend.bot.permission.domain.Permission;
 import com.crimecat.backend.bot.permission.service.PermissionService;
 import com.crimecat.backend.bot.point.service.PointHistoryService;
+import com.crimecat.backend.bot.user.domain.DiscordUser;
 import com.crimecat.backend.bot.user.domain.User;
 import com.crimecat.backend.bot.user.domain.UserPermission;
 import com.crimecat.backend.bot.user.dto.TotalGuildRankingByPlayCountDto;
@@ -33,14 +34,18 @@ import com.crimecat.backend.bot.user.dto.UserRankingFailedResponseDto;
 import com.crimecat.backend.bot.user.dto.UserRankingResponseDto;
 import com.crimecat.backend.bot.user.dto.UserRankingSuccessResponseDto;
 import com.crimecat.backend.bot.user.dto.UserResponseDto;
+import com.crimecat.backend.bot.user.repository.UserRepository;
 import com.crimecat.backend.web.gameHistory.domain.GameHistory;
 import com.crimecat.backend.web.gameHistory.dto.IGameHistoryRankingDto;
 import com.crimecat.backend.web.gameHistory.service.GameHistoryQueryService;
+import com.crimecat.backend.web.webUser.domain.WebUser;
+import com.crimecat.backend.web.webUser.repository.WebUserRepository;
 import io.micrometer.common.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -62,7 +67,7 @@ public class UserService {
 	private final static String SORT_BY_MAKERS = "makers";
 	private final static String SORT_BY_BEST_THEME = "theme";
 
-	private final UserQueryService userQueryService;
+	private final DiscordUserQueryService discordUserQueryService;
 	private final PointHistoryService pointHistoryService;
 	private final PermissionService permissionService;
 	private final UserPermissionService userPermissionService;
@@ -70,10 +75,13 @@ public class UserService {
 	private final GuildService guildService;
 	private final GuildQueryService guildQueryService;
 
+	private final UserRepository userRepository;
+	private final WebUserRepository webUserRepository;
+
 
 	@Transactional(readOnly = true)
-	public User findUserBySnowflake(String userSnowflake) {
-		return userQueryService.findByUserSnowflake(userSnowflake);
+	public DiscordUser findUserBySnowflake(String userSnowflake) {
+		return discordUserQueryService.findByUserSnowflake(userSnowflake);
 	}
 
 	@Transactional
@@ -83,9 +91,17 @@ public class UserService {
 			return new UserInfoResponseDto("Invalid request format", null);
 		}
 		String message = "Already User registered";
-		User user = findUserBySnowflake(userSnowflake);
+		DiscordUser user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
-			user = userQueryService.saveUser(User.of(userSnowflake, userName, userAvatar));
+			user = discordUserQueryService.saveUser(DiscordUser.of(userSnowflake, userName, userAvatar));
+			User u = User.builder().discordUser(user).build();
+			Optional<WebUser> webUser = webUserRepository.findWebUserByDiscordUserSnowflake(userSnowflake);
+			if (webUser.isPresent()) {
+				u.setWebUser(webUser.get());
+				u = userRepository.findByWebUser(u.getWebUser()).orElse(u);
+				u.setDiscordUser(user);
+			}
+			userRepository.save(u);
 			message = "User registered";
 		}
 
@@ -114,7 +130,7 @@ public class UserService {
 		if (StringUtils.isBlank(userSnowflake) || StringUtils.isBlank(permissionName)) {
 			return new UserPermissionPurchaseFailedResponseDto("Invalid request format", 0, 0);
 		}
-		User user = findUserBySnowflake(userSnowflake);
+		DiscordUser user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
 			return new UserPermissionPurchaseFailedResponseDto("user not found", 0, 0);
 		}
@@ -158,7 +174,7 @@ public class UserService {
 			return new UserHasPermissionResponseDto("Invalid request format");
 		}
 
-		User user = findUserBySnowflake(userSnowflake);
+		DiscordUser user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
 			return new UserHasPermissionResponseDto("user not found");
 		}
@@ -188,7 +204,7 @@ public class UserService {
 		if (StringUtils.isBlank(userSnowflake)) {
 			return new UserGrantedPermissionResponseDto("Invalid request format", null);
 		}
-		User user = findUserBySnowflake(userSnowflake);
+		DiscordUser user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
 			return new UserGrantedPermissionResponseDto("user not found", null);
 		}
@@ -217,7 +233,7 @@ public class UserService {
 			return new UserRankingFailedResponseDto("Invalid request format");
 		}
 
-		User user = userQueryService.findByUserSnowflake(userSnowflake);
+		DiscordUser user = discordUserQueryService.findByUserSnowflake(userSnowflake);
 		if (user == null) {
 			return new UserRankingFailedResponseDto("user not found");
 		}
@@ -229,9 +245,9 @@ public class UserService {
 				= gameHistoryQueryService.getGameHistoryWithPlayCountGreaterThan(gameHistoryCountByUserSnowflake).size() + 1;
 
 		// 보유 포인트 순위
-		Integer userRankByPoint = userQueryService.getUsersWithPointGreaterThan(user.getPoint()).size() + 1;
+		Integer userRankByPoint = discordUserQueryService.getUsersWithPointGreaterThan(user.getPoint()).size() + 1;
 
-		Integer totalUserCount = userQueryService.getUserCount();
+		Integer totalUserCount = discordUserQueryService.getUserCount();
 
 		return new UserRankingSuccessResponseDto(
 				"user info find successfully",
@@ -251,7 +267,7 @@ public class UserService {
 			return new TotalUserRankingFailedResponseDto("Invalid request format");
 		}
 
-		Integer totalUserCount = userQueryService.getUserCount();
+		Integer totalUserCount = discordUserQueryService.getUserCount();
 
 		List<TotalUserRankingDto> ranking = new ArrayList<>();
 
@@ -261,7 +277,7 @@ public class UserService {
 					pageable.getPageNumber(),
 					pageable.getPageSize(),
 					Sort.by(Sort.Order.desc(sortingCondition)));
-			Page<User> userWithPagination = userQueryService.getUserWithPagination(pageable);
+			Page<DiscordUser> userWithPagination = discordUserQueryService.getUserWithPagination(pageable);
 
 			AtomicInteger rank = new AtomicInteger(1);
 			ranking = userWithPagination.stream()
@@ -340,24 +356,24 @@ public class UserService {
 		return new UserListResponseDto(
 				gameHistoryQueryService.findUsersByGuildSnowflakeAndDiscordAlarm(guildSnowflake, discordAlarm).stream()
 						.map(GameHistory::getUser)
-						.map(User::getSnowflake)
+						.map(DiscordUser::getSnowflake)
 						.toList()
 		);
 	}
 
 	public UserPatchResponseDto updateUserInfo(String userSnowflake, String avatar, Boolean discordAlarm) {
-		User user = userQueryService.findByUserSnowflake(userSnowflake);
+		DiscordUser user = discordUserQueryService.findByUserSnowflake(userSnowflake);
 		if (user == null) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user not exists");
 		}
 		user.setAvatar(avatar);
 		user.setDiscordAlarm(discordAlarm);
-		return new UserPatchResponseDto(new UserPatchDto(userQueryService.saveUser(user)));
+		return new UserPatchResponseDto(new UserPatchDto(discordUserQueryService.saveUser(user)));
 	}
 
 	@Transactional(readOnly = true)
 	public UserDbInfoResponseDto getUserDbInfo(String userSnowflake){
-		User byUserSnowflake = userQueryService.findByUserSnowflake(userSnowflake);
+		DiscordUser byUserSnowflake = discordUserQueryService.findByUserSnowflake(userSnowflake);
 		if (byUserSnowflake == null) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user not exists");
 		}

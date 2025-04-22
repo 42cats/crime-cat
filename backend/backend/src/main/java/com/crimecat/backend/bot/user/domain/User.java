@@ -1,25 +1,26 @@
 package com.crimecat.backend.bot.user.domain;
 
+import com.crimecat.backend.web.webUser.domain.WebUser;
 import jakarta.persistence.*;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "USERS")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @Getter
+@Builder
+@AllArgsConstructor
 public class User {
-
     @Id
     @UuidGenerator
     @GeneratedValue
@@ -27,59 +28,22 @@ public class User {
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @Column(name = "SNOWFLAKE", nullable = false, unique = true)
-    private String snowflake;
+    @Setter
+    @JoinColumn(name = "WEB_USER_ID", referencedColumnName = "ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private WebUser webUser;
 
-    @Column(name = "NAME", nullable = false)
-    private String name;
-
-    @Column(name = "AVATAR", nullable = false)
-    private String avatar;
-
-    @Column(name = "DISCORD_ALARM")
-    private boolean discordAlarm = false;
-
-    @Column(name = "POINT")
-    private Integer point = 0;
+    @Setter
+    @JoinColumn(name = "DISCORD_USER_ID", referencedColumnName = "ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private DiscordUser discordUser;
 
     @CreatedDate
     @Column(name = "CREATED_AT", updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "IS_WITHDRAW")
-    private boolean isWithdraw = false;
+    @LastModifiedDate
+    @Column(name = "UPDATED_AT")
+    private LocalDateTime updatedAt;
 
-
-    private User(String snowflake, String name, String avatar) {
-        this.snowflake = snowflake;
-        this.name = name;
-        this.avatar = avatar;
-    }
-
-    public static User of(String snowflake, String name, String avatar) {
-        return new User(snowflake, name, avatar);
-    }
-
-    public Integer usePoints(Integer price) {
-        point -= price;
-        return point;
-    }
-    public Integer addPoint(Integer point){
-        this.point += point;
-        return point;
-    }
-
-    public void setAvatar(String avatar) {
-        if (avatar == null) {
-            return;
-        }
-        this.avatar = avatar;
-    }
-
-    public void setDiscordAlarm(Boolean discordAlarm) {
-        if (discordAlarm == null) {
-            return;
-        }
-        this.discordAlarm = discordAlarm;
-    }
 }

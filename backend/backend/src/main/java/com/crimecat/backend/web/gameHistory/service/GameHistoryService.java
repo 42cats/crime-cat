@@ -3,7 +3,7 @@ package com.crimecat.backend.web.gameHistory.service;
 import com.crimecat.backend.bot.guild.domain.Guild;
 import com.crimecat.backend.bot.guild.service.GuildQueryService;
 import com.crimecat.backend.bot.guild.service.GuildService;
-import com.crimecat.backend.bot.user.domain.User;
+import com.crimecat.backend.bot.user.domain.DiscordUser;
 import com.crimecat.backend.bot.user.service.UserService;
 import com.crimecat.backend.web.gameHistory.domain.GameHistory;
 import com.crimecat.backend.web.gameHistory.dto.GameHistoryUpdateRequestDto;
@@ -34,7 +34,7 @@ public class GameHistoryService {
 	public SaveUserHistoryResponseDto saveUserGameHistory(
 			SaveUserGameHistoryRequestDto saveUserGameHistoryRequestDto) {
 
-		User user = userService.findUserBySnowflake(saveUserGameHistoryRequestDto.getUserSnowflake());
+		DiscordUser user = userService.findUserBySnowflake(saveUserGameHistoryRequestDto.getUserSnowflake());
 		if (user == null) {
 			return new SaveUserHistoryResponseDto("History recorded failed");
 		}
@@ -64,7 +64,7 @@ public class GameHistoryService {
 	@Transactional(readOnly = true)
 	public UserGameHistoryResponseDto getUserGameHistoryByUserSnowflake(String userSnowflake) {
 
-		User user = userService.findUserBySnowflake(userSnowflake);
+		DiscordUser user = userService.findUserBySnowflake(userSnowflake);
 		if (user == null) {
 			return new UserGameHistoryFailedResponseDto("user not found");
 		}

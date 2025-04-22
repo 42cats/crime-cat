@@ -3,6 +3,10 @@ package com.crimecat.backend.web.webUser.service;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import com.crimecat.backend.bot.user.domain.DiscordUser;
+import com.crimecat.backend.bot.user.domain.User;
+import com.crimecat.backend.bot.user.repository.DiscordUserRepository;
+import com.crimecat.backend.bot.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import com.crimecat.backend.web.webUser.LoginMethod;
@@ -20,6 +24,8 @@ import lombok.extern.slf4j.Slf4j;
 public class WebUserService {
 
     private final WebUserRepository webUserRepository;
+    private final UserRepository userRepository;
+    private final DiscordUserRepository discordUserRepository;
 
     /**
      * OAuth 로그인 시 사용자 정보를 기준으로 신규 생성 또는 기존 유저 반환
@@ -50,7 +56,16 @@ public class WebUserService {
                     .build();
 
             log.info("📦 [신규 유저 객체 생성] {}", newUser);
-            return webUserRepository.save(newUser);
+            newUser = webUserRepository.save(newUser);
+            User u = User.builder().webUser(newUser).build();
+            Optional<DiscordUser> discordUser = discordUserRepository.findBySnowflake(discordUserId);
+            if (discordUser.isPresent()) {
+                u.setDiscordUser(discordUser.get());
+                u = userRepository.findByDiscordUser(discordUser.get()).orElse(u);
+                u.setWebUser(newUser);
+            }
+            userRepository.save(u);
+            return newUser;
         });
 
         // Discord ID 업데이트 여부 확인

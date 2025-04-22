@@ -1,21 +1,15 @@
 package com.crimecat.backend.bot.user.repository;
 
+import com.crimecat.backend.bot.user.domain.DiscordUser;
 import com.crimecat.backend.bot.user.domain.User;
-import java.util.List;
+import com.crimecat.backend.web.webUser.domain.WebUser;
+import org.springframework.data.jpa.repository.JpaRepository;
+
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
-@Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
+    Optional<User> findByDiscordUser(DiscordUser discordUser);
 
-	@Query("SELECT u FROM User u WHERE u.snowflake = :userSnowflake")
-	Optional<User> findBySnowflake(@Param("userSnowflake") String userSnowflake);
-
-	@Query("SELECT u FROM User u WHERE u.point > :point")
-	List<User> getUsersWithPointGreaterThan(@Param("point") Integer point);
-
+    Optional<User> findByWebUser(WebUser webUser);
 }

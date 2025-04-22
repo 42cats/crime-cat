@@ -23,8 +23,8 @@ import com.crimecat.backend.bot.coupon.domain.Coupon;
 import com.crimecat.backend.bot.coupon.dto.CouponCreateRequestDto;
 import com.crimecat.backend.bot.coupon.dto.CouponRedeemRequestDto;
 import com.crimecat.backend.bot.coupon.repository.CouponRepository;
-import com.crimecat.backend.bot.user.domain.User;
-import com.crimecat.backend.bot.user.repository.UserRepository;
+import com.crimecat.backend.bot.user.domain.DiscordUser;
+import com.crimecat.backend.bot.user.repository.DiscordUserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
@@ -35,7 +35,7 @@ public class CouponApiTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private CouponRepository couponRepository;
-    @Autowired private UserRepository userRepository;
+    @Autowired private DiscordUserRepository discordUserRepository;
 
     @Test
     void 쿠폰_생성_성공() throws Exception {
@@ -54,7 +54,7 @@ public class CouponApiTest {
     void 쿠폰_등록_성공_실패() throws Exception {
         // 준비: 유저 & 쿠폰 저장
         String snowflake = String.valueOf(ThreadLocalRandom.current().nextInt(10000000, 100000000));
-        User user = userRepository.save(User.of(snowflake,"test","url"));
+        DiscordUser user = discordUserRepository.save(DiscordUser.of(snowflake,"test","url"));
         Coupon coupon = couponRepository.save(Coupon.create(5000, 14));
 
         CouponRedeemRequestDto dto = new CouponRedeemRequestDto(user.getSnowflake(), coupon.getId().toString());
@@ -75,7 +75,7 @@ public class CouponApiTest {
     @Test
     void 쿠폰_등록_실패_없는쿠폰() throws Exception {
         String snowflake = String.valueOf(ThreadLocalRandom.current().nextInt(10000000, 100000000));
-        User user = userRepository.save(User.of(snowflake,"sabyun","url"));
+        DiscordUser user = discordUserRepository.save(DiscordUser.of(snowflake,"sabyun","url"));
 
         CouponRedeemRequestDto dto = new CouponRedeemRequestDto(user.getSnowflake(), UUID.randomUUID().toString());
 
@@ -102,7 +102,7 @@ public class CouponApiTest {
     @Test
     void 만료된_쿠폰_사용() throws Exception{
         String snowflake = String.valueOf(ThreadLocalRandom.current().nextInt(10000000, 100000000));
-        User user = userRepository.save(User.of(snowflake,"name","url"));
+        DiscordUser user = discordUserRepository.save(DiscordUser.of(snowflake,"name","url"));
         Coupon coupon = couponRepository.save(Coupon.create(5000,-1));
 
         CouponRedeemRequestDto dto = new CouponRedeemRequestDto(snowflake,coupon.getId().toString());
@@ -115,7 +115,7 @@ public class CouponApiTest {
     @Test
     void 널_바디_체크() throws Exception {
         String snowflake = String.valueOf(ThreadLocalRandom.current().nextInt(10000000, 100000000));
-        User user = userRepository.save(User.of(snowflake, "name", "url"));
+        DiscordUser user = discordUserRepository.save(DiscordUser.of(snowflake, "name", "url"));
         Coupon coupon = couponRepository.save(Coupon.create(5000, -1));
 
         //usersnowfalke null
@@ -154,7 +154,7 @@ public class CouponApiTest {
             new Thread(() -> {
                 try {
                     String snowflake = String.valueOf(ThreadLocalRandom.current().nextInt(10000000, 100000000));
-                    User user = userRepository.save(User.of(snowflake, "user" + snowflake, "avatar"));
+                    DiscordUser user = discordUserRepository.save(DiscordUser.of(snowflake, "user" + snowflake, "avatar"));
 
                     CouponRedeemRequestDto dto = new CouponRedeemRequestDto(user.getSnowflake(), couponId);
 
@@ -190,6 +190,6 @@ public class CouponApiTest {
     @AfterEach
     void cleanUp() {
         couponRepository.deleteAll();
-        userRepository.deleteAll();
+        discordUserRepository.deleteAll();
     }
 }

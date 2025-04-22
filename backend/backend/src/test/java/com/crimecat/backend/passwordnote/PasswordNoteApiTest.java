@@ -28,8 +28,8 @@ import com.crimecat.backend.bot.guild.dto.PatchPasswordNoteRequestDto;
 import com.crimecat.backend.bot.guild.dto.SavePasswordNoteRequestDto;
 import com.crimecat.backend.bot.guild.repository.GuildRepository;
 import com.crimecat.backend.bot.guild.repository.PasswordNoteRepository;
-import com.crimecat.backend.bot.user.domain.User;
-import com.crimecat.backend.bot.user.repository.UserRepository;
+import com.crimecat.backend.bot.user.domain.DiscordUser;
+import com.crimecat.backend.bot.user.repository.DiscordUserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
@@ -40,14 +40,15 @@ public class PasswordNoteApiTest {
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
     @Autowired GuildRepository guildRepository;
-    @Autowired UserRepository userRepository;
+    @Autowired
+    DiscordUserRepository discordUserRepository;
     @Autowired PasswordNoteRepository passwordNoteRepository;
 
     private Guild prepareGuild() {
         String ownerSnowflake = String.valueOf(ThreadLocalRandom.current().nextLong(1000000000L));
 
         // ✅ 먼저 User 저장
-        userRepository.save(User.of(ownerSnowflake, "테스트유저", "https://example.com/avatar.png"));
+        discordUserRepository.save(DiscordUser.of(ownerSnowflake, "테스트유저", "https://example.com/avatar.png"));
         String snowflake = String.valueOf(ThreadLocalRandom.current().nextLong(1000000000L));
         GuildDto dto = new GuildDto(snowflake,"test",ownerSnowflake,LocalDateTime.now());
         return guildRepository.save(Guild.of(dto));

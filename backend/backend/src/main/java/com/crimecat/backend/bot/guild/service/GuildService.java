@@ -7,7 +7,7 @@ import com.crimecat.backend.bot.guild.dto.GuildResponseDto;
 import com.crimecat.backend.bot.guild.dto.MessageDto;
 import com.crimecat.backend.bot.guild.exception.GuildAlreadyExistsException;
 import com.crimecat.backend.bot.guild.repository.GuildRepository;
-import com.crimecat.backend.bot.user.service.UserQueryService;
+import com.crimecat.backend.bot.user.service.DiscordUserQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GuildService {
     private final GuildRepository guildRepository;
-    private final UserQueryService userQueryService;
+    private final DiscordUserQueryService discordUserQueryService;
 
     // TODO: MessageDto 안 쓰고 생성과 복구를 구별할 방법?
 
@@ -29,7 +29,7 @@ public class GuildService {
      * @return 길드 생성 정보 반환 MessageDto
      */
     public MessageDto<GuildResponseDto> addGuild(GuildDto guildDto) {
-        if (userQueryService.findByUserSnowflake(guildDto.getOwnerSnowflake()) == null) {
+        if (discordUserQueryService.findByUserSnowflake(guildDto.getOwnerSnowflake()) == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No user");
         }
         Guild guild = guildRepository.findBySnowflake(guildDto.getSnowflake()).orElse(null);

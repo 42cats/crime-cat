@@ -3,7 +3,7 @@ USE ${DB_DISCORD};
 /**
   사용자 테이블
  */
-CREATE TABLE IF NOT EXISTS `users`
+CREATE TABLE IF NOT EXISTS `discord_users`
 (
     `id`            BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     `snowflake`     VARCHAR(50) NOT NULL UNIQUE COMMENT '디스코드 유저 snowflake',
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `users`
 ) ENGINE=InnoDB
     DEFAULT CHARSET=utf8mb4
     COLLATE=utf8mb4_unicode_ci
-    COMMENT='사용자 정보 테이블';
+    COMMENT='디스코드 사용자 정보 테이블';
 
 
 
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `guilds` (
     `name`             VARCHAR(255) NOT NULL COMMENT '길드 이름',
     `is_withdraw`      BOOLEAN NOT NULL DEFAULT 0 COMMENT '삭제여부',
     `created_at`       TIMESTAMP NOT NULL COMMENT '길드 생성시점(discord 에서 최초생성시기)',
-    CONSTRAINT `fk_guilds_users` FOREIGN KEY (`owner_snowflake`) REFERENCES `users`(`snowflake`)
+    CONSTRAINT `fk_guilds_discord_users` FOREIGN KEY (`owner_snowflake`) REFERENCES `discord_users`(`snowflake`)
         ON DELETE RESTRICT
         ON UPDATE CASCADE
 ) ENGINE=InnoDB
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS `game_histories`
     `is_win`            BOOLEAN NULL DEFAULT NULL COMMENT '승리 여부',
     `created_at`        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '기록 생성 시간',
     `character_name`    VARCHAR(50) DEFAULT NULL COMMENT '캐릭터 이름',
-    CONSTRAINT `fk_game_histories_users` FOREIGN KEY (`user_snowflake`) REFERENCES `users`(`snowflake`)
+    CONSTRAINT `fk_game_histories_discord_users` FOREIGN KEY (`user_snowflake`) REFERENCES `discord_users`(`snowflake`)
         ON DELETE CASCADE,
     CONSTRAINT `fk_game_histories_guilds` FOREIGN KEY (`guild_snowflake`) REFERENCES `guilds`(`snowflake`)
         ON DELETE CASCADE
@@ -197,7 +197,7 @@ CREATE TABLE IF NOT EXISTS `coupons`
     `point`             INT NOT NULL DEFAULT 0 COMMENT '발행 포인트',
     `user_snowflake`    VARCHAR(50) DEFAULT NULL COMMENT '디스코드 사용자 snowflake',
     `expired_at`       TIMESTAMP NOT NULL COMMENT '쿠폰 등록 마감 기한',
-    CONSTRAINT `fk_coupons_users` FOREIGN KEY (`user_snowflake`) REFERENCES `users`(`snowflake`)
+    CONSTRAINT `fk_coupons_discord_users` FOREIGN KEY (`user_snowflake`) REFERENCES `discord_users`(`snowflake`)
         ON DELETE SET NULL
 ) ENGINE=InnoDB
     DEFAULT CHARSET=utf8mb4
@@ -234,7 +234,7 @@ CREATE TABLE `user_permissions`
     CONSTRAINT `fk_user_permissions_permissions` FOREIGN KEY (`permission_id`) REFERENCES `permissions`(`id`)
 	    ON DELETE CASCADE
 	    ON UPDATE CASCADE,
-    CONSTRAINT `fk_user_permissions_users` FOREIGN KEY (`user_snowflake`) REFERENCES `users`(`snowflake`)
+    CONSTRAINT `fk_user_permissions_discord_users` FOREIGN KEY (`user_snowflake`) REFERENCES `discord_users`(`snowflake`)
 	    ON DELETE CASCADE
 	    ON UPDATE CASCADE
 ) ENGINE=InnoDB
@@ -273,7 +273,7 @@ CREATE TABLE `point_histories`
     `permission_id`     BINARY(16) DEFAULT NULL COMMENT 'permission table 식별자',
     `point`             INT NOT NULL COMMENT '입출 포인트',
     `used_at`           TIMESTAMP NOT NULL COMMENT '포인트 입출 날짜',
-    CONSTRAINT `fk_point_histories_users` FOREIGN KEY (`user_snowflake`) REFERENCES `users`(`snowflake`)
+    CONSTRAINT `fk_point_histories_discord_users` FOREIGN KEY (`user_snowflake`) REFERENCES `discord_users`(`snowflake`)
 	    ON DELETE CASCADE
 		ON UPDATE CASCADE,
     CONSTRAINT `fk_point_histories_permissions` FOREIGN KEY (`permission_id`) REFERENCES `permissions`(`id`)
@@ -358,4 +358,17 @@ ENGINE = InnoDB
 DEFAULT CHARSET = utf8mb4
 COLLATE = utf8mb4_unicode_ci;
 
-
+CREATE TABLE `users` (
+    `id`                BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
+    `web_user_id`       BINARY(16) DEFAULT NULL COMMENT '웹 유저 아이디',
+    `discord_user_id`   BINARY(16) DEFAULT NULL COMMENT '디스코드 유저 아이디',
+    `created_at`        DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '생성일',
+    `updated_at`        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일',
+    CONSTRAINT `fk_web_user` FOREIGN KEY (`web_user_id`) REFERENCES web_users(`id`)
+        ON DELETE SET NULL,
+    CONSTRAINT `fk_discord_user` FOREIGN KEY (`discord_user_id`) REFERENCES discord_users(`id`)
+        ON DELETE SET NULL
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  COMMENT '통합 유저 테이블';
