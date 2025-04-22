@@ -1,16 +1,25 @@
 // MessageMacroServiceTest.java
 package com.crimecat.backend.messagemecro;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.*;
+
 import com.crimecat.backend.exception.DomainException;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.web.messagemacro.domain.Group;
 import com.crimecat.backend.web.messagemacro.domain.GroupItem;
-import com.crimecat.backend.web.messagemacro.dto.GroupDto;
 import com.crimecat.backend.web.messagemacro.dto.ButtonDto;
 import com.crimecat.backend.web.messagemacro.dto.ContentDto;
+import com.crimecat.backend.web.messagemacro.dto.GroupDto;
 import com.crimecat.backend.web.messagemacro.repository.GroupItemRepository;
 import com.crimecat.backend.web.messagemacro.repository.GroupRepository;
 import com.crimecat.backend.web.messagemacro.service.MessageMacroService;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,16 +28,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class MessageMacroServiceTest {
@@ -202,7 +201,7 @@ class MessageMacroServiceTest {
 
         DomainException ex = assertThrows(DomainException.class,
                 () -> service.syncMacroData(GUILD_ID, List.of(dto)));
-        assertEquals(ErrorStatus.GROUP_NAME_EXISTS.getMessage(), ex.getMessage());
+        assertEquals(ErrorStatus.GROUP_ALREADY_EXISTS.getMessage(), ex.getMessage());
     }
 
     @Test
