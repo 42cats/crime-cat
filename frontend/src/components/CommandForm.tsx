@@ -153,7 +153,7 @@ const CommandForm: React.FC<CommandFormProps> = ({
         <div className="text-right">
           <Button
             onClick={handleSubmit}
-            disabled={!name || !description || !usage || !category || !content || isLoading}
+            disabled={!name || !description || !usage || !category || !content || requiredPermissions.length === 0 || isLoading}
           >
             {mode === 'edit' ? '수정' : '등록'}
           </Button>
