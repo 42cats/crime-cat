@@ -22,14 +22,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.crimecat.backend.guild.domain.Guild;
-import com.crimecat.backend.guild.dto.GuildDto;
-import com.crimecat.backend.guild.dto.PatchPasswordNoteRequestDto;
-import com.crimecat.backend.guild.dto.SavePasswordNoteRequestDto;
-import com.crimecat.backend.guild.repository.GuildRepository;
-import com.crimecat.backend.guild.repository.PasswordNoteRepository;
-import com.crimecat.backend.user.domain.User;
-import com.crimecat.backend.user.repository.UserRepository;
+import com.crimecat.backend.bot.guild.domain.Guild;
+import com.crimecat.backend.bot.guild.dto.GuildDto;
+import com.crimecat.backend.bot.guild.dto.PatchPasswordNoteRequestDto;
+import com.crimecat.backend.bot.guild.dto.SavePasswordNoteRequestDto;
+import com.crimecat.backend.bot.guild.repository.GuildRepository;
+import com.crimecat.backend.bot.guild.repository.PasswordNoteRepository;
+import com.crimecat.backend.bot.user.domain.User;
+import com.crimecat.backend.bot.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest

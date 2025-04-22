@@ -12,15 +12,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.crimecat.backend.auth.jwt.JwtTokenProvider;
 import com.crimecat.backend.auth.service.JwtBlacklistService;
 import com.crimecat.backend.auth.service.RefreshTokenService;
 import com.crimecat.backend.auth.util.TokenCookieUtil;
-import com.crimecat.backend.webUser.domain.WebUser;
-import com.crimecat.backend.webUser.repository.WebUserRepository;
+import com.crimecat.backend.web.webUser.domain.WebUser;
+import com.crimecat.backend.web.webUser.repository.WebUserRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

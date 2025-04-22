@@ -16,10 +16,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.crimecat.backend.permission.domain.Permission;
-import com.crimecat.backend.permission.dto.ModifyPermissionRequestDto;
-import com.crimecat.backend.permission.dto.SavePermissionRequestDto;
-import com.crimecat.backend.permission.repository.PermissionRepository;
+import com.crimecat.backend.bot.permission.domain.Permission;
+import com.crimecat.backend.bot.permission.dto.ModifyPermissionRequestDto;
+import com.crimecat.backend.bot.permission.dto.SavePermissionRequestDto;
+import com.crimecat.backend.bot.permission.repository.PermissionRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
