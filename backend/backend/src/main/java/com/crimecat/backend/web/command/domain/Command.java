@@ -1,8 +1,11 @@
 package com.crimecat.backend.web.command.domain;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
@@ -10,15 +13,11 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
-
 @Entity
 @Table(name = "commands")
 @EntityListeners(AuditingEntityListener.class)
 @Data
-@NoArgsConstructor
+@RequiredArgsConstructor
 public class Command {
 
   @Id
@@ -52,4 +51,14 @@ public class Command {
   @LastModifiedDate
   @Column(name = "updated_at", nullable = false)
   private LocalDateTime updatedAt;
+
+  public Command(String name, String description, String usage, String category,
+      List<String> requiredPermissions, String content) {
+    this.name = name;
+    this.description = description;
+    this.usage = usage;
+    this.category = category;
+    this.requiredPermissions = requiredPermissions;
+    this.content = content;
+  }
 }

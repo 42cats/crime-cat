@@ -1,23 +1,22 @@
 package com.crimecat.backend.authorization;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.crimecat.backend.auth.jwt.JwtTokenProvider;
 import com.crimecat.backend.auth.service.JwtBlacklistService;
 import com.crimecat.backend.auth.service.RefreshTokenService;
 import com.crimecat.backend.web.webUser.domain.WebUser;
 import com.crimecat.backend.web.webUser.repository.WebUserRepository;
 import jakarta.servlet.http.Cookie;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -35,7 +34,7 @@ class AuthIntegrationTest {
     private WebUser createUser() {
         WebUser user = WebUser.builder()
                 .id(UUID.randomUUID())
-                .discordUserId(userId)
+                .discordUserSnowflake(userId)
                 .nickname("변상훈")
                 .email("test@discord.com")
                 .isActive(true)
@@ -46,7 +45,7 @@ class AuthIntegrationTest {
 
     @Test
     void test1_토큰_쿠키_생성_및_검증() {
-        String token = jwtTokenProvider.createAccessToken(userId, "변상훈");
+        String token = jwtTokenProvider.createAccessToken(userId, "변상훈",userId);
         String refresh = jwtTokenProvider.createRefreshToken(userId);
 
         assertThat(jwtTokenProvider.validateToken(token)).isTrue();
@@ -56,7 +55,7 @@ class AuthIntegrationTest {
 
     @Test
     void test2_블랙리스트_등록_후_검사() {
-        String token = jwtTokenProvider.createAccessToken(userId, "변상훈");
+        String token = jwtTokenProvider.createAccessToken(userId, "변상훈",userId);
         jwtBlacklistService.blacklistToken(token, jwtTokenProvider.getRemainingTime(token));
         assertThat(jwtBlacklistService.isBlacklisted(token)).isTrue();
     }
@@ -75,7 +74,7 @@ class AuthIntegrationTest {
     @Test
     void test4_인증_필터가_사용자_등록_성공() throws Exception {
         WebUser user = createUser();
-        String token = jwtTokenProvider.createAccessToken(user.getDiscordUserSnowflake(), user.getNickname());
+        String token = jwtTokenProvider.createAccessToken(user.getDiscordUserSnowflake(), user.getNickname(),userId);
 
         mockMvc.perform(get("/some/protected/api") // 실제 보호된 엔드포인트
                         .cookie(new Cookie("Authorization", token)))
@@ -85,7 +84,7 @@ class AuthIntegrationTest {
     @Test
     void test5_블랙리스트_토큰_거부_확인() throws Exception {
         WebUser user = createUser();
-        String token = jwtTokenProvider.createAccessToken(user.getDiscordUserSnowflake(), user.getNickname());
+        String token = jwtTokenProvider.createAccessToken(user.getDiscordUserSnowflake(), user.getNickname(),userId);
         jwtBlacklistService.blacklistToken(token, jwtTokenProvider.getRemainingTime(token));
 
         mockMvc.perform(get("/some/protected/api")
