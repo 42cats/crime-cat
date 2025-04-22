@@ -441,7 +441,6 @@ CREATE TABLE `commands` (
   COLLATE=utf8mb4_general_ci
   COMMENT='디스코드 명령어 정보 저장 테이블';
 
-
 CREATE TABLE IF NOT EXISTS notices (
     id          BINARY(16)  PRIMARY KEY,
     title       VARCHAR(200) NOT NULL,
@@ -454,3 +453,87 @@ CREATE TABLE IF NOT EXISTS notices (
     updated_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_notice_type(created_at, notice_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+/*
+    maker_teams
+*/
+CREATE TABLE `maker_teams` (
+    `id`            BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
+    `name`          VARCHAR(50) NOT NULL COMMENT '팀 이름'
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  COMMENT '제작 팀 테이블';
+
+/*
+    maker_team_members
+*/
+CREATE TABLE `maker_team_members` (
+`id`         BINARY(16) PRIMARY KEY,
+`team_id`    BINARY(16),
+`name`       VARCHAR(20),
+`user_id`    BINARY(16),
+
+CONSTRAINT `fk_team_id` FOREIGN KEY (`team_id`) REFERENCES `maker_teams`(`id`)
+    ON DELETE SET NULL,
+CONSTRAINT `fk_user_id` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+    ON DELETE SET NULL
+) ENGINE = InnoDB
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci
+COMMENT = '제작 팀 멤버 테이블';
+
+/*
+    game_themes
+*/
+CREATE TABLE `game_themes` (
+    `id`                BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
+    `title`             VARCHAR(255) NOT NULL COMMENT '테마 제목',
+    `thumbnail`         TEXT COMMENT '썸네일 이미지',
+    `summary`           TEXT COMMENT '간략 설명',
+    `recommendations`   INT DEFAULT 0 COMMENT '추천수',
+    `views`             INT DEFAULT 0 COMMENT '조회수',
+    `play_count`        INT DEFAULT 0 COMMENT '총 플레이 횟수',
+    `author`            BINARY(16) NOT NULL COMMENT '작성자 (users.id 참조)',
+    `tags`              JSON COMMENT '태그 배열 ["tag1", "tag2"]',
+    `content`           TEXT COMMENT '게시글 본문',
+    `player_min`        INT COMMENT '최소 인원수',
+    `player_max`        INT COMMENT '최대 인원수',
+    `playtime_min`      INT COMMENT '최소 소요시간 (분)',
+    `playtime_max`      INT COMMENT '최대 소요시간 (분)',
+    `price`             INT COMMENT '금액 (원화)',
+    `difficulty`        INT COMMENT '난이도',
+    `is_public`         BOOLEAN DEFAULT TRUE COMMENT '공개 여부',
+    `is_deleted`        BOOLEAN DEFAULT FALSE COMMENT '소프트 삭제 여부',
+    `type`              ENUM('ESCAPE_ROOM', 'MURDER_MYSTERY', 'CRIMESCENE', 'REALWORLD') NOT NULL,
+    `created_at`        DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT `fk_author` FOREIGN KEY (`author`)
+        REFERENCES `users`(`id`)
+        ON DELETE CASCADE
+
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  COMMENT '게임 테마 테이블';
+
+/*
+    crimescene_themes
+*/
+CREATE TABLE `crimescene_themes` (
+    `game_theme_id`     BINARY(16) PRIMARY KEY COMMENT '게임 테마',
+    `maker_teams_id`     BINARY(16) COMMENT '제작 팀 정보',
+    `guild_snowflake`   VARCHAR(50) COMMENT '디스코드 서버 id',
+    `extra`             JSON COMMENT '추가 정보 (JSON)'
+        CHECK (JSON_VALID(`extra`)),
+    CONSTRAINT `fk_maker_teams_id` FOREIGN KEY (`maker_teams_id`)
+        REFERENCES `maker_teams`(`id`)
+        ON DELETE CASCADE,
+    CONSTRAINT `fk_guild_snowflake` FOREIGN KEY (`guild_snowflake`)
+        REFERENCES `guilds`(`snowflake`)
+        ON DELETE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  COMMENT = '크라임씬 테마 테이블';
