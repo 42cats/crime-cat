@@ -46,7 +46,7 @@ public class MessageMacroService {
             }
         } catch (DataIntegrityViolationException ex) {
             // 모든 DB 제약 위반은 DomainException으로
-            throw ErrorStatus.GROUP_NAME_EXISTS.asDomainException();
+            throw ErrorStatus.GROUP_ALREADY_EXISTS.asDomainException();
         }
     }
 
@@ -56,7 +56,7 @@ public class MessageMacroService {
         // 중복 이름 검증
         if (!groupRepository.existsById(dto.getId())
                 && groupRepository.existsByGuildSnowflakeAndName(guildId, dto.getName())) {
-            throw ErrorStatus.GROUP_NAME_EXISTS.asDomainException();
+            throw ErrorStatus.GROUP_ALREADY_EXISTS.asDomainException();
         }
         Group group = groupRepository.findById(dto.getId())
                 .orElseGet(() -> Group.builder().id(dto.getId()).build());
@@ -102,7 +102,7 @@ public class MessageMacroService {
         // 삭제할 ID
         List<UUID> toDeleteIds = existingIds.stream()
                 .filter(id -> !keepIds.contains(id))
-                .collect(Collectors.toList());
+                .toList();
         if (!toDeleteIds.isEmpty()) {
             // 실제 엔티티 없이 ID만으로 배치 삭제 시도
             List<GroupItem> toDeleteEntities = toDeleteIds.stream()
@@ -150,7 +150,6 @@ public class MessageMacroService {
                         .id(item.getId())
                         .name(item.getName())
                         .index(item.getIndex())
-                        // 필요 시 더 많은 필드 매핑
                         .build())
                 .toList();
 
