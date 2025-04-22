@@ -16,7 +16,6 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, RefreshCcw } from 'lucide-react';
 
 interface CommandListProps {
   commands: Command[];
@@ -42,6 +41,21 @@ const CommandList: React.FC<CommandListProps> = ({ commands }) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     return diff < days * 24 * 60 * 60 * 1000;
+  };
+
+  const highlightMatch = (text: string, query: string) => {
+    if (!query) return text;
+
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.split(regex).map((part, i) =>
+      regex.test(part) ? (
+        <mark key={i} className="bg-yellow-200 text-yellow-800 rounded px-1">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
   };
 
   return (
@@ -84,24 +98,24 @@ const CommandList: React.FC<CommandListProps> = ({ commands }) => {
                     >
                       <CardHeader className="pb-2">
                         <CardTitle className="flex justify-between items-start">
-                          <div className="text-lg">/{command.name}</div>
+                          <div className="text-lg">/{highlightMatch(command.name, searchQuery)}</div>
                           <div className="flex items-center gap-1">
                             {isNew && (
-                            <span className="text-xs font-semibold text-yellow-600 bg-yellow-100 px-2 py-1 rounded-md animate-twinkle">
-                            New
-                            </span>
+                              <span className="text-xs font-semibold text-yellow-600 bg-yellow-100 px-2 py-1 rounded-md animate-twinkle">
+                                New
+                              </span>
                             )}
                             {isUpdated && (
-                            <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-1 rounded-md animate-twinkle">
-                            Updated
-                            </span>
+                              <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-1 rounded-md animate-twinkle">
+                                Updated
+                              </span>
                             )}
                             <span className="text-xs font-normal text-muted-foreground px-2 py-1 bg-secondary rounded-full">
                               {command.category}
                             </span>
                           </div>
                         </CardTitle>
-                        <CardDescription>{command.description}</CardDescription>
+                        <CardDescription>{highlightMatch(command.description, searchQuery)}</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="text-sm">
