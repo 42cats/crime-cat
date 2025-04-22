@@ -25,7 +25,6 @@ public enum ErrorStatus {
     RESOURCE_NOT_FOUND("요청한 리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),   // 404
 
     // ❌ 중복/충돌
-    GROUP_NAME_EXISTS("이미 존재하는 그룹이름입니다.", HttpStatus.BAD_REQUEST),
     USER_ALREADY_EXISTS("이미 존재하는 사용자입니다.", HttpStatus.CONFLICT),         // 409
     GUILD_ALREADY_EXISTS("이미 존재하는 길드입니다.", HttpStatus.CONFLICT),          // 409
     GROUP_ALREADY_EXISTS("이미 존재하는 그룹 이름입니다.", HttpStatus.CONFLICT),      // 409

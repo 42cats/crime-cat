@@ -31,7 +31,7 @@ public class BotMessageMacroController {
     private final GroupItemRepository groupItemRepository;
     private final GuildRepository guildRepository;
     @GetMapping("/buttons/{guildSnowflake}/{targetGroupName}")
-    public ResponseEntity<?> getGroupButton(
+    public ResponseEntity<?> getGroupButtons(
         @PathVariable @NonNull String guildSnowflake,
         @PathVariable @NonNull String targetGroupName) {
 
@@ -58,11 +58,11 @@ public class BotMessageMacroController {
 
 
     @GetMapping("/contents/{buttonId}")
-    public ResponseEntity<ButtonDto> getButonContent(
+    public ResponseEntity<ButtonDto> getButtonContent(
             @PathVariable @NonNull String buttonId) {
 
         GroupItem groupItemById = groupItemRepository.findGroupItemById(UUID.fromString(buttonId))
-                        .orElseThrow(()-> ErrorStatus.BUTTON_ID_NOT_EXISTS.asControllerException());
+                        .orElseThrow(ErrorStatus.BUTTON_ID_NOT_EXISTS::asControllerException);
 
         ButtonDto contents = messageMacroService.getContents(groupItemById);
         return ResponseEntity.ok(contents);
