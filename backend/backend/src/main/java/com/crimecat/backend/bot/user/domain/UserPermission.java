@@ -36,7 +36,7 @@ public class UserPermission {
 
     @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    private User user;
+    private DiscordUser user;
 
     @JoinColumn(name = "PERMISSION_ID")
     @ManyToOne(fetch = FetchType.LAZY)
@@ -46,7 +46,7 @@ public class UserPermission {
         expiredAt = expiredAt.plusDays(duration);
     }
 
-    public UserPermission(User user, Permission permission) {
+    public UserPermission(DiscordUser user, Permission permission) {
         this.user = user;
         this.permission = permission;
         this.expiredAt = LocalDateTime.now().plusDays(permission.getDuration());

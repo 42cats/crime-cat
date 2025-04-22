@@ -10,7 +10,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.crimecat.backend.bot.permission.domain.Permission;
-import com.crimecat.backend.bot.user.domain.User;
+import com.crimecat.backend.bot.user.domain.DiscordUser;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -46,14 +46,14 @@ public class PointHistory {
 
     @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    private User user;
+    private DiscordUser user;
 
     @JoinColumn(name = "PERMISSION_ID")
     @ManyToOne(fetch = FetchType.LAZY)
     private Permission permission;
 
 
-    public PointHistory(User user, Permission permission, Integer point) {
+    public PointHistory(DiscordUser user, Permission permission, Integer point) {
         this.user = user;
         this.permission = permission;
         this.point = point;

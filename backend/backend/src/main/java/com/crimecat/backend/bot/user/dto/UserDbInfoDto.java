@@ -1,6 +1,6 @@
 package com.crimecat.backend.bot.user.dto;
 
-import com.crimecat.backend.bot.user.domain.User;
+import com.crimecat.backend.bot.user.domain.DiscordUser;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -22,7 +22,7 @@ public class UserDbInfoDto {
     private LocalDateTime createdAt;
     private boolean isWithdraw;
 
-    public static UserDbInfoDto from(User user) {
+    public static UserDbInfoDto from(DiscordUser user) {
         return UserDbInfoDto.builder()
                 .id(user.getId())
                 .snowflake(user.getSnowflake())

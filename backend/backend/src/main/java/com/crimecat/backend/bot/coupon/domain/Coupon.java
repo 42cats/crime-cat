@@ -7,7 +7,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 
-import com.crimecat.backend.bot.user.domain.User;
+import com.crimecat.backend.bot.user.domain.DiscordUser;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -58,7 +58,7 @@ public class Coupon {
      */
     @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE")
     @ManyToOne(fetch = FetchType.LAZY)
-    private User user;
+    private DiscordUser user;
 
 
     public Coupon(Integer point, Integer duration) {
@@ -78,7 +78,7 @@ public class Coupon {
     public boolean isUsed(){
         return (this.user != null);
     }
-    public void use(User user) {
+    public void use(DiscordUser user) {
         if(isUsed()) throw new IllegalStateException("이미 사용된 쿠폰입니다.");
         if(isExpired()) throw new IllegalStateException("이미 만료된 쿠폰입니다");
 

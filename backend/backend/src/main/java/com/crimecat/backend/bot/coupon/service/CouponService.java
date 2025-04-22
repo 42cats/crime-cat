@@ -9,8 +9,8 @@ import com.crimecat.backend.bot.coupon.dto.CouponResponseDto;
 import com.crimecat.backend.bot.coupon.dto.MessageDto;
 import com.crimecat.backend.bot.coupon.repository.CouponRepository;
 import com.crimecat.backend.bot.point.service.PointHistoryService;
-import com.crimecat.backend.bot.user.domain.User;
-import com.crimecat.backend.bot.user.repository.UserRepository;
+import com.crimecat.backend.bot.user.domain.DiscordUser;
+import com.crimecat.backend.bot.user.repository.DiscordUserRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class CouponService {
     private final CouponRepository couponRepository;
-    private final UserRepository userRepository;
+    private final DiscordUserRepository discordUserRepository;
     private final PointHistoryService pointHistoryService;
 
     public MessageDto<CouponListResponse> createCoupon(CouponCreateRequestDto requestDto){
@@ -51,11 +51,11 @@ public class CouponService {
         if (request.getCode() == null || request.getCode().isEmpty())
             throw new RuntimeException("유효한 코드가 아닙니다.");
         Optional<Coupon> optionalCoupon = couponRepository.findByIdForUpdate(UUID.fromString(request.getCode()));
-        Optional<User> optionalUser = userRepository.findBySnowflake(request.getUserSnowflake());
+        Optional<DiscordUser> optionalUser = discordUserRepository.findBySnowflake(request.getUserSnowflake());
         if(optionalCoupon.isEmpty()) throw  new RuntimeException("유효한 코드가 아닙니다.");
         if(optionalUser.isEmpty()) throw  new RuntimeException("유저 정보가 없습니다.");
         Coupon coupon  = optionalCoupon.get();
-        User user = optionalUser.get();
+        DiscordUser user = optionalUser.get();
         coupon.use(user);
         user.addPoint(coupon.getPoint());
         pointHistoryService.usePoint(user,null,coupon.getPoint());

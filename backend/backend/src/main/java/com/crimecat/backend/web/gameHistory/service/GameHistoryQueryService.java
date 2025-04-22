@@ -10,7 +10,7 @@ import com.crimecat.backend.web.gameHistory.domain.GameHistory;
 import com.crimecat.backend.web.gameHistory.dto.IGameHistoryRankingDto;
 import com.crimecat.backend.web.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.bot.guild.domain.Guild;
-import com.crimecat.backend.bot.user.domain.User;
+import com.crimecat.backend.bot.user.domain.DiscordUser;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,7 +21,7 @@ public class GameHistoryQueryService {
 	private final GameHistoryRepository gameHistoryRepository;
 
 	public void saveUserGameHistory(boolean isWin,
-			LocalDateTime createdAt, String characterName, User user, Guild guild) {
+									LocalDateTime createdAt, String characterName, DiscordUser user, Guild guild) {
 		gameHistoryRepository.save(new GameHistory(isWin, createdAt, characterName, user, guild));
 	}
 

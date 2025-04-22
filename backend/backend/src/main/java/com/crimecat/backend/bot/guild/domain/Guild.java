@@ -1,7 +1,7 @@
 package com.crimecat.backend.bot.guild.domain;
 
 import com.crimecat.backend.bot.guild.dto.GuildDto;
-import com.crimecat.backend.bot.user.domain.User;
+import com.crimecat.backend.bot.user.domain.DiscordUser;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -49,7 +49,7 @@ public class Guild {
 
     @JoinColumn(name = "OWNER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", insertable = false, updatable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    private User user;
+    private DiscordUser user;
 
     @NotNull
     @Column(name = "CREATED_AT", nullable = false)

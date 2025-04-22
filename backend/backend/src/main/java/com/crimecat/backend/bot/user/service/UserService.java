@@ -6,7 +6,7 @@ import com.crimecat.backend.bot.guild.service.GuildService;
 import com.crimecat.backend.bot.permission.domain.Permission;
 import com.crimecat.backend.bot.permission.service.PermissionService;
 import com.crimecat.backend.bot.point.service.PointHistoryService;
-import com.crimecat.backend.bot.user.domain.User;
+import com.crimecat.backend.bot.user.domain.DiscordUser;
 import com.crimecat.backend.bot.user.domain.UserPermission;
 import com.crimecat.backend.bot.user.dto.TotalGuildRankingByPlayCountDto;
 import com.crimecat.backend.bot.user.dto.TotalUserRankingByMakerDto;
@@ -72,7 +72,7 @@ public class UserService {
 
 
 	@Transactional(readOnly = true)
-	public User findUserBySnowflake(String userSnowflake) {
+	public DiscordUser findUserBySnowflake(String userSnowflake) {
 		return userQueryService.findByUserSnowflake(userSnowflake);
 	}
 
@@ -83,9 +83,9 @@ public class UserService {
 			return new UserInfoResponseDto("Invalid request format", null);
 		}
 		String message = "Already User registered";
-		User user = findUserBySnowflake(userSnowflake);
+		DiscordUser user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
-			user = userQueryService.saveUser(User.of(userSnowflake, userName, userAvatar));
+			user = userQueryService.saveUser(DiscordUser.of(userSnowflake, userName, userAvatar));
 			message = "User registered";
 		}
 
@@ -114,7 +114,7 @@ public class UserService {
 		if (StringUtils.isBlank(userSnowflake) || StringUtils.isBlank(permissionName)) {
 			return new UserPermissionPurchaseFailedResponseDto("Invalid request format", 0, 0);
 		}
-		User user = findUserBySnowflake(userSnowflake);
+		DiscordUser user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
 			return new UserPermissionPurchaseFailedResponseDto("user not found", 0, 0);
 		}
@@ -158,7 +158,7 @@ public class UserService {
 			return new UserHasPermissionResponseDto("Invalid request format");
 		}
 
-		User user = findUserBySnowflake(userSnowflake);
+		DiscordUser user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
 			return new UserHasPermissionResponseDto("user not found");
 		}
@@ -188,7 +188,7 @@ public class UserService {
 		if (StringUtils.isBlank(userSnowflake)) {
 			return new UserGrantedPermissionResponseDto("Invalid request format", null);
 		}
-		User user = findUserBySnowflake(userSnowflake);
+		DiscordUser user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
 			return new UserGrantedPermissionResponseDto("user not found", null);
 		}
@@ -217,7 +217,7 @@ public class UserService {
 			return new UserRankingFailedResponseDto("Invalid request format");
 		}
 
-		User user = userQueryService.findByUserSnowflake(userSnowflake);
+		DiscordUser user = userQueryService.findByUserSnowflake(userSnowflake);
 		if (user == null) {
 			return new UserRankingFailedResponseDto("user not found");
 		}
@@ -261,7 +261,7 @@ public class UserService {
 					pageable.getPageNumber(),
 					pageable.getPageSize(),
 					Sort.by(Sort.Order.desc(sortingCondition)));
-			Page<User> userWithPagination = userQueryService.getUserWithPagination(pageable);
+			Page<DiscordUser> userWithPagination = userQueryService.getUserWithPagination(pageable);
 
 			AtomicInteger rank = new AtomicInteger(1);
 			ranking = userWithPagination.stream()
@@ -340,13 +340,13 @@ public class UserService {
 		return new UserListResponseDto(
 				gameHistoryQueryService.findUsersByGuildSnowflakeAndDiscordAlarm(guildSnowflake, discordAlarm).stream()
 						.map(GameHistory::getUser)
-						.map(User::getSnowflake)
+						.map(DiscordUser::getSnowflake)
 						.toList()
 		);
 	}
 
 	public UserPatchResponseDto updateUserInfo(String userSnowflake, String avatar, Boolean discordAlarm) {
-		User user = userQueryService.findByUserSnowflake(userSnowflake);
+		DiscordUser user = userQueryService.findByUserSnowflake(userSnowflake);
 		if (user == null) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user not exists");
 		}
@@ -357,7 +357,7 @@ public class UserService {
 
 	@Transactional(readOnly = true)
 	public UserDbInfoResponseDto getUserDbInfo(String userSnowflake){
-		User byUserSnowflake = userQueryService.findByUserSnowflake(userSnowflake);
+		DiscordUser byUserSnowflake = userQueryService.findByUserSnowflake(userSnowflake);
 		if (byUserSnowflake == null) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user not exists");
 		}

@@ -1,7 +1,7 @@
 package com.crimecat.backend.bot.user.service;
 
-import com.crimecat.backend.bot.user.domain.User;
-import com.crimecat.backend.bot.user.repository.UserRepository;
+import com.crimecat.backend.bot.user.domain.DiscordUser;
+import com.crimecat.backend.bot.user.repository.DiscordUserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -12,24 +12,24 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserQueryService {
 
-	private final UserRepository userRepository;
+	private final DiscordUserRepository discordUserRepository;
 
-	public User findByUserSnowflake(String userSnowflake) {
-		return userRepository.findBySnowflake(userSnowflake).orElse(null);
+	public DiscordUser findByUserSnowflake(String userSnowflake) {
+		return discordUserRepository.findBySnowflake(userSnowflake).orElse(null);
 	}
-	public User saveUser(User user) {
-		return userRepository.save(user);
+	public DiscordUser saveUser(DiscordUser user) {
+		return discordUserRepository.save(user);
 	}
 
-	public List<User> getUsersWithPointGreaterThan(Integer point) {
-		return userRepository.getUsersWithPointGreaterThan(point);
+	public List<DiscordUser> getUsersWithPointGreaterThan(Integer point) {
+		return discordUserRepository.getUsersWithPointGreaterThan(point);
 	}
 
 	public Integer getUserCount() {
-		return (int) userRepository.count();
+		return (int) discordUserRepository.count();
 	}
 
-	public Page<User> getUserWithPagination(Pageable pageable) {
-		return userRepository.findAll(pageable);
+	public Page<DiscordUser> getUserWithPagination(Pageable pageable) {
+		return discordUserRepository.findAll(pageable);
 	}
 }
