@@ -62,7 +62,7 @@ public class UserService {
 	private final static String SORT_BY_MAKERS = "makers";
 	private final static String SORT_BY_BEST_THEME = "theme";
 
-	private final UserQueryService userQueryService;
+	private final DiscordUserQueryService discordUserQueryService;
 	private final PointHistoryService pointHistoryService;
 	private final PermissionService permissionService;
 	private final UserPermissionService userPermissionService;
@@ -73,7 +73,7 @@ public class UserService {
 
 	@Transactional(readOnly = true)
 	public DiscordUser findUserBySnowflake(String userSnowflake) {
-		return userQueryService.findByUserSnowflake(userSnowflake);
+		return discordUserQueryService.findByUserSnowflake(userSnowflake);
 	}
 
 	@Transactional
@@ -85,7 +85,7 @@ public class UserService {
 		String message = "Already User registered";
 		DiscordUser user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
-			user = userQueryService.saveUser(DiscordUser.of(userSnowflake, userName, userAvatar));
+			user = discordUserQueryService.saveUser(DiscordUser.of(userSnowflake, userName, userAvatar));
 			message = "User registered";
 		}
 
@@ -217,7 +217,7 @@ public class UserService {
 			return new UserRankingFailedResponseDto("Invalid request format");
 		}
 
-		DiscordUser user = userQueryService.findByUserSnowflake(userSnowflake);
+		DiscordUser user = discordUserQueryService.findByUserSnowflake(userSnowflake);
 		if (user == null) {
 			return new UserRankingFailedResponseDto("user not found");
 		}
@@ -229,9 +229,9 @@ public class UserService {
 				= gameHistoryQueryService.getGameHistoryWithPlayCountGreaterThan(gameHistoryCountByUserSnowflake).size() + 1;
 
 		// 보유 포인트 순위
-		Integer userRankByPoint = userQueryService.getUsersWithPointGreaterThan(user.getPoint()).size() + 1;
+		Integer userRankByPoint = discordUserQueryService.getUsersWithPointGreaterThan(user.getPoint()).size() + 1;
 
-		Integer totalUserCount = userQueryService.getUserCount();
+		Integer totalUserCount = discordUserQueryService.getUserCount();
 
 		return new UserRankingSuccessResponseDto(
 				"user info find successfully",
@@ -251,7 +251,7 @@ public class UserService {
 			return new TotalUserRankingFailedResponseDto("Invalid request format");
 		}
 
-		Integer totalUserCount = userQueryService.getUserCount();
+		Integer totalUserCount = discordUserQueryService.getUserCount();
 
 		List<TotalUserRankingDto> ranking = new ArrayList<>();
 
@@ -261,7 +261,7 @@ public class UserService {
 					pageable.getPageNumber(),
 					pageable.getPageSize(),
 					Sort.by(Sort.Order.desc(sortingCondition)));
-			Page<DiscordUser> userWithPagination = userQueryService.getUserWithPagination(pageable);
+			Page<DiscordUser> userWithPagination = discordUserQueryService.getUserWithPagination(pageable);
 
 			AtomicInteger rank = new AtomicInteger(1);
 			ranking = userWithPagination.stream()
@@ -346,18 +346,18 @@ public class UserService {
 	}
 
 	public UserPatchResponseDto updateUserInfo(String userSnowflake, String avatar, Boolean discordAlarm) {
-		DiscordUser user = userQueryService.findByUserSnowflake(userSnowflake);
+		DiscordUser user = discordUserQueryService.findByUserSnowflake(userSnowflake);
 		if (user == null) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user not exists");
 		}
 		user.setAvatar(avatar);
 		user.setDiscordAlarm(discordAlarm);
-		return new UserPatchResponseDto(new UserPatchDto(userQueryService.saveUser(user)));
+		return new UserPatchResponseDto(new UserPatchDto(discordUserQueryService.saveUser(user)));
 	}
 
 	@Transactional(readOnly = true)
 	public UserDbInfoResponseDto getUserDbInfo(String userSnowflake){
-		DiscordUser byUserSnowflake = userQueryService.findByUserSnowflake(userSnowflake);
+		DiscordUser byUserSnowflake = discordUserQueryService.findByUserSnowflake(userSnowflake);
 		if (byUserSnowflake == null) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user not exists");
 		}
