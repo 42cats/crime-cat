@@ -3,7 +3,6 @@ package com.crimecat.backend.web.command.service;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.web.command.domain.Command;
 import com.crimecat.backend.web.command.dto.CommandDto;
-import com.crimecat.backend.web.command.dto.CommandListResponseDto;
 import com.crimecat.backend.web.command.dto.CommandRequestDto;
 import com.crimecat.backend.web.command.dto.CommandSummaryDto;
 import com.crimecat.backend.web.command.repository.CommandRepository;
@@ -23,25 +22,24 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommandService {
   private final CommandRepository commandRepository;
 
-  public CommandListResponseDto getCommandsList() {
+  public List<CommandSummaryDto> getCommandsList() {
     List<Command> allCommands =
         commandRepository.findAll(
             Sort.by(Sort.Direction.DESC, "updatedAt", "createdAt")); // 업데이트 최신순 등록날짜 최신순
-    List<CommandSummaryDto> commandSummaryDtoList =
-        allCommands.stream()
-            .map(
-                v ->
-                    CommandSummaryDto.builder()
-                        .id(v.getId().toString())
-                        .name(v.getName())
-                        .description(v.getDescription())
-                        .usage(v.getUsage())
-                        .category(v.getCategory())
-                        .createdAt(v.getCreatedAt().toInstant(ZoneOffset.UTC)) // ISO zone 타임으로 반환
-                        .updatedAt(v.getUpdatedAt().toInstant(ZoneOffset.UTC))
-                        .build())
-            .toList();
-    return new CommandListResponseDto(commandSummaryDtoList);
+    // ISO zone 타임으로 반환
+    return allCommands.stream()
+        .map(
+            v ->
+                CommandSummaryDto.builder()
+                    .id(v.getId().toString())
+                    .name(v.getName())
+                    .description(v.getDescription())
+                    .usage(v.getUsage())
+                    .category(v.getCategory())
+                    .createdAt(v.getCreatedAt().toInstant(ZoneOffset.UTC)) // ISO zone 타임으로 반환
+                    .updatedAt(v.getUpdatedAt().toInstant(ZoneOffset.UTC))
+                    .build())
+        .toList();
   }
 
   public CommandDto getCommand(String commandId) {

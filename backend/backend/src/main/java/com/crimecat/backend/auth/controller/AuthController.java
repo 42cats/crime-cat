@@ -1,11 +1,22 @@
 package com.crimecat.backend.auth.controller;
 
+import com.crimecat.backend.auth.jwt.JwtTokenProvider;
+import com.crimecat.backend.auth.service.DiscordRedisTokenService;
+import com.crimecat.backend.auth.service.JwtBlacklistService;
+import com.crimecat.backend.auth.service.RefreshTokenService;
+import com.crimecat.backend.auth.util.TokenCookieUtil;
+import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.web.webUser.domain.WebUser;
+import com.crimecat.backend.web.webUser.repository.WebUserRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import com.crimecat.backend.auth.service.DiscordRedisTokenService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,18 +24,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.crimecat.backend.auth.jwt.JwtTokenProvider;
-import com.crimecat.backend.auth.service.JwtBlacklistService;
-import com.crimecat.backend.auth.service.RefreshTokenService;
-import com.crimecat.backend.auth.util.TokenCookieUtil;
-import com.crimecat.backend.web.webUser.domain.WebUser;
-import com.crimecat.backend.web.webUser.repository.WebUserRepository;
-
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
@@ -100,50 +99,43 @@ public class AuthController {
 
         String userId = jwtTokenProvider.getUserIdFromToken(accessToken);
         WebUser user = webUserRepository.findById(UUID.fromString(userId))
-                .orElseThrow(() -> new RuntimeException("유저 정보 없음"));
+                .orElseThrow(ErrorStatus.USER_NOT_FOUND::asControllerException);
 
-        log.info("🙋 [현재 로그인 유저 요청] ID={}, nickname={}", userId, user.getNickname());
-        return ResponseEntity.ok(Map.of(
-                "nickname", user.getNickname(),
-                "message", "인증 성공"
-        ));
+        Map<String, String> UserAuthInfo = getStringStringMap(user);
+
+        return ResponseEntity.ok(UserAuthInfo);
     }
 
 
     @PostMapping("/reissue")
     public ResponseEntity<?> reissue(HttpServletRequest request, HttpServletResponse response) {
-        log.info("♻️ [토큰 재발급 요청]");
         String refreshToken = TokenCookieUtil.getCookieValue(request, "RefreshToken");
-
+        // 1) 토큰이 없거나 검증 실패
         if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
-            log.warn("❌ [토큰 재발급 실패] RefreshToken 유효하지 않음");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("RefreshToken이 유효하지 않음");
+            TokenCookieUtil.clearAuthCookies(response);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body("RefreshToken이 유효하지 않음");
         }
 
         String userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
-        String storedToken = refreshTokenService.getRefreshToken(userId);
-        if (!refreshToken.equals(storedToken)) {
-            log.warn("❌ [토큰 재발급 실패] RefreshToken 불일치");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("RefreshToken 불일치");
+        String stored = refreshTokenService.getRefreshToken(userId);
+        // 2) 저장소 불일치 시 → 완전 세션 종료
+        if (!refreshToken.equals(stored)) {
+            // 2-1) 서버 저장소에서 리프레시 토큰 제거
+            refreshTokenService.deleteRefreshToken(userId);
+            // 2-2) 블랙리스트에 기록 (만료시간 계산)
+            long expiry = jwtTokenProvider.getRemainingTime(refreshToken);
+            jwtBlacklistService.blacklistToken(refreshToken, expiry);
+            // 2-3) 쿠키 삭제
+            TokenCookieUtil.clearAuthCookies(response);
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body("RefreshToken 불일치 – 재로그인 필요");
         }
-
         WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
-                .orElseThrow(() -> new RuntimeException("유저 정보 없음"));
-
-        String newAccessToken = jwtTokenProvider.createAccessToken(userId, webUser.getNickname(),webUser.getDiscordUserSnowflake());
-        String newRefreshToken = jwtTokenProvider.createRefreshToken(userId);
-        refreshTokenService.saveRefreshToken(userId, newRefreshToken);
-        log.info("✅ [새 토큰 발급 완료]");
-
-        TokenCookieUtil.clearAuthCookies(response);
-        response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createAccessCookie(newAccessToken));
-        response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createRefreshCookie(newRefreshToken));
-        log.info("🍪 [쿠키 설정 완료]");
-
-        return ResponseEntity.ok(Map.of(
-                "nickname", webUser.getNickname(),
-                "message", "토큰 갱신 성공"
-        ));
+                .orElseThrow(ErrorStatus.USER_NOT_FOUND::asControllerException);
+        Map<String, String> userAuthInfo = getStringStringMap(webUser);
+        return ResponseEntity.ok(userAuthInfo);
     }
 
     @PostMapping("/logout")
@@ -173,4 +165,22 @@ public class AuthController {
                 "message", "로그아웃 성공"
         ));
     }
+    private static Map<String, String> getStringStringMap(WebUser user) {
+        Map<String,String> resp  = new HashMap<>();
+        // 필수 값
+        resp.put("id", user.getId().toString());
+        resp.put("nickname", user.getNickname());
+        resp.put("profile_image_path", user.getProfileImagePath());
+        resp.put("setting", user.getSettings());
+        resp.put("bio", user.getBio());
+        resp.put("role", user.getRole().name());
+//        resp.put("is_active", user.getIsActive().toString());
+//        resp.put("last_login_at",user.getLastLoginAt().toString());
+
+        // Optional 값은 null 체크 후에만 put
+        if (user.getSocialLinks() != null) {
+            resp.put("social_links", user.getSocialLinks());
+        }
+        return resp;
+        }
 }

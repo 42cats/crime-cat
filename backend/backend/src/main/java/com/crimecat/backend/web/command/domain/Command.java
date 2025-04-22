@@ -4,10 +4,11 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -16,12 +17,14 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Entity
 @Table(name = "commands")
 @EntityListeners(AuditingEntityListener.class)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Data
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class Command {
 
   @Id
-  @UuidGenerator
+  @GeneratedValue
+  @JdbcTypeCode(SqlTypes.BINARY)
   @Column(name = "id", columnDefinition = "BINARY(16)", nullable = false, updatable = false)
   private UUID id;
 
@@ -31,7 +34,7 @@ public class Command {
   @Column(name = "description", columnDefinition = "TEXT", nullable = false)
   private String description;
 
-  @Column(name = "usage", length = 255, nullable = false)
+  @Column(name = "usageExample", length = 255, nullable = false)
   private String usage;
 
   @Column(name = "category", length = 100, nullable = false)

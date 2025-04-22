@@ -322,6 +322,11 @@ CREATE TABLE IF NOT EXISTS `group_items` (
     FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+/*
+
+    webUser TABLE
+
+*/
 CREATE TABLE `web_users` (
     `id` BINARY(16) NOT NULL COMMENT 'UUID 기반 기본키',
 
@@ -358,6 +363,12 @@ ENGINE = InnoDB
 DEFAULT CHARSET = utf8mb4
 COLLATE = utf8mb4_unicode_ci;
 
+
+/*
+
+    users
+
+*/
 CREATE TABLE `users` (
     `id`                BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     `web_user_id`       BINARY(16) DEFAULT NULL COMMENT '웹 유저 아이디',
@@ -372,3 +383,46 @@ CREATE TABLE `users` (
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci
   COMMENT '통합 유저 테이블';
+
+
+/*
+
+    commands
+    
+*/
+CREATE TABLE `commands` (
+  `id` BINARY(16) NOT NULL
+    COMMENT '고유 식별자(UUID, 16바이트 이진 저장) – 애플리케이션에서 UNHEX(REPLACE(UUID(),"-",""))로 삽입',
+  
+  `name` VARCHAR(255) NOT NULL
+    COMMENT '명령어 이름(유니크, 예: "/계산")',
+
+  `description` TEXT NOT NULL
+    COMMENT '명령어 설명(간단한 안내 문구)',
+
+  `usage` VARCHAR(255) NOT NULL
+    COMMENT '사용법 예시(예: "/계산 계산식:[계산식]")',
+
+  `category` VARCHAR(100) NOT NULL
+    COMMENT '카테고리(예: "유틸리티", "게임" 등)',
+
+  `required_permissions` JSON NOT NULL
+    COMMENT '필수 권한 목록(JSON 배열, 예: ["공통"])',
+
+  `content` TEXT NOT NULL
+    COMMENT '명령어 상세 내용(Markdown 등으로 저장)',
+
+  `created_at` DATETIME(6) NOT NULL
+    DEFAULT CURRENT_TIMESTAMP(6)
+    COMMENT '레코드 생성 시각(UTC, 자동 설정)',
+
+  `updated_at` DATETIME(6) NOT NULL
+    DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
+    COMMENT '레코드 최종 수정 시각(UTC, 자동 갱신)',
+
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UK_commands_name` (`name`)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_general_ci
+  COMMENT='디스코드 명령어 정보 저장 테이블';
