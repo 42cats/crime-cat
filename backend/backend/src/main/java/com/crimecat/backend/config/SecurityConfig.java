@@ -1,5 +1,11 @@
 package com.crimecat.backend.config;
 
+import com.crimecat.backend.auth.filter.DiscordBotTokenFilter;
+import com.crimecat.backend.auth.filter.JwtAuthenticationFilter;
+import com.crimecat.backend.auth.filter.OAuth2TokenRefreshFilter;
+import com.crimecat.backend.auth.handler.CustomOAuth2SuccessHandler;
+import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -10,14 +16,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.crimecat.backend.auth.filter.JwtAuthenticationFilter;
-import com.crimecat.backend.auth.filter.OAuth2TokenRefreshFilter;
-import com.crimecat.backend.auth.handler.CustomOAuth2SuccessHandler;
-import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
-
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-
 @RequiredArgsConstructor
 @Configuration
 @EnableWebSecurity
@@ -26,6 +24,7 @@ public class SecurityConfig {
 
     private final DiscordOAuth2UserService discordOAuth2UserService; // ✅ 생성자 주입
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final DiscordBotTokenFilter discordBotTokenFilter;
     private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
     private final ServiceUrlConfig serviceUrlConfig;
 
@@ -43,7 +42,6 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType("application/json");
                             response.getWriter().write("{\"error\": \"Unauthorized\"}");
                         })
@@ -57,6 +55,8 @@ public class SecurityConfig {
                         )
 //                        .failureUrl("http://localhost:5173/failed")
                 )
+                .addFilterBefore(discordBotTokenFilter,
+                    UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(oAuth2TokenRefreshFilter,

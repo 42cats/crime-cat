@@ -30,7 +30,10 @@ public class OAuth2TokenRefreshFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-
+        if (request.getRequestURI().startsWith("/bot/v1/")){
+            filterChain.doFilter(request, response);
+            return;
+        }
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication != null &&

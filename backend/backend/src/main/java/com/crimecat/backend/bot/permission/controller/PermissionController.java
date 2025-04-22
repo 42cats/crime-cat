@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("v1/bot/permissions")
+@RequestMapping("/bot/v1/permissions")
 public class PermissionController {
 
 	private final PermissionService permissionService;
