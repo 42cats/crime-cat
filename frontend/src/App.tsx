@@ -15,6 +15,7 @@ import DashboardLayout from "@/layout/DashboardLayout";
 // Main Pages
 import Index from "@/pages/Index";
 import Commands from "@/pages/Commands";
+import CommandDetail from "@/pages/CommandDetail";
 import CreateCommand from "@/pages/CreateCommand";
 import EditCommand from "@/pages/EditCommand";
 import Themes from "@/pages/Themes";
@@ -50,6 +51,7 @@ const App = () => (
               <Route element={<MainLayout />}>
                 <Route path="/" element={<Index />} />
                 <Route path="/commands" element={<Commands />} />
+                <Route path="/commands/:id" element={<CommandDetail />} />
                 <Route path="/commands/new"
                        element={<PrivateRoute allowedRoles={['ADMIN', 'MANAGER']}>
                                   <CreateCommand />

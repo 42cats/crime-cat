@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Command } from '@/lib/types';
-import { Search, ChevronDown, MessageSquareCode } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import MarkdownRenderer from '@/components/MarkdownRenderer';
 import {
   Card,
   CardContent,
@@ -16,18 +15,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { commandsService } from '@/api/commandsService';
-import { useQueryClient } from '@tanstack/react-query';
-import { useAuth } from "@/hooks/useAuth";
 
 interface CommandListProps {
   commands: Command[];
@@ -35,10 +23,7 @@ interface CommandListProps {
 
 const CommandList: React.FC<CommandListProps> = ({ commands }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCommand, setSelectedCommand] = useState<Command | null>(null);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { hasRole } = useAuth();
 
   const categories = ['전체', ...new Set(commands.map(cmd => cmd.category))];
 
@@ -49,17 +34,6 @@ const CommandList: React.FC<CommandListProps> = ({ commands }) => {
       const matchesCategory = category === '전체' || cmd.category === category;
       return matchesSearch && matchesCategory;
     });
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
-    try {
-      await commandsService.deleteCommand(id);
-      queryClient.invalidateQueries({ queryKey: ['commands'] });
-      setSelectedCommand(null);
-    } catch (err) {
-      console.error('삭제 실패:', err);
-    }
   };
 
   return (
@@ -91,7 +65,11 @@ const CommandList: React.FC<CommandListProps> = ({ commands }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredCommands(category).length > 0 ? (
                 filteredCommands(category).map((command) => (
-                  <Card key={command.id} className="card-hover overflow-hidden cursor-pointer" onClick={() => setSelectedCommand(command)}>
+                  <Card
+                    key={command.id}
+                    className="card-hover overflow-hidden cursor-pointer"
+                    onClick={() => navigate(`/commands/${command.id}`)}
+                  >
                     <CardHeader className="pb-2">
                       <CardTitle className="flex justify-between items-start">
                         <span className="text-lg">/{command.name}</span>
@@ -108,13 +86,6 @@ const CommandList: React.FC<CommandListProps> = ({ commands }) => {
                           {command.usage}
                         </code>
                       </div>
-                      {command.content && (
-                        <div className="flex items-center text-xs text-muted-foreground mt-3">
-                          <MessageSquareCode className="h-3.5 w-3.5 mr-1" />
-                          <span>자세한 설명 보기</span>
-                          <ChevronDown className="h-3.5 w-3.5 ml-1" />
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
                 ))
@@ -127,75 +98,6 @@ const CommandList: React.FC<CommandListProps> = ({ commands }) => {
           </TabsContent>
         ))}
       </Tabs>
-
-      {/* 명령어 상세 모달 */}
-      <Dialog open={!!selectedCommand} onOpenChange={(open) => !open && setSelectedCommand(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          {selectedCommand && (
-            <>
-              <DialogHeader className="relative">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <DialogTitle className="text-2xl font-bold">/{selectedCommand.name}</DialogTitle>
-                    <DialogDescription className="text-base text-muted-foreground">
-                      {selectedCommand.description}
-                    </DialogDescription>
-                  </div>
-                  {hasRole(['ADMIN', 'MANAGER']) && (
-                  <div className="flex gap-2 mt-1 -translate-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                      navigate(`/commands/edit/${selectedCommand.id}`);
-                      }}
-                    >
-                      수정
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(selectedCommand.id)}
-                    >
-                      삭제
-                    </Button>
-                  </div>
-                  )}
-                </div>
-              </DialogHeader>
-
-              <div className="space-y-4 mt-4">
-                <div>
-                  <h3 className="text-sm font-medium mb-2">사용법:</h3>
-                  <code className="p-3 rounded bg-secondary text-sm block overflow-x-auto">
-                    {selectedCommand.usage}
-                  </code>
-                </div>
-
-                {selectedCommand.requiredPermissions.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-medium mb-2">필요 권한:</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedCommand.requiredPermissions.map(perm => (
-                        <span key={perm} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-md">
-                          {perm}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {selectedCommand.content && (
-                  <div className="mt-6">
-                    <h3 className="text-sm font-medium mb-3">명령어 설명:</h3>
-                    <MarkdownRenderer content={selectedCommand.content} />
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
