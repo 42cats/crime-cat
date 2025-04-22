@@ -25,6 +25,7 @@ public class WebUserService {
 
     private final WebUserRepository webUserRepository;
     private final UserRepository userRepository;
+    private final DiscordUserRepository discordUserRepository;
 
     /**
      * OAuth 로그인 시 사용자 정보를 기준으로 신규 생성 또는 기존 유저 반환
@@ -56,7 +57,14 @@ public class WebUserService {
 
             log.info("📦 [신규 유저 객체 생성] {}", newUser);
             newUser = webUserRepository.save(newUser);
-            userRepository.save(User.builder().webUser(newUser).build());
+            User u = User.builder().webUser(newUser).build();
+            Optional<DiscordUser> discordUser = discordUserRepository.findBySnowflake(discordUserId);
+            if (discordUser.isPresent()) {
+                u.setDiscordUser(discordUser.get());
+                u = userRepository.findByDiscordUserId(discordUser.get()).orElse(u);
+                u.setWebUser(newUser);
+            }
+            userRepository.save(u);
             return newUser;
         });
 

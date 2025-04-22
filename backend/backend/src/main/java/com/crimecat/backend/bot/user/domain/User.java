@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "USERS")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Builder
@@ -28,10 +28,12 @@ public class User {
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
+    @Setter
     @JoinColumn(name = "WEB_USER_ID", referencedColumnName = "ID")
     @ManyToOne(fetch = FetchType.LAZY)
     private WebUser webUser;
 
+    @Setter
     @JoinColumn(name = "DISCORD_USER_ID", referencedColumnName = "ID")
     @ManyToOne(fetch = FetchType.LAZY)
     private DiscordUser discordUser;
@@ -43,4 +45,5 @@ public class User {
     @LastModifiedDate
     @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
+
 }

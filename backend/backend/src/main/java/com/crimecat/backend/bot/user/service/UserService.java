@@ -38,11 +38,14 @@ import com.crimecat.backend.bot.user.repository.UserRepository;
 import com.crimecat.backend.web.gameHistory.domain.GameHistory;
 import com.crimecat.backend.web.gameHistory.dto.IGameHistoryRankingDto;
 import com.crimecat.backend.web.gameHistory.service.GameHistoryQueryService;
+import com.crimecat.backend.web.webUser.domain.WebUser;
+import com.crimecat.backend.web.webUser.repository.WebUserRepository;
 import io.micrometer.common.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -73,6 +76,7 @@ public class UserService {
 	private final GuildQueryService guildQueryService;
 
 	private final UserRepository userRepository;
+	private final WebUserRepository webUserRepository;
 
 
 	@Transactional(readOnly = true)
@@ -91,6 +95,12 @@ public class UserService {
 		if (user == null) {
 			user = discordUserQueryService.saveUser(DiscordUser.of(userSnowflake, userName, userAvatar));
 			User u = User.builder().discordUser(user).build();
+			Optional<WebUser> webUser = webUserRepository.findWebUserByDiscordUserSnowflake(userSnowflake);
+			if (webUser.isPresent()) {
+				u.setWebUser(webUser.get());
+				u = userRepository.findByWebUserId(u.getWebUser()).orElse(u);
+				u.setDiscordUser(user);
+			}
 			userRepository.save(u);
 			message = "User registered";
 		}
