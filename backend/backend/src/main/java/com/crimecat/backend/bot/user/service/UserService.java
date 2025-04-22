@@ -7,6 +7,7 @@ import com.crimecat.backend.bot.permission.domain.Permission;
 import com.crimecat.backend.bot.permission.service.PermissionService;
 import com.crimecat.backend.bot.point.service.PointHistoryService;
 import com.crimecat.backend.bot.user.domain.DiscordUser;
+import com.crimecat.backend.bot.user.domain.User;
 import com.crimecat.backend.bot.user.domain.UserPermission;
 import com.crimecat.backend.bot.user.dto.TotalGuildRankingByPlayCountDto;
 import com.crimecat.backend.bot.user.dto.TotalUserRankingByMakerDto;
@@ -33,6 +34,7 @@ import com.crimecat.backend.bot.user.dto.UserRankingFailedResponseDto;
 import com.crimecat.backend.bot.user.dto.UserRankingResponseDto;
 import com.crimecat.backend.bot.user.dto.UserRankingSuccessResponseDto;
 import com.crimecat.backend.bot.user.dto.UserResponseDto;
+import com.crimecat.backend.bot.user.repository.UserRepository;
 import com.crimecat.backend.web.gameHistory.domain.GameHistory;
 import com.crimecat.backend.web.gameHistory.dto.IGameHistoryRankingDto;
 import com.crimecat.backend.web.gameHistory.service.GameHistoryQueryService;
@@ -70,6 +72,8 @@ public class UserService {
 	private final GuildService guildService;
 	private final GuildQueryService guildQueryService;
 
+	private final UserRepository userRepository;
+
 
 	@Transactional(readOnly = true)
 	public DiscordUser findUserBySnowflake(String userSnowflake) {
@@ -86,6 +90,8 @@ public class UserService {
 		DiscordUser user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
 			user = discordUserQueryService.saveUser(DiscordUser.of(userSnowflake, userName, userAvatar));
+			User u = User.builder().discordUser(user).build();
+			userRepository.save(u);
 			message = "User registered";
 		}
 
