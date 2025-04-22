@@ -471,7 +471,7 @@ CREATE TABLE `maker_teams` (
 CREATE TABLE `maker_team_members` (
 `id`         BINARY(16) PRIMARY KEY,
 `team_id`    BINARY(16),
-`name`       VARCHAR(20),
+`name`       VARCHAR(50),
 `user_id`    BINARY(16),
 
 CONSTRAINT `fk_team_id` FOREIGN KEY (`team_id`) REFERENCES `maker_teams`(`id`)
@@ -505,7 +505,7 @@ CREATE TABLE `game_themes` (
     `difficulty`        INT COMMENT '난이도',
     `is_public`         BOOLEAN DEFAULT TRUE COMMENT '공개 여부',
     `is_deleted`        BOOLEAN DEFAULT FALSE COMMENT '소프트 삭제 여부',
-    `type`              ENUM('ESCAPE_ROOM', 'MURDER_MYSTERY', 'CRIMESCENE', 'REALWORLD') NOT NULL,
+    `type`              ENUM('CRIMESCENE', 'ESCAPE_ROOM', 'MURDER_MYSTERY', 'REALWORLD') NOT NULL,
     `created_at`        DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at`        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
