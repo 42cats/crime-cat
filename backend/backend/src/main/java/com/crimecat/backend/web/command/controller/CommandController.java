@@ -1,9 +1,10 @@
 package com.crimecat.backend.web.command.controller;
 
 import com.crimecat.backend.web.command.dto.CommandDto;
-import com.crimecat.backend.web.command.dto.CommandListResponseDto;
 import com.crimecat.backend.web.command.dto.CommandRequestDto;
+import com.crimecat.backend.web.command.dto.CommandSummaryDto;
 import com.crimecat.backend.web.command.service.CommandService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -25,7 +26,7 @@ public class CommandController {
 
   private final CommandService commandService;
   @GetMapping("")
-  public ResponseEntity<CommandListResponseDto> getCommandsList(){
+  public ResponseEntity<List<CommandSummaryDto>> getCommandsList(){
     return ResponseEntity.ok(commandService.getCommandsList());
   }
 
