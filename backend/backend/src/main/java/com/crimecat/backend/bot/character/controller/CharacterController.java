@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("v1/bot/guilds")
+@RequestMapping("/bot/v1/guilds")
 @RequiredArgsConstructor
 public class CharacterController {
 

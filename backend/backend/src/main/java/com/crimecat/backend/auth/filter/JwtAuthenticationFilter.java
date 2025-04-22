@@ -37,6 +37,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
+        if (request.getRequestURI().startsWith("/bot/v1/")){
+            filterChain.doFilter(request, response);
+            return;
+        }
         if (request.getRequestURI().startsWith("/login/oauth2/")) {
             filterChain.doFilter(request, response);
             return;
