@@ -61,7 +61,7 @@ public class WebUserService {
             Optional<DiscordUser> discordUser = discordUserRepository.findBySnowflake(discordUserId);
             if (discordUser.isPresent()) {
                 u.setDiscordUser(discordUser.get());
-                u = userRepository.findByDiscordUserId(discordUser.get()).orElse(u);
+                u = userRepository.findByDiscordUser(discordUser.get()).orElse(u);
                 u.setWebUser(newUser);
             }
             userRepository.save(u);
