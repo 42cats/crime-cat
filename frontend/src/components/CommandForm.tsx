@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import MDEditor, { commands, EditorContext } from '@uiw/react-md-editor';
+import { useTheme } from '@/hooks/useTheme';
 import { Command, CommandInput } from '@/lib/types';
 import PageTransition from '@/components/PageTransition';
 
@@ -36,6 +37,7 @@ const CommandForm: React.FC<CommandFormProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
+  const { theme } = useTheme();
   const [name, setName] = useState(initialData.name || '');
   const [description, setDescription] = useState(initialData.description || '');
   const [usage, setUsage] = useState(initialData.usage || '');
@@ -129,7 +131,7 @@ const CommandForm: React.FC<CommandFormProps> = ({
 
         <div>
           <Label className="font-bold mb-1 block">본문 내용 *</Label>
-          <div data-color-mode="light">
+          <div data-color-mode={theme === 'dark' ? 'dark' : 'light'}>
             <div className="border rounded-md overflow-hidden">
               <MDEditor
                 value={content}

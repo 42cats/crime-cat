@@ -19,7 +19,7 @@ const CreateCommand: React.FC = () => {
   return (
     <CommandForm
       mode='create'
-      title='새 테마 작성'
+      title='새 명령어 작성'
       onSubmit={handleSubmit}
     />
   );
