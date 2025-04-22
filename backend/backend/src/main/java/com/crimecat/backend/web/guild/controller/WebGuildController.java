@@ -1,0 +1,48 @@
+package com.crimecat.backend.web.guild.controller;
+
+import com.crimecat.backend.web.guild.service.WebGuildService;
+import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
+import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.bot.guild.repository.GuildRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import com.crimecat.backend.web.webUser.domain.WebUser;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+
+@Slf4j
+@RestController
+@RequestMapping("/api/v1/auth/guilds")
+@RequiredArgsConstructor
+public class WebGuildController {
+
+    private final WebGuildService webGuildService;
+    private final GuildRepository guildRepository;
+
+    @GetMapping("")
+    public ResponseEntity<?>getGuildList() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
+        WebUser webUser = principal.getWebUser();
+        return ResponseEntity.ok(webGuildService.guildBotInfoDTOS(webUser));
+    }
+
+    @GetMapping("/channels/{guildSnowflake}")
+    public ResponseEntity<?>getGuildList(@PathVariable String guildSnowflake) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
+        WebUser webUser = principal.getWebUser();
+        boolean isOwner = guildRepository.existsBySnowflakeAndOwnerSnowflake(guildSnowflake, webUser.getDiscordUserSnowflake());
+        if (!isOwner) {
+            throw ErrorStatus.NOT_GUILD_OWNER.asControllerException(); // 해당길드의 오너가 아님
+        }
+        return ResponseEntity.ok(webGuildService.getGuildChannels(guildSnowflake));
+    }
+
+}

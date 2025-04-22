@@ -1,0 +1,72 @@
+package com.crimecat.backend.bot.guild.domain;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
+
+import com.crimecat.backend.bot.guild.dto.GuildMusicRequestDto;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "MUSICS")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
+public class Music {
+
+    @Id
+    @UuidGenerator
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(name = "ID", columnDefinition = "BINARY(16)")
+    private UUID id;
+
+    @Column(name = "GUILD_SNOWFLAKE", nullable = false)
+    private String guildSnowflake;
+
+    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", insertable = false, updatable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Guild guild;
+
+    @NotBlank
+    @Column(name = "TITLE", nullable = false)
+    private String title;
+
+    @NotBlank
+    @Column(name = "YOUTUBE_URL", nullable = false)
+    private String youtubeUrl;
+
+    @NotBlank
+    @Column(name = "THUMBNAIL", nullable = false)
+    private String thumbnail;
+
+    @NotBlank
+    @Column(name = "DURATION", nullable = false)
+    private String duration;
+
+    @NotNull
+    @Column(name = "CREATED_AT", nullable = false)
+    private LocalDateTime createdAt;
+
+    public Music(String guildSnowflake, GuildMusicRequestDto guildMusicRequestDto) {
+        this.guildSnowflake = guildSnowflake;
+        this.title = guildMusicRequestDto.getTitle();
+        this.youtubeUrl = guildMusicRequestDto.getUrl();
+        this.thumbnail = guildMusicRequestDto.getThumbnail();
+        this.duration = guildMusicRequestDto.getDuration();
+        this.createdAt = LocalDateTime.now();
+    }
+}

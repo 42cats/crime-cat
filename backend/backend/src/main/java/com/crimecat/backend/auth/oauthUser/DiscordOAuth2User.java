@@ -6,7 +6,7 @@ import java.util.Map;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.web.webUser.domain.WebUser;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
