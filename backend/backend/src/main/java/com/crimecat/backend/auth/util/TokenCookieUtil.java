@@ -68,8 +68,9 @@ public class TokenCookieUtil {
             .httpOnly(true)
             .secure(true)
             .path("/")
-            .maxAge(Duration.ofSeconds(ACCESS_TOKEN_EXPIRE_MINUTES))
+            .maxAge(Duration.ofMinutes(ACCESS_TOKEN_EXPIRE_MINUTES))
 //                .domain(appDomain) /// 개발시 제외 서비스시 활성
+            .sameSite("Strict")  // 또는 "Lax", "None"
             .build();
         return cookie.toString();
     }
@@ -82,6 +83,7 @@ public class TokenCookieUtil {
                 .path("/")
                 .maxAge(Duration.ofDays(REFRESH_TOKEN_EXPIRE_DAY))
 //                .domain(appDomain)/// 개발시 제외 서비스시 활성
+                .sameSite("Strict")  // 또는 "Lax", "None"
                 .build();
         return cookie.toString();
     }
