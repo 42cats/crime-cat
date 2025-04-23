@@ -12,6 +12,6 @@ public class PointHistoryService {
 	private final PointHistoryQueryService pointHistoryQueryService;
 
 	public void usePoint(User user, Permission permission, Integer permissionPrice) {
-		pointHistoryQueryService.usePoint(user, permission, permissionPrice);
+		pointHistoryQueryService.BuyPermission(user, permission, permissionPrice);
 	}
 }
