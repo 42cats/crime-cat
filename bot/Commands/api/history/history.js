@@ -2,7 +2,7 @@ const axios = require('axios');
 const { User, Guild } = require('discord.js');
 const dotenv = require('dotenv');
 dotenv.config();
-const BEARER_TOKEN = process.env.API_TOKEN;
+const BEARER_TOKEN = process.env.DISCORD_CLIENT_SECRET;
 const baseUrl = process.env.BASE_URL
 
 
@@ -20,9 +20,10 @@ async function addUserHistory({ id: userID }, { id: guildID }, characterName, cr
 		"userSnowflake": userID,  // discord user_id
 		"characterName": characterName,
 	}
-	if (!createdAt)
+	if (createdAt)
 		body.createdAt = toLocalISOString(createdAt);
 	try {
+		console.log(body, " .  ", createdAt);
 		const response = await axios.post(API_URL, body, {
 			headers: {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
@@ -31,7 +32,7 @@ async function addUserHistory({ id: userID }, { id: guildID }, characterName, cr
 		});
 		console.log('응답 데이터:', response.status, response.data);
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
@@ -50,7 +51,7 @@ async function getUserHistory(userId) {
 		console.log('응답 데이터:', response.status, response.data);
 		return response.data?.userGameHistoryDtos || [];
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return []; // ✅ 에러 발생 시에도 항상 빈 배열 반환
 	}
 }
@@ -70,7 +71,7 @@ async function getGmaePlayedUser(guildId, alarm = true) {
 		console.log('응답 데이터:', response.status, response.data);
 		return response.data?.users || [];
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return []; // ✅ 에러 발생 시에도 항상 빈 배열 반환
 	}
 }

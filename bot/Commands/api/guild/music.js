@@ -2,7 +2,7 @@ const axios = require('axios');
 const { User, Guild } = require('discord.js');
 const dotenv = require('dotenv');
 dotenv.config();
-const BEARER_TOKEN = process.env.API_TOKEN;
+const BEARER_TOKEN = process.env.DISCORD_CLIENT_SECRET;
 const baseUrl = process.env.BASE_URL
 
 /**
@@ -47,7 +47,7 @@ async function deleteGuildMusic(guildId, title) {
 		console.log('응답 데이터:', response.status, response.data);
 		return response.data;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 

@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 const { addUser } = require('../user/user');
 const { addUserHistory } = require('../history/history');
 dotenv.config();
-const BEARER_TOKEN = process.env.API_TOKEN;
+const BEARER_TOKEN = process.env.DISCORD_CLIENT_SECRET;
 const baseUrl = process.env.BASE_URL
 /**
  * 
@@ -33,7 +33,7 @@ async function addGuild({ id, name, ownerId, createdAt }) {
 			console.log("⛔ 이미 등록된 길드, 처리 생략");
 			return { status: 200, data: error.response.data.guild }; // ✅ 응답 모양 맞춰서 반환
 		}
-		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return null;
 	}
 }
@@ -54,7 +54,7 @@ async function guildMembersAdd(client, guild) {
 		console.log("Guild members inserted/updated successfully.");
 	}
 	catch (err) {
-		console.error("Error inserting users from guild:", err.response.data.message);
+		console.error("Error inserting users from guild:", err.response?.data?.message);
 	}
 }
 /**
@@ -71,7 +71,7 @@ async function deleteGuild(guildId) {
 		console.log('응답 데이터:', response.status, response.data, response.data.message);
 		return response.data.message;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return error.response.data.message;
 	}
 }

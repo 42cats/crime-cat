@@ -1,12 +1,15 @@
 const redis = require('redis');
 const { v4: uuidv4 } = require('uuid');
+const dotenv = require('dotenv');
+dotenv.config();
+const redisHost = process.env.REDIS_HOST;
 
 class RedisManager {
 	constructor() {
 		if (!RedisManager.instance) {
 			this.client = redis.createClient({
 				socket: {
-					host: 'redis', // Redis 컨테이너 이름 또는 호스트
+					host: redisHost, // Redis 컨테이너 이름 또는 호스트
 					port: 6379,    // Redis 기본 포트
 				},
 			});

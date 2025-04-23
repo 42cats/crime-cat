@@ -2,7 +2,7 @@ const axios = require('axios');
 const { User, Guild } = require('discord.js');
 const dotenv = require('dotenv');
 dotenv.config();
-const BEARER_TOKEN = process.env.API_TOKEN;
+const BEARER_TOKEN = process.env.DISCORD_CLIENT_SECRET;
 const baseUrl = process.env.BASE_URL
 
 

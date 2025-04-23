@@ -270,7 +270,7 @@ class GuildURLManager {
     }
     async getPermissionButton() {
         console.log("operators = ", this.operator?.user?.id);
-        const check = await isPermissionHas(this.operator?.user?.id, "LOCAL_MUSIC");
+        const check = await isPermissionHas(this.operator?.user?.id, "음악저장");
         if (!check) return [];
         const primeumRow = new ActionRowBuilder()
             .addComponents(

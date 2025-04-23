@@ -35,6 +35,7 @@ import com.crimecat.backend.bot.user.dto.UserRankingResponseDto;
 import com.crimecat.backend.bot.user.dto.UserRankingSuccessResponseDto;
 import com.crimecat.backend.bot.user.dto.UserResponseDto;
 import com.crimecat.backend.bot.user.repository.UserRepository;
+import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.web.gameHistory.domain.GameHistory;
 import com.crimecat.backend.web.gameHistory.dto.IGameHistoryRankingDto;
 import com.crimecat.backend.web.gameHistory.service.GameHistoryQueryService;
@@ -171,17 +172,17 @@ public class UserService {
 	public UserHasPermissionResponseDto checkUserHasPermissionByPermissionName(String userSnowflake,
 			String permissionName) {
 		if (StringUtils.isBlank(userSnowflake) || StringUtils.isBlank(permissionName)) {
-			return new UserHasPermissionResponseDto("Invalid request format");
+			throw ErrorStatus.INVALID_INPUT.asServiceException();
 		}
 
 		DiscordUser user = findUserBySnowflake(userSnowflake);
 		if (user == null) {
-			return new UserHasPermissionResponseDto("user not found");
+			throw ErrorStatus.USER_NOT_FOUND.asServiceException();
 		}
 
 		Permission permission = permissionService.findPermissionByPermissionName(permissionName);
 		if (permission == null) {
-			return new UserHasPermissionResponseDto("permission not found");
+			throw ErrorStatus.RESOURCE_NOT_FOUND.asServiceException();
 		}
 
 		UserPermission userPermissionByPermissionId = userPermissionService.getUserPermissionByPermissionId(
@@ -190,7 +191,7 @@ public class UserService {
 		if (userPermissionByPermissionId != null && LocalDateTime.now().isBefore(userPermissionByPermissionId.getExpiredAt())) {
 			return new UserHasPermissionResponseDto("Permission has");
 		}
-		return new UserHasPermissionResponseDto("not has Permission");
+    throw ErrorStatus.RESOURCE_NOT_FOUND.asServiceException();
 	}
 
 	/**
