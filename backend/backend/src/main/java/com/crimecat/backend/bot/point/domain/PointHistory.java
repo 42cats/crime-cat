@@ -13,6 +13,8 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -26,6 +28,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 @Getter
+@Builder
+@AllArgsConstructor
 public class PointHistory {
 
     @Id
@@ -34,10 +38,35 @@ public class PointHistory {
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @Column(name = "POINT", nullable = false)
-    private Integer point;
+    @JoinColumn(name = "USER_ID", referencedColumnName = "ID", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User user;
 
-    @Column(name = "USED_AT", nullable = false)
+    @Column(name = "TYPE", nullable = false)
+    private TransactionType type;
+
+    @Column(name = "AMOUNT", nullable = false)
+    private Integer amount;
+
+    @Column(name = "BALANCE_AFTER", nullable = false)
+    private Integer balanceAfter;
+
+    @Column(name = "ITEM_TYPE")
+    private ItemType itemType;
+
+    @JoinColumn(name = "ITEM_ID", referencedColumnName = "ID",nullable = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JdbcTypeCode(SqlTypes.BINARY)
+    private UUID itemId;
+    
+    @JoinColumn(name = "RELATED_USER_ID", referencedColumnName = "ID", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User relatedUserId;
+
+    @Column(name = "MEMO")
+    private String memo;
+
+    @Column(name = "CREATED_AT", nullable = false)
     @CreatedDate
     private LocalDateTime usedAt;
 

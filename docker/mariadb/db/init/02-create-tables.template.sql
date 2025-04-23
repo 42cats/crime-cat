@@ -264,25 +264,35 @@ CREATE TABLE IF NOT EXISTS `observations`
 
 
 /**
-  각 유저 별 기록 테이블
+  통합 포인트 히스토리
  */
-CREATE TABLE `point_histories`
-(
-    `id`                BINARY(16) NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
-    `user_snowflake`    VARCHAR(50) NOT NULL COMMENT 'discord user snowflake',
-    `permission_id`     BINARY(16) DEFAULT NULL COMMENT 'permission table 식별자',
-    `point`             INT NOT NULL COMMENT '입출 포인트',
-    `used_at`           TIMESTAMP NOT NULL COMMENT '포인트 입출 날짜',
-    CONSTRAINT `fk_point_histories_discord_users` FOREIGN KEY (`user_snowflake`) REFERENCES `discord_users`(`snowflake`)
-	    ON DELETE CASCADE
-		ON UPDATE CASCADE,
-    CONSTRAINT `fk_point_histories_permissions` FOREIGN KEY (`permission_id`) REFERENCES `permissions`(`id`)
-	    ON DELETE CASCADE
-		ON UPDATE CASCADE
-) ENGINE=InnoDB
-    DEFAULT CHARSET=utf8mb4
-    COLLATE=utf8mb4_unicode_ci
-    COMMENT='포인트 사용 기록 테이블';
+CREATE TABLE `point_histories` (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    user_id BINARY(16) NOT NULL, -- 포인트 주체 사용자 (users.id 참조)
+    
+    type ENUM('CHARGE', 'USE', 'GIFT', 'RECEIVE', 'REFUND', 'EXPIRE') NOT NULL,
+    
+    amount INT NOT NULL, -- 양수만 저장 (입출은 type으로 구분)
+    
+    balance_after INT NOT NULL, -- 이 거래 이후의 사용자 잔액
+
+    item_type ENUM('PERMISSION') NULL, -- 아이템의 타입 (확장 가능)
+
+    item_id BINARY(16) NULL, -- 사용한 아이템 ID 등 연결 가능
+
+    related_user_id BINARY(16) NULL, -- 선물 대상자 (GIFT or RECEIVE 시 사용)
+
+    memo VARCHAR(255), -- 관리용 메모/설명
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    -- ✅ 외래키 설정
+    CONSTRAINT fk_point_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_point_related_user FOREIGN KEY (related_user_id) REFERENCES users(id)
+    -- item_id는 다른 테이블 참조 여부에 따라 FK 추가 가능
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
 
 
 /*
