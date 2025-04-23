@@ -1,22 +1,24 @@
 package com.crimecat.backend.web.webUser.service;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-
+import com.crimecat.backend.auth.util.UserDailyCheckUtil;
 import com.crimecat.backend.bot.user.domain.DiscordUser;
 import com.crimecat.backend.bot.user.domain.User;
 import com.crimecat.backend.bot.user.repository.DiscordUserRepository;
 import com.crimecat.backend.bot.user.repository.UserRepository;
-import org.springframework.stereotype.Service;
-
 import com.crimecat.backend.web.webUser.LoginMethod;
 import com.crimecat.backend.web.webUser.UserRole;
 import com.crimecat.backend.web.webUser.domain.WebUser;
 import com.crimecat.backend.web.webUser.repository.WebUserRepository;
-
 import jakarta.transaction.Transactional;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
@@ -26,6 +28,7 @@ public class WebUserService {
     private final WebUserRepository webUserRepository;
     private final UserRepository userRepository;
     private final DiscordUserRepository discordUserRepository;
+    private final UserDailyCheckUtil userDailyCheckUtil;
 
     /**
      * OAuth 로그인 시 사용자 정보를 기준으로 신규 생성 또는 기존 유저 반환
@@ -79,5 +82,22 @@ public class WebUserService {
         user.setLastLoginAt(LocalDateTime.now());
         log.info("🎉 [OAuth 처리 완료] userId={}, nickname={}", user.getDiscordUserSnowflake(), user.getNickname());
         return user;
+    }
+
+    public ResponseEntity<Map<String, Object>> userDailyCheck(String userId) {
+        Optional<LocalDateTime> existing = userDailyCheckUtil.load(userId);
+
+        Map<String, Object> response = new HashMap<>();
+
+        if (existing.isEmpty()) {
+            userDailyCheckUtil.save(userId);
+            response.put("message", "출석 완료");
+            response.put("checkTime", LocalDateTime.now()); // 현재 시간 기준으로 출석 시각 반환
+            return ResponseEntity.ok(response);
+        } else {
+            response.put("message", "이미 출석하였습니다");
+            response.put("checkTime", existing.get());
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+        }
     }
 }
