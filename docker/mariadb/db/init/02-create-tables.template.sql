@@ -290,7 +290,7 @@ CREATE TABLE `point_histories` (
     -- ✅ 외래키 설정
     CONSTRAINT fk_point_user FOREIGN KEY (user_id) REFERENCES users(id),
     CONSTRAINT fk_point_related_user FOREIGN KEY (related_user_id) REFERENCES users(id)
-    -- item_id는 다른 테이블 참조 여부에 따라 FK 추가 가능
+    CREATE INDEX idx_point_histories_user_id ON point_histories(user_id);
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
 

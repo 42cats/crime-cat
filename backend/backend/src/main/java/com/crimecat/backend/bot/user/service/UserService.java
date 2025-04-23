@@ -166,7 +166,7 @@ public class UserService {
 		catch (IllegalStateException e) {
 				return new UserPermissionPurchaseFailedResponseDto(e.getMessage(), permissionPrice ,user.getPoint());
 		}
-		pointHistoryService.usePoint(user.getUser(), permission, permissionPrice);
+		pointHistoryService.buyPermission(user.getUser(), permission);
 
 		UserPermission userPermission = userPermissionService.getUserPermissionByPermissionId(user, permission.getId());
 		if (userPermission != null && LocalDateTime.now().isBefore(userPermission.getExpiredAt())) {
