@@ -182,9 +182,10 @@ public class AuthController {
         resp.put("setting", user.getSettings());
         resp.put("bio", user.getBio());
         resp.put("role", user.getRole().name());
-//        resp.put("is_active", user.getIsActive().toString());
-//        resp.put("last_login_at",user.getLastLoginAt().toString());
-
+        resp.put("is_active", user.getIsActive().toString());
+        resp.put("last_login_at",user.getLastLoginAt().toString());
+        resp.put("snowflake", user.getDiscordUserSnowflake());
+        resp.put("point", user.getPoint().toString());
         // Optional 값은 null 체크 후에만 put
         if (user.getSocialLinks() != null) {
             resp.put("social_links", user.getSocialLinks());
