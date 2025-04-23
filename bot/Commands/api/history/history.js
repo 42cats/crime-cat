@@ -23,7 +23,6 @@ async function addUserHistory({ id: userID }, { id: guildID }, characterName, cr
 	if (createdAt)
 		body.createdAt = toLocalISOString(createdAt);
 	try {
-		console.log(body, " .  ", createdAt);
 		const response = await axios.post(API_URL, body, {
 			headers: {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
