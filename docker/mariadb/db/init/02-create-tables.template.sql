@@ -374,6 +374,7 @@ CREATE TABLE `users` (
     `discord_snowflake` VARCHAR(50) UNIQUE COMMENT '디스코드 유저 snowflake',
     `web_user_id`       BINARY(16) DEFAULT NULL COMMENT '웹 유저 아이디',
     `point`             INT NOT NULL DEFAULT 0 COMMENT '보유 포인트',
+    `is_withdraw`       BOOLEAN NOT NULL DEFAULT FALSE COMMENT '탈퇴 여부',
     `discord_user_id`   BINARY(16) DEFAULT NULL COMMENT '디스코드 유저 아이디',
     `created_at`        DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '생성일',
     `updated_at`        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일',
@@ -385,6 +386,7 @@ CREATE TABLE `users` (
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci
   COMMENT '통합 유저 테이블';
+
 
 
 /*

@@ -60,7 +60,12 @@ public class WebUserService {
 
             log.info("📦 [신규 유저 객체 생성] {}", newUser);
             newUser = webUserRepository.save(newUser);
-            User u = User.builder().webUser(newUser).build();
+            User u = User.builder()
+                    .isWithdraw(false)
+                    .webUser(newUser)
+                    .point(0)
+                    .discordSnowflake(discordUserId)
+                    .build();
             Optional<DiscordUser> discordUser = discordUserRepository.findBySnowflake(discordUserId);
             if (discordUser.isPresent()) {
                 u.setDiscordUser(discordUser.get());
