@@ -26,7 +26,7 @@ public class JwtTokenProvider {
     private String secretKeyString;
 
     // 만료 시간 통일 (Access 1시간, Refresh 7일)
-    private final long accessTokenValidity = 1000L * 60 * 60;      // 1시간
+    private final long accessTokenValidity = 60* 1000L;      // 1시간
     private final long refreshTokenValidity = 1000L * 60 * 60 * 24 * 7; // 7일
 
     /**
