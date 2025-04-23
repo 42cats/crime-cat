@@ -23,12 +23,14 @@ public enum ErrorStatus {
     GROUP_NOT_FOUND("그룹을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),              // 404
     GROUP_NAME_NOT_FOUND("그룹을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),              // 404
     RESOURCE_NOT_FOUND("요청한 리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),   // 404
+    TEAM_NOT_FOUND("제작팀을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
     // ❌ 중복/충돌
     USER_ALREADY_EXISTS("이미 존재하는 사용자입니다.", HttpStatus.CONFLICT),         // 409
     GUILD_ALREADY_EXISTS("이미 존재하는 길드입니다.", HttpStatus.CONFLICT),          // 409
     GROUP_ALREADY_EXISTS("이미 존재하는 그룹 이름입니다.", HttpStatus.CONFLICT),      // 409
     EMAIL_ALREADY_REGISTERED("이미 등록된 이메일입니다.", HttpStatus.CONFLICT),      // 409
+    TEAM_MEMBER_ALREADY_REGISTERED("이미 등록된 멤버입니다.", HttpStatus.CONFLICT),
 
     // 🛑 잘못된 요청
     INVALID_INPUT("잘못된 요청입니다.", HttpStatus.BAD_REQUEST),    //400                 // 400
