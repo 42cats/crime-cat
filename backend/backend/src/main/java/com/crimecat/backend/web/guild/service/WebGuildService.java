@@ -1,99 +1,79 @@
 package com.crimecat.backend.web.guild.service;
 
-import com.crimecat.backend.web.guild.api.DiscordUserApiClient;
+import com.crimecat.backend.bot.guild.domain.Guild;
+import com.crimecat.backend.bot.guild.repository.GuildRepository;
+import com.crimecat.backend.web.guild.api.DiscordBotApi;
 import com.crimecat.backend.web.guild.dto.ApiGetGuildInfoDto;
 import com.crimecat.backend.web.guild.dto.ChannelDto;
 import com.crimecat.backend.web.guild.dto.GuildBotInfoDto;
 import com.crimecat.backend.web.guild.dto.GuildResponseDto;
-import com.crimecat.backend.bot.guild.domain.Guild;
-import com.crimecat.backend.bot.guild.repository.GuildRepository;
 import com.crimecat.backend.web.webUser.domain.WebUser;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.concurrent.*;
-import java.util.stream.IntStream;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class WebGuildService {
 
-    private final DiscordUserApiClient discordUserApiClient;
     private final GuildRepository guildRepository;
+    private final DiscordBotApi discordBotApi;
 
     public GuildResponseDto guildBotInfoDTOS(WebUser webUser) {
         String discordUserSnowflake = webUser.getDiscordUserSnowflake();
         List<Guild> guildList = guildRepository.findActiveGuildsByOwner(discordUserSnowflake);
         log.info("🎯 사용자 {}의 길드 목록: {}", discordUserSnowflake, guildList);
 
-        ExecutorService executor = Executors.newFixedThreadPool(3);
-        ConcurrentMap<String, GuildBotInfoDto> resultMap = new ConcurrentHashMap<>();
+        Map<String, GuildBotInfoDto> resultMap = new HashMap<>();
 
-        List<CompletableFuture<Void>> futures = IntStream.range(0, 4)
-                .mapToObj(botIndex -> CompletableFuture.runAsync(() -> {
-                    for (Guild guild : guildList) {
-                        String guildId = guild.getSnowflake();
-                        if (resultMap.containsKey(guildId)) continue;
+        for (Guild guild : guildList) {
+            String guildId = guild.getSnowflake();
 
-                        try {
-                            ApiGetGuildInfoDto apiGuildInfo = discordUserApiClient.getApiGetGuildInfoDto(botIndex, guildId);
-                            log.info("🌐 [응답] botIndex={} → {}", botIndex, apiGuildInfo);
+            try {
+                // ✅ 봇 토큰 인덱스 없이 단일 API 클라이언트 사용
+                ApiGetGuildInfoDto apiGuildInfo = discordBotApi.getGuildInfo(guildId).block(); // WebClient Mono → block()
 
-                            GuildBotInfoDto converted = convertToGuildBotInfo(apiGuildInfo, discordUserSnowflake);
-                            if (converted != null) {
-                                resultMap.putIfAbsent(guildId, converted);
-                                log.info("✅ [길드 변환 성공] guildId={}, botIndex={}", guildId, botIndex);
-                            } else {
-                                log.info("🚫 [오너 불일치] guildId={}, botIndex={}", guildId, botIndex);
-                            }
-                        } catch (Exception e) {
-                            log.warn("❌ [길드 정보 실패] guildId={}, botIndex={}, error={}", guildId, botIndex, e.toString());
-                        }
-                    }
-                }, executor))
-                .toList();
+                log.info("🌐 [응답] guildId={} → {}", guildId, apiGuildInfo);
 
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        executor.shutdown();
+                GuildBotInfoDto converted = convertToGuildBotInfo(apiGuildInfo, discordUserSnowflake);
+                if (converted != null) {
+                    resultMap.putIfAbsent(guildId, converted);
+                    log.info("✅ [길드 변환 성공] guildId={}", guildId);
+                } else {
+                    log.info("🚫 [오너 불일치] guildId={}", guildId);
+                }
+            } catch (Exception e) {
+                log.warn("❌ [길드 정보 실패] guildId={}, error={}", guildId, e.toString());
+            }
+        }
 
-        return new GuildResponseDto(resultMap.values().stream().toList());
+        return new GuildResponseDto(new ArrayList<>(resultMap.values()));
     }
+
 
 
     public List<ChannelDto> getGuildChannels(String guildSnowflake) {
-        ExecutorService executor = Executors.newFixedThreadPool(4);
-        CompletableFuture<List<ChannelDto>> resultFuture = new CompletableFuture<>();
-
-        for (int i = 0; i < 4; i++) {
-            final int botIndex = i;
-            executor.submit(() -> {
-                try {
-                    List<ChannelDto> result = discordUserApiClient.getGuildChannels(botIndex, guildSnowflake);
-                    if (result != null && !result.isEmpty()) {
-                        log.info("✅ [채널 정보 획득 성공] botIndex={}, guildId={}", botIndex, guildSnowflake);
-                        resultFuture.complete(result);
-                    } else {
-                        log.warn("⚠️ [빈 채널 리스트] botIndex={}, guildId={}", botIndex, guildSnowflake);
-                    }
-                } catch (Exception e) {
-                    log.warn("❌ [채널 정보 실패] botIndex={}, guildId={}, error={}", botIndex, guildSnowflake, e.toString());
-                }
-            });
-        }
-
         try {
-            List<ChannelDto> channels = resultFuture.get(5, TimeUnit.SECONDS);
-            executor.shutdownNow();
-            return channels;
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            log.error("⛔ [모든 봇 실패 또는 시간 초과] guildId={}, error={}", guildSnowflake, e.toString());
-            executor.shutdownNow();
+            List<ChannelDto> result = discordBotApi.getGuildChannels(guildSnowflake); // botIndex 제거
+            if (result != null && !result.isEmpty()) {
+                log.info("✅ [채널 정보 획득 성공] guildId={}", guildSnowflake);
+                return result;
+            } else {
+                log.warn("⚠️ [빈 채널 리스트] guildId={}", guildSnowflake);
+                return List.of(); // 빈 리스트 반환
+            }
+        } catch (Exception e) {
+            log.error("❌ [채널 정보 조회 실패] guildId={}, error={}", guildSnowflake, e.toString());
             return List.of(); // 실패 시 빈 리스트 반환
         }
     }
+
 
     private GuildBotInfoDto convertToGuildBotInfo(ApiGetGuildInfoDto info, String currentUserId) {
         if (!info.getOwnerId().equals(currentUserId)) {
