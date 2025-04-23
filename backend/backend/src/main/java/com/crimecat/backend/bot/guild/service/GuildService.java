@@ -1,25 +1,25 @@
 package com.crimecat.backend.bot.guild.service;
 
 import com.crimecat.backend.bot.guild.domain.Guild;
-
 import com.crimecat.backend.bot.guild.dto.GuildDto;
 import com.crimecat.backend.bot.guild.dto.GuildResponseDto;
 import com.crimecat.backend.bot.guild.dto.MessageDto;
 import com.crimecat.backend.bot.guild.exception.GuildAlreadyExistsException;
 import com.crimecat.backend.bot.guild.repository.GuildRepository;
-import com.crimecat.backend.bot.user.service.DiscordUserQueryService;
+import com.crimecat.backend.bot.user.domain.User;
+import com.crimecat.backend.bot.user.repository.UserRepository;
+import com.crimecat.backend.exception.ErrorStatus;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class GuildService {
     private final GuildRepository guildRepository;
-    private final DiscordUserQueryService discordUserQueryService;
+    private final UserRepository userRepository;
 
     // TODO: MessageDto 안 쓰고 생성과 복구를 구별할 방법?
 
@@ -29,9 +29,8 @@ public class GuildService {
      * @return 길드 생성 정보 반환 MessageDto
      */
     public MessageDto<GuildResponseDto> addGuild(GuildDto guildDto) {
-        if (discordUserQueryService.findByUserSnowflake(guildDto.getOwnerSnowflake()) == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No user");
-        }
+        User user = userRepository.findByDiscordSnowflake(guildDto.getOwnerSnowflake()).orElseThrow(
+            ErrorStatus.USER_NOT_FOUND::asServiceException);
         Guild guild = guildRepository.findBySnowflake(guildDto.getSnowflake()).orElse(null);
         if (guild != null) {
             if (!guild.isWithdraw()) {
@@ -42,7 +41,7 @@ public class GuildService {
             guildRepository.save(guild);
             return new MessageDto<>("Guild restored successfully", new GuildResponseDto(new GuildDto(guild)));
         }
-        guild = Guild.of(guildDto);
+        guild = Guild.of(guildDto,user);
         guildRepository.save(guild);
         return new MessageDto<>("Guild created successfully", new GuildResponseDto(new GuildDto(guild)));
     }

@@ -1,5 +1,8 @@
 package com.crimecat.backend.web.webUser.domain;
 
+import com.crimecat.backend.bot.user.domain.User;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.OneToOne;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -57,6 +60,9 @@ public class WebUser implements UserDetails {
     // ✅ 이메일 정보 및 인증 여부
     @Column(name = "email", unique = true, length = 100)
     private String email;
+
+    @OneToOne(mappedBy = "webUser", fetch = FetchType.LAZY)
+    private User user;
 
     @Builder.Default
     @Column(name = "email_verified", nullable = false)
