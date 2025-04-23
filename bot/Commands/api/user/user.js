@@ -2,7 +2,7 @@ const axios = require('axios');
 const { User, Guild } = require('discord.js');
 const dotenv = require('dotenv');
 dotenv.config();
-const BEARER_TOKEN = process.env.API_TOKEN;
+const BEARER_TOKEN = process.env.DISCORD_CLIENT_SECRET;
 const baseUrl = process.env.BASE_URL
 
 
@@ -30,7 +30,7 @@ async function addUser(user) {
 		});
 		console.log('응답 데이터:', response.data.message);
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
@@ -57,7 +57,7 @@ async function addUserPermisson(user, permissionName) {
 		console.log('응답 데이터:', response.data.message);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
@@ -77,7 +77,7 @@ async function getUserRank(userId) {
 		console.log('응답 데이터:', response.data.message, response.data);
 		return response.data;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
@@ -97,7 +97,7 @@ async function getUserPermissons(userId) {
 		console.log('응답 데이터 유저 퍼미션:', response.data?.permissions);
 		return response?.data?.permissions ?? [];
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return [];
 	}
 }
@@ -117,7 +117,7 @@ async function getUserDbInfo(userId) {
 		console.log('응답 데이터:', response.data.message, response.data);
 		return response.data.user ?? {};
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return {}
 	}
 }
@@ -139,7 +139,7 @@ async function setUserAlarm(userId, alarm = null, avatarUrl = null) {
 		console.log('응답 데이터:', response.data.message, response.data);
 		return response?.data?.message ?? "알림 설정 실패";
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return error.response.data.message;
 	}
 }

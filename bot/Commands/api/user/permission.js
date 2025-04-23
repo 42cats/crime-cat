@@ -2,7 +2,7 @@ const axios = require('axios');
 const { User, Guild } = require('discord.js');
 const dotenv = require('dotenv');
 dotenv.config();
-const BEARER_TOKEN = process.env.API_TOKEN;
+const BEARER_TOKEN = process.env.DISCORD_CLIENT_SECRET;
 const baseUrl = process.env.BASE_URL
 
 /**
@@ -12,42 +12,20 @@ const baseUrl = process.env.BASE_URL
  * @returns {Boolean} 권한 여부
  */
 async function isPermissionHas(userId, permissionName) {
-	const API_URL = `${baseUrl}/bot/v1/users/${userId}/permission/${encodeURI(permissionName)}`;
+	const API_URL = `${baseUrl}/bot/v1/users/${userId}/permission?permission_name=${encodeURI(permissionName)}`;
 	try {
 		const response = await axios.get(API_URL, {
 			headers: {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
 		});
-		console.log('응답 데이터:', response.status);
+		console.log('응답 데이터:', response.data.message);
 		return response.status === 200;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return false; // ✅ 반드시 false 반환
 	}
 }
-/**
- * 특정 유저가 해당 권한을 가지고 있는지 확인합니다.
- * @param {String} userId 
- * @param {String} permissionName 
- * @returns {Boolean} 권한 여부
- */
-async function isPermissionHas(userId, permissionName) {
-	const API_URL = `${baseUrl}/bot/v1/users/${userId}/permission/${encodeURI(permissionName)}`;
-	try {
-		const response = await axios.get(API_URL, {
-			headers: {
-				'Authorization': `Bearer ${BEARER_TOKEN}`
-			}
-		});
-		console.log('응답 데이터:', response.status);
-		return response.status === 200;
-	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response.data.message);
-		return false; // ✅ 반드시 false 반환
-	}
-}
-
 
 
 async function getPermissons() {
@@ -94,7 +72,7 @@ async function addPermisson(name, price, duration = 28) {
 		console.log('응답 데이터:', response.data.message, response.data);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
@@ -124,7 +102,7 @@ async function editPermisson(name, price, duration = 28) {
 		console.log('응답 데이터:', response.data.message, response.data);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
@@ -143,7 +121,7 @@ async function deletePermisson(name) {
 		console.log('응답 데이터:', response.data.message, response.data);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error.response.data : error.response.data.message);
+		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
