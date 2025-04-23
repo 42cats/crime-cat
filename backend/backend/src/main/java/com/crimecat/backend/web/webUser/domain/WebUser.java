@@ -162,4 +162,14 @@ public class WebUser implements UserDetails {
     public boolean isEnabled() {
         return Boolean.TRUE.equals(isActive);
     }
+
+    public Integer getPoint() {
+        return user.getPoint();
+    }
+
+    public void subtractPoint(int amount) {
+        this.user.subtractPoint(amount);
+    }
+
+    public void addPoint(Integer point) {this.user.addPoint(point);}
 }
