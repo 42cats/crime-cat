@@ -1,7 +1,7 @@
 package com.crimecat.backend.bot.guild.domain;
 
 import com.crimecat.backend.bot.guild.dto.GuildDto;
-import com.crimecat.backend.bot.user.domain.DiscordUser;
+import com.crimecat.backend.bot.user.domain.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -9,11 +9,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.UUID;
-
-import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -47,21 +45,22 @@ public class Guild {
     @Column(name = "OWNER_SNOWFLAKE", nullable = false)
     private String ownerSnowflake;
 
-    @JoinColumn(name = "OWNER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", insertable = false, updatable = false)
+    @JoinColumn(name = "OWNER_USER_ID", referencedColumnName = "ID", insertable = false, updatable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    private DiscordUser user;
+    private User user;
 
     @NotNull
     @Column(name = "CREATED_AT", nullable = false)
     private LocalDateTime createdAt;
 
-    public static Guild of(GuildDto guildDto) {
+    public static Guild of(GuildDto guildDto,User user) {
         Guild guild = new Guild();
         guild.snowflake = guildDto.getSnowflake();
         guild.name = guildDto.getName();
         guild.isWithdraw = false;
         guild.ownerSnowflake = guildDto.getOwnerSnowflake();
         guild.createdAt = guildDto.getCreatedAt();
+        guild.user = user;
         return guild;
     }
 

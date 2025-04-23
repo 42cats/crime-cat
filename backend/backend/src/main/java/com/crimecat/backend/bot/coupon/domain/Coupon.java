@@ -1,14 +1,6 @@
 package com.crimecat.backend.bot.coupon.domain;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.UuidGenerator;
-import org.hibernate.type.SqlTypes;
-
-import com.crimecat.backend.bot.user.domain.DiscordUser;
-
+import com.crimecat.backend.bot.user.domain.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -16,9 +8,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "COUPONS")
@@ -56,9 +53,9 @@ public class Coupon {
     /**
      * 쿠폰을 등록/사용한 사용자
      */
-    @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE")
+    @JoinColumn(name = "USER_ID", referencedColumnName = "ID")
     @ManyToOne(fetch = FetchType.LAZY)
-    private DiscordUser user;
+    private User user;
 
 
     public Coupon(Integer point, Integer duration) {
@@ -78,7 +75,7 @@ public class Coupon {
     public boolean isUsed(){
         return (this.user != null);
     }
-    public void use(DiscordUser user) {
+    public void use(User user) {
         if(isUsed()) throw new IllegalStateException("이미 사용된 쿠폰입니다.");
         if(isExpired()) throw new IllegalStateException("이미 만료된 쿠폰입니다");
 

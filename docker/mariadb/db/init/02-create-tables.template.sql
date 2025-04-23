@@ -25,12 +25,12 @@ CREATE TABLE IF NOT EXISTS `discord_users`
  */
 CREATE TABLE IF NOT EXISTS `guilds` (
     `id`               BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
-    `owner_snowflake`  VARCHAR(50) NOT NULL COMMENT '길드 소유자 user discord id',
+    `owner_user_id`    BINARY(16) NOT NULL COMMENT '길드 소유자 user id',
     `snowflake`        VARCHAR(50) NOT NULL UNIQUE COMMENT 'snowflake discord 길드 ID',
     `name`             VARCHAR(255) NOT NULL COMMENT '길드 이름',
     `is_withdraw`      BOOLEAN NOT NULL DEFAULT 0 COMMENT '삭제여부',
     `created_at`       TIMESTAMP NOT NULL COMMENT '길드 생성시점(discord 에서 최초생성시기)',
-    CONSTRAINT `fk_guilds_discord_users` FOREIGN KEY (`owner_snowflake`) REFERENCES `discord_users`(`snowflake`)
+    CONSTRAINT `fk_guilds_users` FOREIGN KEY (`owner_user_id`) REFERENCES `users`(`id`)
         ON DELETE RESTRICT
         ON UPDATE CASCADE
 ) ENGINE=InnoDB
@@ -195,9 +195,9 @@ CREATE TABLE IF NOT EXISTS `coupons`
     `created_at`        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '발행 시각',
     `used_at`           TIMESTAMP DEFAULT NULL COMMENT '사용 시각',
     `point`             INT NOT NULL DEFAULT 0 COMMENT '발행 포인트',
-    `user_snowflake`    VARCHAR(50) DEFAULT NULL COMMENT '디스코드 사용자 snowflake',
-    `expired_at`       TIMESTAMP NOT NULL COMMENT '쿠폰 등록 마감 기한',
-    CONSTRAINT `fk_coupons_discord_users` FOREIGN KEY (`user_snowflake`) REFERENCES `discord_users`(`snowflake`)
+    `user_id`           BINARY(16) DEFAULT NULL COMMENT '사용자 id',
+    `expired_at`        TIMESTAMP NOT NULL COMMENT '쿠폰 등록 마감 기한',
+    CONSTRAINT `fk_coupons_users` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
         ON DELETE SET NULL
 ) ENGINE=InnoDB
     DEFAULT CHARSET=utf8mb4
@@ -371,7 +371,9 @@ COLLATE = utf8mb4_unicode_ci;
 */
 CREATE TABLE `users` (
     `id`                BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
+    `discord_snowflake` VARCHAR(50) UNIQUE COMMENT '디스코드 유저 snowflake',
     `web_user_id`       BINARY(16) DEFAULT NULL COMMENT '웹 유저 아이디',
+    `point`             INT NOT NULL DEFAULT 0 COMMENT '보유 포인트',
     `discord_user_id`   BINARY(16) DEFAULT NULL COMMENT '디스코드 유저 아이디',
     `created_at`        DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '생성일',
     `updated_at`        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일',

@@ -2,6 +2,7 @@ package com.crimecat.backend.bot.user.service;
 
 import com.crimecat.backend.bot.user.domain.DiscordUser;
 import com.crimecat.backend.bot.user.repository.DiscordUserRepository;
+import com.crimecat.backend.bot.user.repository.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 public class DiscordUserQueryService {
 
 	private final DiscordUserRepository discordUserRepository;
+	private final UserRepository userRepository;
 
 	public DiscordUser findByUserSnowflake(String userSnowflake) {
 		return discordUserRepository.findBySnowflake(userSnowflake).orElse(null);
@@ -22,7 +24,7 @@ public class DiscordUserQueryService {
 	}
 
 	public List<DiscordUser> getUsersWithPointGreaterThan(Integer point) {
-		return discordUserRepository.getUsersWithPointGreaterThan(point);
+		return userRepository.findDiscordUsersByPointGreaterThan(point);
 	}
 
 	public Integer getUserCount() {

@@ -23,19 +23,29 @@ import java.util.UUID;
 public class User {
     @Id
     @UuidGenerator
-    @GeneratedValue
     @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
+    @Column(name = "DISCORD_SNOWFLAKE", unique = true)
+    private String discordSnowflake;
+
     @Setter
+    @Column(name = "POINT")
+    private Integer point = 0;
+
+    @Setter
+    @Column(name = "IS_WITHDRAW",nullable = false)
+    private Boolean isWithdraw = false;
+
+    @Setter
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "WEB_USER_ID", referencedColumnName = "ID")
-    @ManyToOne(fetch = FetchType.LAZY)
     private WebUser webUser;
 
     @Setter
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "DISCORD_USER_ID", referencedColumnName = "ID")
-    @ManyToOne(fetch = FetchType.LAZY)
     private DiscordUser discordUser;
 
     @CreatedDate
@@ -45,5 +55,29 @@ public class User {
     @LastModifiedDate
     @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
+
+    public void addPoint(int amount) {
+        if (amount < 0) throw new IllegalArgumentException("음수는 더할 수 없습니다.");
+        this.point += amount;
+    }
+
+    public void subtractPoint(int amount) {
+        if (amount < 0) throw new IllegalArgumentException("음수를 뺄 수 없습니다.");
+        if (this.point < amount) throw new IllegalStateException("잔여 포인트 부족");
+        this.point -= amount;
+    }
+    public void linkDiscordUser(DiscordUser discordUser) {
+        this.discordUser = discordUser;
+        if (discordUser.getUser() != this) {
+            discordUser.setUser(this);
+        }
+    }
+
+    public void linkWebdUser(WebUser webUser) {
+        this.webUser = webUser;
+        if (webUser.getUser() != this) {
+            webUser.setUser(this);
+        }
+    }
 
 }

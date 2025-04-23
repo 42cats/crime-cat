@@ -7,6 +7,7 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
@@ -18,6 +19,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 @Getter
+@Setter
 public class DiscordUser {
 
     @Id
@@ -39,8 +41,11 @@ public class DiscordUser {
     @Column(name = "DISCORD_ALARM")
     private boolean discordAlarm = false;
 
-    @Column(name = "POINT")
-    private Integer point = 0;
+//    @Column(name = "POINT")
+//    private Integer point = 0;
+
+    @OneToOne(mappedBy = "discordUser", fetch = FetchType.LAZY)
+    private User user;
 
     @CreatedDate
     @Column(name = "CREATED_AT", updatable = false)
@@ -60,13 +65,17 @@ public class DiscordUser {
         return new DiscordUser(snowflake, name, avatar);
     }
 
-    public Integer usePoints(Integer price) {
-        point -= price;
-        return point;
+    public Integer getPoint() {
+        return user.getPoint();
     }
-    public Integer addPoint(Integer point){
-        this.point += point;
-        return point;
+
+    public void subtractPoint(int amount) {
+          this.user.subtractPoint(amount);
+    }
+
+
+    public void addPoint(Integer point){
+        this.user.addPoint(point);
     }
 
     public void setAvatar(String avatar) {
@@ -77,9 +86,6 @@ public class DiscordUser {
     }
 
     public void setDiscordAlarm(Boolean discordAlarm) {
-        if (discordAlarm == null) {
-            return;
-        }
         this.discordAlarm = discordAlarm;
     }
 }

@@ -34,19 +34,18 @@ import com.crimecat.backend.bot.user.dto.UserRankingFailedResponseDto;
 import com.crimecat.backend.bot.user.dto.UserRankingResponseDto;
 import com.crimecat.backend.bot.user.dto.UserRankingSuccessResponseDto;
 import com.crimecat.backend.bot.user.dto.UserResponseDto;
+import com.crimecat.backend.bot.user.repository.DiscordUserRepository;
 import com.crimecat.backend.bot.user.repository.UserRepository;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.web.gameHistory.domain.GameHistory;
 import com.crimecat.backend.web.gameHistory.dto.IGameHistoryRankingDto;
 import com.crimecat.backend.web.gameHistory.service.GameHistoryQueryService;
-import com.crimecat.backend.web.webUser.domain.WebUser;
 import com.crimecat.backend.web.webUser.repository.WebUserRepository;
 import io.micrometer.common.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -78,6 +77,7 @@ public class UserService {
 
 	private final UserRepository userRepository;
 	private final WebUserRepository webUserRepository;
+	private final DiscordUserRepository discordUserRepository;
 
 
 	@Transactional(readOnly = true)
@@ -86,30 +86,48 @@ public class UserService {
 	}
 
 	@Transactional
-	public UserInfoResponseDto saveUserInfo(String userSnowflake, String userName, String userAvatar) {
-		if (StringUtils.isBlank(userSnowflake) || StringUtils.isBlank(userName)
-				|| StringUtils.isBlank(userAvatar)) {
+	public UserInfoResponseDto saveUserInfo(String snowflake, String name, String avatar) {
+		if (StringUtils.isBlank(snowflake) || StringUtils.isBlank(name) || StringUtils.isBlank(avatar)) {
 			return new UserInfoResponseDto("Invalid request format", null);
 		}
-		String message = "Already User registered";
-		DiscordUser user = findUserBySnowflake(userSnowflake);
-		if (user == null) {
-			user = discordUserQueryService.saveUser(DiscordUser.of(userSnowflake, userName, userAvatar));
-			User u = User.builder().discordUser(user).build();
-			Optional<WebUser> webUser = webUserRepository.findWebUserByDiscordUserSnowflake(userSnowflake);
-			if (webUser.isPresent()) {
-				u.setWebUser(webUser.get());
-				u = userRepository.findByWebUser(u.getWebUser()).orElse(u);
-				u.setDiscordUser(user);
-			}
-			userRepository.save(u);
-			message = "User registered";
+
+		// 1. User 객체 먼저 조회 or 생성 (기본 구조 설정)
+		User user = userRepository.findByDiscordSnowflake(snowflake)
+				.orElseGet(() -> userRepository.save(User.builder()
+						.discordSnowflake(snowflake)
+						.isWithdraw(false)
+						.point(0)
+						.build()));
+
+		// 2. DiscordUser가 없으면 새로 만들고 연결
+		if (user.getDiscordUser() == null) {
+			DiscordUser discordUser = discordUserRepository.findBySnowflake(snowflake)
+					.orElseGet(() -> discordUserRepository.save(
+							DiscordUser.of(snowflake, name, avatar)
+					));
+			user.linkDiscordUser(discordUser);
 		}
 
-		UserResponseDto userResponseDto
-				= new UserResponseDto(userSnowflake, userName, userAvatar, user.getCreatedAt());
-		return new UserInfoResponseDto(message, userResponseDto);
+		// 3. WebUser가 있다면 연결 (없는 경우 skip)
+		webUserRepository.findWebUserByDiscordUserSnowflake(snowflake).ifPresent(webUser -> {
+			if (user.getWebUser() == null) {
+				user.linkWebdUser(webUser);
+			}
+			if (StringUtils.isBlank(webUser.getDiscordUserSnowflake())) {
+				webUser.setDiscordUserSnowflake(snowflake);
+				webUserRepository.save(webUser);
+			}
+		});
+
+		// 4. 최종 저장
+		userRepository.save(user);
+
+		return new UserInfoResponseDto(
+				"User ensured and updated.",
+				new UserResponseDto(snowflake, name, avatar, user.getCreatedAt())
+		);
 	}
+
 
 	/**
 	 * 특정 유저가 특정 권한 구매
@@ -141,14 +159,14 @@ public class UserService {
 			return new UserPermissionPurchaseFailedResponseDto("permission not found", 0, 0);
 		}
 
-		Integer userPoint = user.getPoint();
 		Integer permissionPrice = permission.getPrice();
-		if (userPoint < permissionPrice) {
-			return new UserPermissionPurchaseFailedResponseDto("point not enough", permissionPrice, userPoint);
+		try{
+			user.subtractPoint(permissionPrice);
 		}
-
-		user.usePoints(permissionPrice);
-		pointHistoryService.usePoint(user, permission, permissionPrice);
+		catch (IllegalStateException e) {
+				return new UserPermissionPurchaseFailedResponseDto(e.getMessage(), permissionPrice ,user.getPoint());
+		}
+		pointHistoryService.usePoint(user.getUser(), permission, permissionPrice);
 
 		UserPermission userPermission = userPermissionService.getUserPermissionByPermissionId(user, permission.getId());
 		if (userPermission != null && LocalDateTime.now().isBefore(userPermission.getExpiredAt())) {
