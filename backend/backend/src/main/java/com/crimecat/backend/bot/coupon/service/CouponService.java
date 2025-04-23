@@ -57,7 +57,7 @@ public class CouponService {
         Coupon coupon  = optionalCoupon.get();
         coupon.use(user);
         user.addPoint(coupon.getPoint());
-        pointHistoryService.usePoint(user,null,coupon.getPoint());
+        pointHistoryService.redeemCoupon(user,coupon);
         return new MessageDto<>("Coupon redeemed successfully", new CouponRedeemResponseDto(user.getPoint()));
     }
 }

@@ -54,9 +54,7 @@ public class PointHistory {
     @Column(name = "ITEM_TYPE")
     private ItemType itemType;
 
-    @JoinColumn(name = "ITEM_ID", referencedColumnName = "ID",nullable = true)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(name = "ITEM_ID", columnDefinition = "BINARY(16)")
     private UUID itemId;
     
     @JoinColumn(name = "RELATED_USER_ID", referencedColumnName = "ID", nullable = false)
@@ -70,18 +68,8 @@ public class PointHistory {
     @CreatedDate
     private LocalDateTime usedAt;
 
-    @JoinColumn(name = "USER_ID", referencedColumnName = "ID", nullable = false)
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User user;
-
     @JoinColumn(name = "PERMISSION_ID")
     @ManyToOne(fetch = FetchType.LAZY)
     private Permission permission;
 
-
-    public PointHistory(User user, Permission permission, Integer point) {
-        this.user = user;
-        this.permission = permission;
-        this.point = point;
-    }
 }
