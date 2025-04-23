@@ -32,10 +32,12 @@ public class User {
 
     @Setter
     @Column(name = "POINT")
+    @Builder.Default
     private Integer point = 0;
 
     @Setter
     @Column(name = "IS_WITHDRAW",nullable = false)
+    @Builder.Default
     private Boolean isWithdraw = false;
 
     @Setter
