@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -132,8 +133,15 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body("RefreshToken 불일치 – 재로그인 필요");
         }
-        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
-                .orElseThrow(ErrorStatus.USER_NOT_FOUND::asControllerException);
+        Optional<WebUser> optionalWebUser = webUserRepository.findById(UUID.fromString(userId));
+        if(optionalWebUser.isEmpty()){
+            TokenCookieUtil.clearAuthCookies(response);
+            throw ErrorStatus.USER_NOT_FOUND.asControllerException();
+        }
+        WebUser webUser = optionalWebUser.get();
+        String accessToken = jwtTokenProvider.createAccessToken(webUser.getId()
+            .toString(), webUser.getNickname(), webUser.getDiscordUserSnowflake());
+        response.addHeader(HttpHeaders.SET_COOKIE,TokenCookieUtil.createAccessCookie(accessToken));
         Map<String, String> userAuthInfo = getStringStringMap(webUser);
         return ResponseEntity.ok(userAuthInfo);
     }

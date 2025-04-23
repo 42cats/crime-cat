@@ -68,7 +68,7 @@ public class TokenCookieUtil {
             .httpOnly(true)
             .secure(true)
             .path("/")
-            .maxAge(Duration.ofMinutes(ACCESS_TOKEN_EXPIRE_MINUTES))
+            .maxAge(Duration.ofSeconds(ACCESS_TOKEN_EXPIRE_MINUTES))
 //                .domain(appDomain) /// 개발시 제외 서비스시 활성
             .build();
         return cookie.toString();
