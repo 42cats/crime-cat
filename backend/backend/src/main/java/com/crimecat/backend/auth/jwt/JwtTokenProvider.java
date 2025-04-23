@@ -1,5 +1,6 @@
 package com.crimecat.backend.auth.jwt;
 
+import java.time.Duration;
 import java.util.Date;
 
 import javax.crypto.SecretKey;
@@ -25,16 +26,18 @@ public class JwtTokenProvider {
     @Value("${spring.jwt.secret}")
     private String secretKeyString;
 
-    // 만료 시간 통일 (Access 1시간, Refresh 7일)
-    private final long accessTokenValidity = 60* 1000L;      // 1시간
-    private final long refreshTokenValidity = 1000L * 60 * 60 * 24 * 7; // 7일
+    @Value("${spring.oauth.refresh-token-expire-days}")
+    private int refreshTokenExpireDay;
+    @Value("${spring.oauth.access-token-expire-minutes}")
+    private int accessTokenExpireMinutes;
+
 
     /**
      * Access 토큰 생성
      */
     public String createAccessToken(String userId, String nickname, String discordUserSnowflake) {
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + accessTokenValidity);
+        Date expiry = new Date(now.getTime() + Duration.ofMinutes(accessTokenExpireMinutes).toMillis());
 
         return Jwts.builder()
                 .setSubject(userId)
@@ -51,7 +54,7 @@ public class JwtTokenProvider {
      */
     public String createRefreshToken(String userId) {
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + refreshTokenValidity);
+        Date expiry = new Date(now.getTime() + Duration.ofDays(refreshTokenExpireDay).toMillis());
 
         return Jwts.builder()
                 .setSubject(userId)
@@ -122,11 +125,11 @@ public class JwtTokenProvider {
     }
 
     public long getRefreshTokenValidity() {
-        return refreshTokenValidity;
+        return Duration.ofDays(refreshTokenExpireDay).toMillis();
     }
 
     public long getAccessTokenValidity() {
-        return accessTokenValidity;
+        return Duration.ofMinutes(accessTokenExpireMinutes).toMillis();
     }
 
 }

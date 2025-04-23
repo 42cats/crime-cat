@@ -31,9 +31,11 @@ const Guilds: React.FC = () => {
     });
 
     // 검색어 기준으로 길드 필터링
-    const filteredGuilds = guilds?.filter((guild) =>
-        guild.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredGuilds = Array.isArray(guilds)
+    ? guilds.filter((guild) =>
+        guild?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
 
     const handleSettingsClick = (guildId: string, guildName: string) => {
         navigate(`/dashboard/guilds/${guildId}/message-format`, {
