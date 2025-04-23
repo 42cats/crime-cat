@@ -3,6 +3,9 @@
 # nodemon 전역 설치
 npm install -g nodemon
 
+# ytdlp 최신버전 업데이트
+pip install -U yt-dlp
+
 # 프로젝트 의존성 설치
 npm install
 
