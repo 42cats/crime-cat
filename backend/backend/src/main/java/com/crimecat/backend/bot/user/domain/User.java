@@ -73,7 +73,7 @@ public class User {
         }
     }
 
-    public void linkWebdUser(WebUser webUser) {
+    public void linkWebUser(WebUser webUser) {
         this.webUser = webUser;
         if (webUser.getUser() != this) {
             webUser.setUser(this);

@@ -111,7 +111,7 @@ public class UserService {
 		// 3. WebUser가 있다면 연결 (없는 경우 skip)
 		webUserRepository.findWebUserByDiscordUserSnowflake(snowflake).ifPresent(webUser -> {
 			if (user.getWebUser() == null) {
-				user.linkWebdUser(webUser);
+				user.linkWebUser(webUser);
 			}
 			if (StringUtils.isBlank(webUser.getDiscordUserSnowflake())) {
 				webUser.setDiscordUserSnowflake(snowflake);
