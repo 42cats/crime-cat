@@ -27,4 +27,13 @@ public interface GuildRepository extends JpaRepository<Guild, UUID> {
     List<Guild> findAllActiveGuilds();
 
     boolean existsBySnowflakeAndOwnerSnowflake(String guildSnowflake, String ownerSnowflake);
+
+    // 1. 전체 운영 중인 길드 수
+    @Query("SELECT COUNT(g) FROM Guild g WHERE g.isWithdraw = false")
+    long countAllActiveGuilds();
+
+    // 2. 유니크한 오너 수
+    @Query("SELECT COUNT(DISTINCT g.ownerSnowflake) FROM Guild g WHERE g.isWithdraw = false")
+    long countUniqueGuildOwners();
+
 }

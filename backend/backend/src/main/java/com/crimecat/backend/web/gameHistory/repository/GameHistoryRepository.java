@@ -39,4 +39,6 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 			"AND (:discordAlarm IS NULL OR gh.user.discordAlarm = :discordAlarm)")
 	List<GameHistory> findUsersByGuildSnowflakeAndDiscordAlarm(@Param("guildSnowflake") String guildSnowflake,
 														 @Param("discordAlarm") Boolean discordAlarm);
+
+	long count();
 }
