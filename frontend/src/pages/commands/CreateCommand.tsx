@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import CommandForm from '@/components/CommandForm';
+import CommandForm from '@/components/commands/CommandForm';
 import { commandsService } from '@/api/commandsService';
 import { Command } from '@/lib/types';
 

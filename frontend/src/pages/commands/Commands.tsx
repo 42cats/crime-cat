@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import CommandList from '@/components/CommandList';
+import CommandList from '@/components/commands/CommandList';
 import PageTransition from '@/components/PageTransition';
 import { commandsService } from '@/api/commandsService';
 import { Card } from '@/components/ui/card';

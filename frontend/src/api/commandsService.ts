@@ -1,10 +1,12 @@
 import { apiClient } from '@/lib/api';
 import { Command } from '@/lib/types';
 
+const baseURI = '/public/commands';
+
 export const commandsService = {
   getCommands: async (): Promise<Command[]> => {
     try {
-      return await apiClient.get<Command[]>('/commands');
+      return await apiClient.get<Command[]>(`${baseURI}`);
     } catch (error) {
       console.error('명령어 불러오기 오류:', error);
       return [];
@@ -13,7 +15,7 @@ export const commandsService = {
 
   getCommandById: async (id: string): Promise<Command | null> => {
     try {
-      return await apiClient.get<Command>(`/commands/${id}`);
+      return await apiClient.get<Command>(`${baseURI}/${id}`);
     } catch (error) {
       console.error('ID로 명령어 조회 실패:', error);
       return null;
@@ -24,7 +26,7 @@ export const commandsService = {
     data: Omit<Command, 'id' | 'createdBy' | 'updatedBy' | 'createdAt' | 'updatedAt'>
   ): Promise<Command> => {
     try {
-      return await apiClient.post<Command>('/commands', data);
+      return await apiClient.post<Command>(`${baseURI}`, data);
     } catch (error) {
       console.error('명령어 생성 실패:', error);
       throw error;
@@ -36,7 +38,7 @@ export const commandsService = {
     data: Partial<Command>
   ): Promise<Command> => {
     try {
-      return await apiClient.patch<Command>(`/commands/${id}`, data);
+      return await apiClient.patch<Command>(`${baseURI}/${id}`, data);
     } catch (error) {
       console.error('명령어 수정 실패:', error);
       throw error;
@@ -45,7 +47,7 @@ export const commandsService = {
 
   deleteCommand: async (id: string): Promise<void> => {
     try {
-      await apiClient.delete(`/commands/${id}`);
+      await apiClient.delete(`${baseURI}/${id}`);
     } catch (error) {
       console.error('명령어 삭제 실패:', error);
       throw error;
