@@ -33,10 +33,6 @@ public class CouponController{
 
     @PatchMapping
     public ResponseEntity<?> redeemCoupon(@RequestBody CouponRedeemRequestDto request){
-        try{
-            return ResponseEntity.ok(couponService.redeemCoupon(request));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new MessageDto<>(e.getMessage()));
-        }
+        return ResponseEntity.ok(couponService.redeemCoupon(request));
     }
 }
