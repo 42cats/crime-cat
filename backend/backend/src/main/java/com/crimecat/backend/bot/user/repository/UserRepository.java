@@ -21,4 +21,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
   Optional<User> findByDiscordSnowflake(String discordSnowflake);
 
+  @Query("SELECT COUNT(u) FROM User u WHERE u.discordUser IS NOT NULL")
+  long countUsersWithDiscordAccount();
 }
