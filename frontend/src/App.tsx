@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AuthInitializer from "@/components/AuthInitializer";
 import PrivateRoute from "@/components/PrivateRoute";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { RecoilRoot } from "recoil";
@@ -35,7 +35,7 @@ import Guilds from "@/pages/Guilds";
 import Profile from "@/pages/Profile";
 import MessageFormat from "@/pages/MessageButtonEditor";
 
-const queryClient = new QueryClient();
+import { queryClient } from '@/lib/reactQuery'
 
 const App = () => (
   <RecoilRoot>
