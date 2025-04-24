@@ -31,7 +31,7 @@ public enum ErrorStatus {
     EMAIL_ALREADY_REGISTERED("이미 등록된 이메일입니다.", HttpStatus.CONFLICT),      // 409
 
     // 🛑 잘못된 요청
-    INVALID_INPUT("잘못된 요청입니다.", HttpStatus.BAD_REQUEST),                    // 400
+    INVALID_INPUT("잘못된 요청입니다.", HttpStatus.BAD_REQUEST),    //400                 // 400
     INVALID_PARAMETER("요청 파라미터가 잘못되었습니다.", HttpStatus.BAD_REQUEST),     // 400
     MISSING_REQUIRED_FIELD("필수 항목이 누락되었습니다.", HttpStatus.BAD_REQUEST),   // 400
 
