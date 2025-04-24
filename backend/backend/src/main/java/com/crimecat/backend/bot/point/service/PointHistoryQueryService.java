@@ -46,7 +46,7 @@ public class PointHistoryQueryService {
 		PointHistory senderHistory = PointHistory.builder()
 				.user(fromUser)
 				.type(TransactionType.GIFT)
-				.amount(-amount)
+				.amount(amount)
 				.balanceAfter(fromUser.getPoint())
 				.relatedUserId(toUser)
 				.memo("→ " + toUser.getWebUser().getNickname() + "에게 선물")

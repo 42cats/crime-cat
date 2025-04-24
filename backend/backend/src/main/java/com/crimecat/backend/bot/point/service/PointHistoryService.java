@@ -27,6 +27,11 @@ public class PointHistoryService {
 	}
 
 	@Transactional
+	public void dailyCheckPoint(User user, int amount) {
+		user.addPoint(amount);
+		pointHistoryQueryService.logPointTransaction(user, TransactionType.CHARGE, amount, "출석 체크");
+	}
+	@Transactional
 	public void gift(User from, User to, int amount) {
 		from.subtractPoint(amount);
 		to.addPoint(amount);

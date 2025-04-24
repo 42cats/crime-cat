@@ -271,7 +271,7 @@ CREATE TABLE `point_histories` (
 
     user_id BINARY(16) NOT NULL, -- 포인트 주체 사용자 (users.id 참조)
     
-    type ENUM('CHARGE', 'USE', 'GIFT', 'RECEIVE', 'REFUND', 'EXPIRE') NOT NULL,
+    type ENUM('CHARGE', 'USE', 'GIFT', 'RECEIVE', 'REFUND', 'EXPIRE','COUPON', 'DAILY') NOT NULL,
     
     amount INT NOT NULL, -- 양수만 저장 (입출은 type으로 구분)
     
