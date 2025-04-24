@@ -44,7 +44,10 @@ public enum ErrorStatus {
     MACRO_EXECUTION_FAILED("매크로 실행에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // 🧱 서버 내부 오류
-    INTERNAL_ERROR("서버 내부 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR); // 500
+    INTERNAL_ERROR("서버 내부 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR), // 500
+
+    //포인트관련
+    INSUFFICIENT_POINT("포인트가 부족합니다.", HttpStatus.BAD_REQUEST);                    // 400
 
     private final String message;
     private final HttpStatus status;

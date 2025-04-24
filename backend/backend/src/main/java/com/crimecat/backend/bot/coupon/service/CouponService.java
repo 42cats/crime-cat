@@ -56,7 +56,6 @@ public class CouponService {
         if(optionalCoupon.isEmpty()) throw  new RuntimeException("유효한 코드가 아닙니다.");
         Coupon coupon  = optionalCoupon.get();
         coupon.use(user);
-        user.addPoint(coupon.getPoint());
         pointHistoryService.redeemCoupon(user,coupon);
         return new MessageDto<>("Coupon redeemed successfully", new CouponRedeemResponseDto(user.getPoint()));
     }
