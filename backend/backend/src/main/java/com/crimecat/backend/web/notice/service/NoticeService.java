@@ -4,10 +4,11 @@ import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.web.notice.domain.Notice;
 import com.crimecat.backend.web.notice.dto.NoticeResponseDto;
 import com.crimecat.backend.web.notice.dto.NoticeSummaryResponseDto;
+import com.crimecat.backend.web.notice.dto.PageResultDto;
 import com.crimecat.backend.web.notice.repository.NoticeRepository;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,19 +21,11 @@ public class NoticeService {
 
 
 
-  public List<NoticeSummaryResponseDto> getNotice(Integer limit, Integer page){
+  public PageResultDto<NoticeSummaryResponseDto> getNotice(Integer limit, Integer page){
     Pageable pageable = PageRequest.of(page,limit);
-
-    return noticeRepository.findAllNoticesOrdered(pageable).stream()
-        .map(v -> NoticeSummaryResponseDto
-            .builder()
-            .noticeType(v.getNoticeType())
-            .id(v.getId().toString())
-            .title(v.getTitle())
-            .summary(v.getSummary())
-            .updatedAt(v.getUpdatedAt())
-            .build())
-        .toList();
+    Page<Notice> noticePage = noticeRepository.findAllNoticesOrdered(pageable);
+    Page<NoticeSummaryResponseDto> dtoPage = noticePage.map(NoticeSummaryResponseDto::from);
+    return PageResultDto.from(dtoPage);
   }
 
   public NoticeResponseDto getNoticeDetail(String id) {
