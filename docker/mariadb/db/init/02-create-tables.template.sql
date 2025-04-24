@@ -430,3 +430,16 @@ CREATE TABLE `commands` (
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_general_ci
   COMMENT='디스코드 명령어 정보 저장 테이블';
+
+
+CREATE TABLE IF NOT EXISTS notices (
+    id          BINARY(16)  PRIMARY KEY,
+    title       VARCHAR(200) NOT NULL,
+    content     TEXT         NOT NULL,
+    summary     VARCHAR(300) NOT NULL,
+    notice_type ENUM('SYSTEM','EVENT','UPDATE') NOT NULL DEFAULT 'SYSTEM',
+    is_pinned   BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_notice_type(created_at, notice_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
