@@ -159,14 +159,12 @@ public class UserService {
 			return new UserPermissionPurchaseFailedResponseDto("permission not found", 0, 0);
 		}
 
-		Integer permissionPrice = permission.getPrice();
 		try{
-			user.subtractPoint(permissionPrice);
+			pointHistoryService.buyPermission(user.getUser(), permission);
 		}
 		catch (IllegalStateException e) {
-				return new UserPermissionPurchaseFailedResponseDto(e.getMessage(), permissionPrice ,user.getPoint());
+				return new UserPermissionPurchaseFailedResponseDto(e.getMessage(), permission.getPrice() ,user.getPoint());
 		}
-		pointHistoryService.buyPermission(user.getUser(), permission);
 
 		UserPermission userPermission = userPermissionService.getUserPermissionByPermissionId(user, permission.getId());
 		if (userPermission != null && LocalDateTime.now().isBefore(userPermission.getExpiredAt())) {

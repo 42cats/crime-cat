@@ -16,6 +16,7 @@ public class PointHistoryService {
 
 	@Transactional
 	public void buyPermission(User user, Permission permission) {
+		user.subtractPoint(permission.getPrice());
 		pointHistoryQueryService.logPermissionPurchase(user, TransactionType.USE, permission);
 	}
 
@@ -29,10 +30,12 @@ public class PointHistoryService {
 	public void gift(User from, User to, int amount) {
 		from.subtractPoint(amount);
 		to.addPoint(amount);
+		pointHistoryQueryService.logGiftTransaction(from,to,amount);
 
 	}
 	@Transactional
 	public void redeemCoupon(User user, Coupon coupon){
+		user.addPoint(coupon.getPoint());
 		pointHistoryQueryService.logCouponTransaction(user,coupon);
 	}
 }
