@@ -14,13 +14,13 @@ import DashboardLayout from "@/layout/DashboardLayout";
 
 // Main Pages
 import Index from "@/pages/Index";
-import Commands from "@/pages/Commands";
-import CommandDetail from "@/pages/CommandDetail";
-import CreateCommand from "@/pages/CreateCommand";
-import EditCommand from "@/pages/EditCommand";
-import Themes from "@/pages/Themes";
-import ThemeDetail from "@/pages/ThemeDetail";
-import CreateTheme from "@/pages/CreateTheme";
+import Commands from "@/pages/commands/Commands";
+import CommandDetail from "@/pages/commands/CommandDetail";
+import CreateCommand from "@/pages/commands/CreateCommand";
+import EditCommand from "@/pages/commands/EditCommand";
+import Themes from "@/pages/themes/Themes";
+import ThemeDetail from "@/pages/themes/ThemeDetail";
+import CreateTheme from "@/pages/themes/CreateTheme";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/NotFound";
 import TermsPage from '@/pages/TermsPage';
@@ -34,9 +34,9 @@ import CreateNotice from "@/pages/notices/CreateNotice";
 import EditNotice from "@/pages/notices/EditNotice";
 
 // Dashboard Pages
-import Dashboard from "@/pages/Dashboard";
-import Guilds from "@/pages/Guilds";
-import Profile from "@/pages/Profile";
+import Dashboard from "@/pages/dashboard/Dashboard";
+import Guilds from "@/pages/dashboard/Guilds";
+import Profile from "@/pages/dashboard/Profile";
 import MessageFormat from "@/pages/MessageButtonEditor";
 
 import { queryClient } from '@/lib/reactQuery'

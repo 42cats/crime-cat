@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from "@tanstack/react-query";
 import PageTransition from "@/components/PageTransition";
-import ThemeCard from "@/components/ThemeCard";
+import ThemeCard from "@/components/themes/ThemeCard";
 import { Input } from "@/components/ui/input";
 import { Search, Hash } from "lucide-react";
 import { Badge } from "@/components/ui/badge";

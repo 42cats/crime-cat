@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageTransition from '@/components/PageTransition';
-import ThemeForm from '@/components/ThemeForm';
+import ThemeForm from '@/components/themes/ThemeForm';
 import { useAuth } from '@/hooks/useAuth';
 
 const CreateTheme: React.FC = () => {

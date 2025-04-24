@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Card, CardContent } from "./ui/card";
+import { Card, CardContent } from "../ui/card";
 import { User, Users, Tag, Coins, Clock, Heart } from "lucide-react"; // Heart 추가
 import { Theme } from "@/lib/types";
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { commandsService } from '@/api/commandsService';
-import CommandForm from '@/components/CommandForm';
+import CommandForm from '@/components/commands/CommandForm';
 import { Command, CommandInput } from '@/lib/types';
 
 const EditCommand: React.FC = () => {
