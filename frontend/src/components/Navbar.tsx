@@ -35,6 +35,7 @@ const Navbar: React.FC = () => {
 
   const navItems = [
     { name: '홈', path: '/' },
+    { name: '공지사항', path: '/notices' },
     { name: '명령어', path: '/commands' },
     { name: '테마', path: '/themes' },
   ];
