@@ -14,13 +14,17 @@ export interface SocialLinks {
 export interface User {
     id: string;
     nickname: string;
-    profile_image_path: string;
-    setting: UserSetting;
-    social_links?: SocialLinks;
-    bio: string;
     role: UserRole;
+    profile_image_path?: string;
+    setting?: UserSetting;
+    social_links?: SocialLinks;
+    bio?: string;
     title?: string;
     badge?: string;
+    snowflake?: string;
+    last_login_at?: string;
+    is_active?: boolean;
+    point?: number;
 }
 
 export interface Channel {
@@ -139,4 +143,13 @@ export interface Place {
     link: string;
     lat?: number;
     lng?: number;
+}
+
+export interface DailyCheck {
+    isComplete: boolean;
+    checkTime: string;
+}
+
+export interface Coupon {
+    point: number;
 }
