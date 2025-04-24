@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Command } from '@/lib/types';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { useNavigate } from 'react-router-dom';
+import { isWithinDays, highlightMatch } from '@/utils/highlight';
 
 interface CommandListProps {
   commands: Command[];
@@ -34,28 +35,6 @@ const CommandList: React.FC<CommandListProps> = ({ commands }) => {
       const matchesCategory = category === '전체' || cmd.category === category;
       return matchesSearch && matchesCategory;
     });
-  };
-
-  const isWithinDays = (dateStr: string, days: number) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    return diff < days * 24 * 60 * 60 * 1000;
-  };
-
-  const highlightMatch = (text: string, query: string) => {
-    if (!query) return text;
-
-    const regex = new RegExp(`(${query})`, 'gi');
-    return text.split(regex).map((part, i) =>
-      regex.test(part) ? (
-        <mark key={i} className="bg-yellow-200 text-yellow-800 rounded px-1">
-          {part}
-        </mark>
-      ) : (
-        part
-      )
-    );
   };
 
   return (
@@ -99,14 +78,14 @@ const CommandList: React.FC<CommandListProps> = ({ commands }) => {
                       <CardHeader className="pb-2">
                         <CardTitle className="flex justify-between items-start">
                           <div className="text-lg">/{highlightMatch(command.name, searchQuery)}</div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 flex-wrap justify-end">
                             {isNew && (
-                              <span className="text-xs font-semibold text-yellow-600 bg-yellow-100 px-2 py-1 rounded-md animate-twinkle">
+                              <span className="twinkle-badge twinkle-badge-yellow">
                                 New
                               </span>
                             )}
-                            {isUpdated && (
-                              <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-1 rounded-md animate-twinkle">
+                            {isUpdated && (!isNew || command.createdAt !== command.updatedAt) && (
+                              <span className="twinkle-badge twinkle-badge-yellow">
                                 Updated
                               </span>
                             )}

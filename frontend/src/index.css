@@ -126,3 +126,17 @@
     @apply opacity-0 transition-opacity duration-300;
   }
 }
+
+@layer components {
+	.twinkle-badge {
+	  @apply px-2 py-1 rounded-md text-xs font-semibold animate-twinkle;
+	}
+  
+	.twinkle-badge-yellow {
+	  @apply bg-yellow-100 text-yellow-600 hover:bg-yellow-100 hover:text-yellow-600;
+	}
+  
+	.twinkle-badge-blue {
+	  @apply bg-blue-100 text-blue-600 hover:bg-blue-100 hover:text-blue-600;
+	}
+  }

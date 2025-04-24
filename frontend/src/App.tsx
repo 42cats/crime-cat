@@ -28,6 +28,10 @@ import PrivacyPage from "./pages/PrivacyPage";
 import ContactPage from '@/pages/ContactPage';
 import DonationPage from '@/pages/DonationPage';
 import Unauthorized from "@/pages/Unauthorized";
+import NoticeList from "@/components/notices/NoticeList";
+import NoticeDetail from "@/pages/notices/NoticeDetail";
+import CreateNotice from "@/pages/notices/CreateNotice";
+import EditNotice from "@/pages/notices/EditNotice";
 
 // Dashboard Pages
 import Dashboard from "@/pages/Dashboard";
@@ -60,6 +64,16 @@ const App = () => (
                        element={<PrivateRoute allowedRoles={['ADMIN', 'MANAGER']}>
                                   <EditCommand />
                                 </PrivateRoute>} />
+                <Route path="/notices" element={<NoticeList />} />
+                <Route path="/notices/:id" element={<NoticeDetail />} />
+                <Route path="/notices/new" 
+                       element={<PrivateRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                                  <CreateNotice />
+                                </PrivateRoute>} />
+                <Route path="/notices/edit/:id" 
+                       element={<PrivateRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                                  <EditNotice />
+                                 </PrivateRoute>} />
                 <Route path="/themes" element={<Themes />} />
                 <Route path="/themes/:id" element={<ThemeDetail />} />
                 <Route path="/themes/new" element={<CreateTheme />} />

@@ -50,10 +50,11 @@ const CommandDetail: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     const d = new Date(dateString);
-    return d.toLocaleString('ko-KR', {
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit',
-    });
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    return d.toLocaleString('ko-KR', isMobile
+      ? { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }
+      : { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }
+    );
   };
 
   if (isLoading) {
@@ -90,34 +91,28 @@ const CommandDetail: React.FC = () => {
           </Link>
 
           {/* Header */}
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold">/{command.name}</h1>
+          <div className="flex flex-col sm:flex-row justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-3xl font-bold break-keep">/{command.name}</h1>
             </div>
 
-            <div className="flex flex-col items-end min-w-[130px]">
-              {/* Buttons */}
-              <div className="flex gap-2 mb-3">
+            <div className="flex flex-col gap-2 items-end text-right w-full sm:w-auto">
+              <div className="flex justify-end gap-2 flex-wrap">
                 {hasRole(['ADMIN', 'MANAGER']) && (
                   <>
                     <Button variant="outline" className="h-8 px-2 text-sm" onClick={handleEdit}>
-                      <Edit className="h-4 w-4 mr-1" />
-                      수정
+                      <Edit className="h-4 w-4 mr-1" /> 수정
                     </Button>
                     <Button variant="destructive" className="h-8 px-2 text-sm" onClick={handleDelete}>
-                      <Trash className="h-4 w-4 mr-1" />
-                      삭제
+                      <Trash className="h-4 w-4 mr-1" /> 삭제
                     </Button>
                   </>
                 )}
                 <Button variant="outline" className="h-8 px-2 text-sm" onClick={handleShare}>
-                  <Share2 className="h-4 w-4 mr-1" />
-                  공유
+                  <Share2 className="h-4 w-4 mr-1" /> 공유
                 </Button>
               </div>
-
-              {/* Dates */}
-              <div className="text-sm text-muted-foreground text-right">
+              <div className="text-sm text-muted-foreground">
                 <div><strong>생성일</strong> {formatDate(command.createdAt)}</div>
                 <div><strong>수정일</strong> {formatDate(command.updatedAt)}</div>
               </div>
@@ -127,7 +122,7 @@ const CommandDetail: React.FC = () => {
           {/* 설명 */}
           <section>
             <h2 className="text-sm font-semibold text-muted-foreground mb-1">설명</h2>
-            <p className="text-base text-foreground">{command.description}</p>
+            <p className="text-base text-foreground break-words whitespace-pre-line">{command.description}</p>
           </section>
 
           {/* 카테고리 */}
@@ -156,7 +151,9 @@ const CommandDetail: React.FC = () => {
           {/* 사용법 */}
           <section className="mt-6">
             <h2 className="text-sm font-semibold text-muted-foreground mb-1">사용법</h2>
-            <code className="block bg-muted px-3 py-2 rounded text-foreground">{command.usage}</code>
+            <code className="block bg-muted px-3 py-2 rounded text-foreground whitespace-pre-wrap">
+              {command.usage}
+            </code>
           </section>
 
           {/* 본문 */}
