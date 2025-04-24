@@ -449,6 +449,7 @@ CREATE TABLE IF NOT EXISTS notices (
     summary     VARCHAR(300) NOT NULL,
     notice_type ENUM('SYSTEM','EVENT','UPDATE') NOT NULL DEFAULT 'SYSTEM',
     is_pinned   BOOLEAN      NOT NULL DEFAULT FALSE,
+    order_isdx   INT         NULL DEFAULT 0 COMMENT 'pin 적용시 정렬순서'
     created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_notice_type(created_at, notice_type)
