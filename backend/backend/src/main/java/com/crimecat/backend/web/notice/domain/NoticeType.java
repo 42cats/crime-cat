@@ -1,4 +1,4 @@
-package com.crimecat.backend.web.admin.domain;
+package com.crimecat.backend.web.notice.domain;
 
 public enum NoticeType {
   SYSTEM,EVENT,UPDATE

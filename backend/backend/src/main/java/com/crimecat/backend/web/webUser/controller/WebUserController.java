@@ -33,7 +33,7 @@ public class WebUserController {
   public ResponseEntity<Map<String, Object>> isDailyCheck(@PathVariable("user_id") String userId){
     return webUserService.isDailyCheck(userId);
   }
-  @PatchMapping("/coupons")
+  @PatchMapping("/coupon")
   public MessageDto<?> couponReem (@RequestBody WebCouponRequestDto request){
     WebUser webUser = webUserRepository.findById(UUID.fromString(request.getUserId())).orElseThrow(ErrorStatus.USER_NOT_FOUND::asControllerException);
     CouponRedeemRequestDto couponRedeemRequestDto = new CouponRedeemRequestDto(
