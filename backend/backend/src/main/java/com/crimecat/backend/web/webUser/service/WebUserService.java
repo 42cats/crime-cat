@@ -94,7 +94,7 @@ public class WebUserService {
     }
 
     public ResponseEntity<Map<String, Object>> isDailyCheck(String userId) {
-        userRepository.findById(UUID.fromString(userId))
+        webUserRepository.findById(UUID.fromString(userId))
                 .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
         Optional<LocalDateTime> existing = userDailyCheckUtil.load(userId);
 
@@ -106,7 +106,7 @@ public class WebUserService {
     }
 
     public ResponseEntity<Map<String, Object>> userDailyCheck(String userId) {
-        userRepository.findById(UUID.fromString(userId))
+        webUserRepository.findById(UUID.fromString(userId))
                 .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
         Optional<LocalDateTime> existing = userDailyCheckUtil.load(userId);
 
