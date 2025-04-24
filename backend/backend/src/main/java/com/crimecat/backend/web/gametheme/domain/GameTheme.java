@@ -1,12 +1,11 @@
 package com.crimecat.backend.web.gametheme.domain;
 
 import com.crimecat.backend.bot.user.domain.User;
+import com.crimecat.backend.web.gametheme.dto.AddCrimesceneThemeRequest;
+import com.crimecat.backend.web.gametheme.dto.AddGameThemeRequest;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.Type;
@@ -18,6 +17,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -28,7 +28,7 @@ import java.util.UUID;
 @SuperBuilder
 @AllArgsConstructor
 @Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "`TYPE`")
+@DiscriminatorColumn(name = "`TYPE`", discriminatorType = DiscriminatorType.INTEGER)
 public class GameTheme {
     @Id
     @UuidGenerator
@@ -36,12 +36,15 @@ public class GameTheme {
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
+    @Setter
     @Column(name = "TITLE")
     private String title;
 
+    @Setter
     @Column(name = "THUMBNAIL", columnDefinition = "TEXT")
     private String thumbnail;
 
+    @Setter
     @Column(name = "SUMMARY", columnDefinition = "TEXT")
     private String summary;
 
@@ -58,34 +61,47 @@ public class GameTheme {
     private int playCount = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "AUTHOR")
+    @JoinColumn(name = "AUTHOR", updatable = false, insertable = false)
     private User author;
 
+    @Setter
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(name = "AUTHOR")
+    private UUID authorId;
+
+    @Setter
     @Type(JsonType.class)
     @Column(name = "`TAGS`", columnDefinition = "JSON")
-    private List<String> tags;
+    private Set<String> tags;
 
+    @Setter
     @Column(name = "CONTENT", columnDefinition = "TEXT")
     private String content;
 
+    @Setter
     @Column(name = "PLAYER_MIN")
     private int playerMin;
 
+    @Setter
     @Column(name = "PLAYER_MAX")
     private int playerMax;
 
+    @Setter
     @Column(name = "PLAYTIME")
     private int playtime;
 
+    @Setter
     @Column(name = "PRICE")
     private int price;
 
+    @Setter
     @Column(name = "DIFFICULTY")
     private int difficulty;
 
+    @Setter
     @Column(name = "IS_PUBLIC")
     @Builder.Default
-    private boolean isPublic = true;
+    private boolean publicStatus = true;
 
     @Column(name = "IS_DELETED")
     @Builder.Default
@@ -98,4 +114,30 @@ public class GameTheme {
     @LastModifiedDate
     @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
+
+    public static GameTheme from(AddGameThemeRequest request) {
+        if (request instanceof AddCrimesceneThemeRequest) {
+            return CrimesceneTheme.from((AddCrimesceneThemeRequest) request);
+        }
+        return GameTheme.builder()
+                .title(request.getTitle())
+                .summary(request.getSummary())
+                .authorId(request.getAuthor())
+                .tags(request.getTags())
+                .content(request.getContent())
+                .playerMin(request.getPlayerMin())
+                .playerMax(request.getPlayerMax())
+                .playtime(request.getPlaytime())
+                .price(request.getPrice())
+                .difficulty(request.getDifficulty())
+                .publicStatus(request.isPublicStatus())
+                .build();
+    }
+
+    public void setIsDelete(Boolean isDeleted) {
+        if (isDeleted == null) {
+            return;
+        }
+        this.isDeleted = isDeleted;
+    }
 }

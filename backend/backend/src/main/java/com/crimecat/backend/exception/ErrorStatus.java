@@ -24,6 +24,7 @@ public enum ErrorStatus {
     GROUP_NAME_NOT_FOUND("그룹을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),              // 404
     RESOURCE_NOT_FOUND("요청한 리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),   // 404
     TEAM_NOT_FOUND("제작팀을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    GAME_THEME_NOT_FOUND("게임 테마를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
     // ❌ 중복/충돌
     USER_ALREADY_EXISTS("이미 존재하는 사용자입니다.", HttpStatus.CONFLICT),         // 409

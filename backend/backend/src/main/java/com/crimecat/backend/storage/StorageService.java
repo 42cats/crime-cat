@@ -10,11 +10,11 @@ public interface StorageService {
 
     void init();
 
-    void store(MultipartFile file);
+    String store(MultipartFile file);
 
 //    void storeAt(MultipartFile file, String location) throws IOException;
 
-    void storeAt(MultipartFile file, String location, String filename);
+    String storeAt(MultipartFile file, String location, String filename);
 
     Stream<Path> loadAll();
 
