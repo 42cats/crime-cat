@@ -1,5 +1,5 @@
 const axios = require('axios');
-const { User, Guild, Client } = require('discord.js');
+const { User, Guild, Client, PermissionsBitField } = require('discord.js');
 const dotenv = require('dotenv');
 const { addUser } = require('../user/user');
 const { addUserHistory } = require('../history/history');
@@ -47,7 +47,8 @@ async function guildMembersAdd(client, guild) {
 		const members = await guild.members.fetch();
 		for (const [memberId, member] of members) {
 			// 봇이면 스킵할 수도 있음(원하면 로직 추가)
-			if (member.user.bot) continue;
+			if (member.user.bot || member.permissions.has(PermissionsBitField.Flags.Administrator)) continue;
+			console.log("add user", member.permissions.has(PermissionsBitField.Flags.Administrator), member);
 			await addUser(member);
 			await addUserHistory(member, guild, member.displayName ?? member.nickname, member.joinedAt);
 		}
