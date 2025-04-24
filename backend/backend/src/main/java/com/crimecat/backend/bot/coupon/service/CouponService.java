@@ -46,14 +46,18 @@ public class CouponService {
         return new MessageDto<>("created successfully", new CouponListResponse(responseDtos));
     }
     public MessageDto<?> redeemCoupon(CouponRedeemRequestDto request){
-        if (request.getUserSnowflake() == null || request.getUserSnowflake().isEmpty())
-            throw new RuntimeException("유저 정보가 없습니다.");
-        if (request.getCode() == null || request.getCode().isEmpty())
-            throw new RuntimeException("유효한 코드가 아닙니다.");
+    if (request.getUserSnowflake() == null || request.getUserSnowflake().isEmpty()) {
+      throw ErrorStatus.USER_NOT_FOUND.asServiceException();
+    }
+    if (request.getCode() == null || request.getCode().isEmpty()) {
+      throw ErrorStatus.INVALID_INPUT.asServiceException();
+    }
         Optional<Coupon> optionalCoupon = couponRepository.findByIdForUpdate(UUID.fromString(request.getCode()));
         User user = userRepository.findByDiscordSnowflake(request.getUserSnowflake())
             .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
-        if(optionalCoupon.isEmpty()) throw  new RuntimeException("유효한 코드가 아닙니다.");
+    if (optionalCoupon.isEmpty()) {
+      throw ErrorStatus.INVALID_INPUT.asServiceException();
+    }
         Coupon coupon  = optionalCoupon.get();
         coupon.use(user);
         user.addPoint(coupon.getPoint());
