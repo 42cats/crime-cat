@@ -153,3 +153,11 @@ export interface DailyCheck {
 export interface Coupon {
     point: number;
 }
+
+export interface Stats {
+    totalUsers: number;
+    totalServers: number;
+    totalPlayers: number;
+    totalCreators: number;
+    totalThemes: number;
+}
