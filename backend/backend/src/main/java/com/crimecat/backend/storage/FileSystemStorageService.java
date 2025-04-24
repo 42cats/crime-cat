@@ -1,8 +1,10 @@
 package com.crimecat.backend.storage;
 
+import com.crimecat.backend.utils.FileUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,19 +30,19 @@ public class FileSystemStorageService implements StorageService {
     }
 
     @Override
-    public void store(MultipartFile file) {
-        this.storeAt(file, null, file.getOriginalFilename());
+    public String store(MultipartFile file) {
+        return this.storeAt(file, null, file.getOriginalFilename());
     }
 
     @Override
-    public void storeAt(MultipartFile file, String location, String filename) {
+    public String storeAt(MultipartFile file, String location, String filename) {
+        Path savePath = this.rootLocation;
         try {
-            Path savePath = this.rootLocation;
             if (location != null) {
                 Files.createDirectories(this.rootLocation.resolve(location));
                 savePath = savePath.resolve(location);
             }
-            savePath = savePath.resolve(filename);
+            savePath = savePath.resolve(filename + FileUtil.getExtension(file.getOriginalFilename()));
             if (file.isEmpty()) {
                 throw new RuntimeException("Failed to store empty file " + file.getOriginalFilename());
             }
@@ -48,6 +50,7 @@ public class FileSystemStorageService implements StorageService {
         } catch (IOException e) {
             throw new RuntimeException("Failed to store file " + file.getOriginalFilename(), e);
         }
+        return savePath.subpath(1, savePath.getNameCount()).toString();
     }
 
     @Override
