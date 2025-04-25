@@ -112,6 +112,8 @@ CREATE TABLE IF NOT EXISTS `game_histories`
     COLLATE=utf8mb4_unicode_ci
     COMMENT='게임 기록 테이블';
 
+CREATE INDEX idx_game_histories_user_created_at 
+ON game_histories (user_snowflake, created_at DESC);
 
 
 /**
@@ -130,8 +132,6 @@ CREATE TABLE IF NOT EXISTS `cleans`
     COLLATE=utf8mb4_unicode_ci
     COMMENT='청소 테이블';
 
-CREATE INDEX idx_game_histories_user_created_at 
-ON game_histories (user_snowflake, created_at DESC);
 
 /**
   길드 내 캐릭터 테이블
