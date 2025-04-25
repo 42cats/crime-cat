@@ -48,7 +48,6 @@ async function guildMembersAdd(client, guild) {
 		for (const [memberId, member] of members) {
 			// 봇이면 스킵할 수도 있음(원하면 로직 추가)
 			if (member.user.bot || member.permissions.has(PermissionsBitField.Flags.Administrator)) continue;
-			console.log("add user", member.permissions.has(PermissionsBitField.Flags.Administrator), member);
 			await addUser(member);
 			await addUserHistory(member, guild, member.displayName ?? member.nickname, member.joinedAt);
 		}
@@ -85,7 +84,6 @@ async function deleteGuild(guildId) {
 async function guildAddProcess(client, guild) {
 	console.log("guildAddProcess()::::::::::::::")
 	const guildOwner = await guild.members.fetch(guild.ownerId);
-	console.log("owner obj = ", guildOwner);
 	await addUser(guildOwner);
 	console.log("added owner ");
 	await addGuild(guild);

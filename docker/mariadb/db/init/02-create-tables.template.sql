@@ -100,13 +100,18 @@ CREATE TABLE IF NOT EXISTS `game_histories`
     `id`                BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     `user_snowflake`    VARCHAR(50) NOT NULL COMMENT '디스코드 user snowflake',
     `guild_snowflake`   VARCHAR(50) NOT NULL COMMENT '디스코드 guild snowflake',
-    `is_win`            BOOLEAN NULL DEFAULT NULL COMMENT '승리 여부',
+    `game_theme_id`     VARCHAR(50) NOT NULL COMMENT '게임 테마 ID',
+    `is_win`            BOOLEAN NULL DEFAULT FALSE COMMENT '승리 여부',
     `created_at`        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '기록 생성 시간',
     `character_name`    VARCHAR(50) DEFAULT NULL COMMENT '캐릭터 이름',
+    `memo`              VARCHAR(1000) DEFAULT NULL COMMENT '플레이 기록 메모',
     CONSTRAINT `fk_game_histories_discord_users` FOREIGN KEY (`user_snowflake`) REFERENCES `discord_users`(`snowflake`)
         ON DELETE CASCADE,
     CONSTRAINT `fk_game_histories_guilds` FOREIGN KEY (`guild_snowflake`) REFERENCES `guilds`(`snowflake`)
         ON DELETE CASCADE
+    CONSTRAINT `fk_game_histories_game_themes`
+        FOREIGN KEY (`game_theme_id`) REFERENCES `game_themes`(`id`)
+        ON DELETE SET NULL
 ) ENGINE=InnoDB
     DEFAULT CHARSET=utf8mb4
     COLLATE=utf8mb4_unicode_ci
@@ -114,6 +119,15 @@ CREATE TABLE IF NOT EXISTS `game_histories`
 
 CREATE INDEX idx_game_histories_user_created_at 
 ON game_histories (user_snowflake, created_at DESC);
+
+
+-- 유저 + 생성일 내림차순 인덱스
+CREATE INDEX idx_game_histories_user_created_at 
+ON game_histories (user_snowflake, created_at DESC);
+
+-- 게임 테마 기준 인덱스 (통계용)
+CREATE INDEX idx_game_histories_game_theme 
+ON game_histories (game_theme_id);
 
 
 /**
