@@ -1,12 +1,13 @@
 import { apiClient } from '@/lib/api';
 import { Command } from '@/lib/types';
 
-const baseURI = '/public/commands';
+const publicBaseURI = '/public/commands';
+const baseURI = '/commands';
 
 export const commandsService = {
   getCommands: async (): Promise<Command[]> => {
     try {
-      return await apiClient.get<Command[]>(`${baseURI}`);
+      return await apiClient.get<Command[]>(`${publicBaseURI}`);
     } catch (error) {
       console.error('명령어 불러오기 오류:', error);
       return [];
@@ -15,7 +16,7 @@ export const commandsService = {
 
   getCommandById: async (id: string): Promise<Command | null> => {
     try {
-      return await apiClient.get<Command>(`${baseURI}/${id}`);
+      return await apiClient.get<Command>(`${publicBaseURI}/${id}`);
     } catch (error) {
       console.error('ID로 명령어 조회 실패:', error);
       return null;

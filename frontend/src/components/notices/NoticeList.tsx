@@ -94,8 +94,8 @@ const NoticeList: React.FC = () => {
       <div className="container mx-auto px-6 py-20">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">공지사항</h1>
-          {hasRole(['ADMIN', 'MANAGER']) && (
-            <Link to="/notices/create">
+          {hasRole(['ADMIN']) && (
+            <Link to="/notices/new">
               <Button size="sm">글쓰기</Button>
             </Link>
           )}
