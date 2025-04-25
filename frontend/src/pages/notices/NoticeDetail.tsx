@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, Share2, Edit, Trash } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/useToast';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import { useAuth } from '@/hooks/useAuth';
 

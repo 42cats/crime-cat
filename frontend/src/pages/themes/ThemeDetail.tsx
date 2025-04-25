@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { themesService } from "@/api/themesService";
 import { Skeleton } from "@/components/ui/skeleton";
 import ThemePasswordDialog from "@/components/themes/ThemePasswordDialog";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/useToast";
 import ReactMarkdown from "react-markdown";
 import {
     AlertDialog,

@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ProfileCard } from '@/components/dashboard/ProfileCard';
 import { DailyCheckCard } from '@/components/dashboard/DailyCheckCard';
 import { dailycheckService } from '@/api/dailycheckService';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/useToast';
 
 const fetchDailyCheck = async (id: string) => {
   const data = await dailycheckService.getDailyCheck(id);

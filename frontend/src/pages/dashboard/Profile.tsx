@@ -13,7 +13,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import PageTransition from "@/components/PageTransition";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/useToast";
 import {
   Dialog,
   DialogContent,

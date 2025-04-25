@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import PageTransition from "@/components/PageTransition";
 import { LoaderCircle, User, Key } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/useToast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
