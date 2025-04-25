@@ -1,12 +1,13 @@
 import { apiClient } from '@/lib/api';
 import { Notice, NoticePage } from '@/lib/types';
 
-const baseURI = '/public/notices';
+const publicBaseURI = '/public/notices';
+const baseURI = '/admin/notices';
 
 export const noticesService = {
   getLatestNotices: async (): Promise<Notice[]> => {
     try {
-      const response = await apiClient.get<NoticePage>(`${baseURI}?limit=4`);
+      const response = await apiClient.get<NoticePage>(`${publicBaseURI}?limit=4`);
       return response.content;
     } catch (error) {
       console.error('최신 공지 불러오기 오류:', error);
@@ -16,7 +17,7 @@ export const noticesService = {
 
   getNotices: async (page: number, limit: number): Promise<NoticePage> => {
     try {
-      return await apiClient.get<NoticePage>(`${baseURI}?page=${page}&limit=${limit}`);
+      return await apiClient.get<NoticePage>(`${publicBaseURI}?page=${page}&limit=${limit}`);
     } catch (error) {
       console.error('공지 목록 불러오기 오류:', error);
       throw error;
@@ -25,7 +26,7 @@ export const noticesService = {
 
   getNoticeById: async (id: string): Promise<Notice | null> => {
     try {
-      return await apiClient.get<Notice>(`${baseURI}/${id}`);
+      return await apiClient.get<Notice>(`${publicBaseURI}/${id}`);
     } catch (error) {
       console.error('공지 ID로 조회 실패:', error);
       throw error;

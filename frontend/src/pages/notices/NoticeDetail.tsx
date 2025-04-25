@@ -107,7 +107,7 @@ const NoticeDetail: React.FC = () => {
 
             <div className="flex flex-col items-end gap-2 whitespace-nowrap">
               <div className="flex gap-2">
-                {hasRole(['ADMIN', 'MANAGER']) && (
+                {hasRole(['ADMIN']) && (
                   <>
                     <Button variant="outline" className="h-8 px-2 text-sm" onClick={handleEdit}>
                       <Edit className="h-4 w-4 mr-1" /> 수정
