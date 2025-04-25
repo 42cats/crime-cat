@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import PageTransition from '@/components/PageTransition';
 import { isWithinDays } from '@/utils/highlight';
 import { useAuth } from '@/hooks/useAuth';
+import { Pin } from 'lucide-react';
 
 const PAGE_SIZE = 10;
 
@@ -117,29 +118,39 @@ const NoticeList: React.FC = () => {
               return (
                 <div
                   key={notice.id}
-                  className="glass p-4 rounded-lg cursor-pointer hover:bg-slate-100/5 transition-colors"
+                  className={`relative glass p-4 rounded-lg cursor-pointer transition-colors hover:bg-slate-100/5 ${
+                    notice.isPinned ? 'border border-yellow-300 ring-1 ring-yellow-200' : ''
+                  }`}
                   onClick={() => handleClick(notice)}
                 >
-                  <div className="block sm:flex sm:justify-between sm:items-start mb-1">
-                    <div className="flex items-center gap-2 flex-wrap text-sm mb-1 sm:mb-0">
-                      {noticeTypeBadge(notice.noticeType)}
-                      {isNew && <span className="twinkle-badge twinkle-badge-yellow">New</span>}
-                      {isUpdated && (!isNew || notice.createdAt !== notice.updatedAt) && (
-                        <span className="twinkle-badge twinkle-badge-blue">Updated</span>
-                      )}
+                  {notice.isPinned && (
+                    <div className="absolute top-1.5 left-1.5 z-10">
+                      <Pin className="w-4 h-4 text-yellow-500" />
                     </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap sm:text-right">
-                      {formatDateTime(notice.createdAt)}
-                    </span>
+                  )}
+
+                  <div className="pl-6">
+                    <div className="block sm:flex sm:justify-between sm:items-start mb-1">
+                      <div className="flex items-center gap-2 flex-wrap text-sm mb-1 sm:mb-0">
+                        {noticeTypeBadge(notice.noticeType)}
+                        {isNew && <span className="twinkle-badge twinkle-badge-yellow">New</span>}
+                        {isUpdated && (!isNew || notice.createdAt !== notice.updatedAt) && (
+                          <span className="twinkle-badge twinkle-badge-blue">Updated</span>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap sm:text-right">
+                        {formatDateTime(notice.createdAt)}
+                      </span>
+                    </div>
+
+                    <h3 className="text-base font-semibold line-clamp-1 sm:line-clamp-2 mb-1">
+                      {notice.title}
+                    </h3>
+
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {notice.summary || notice.content}
+                    </p>
                   </div>
-
-                  <h3 className="text-base font-semibold line-clamp-1 sm:line-clamp-2 mb-1">
-                    {notice.title}
-                  </h3>
-
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {notice.summary || notice.content}
-                  </p>
                 </div>
               );
             })}

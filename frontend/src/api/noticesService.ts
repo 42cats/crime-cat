@@ -6,7 +6,8 @@ const baseURI = '/public/notices';
 export const noticesService = {
   getLatestNotices: async (): Promise<Notice[]> => {
     try {
-      return await apiClient.get<Notice[]>(`${baseURI}/limit=4`);
+      const response = await apiClient.get<NoticePage>(`${baseURI}?limit=4`);
+      return response.content;
     } catch (error) {
       console.error('최신 공지 불러오기 오류:', error);
       throw error;
