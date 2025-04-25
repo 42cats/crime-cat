@@ -1,7 +1,7 @@
-import React from "react";
-import { Navigate, Outlet, Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { ThemeToggle } from "@/components/themes/ThemeToggle";
+import React from 'react';
+import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import {
     LayoutDashboard,
     Server,
@@ -60,7 +60,6 @@ const DashboardLayout: React.FC = () => {
     );
 };
 
-// ✅ 모바일용 사이드바 열기 버튼 (Menu 아이콘)
 const MobileSidebarToggle = () => {
     const isMobile = useIsMobile();
     const { toggleSidebar } = useSidebar();

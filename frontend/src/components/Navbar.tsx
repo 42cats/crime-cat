@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { ThemeToggle } from '@/components/themes/ThemeToggle';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Menu, X, User, LogOut } from 'lucide-react';
 import {
@@ -34,16 +34,16 @@ const Navbar: React.FC = () => {
   }, [location.pathname]);
 
   const navItems = [
-    { name: "홈", path: "/" },
-    { name: "공지사항", path: "/notices" },
-    { name: "명령어", path: "/commands" },
-    { name: "테마", path: "/themes" },
+    { name: '홈', path: '/' },
+    { name: '공지사항', path: '/notices' },
+    { name: '명령어', path: '/commands' },
+    { name: '테마' },
   ];
 
   const themeSubItems = [
     { name: '크라임씬', path: '/themes/crimescene' },
-    { name: '방탈출', path: '/themes/escaperoom' },
-    { name: '머더미스터리', path: '/themes/murdermystery' },
+    { name: '방탈출', path: '/themes/escape_room' },
+    { name: '머더미스터리', path: '/themes/murder_mystery' },
     { name: '리얼월드', path: '/themes/realworld' },
   ];
 

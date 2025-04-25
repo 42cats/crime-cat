@@ -18,9 +18,10 @@ import Commands from "@/pages/commands/Commands";
 import CommandDetail from "@/pages/commands/CommandDetail";
 import CreateCommand from "@/pages/commands/CreateCommand";
 import EditCommand from "@/pages/commands/EditCommand";
-import Themes from "@/pages/themes/Themes";
+import ThemeList from "@/pages/themes/ThemeList";
 import ThemeDetail from "@/pages/themes/ThemeDetail";
 import CreateTheme from "@/pages/themes/CreateTheme";
+import EditTheme from "@/pages/themes/EditTheme";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/NotFound";
 import TermsPage from "@/pages/TermsPage";
@@ -28,7 +29,7 @@ import PrivacyPage from "./pages/PrivacyPage";
 import ContactPage from "@/pages/ContactPage";
 import DonationPage from "@/pages/DonationPage";
 import Unauthorized from "@/pages/Unauthorized";
-import NoticeList from "@/components/notices/NoticeList";
+import NoticeList from "@/pages/notices/NoticeList";
 import NoticeDetail from "@/pages/notices/NoticeDetail";
 import CreateNotice from "@/pages/notices/CreateNotice";
 import EditNotice from "@/pages/notices/EditNotice";
@@ -44,98 +45,48 @@ import GameHistoryManager from "./pages/GameHistoryOwnerBoard";
 import UserGameHistoryPage from "./pages/UserGameHistoryPage";
 
 const App = () => (
-    <RecoilRoot>
-        <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                    <AuthInitializer />
-                    <AnimatePresence mode="wait">
-                        <Routes>
-                            {/* Main Layout Routes */}
-                            <Route element={<MainLayout />}>
-                                <Route path="/" element={<Index />} />
-                                <Route
-                                    path="/commands"
-                                    element={<Commands />}
-                                />
-                                <Route
-                                    path="/commands/:id"
-                                    element={<CommandDetail />}
-                                />
-                                <Route
-                                    path="/commands/new"
-                                    element={
-                                        <PrivateRoute
-                                            allowedRoles={["ADMIN", "MANAGER"]}
-                                        >
-                                            <CreateCommand />
-                                        </PrivateRoute>
-                                    }
-                                />
-                                <Route
-                                    path="/commands/edit/:id"
-                                    element={
-                                        <PrivateRoute
-                                            allowedRoles={["ADMIN", "MANAGER"]}
-                                        >
-                                            <EditCommand />
-                                        </PrivateRoute>
-                                    }
-                                />
-                                <Route
-                                    path="/notices"
-                                    element={<NoticeList />}
-                                />
-                                <Route
-                                    path="/notices/:id"
-                                    element={<NoticeDetail />}
-                                />
-                                <Route
-                                    path="/notices/new"
-                                    element={
-                                        <PrivateRoute
-                                            allowedRoles={["ADMIN", "MANAGER"]}
-                                        >
-                                            <CreateNotice />
-                                        </PrivateRoute>
-                                    }
-                                />
-                                <Route
-                                    path="/notices/edit/:id"
-                                    element={
-                                        <PrivateRoute
-                                            allowedRoles={["ADMIN", "MANAGER"]}
-                                        >
-                                            <EditNotice />
-                                        </PrivateRoute>
-                                    }
-                                />
-                                <Route path="/themes" element={<Themes />} />
-                                <Route
-                                    path="/themes/:id"
-                                    element={<ThemeDetail />}
-                                />
-                                <Route
-                                    path="/themes/new"
-                                    element={<CreateTheme />}
-                                />
-                                <Route path="/terms" element={<TermsPage />} />
-                                <Route
-                                    path="/privacy"
-                                    element={<PrivacyPage />}
-                                />
-                                <Route path="/login" element={<Login />} />
-                                <Route
-                                    path="/contact"
-                                    element={<ContactPage />}
-                                />
-                                <Route
-                                    path="/donate"
-                                    element={<DonationPage />}
-                                />
-                            </Route>
+  <RecoilRoot>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+        <AuthInitializer />
+          <AnimatePresence mode="wait">
+            <Routes>
+              {/* Main Layout Routes */}
+              <Route element={<MainLayout />}>
+                <Route path="/" element={<Index />} />
+                <Route path="/commands" element={<Commands />} />
+                <Route path="/commands/:id" element={<CommandDetail />} />
+                <Route path="/commands/new"
+                       element={<PrivateRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                                  <CreateCommand />
+                                </PrivateRoute>} />
+                <Route path="/commands/edit/:id"
+                       element={<PrivateRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                                  <EditCommand />
+                                </PrivateRoute>} />
+                <Route path="/notices" element={<NoticeList />} />
+                <Route path="/notices/:id" element={<NoticeDetail />} />
+                <Route path="/notices/new" 
+                       element={<PrivateRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                                  <CreateNotice />
+                                </PrivateRoute>} />
+                <Route path="/notices/edit/:id" 
+                       element={<PrivateRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                                  <EditNotice />
+                                 </PrivateRoute>} />
+                <Route path="/themes/:category" element={<ThemeList />} />
+                <Route path="/themes/:category/:id" element={<ThemeDetail />} />
+                <Route path="/themes/new" element={<CreateTheme />} />
+                <Route path="/themes/edit/:id" element={<EditTheme />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/donate" element={<DonationPage />} />
+              </Route>
 
                             {/* Dashboard Layout Routes */}
                             <Route
