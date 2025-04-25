@@ -93,27 +93,6 @@ export interface CommandInput {
     content: string;
 }
 
-export interface Theme {
-    id: string;
-    title: string;
-    thumbnail: string;
-    description: string;
-    recommendations: number;
-    content: string;
-    tags: string[];
-    password: string;
-    makers: string[];
-    players: string;
-    characters: string[];
-    price: number;
-    time: number;
-    contact?: string;
-    createdBy: string;
-    updatedBy: string;
-    createdAt: string;
-    updatedAt: string;
-}
-
 export interface Guild {
     id: string;
     name: string;
@@ -190,11 +169,11 @@ export interface NoticePage {
 }
 
 export interface NoticeInput {
-    title: string;
-    content: string;
-    summary: string;
-    noticeType: NoticeType;
-    isPinned: boolean;
+  title: string;
+  content: string;
+  summary: string;
+  noticeType: NoticeType;
+  isPinned: boolean;
 }
 
 export interface AdditionalUserInfo {
@@ -203,3 +182,74 @@ export interface AdditionalUserInfo {
     recentlyPlayCrimeSeenThemeTime?: string; // 최근 플레이한 시간 (UTC ISO-8601)
     mostFavoriteCrimeSeenMaker?: string; // 가장 자주 플레이한 제작자
 }
+
+interface BaseTheme {
+  id: string;
+  title: string;
+  thumbnail: string;
+  summary: string;
+  recommendations: number;
+  views: number;
+  playCount: number;
+  authorId: string;
+  playersMin: number;
+  playersMax: number;
+  playtime: number;
+  price: number;
+  difficulty: number;
+  tags: string[];
+  content: string;
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+  type: 'CRIMESCENE' | 'ESCAPE_ROOM' | 'MURDER_MYSTERY' | 'REALWORLD';
+}
+
+interface CrimeSceneExtra {
+  characters: string[];
+}
+
+export interface CrimeSceneTheme extends BaseTheme {
+  type: 'CRIMESCENE';
+  makerTeamsId: string;
+  guildSnowflake: string;
+  extra: CrimeSceneExtra;
+}
+
+export interface CrimeScenePage {
+  themes: CrimeSceneTheme[];
+  page: number;
+  size: number;
+}
+
+export interface EscapeRoomTheme extends BaseTheme {
+  type: 'ESCAPE_ROOM';
+}
+
+export interface EscapeRoomPage {
+  themes: EscapeRoomTheme[];
+  page: number;
+  size: number;
+}
+
+export interface MurderMysteryTheme extends BaseTheme {
+  type: 'MURDER_MYSTERY';
+}
+
+export interface MurderMysteryPage {
+  themes: MurderMysteryTheme[];
+  page: number;
+  size: number;
+}
+
+export interface RealWorldTheme extends BaseTheme {
+  type: 'REALWORLD';
+}
+
+export interface RealWorldTheme extends BaseTheme {
+  themes: RealWorldTheme[];
+  page: number;
+  size: number;
+}
+
+export type Theme = CrimeSceneTheme | EscapeRoomTheme | MurderMysteryTheme | RealWorldTheme;
