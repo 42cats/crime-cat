@@ -1,5 +1,6 @@
 package com.crimecat.backend.web.gameHistory.service;
 
+import com.crimecat.backend.web.gametheme.domain.GameTheme;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,9 +21,9 @@ public class GameHistoryQueryService {
 
 	private final GameHistoryRepository gameHistoryRepository;
 
-	public void saveUserGameHistory(boolean isWin,
-									LocalDateTime createdAt, String characterName, DiscordUser user, Guild guild) {
-		gameHistoryRepository.save(new GameHistory(isWin, createdAt, characterName, user, guild));
+	public void saveCrimeSceneUserGameHistory(boolean isWin,
+									LocalDateTime createdAt, String characterName, DiscordUser user, Guild guild, GameTheme gameTheme) {
+		gameHistoryRepository.save(new GameHistory(isWin, createdAt, characterName, user, guild, gameTheme));
 	}
 
 	public List<GameHistory> getGameHistoryByUserSnowflake(String userSnowflake) {

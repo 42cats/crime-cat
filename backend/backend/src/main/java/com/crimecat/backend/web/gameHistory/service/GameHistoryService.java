@@ -13,6 +13,9 @@ import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryDto;
 import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryFailedResponseDto;
 import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryResponseDto;
 import com.crimecat.backend.web.gameHistory.dto.UserGameHistorySuccessResponseDto;
+import com.crimecat.backend.web.gametheme.domain.CrimesceneTheme;
+import com.crimecat.backend.web.gametheme.repository.GameThemeRepository;
+import com.crimecat.backend.web.gametheme.service.GameThemeService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -29,9 +32,11 @@ public class GameHistoryService {
 	private final UserService userService;
 	private final GuildService guildService;
 	private final GuildQueryService guildQueryService;
+	private final GameThemeService gameThemeService;
+	private final GameThemeRepository gameThemeRepository;
 
 	@Transactional
-	public SaveUserHistoryResponseDto saveUserGameHistory(
+	public SaveUserHistoryResponseDto saveCrimeSceneUserGameHistory(
 			SaveUserGameHistoryRequestDto saveUserGameHistoryRequestDto) {
 
 		DiscordUser user = userService.findUserBySnowflake(saveUserGameHistoryRequestDto.getUserSnowflake());
@@ -51,18 +56,23 @@ public class GameHistoryService {
 			return new SaveUserHistoryResponseDto("History already recorded");
 		}
 
-		gameHistoryQueryService.saveUserGameHistory(
+		CrimesceneTheme byGuildSnowflake = gameThemeRepository.findByGuildSnowflake(
+				guild.getSnowflake())
+				.orElse(null);
+
+		gameHistoryQueryService.saveCrimeSceneUserGameHistory(
 				saveUserGameHistoryRequestDto.isWin(),
 				saveUserGameHistoryRequestDto.getCreatedAt(),
 				saveUserGameHistoryRequestDto.getCharacterName(),
 				user,
-				guild);
+				guild,
+				byGuildSnowflake);
 
 		return new SaveUserHistoryResponseDto("History recorded successfully");
 	}
 
 	@Transactional(readOnly = true)
-	public UserGameHistoryResponseDto getUserGameHistoryByUserSnowflake(String userSnowflake) {
+	public UserGameHistoryResponseDto getUserCrimeSceneGameHistoryByUserSnowflake(String userSnowflake) {
 
 		DiscordUser user = userService.findUserBySnowflake(userSnowflake);
 		if (user == null) {

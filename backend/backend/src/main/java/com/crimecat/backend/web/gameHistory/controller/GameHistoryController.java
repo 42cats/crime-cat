@@ -21,10 +21,10 @@ public class GameHistoryController {
 	 * @param saveUserGameHistoryRequestDto
 	 * @return
 	 */
-	@PostMapping("")
+	@PostMapping("/crime_scene")
 	public SaveUserHistoryResponseDto saveUserHistory(
 			@RequestBody SaveUserGameHistoryRequestDto saveUserGameHistoryRequestDto) {
-		return gameHistoryService.saveUserGameHistory(saveUserGameHistoryRequestDto);
+		return gameHistoryService.saveCrimeSceneUserGameHistory(saveUserGameHistoryRequestDto);
 	}
 
 	/**
@@ -32,12 +32,12 @@ public class GameHistoryController {
 	 * @param userSnowflake
 	 * @return
 	 */
-	@GetMapping("{user_snowflake}")
+	@GetMapping("/crime_scene/{user_snowflake}")
 	public UserGameHistoryResponseDto getUserGameHistoryByUserSnowflake(@PathVariable("user_snowflake") String userSnowflake) {
-		return gameHistoryService.getUserGameHistoryByUserSnowflake(userSnowflake);
+		return gameHistoryService.getUserCrimeSceneGameHistoryByUserSnowflake(userSnowflake);
 	}
 
-	@PatchMapping("{user_snowflake}/guild/{guild_snowflake}")
+	@PatchMapping("/crime_scene/{user_snowflake}/guild/{guild_snowflake}")
 	public MessageDto<?> updateUserGameHistory(@PathVariable("user_snowflake") String userSnowflake,
 											   @PathVariable("guild_snowflake") String guildSnowflake,
 											   @RequestBody GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
