@@ -2,7 +2,11 @@ import {
   CrimeSceneTheme,
   EscapeRoomTheme,
   MurderMysteryTheme,
-  RealWorldTheme
+  RealWorldTheme,
+  CrimeScenePage,
+  EscapeRoomPage,
+  MurderMysteryPage,
+  RealWorldPage
 } from '@/lib/types';
 import { apiClient } from "@/lib/api";
 
