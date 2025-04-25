@@ -1,24 +1,13 @@
-import { Theme } from '@/lib/types';
+import {
+  CrimeSceneTheme,
+  EscapeRoomTheme,
+  MurderMysteryTheme,
+  RealWorldTheme
+} from '@/lib/types';
+import { apiClient } from "@/lib/api";
 
-// Vite 전용: themes 폴더 내 모든 JSON 동기 로드
-const modules = import.meta.glob('@/data/themes/*.json', { eager: true });
-
-// Theme[] 생성
-const defaultThemes: Theme[] = Object.values(modules).map((mod: any) => mod.default || mod) as Theme[];
-
-// 저장된 테마 불러오기
-const getStoredThemes = (): Theme[] => {
-  return defaultThemes;
-};
-
-// 저장된 테마 업데이트 (로컬에서만 사용됨)
-const updateStoredThemes = (themes: Theme[]) => {
-  localStorage.setItem('themes', JSON.stringify(themes));
-};
-
-// 테마 관련 서비스 정의
 export const themesService = {
-  // 모든 테마 가져오기
+
   getThemes: async (): Promise<Theme[]> => {
     try {
       return getStoredThemes();
