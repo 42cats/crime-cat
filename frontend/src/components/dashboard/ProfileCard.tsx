@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { Gift } from 'lucide-react';
 import { couponService } from '@/api/couponService';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/useToast';
 
 interface Props {
   user: {
