@@ -253,3 +253,4 @@ export interface RealWorldPage extends BaseTheme {
 }
 
 export type Theme = CrimeSceneTheme | EscapeRoomTheme | MurderMysteryTheme | RealWorldTheme;
+export type ThemePage = CrimeScenePage | EscapeRoomPage | MurderMysteryPage | RealWorldPage;

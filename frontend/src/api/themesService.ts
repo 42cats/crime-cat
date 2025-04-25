@@ -1,112 +1,64 @@
-import {
-  CrimeSceneTheme,
-  EscapeRoomTheme,
-  MurderMysteryTheme,
-  RealWorldTheme,
-  CrimeScenePage,
-  EscapeRoomPage,
-  MurderMysteryPage,
-  RealWorldPage
-} from '@/lib/types';
-import { apiClient } from "@/lib/api";
+import { Theme, ThemePage } from '@/lib/types';
+import { apiClient } from '@/lib/api';
+ 
+const baseURI = '/themes';
 
 export const themesService = {
-
-  getThemes: async (): Promise<Theme[]> => {
+  getLatestThemes: async (
+    category: 'CRIMESCENE' | 'ESCAPE_ROOM' | 'MURDER_MYSTERY' | 'REALWORLD'
+  ): Promise<Theme[]> => {
     try {
-      return getStoredThemes();
+    const response = await apiClient.get<ThemePage>(`${baseURI}?limit=5&page=0&category=${category}`);
+    return response.themes;
     } catch (error) {
-      console.error('테마 목록 가져오기 실패:', error);
-      return defaultThemes;
+    console.error('최신 테마 불러오기 실패:', error);
+    throw error;
     }
   },
 
-  // 특정 ID의 테마 가져오기
-  getThemeById: async (id: string): Promise<Theme | null> => {
+  getThemeById: async (id: string): Promise<Theme> => {
     try {
-      const themes = getStoredThemes();
-      return themes.find((t) => t.id === id) || null;
+      return await apiClient.get<Theme>(`${baseURI}/${id}`);
     } catch (error) {
-      console.error(`ID로 테마 가져오기 실패:`, error);
-      return null;
+      console.error(`테마 ID로 조회 실패:`, error);
+      throw error;
     }
   },
 
-  // 테마 생성
   createTheme: async (
-    data: Omit<Theme, 'id' | 'createdBy' | 'updatedBy' | 'createdAt' | 'updatedAt'>
+    data: Omit<Theme, 'id' | 'authorId' | 'recommendations' | 'views' | 'playCount' | 'createdAt' | 'updatedAt'>
   ): Promise<Theme> => {
     try {
-      const themes = getStoredThemes();
-      const newTheme: Theme = {
-        ...data,
-        id: Date.now().toString(),
-        createdBy: 'user',
-        updatedBy: 'user',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      themes.push(newTheme);
-      updateStoredThemes(themes);
-      return newTheme;
+      return await apiClient.post<Theme>(`${baseURI}`, data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
     } catch (error) {
       console.error(`테마 생성 실패:`, error);
       throw error;
     }
   },
 
-  // 테마 수정
-  updateTheme: async (id: string, data: Partial<Theme>, password?: string): Promise<Theme> => {
+  updateTheme: async (id: string, data: Partial<Theme>): Promise<Theme> => {
     try {
-      const themes = getStoredThemes();
-      const index = themes.findIndex((t) => t.id === id);
-      if (index === -1) throw new Error('테마를 찾을 수 없습니다.');
-      if (themes[index].password && password !== themes[index].password) {
-        throw new Error('비밀번호가 일치하지 않습니다.');
-      }
-
-      themes[index] = {
-        ...themes[index],
-        ...data,
-        updatedBy: 'user',
-        updatedAt: new Date().toISOString()
-      };
-      updateStoredThemes(themes);
-      return themes[index];
+      return await apiClient.post<Theme>(`${baseURI}/${id}`, data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
     } catch (error) {
       console.error(`테마 수정 실패:`, error);
       throw error;
     }
   },
 
-  // 테마 삭제
-  deleteTheme: async (id: string, password?: string): Promise<void> => {
+  deleteTheme: async (id: string): Promise<void> => {
     try {
-      const themes = getStoredThemes();
-      const index = themes.findIndex((t) => t.id === id);
-      if (index === -1) throw new Error('테마를 찾을 수 없습니다.');
-      if (themes[index].password && password !== themes[index].password) {
-        throw new Error('비밀번호가 일치하지 않습니다.');
-      }
-
-      themes.splice(index, 1);
-      updateStoredThemes(themes);
+      await apiClient.delete(`${baseURI}/${id}`);
     } catch (error) {
       console.error(`테마 삭제 실패:`, error);
       throw error;
     }
   },
-
-  // 비밀번호 확인
-  verifyThemePassword: async (id: string, password: string): Promise<boolean> => {
-    try {
-      const theme = await themesService.getThemeById(id);
-      if (!theme) throw new Error('테마를 찾을 수 없습니다.');
-      return theme.password === password;
-    } catch (error) {
-      console.error(`비밀번호 검증 실패:`, error);
-      return false;
-    }
-  }
 };
