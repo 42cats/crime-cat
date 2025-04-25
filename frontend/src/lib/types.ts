@@ -252,5 +252,41 @@ export interface RealWorldPage extends BaseTheme {
   size: number;
 }
 
+interface BaseThemeInput {
+  title: string;
+  thumbnail: File;
+  summary: string;
+  playersMin: number;
+  playersMax: number;
+  playtime: number;
+  price: number;
+  difficulty: number;
+  tags: string[];
+  content: string;
+  isPublic: boolean;
+}
+
+export interface CrimeSceneInput extends BaseThemeInput {
+  type: 'CRIMESCENE';
+  makerTeamsId: string;
+  guildSnowflake: string;
+  extra: {
+    characters: string[];
+  };
+}
+
+export interface EscapeRoomInput extends BaseThemeInput {
+  type: 'ESCAPE_ROOM';
+}
+
+export interface MurderMysteryInput extends BaseThemeInput {
+  type: 'MURDER_MYSTERY';
+}
+
+export interface RealWorldInput extends BaseThemeInput {
+  type: 'REALWORLD';
+}
+
 export type Theme = CrimeSceneTheme | EscapeRoomTheme | MurderMysteryTheme | RealWorldTheme;
 export type ThemePage = CrimeScenePage | EscapeRoomPage | MurderMysteryPage | RealWorldPage;
+export type ThemeInput = CrimeSceneInput | EscapeRoomInput | MurderMysteryInput | RealWorldInput;

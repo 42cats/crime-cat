@@ -52,7 +52,7 @@ const BoardSection = ({
               >
                 <button
                   className="text-left w-full hover:text-primary transition-colors"
-                  onClick={() => navigate(`/themes/${post.id}`)}
+                  onClick={() => navigate(`/themes/${category}/${post.id}`)}
                 >
                   <h4 className="text-sm font-medium truncate">{post.title}</h4>
                   <div className="flex justify-between text-xs text-muted-foreground mt-1">

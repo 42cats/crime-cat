@@ -8,7 +8,21 @@ export const themesService = {
     category: 'CRIMESCENE' | 'ESCAPE_ROOM' | 'MURDER_MYSTERY' | 'REALWORLD'
   ): Promise<Theme[]> => {
     try {
-    const response = await apiClient.get<ThemePage>(`${baseURI}?limit=5&page=0&category=${category}`);
+    const response = await apiClient.get<ThemePage>(`${baseURI}?limit=5&category=${category}`);
+    return response.themes;
+    } catch (error) {
+    console.error('최신 테마 불러오기 실패:', error);
+    throw error;
+    }
+  },
+
+  getThemes: async (
+    category: 'CRIMESCENE' | 'ESCAPE_ROOM' | 'MURDER_MYSTERY' | 'REALWORLD',
+    limit: number,
+    page: number
+  ): Promise<Theme[]> => {
+    try {
+    const response = await apiClient.get<ThemePage>(`${baseURI}?limit=${limit}&page=${page}&category=${category}`);
     return response.themes;
     } catch (error) {
     console.error('최신 테마 불러오기 실패:', error);
@@ -26,7 +40,7 @@ export const themesService = {
   },
 
   createTheme: async (
-    data: Omit<Theme, 'id' | 'authorId' | 'recommendations' | 'views' | 'playCount' | 'createdAt' | 'updatedAt'>
+    data: FormData
   ): Promise<Theme> => {
     try {
       return await apiClient.post<Theme>(`${baseURI}`, data, {
@@ -40,7 +54,7 @@ export const themesService = {
     }
   },
 
-  updateTheme: async (id: string, data: Partial<Theme>): Promise<Theme> => {
+  updateTheme: async (id: string, data: FormData): Promise<Theme> => {
     try {
       return await apiClient.post<Theme>(`${baseURI}/${id}`, data, {
         headers: {
