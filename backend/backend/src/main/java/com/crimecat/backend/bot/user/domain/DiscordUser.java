@@ -18,40 +18,46 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Table(name = "DISCORD_USERS")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-@Getter
 @Setter
 public class DiscordUser {
 
     @Id
     @UuidGenerator
     @GeneratedValue
+    @Getter
     @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
+    @Getter
     @Column(name = "SNOWFLAKE", nullable = false, unique = true)
     private String snowflake;
 
     @Column(name = "NAME", nullable = false)
     private String name;
 
+    @Getter
     @Column(name = "AVATAR", nullable = false)
     private String avatar;
 
+    @Getter
     @Column(name = "DISCORD_ALARM")
     private boolean discordAlarm = false;
 
 //    @Column(name = "POINT")
 //    private Integer point = 0;
 
+    @Getter
     @OneToOne(mappedBy = "discordUser", fetch = FetchType.LAZY)
     private User user;
 
     @CreatedDate
+    @Getter
     @Column(name = "CREATED_AT", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "IS_WITHDRAW")
+    @Getter
     private boolean isWithdraw = false;
 
 
@@ -87,5 +93,9 @@ public class DiscordUser {
 
     public void setDiscordAlarm(Boolean discordAlarm) {
         this.discordAlarm = discordAlarm;
+    }
+
+    public String getName(){
+        return user.getName();
     }
 }
