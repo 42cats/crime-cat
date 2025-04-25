@@ -2,6 +2,7 @@ package com.crimecat.backend.bot.user.domain;
 
 import com.crimecat.backend.web.webUser.domain.WebUser;
 import jakarta.persistence.*;
+import java.util.Objects;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
@@ -79,6 +80,51 @@ public class User {
         this.webUser = webUser;
         if (webUser.getUser() != this) {
             webUser.setUser(this);
+        }
+    }
+
+    public String getName(){
+        if(this.webUser == null){
+            return maskName(discordUser.getName());
+        }
+        return webUser.getNickname();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof User user))
+            return false;
+      return Objects.equals(id, user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    public static String maskName(String name) {
+        if (name == null || name.isBlank()) return "";
+
+        int length = name.length();
+
+        if (length == 1) {
+            return "*";
+        } else if (length == 2) {
+            return name.charAt(0) + "*";
+        } else if (length == 3) {
+            return name.charAt(0) + "*" + name.charAt(2);
+        } else if (length == 4) {
+            return name.charAt(0) + "**" + name.charAt(3);
+        } else {
+            // 5글자 이상은 가운데 2글자 마스킹
+            int maskStart = length / 2 - 1;
+            int maskEnd = maskStart + 2;
+
+            StringBuilder sb = new StringBuilder(name);
+            for (int i = maskStart; i < maskEnd && i < length; i++) {
+                sb.setCharAt(i, '*');
+            }
+            return sb.toString();
         }
     }
 

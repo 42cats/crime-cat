@@ -136,7 +136,7 @@ public class WebUser implements UserDetails {
     // ✅ 사용자명 (UserDetails 기준 → 여기선 nickname 사용)
     @Override
     public String getUsername() {
-        return nickname;
+        return user.getName();
     }
 
     // ✅ 계정 만료 여부 (true면 만료 안됨)
