@@ -16,12 +16,16 @@ public class NoticeSummaryResponseDto {
   private String summary;
   private NoticeType noticeType;
   private LocalDateTime updatedAt;
+  private LocalDateTime createdAt;
+  private Boolean isPinned;
 
   public static NoticeSummaryResponseDto from(Notice notice) {
     return NoticeSummaryResponseDto.builder()
         .id(notice.getId().toString())
         .title(notice.getTitle())
         .summary(notice.getSummary())
+        .isPinned(notice.getIsPinned())
+        .createdAt(notice.getCreatedAt())
         .noticeType(notice.getNoticeType())
         .updatedAt(notice.getUpdatedAt())
         .build();
