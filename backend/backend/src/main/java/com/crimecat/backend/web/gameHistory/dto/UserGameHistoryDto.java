@@ -11,7 +11,11 @@ public class UserGameHistoryDto {
 
 	private UUID uuid;
 	private String guildSnowflake;
+	private String playerName;
 	private boolean isWin;
 	private LocalDateTime createdAt;
 	private String characterName;
+	private String memo;
+	private String themeId;
+	private String themeName;
 }

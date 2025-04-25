@@ -8,4 +8,5 @@ import lombok.Getter;
 public class GameHistoryUpdateRequestDto {
     private String characterName;
     private Boolean isWin;
+    private String memo;
 }
