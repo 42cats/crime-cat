@@ -130,6 +130,8 @@ CREATE TABLE IF NOT EXISTS `cleans`
     COLLATE=utf8mb4_unicode_ci
     COMMENT='청소 테이블';
 
+CREATE INDEX idx_game_histories_user_created_at 
+ON game_histories (user_snowflake, created_at DESC);
 
 /**
   길드 내 캐릭터 테이블
@@ -264,35 +266,25 @@ CREATE TABLE IF NOT EXISTS `observations`
 
 
 /**
-  통합 포인트 히스토리
+  각 유저 별 기록 테이블
  */
-CREATE TABLE `point_histories` (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-
-    user_id BINARY(16) NOT NULL, -- 포인트 주체 사용자 (users.id 참조)
-    
-    type ENUM('CHARGE', 'USE', 'GIFT', 'RECEIVE', 'REFUND', 'EXPIRE','COUPON', 'DAILY') NOT NULL,
-    
-    amount INT NOT NULL, -- 양수만 저장 (입출은 type으로 구분)
-    
-    balance_after INT NOT NULL, -- 이 거래 이후의 사용자 잔액
-
-    item_type ENUM('PERMISSION') NULL, -- 아이템의 타입 (확장 가능)
-
-    item_id BINARY(16) NULL, -- 사용한 아이템 ID 등 연결 가능
-
-    related_user_id BINARY(16) NULL, -- 선물 대상자 (GIFT or RECEIVE 시 사용)
-
-    memo VARCHAR(255), -- 관리용 메모/설명
-
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    -- ✅ 외래키 설정
-    CONSTRAINT fk_point_user FOREIGN KEY (user_id) REFERENCES users(id),
-    CONSTRAINT fk_point_related_user FOREIGN KEY (related_user_id) REFERENCES users(id)
-    CREATE INDEX idx_point_histories_user_id ON point_histories(user_id);
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
+CREATE TABLE `point_histories`
+(
+    `id`                BINARY(16) NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
+    `user_snowflake`    VARCHAR(50) NOT NULL COMMENT 'discord user snowflake',
+    `permission_id`     BINARY(16) DEFAULT NULL COMMENT 'permission table 식별자',
+    `point`             INT NOT NULL COMMENT '입출 포인트',
+    `used_at`           TIMESTAMP NOT NULL COMMENT '포인트 입출 날짜',
+    CONSTRAINT `fk_point_histories_discord_users` FOREIGN KEY (`user_snowflake`) REFERENCES `discord_users`(`snowflake`)
+	    ON DELETE CASCADE
+		ON UPDATE CASCADE,
+    CONSTRAINT `fk_point_histories_permissions` FOREIGN KEY (`permission_id`) REFERENCES `permissions`(`id`)
+	    ON DELETE CASCADE
+		ON UPDATE CASCADE
+) ENGINE=InnoDB
+    DEFAULT CHARSET=utf8mb4
+    COLLATE=utf8mb4_unicode_ci
+    COMMENT='포인트 사용 기록 테이블';
 
 
 /*
@@ -448,7 +440,6 @@ CREATE TABLE IF NOT EXISTS notices (
     summary     VARCHAR(300) NOT NULL,
     notice_type ENUM('SYSTEM','EVENT','UPDATE') NOT NULL DEFAULT 'SYSTEM',
     is_pinned   BOOLEAN      NOT NULL DEFAULT FALSE,
-    order_isdx   INT         NULL DEFAULT 0 COMMENT 'pin 적용시 정렬순서'
     created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_notice_type(created_at, notice_type)
