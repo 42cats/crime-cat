@@ -78,4 +78,10 @@ public class GameHistory {
         }
         this.characterName = characterName;
     }
+
+    public void setMemo(String memo){
+        if(memo == null)
+            return;
+        this.memo = memo;
+    }
 }
