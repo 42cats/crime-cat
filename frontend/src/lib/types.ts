@@ -246,7 +246,7 @@ export interface RealWorldTheme extends BaseTheme {
   type: 'REALWORLD';
 }
 
-export interface RealWorldTheme extends BaseTheme {
+export interface RealWorldPage extends BaseTheme {
   themes: RealWorldTheme[];
   page: number;
   size: number;
