@@ -7,6 +7,7 @@ import {
     Server,
     Users,
     UserCog,
+    UserRoundPen,
     Settings,
     LogOut,
     ChevronLeft,
@@ -146,28 +147,38 @@ const SidebarInner = () => {
                                                     "USER",
                                                 ],
                                             },
-                                            // {
-                                            //     name: "프로필",
-                                            //     path: "/dashboard/profile",
-                                            //     icon: UserCog,
-                                            //     roles: [
-                                            //         "ADMIN",
-                                            //         "MANAGER",
-                                            //         "USER",
-                                            //     ],
-                                            // },
-                                            // {
-                                            //     name: "사용자 관리",
-                                            //     path: "/dashboard/users",
-                                            //     icon: Users,
-                                            //     roles: ["ADMIN"],
-                                            // },
-                                            // {
-                                            //     name: "설정",
-                                            //     path: "/dashboard/settings",
-                                            //     icon: Settings,
-                                            //     roles: ["ADMIN", "MANAGER"],
-                                            // },
+                                            {
+                                                name: "프로필",
+                                                path: "/dashboard/profile",
+                                                icon: UserRoundPen,
+                                                roles: [
+                                                    "ADMIN",
+                                                    "MANAGER",
+                                                    "USER",
+                                                ],
+                                            },
+                                            {
+                                                name: "팀",
+                                                path: "/dashboard/teams",
+                                                icon: Users,
+                                                roles: [
+                                                    "ADMIN",
+                                                    "MANAGER",
+                                                    "USER",
+                                                ],
+                                            },
+                                            {
+                                                name: "사용자 관리",
+                                                path: "/dashboard/users",
+                                                icon: UserCog,
+                                                roles: ["ADMIN"],
+                                            },
+                                            {
+                                                name: "설정",
+                                                path: "/dashboard/settings",
+                                                icon: Settings,
+                                                roles: ["ADMIN", "MANAGER"],
+                                            },
                                         ]
                                             .filter((item) =>
                                                 item.roles.includes(
