@@ -8,11 +8,18 @@ import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AccountExpiredException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.CredentialsExpiredException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -40,12 +47,41 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/info", "/oauth2/**","/bot/v1/**","/login/**", "/api/v1/public/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setContentType("application/json");
-                            response.getWriter().write("{\"error\": \"UnauthorizedOnFilter\"}");
-                        })
-                )
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                  response.setContentType("application/json");
+                  response.setCharacterEncoding("UTF-8");
+
+                  String errorCode = "UNAUTHORIZED";
+                  String message = "인증 오류";
+
+                  if (authException instanceof BadCredentialsException) {
+                    errorCode = "BAD_CREDENTIALS";
+                    message = "아이디 또는 비밀번호가 잘못되었습니다.";
+                  } else if (authException instanceof UsernameNotFoundException) {
+                    errorCode = "USER_NOT_FOUND";
+                    message = "존재하지 않는 사용자입니다.";
+                  } else if (authException instanceof AccountExpiredException) {
+                    errorCode = "ACCOUNT_EXPIRED";
+                    message = "계정이 만료되었습니다.";
+                  } else if (authException instanceof CredentialsExpiredException) {
+                    errorCode = "CREDENTIALS_EXPIRED";
+                    message = "비밀번호가 만료되었습니다.";
+                  } else if (authException instanceof DisabledException) {
+                    errorCode = "ACCOUNT_DISABLED";
+                    message = "계정이 비활성화되었습니다.";
+                  } else if (authException instanceof LockedException) {
+                    errorCode = "ACCOUNT_LOCKED";
+                    message = "계정이 잠겼습니다.";
+                  } else if (authException instanceof InsufficientAuthenticationException) {
+                    errorCode = "INSUFFICIENT_AUTHENTICATION";
+                    message = "인증 정보가 부족합니다.";
+                  }
+                  String jsonResponse = String.format("{\"errorCode\": \"%s\", \"message\": \"%s\"}", errorCode, message);
+                  response.getWriter().write(jsonResponse);
+                })
+            )
+
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login") // 로그인 경로 설정
                         .successHandler(customOAuth2SuccessHandler)
