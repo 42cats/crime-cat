@@ -49,8 +49,8 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login") // 로그인 경로 설정
                         .successHandler(customOAuth2SuccessHandler)
-                        .defaultSuccessUrl("/", true) // 트루 반환(성공)시에 리다이렉트 될 경로
-                        .failureUrl("/")
+                        // .defaultSuccessUrl("/", true) // 트루 반환(성공)시에 리다이렉트 될 경로
+                        // .failureUrl("/")
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(discordOAuth2UserService) // 디스코드에서 반환하는 유저정보 처리 하는곳
                         )
