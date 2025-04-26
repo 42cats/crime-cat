@@ -11,4 +11,6 @@ public interface MakerTeamMemberRepository extends JpaRepository<MakerTeamMember
     List<MakerTeamMember> findByUserIdAndIsLeader(UUID leaderId, boolean isLeader);
 
     Optional<MakerTeamMember> findByUserIdAndTeamId(UUID userId, UUID id);
+
+    List<MakerTeamMember> findByUserId(UUID leaderId);
 }

@@ -162,4 +162,12 @@ public class MakerTeamService {
             throw ErrorStatus.FORBIDDEN.asServiceException();
         }
     }
+
+    public GetTeamsResponse getMyTeams() {
+        return new GetTeamsResponse(
+                teamMemberRepository.findByUserId(oAuth2UserService.getLoginUserId()).stream()
+                        .map(v -> TeamDto.from(v.getTeam()))
+                        .toList()
+        );
+    }
 }
