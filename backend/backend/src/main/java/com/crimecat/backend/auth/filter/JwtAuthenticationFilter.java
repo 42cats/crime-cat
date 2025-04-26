@@ -45,6 +45,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         } // successHandeler 로 가는거 막는 부분
+
+            if (uri.startsWith("/actuator/health") || uri.startsWith("/actuator/info")) {
+        filterChain.doFilter(request, response);
+        return;
+    }
+    
         log.info("request = {}", request);
         String token = TokenCookieUtil.getCookieValue(request, "Authorization");
         if (token == null) {
@@ -73,7 +79,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         
         // 쿠키에서 AccessToken (Authorization) 추출
-        String token = TokenCookieUtil.getCookieValue(request, "Authorization");
         System.out.println("token = " + token);
         // 토큰 검증 & 블랙리스트 검사
         if (token != null && jwtTokenProvider.validateToken(token) && !jwtBlacklistService.isBlacklisted(token)) {

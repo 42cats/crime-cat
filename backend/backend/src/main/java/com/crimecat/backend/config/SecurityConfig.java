@@ -43,7 +43,7 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setContentType("application/json");
-                            response.getWriter().write("{\"error\": \"Unauthorized\"}");
+                            response.getWriter().write("{\"error\": \"UnauthorizedOnFilter\"}");
                         })
                 )
                 .oauth2Login(oauth2 -> oauth2

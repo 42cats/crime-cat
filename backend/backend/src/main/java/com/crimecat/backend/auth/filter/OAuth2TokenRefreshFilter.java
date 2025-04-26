@@ -34,6 +34,10 @@ public class OAuth2TokenRefreshFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+            if (uri.startsWith("/actuator/health") || uri.startsWith("/actuator/info")) {
+        filterChain.doFilter(request, response);
+        return;
+    }
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication != null &&
