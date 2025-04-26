@@ -247,6 +247,7 @@ CREATE TABLE IF NOT EXISTS `game_histories`
         ON DELETE CASCADE,
     CONSTRAINT `fk_game_histories_game_themes`
         FOREIGN KEY (`game_theme_id`) REFERENCES `game_themes`(`id`)
+        ON DELETE SET NULL
 ) ENGINE=InnoDB
     DEFAULT CHARSET=utf8mb4
     COLLATE=utf8mb4_unicode_ci
