@@ -247,7 +247,6 @@ CREATE TABLE IF NOT EXISTS `game_histories`
         ON DELETE CASCADE,
     CONSTRAINT `fk_game_histories_game_themes`
         FOREIGN KEY (`game_theme_id`) REFERENCES `game_themes`(`id`)
-        ON DELETE SET NULL
 ) ENGINE=InnoDB
     DEFAULT CHARSET=utf8mb4
     COLLATE=utf8mb4_unicode_ci
@@ -623,8 +622,7 @@ CREATE TABLE `crimescene_themes` (
     `game_theme_id`     BINARY(16) PRIMARY KEY COMMENT '게임 테마',
     `maker_teams_id`     BINARY(16) COMMENT '제작 팀 정보',
     `guild_snowflake`   VARCHAR(50) COMMENT '디스코드 서버 id',
-    `extra`             JSON COMMENT '추가 정보 (JSON)'
-        CHECK (JSON_VALID(`extra`)),
+    `extra` JSON COMMENT '추가 정보 (JSON)',
     CONSTRAINT `fk_maker_teams_id` FOREIGN KEY (`maker_teams_id`)
         REFERENCES `maker_teams`(`id`)
         ON DELETE SET NULL,
