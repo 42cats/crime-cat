@@ -91,17 +91,17 @@ const SidebarInner = () => {
     return (
         <>
             {!isCollapsed && (
-                <div className="flex h-14 items-center px-4 border-b">
-                    <Link to="/" className="flex items-center space-x-2">
-                        <div className="relative w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
-                            C
-                        </div>
-                        <span className="text-lg font-semibold">홈</span>
-                    </Link>
-                    <div className="ml-auto">
-                        <ThemeToggle />
-                    </div>
+              <div className="flex h-14 justify-between items-center px-4 border-b">
+                <Link to="/" className="flex items-center space-x-2">
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                    <img src="../content/image/icon.png" alt="짭냥이 로고" className="w-full h-full object-cover" />
+                  </div>
+                  <span className="text-xl font-semibold">짭냥이</span>
+                </Link>
+                <div className="ml-auto">
+                  <ThemeToggle />
                 </div>
+              </div>
             )}
 
             <SidebarContent>

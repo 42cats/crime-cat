@@ -26,7 +26,9 @@ interface ThemeFormProps {
 const initialExtraFieldsMap = {
   CRIMESCENE: {
     makerTeamsId: "",
+    makerTeamsName: "",
     guildSnowflake: "",
+    guildName: "",
     extra: { characters: [] },
   },
   ESCAPE_ROOM: { extra: {} },
@@ -80,7 +82,9 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
 
   const addTagsFromInput = () => {
     const parts = form.tagInput.split(",").map((t) => t.trim()).filter((t) => t.length > 0 && !form.tags.includes(t));
-    if (parts.length > 0) setForm((prev) => ({ ...prev, tags: [...prev.tags, ...parts], tagInput: "" }));
+    if (parts.length > 0) {
+      setForm((prev) => ({ ...prev, tags: [...prev.tags, ...parts], tagInput: "" }));
+    }
   };
 
   const handleSubmit = () => {
@@ -120,16 +124,19 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
       <div className="max-w-3xl mx-auto px-6 py-20 space-y-6">
         <h1 className="text-3xl font-bold mb-8">{title}</h1>
 
+        {/* 카테고리 */}
         <div>
           <Label className="font-bold mb-1 block">카테고리</Label>
           <Input value={form.type} readOnly disabled />
         </div>
 
+        {/* 제목 */}
         <div>
           <Label className="font-bold mb-1 block">제목 *</Label>
           <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="테마 제목" required />
         </div>
 
+        {/* 썸네일 */}
         <div>
           <Label className="font-bold mb-1 block">썸네일 *</Label>
           {form.thumbnail && (
@@ -139,26 +146,34 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
               </div>
             </div>
           )}
-          <Input type="file" accept="image/*" onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) {
-              setThumbnailFile(file);
-              const url = URL.createObjectURL(file);
-              setForm((prev) => ({ ...prev, thumbnail: url }));
-            }
-          }} />
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                setThumbnailFile(file);
+                const url = URL.createObjectURL(file);
+                setForm((prev) => ({ ...prev, thumbnail: url }));
+              }
+            }}
+          />
         </div>
 
+        {/* 설명 */}
         <div>
           <Label className="font-bold mb-1 block">설명 *</Label>
           <Input value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} placeholder="간단한 테마 소개" required />
         </div>
 
+        {/* 태그 */}
         <div>
           <Label className="font-bold mb-1 block">태그 *</Label>
           <div className="flex gap-2 mt-1 mb-2 flex-wrap">
             {form.tags.map((tag) => (
-              <Badge key={tag} className="cursor-pointer" onClick={() => setForm({ ...form, tags: form.tags.filter((t) => t !== tag) })}>#{tag}</Badge>
+              <Badge key={tag} className="cursor-pointer" onClick={() => setForm((prev) => ({ ...prev, tags: prev.tags.filter((t) => t !== tag) }))}>
+                #{tag}
+              </Badge>
             ))}
           </div>
           <Input
@@ -170,18 +185,13 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
                 addTagsFromInput();
               }
             }}
-            onKeyUp={(e) => {
-              if (!isComposing && e.key === ",") {
-                e.preventDefault();
-                addTagsFromInput();
-              }
-            }}
             onCompositionStart={() => setIsComposing(true)}
             onCompositionEnd={() => setIsComposing(false)}
             placeholder="쉼표 또는 Enter로 구분"
           />
         </div>
 
+        {/* 인원, 가격, 플레이타임, 난이도 */}
         <div className="flex flex-wrap gap-4">
           <div className="flex flex-col w-24">
             <Label className="font-bold mb-1 block">최소 인원 *</Label>
@@ -207,45 +217,31 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
                   key={value}
                   className={`w-6 h-6 transition-colors ${(hovered ?? form.difficulty) >= value ? "text-yellow-400" : "text-muted-foreground"}`}
                   onMouseEnter={() => setHovered(value)}
-                  onMouseDown={() => setForm({ ...form, difficulty: value })}
+                  onClick={() => setForm({ ...form, difficulty: value })}
                 />
               ))}
             </div>
           </div>
         </div>
 
-        {/* 타입별 필드 */}
+        {/* 타입별 추가 필드 */}
         {form.type === "CRIMESCENE" && (
           <>
-          <CrimeSceneFields
-            extraFields={extraFields}
-            setExtraFields={setExtraFields}
-            onOpenTeamModal={() => setTeamModalOpen(true)}
-            onOpenGuildModal={() => setGuildModalOpen(true)}
-          />
-
-          <TeamSelectModal
-          open={isTeamModalOpen}
-          onOpenChange={setTeamModalOpen}
-          onSelect={(id) => setExtraFields((prev) => ({ ...prev, makerTeamsId: id }))}
-          />
-          <GuildSelectModal
-          open={isGuildModalOpen}
-          onOpenChange={setGuildModalOpen}
-          onSelect={(id) => setExtraFields((prev) => ({ ...prev, guildSnowflake: id }))}
-          />
+            <CrimeSceneFields
+              extraFields={extraFields}
+              setExtraFields={setExtraFields}
+              onOpenTeamModal={() => setTeamModalOpen(true)}
+              onOpenGuildModal={() => setGuildModalOpen(true)}
+            />
+            <TeamSelectModal open={isTeamModalOpen} onOpenChange={setTeamModalOpen} onSelect={(id, name) => setExtraFields(prev => ({ ...prev, makerTeamsId: id, makerTeamsName: name }))} />
+            <GuildSelectModal open={isGuildModalOpen} onOpenChange={setGuildModalOpen} onSelect={(id, name) => setExtraFields(prev => ({ ...prev, guildSnowflake: id, guildName: name }))} />
           </>
         )}
-        {form.type === "ESCAPEROOM" && (
-          <EscapeRoomFields extraFields={extraFields} setExtraFields={setExtraFields} />
-        )}
-        {form.type === "MURDERMYSTERY" && (
-          <MurderMysteryFields extraFields={extraFields} setExtraFields={setExtraFields} />
-        )}
-        {form.type === "REALWORLD" && (
-          <RealWorldFields extraFields={extraFields} setExtraFields={setExtraFields} />
-        )}
+        {form.type === "ESCAPEROOM" && <EscapeRoomFields extraFields={extraFields} setExtraFields={setExtraFields} />}
+        {form.type === "MURDERMYSTERY" && <MurderMysteryFields extraFields={extraFields} setExtraFields={setExtraFields} />}
+        {form.type === "REALWORLD" && <RealWorldFields extraFields={extraFields} setExtraFields={setExtraFields} />}
 
+        {/* 본문 에디터 */}
         <div>
           <Label className="font-bold mb-1 block">본문 내용 *</Label>
           <div data-color-mode={theme === "dark" ? "dark" : "light"}>
@@ -262,6 +258,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
           </div>
         </div>
 
+        {/* 제출 */}
         <div className="text-right">
           <Button
             onClick={handleSubmit}
