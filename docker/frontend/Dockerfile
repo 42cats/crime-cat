@@ -1,10 +1,11 @@
 # docker/frontend/Dockerfile
 FROM node:20-alpine
 WORKDIR /app
-# COPY ./frontend .
-# RUN npm install && npm run build
-# 빌드 결과를 nginx로 넘기기 위해 결과물을 volume에 둠
-CMD ["sh", "-c", "npm install && npm run build"]
+
+COPY ./docker/frontend/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+ENTRYPOINT ["/app/entrypoint.sh"]
 
 
 
