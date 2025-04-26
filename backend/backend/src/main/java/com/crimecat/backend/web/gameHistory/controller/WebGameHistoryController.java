@@ -52,7 +52,7 @@ public class WebGameHistoryController {
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "10") int size,
 			@RequestParam(required = false) List<String> sort,
-			@RequestParam(required = false) String keyword // ✅
+			@RequestParam(name = "query", required = false) String keyword // ✅
 	) {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();

@@ -173,6 +173,8 @@ export function Group({
             id: newButtonId,
             name: `새버튼${data.buttons.length + 1}`,
             index: data.buttons.length,
+            groupId: data.id, // ✅ groupId 추가
+            guildId: guildId, // ✅ guildId 추가
             contents: [
                 {
                     id: contentId,
