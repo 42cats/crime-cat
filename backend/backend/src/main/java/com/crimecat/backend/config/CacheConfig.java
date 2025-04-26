@@ -19,7 +19,8 @@ public class CacheConfig {
     // Caffeine 설정 빌더
     Caffeine<Object, Object> caffeine = Caffeine.newBuilder()
         .expireAfterWrite(10, TimeUnit.MINUTES) // 10분간 캐시 유지
-        .maximumSize(1000);                     // 최대 항목 수 제한
+        .maximumSize(1000)                     // 최대 항목 수 제한
+        .recordStats();
 
     List<String> cacheNames = Arrays.asList(CacheType.CACHE_TYPE);
 
