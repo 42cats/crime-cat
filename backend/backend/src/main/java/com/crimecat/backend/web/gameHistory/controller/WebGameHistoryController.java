@@ -1,17 +1,22 @@
 package com.crimecat.backend.web.gameHistory.controller;
 
 import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
+import com.crimecat.backend.auth.util.sort.SortUtil;
 import com.crimecat.backend.bot.guild.dto.MessageDto;
 import com.crimecat.backend.web.gameHistory.dto.GameHistoryUpdateRequestDto;
 import com.crimecat.backend.web.gameHistory.dto.SaveUserGameHistoryRequestDto;
 import com.crimecat.backend.web.gameHistory.dto.SaveUserHistoryResponseDto;
-import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryDto;
 import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryResponseDto;
+import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryToOwnerDto;
 import com.crimecat.backend.web.gameHistory.service.GameHistoryService;
+import com.crimecat.backend.web.gameHistory.sort.GameHistorySortType;
 import com.crimecat.backend.web.webUser.domain.WebUser;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -40,7 +45,7 @@ public class WebGameHistoryController {
 	 * @param webuserId
 	 * @return
 	 */
-	@GetMapping("/crime_scene/{web_user_id}")
+	@GetMapping("/crime_scene/my/{web_user_id}")
 	public UserGameHistoryResponseDto getUserGameHistoryByUserSnowflake(@PathVariable("web_user_id") String webuserId) {
 		return gameHistoryService.getUserCrimeSceneGameHistoryByUserSnowflake(webuserId);
 	}
@@ -49,14 +54,29 @@ public class WebGameHistoryController {
 	public MessageDto<?> updateUserGameHistory(@PathVariable("user_snowflake") String userSnowflake,
 											   @PathVariable("guild_snowflake") String guildSnowflake,
 											   @RequestBody GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
-		gameHistoryService.updateGameHistory(userSnowflake, guildSnowflake, gameHistoryUpdateRequestDto);
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
+		WebUser webUser = principal.getWebUser();
+		gameHistoryService.updateGameHistoryOnWeb(webUser, userSnowflake, guildSnowflake, gameHistoryUpdateRequestDto);
 		return new MessageDto<>("History updated successfully");
 	}
 
-	@GetMapping("/crime_scene/{guild_id}")
-	public ResponseEntity<Page<UserGameHistoryDto>> crimeSceneGuildHistory(
+	@GetMapping("/crime_scene/owner/{guild_id}")
+	public ResponseEntity<Page<UserGameHistoryToOwnerDto>> crimeSceneGuildHistory(
 			@PathVariable("guild_id") String guidId,
-			Pageable pageable){
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size,
+			@RequestParam(required = false) List<String> sort){
+		List<GameHistorySortType> sortTypes = (sort != null && !sort.isEmpty()) ?
+				sort.stream()
+						.map(String::toUpperCase)
+						.map(GameHistorySortType::valueOf)
+						.toList()
+				: List.of(GameHistorySortType.LATEST);
+
+		Sort resolvedSort = SortUtil.combineSorts(sortTypes);
+		Pageable pageable = PageRequest.of(page, size, resolvedSort);
+
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
 		WebUser webUser = principal.getWebUser();

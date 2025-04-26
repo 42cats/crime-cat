@@ -372,7 +372,7 @@ public class UserService {
 		}
 		return new UserListResponseDto(
 				gameHistoryQueryService.findUsersByGuildSnowflakeAndDiscordAlarm(guildSnowflake, discordAlarm).stream()
-						.map(GameHistory::getUser)
+						.map(GameHistory::getDiscordUser)
 						.map(DiscordUser::getSnowflake)
 						.toList()
 		);

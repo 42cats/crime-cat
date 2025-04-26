@@ -22,7 +22,7 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 * - WHERE user.snowflake = :userSnowflake
 	 * - 성능 고려: user.snowflake에 인덱스 필요
 	 */
-	@Query("SELECT gh FROM GameHistory gh JOIN FETCH gh.user JOIN FETCH gh.guild WHERE gh.user.snowflake = :userSnowflake")
+	@Query("SELECT gh FROM GameHistory gh JOIN FETCH gh.discordUser JOIN FETCH gh.guild WHERE gh.discordUser.snowflake = :userSnowflake")
 	List<GameHistory> getGameHistoryByUserSnowflake(@Param("userSnowflake") String userSnowflake);
 
 	/**
@@ -31,7 +31,7 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 * - 성능주의: group by + having → 대량 데이터시 느릴 수 있음
 	 * - Snowflake 기준 집계, COUNT(*) 기준
 	 */
-	@Query("SELECT gh FROM GameHistory gh JOIN FETCH gh.user u GROUP BY u.snowflake HAVING COUNT(*) > :playCount")
+	@Query("SELECT gh FROM GameHistory gh JOIN FETCH gh.discordUser u GROUP BY u.snowflake HAVING COUNT(*) > :playCount")
 	List<GameHistory> getGameHistoryWithPlayCountGreaterThan(@Param("playCount") Integer playCount);
 
 	/**
@@ -40,9 +40,9 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 * - Pageable 지원
 	 * - 성능 고려: COUNT + GROUP BY + ORDER BY → user.snowflake 인덱스 필요
 	 */
-	@Query(value = "SELECT gh.user.snowflake as userSnowflake, COUNT(gh) as playCount "
+	@Query(value = "SELECT gh.discordUser.snowflake as userSnowflake, COUNT(gh) as playCount "
 		+ "FROM GameHistory gh " +
-		"GROUP BY gh.user.snowflake " +
+		"GROUP BY gh.discordUser.snowflake " +
 		"ORDER BY playCount DESC")
 	List<IGameHistoryRankingDto> getGameHistorySortingByPlayTimeWithPagination(Pageable pageable);
 
@@ -53,7 +53,7 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 * - 로그인 사용자에게 관전 버튼/배지 표시 여부 판단 등에 활용
 	 * - user_snowflake + guild_snowflake 복합 인덱스 강력 권장
 	 */
-	@Query("SELECT gh FROM GameHistory gh WHERE gh.user.snowflake = :userSnowflake AND gh.guild.snowflake = :guildSnowflake")
+	@Query("SELECT gh FROM GameHistory gh WHERE gh.discordUser.snowflake = :userSnowflake AND gh.guild.snowflake = :guildSnowflake")
 	GameHistory findGameHistoryByUserSnowFlakeAndGuildSnowflake(@Param("userSnowflake") String userSnowflake, @Param("guildSnowflake") String guildSnowflake);
 
 	/**
@@ -72,7 +72,7 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 */
 	@Query("SELECT gh FROM GameHistory gh " +
 			"WHERE (:guildSnowflake IS NULL OR gh.guild.snowflake = :guildSnowflake) " +
-			"AND (:discordAlarm IS NULL OR gh.user.discordAlarm = :discordAlarm)")
+			"AND (:discordAlarm IS NULL OR gh.discordUser.discordAlarm = :discordAlarm)")
 	List<GameHistory> findUsersByGuildSnowflakeAndDiscordAlarm(@Param("guildSnowflake") String guildSnowflake,
 														 @Param("discordAlarm") Boolean discordAlarm);
 
@@ -85,7 +85,7 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 *
 	 */
 	@Query("SELECT gh FROM GameHistory gh " +
-			"WHERE gh.user.snowflake = :userSnowflake " +
+			"WHERE gh.discordUser.snowflake = :userSnowflake " +
 			"ORDER BY gh.createdAt DESC")
 	List<GameHistory> findGameHistoriesByUserSnowflakeOrderByCreatedAtDesc(@Param("userSnowflake") String userSnowflake);
 
@@ -99,4 +99,5 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 
 	Page<GameHistory> findByGuild_Snowflake(String guildSnowflake, Pageable pageable);
 
+	Page<GameHistory> searchByGuild_Snowflake(String guildSnowflake, Pageable pageable);
 }

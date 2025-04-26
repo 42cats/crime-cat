@@ -16,10 +16,12 @@ import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryDto;
 import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryFailedResponseDto;
 import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryResponseDto;
 import com.crimecat.backend.web.gameHistory.dto.UserGameHistorySuccessResponseDto;
+import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryToOwnerDto;
 import com.crimecat.backend.web.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.web.gametheme.domain.CrimesceneTheme;
 import com.crimecat.backend.web.gametheme.repository.GameThemeRepository;
 import com.crimecat.backend.web.gametheme.service.GameThemeService;
+import com.crimecat.backend.web.webUser.domain.WebUser;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -90,12 +92,12 @@ public class GameHistoryService {
 		List<UserGameHistoryDto> userGameHistoryDtos = gameHistoryQueryService.getGameHistoryByUserSnowflake(
 						userSnowflake)
 				.stream()
-				.map(gh -> new UserGameHistoryDto(gh.getId(), gh.getGuild().getSnowflake(),gh.getUser().getUser().getName(),
-						gh.isWin(), gh.getCreatedAt(), gh.getCharacterName(),gh.getMemo(),gh.getGameTheme().getId().toString(),gh.getGameTheme().getTitle()))
+				.map(UserGameHistoryDto::from)
 				.toList();
 		return new UserGameHistorySuccessResponseDto(userSnowflake, userGameHistoryDtos);
 	}
 
+	@Transactional
     public void updateGameHistory(String userSnowflake, String guildSnowflake,
 								  GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
 		if (userService.findUserBySnowflake(userSnowflake) == null) {
@@ -115,24 +117,54 @@ public class GameHistoryService {
 		gameHistoryQueryService.save(gameHistory);
     }
 
-	public Page<UserGameHistoryDto> getGuildOwnerHistory(User owner,String guildSnowflake, Pageable pageable) {
+
+		@Transactional(readOnly = true)
+	public Page<UserGameHistoryToOwnerDto> getGuildOwnerHistory(User owner,String guildSnowflake, Pageable pageable) {
 
 		Guild guild = guildRepository.findBySnowflake(guildSnowflake).orElseThrow(ErrorStatus.GUILD_NOT_FOUND::asServiceException);
 		if(!guild.getOwnerSnowflake().equals(owner.getDiscordSnowflake())){
 			throw ErrorStatus.NOT_GUILD_OWNER.asServiceException();
 		}
-		Page<UserGameHistoryDto> mappedPage = gameHistoryRepository.findByGuild_Snowflake(guildSnowflake, pageable)
-				.map(v -> new UserGameHistoryDto(
-						v.getId(),
-						v.getGuild().getSnowflake(),
-						v.getUser().getUser().getName(),
-						v.isWin(),
-						v.getCreatedAt(),
-						v.getCharacterName(),
-						v.getMemo(),
-						v.getGameTheme() != null ? v.getGameTheme().getId().toString() : null,
-						v.getGameTheme() != null ? v.getGameTheme().getTitle() : null
-				));
-		return mappedPage;
+			Page<GameHistory> page = gameHistoryRepository.searchByGuild_Snowflake(guildSnowflake, pageable);
+
+		return page.map(UserGameHistoryToOwnerDto::from);
 	}
+
+	@Transactional
+	public void updateGameHistoryOnWeb(WebUser webUser,String userSnowflake, String guildSnowflake,
+			GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
+		if (userService.findUserBySnowflake(userSnowflake) == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user not exists");
+		}
+		if (!guildQueryService.existsBySnowflake(guildSnowflake)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "guild not exists");
+		}
+		GameHistory gameHistory = gameHistoryQueryService.findGameHistoryByUserSnowFlakeAndGuildSnowflake(
+				userSnowflake, guildSnowflake);
+		if (gameHistory == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "game history not exists");
+		}
+		if (
+				!gameHistory.getDiscordUser().getSnowflake().equals(webUser.getDiscordUserSnowflake()) &&
+						!gameHistory.getGuild().getOwnerSnowflake().equals(webUser.getDiscordUserSnowflake())
+		) {
+			throw ErrorStatus.INVALID_ACCESS.asServiceException();  //플레이한 유저도 아니고 오너도 아닐경우
+		}
+
+// 공통: 승패, 캐릭터명 수정
+		gameHistory.setIsWin(gameHistoryUpdateRequestDto.getIsWin());
+		gameHistory.setCharacterName(gameHistoryUpdateRequestDto.getCharacterName());
+
+// 분기: 메모 수정
+		if (gameHistory.getGuild().getOwnerSnowflake().equals(webUser.getDiscordUserSnowflake())) {
+			// 오너라면
+			gameHistory.setOwnerMemo(gameHistoryUpdateRequestDto.getMemo());
+		} else {
+			// 플레이어라면
+			gameHistory.setMemo(gameHistoryUpdateRequestDto.getMemo());
+		}
+
+		gameHistoryQueryService.save(gameHistory);
+	}
+
 }
