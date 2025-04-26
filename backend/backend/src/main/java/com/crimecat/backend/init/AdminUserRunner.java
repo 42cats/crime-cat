@@ -1,6 +1,7 @@
 package com.crimecat.backend.init;
 
 import com.crimecat.backend.auth.util.TokenCookieUtil.DomainHolder;
+import com.crimecat.backend.bot.permission.service.PermissionService;
 import com.crimecat.backend.bot.user.domain.DiscordUser;
 import com.crimecat.backend.bot.user.domain.User;
 import com.crimecat.backend.bot.user.repository.DiscordUserRepository;
@@ -26,6 +27,7 @@ public class AdminUserRunner implements ApplicationRunner {
   private final DiscordUserRepository discordUserRepository;
   private final DomainHolder domainHolder;
   private final AdminProperties adminProperties;
+  private final PermissionService permissionService;
 
   @Override
   public void run(ApplicationArguments args) {
@@ -63,5 +65,10 @@ public class AdminUserRunner implements ApplicationRunner {
 
     userRepository.save(admin);
     System.out.println("✅ 어드민 계정 생성됨: " + adminProperties.getUsername());
+
+    permissionService.savePermission("관전", 2000,28);
+    permissionService.savePermission("주소추가", 3000,28);
+    permissionService.savePermission("로컬음악", 3000,28);
+
   }
 }
