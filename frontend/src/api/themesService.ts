@@ -43,11 +43,7 @@ export const themesService = {
     data: FormData
   ): Promise<Theme> => {
     try {
-      return await apiClient.post<Theme>(`${baseURI}`, data, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      return await apiClient.post<Theme>(`${baseURI}`, data);
     } catch (error) {
       console.error(`테마 생성 실패:`, error);
       throw error;
@@ -56,11 +52,7 @@ export const themesService = {
 
   updateTheme: async (id: string, data: FormData): Promise<Theme> => {
     try {
-      return await apiClient.post<Theme>(`${baseURI}/${id}`, data, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      return await apiClient.post<Theme>(`${baseURI}/${id}`, data);
     } catch (error) {
       console.error(`테마 수정 실패:`, error);
       throw error;
