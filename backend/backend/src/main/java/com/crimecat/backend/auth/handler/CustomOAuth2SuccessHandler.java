@@ -44,41 +44,43 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
      * @param response       HTTP 응답
      * @param authentication Spring Security 인증 정보
      */
-    @Override
-    public void onAuthenticationSuccess(HttpServletRequest request,
-                                        HttpServletResponse response,
-                                        Authentication authentication)
-            throws IOException, ServletException {
+@Override
+public void onAuthenticationSuccess(HttpServletRequest request,
+                                     HttpServletResponse response,
+                                     Authentication authentication) throws IOException, ServletException {
 
-        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        log.info("🧾 [OAuth2User 정보] {}", oAuth2User);
+    OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+    log.info("🧾 [OAuth2User 정보] {}", oAuth2User);
 
-        String webUserId = Objects.requireNonNull(oAuth2User.getName());
-        log.info("🆔 [WebUser UUID] {}", webUserId);
+    String webUserId = Objects.requireNonNull(oAuth2User.getName());
+    log.info("🆔 [WebUser UUID] {}", webUserId);
 
-        Optional<WebUser> webUserByDiscordUserId = webUserRepository.findById(UUID.fromString(webUserId));
-        webUserByDiscordUserId.ifPresent(user -> {
-            String accessToken = jwtTokenProvider.createAccessToken(user.getId().toString(), user.getNickname(), user.getDiscordUserSnowflake());
-            String refreshToken = jwtTokenProvider.createRefreshToken(user.getId().toString());
+    Optional<WebUser> optionalUser = webUserRepository.findById(UUID.fromString(webUserId));
 
-            log.info("✅ [AccessToken 생성 완료]");
-            log.info("✅ [RefreshToken 생성 완료]");
-
-            refreshTokenService.saveRefreshToken(user.getId().toString(), refreshToken);
-            log.info("💾 [RefreshToken 저장 완료]");
-
-            response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createAccessCookie(accessToken));
-            response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createRefreshCookie(refreshToken));
-
-            try {
-                String baseUrl = serviceUrlConfig.getDomain();
-                log.info("🔁 [리다이렉트 수행 → {}]", baseUrl);
-                response.sendRedirect(baseUrl);
-            } catch (IOException e) {
-                log.error("❌ [리다이렉트 실패]", e);
-                throw new RuntimeException(e);
-            }
-        });
+    if (optionalUser.isEmpty()) {
+        log.error("❌ [OAuth2 인증 성공했지만 WebUser 없음]");
+        response.sendRedirect(serviceUrlConfig.getDomain() + "/login?error=user_not_found");
+        return;
     }
+
+    WebUser user = optionalUser.get();
+
+    String accessToken = jwtTokenProvider.createAccessToken(user.getId().toString(), user.getNickname(), user.getDiscordUserSnowflake());
+    String refreshToken = jwtTokenProvider.createRefreshToken(user.getId().toString());
+
+    log.info("✅ [AccessToken 생성 완료]");
+    log.info("✅ [RefreshToken 생성 완료]");
+
+    refreshTokenService.saveRefreshToken(user.getId().toString(), refreshToken);
+    log.info("💾 [RefreshToken 저장 완료]");
+
+    response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createAccessCookie(accessToken));
+    response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createRefreshCookie(refreshToken));
+
+    String baseUrl = serviceUrlConfig.getDomain();
+    log.info("🔁 [리다이렉트 수행 → {}]", baseUrl);
+    response.sendRedirect(baseUrl);
+}
+
 }
 
