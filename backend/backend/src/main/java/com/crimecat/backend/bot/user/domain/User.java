@@ -83,11 +83,14 @@ public class User {
         }
     }
 
-    public String getName(){
-        if(this.webUser == null){
-            return maskName(discordUser.getName());
+    public String getName() {
+        if (webUser != null) {
+            return webUser.getNickname();
         }
-        return webUser.getNickname();
+        if (discordUser != null) {
+            return maskName(discordUser.getName()); // 이제 안전
+        }
+        return "UNKNOWN";
     }
 
     @Override
