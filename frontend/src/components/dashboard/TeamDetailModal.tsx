@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
-import { Team, TeamMember } from "@/lib/types";
+import { Team } from "@/lib/types";
 import { teamsService } from "@/api/teamsService";
+import { useToast } from "@/hooks/useToast"; // ✅ 토스트 훅 추가
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from "@/components/ui/alert-dialog";
 
 interface Props {
   team: Team;
@@ -14,7 +16,9 @@ interface Props {
 }
 
 const TeamDetailModal: React.FC<Props> = ({ team, onClose, onUpdated }) => {
+  const { toast } = useToast(); // ✅ 토스트 사용
   const [newMemberName, setNewMemberName] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null); // ✅ 삭제할 멤버 ID 저장
 
   const handleAddMember = async () => {
     if (!newMemberName.trim()) return;
@@ -22,17 +26,22 @@ const TeamDetailModal: React.FC<Props> = ({ team, onClose, onUpdated }) => {
       await teamsService.updateTeamMember(team.id, { name: newMemberName });
       setNewMemberName("");
       onUpdated();
+      toast({ title: "멤버 추가 완료", description: `${newMemberName} 님이 추가되었습니다.` });
     } catch (error) {
       console.error("멤버 추가 실패:", error);
+      toast({ title: "오류", description: "멤버 추가에 실패했습니다.", variant: "destructive" });
     }
   };
 
   const handleDeleteMember = async (memberId: string) => {
     try {
       await teamsService.deleteTeamMember(team.id, [{ id: memberId }]);
+      setDeleteTarget(null);
       onUpdated();
+      toast({ title: "멤버 삭제 완료", description: `멤버가 삭제되었습니다.` });
     } catch (error) {
       console.error("멤버 삭제 실패:", error);
+      toast({ title: "오류", description: "멤버 삭제에 실패했습니다.", variant: "destructive" });
     }
   };
 
@@ -70,7 +79,7 @@ const TeamDetailModal: React.FC<Props> = ({ team, onClose, onUpdated }) => {
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => handleDeleteMember(member.id)}
+                    onClick={() => setDeleteTarget(member.id)} // ✅ 삭제 대상 설정
                   >
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
@@ -88,6 +97,25 @@ const TeamDetailModal: React.FC<Props> = ({ team, onClose, onUpdated }) => {
             </Button>
           </div>
         </div>
+
+        {/* 삭제 확인 다이얼로그 */}
+        {deleteTarget && (
+          <AlertDialog open={true} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="flex justify-end gap-2">
+                <Button variant="secondary" onClick={() => setDeleteTarget(null)}>
+                  취소
+                </Button>
+                <Button variant="destructive" onClick={() => handleDeleteMember(deleteTarget)}>
+                  삭제
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </DialogContent>
     </Dialog>
   );

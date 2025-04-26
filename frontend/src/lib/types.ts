@@ -294,7 +294,7 @@ export type ThemeInput = CrimeSceneInput | EscapeRoomInput | MurderMysteryInput 
 export interface TeamMember {
   id: string;
   userId?: string;
-  name: string;
+  name?: string;
 }
 
 export interface Team {
