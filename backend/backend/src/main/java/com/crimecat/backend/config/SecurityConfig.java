@@ -47,7 +47,7 @@ public class SecurityConfig {
                         })
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .loginPage(serviceUrlConfig.getDomain() + "/login") // 로그인 경로 설정
+                        .loginPage("/login") // 로그인 경로 설정
                         .successHandler(customOAuth2SuccessHandler)
 //                        .defaultSuccessUrl("/auth/login-success", true) // 트루 반환(성공)시에 리다이렉트 될 경로
                         .userInfoEndpoint(userInfo -> userInfo
