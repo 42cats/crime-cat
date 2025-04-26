@@ -46,6 +46,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         } // successHandeler 로 가는거 막는 부분
         log.info("request = {}", request);
+        String token = TokenCookieUtil.getCookieValue(request, "Authorization");
+        if (token == null) {
+            // 🚨 토큰 없으면 바로 인증 실패 응답
+            unauthorized(response, "Missing Token");
+            return;
+        }
+
+        if (!jwtTokenProvider.validateToken(token)) {
+            // 🚨 토큰 유효성 검사 실패
+            unauthorized(response, "Invalid Token");
+            return;
+        }
+
+        if (jwtBlacklistService.isBlacklisted(token)) {
+            // 🚨 블랙리스트 된 토큰
+            unauthorized(response, "Token Blacklisted");
+            return;
+        }
+
+        if (token == null) {
+            String bearer = request.getHeader("Authorization");
+            if (bearer != null && bearer.startsWith("Bearer ")) {
+                token = bearer.substring(7); // "Bearer " 이후 토큰만 가져오기
+            }
+        }
+        
         // 쿠키에서 AccessToken (Authorization) 추출
         String token = TokenCookieUtil.getCookieValue(request, "Authorization");
         System.out.println("token = " + token);
@@ -76,4 +102,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+    private void unauthorized(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.getWriter().write("{\"error\": \"" + message + "\"}");
+    }
+
 }
