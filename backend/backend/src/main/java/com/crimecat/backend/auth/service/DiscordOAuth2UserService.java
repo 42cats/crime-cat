@@ -4,8 +4,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
+import com.crimecat.backend.bot.user.repository.UserRepository;
+import com.crimecat.backend.exception.ErrorStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
@@ -28,6 +33,9 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
 
     private final WebUserService webUserService;
     private final DiscordRedisTokenService discordRedisTokenService;
+
+    private final UserRepository userRepository;
+
     @Override
     public OAuth2User loadUser(OAuth2UserRequest request) throws OAuth2AuthenticationException {
         OAuth2User oauth2User = new DefaultOAuth2UserService().loadUser(request);
@@ -56,5 +64,13 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
                 webUser,
                 attributes,
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_" + webUser.getRole())));
+    }
+
+    public UUID getLoginUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
+        return userRepository.findByWebUser(principal.getWebUser())
+                .orElseThrow(ErrorStatus.FORBIDDEN::asControllerException)
+                .getId();
     }
 }

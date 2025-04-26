@@ -48,7 +48,6 @@ public class CrimesceneTheme extends GameTheme {
         return CrimesceneTheme.builder()
                 .title(request.getTitle())
                 .summary(request.getSummary())
-                .authorId(request.getAuthor())
                 .tags(request.getTags())
                 .content(request.getContent())
                 .playerMin(request.getPlayerMin())
