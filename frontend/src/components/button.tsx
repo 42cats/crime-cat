@@ -178,7 +178,7 @@ export function Button({
     const addContent = () => {
         const newContent: ContentData = {
             id: uuidv4(),
-            channelId: "",
+            channelId: "none",
             text: "",
             index: data.contents.length,
         };

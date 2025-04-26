@@ -1,53 +1,168 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { Button as UIButton } from "@/components/ui/button";
 import { Group } from "@/components/group";
 import { Plus, Save } from "lucide-react";
-import { GroupData, DraggableItem, ItemPosition } from "@/lib/types";
+import { GroupData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { fetchGroupsFromServer, saveData } from "@/api/messageButtonService";
-import { useParams, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
-const MessageButtonEditor = () => {
+/**
+ * 임시 저장 지연 시간(ms)
+ */
+const AUTO_SAVE_DELAY = 5000;
+
+const MessageButtonEditor: React.FC = () => {
     const [groups, setGroups] = useState<GroupData[]>([]);
     const [isSaving, setIsSaving] = useState(false);
-    const { guildId } = useParams<{ guildId: string }>();
-    const location = useLocation();
-    const guildName = location.state?.guildName ?? "이름 없음";
 
+    // React Router로부터 길드 정보 수신
+    const location = useLocation();
+    const guildName: string = location.state?.guildName ?? "이름 없음";
+    const guildId: string = location.state?.guildId ?? "???";
+
+    /**
+     * 3초 후 자동 저장을 위한 타이머 참조
+     */
+    const saveTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    /**
+     * 최초 로딩 시 서버에서 그룹 목록을 받아옴
+     */
     useEffect(() => {
+        let mounted = true;
+
         (async () => {
             try {
                 const serverGroups = await fetchGroupsFromServer(guildId);
-                console.log("get save data ", serverGroups);
+                if (!mounted) return;
                 setGroups(
-                    serverGroups.length
+                    serverGroups.length > 0
                         ? serverGroups
-                        : [initializeDefaultGroup()]
+                        : [initializeDefaultGroup(serverGroups.length)]
                 );
             } catch {
-                setGroups([initializeDefaultGroup()]);
+                if (mounted) setGroups([initializeDefaultGroup(0)]);
             }
         })();
+
+        return () => {
+            mounted = false;
+        };
+        // guildId 변경 시 재호출
     }, [guildId]);
 
-    const initializeDefaultGroup = (): GroupData => {
-        const gid = uuidv4(),
-            bid = uuidv4(),
-            cid = uuidv4();
+    /**
+     * 그룹 데이터 변경 감지 → 3초 뒤 자동 저장
+     */
+    useEffect(() => {
+        // 이전 타이머 초기화
+        if (saveTimeout.current) clearTimeout(saveTimeout.current);
+
+        // 변경이 발생하면 3초 뒤 handleSave 실행
+        saveTimeout.current = setTimeout(() => {
+            handleSave();
+        }, AUTO_SAVE_DELAY);
+
+        // 컴포넌트 언마운트 또는 groups 변경 시 타이머 해제
+        return () => {
+            if (saveTimeout.current) clearTimeout(saveTimeout.current);
+        };
+    }, [groups]);
+
+    /**
+     * 수동·자동 호출 모두 가능한 저장 로직
+     */
+    const handleSave = useCallback(async () => {
+        if (isSaving) return; // 중복 저장 방지
+
+        setIsSaving(true);
+        try {
+            // 인덱스 재정렬 및 관계 ID 주입
+            const payload = groups.map((g, gi) => ({
+                ...g,
+                index: gi,
+                buttons: g.buttons.map((b, bi) => ({
+                    ...b,
+                    index: bi,
+                    groupId: g.id,
+                    guildId,
+                    contents: b.contents.map((c, ci) => ({
+                        ...c,
+                        index: ci,
+                        buttonId: b.id,
+                    })),
+                })),
+            }));
+
+            const ok = await saveData(guildId, payload);
+            toast[ok ? "success" : "error"](ok ? "저장 성공" : "저장 실패");
+        } catch {
+            toast.error("저장 중 오류 발생");
+        } finally {
+            setIsSaving(false);
+        }
+    }, [groups, guildId, isSaving]);
+
+    /**
+     * 중복 코드 방지를 위한 그룹 이름 유효성 확인
+     */
+    const isDuplicateName = useCallback(
+        (id: string, name: string) =>
+            groups.some((g) => g.id !== id && g.name.trim() === name.trim()),
+        [groups]
+    );
+
+    /**
+     * 그룹 변경 핸들러 (메모이제이션하여 리렌더 최소화)
+     */
+    const handleGroupChange = useCallback(
+        (groupId: string, updated: Partial<GroupData>) => {
+            if (updated.name && isDuplicateName(groupId, updated.name)) {
+                toast.error("같은 이름의 그룹이 이미 존재합니다.");
+                return;
+            }
+            setGroups((prev) =>
+                prev.map((g) => (g.id === groupId ? { ...g, ...updated } : g))
+            );
+        },
+        [isDuplicateName]
+    );
+
+    /**
+     * 그룹 제거 핸들러
+     */
+    const handleGroupRemove = useCallback((groupId: string) => {
+        setGroups((prev) => prev.filter((g) => g.id !== groupId));
+    }, []);
+
+    /**
+     * 기본 그룹 생성기 (최초 & 서버 데이터 없을 때)
+     */
+    const initializeDefaultGroup = (
+        order: number,
+        guildId: string
+    ): GroupData => {
+        const groupId = uuidv4();
+        const buttonId = uuidv4();
+        const contentId = uuidv4();
+
         return {
-            id: gid,
+            id: groupId,
             name: "예제그룹",
-            index: groups.length,
+            index: order,
             buttons: [
                 {
-                    id: bid,
+                    id: buttonId,
                     name: "버튼예시",
                     index: 0,
+                    groupId, // ✅ 추가
+                    guildId, // ✅ 추가 (함수 파라미터에서 받아야 함)
                     contents: [
                         {
-                            id: cid,
+                            id: contentId,
                             channelId: "none",
                             text: "여기에 메시지를 입력하세요",
                             index: 0,
@@ -58,61 +173,22 @@ const MessageButtonEditor = () => {
         };
     };
 
-    const initializeNewGroup = (): GroupData => ({
-        id: uuidv4(),
-        name: `예제그룹${groups.length + 1}`,
-        index: groups.length,
-        buttons: [],
-    });
+    /**
+     * 빈 그룹 생성기 (+버튼 클릭 시)
+     */
+    const initializeNewGroup = useCallback(
+        (): GroupData => ({
+            id: uuidv4(),
+            name: `예제그룹${groups.length + 1}`,
+            index: groups.length,
+            buttons: [],
+        }),
+        [groups.length]
+    );
 
-    const handleSave = async () => {
-        setIsSaving(true);
-        console.log("now data ", groups);
-        try {
-            const payload = groups.map((g, gi) => ({
-                ...g,
-                index: gi,
-                buttons: g.buttons.map((b, bi) => ({
-                    ...b,
-                    index: bi,
-                    groupId: g.id,
-                    guildId: guildId ?? "",
-                    contents: b.contents.map((c, ci) => ({
-                        ...c,
-                        index: ci,
-                        buttonId: b.id,
-                    })),
-                })),
-            }));
-            const ok = await saveData(guildId ?? "", payload);
-            toast[ok ? "success" : "error"](ok ? "저장 성공" : "저장 실패");
-        } catch {
-            toast.error("저장 중 오류 발생");
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const handleGroupChange = (
-        groupId: string,
-        updated: Partial<GroupData>
-    ) => {
-        if (updated.name) {
-            const name = updated.name.trim();
-            if (
-                groups.some((g) => g.id !== groupId && g.name.trim() === name)
-            ) {
-                alert("같은 이름의 그룹이 이미 존재합니다.");
-                return;
-            }
-        }
-        setGroups((gs) =>
-            gs.map((g) => (g.id === groupId ? { ...g, ...updated } : g))
-        );
-    };
-
-    const handleGroupRemove = (groupId: string) =>
-        setGroups((gs) => gs.filter((g) => g.id !== groupId));
+    /* ------------------------------------------------------------------ */
+    /* ------------------------------- UI ------------------------------- */
+    /* ------------------------------------------------------------------ */
 
     return (
         <div className="min-h-screen bg-background text-foreground">
@@ -148,7 +224,7 @@ const MessageButtonEditor = () => {
                             index={idx}
                             onChange={handleGroupChange}
                             onRemove={handleGroupRemove}
-                            guildId={guildId ?? ""}
+                            guildId={guildId}
                             onDragStart={() => {}}
                             onDragEnd={() => {}}
                             onDragOver={() => {}}
@@ -162,16 +238,14 @@ const MessageButtonEditor = () => {
                     <div className="flex justify-center mt-8">
                         <UIButton
                             onClick={() =>
-                                setGroups((gs) => [...gs, initializeNewGroup()])
+                                setGroups((prev) => [
+                                    ...prev,
+                                    initializeNewGroup(),
+                                ])
                             }
-                            className="w-full flex items-center gap-2 text-sm 
-             text-foreground dark:text-foreground 
-             hover:bg-muted/50 dark:hover:bg-muted 
-             px-3 py-2 rounded border border-dashed 
-             border-border transition-colors"
+                            className="w-full flex items-center gap-2 text-sm text-foreground dark:text-foreground hover:bg-muted/50 dark:hover:bg-muted px-3 py-2 rounded border border-dashed border-border transition-colors"
                         >
-                            <Plus className="h-5 w-5" />
-                            그룹 추가
+                            <Plus className="h-5 w-5" /> 그룹 추가
                         </UIButton>
                     </div>
                 </div>
