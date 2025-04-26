@@ -3,12 +3,13 @@ package com.crimecat.backend.web.gameHistory.controller;
 import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import com.crimecat.backend.auth.util.sort.SortUtil;
 import com.crimecat.backend.bot.guild.dto.MessageDto;
+import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.web.gameHistory.dto.GameHistoryUpdateRequestDto;
 import com.crimecat.backend.web.gameHistory.dto.SaveUserGameHistoryRequestDto;
 import com.crimecat.backend.web.gameHistory.dto.SaveUserHistoryResponseDto;
-import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryResponseDto;
 import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryToOwnerDto;
-import com.crimecat.backend.web.gameHistory.service.GameHistoryService;
+import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryToUserDto;
+import com.crimecat.backend.web.gameHistory.service.WebGameHistoryService;
 import com.crimecat.backend.web.gameHistory.sort.GameHistorySortType;
 import com.crimecat.backend.web.webUser.domain.WebUser;
 import java.util.List;
@@ -27,7 +28,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/histories")
 public class WebGameHistoryController {
 
-	private final GameHistoryService gameHistoryService;
+	private final WebGameHistoryService webGameHistoryService;
 
 	/**
 	 * 유저의 게임 기록을 저장
@@ -37,7 +38,7 @@ public class WebGameHistoryController {
 	@PostMapping("/crime_scene")
 	public SaveUserHistoryResponseDto saveUserHistory(
 			@RequestBody SaveUserGameHistoryRequestDto saveUserGameHistoryRequestDto) {
-		return gameHistoryService.saveCrimeSceneUserGameHistory(saveUserGameHistoryRequestDto);
+		return webGameHistoryService.saveCrimeSceneUserGameHistory(saveUserGameHistoryRequestDto);
 	}
 
 	/**
@@ -45,9 +46,31 @@ public class WebGameHistoryController {
 	 * @param webuserId
 	 * @return
 	 */
-	@GetMapping("/crime_scene/my/{web_user_id}")
-	public UserGameHistoryResponseDto getUserGameHistoryByUserSnowflake(@PathVariable("web_user_id") String webuserId) {
-		return gameHistoryService.getUserCrimeSceneGameHistoryByUserSnowflake(webuserId);
+	@GetMapping("/crime_scene/user/{web_user_id}")
+	public ResponseEntity<Page<UserGameHistoryToUserDto>> getUserGameHistoryByUserSnowflake(
+			@PathVariable("web_user_id") String webuserId,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size,
+			@RequestParam(required = false) List<String> sort,
+			@RequestParam(required = false) String keyword // ✅
+	) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
+		WebUser webUser = principal.getWebUser();
+		if(!webuserId.equals(webUser.getId().toString())){
+			throw ErrorStatus.INVALID_ACCESS.asControllerException();
+		}
+		List<GameHistorySortType> sortTypes = (sort != null && !sort.isEmpty()) ?
+				sort.stream()
+						.map(String::toUpperCase)
+						.map(GameHistorySortType::valueOf)
+						.toList()
+				: List.of(GameHistorySortType.LATEST);
+
+		Sort resolvedSort = SortUtil.combineSorts(sortTypes);
+		Pageable pageable = PageRequest.of(page, size, resolvedSort);
+
+		return ResponseEntity.ok().body(webGameHistoryService.getUserCrimeSceneGameHistoryByDiscordUserSnowflake(webUser.getDiscordUserSnowflake(), pageable, keyword));
 	}
 
 	@PatchMapping("/crime_scene/{user_snowflake}/guild/{guild_snowflake}")
@@ -57,7 +80,7 @@ public class WebGameHistoryController {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
 		WebUser webUser = principal.getWebUser();
-		gameHistoryService.updateGameHistoryOnWeb(webUser, userSnowflake, guildSnowflake, gameHistoryUpdateRequestDto);
+		webGameHistoryService.WebUpdateGameHistory(webUser, userSnowflake, guildSnowflake, gameHistoryUpdateRequestDto);
 		return new MessageDto<>("History updated successfully");
 	}
 
@@ -80,6 +103,7 @@ public class WebGameHistoryController {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
 		WebUser webUser = principal.getWebUser();
-		return ResponseEntity.ok().body(gameHistoryService.getGuildOwnerHistory(webUser.getUser(), guidId, pageable));
+		return ResponseEntity.ok().body(
+				webGameHistoryService.WebGetGuildOwnerHistory(webUser.getUser(), guidId, pageable));
 	}
 }
