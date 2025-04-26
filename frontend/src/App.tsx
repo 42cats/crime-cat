@@ -40,7 +40,7 @@ import Profile from "@/pages/dashboard/Profile";
 import MessageFormat from "@/pages/MessageButtonEditor";
 
 import { queryClient } from "@/lib/reactQuery";
-import GameHistoryManager from "./pages/GameHistoryOwnerBord";
+import GameHistoryManager from "./pages/GameHistoryOwnerBoard";
 
 const App = () => (
     <RecoilRoot>
