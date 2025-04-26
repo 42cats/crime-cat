@@ -120,26 +120,26 @@ services:
         max-size: "10m"
         max-file: "5"
 
-  # frontend:
-  #   build:
-  #     context: .
-  #     dockerfile: docker/frontend/Dockerfile
-  #   image: frontend
-  #   container_name: frontend
-  #   networks:
-  #     - discord-network
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - frontend_data:/app
-  #   depends_on:
-  #     backend:
-  #       condition: service_healthy
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: "10m"
-  #       max-file: "5"
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    image: frontend
+    container_name: frontend
+    networks:
+      - discord-network
+    env_file:
+      - .env
+    volumes:
+      - frontend_data:/app
+    depends_on:
+      backend:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   nginx:
     container_name: nginx
@@ -160,9 +160,9 @@ services:
       - cert:/etc/nginx/certs:ro
     extra_hosts:
       - "dev.crimecat.org:127.0.0.1"
-    # depends_on:
-    #   frontend:
-    #     condition: service_completed_successfully
+    depends_on:
+      frontend:
+        condition: service_completed_successfully
     logging:
       driver: "json-file"
       options:

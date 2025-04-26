@@ -62,6 +62,16 @@ dev: update_config
 
 	@$(MAKE) up
 
+# 특정 서비스만 다시 빌드하고 띄우기
+target:
+	@if [ -z "$(filter-out $@,$(MAKECMDGOALS))" ]; then \
+		echo "${RED}⚠️  서비스 이름을 지정해야 합니다. 예시: make target spring-backend${NC}"; \
+		exit 1; \
+	else \
+		echo "${BLUE}$(filter-out $@,$(MAKECMDGOALS)) 서비스를 빌드하고 실행합니다...${NC}"; \
+		docker compose up -d --build $(filter-out $@,$(MAKECMDGOALS)); \
+	fi
+
 
 # 운영 환경 설정
 prod: update_config
