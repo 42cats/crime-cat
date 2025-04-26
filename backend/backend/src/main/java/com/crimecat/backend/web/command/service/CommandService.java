@@ -34,7 +34,7 @@ public class CommandService {
                     .id(v.getId().toString())
                     .name(v.getName())
                     .description(v.getDescription())
-                    .usage(v.getUsage())
+                    .usageExample(v.getUsageExample())
                     .category(v.getCategory())
                     .createdAt(v.getCreatedAt().toInstant(ZoneOffset.UTC)) // ISO zone 타임으로 반환
                     .updatedAt(v.getUpdatedAt().toInstant(ZoneOffset.UTC))
@@ -51,7 +51,7 @@ public class CommandService {
         .id(command.getId().toString())
         .name(command.getName())
         .description(command.getDescription())
-        .usage(command.getUsage())
+        .usageExample(command.getUsageExample())
         .category(command.getCategory())
         .requiredPermissions(command.getRequiredPermissions())
         .content(command.getContent())
@@ -67,7 +67,7 @@ public class CommandService {
           new Command(
               requestDto.getName(),
               requestDto.getDescription(),
-              requestDto.getUsage(),
+              requestDto.getUsageExample(),
               requestDto.getCategory(),
               requestDto.getRequiredPermissions(),
               requestDto.getContent());
@@ -94,7 +94,7 @@ public class CommandService {
       // 2) 필드 업데이트
       command.setName(requestDto.getName());
       command.setDescription(requestDto.getDescription());
-      command.setUsage(requestDto.getUsage());
+      command.setUsageExample(requestDto.getUsageExample());
       command.setCategory(requestDto.getCategory());
       command.setRequiredPermissions(requestDto.getRequiredPermissions());
       command.setContent(requestDto.getContent());

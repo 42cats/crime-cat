@@ -35,7 +35,7 @@ public class Command {
   private String description;
 
   @Column(name = "usageExample", length = 255, nullable = false)
-  private String usage;
+  private String usageExample;
 
   @Column(name = "category", length = 100, nullable = false)
   private String category;
@@ -55,11 +55,11 @@ public class Command {
   @Column(name = "updated_at", nullable = false)
   private LocalDateTime updatedAt;
 
-  public Command(String name, String description, String usage, String category,
+  public Command(String name, String description, String usageExample, String category,
       List<String> requiredPermissions, String content) {
     this.name = name;
     this.description = description;
-    this.usage = usage;
+    this.usageExample = usageExample;
     this.category = category;
     this.requiredPermissions = requiredPermissions;
     this.content = content;

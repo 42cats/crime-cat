@@ -52,7 +52,7 @@ class CommandServiceControllerTest {
     CommandRequestDto dto = CommandRequestDto.builder()
         .name("test")
         .description("desc")
-        .usage("u")
+        .usageExample("u")
         .category("cat")
         .requiredPermissions(List.of("p1","p2"))
         .content("content")
