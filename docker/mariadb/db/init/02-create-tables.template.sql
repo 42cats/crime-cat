@@ -104,7 +104,8 @@ CREATE TABLE IF NOT EXISTS `game_histories`
     `is_win`            BOOLEAN NULL DEFAULT FALSE COMMENT '승리 여부',
     `created_at`        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '기록 생성 시간',
     `character_name`    VARCHAR(50) DEFAULT NULL COMMENT '캐릭터 이름',
-    `memo`              VARCHAR(1000) DEFAULT NULL COMMENT '플레이 기록 메모',
+    `memo`              VARCHAR(1000) DEFAULT NULL COMMENT '유저 플레이 기록 메모',
+    `owner_memo`        VARCHAR(1000) DEFAULT NULL COMMENT '오너 플레이 기록 메모',
     CONSTRAINT `fk_game_histories_discord_users` FOREIGN KEY (`user_snowflake`) REFERENCES `discord_users`(`snowflake`)
         ON DELETE CASCADE,
     CONSTRAINT `fk_game_histories_guilds` FOREIGN KEY (`guild_snowflake`) REFERENCES `guilds`(`snowflake`)
