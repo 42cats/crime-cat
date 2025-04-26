@@ -46,30 +46,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         } // successHandeler 로 가는거 막는 부분
 
-            if (uri.startsWith("/actuator/health") || uri.startsWith("/actuator/info")) {
+            if (request.getRequestURI().startsWith("/actuator/health") || request.getRequestURI().startsWith("/actuator/info")) {
         filterChain.doFilter(request, response);
         return;
     }
     
         log.info("request = {}", request);
         String token = TokenCookieUtil.getCookieValue(request, "Authorization");
-        if (token == null) {
-            // 🚨 토큰 없으면 바로 인증 실패 응답
-            unauthorized(response, "Missing Token");
-            return;
-        }
-
-        if (!jwtTokenProvider.validateToken(token)) {
-            // 🚨 토큰 유효성 검사 실패
-            unauthorized(response, "Invalid Token");
-            return;
-        }
-
-        if (jwtBlacklistService.isBlacklisted(token)) {
-            // 🚨 블랙리스트 된 토큰
-            unauthorized(response, "Token Blacklisted");
-            return;
-        }
 
         if (token == null) {
             String bearer = request.getHeader("Authorization");
