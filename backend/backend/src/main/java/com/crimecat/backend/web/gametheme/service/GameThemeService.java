@@ -1,20 +1,20 @@
 package com.crimecat.backend.web.gametheme.service;
 
-import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
-import com.crimecat.backend.bot.user.repository.UserRepository;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.storage.StorageService;
-import com.crimecat.backend.web.gametheme.domain.CrimesceneTheme;
 import com.crimecat.backend.web.gametheme.domain.GameTheme;
+import com.crimecat.backend.web.gametheme.domain.ThemeType;
 import com.crimecat.backend.web.gametheme.dto.*;
 import com.crimecat.backend.web.gametheme.repository.GameThemeRepository;
+import com.crimecat.backend.web.gametheme.specification.GameThemeSpecification;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -86,17 +86,15 @@ public class GameThemeService {
     }
 
     @Transactional
-    public GetGameThemesResponse getGameThemes(Specification<GameTheme> spec, Pageable pageable) {
+    public GetGameThemesResponse getGameThemes(String category, int pageSize, int pageNumber) {
         UUID userId = oAuth2UserService.getLoginUserId();
-        List<GameThemeDto> list = themeRepository.findAll(spec, pageable).stream()
-                // TODO: specification으로 처리
-                .filter(v -> !v.isDeleted() && (v.isPublicStatus() || (userId.equals(v.getAuthorId()))))
-                .map(GameThemeDto::from)
-                .toList();
-        return GetGameThemesResponse.builder()
-                .themes(list)
-                .page(pageable.getPageNumber())
-                .size(list.size())
-                .build();
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Order.desc("createdAt")));
+        // TODO: QueryDSL
+        Specification<GameTheme> spec = Specification.where(GameThemeSpecification.defaultSpec(userId));
+        if (ThemeType.contains(category)) {
+            spec.and(GameThemeSpecification.equalCategory(category));
+        }
+        Page<GameThemeDto> page = themeRepository.findAll(spec, pageable).map(GameThemeDto::from);
+        return GetGameThemesResponse.from(page);
     }
 }

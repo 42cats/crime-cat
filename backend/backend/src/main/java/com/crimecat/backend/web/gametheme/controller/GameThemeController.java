@@ -36,12 +36,7 @@ public class GameThemeController {
     public GetGameThemesResponse getGameThemes(@RequestParam(value = "category", required = false) String category,
                                                @RequestParam(value = "limit", defaultValue = "10") int limit,
                                                @RequestParam(value = "page", defaultValue = "0") int page) {
-        Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Order.desc("createdAt")));
-        if (!ThemeType.contains(category)) {
-            return gameThemeService.getGameThemes(null, pageable);
-        }
-        Specification<GameTheme> spec = Specification.where(GameThemeSpecification.equalCategory(category));
-        return gameThemeService.getGameThemes(spec, pageable);
+        return gameThemeService.getGameThemes(category, limit, page);
     }
 
     @GetMapping("/{themeId}")
