@@ -33,6 +33,7 @@ public class DiscordUser {
     @Column(name = "SNOWFLAKE", nullable = false, unique = true)
     private String snowflake;
 
+    @Getter
     @Column(name = "NAME", nullable = false)
     private String name;
 
@@ -95,7 +96,4 @@ public class DiscordUser {
         this.discordAlarm = discordAlarm;
     }
 
-    public String getName(){
-        return user.getName();
-    }
 }
