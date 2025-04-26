@@ -6,10 +6,8 @@ const mockChannels: Channel[] = [{ id: "none", name: "현재채널" }];
 // 채널 리스트 가져오기
 export async function fetchChannels(guildId?: string): Promise<any> {
     try {
-        console.log("채널 호출 ", guildId);
         const endpoint = `auth/guilds/channels/${guildId}`;
         const data = await apiClient.get<Channel[]>(endpoint);
-        console.log("data", data);
         return [...mockChannels, ...data];
     } catch (error) {
         console.error("Error fetching channels:", error);

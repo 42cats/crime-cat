@@ -181,6 +181,7 @@ export function Button({
             channelId: "none",
             text: "",
             index: data.contents.length,
+            buttonId: data.id, // ✅ 추가
         };
 
         onChange(data.id, {
@@ -222,7 +223,6 @@ export function Button({
         return data.contents
             .slice(0, MAX_CONTENTS) // 앞의 몇 개만 표시
             .map((content) => {
-                console.log("content = ", content, channelNames);
                 const channelName =
                     channelNames[content.channelId] || "알 수 없음";
                 const text = content.text?.trim() || "내용 없음";

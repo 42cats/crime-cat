@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/popover";
 import { fetchChannels } from "@/api/messageButtonService";
 import { Channel } from "@/lib/types";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 
 interface ChannelSelectProps {
     value: string;
@@ -33,28 +33,41 @@ export function ChannelSelect({
     disabled,
     className,
 }: ChannelSelectProps) {
+    // ✅ guildId 안전하게 가져오기 (params → state → sessionStorage)
+    const params = useParams<{ guildId?: string }>();
+    const location = useLocation();
+    const state = location.state as { guildId?: string } | null;
+
+    const guildId = useMemo(() => {
+        return (
+            params.guildId ||
+            state?.guildId ||
+            sessionStorage.getItem("guildId") ||
+            ""
+        );
+    }, [params.guildId, state]);
+
     const [open, setOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [channels, setChannels] = useState<Channel[]>([]);
     const [selectedChannel, setSelectedChannel] = useState<Channel>();
     const [initialized, setInitialized] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const { guildId } = useParams<{ guildId: string }>();
 
     // 👑 초성검색 포함 매칭 함수
     const matches = (target: string, keyword: string) => {
         const t = target.toLowerCase();
         const k = keyword.toLowerCase();
-        // 1) 완전 일치 포함
-        if (t.includes(k)) return true;
-        // 2) 초성 검색 지원
-        //    Hangul.search 는 'ㄱㅇ' → '게임' 매칭 가능
-        return Hangul.search(Hangul.d(target, true).join(""), k) >= 0;
+        return (
+            t.includes(k) ||
+            Hangul.search(Hangul.d(target, true).join(""), k) >= 0
+        );
     };
 
-    // 1회 채널 로드 + 가나다·알파벳 정렬
+    // ✅ 1회 채널 로드 + 가나다 정렬
     useEffect(() => {
-        if (initialized) return;
+        if (initialized || !guildId) return;
+
         setIsLoading(true);
         fetchChannels(guildId)
             .then((fetched) => {
@@ -66,14 +79,16 @@ export function ChannelSelect({
                     setSelectedChannel(sorted.find((c) => c.id === value));
                 }
             })
-            .catch(console.error)
+            .catch((e) => {
+                console.error("채널 로드 실패", e);
+            })
             .finally(() => {
                 setInitialized(true);
                 setIsLoading(false);
             });
     }, [guildId, initialized, value]);
 
-    // value 변경 시 selected 동기화
+    // ✅ value 변경 시 selected 동기화
     useEffect(() => {
         if (!value || !channels.length) return;
         setSelectedChannel(channels.find((c) => c.id === value));
@@ -88,7 +103,7 @@ export function ChannelSelect({
         }
     };
 
-    // 필터링
+    // 검색 필터링
     const filtered = channels.filter((c) =>
         !searchQuery.trim() ? true : matches(c.name, searchQuery)
     );
@@ -98,7 +113,7 @@ export function ChannelSelect({
             open={open}
             onOpenChange={(o) => {
                 setOpen(o);
-                if (o) setSearchQuery(""); // 열 때마다 검색 초기화
+                if (o) setSearchQuery(""); // 열 때 검색어 초기화
             }}
         >
             <PopoverTrigger asChild>
