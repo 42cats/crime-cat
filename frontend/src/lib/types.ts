@@ -74,7 +74,7 @@ export interface Command {
     id: string;
     name: string;
     description: string;
-    usage: string;
+    usageExample: string;
     category: string;
     requiredPermissions: string[];
     content?: string;
@@ -87,7 +87,7 @@ export interface Command {
 export interface CommandInput {
     name: string;
     description: string;
-    usage: string;
+    usageExample: string;
     category: string;
     requiredPermissions: string[];
     content: string;
