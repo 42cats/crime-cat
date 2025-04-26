@@ -416,23 +416,43 @@ CREATE TABLE IF NOT EXISTS `observations`
 /**
   각 유저 별 기록 테이블
  */
-CREATE TABLE `point_histories`
-(
+CREATE TABLE `point_histories` (
     `id`                BINARY(16) NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자',
-    `user_snowflake`    VARCHAR(50) NOT NULL COMMENT 'discord user snowflake',
-    `permission_id`     BINARY(16) DEFAULT NULL COMMENT 'permission table 식별자',
-    `point`             INT NOT NULL COMMENT '입출 포인트',
-    `used_at`           TIMESTAMP NOT NULL COMMENT '포인트 입출 날짜',
-    CONSTRAINT `fk_point_histories_discord_users` FOREIGN KEY (`user_snowflake`) REFERENCES `discord_users`(`snowflake`)
-	    ON DELETE CASCADE
-		ON UPDATE CASCADE,
-    CONSTRAINT `fk_point_histories_permissions` FOREIGN KEY (`permission_id`) REFERENCES `permissions`(`id`)
-	    ON DELETE CASCADE
-		ON UPDATE CASCADE
+    
+    `user_id`           BINARY(16) NOT NULL COMMENT '포인트 사용 유저 (users.id)',
+    `related_user_id`   BINARY(16) DEFAULT NULL COMMENT '거래 상대 유저 (users.id)',
+
+    `type`              VARCHAR(50) NOT NULL COMMENT '거래 유형 (ex: 충전, 사용, 송금 등)',
+    `amount`            INT NOT NULL COMMENT '변동 포인트 수량',
+    `balance_after`     INT NOT NULL COMMENT '변경 후 잔액',
+
+    `item_type`         VARCHAR(50) DEFAULT NULL COMMENT '관련 아이템 타입 (ex: 쿠폰, 상품 등)',
+    `item_id`           BINARY(16) DEFAULT NULL COMMENT '관련 아이템 고유 ID',
+
+    `permission_id`     BINARY(16) DEFAULT NULL COMMENT '관련 권한(permission) ID',
+
+    `memo`              TEXT DEFAULT NULL COMMENT '관리자 메모 또는 설명',
+    
+    `used_at`           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '사용 시각',
+
+    CONSTRAINT `fk_point_histories_user`
+        FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    CONSTRAINT `fk_point_histories_related_user`
+        FOREIGN KEY (`related_user_id`) REFERENCES `users`(`id`)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+
+    CONSTRAINT `fk_point_histories_permission`
+        FOREIGN KEY (`permission_id`) REFERENCES `permissions`(`id`)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
 ) ENGINE=InnoDB
-    DEFAULT CHARSET=utf8mb4
-    COLLATE=utf8mb4_unicode_ci
-    COMMENT='포인트 사용 기록 테이블';
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='포인트 변동 기록 테이블';
 
 
 /*

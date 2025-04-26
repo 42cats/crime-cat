@@ -57,7 +57,7 @@ public class PointHistory {
     @Column(name = "ITEM_ID", columnDefinition = "BINARY(16)")
     private UUID itemId;
     
-    @JoinColumn(name = "RELATED_USER_ID", referencedColumnName = "ID", nullable = false)
+    @JoinColumn(name = "RELATED_USER_ID", referencedColumnName = "ID")
     @ManyToOne(fetch = FetchType.LAZY)
     private User relatedUserId;
 
