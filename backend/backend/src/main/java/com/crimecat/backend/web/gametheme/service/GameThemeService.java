@@ -1,10 +1,10 @@
 package com.crimecat.backend.web.gametheme.service;
 
 import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
+import com.crimecat.backend.bot.user.domain.User;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.storage.StorageService;
-import com.crimecat.backend.web.gametheme.domain.GameTheme;
-import com.crimecat.backend.web.gametheme.domain.ThemeType;
+import com.crimecat.backend.web.gametheme.domain.*;
 import com.crimecat.backend.web.gametheme.dto.*;
 import com.crimecat.backend.web.gametheme.repository.GameThemeRepository;
 import com.crimecat.backend.web.gametheme.specification.GameThemeSpecification;
@@ -34,12 +34,28 @@ public class GameThemeService {
     @Transactional
     public void addGameTheme(MultipartFile file, AddGameThemeRequest request) {
         GameTheme gameTheme = GameTheme.from(request);
-        gameTheme.setAuthorId(oAuth2UserService.getLoginUserId());
+        User user = oAuth2UserService.getLoginUser();
+        gameTheme.setAuthorId(user.getId());
+        if (gameTheme instanceof CrimesceneTheme) {
+            checkTeam((CrimesceneTheme) gameTheme, user);
+        }
         gameTheme = themeRepository.save(gameTheme);
         if (file != null && !file.isEmpty()) {
             String path = storageService.storeAt(file, THUMBNAIL_LOCATION, gameTheme.getId().toString());
             gameTheme.setThumbnail(path);
             themeRepository.save(gameTheme);
+        }
+    }
+
+    private void checkTeam(CrimesceneTheme gameTheme, User user) {
+        if (gameTheme.getTeamId() == null) {
+            List<MakerTeamMember> teams = teamService.getIndividualTeams(user.getId());
+            if (teams.size() == 0) {
+                UUID teamId = teamService.create(user.getName(), user.getId(), true);
+                gameTheme.setTeamId(teamId);
+            } else {
+                gameTheme.setTeamId(teams.get(0).getTeam().getId());
+            }
         }
     }
 

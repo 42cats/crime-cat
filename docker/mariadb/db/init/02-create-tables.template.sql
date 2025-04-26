@@ -465,7 +465,8 @@ CREATE TABLE IF NOT EXISTS notices (
 */
 CREATE TABLE `maker_teams` (
     `id`            BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
-    `name`          VARCHAR(50) NOT NULL COMMENT '팀 이름'
+    `name`          VARCHAR(50) NOT NULL COMMENT '팀 이름',
+    `is_individual` BOOLEAN NOT NULL DEFAULT FALSE,
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci
@@ -479,6 +480,7 @@ CREATE TABLE `maker_team_members` (
     `team_id`    BINARY(16),
     `name`       VARCHAR(50),
     `user_id`    BINARY(16),
+    `is_leader`  BOOLEAN NOT NULL DEFAULT FALSE,
 
     CONSTRAINT `fk_team_id` FOREIGN KEY (`team_id`) REFERENCES `maker_teams`(`id`)
         ON DELETE CASCADE,
@@ -534,7 +536,7 @@ CREATE TABLE `crimescene_themes` (
         CHECK (JSON_VALID(`extra`)),
     CONSTRAINT `fk_maker_teams_id` FOREIGN KEY (`maker_teams_id`)
         REFERENCES `maker_teams`(`id`)
-        ON DELETE CASCADE,
+        ON DELETE SET NULL,
     CONSTRAINT `fk_guild_snowflake` FOREIGN KEY (`guild_snowflake`)
         REFERENCES `guilds`(`snowflake`)
         ON DELETE CASCADE

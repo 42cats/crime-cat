@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
+import com.crimecat.backend.bot.user.domain.User;
 import com.crimecat.backend.bot.user.repository.UserRepository;
 import com.crimecat.backend.exception.ErrorStatus;
 import org.springframework.security.core.Authentication;
@@ -66,11 +67,14 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_" + webUser.getRole())));
     }
 
-    public UUID getLoginUserId() {
+    public User getLoginUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
         return userRepository.findByWebUser(principal.getWebUser())
-                .orElseThrow(ErrorStatus.FORBIDDEN::asControllerException)
-                .getId();
+                .orElseThrow(ErrorStatus.FORBIDDEN::asControllerException);
+    }
+
+    public UUID getLoginUserId() {
+        return getLoginUser().getId();
     }
 }
