@@ -39,10 +39,11 @@ import Dashboard from "@/pages/dashboard/Dashboard";
 import Guilds from "@/pages/dashboard/Guilds";
 import Profile from "@/pages/dashboard/Profile";
 import MessageFormat from "@/pages/MessageButtonEditor";
+import Teams from "@/pages/dashboard/Teams";
 
 import { queryClient } from "@/lib/reactQuery";
-import GameHistoryManager from "./pages/GameHistoryOwnerBoard";
-import UserGameHistoryPage from "./pages/UserGameHistoryPage";
+import GameHistoryManager from "@/pages/GameHistoryOwnerBoard";
+import UserGameHistoryPage from "@/pages/UserGameHistoryPage";
 
 const App = () => (
   <RecoilRoot>
@@ -108,6 +109,7 @@ const App = () => (
                                     element={<UserGameHistoryPage />}
                                 />
                                 <Route path="profile" element={<Profile />} />
+                                <Route path="teams" element={<Teams />} />
                             </Route>
 
                             {/* 404 Route */}
