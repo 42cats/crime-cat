@@ -290,3 +290,19 @@ export interface RealWorldInput extends BaseThemeInput {
 export type Theme = CrimeSceneTheme | EscapeRoomTheme | MurderMysteryTheme | RealWorldTheme;
 export type ThemePage = CrimeScenePage | EscapeRoomPage | MurderMysteryPage | RealWorldPage;
 export type ThemeInput = CrimeSceneInput | EscapeRoomInput | MurderMysteryInput | RealWorldInput;
+
+export interface TeamMember {
+  id: string;
+  userId?: string;
+  name: string;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  members?: TeamMember[];
+}
+
+export interface Teams {
+  teams: Team[];
+}
