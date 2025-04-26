@@ -117,17 +117,9 @@ class AudioPlayerManager {
       resource.volume.setVolume(this.volume);
     } else {
       // Assume the track URL is a YouTube URL and use yt-dlp
-      console.log("audio operator = ", this.parent?.operator?.user?.id);
-      const beatRate = await isPermissionHas(
-        this.parent?.operator?.user?.id,
-        "고음질"
-      )
-        ? "bestaudio"
-        : "bestaudio[abr<=128]";
-      console.log("bitrate", beatRate);
       this.process = spawn("yt-dlp", [
         "-f",
-        beatRate,
+        "bestaudio",
         "-o",
         "-",
         "--audio-format",
