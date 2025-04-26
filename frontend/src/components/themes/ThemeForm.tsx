@@ -90,31 +90,35 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
   const handleSubmit = () => {
     const { tagInput, ...data } = form;
     const formData = new FormData();
-    formData.append("type", data.type);
-    formData.append("title", data.title);
-    formData.append("summary", data.summary);
-    formData.append("playersMin", String(data.playersMin));
-    formData.append("playersMax", String(data.playersMax));
-    formData.append("playtime", String(data.playtime));
-    formData.append("price", String(data.price));
-    formData.append("difficulty", String(data.difficulty));
-    formData.append("content", data.content);
+
 
     if (thumbnailFile instanceof File) {
       formData.append("thumbnail", thumbnailFile);
     }
 
-    data.tags.forEach((tag, index) => {
-      formData.append(`tags[${index}]`, tag);
-    });
+    const jsonData = {
+      title: data.title,
+      summary: data.summary,
+      tags: data.tags,
+      content: data.content,
+      playersMin: Number(data.playersMin),
+      playersMax: Number(data.playersMax),
+      playtime: Number(data.playtime),
+      price: Number(data.price),
+      difficulty: Number(data.difficulty),
+      publicStatus: true,
+      type: data.type,
+    };
 
     if (data.type === "CRIMESCENE" && extraFields) {
-      formData.append("makerTeamsId", extraFields.makerTeamsId);
-      formData.append("guildSnowflake", extraFields.guildSnowflake);
+      jsonData["makerTeamsId"] = extraFields.makerTeamsId || null;
+      jsonData["guildSnowflake"] = extraFields.guildSnowflake || null;
       if (extraFields.extra) {
-        formData.append("extra", JSON.stringify(extraFields.extra));
+        jsonData["extra"] = extraFields.extra;
       }
     }
+    
+    formData.append("data", JSON.stringify(jsonData));
 
     onSubmit(formData);
   };
