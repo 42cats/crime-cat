@@ -18,6 +18,71 @@ CREATE TABLE IF NOT EXISTS `discord_users`
     COLLATE=utf8mb4_unicode_ci
     COMMENT='디스코드 사용자 정보 테이블';
 
+/*
+
+    webUser TABLE
+
+*/
+CREATE TABLE `web_users` (
+    `id` BINARY(16) NOT NULL COMMENT 'UUID 기반 기본키',
+
+    `email_verified` BIT(1) NOT NULL DEFAULT b'0' COMMENT '이메일 인증 여부',
+    `is_active`     BIT(1) NOT NULL DEFAULT b'1' COMMENT '활성화 여부',
+    `is_banned`     BIT(1) NOT NULL DEFAULT b'0' COMMENT '정지 여부',
+
+    `created_at`    DATETIME(6) DEFAULT NULL COMMENT '계정 생성일',
+    `last_login_at` DATETIME(6) DEFAULT NULL COMMENT '마지막 로그인 일시',
+
+    `discord_user_id` VARCHAR(50) DEFAULT NULL COMMENT '디스코드 사용자 ID',
+    `nickname`        VARCHAR(50) NOT NULL COMMENT '사용자 닉네임',
+    `email`           VARCHAR(100) DEFAULT NULL COMMENT '이메일 주소',
+    `bio`             TEXT DEFAULT NULL COMMENT '자기소개',
+    `password_hash`   VARCHAR(255) DEFAULT NULL COMMENT '비밀번호 해시',
+    `profile_image_path` VARCHAR(255) DEFAULT NULL COMMENT '프로필 이미지 경로',
+
+    `settings` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL
+        CHECK (JSON_VALID(`settings`)) COMMENT '유저 설정 (JSON)',
+
+    `social_links` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL
+        CHECK (JSON_VALID(`social_links`)) COMMENT 'SNS 링크 (JSON)',
+
+    `login_method` ENUM('DISCORD', 'GOOGLE', 'LOCAL') NOT NULL COMMENT '로그인 방식',
+    `role`         ENUM('ADMIN', 'MANAGER', 'USER') NOT NULL COMMENT '권한 등급',
+
+    PRIMARY KEY (`id`),
+
+    -- ✅ 명시적인 UNIQUE 키 이름 부여
+    CONSTRAINT `UK_web_users_discord_user_id` UNIQUE (`discord_user_id`),
+    CONSTRAINT `UK_web_users_email` UNIQUE (`email`)
+)
+ENGINE = InnoDB
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
+
+
+/*
+
+    users
+
+*/
+CREATE TABLE `users` (
+    `id`                BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
+    `discord_snowflake` VARCHAR(50) UNIQUE COMMENT '디스코드 유저 snowflake',
+    `web_user_id`       BINARY(16) DEFAULT NULL COMMENT '웹 유저 아이디',
+    `point`             INT NOT NULL DEFAULT 0 COMMENT '보유 포인트',
+    `is_withdraw`       BOOLEAN NOT NULL DEFAULT FALSE COMMENT '탈퇴 여부',
+    `discord_user_id`   BINARY(16) DEFAULT NULL COMMENT '디스코드 유저 아이디',
+    `created_at`        DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '생성일',
+    `updated_at`        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일',
+    CONSTRAINT `fk_web_user` FOREIGN KEY (`web_user_id`) REFERENCES web_users(`id`)
+        ON DELETE SET NULL,
+    CONSTRAINT `fk_discord_user` FOREIGN KEY (`discord_user_id`) REFERENCES discord_users(`id`)
+        ON DELETE SET NULL
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  COMMENT '통합 유저 테이블';
+
 
 
 /**
@@ -338,71 +403,6 @@ CREATE TABLE IF NOT EXISTS `group_items` (
   CONSTRAINT `fk_group_items_group`
     FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-/*
-
-    webUser TABLE
-
-*/
-CREATE TABLE `web_users` (
-    `id` BINARY(16) NOT NULL COMMENT 'UUID 기반 기본키',
-
-    `email_verified` BIT(1) NOT NULL DEFAULT b'0' COMMENT '이메일 인증 여부',
-    `is_active`     BIT(1) NOT NULL DEFAULT b'1' COMMENT '활성화 여부',
-    `is_banned`     BIT(1) NOT NULL DEFAULT b'0' COMMENT '정지 여부',
-
-    `created_at`    DATETIME(6) DEFAULT NULL COMMENT '계정 생성일',
-    `last_login_at` DATETIME(6) DEFAULT NULL COMMENT '마지막 로그인 일시',
-
-    `discord_user_id` VARCHAR(50) DEFAULT NULL COMMENT '디스코드 사용자 ID',
-    `nickname`        VARCHAR(50) NOT NULL COMMENT '사용자 닉네임',
-    `email`           VARCHAR(100) DEFAULT NULL COMMENT '이메일 주소',
-    `bio`             TEXT DEFAULT NULL COMMENT '자기소개',
-    `password_hash`   VARCHAR(255) DEFAULT NULL COMMENT '비밀번호 해시',
-    `profile_image_path` VARCHAR(255) DEFAULT NULL COMMENT '프로필 이미지 경로',
-
-    `settings` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL
-        CHECK (JSON_VALID(`settings`)) COMMENT '유저 설정 (JSON)',
-
-    `social_links` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL
-        CHECK (JSON_VALID(`social_links`)) COMMENT 'SNS 링크 (JSON)',
-
-    `login_method` ENUM('DISCORD', 'GOOGLE', 'LOCAL') NOT NULL COMMENT '로그인 방식',
-    `role`         ENUM('ADMIN', 'MANAGER', 'USER') NOT NULL COMMENT '권한 등급',
-
-    PRIMARY KEY (`id`),
-
-    -- ✅ 명시적인 UNIQUE 키 이름 부여
-    CONSTRAINT `UK_web_users_discord_user_id` UNIQUE (`discord_user_id`),
-    CONSTRAINT `UK_web_users_email` UNIQUE (`email`)
-)
-ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4
-COLLATE = utf8mb4_unicode_ci;
-
-
-/*
-
-    users
-
-*/
-CREATE TABLE `users` (
-    `id`                BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
-    `discord_snowflake` VARCHAR(50) UNIQUE COMMENT '디스코드 유저 snowflake',
-    `web_user_id`       BINARY(16) DEFAULT NULL COMMENT '웹 유저 아이디',
-    `point`             INT NOT NULL DEFAULT 0 COMMENT '보유 포인트',
-    `is_withdraw`       BOOLEAN NOT NULL DEFAULT FALSE COMMENT '탈퇴 여부',
-    `discord_user_id`   BINARY(16) DEFAULT NULL COMMENT '디스코드 유저 아이디',
-    `created_at`        DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '생성일',
-    `updated_at`        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일',
-    CONSTRAINT `fk_web_user` FOREIGN KEY (`web_user_id`) REFERENCES web_users(`id`)
-        ON DELETE SET NULL,
-    CONSTRAINT `fk_discord_user` FOREIGN KEY (`discord_user_id`) REFERENCES discord_users(`id`)
-        ON DELETE SET NULL
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci
-  COMMENT '통합 유저 테이블';
 
 
 
