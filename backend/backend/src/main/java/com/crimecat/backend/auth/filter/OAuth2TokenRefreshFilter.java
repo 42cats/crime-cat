@@ -30,14 +30,16 @@ public class OAuth2TokenRefreshFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-        if (request.getRequestURI().startsWith("/bot/v1/") || (request.getRequestURI().startsWith("/api/v1/public/"))){
-            filterChain.doFilter(request, response);
-            return;
-        }
-        if (request.getRequestURI().startsWith("/actuator/health") || request.getRequestURI().startsWith("/actuator/info")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+    // 인증 제외 경로
+    if (request.getRequestURI().startsWith("/bot/v1/")
+        || request.getRequestURI().startsWith("/login/oauth2/")
+        || request.getRequestURI().startsWith("/actuator/health")
+        || request.getRequestURI().startsWith("/actuator/info")
+        ||(request.getRequestURI().startsWith("/api/v1/public/"))
+        ) {
+        filterChain.doFilter(request, response);
+        return;
+    }
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication != null &&
@@ -56,7 +58,7 @@ public class OAuth2TokenRefreshFilter extends OncePerRequestFilter {
                 TokenCookieUtil.clearAuthCookies(response); // 쿠키 삭제
 
                 try {
-                    String baseUrl = serviceUrlConfig.getDomain();
+                    String baseUrl = "https://crimecat.org";
                     response.sendRedirect(baseUrl + "/login");
                 } catch (Exception e) {
                     log.warn("❌ 디스코드 토큰 만료 리디렉션 실패: {}", e.toString());
