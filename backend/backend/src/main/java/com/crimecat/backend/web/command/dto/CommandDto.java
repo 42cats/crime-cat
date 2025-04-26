@@ -11,7 +11,7 @@ public class CommandDto {
   private String id;
   private String name;
   private String description;
-  private String usage;
+  private String usageExample;
   private String category;
   private List<String> requiredPermissions;
   private String content;
