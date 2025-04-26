@@ -120,9 +120,17 @@ clean:
 
 # 전체 Docker 리소스 제거
 fclean: clean
-	@echo "${RED}모든 Docker 리소스를 제거합니다...${NC}"
-	docker volume prune -f
+	@echo "${RED}모든 Docker 리소스(볼륨, 이미지, 네트워크, 빌드캐시)를 제거합니다...${NC}"
+	# 남은 컨테이너/네트워크 강제 종료 및 삭제
+	-docker system prune -af --volumes
+	# 수동으로 모든 로컬 이미지 삭제
+	-docker rmi -f $$(docker images -q) || true
+	# 빌드 캐시까지 완전 삭제 (Docker 20.10+ 버전 지원)
+	-docker builder prune -af || true
+	# 직접 만든 디렉토리 삭제
 	rm -rf $(DB_BASE_DIR)
+	@echo "${GREEN}🧹 전체 Docker 리소스 정리 완료!${NC}"
+
 
 # 로그 보기
 logs:
