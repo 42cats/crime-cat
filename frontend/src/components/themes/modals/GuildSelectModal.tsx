@@ -1,6 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { authService } from "@/api/authService";
+import { Guild } from "@/lib/types";
+import { Server } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -9,20 +14,72 @@ interface Props {
 }
 
 const GuildSelectModal: React.FC<Props> = ({ open, onOpenChange, onSelect }) => {
-  const dummyGuilds = ["guild-x", "guild-y", "guild-z"];
+  const [guilds, setGuilds] = useState<Guild[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleFetch = async () => {
+    setIsLoading(true);
+    try {
+      const data = await authService.getUserGuilds();
+      setGuilds(data);
+    } catch (error) {
+      console.error("길드 목록 가져오기 실패:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>길드 선택</DialogTitle>
         </DialogHeader>
-        <div className="space-y-2">
-          {dummyGuilds.map((guild) => (
-            <Button key={guild} variant="outline" className="w-full" onClick={() => { onSelect(guild); onOpenChange(false); }}>
-              {guild}
-            </Button>
-          ))}
+
+        {/* 조회 버튼 */}
+        <div className="flex justify-end mb-4">
+          <Button onClick={handleFetch}>조회</Button>
+        </div>
+
+        {/* 길드 리스트 */}
+        <div className="grid grid-cols-2 gap-4 max-h-[500px] overflow-y-auto">
+          {isLoading ? (
+            [...Array(4)].map((_, idx) => (
+              <Skeleton key={idx} className="h-32 w-full rounded-lg" />
+            ))
+          ) : guilds.length ? (
+            guilds.map((guild) => (
+              <Card
+                key={guild.id}
+                className="cursor-pointer hover:shadow-md transition"
+                onClick={() => {
+                  onSelect(guild.id);
+                  onOpenChange(false);
+                }}
+              >
+                <CardHeader className="flex flex-col items-center justify-center py-6">
+                  {guild.icon ? (
+                    <img
+                      src={guild.icon}
+                      alt={guild.name}
+                      className="h-14 w-14 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Server className="h-6 w-6 text-primary" />
+                    </div>
+                  )}
+                  <CardTitle className="text-center text-sm mt-2 truncate w-full">
+                    {guild.name}
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground col-span-2 text-center py-10">
+              조회된 길드가 없습니다.
+            </p>
+          )}
         </div>
       </DialogContent>
     </Dialog>
