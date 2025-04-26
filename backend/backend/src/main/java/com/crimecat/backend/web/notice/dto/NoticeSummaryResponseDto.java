@@ -1,6 +1,6 @@
 package com.crimecat.backend.web.notice.dto;
 
-import com.crimecat.backend.web.notice.domain.Notice;
+import com.crimecat.backend.web.notice.domain.Notices;
 import com.crimecat.backend.web.notice.domain.NoticeType;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -19,15 +19,15 @@ public class NoticeSummaryResponseDto {
   private LocalDateTime createdAt;
   private Boolean isPinned;
 
-  public static NoticeSummaryResponseDto from(Notice notice) {
+  public static NoticeSummaryResponseDto from(Notices notices) {
     return NoticeSummaryResponseDto.builder()
-        .id(notice.getId().toString())
-        .title(notice.getTitle())
-        .summary(notice.getSummary())
-        .isPinned(notice.getIsPinned())
-        .createdAt(notice.getCreatedAt())
-        .noticeType(notice.getNoticeType())
-        .updatedAt(notice.getUpdatedAt())
+        .id(notices.getId().toString())
+        .title(notices.getTitle())
+        .summary(notices.getSummary())
+        .isPinned(notices.getIsPinned())
+        .createdAt(notices.getCreatedAt())
+        .noticeType(notices.getNoticeType())
+        .updatedAt(notices.getUpdatedAt())
         .build();
   }
 
