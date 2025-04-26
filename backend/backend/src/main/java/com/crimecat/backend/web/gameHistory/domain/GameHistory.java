@@ -34,7 +34,7 @@ public class GameHistory {
     @Column(name = "IS_WIN")
     private boolean isWin = false;
 
-    @Column(name = "CREATED_AT", nullable = false, updatable = false)
+    @Column(name = "CREATED_AT", nullable = false, updatable = true)
     private LocalDateTime createdAt;
 
     @Column(name = "CHARACTER_NAME")
@@ -93,4 +93,10 @@ public class GameHistory {
             return;
         this.ownerMemo = memo;
     }
+    public void setCreatedAt(LocalDateTime dateTime){
+        if(dateTime == null)
+            return;
+        this.createdAt = dateTime;
+    }
+
 }

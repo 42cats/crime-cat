@@ -100,4 +100,26 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	Page<GameHistory> findByGuild_Snowflake(String guildSnowflake, Pageable pageable);
 
 	Page<GameHistory> searchByGuild_Snowflake(String guildSnowflake, Pageable pageable);
-}
+
+	Page<GameHistory> searchByDiscordUser_Snowflake(String discordUserSnowflake, Pageable pageable);
+
+	Page<GameHistory> findByDiscordUser_Snowflake(String discordUserSnowflake, Pageable pageable);
+
+		@Query("""
+        SELECT gh
+        FROM GameHistory gh
+        JOIN gh.guild g
+        LEFT JOIN gh.gameTheme gt
+        WHERE gh.discordUser.snowflake = :discordUserSnowflake
+        AND (
+            (:keyword IS NULL OR :keyword = '' OR 
+            LOWER(g.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+            LOWER(gt.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        )
+    """)
+		Page<GameHistory> findByDiscordUserSnowflakeAndKeyword(
+				@Param("discordUserSnowflake") String discordUserSnowflake,
+				@Param("keyword") String keyword,
+				Pageable pageable
+		);
+	}

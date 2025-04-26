@@ -41,6 +41,7 @@ import MessageFormat from "@/pages/MessageButtonEditor";
 
 import { queryClient } from "@/lib/reactQuery";
 import GameHistoryManager from "./pages/GameHistoryOwnerBoard";
+import UserGameHistoryPage from "./pages/UserGameHistoryPage";
 
 const App = () => (
     <RecoilRoot>
@@ -150,6 +151,10 @@ const App = () => (
                                 <Route
                                     path="guilds/crime-scene-history"
                                     element={<GameHistoryManager />}
+                                />
+                                <Route
+                                    path="users/my-history"
+                                    element={<UserGameHistoryPage />}
                                 />
                                 <Route path="profile" element={<Profile />} />
                             </Route>
