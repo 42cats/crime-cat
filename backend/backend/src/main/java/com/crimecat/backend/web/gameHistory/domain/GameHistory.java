@@ -42,7 +42,7 @@ public class GameHistory {
 
     @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false, updatable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    private DiscordUser user;
+    private DiscordUser discordUser;
 
     @JoinColumn(name = "GAME_THEME_ID", referencedColumnName = "ID", nullable = true)
     @ManyToOne(fetch = FetchType.LAZY)
@@ -55,11 +55,14 @@ public class GameHistory {
     @Column(name = "MEMO", length = 1000)
     private String memo;
 
-    public GameHistory(boolean isWin, LocalDateTime createdAt, String characterName, DiscordUser user, Guild guild, GameTheme gameTheme) {
+    @Column(name = "OWNER_MEMO", length = 1000)
+    private String ownerMemo;
+
+    public GameHistory(boolean isWin, LocalDateTime createdAt, String characterName, DiscordUser discordUser, Guild guild, GameTheme gameTheme) {
         this.isWin = isWin;
         this.createdAt = createdAt;
         this.characterName = characterName;
-        this.user = user;
+        this.discordUser = discordUser;
         this.guild = guild;
         if(gameTheme != null)
             this.gameTheme = gameTheme;
@@ -83,5 +86,11 @@ public class GameHistory {
         if(memo == null)
             return;
         this.memo = memo;
+    }
+
+    public void setOwnerMemo(String memo){
+        if(memo == null)
+            return;
+        this.ownerMemo = memo;
     }
 }

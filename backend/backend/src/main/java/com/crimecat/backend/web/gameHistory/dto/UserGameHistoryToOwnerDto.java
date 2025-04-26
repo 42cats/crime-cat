@@ -8,19 +8,21 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public class UserGameHistoryDto {
+public class UserGameHistoryToOwnerDto {
 
 	private UUID uuid;
 	private String guildSnowflake;
+	private String userSnowflake;
 	private String playerName;
 	private boolean isWin;
 	private LocalDateTime createdAt;
 	private String characterName;
-	private String memo;
+	private String ownerMemo;
 	private String themeId;
 	private String themeName;
 
-	static public UserGameHistoryDto from(GameHistory gameHistory){
+
+	static public UserGameHistoryToOwnerDto from(GameHistory gameHistory){
 		String gameThemeId = "";
 		String gameThemeName = "등록되지 않음";
 
@@ -32,15 +34,15 @@ public class UserGameHistoryDto {
 				gameThemeName = gameHistory.getGameTheme().getTitle();
 			}
 		}
-
-		return new UserGameHistoryDto(
+		return new UserGameHistoryToOwnerDto(
 				gameHistory.getId(),
 				gameHistory.getGuild().getSnowflake(),
+				gameHistory.getDiscordUser().getSnowflake(),
 				gameHistory.getDiscordUser().getUser().getName(),
 				gameHistory.isWin(),
 				gameHistory.getCreatedAt(),
 				gameHistory.getCharacterName(),
-				gameHistory.getMemo(),
+				gameHistory.getOwnerMemo(),
 				gameThemeId,
 				gameThemeName
 		);
