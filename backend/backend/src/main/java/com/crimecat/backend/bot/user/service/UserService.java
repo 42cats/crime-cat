@@ -42,6 +42,8 @@ import com.crimecat.backend.web.gameHistory.dto.IGameHistoryRankingDto;
 import com.crimecat.backend.web.gameHistory.service.GameHistoryQueryService;
 import com.crimecat.backend.web.webUser.repository.WebUserRepository;
 import io.micrometer.common.util.StringUtils;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -74,11 +76,12 @@ public class UserService {
 	private final GameHistoryQueryService gameHistoryQueryService;
 	private final GuildService guildService;
 	private final GuildQueryService guildQueryService;
-
 	private final UserRepository userRepository;
 	private final WebUserRepository webUserRepository;
 	private final DiscordUserRepository discordUserRepository;
 
+	@PersistenceContext
+	private final EntityManager entityManager;
 
 	@Transactional(readOnly = true)
 	public DiscordUser findUserBySnowflake(String userSnowflake) {
@@ -122,6 +125,7 @@ public class UserService {
 		// 4. 최종 저장
 		userRepository.save(user);
 
+		entityManager.flush();
 		return new UserInfoResponseDto(
 				"User ensured and updated.",
 				new UserResponseDto(snowflake, name, avatar, user.getCreatedAt())
