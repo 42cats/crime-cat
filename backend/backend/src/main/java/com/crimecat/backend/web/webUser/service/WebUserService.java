@@ -1,17 +1,27 @@
 package com.crimecat.backend.web.webUser.service;
 
 import com.crimecat.backend.auth.util.UserDailyCheckUtil;
+import com.crimecat.backend.bot.permission.domain.Permission;
+import com.crimecat.backend.bot.permission.repository.PermissionRepository;
+import com.crimecat.backend.bot.permission.service.PermissionService;
 import com.crimecat.backend.bot.point.service.PointHistoryService;
 import com.crimecat.backend.bot.user.domain.DiscordUser;
 import com.crimecat.backend.bot.user.domain.User;
+import com.crimecat.backend.bot.user.domain.UserPermission;
+import com.crimecat.backend.bot.user.dto.UserPermissionPurchaseFailedResponseDto;
 import com.crimecat.backend.bot.user.repository.DiscordUserRepository;
 import com.crimecat.backend.bot.user.repository.UserRepository;
+import com.crimecat.backend.bot.user.service.UserPermissionService;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.web.webUser.LoginMethod;
 import com.crimecat.backend.web.webUser.UserRole;
 import com.crimecat.backend.web.webUser.domain.WebUser;
 import com.crimecat.backend.web.webUser.repository.WebUserRepository;
+import io.micrometer.common.util.StringUtils;
 import jakarta.transaction.Transactional;
+
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +43,8 @@ public class WebUserService {
     private final DiscordUserRepository discordUserRepository;
     private final UserDailyCheckUtil userDailyCheckUtil;
     private final PointHistoryService pointHistoryService;
+    private final PermissionService permissionService;
+    private final UserPermissionService userPermissionService;
 
     /**
      * OAuth 로그인 시 사용자 정보를 기준으로 신규 생성 또는 기존 유저 반환
@@ -77,6 +89,20 @@ public class WebUserService {
                 u = userRepository.findByDiscordUser(discordUser.get()).orElse(u);
                 u.setWebUser(newUser);
             }
+
+            /// 이벤트 최초 7일이내 권한 한달무료
+            Instant eventStart = Instant.parse("2025-04-28T03:00:00Z"); // 한국시간 4/28 12:00
+            Instant eventEnd = eventStart.plus(Duration.ofDays(7)); // 일주일 후 종료
+            Instant now = Instant.now();
+
+            if (!now.isBefore(eventStart) && !now.isAfter(eventEnd)) {
+                this.PermissionsSet(u, "관전");
+                this.PermissionsSet(u, "주소추가");
+                this.PermissionsSet(u, "로컬음악");
+                this.PermissionsSet(u, "버튼매크로");
+            }
+
+
             userRepository.save(u);
             return newUser;
         });
@@ -122,4 +148,13 @@ public class WebUserService {
         }
         throw ErrorStatus.INVALID_INPUT.asServiceException();
     }
+
+    @Transactional
+    public void PermissionsSet(User user, String name) {
+        Permission permission = permissionService.findPermissionByPermissionName(name);
+        if (permission != null) {
+            userPermissionService.purchasePermission(user.getDiscordUser(), permission);
+        }
+    }
+
 }
