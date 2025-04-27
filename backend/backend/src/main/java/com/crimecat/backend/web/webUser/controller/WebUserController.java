@@ -25,7 +25,6 @@ public class WebUserController {
 
   private final WebUserService webUserService;
   private final CouponService couponService;
-  private final UserRepository userRepository;
   private final WebUserRepository webUserRepository;
   private final UserService userService;
 
@@ -52,8 +51,8 @@ public class WebUserController {
   @GetMapping("/{user_id}/permissions")
   public UserGrantedPermissionResponseDto getAllUserPermissions(
           @PathVariable("user_id") String userId) {
-    User user = userRepository.findById(UUID.fromString(userId)).orElseThrow(ErrorStatus.USER_NOT_FOUND::asControllerException);
-    return userService.getAllUserPermissions(user.getDiscordSnowflake());
+    WebUser webUser = webUserRepository.findById(UUID.fromString(userId)).orElseThrow(ErrorStatus.USER_NOT_FOUND::asControllerException);
+    return userService.getAllUserPermissions(webUser.getDiscordUserSnowflake());
   }
 
 }
