@@ -44,7 +44,7 @@ public class Permission {
             this.duration = duration;
         }
         if(info != null) {
-            this.info = "";
+            this.info = info;
         }
     }
 
