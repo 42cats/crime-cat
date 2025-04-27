@@ -52,14 +52,15 @@ async function getPermissons() {
  * @param {number} price
  * @param {number} [duration=28]   
  */
-async function addPermisson(name, price, duration = 28) {
+async function addPermisson(name, price, info, duration = 28) {
 	const API_URL = `${baseUrl}/bot/v1/permissions`;
 
 
 	const body = {
 		name,
 		price,
-		duration
+		duration,
+		info
 	};
 
 	try {

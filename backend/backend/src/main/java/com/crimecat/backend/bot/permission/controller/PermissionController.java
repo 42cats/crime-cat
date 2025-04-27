@@ -28,7 +28,9 @@ public class PermissionController {
 		return permissionService.savePermission(
 				savePermissionRequestDto.getName(),
 				savePermissionRequestDto.getPrice(),
-				savePermissionRequestDto.getDuration());
+				savePermissionRequestDto.getDuration(),
+				savePermissionRequestDto.getInfo()
+		);
 	}
 	/**
 	 * 권한 목록 조회
