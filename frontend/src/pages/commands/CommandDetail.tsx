@@ -10,6 +10,7 @@ import MarkdownRenderer from "@/components/MarkdownRenderer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/useToast";
+import { UTCToKST } from "@/lib/dateFormat";
 
 const CommandDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -161,11 +162,11 @@ const CommandDetail: React.FC = () => {
                             <div className="text-sm text-muted-foreground">
                                 <div>
                                     <strong>생성일</strong>{" "}
-                                    {formatDate(command.createdAt)}
+                                    <UTCToKST date={command.createdAt} />
                                 </div>
                                 <div>
                                     <strong>수정일</strong>{" "}
-                                    {formatDate(command.updatedAt)}
+                                    <UTCToKST date={command.updatedAt} />
                                 </div>
                             </div>
                         </div>
