@@ -18,7 +18,8 @@ import {
 import { Gift, CheckCircle } from "lucide-react";
 import { couponService } from "@/api/couponService";
 import { useToast } from "@/hooks/useToast";
-
+import { UserPermissionCard } from "@/components/UserPermissionCard";
+import { UTCToKST } from "@/lib/dateFormat";
 interface Props {
     user: {
         id: string;
@@ -51,6 +52,12 @@ interface Props {
         recentlyPlayCrimeSeenThemeTime?: string;
         mostFavoriteCrimeSeenMaker?: string;
     };
+    permissions?: {
+        permissionId: string;
+        permissionName: string;
+        info?: string;
+        expiredDate: string;
+    }[];
 }
 
 export const DashboardProfileCard: React.FC<Props> = ({
@@ -59,6 +66,7 @@ export const DashboardProfileCard: React.FC<Props> = ({
     onCheckDaily,
     isChecking,
     additionalInfo,
+    permissions,
 }) => {
     const [isCouponModalOpen, setCouponModalOpen] = useState(false);
     const [couponCode, setCouponCode] = useState("");
@@ -144,9 +152,11 @@ export const DashboardProfileCard: React.FC<Props> = ({
                         <ProfileField
                             label="마지막 로그인"
                             value={
-                                user.last_login_at
-                                    ? formatDate(user.last_login_at)
-                                    : "-"
+                                user.last_login_at ? (
+                                    <UTCToKST date={user.last_login_at} />
+                                ) : (
+                                    "-"
+                                )
                             }
                         />
                     </div>
@@ -261,6 +271,17 @@ export const DashboardProfileCard: React.FC<Props> = ({
                                     "-"
                                 }
                             />
+                        </div>
+                    )}
+                    {permissions && permissions.length > 0 && (
+                        <div className="mt-8">
+                            <UserPermissionCard permissions={permissions} />
+                        </div>
+                    )}
+                    {/* 퍼미션이 없을 경우 */}
+                    {(!permissions || permissions.length === 0) && (
+                        <div className="mt-8 text-center text-muted-foreground text-sm">
+                            보유한 권한이 없습니다.
                         </div>
                     )}
                 </CardContent>

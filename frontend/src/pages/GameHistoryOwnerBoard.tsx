@@ -16,7 +16,7 @@ import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api";
-
+import { UTCToKST } from "@/lib/dateFormat";
 /* ------------------------------ 타입 ------------------------------ */
 export interface UserGameHistoryDto {
     uuid: string;
@@ -259,11 +259,7 @@ const GameHistoryManager: React.FC = () => {
                                             {h.ownerMemo || "-"}
                                         </td>
                                         <td className="px-4 py-2">
-                                            {format(
-                                                new Date(h.createdAt),
-                                                "yyyy-MM-dd HH:mm",
-                                                { locale: ko }
-                                            )}
+                                            <UTCToKST date={h.createdAt} />
                                         </td>
                                         <td className="px-4 py-2 text-right">
                                             <Button
@@ -372,18 +368,9 @@ const GameHistoryManager: React.FC = () => {
                                 />
                                 <Label htmlFor="win">승리</Label>
                             </div>
-                            <div className="space-y-1">
-                                <Label htmlFor="createdAt">플레이 날짜</Label>
-                                <Input
-                                    id="createdAt"
-                                    name="createdAt"
-                                    type="datetime-local"
-                                    defaultValue={editing.createdAt.slice(
-                                        0,
-                                        16
-                                    )}
-                                    required
-                                />
+                            <div>
+                                <span className="font-medium">날짜:</span>{" "}
+                                <UTCToKST date={editing.createdAt} />
                             </div>
                             <div className="space-y-1">
                                 <Label htmlFor="characterName">
@@ -400,7 +387,7 @@ const GameHistoryManager: React.FC = () => {
                                 <textarea
                                     id="memo"
                                     name="memo"
-                                    defaultValue={editing.memo}
+                                    defaultValue={editing.ownerMemo}
                                     rows={3}
                                     className="w-full border rounded-md p-2 text-sm"
                                 />

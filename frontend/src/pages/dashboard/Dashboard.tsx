@@ -94,12 +94,7 @@ const Dashboard: React.FC = () => {
                             mostFavoriteCrimeSeenMaker:
                                 additionalData.mostFavoriteCrimeSeenMaker,
                         }}
-                    />
-                )}
-                {/* ✅ 추가: 유저 권한 카드 */}
-                {permissionData && (
-                    <UserPermissionCard
-                        permissions={permissionData.permissions}
+                        permissions={permissionData}
                     />
                 )}
                 {/* ✅ 로딩 중일 때는 텍스트 표시 (선택사항) */}

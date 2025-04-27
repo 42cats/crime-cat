@@ -4,16 +4,12 @@ export interface UserGrantedPermissionDto {
     permissionId: string;
     permissionName: string;
     expiredDate: string;
-}
-
-export interface UserGrantedPermissionResponseDto {
-    userSnowflake: string;
-    permissions: UserGrantedPermissionDto[];
+    info?: string;
 }
 
 export const userGrantedPermissionService = {
     fetchPermissions: (userId: string) =>
-        apiClient.get<UserGrantedPermissionResponseDto>(
-            `/users/${userId}/permissions`
+        apiClient.get<UserGrantedPermissionDto[]>(
+            `/web_user/${userId}/permissions`
         ),
 };
