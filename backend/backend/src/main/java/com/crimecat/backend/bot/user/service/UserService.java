@@ -237,7 +237,8 @@ public class UserService {
 				.map(aup -> new UserGrantedPermissionDto(
 						aup.getPermission().getId(),
 						aup.getPermission().getName(),
-						aup.getExpiredAt()))
+						aup.getExpiredAt(),
+						aup.getPermission().getInfo()))
 				.toList();
 
 		return new UserGrantedPermissionResponseDto(userSnowflake, userGrantedPermissions);
@@ -250,7 +251,7 @@ public class UserService {
 	 * @return
 	 */
 	@Transactional(readOnly = true)
-	public ResponseEntity<List<UserPermission>> getAllUserPermissionsForWeb(String userSnowflake) {
+	public ResponseEntity<List<UserGrantedPermissionDto>> getAllUserPermissionsForWeb(String userSnowflake) {
 		if (StringUtils.isBlank(userSnowflake)) {
 			throw ErrorStatus.INVALID_INPUT.asServiceException();
 		}
@@ -259,9 +260,11 @@ public class UserService {
 			throw ErrorStatus.USER_NOT_FOUND.asServiceException();
 		}
 
-		List<UserPermission> userGrantedPermissions
-				= userPermissionService.getActiveUserPermissions(user);
-		return ResponseEntity.ok().body(userGrantedPermissions);
+		List<UserGrantedPermissionDto> list = userPermissionService.getActiveUserPermissions(user)
+				.stream()
+				.map(UserGrantedPermissionDto::of)
+				.toList();
+		return ResponseEntity.ok().body(list);
 	}
 
 
