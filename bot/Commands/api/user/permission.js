@@ -113,7 +113,7 @@ async function deletePermisson(name) {
 	const API_URL = `${baseUrl}/bot/v1/permissions/${encodeURI(name)}`;
 
 	try {
-		const response = await axios.delete(API_URL, {
+		const response = await axios.delete(API_URL, null, {
 			headers: {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}

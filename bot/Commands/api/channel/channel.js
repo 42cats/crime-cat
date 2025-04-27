@@ -12,7 +12,7 @@ const baseUrl = process.env.BASE_URL
 async function addChannelClean(guildId, channelId) {
 	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/channels/cleans/${channelId}`;  // 요청할 API 엔드포인트
 	try {
-		const response = await axios.post(API_URL, {
+		const response = await axios.post(API_URL, null, {
 			headers: {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
@@ -20,6 +20,7 @@ async function addChannelClean(guildId, channelId) {
 		console.log('응답 데이터:', response.status, response.data);
 		return response.data.message;
 	} catch (error) {
+		return error?.response?.data?.detail || "알수없는 에러";
 		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
@@ -44,6 +45,7 @@ async function addChannelMessage(guildId, channelId, input) {
 		return response.data.message;
 	} catch (error) {
 		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		return error?.response?.data?.detail || "알수없는 에러";
 	}
 }
 /**
@@ -53,7 +55,7 @@ async function addChannelMessage(guildId, channelId, input) {
 async function deleteChannelClean(guildId, channelId) {
 	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/channels/cleans/${channelId}`;  // 요청할 API 엔드포인트
 	try {
-		const response = await axios.delete(API_URL, {
+		const response = await axios.delete(API_URL, null, {
 			headers: {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
@@ -62,7 +64,7 @@ async function deleteChannelClean(guildId, channelId) {
 		return response.data.message;
 	} catch (error) {
 		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
-		return error.response.data.message;
+		return error?.response?.data?.detail || "알수없는 에러";
 	}
 }
 
@@ -75,14 +77,14 @@ async function deleteChannelMessage(guildId, channelId) {
 	try {
 		const response = await axios.delete(API_URL, {
 			headers: {
-				'Authorization': `Bearer ${BEARER_TOKEN}`
+				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}
 		});
 		console.log('응답 데이터:', response.status, response.data, response.data.message);
 		return response.data.message;
 	} catch (error) {
 		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
-		return error.response.data.message;
+		return error?.response?.data?.detail || "알수없는 에러";
 	}
 }
 

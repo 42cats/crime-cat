@@ -32,7 +32,7 @@ module.exports = {
 		console.log("amount = ", amount);
 		const msg = await interaction.reply("메시지가 삭제중입니다.");
 		await delayedDeleteMessage(msg, 1);
-		await deleteMessagesFromChannel(channelId, client, amount);
+		await deleteRecentMessages(guildId, channelId, client, amount);
 	},
 	prefixCommand: {
 		name: nameOfCommand,
