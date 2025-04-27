@@ -14,6 +14,6 @@ export interface UserGrantedPermissionResponseDto {
 export const userGrantedPermissionService = {
     fetchPermissions: (userId: string) =>
         apiClient.get<UserGrantedPermissionResponseDto>(
-            `/bot/v1/user/${userId}/permissions`
+            `/users/${userId}/permissions`
         ),
 };
