@@ -20,6 +20,7 @@ module.exports = {
 		const replydata = await addChannelForDelete(guildId, channelId);
 		const msg = await interaction.reply(`${interaction.channel.name} 추가 ${replydata}`);
 		await delayedDeleteMessage(msg, 1);
+
 	},
 	prefixCommand: {
 		name: nameOfCommand,
@@ -42,7 +43,7 @@ module.exports = {
 async function addChannelForDelete(guildId, channelId) {
 
 	if (!guildId) {
-		throw Error('길드아이디 오류. 관리자에게 문의');
+		return ('길드아이디 오류. 관리자에게 문의');
 	}
 	return await addChannelClean(guildId, channelId);
 
