@@ -19,6 +19,7 @@ async function addGuild({ id, name, ownerId, createdAt }) {
 		ownerSnowflake: ownerId,
 		createdAt: createdAt.toISOString()
 	};
+	console.log("1111111111", body);
 
 	try {
 		const response = await axios.post(API_URL, body, {
@@ -63,7 +64,7 @@ async function guildMembersAdd(client, guild) {
 async function deleteGuild(guildId) {
 	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}`;  // 요청할 API 엔드포인트
 	try {
-		const response = await axios.delete(API_URL, {
+		const response = await axios.delete(API_URL, null, {
 			headers: {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
