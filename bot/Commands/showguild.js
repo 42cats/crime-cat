@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const dotenv = require('dotenv');
 dotenv.config();
 
-const nameOfCommand = "showguild";
+const nameOfCommand = "전체길드";
 const description = "봇이 참여한 길드를 오너별로 정리해 출력합니다.";
 
 module.exports = {
@@ -39,28 +39,34 @@ module.exports = {
 					name: guild.name,
 					id: guild.id,
 					memberCount: guild.memberCount,
-					createdAt: `<t:${Math.floor(guild.createdTimestamp / 1000)}:F>`
+					createdAt: guild.createdTimestamp
 				});
 			} catch (err) {
 				console.error(`❌ ${guild.name} 정보 조회 실패:`, err);
 			}
 		}
 
+		// 오너 순회
 		for (const { ownerTag, ownerId, guilds } of ownerMap.values()) {
+			// ✅ 길드 이름으로 정렬
+			const sortedGuilds = guilds.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
 			const embed = new EmbedBuilder()
-				.setTitle(`👑 ${ownerTag} (${ownerId})`)
-				.setDescription(`관리 중인 길드 수: **${guilds.length}개**`)
+				.setTitle(`👑 ${ownerTag}`)
+				.setDescription(`🆔 오너 ID: ${ownerId}\n📋 총 길드 수: **${sortedGuilds.length}개**`)
 				.setColor(0x9b59b6);
 
-			for (const g of guilds) {
+			// ✅ 정리된 표 형태로 추가
+			for (const g of sortedGuilds) {
+				const createdAtFormatted = `<t:${Math.floor(g.createdAt / 1000)}:F>`; // 길드 생성일 포맷
 				embed.addFields({
 					name: `📘 ${g.name}`,
-					value: `🆔 ${g.id}\n👥 ${g.memberCount}명\n📆 ${g.createdAt}`,
+					value: `🆔 길드 ID: ${g.id}\n👥 인원수: ${g.memberCount}명\n📆 생성일: ${createdAtFormatted}`,
 					inline: false
 				});
 			}
 
-			await interaction.followUp({ embeds: [embed], ephemeral: true });
+			await interaction.followUp({ embeds: [embed] });
 		}
 	},
 
