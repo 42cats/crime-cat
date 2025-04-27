@@ -19,6 +19,10 @@ module.exports = {
 				.setDescription('권한 가격 (숫자)')
 				.setRequired(true))
 		.addIntegerOption(option =>
+			option.setName('설명')
+				.setDescription('권한 설명')
+				.setRequired(true))
+		.addIntegerOption(option =>
 			option.setName('기간')
 				.setDescription('권한 유지 기간 (일, 기본: 28)')
 				.setRequired(false)),
@@ -30,14 +34,15 @@ module.exports = {
 
 		const name = interaction.options.getString('이름');
 		const price = interaction.options.getInteger('가격');
+		const info = interaction.options.getInteger('설명');
 		const duration = interaction.options.getInteger('기간') ?? 28;
 
 		try {
-			const response = await addPermisson(name, price, duration);
+			const response = await addPermisson(name, price, info, duration);
 
 			await interaction.reply({
 				content: `✔️ 권한 생성 완료\n` +
-					`📛 이름: \`${name}\`\n💰 가격: \`${price}\`\n📅 기간: \`${duration}\`일\n📨 메시지: ${response.data.message}`,
+					`📛 이름: \`${name}\`\n💰 가격: \`${price}\`\n📅 기간: \`${duration}\`일\n 설명: ${info} \n📨 메시지: ${response.data.message}`,
 				ephemeral: true
 			});
 		} catch (error) {

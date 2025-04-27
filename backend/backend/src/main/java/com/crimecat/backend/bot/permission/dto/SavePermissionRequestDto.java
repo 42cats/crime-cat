@@ -11,4 +11,5 @@ public class SavePermissionRequestDto {
 	private String name;
 	private Integer price;
 	private Integer duration;
+	private String info;
 }

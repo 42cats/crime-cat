@@ -34,11 +34,17 @@ public class Permission {
     @Column(name = "DURATION")
     private Integer duration = 28;
 
-    public Permission(String name, Integer price, Integer duration) {
+    @Column(name = "INFO", length = 255)
+    private String info;
+
+    public Permission(String name, Integer price, Integer duration, String info) {
         this.name = name;
         this.price = price;
         if (duration != null) {
             this.duration = duration;
+        }
+        if(info != null) {
+            this.info = "";
         }
     }
 
@@ -51,6 +57,12 @@ public class Permission {
         }
         if (duration != null) {
             this.duration = duration;
+        }
+    }
+
+    public void setInfo(String info) {
+        if (info != null) {
+            this.info = info;
         }
     }
 }

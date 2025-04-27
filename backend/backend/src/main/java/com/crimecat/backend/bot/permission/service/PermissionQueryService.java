@@ -17,8 +17,8 @@ public class PermissionQueryService {
 		return permissionRepository.findByPermissionName(permissionName).orElse(null);
 	}
 
-	public void savePermission(String name, Integer price, Integer duration) {
-		permissionRepository.save(new Permission(name, price, duration));
+	public void savePermission(String name, Integer price, Integer duration, String info) {
+		permissionRepository.save(new Permission(name, price, duration, info));
 	}
 
 	public void deletePermission(Permission permission) {
