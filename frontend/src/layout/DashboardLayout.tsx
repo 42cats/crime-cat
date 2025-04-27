@@ -94,9 +94,9 @@ const SidebarInner = () => {
                 <div className="flex h-14 items-center px-4 border-b">
                     <Link to="/" className="flex items-center space-x-2">
                         <div className="relative w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
-                            B
+                            C
                         </div>
-                        <span className="text-lg font-semibold">대시보드</span>
+                        <span className="text-lg font-semibold">홈</span>
                     </Link>
                     <div className="ml-auto">
                         <ThemeToggle />
@@ -147,28 +147,28 @@ const SidebarInner = () => {
                                                     "USER",
                                                 ],
                                             },
-                                            {
-                                                name: "프로필",
-                                                path: "/dashboard/profile",
-                                                icon: UserCog,
-                                                roles: [
-                                                    "ADMIN",
-                                                    "MANAGER",
-                                                    "USER",
-                                                ],
-                                            },
-                                            {
-                                                name: "사용자 관리",
-                                                path: "/dashboard/users",
-                                                icon: Users,
-                                                roles: ["ADMIN"],
-                                            },
-                                            {
-                                                name: "설정",
-                                                path: "/dashboard/settings",
-                                                icon: Settings,
-                                                roles: ["ADMIN", "MANAGER"],
-                                            },
+                                            // {
+                                            //     name: "프로필",
+                                            //     path: "/dashboard/profile",
+                                            //     icon: UserCog,
+                                            //     roles: [
+                                            //         "ADMIN",
+                                            //         "MANAGER",
+                                            //         "USER",
+                                            //     ],
+                                            // },
+                                            // {
+                                            //     name: "사용자 관리",
+                                            //     path: "/dashboard/users",
+                                            //     icon: Users,
+                                            //     roles: ["ADMIN"],
+                                            // },
+                                            // {
+                                            //     name: "설정",
+                                            //     path: "/dashboard/settings",
+                                            //     icon: Settings,
+                                            //     roles: ["ADMIN", "MANAGER"],
+                                            // },
                                         ]
                                             .filter((item) =>
                                                 item.roles.includes(

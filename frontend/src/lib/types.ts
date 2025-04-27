@@ -196,3 +196,10 @@ export interface NoticeInput {
     noticeType: NoticeType;
     isPinned: boolean;
 }
+
+export interface AdditionalUserInfo {
+    themePlayCount?: string; // 총 플레이한 테마 수
+    recentlyPlayCrimeSeenTheme?: string; // 최근 플레이한 테마 이름
+    recentlyPlayCrimeSeenThemeTime?: string; // 최근 플레이한 시간 (UTC ISO-8601)
+    mostFavoriteCrimeSeenMaker?: string; // 가장 자주 플레이한 제작자
+}
