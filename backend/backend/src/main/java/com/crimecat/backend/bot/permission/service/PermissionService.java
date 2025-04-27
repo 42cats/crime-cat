@@ -25,7 +25,7 @@ public class PermissionService {
 
 	// TODO : 권한 이미 존재할 때 덮어쓰기? 튕기기? 일단 튕기기로 처리함
 	@Transactional
-	public SavePermissionResponseDto savePermission(String name, Integer price, Integer duration) {
+	public SavePermissionResponseDto savePermission(String name, Integer price, Integer duration, String info) {
 		if (StringUtils.isBlank(name) || (price == null || price <= 0) || (duration != null && duration <= 0)) {
 			return new SavePermissionResponseDto("Invalid request format");
 		}
@@ -35,7 +35,7 @@ public class PermissionService {
 			return new SavePermissionResponseDto("permission already exists");
 		}
 
-		permissionQueryService.savePermission(name, price, duration);
+		permissionQueryService.savePermission(name, price, duration, info);
 		return new SavePermissionResponseDto("permission saved");
 	}
 
