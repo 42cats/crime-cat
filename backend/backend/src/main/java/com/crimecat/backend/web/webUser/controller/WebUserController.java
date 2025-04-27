@@ -7,6 +7,7 @@ import com.crimecat.backend.bot.coupon.service.CouponService;
 import com.crimecat.backend.bot.permission.domain.Permission;
 import com.crimecat.backend.bot.user.domain.User;
 import com.crimecat.backend.bot.user.domain.UserPermission;
+import com.crimecat.backend.bot.user.dto.UserGrantedPermissionDto;
 import com.crimecat.backend.bot.user.dto.UserGrantedPermissionResponseDto;
 import com.crimecat.backend.bot.user.repository.UserRepository;
 import com.crimecat.backend.bot.user.service.UserService;
@@ -53,7 +54,7 @@ public class WebUserController {
    * @return
    */
   @GetMapping("/{user_id}/permissions")
-  public ResponseEntity<List<UserPermission>> getAllUserPermissions(
+  public ResponseEntity<List<UserGrantedPermissionDto>> getAllUserPermissions(
           @PathVariable("user_id") String userId) {
     WebUser webUser = webUserRepository.findById(UUID.fromString(userId)).orElseThrow(ErrorStatus.USER_NOT_FOUND::asControllerException);
     return userService.getAllUserPermissionsForWeb(webUser.getDiscordUserSnowflake());
