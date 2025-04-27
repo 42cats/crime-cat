@@ -46,8 +46,7 @@ const Dashboard: React.FC = () => {
 
     const { data: permissionData } = useQuery({
         queryKey: ["userPermissions", user?.id],
-        queryFn: () =>
-            userGrantedPermissionService.fetchPermissions(user!.snowflake),
+        queryFn: () => userGrantedPermissionService.fetchPermissions(user!.id),
         enabled: !!user?.id,
     });
 
