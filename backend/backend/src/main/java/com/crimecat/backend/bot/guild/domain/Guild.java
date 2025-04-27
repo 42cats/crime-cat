@@ -58,12 +58,17 @@ public class Guild {
         guild.snowflake = guildDto.getSnowflake();
         guild.name = guildDto.getName();
         guild.isWithdraw = false;
-        guild.ownerSnowflake = guildDto.getOwnerSnowflake();
         guild.createdAt = guildDto.getCreatedAt();
-        guild.user = user;
+        guild.linkOwner(user);
         return guild;
     }
 
+    public void linkOwner(User user) {
+        this.user = user;
+        this.ownerSnowflake = user.getDiscordSnowflake();
+    }
+
+    
     public void setIsWithdraw(boolean isWithdraw) {
         this.isWithdraw = isWithdraw;
     }
