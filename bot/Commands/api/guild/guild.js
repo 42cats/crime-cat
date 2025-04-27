@@ -85,11 +85,11 @@ async function deleteGuild(guildId) {
  * @param {Guild} guild 
  */
 async function guildAddProcess(client, guild) {
-	// console.log("guildAddProcess()::::::::::::::", BEARER_TOKEN);
-	// const guildOwner = await guild.members.fetch(guild.ownerId);
-	// await addUser(guildOwner);
-	// console.log("added owner ");
-	// await addGuild(guild);
+	console.log("guildAddProcess()::::::::::::::", BEARER_TOKEN);
+	const guildOwner = await guild.members.fetch(guild.ownerId);
+	await addUser(guildOwner);
+	console.log("added owner ");
+	await addGuild(guild);
 	console.log("added guild");
 	await guildMembersAdd(client, guild);
 	console.log("all guild add process done");
