@@ -107,6 +107,7 @@ async function getUserPermissons(userId) {
  */
 async function getUserDbInfo(userId) {
 	const API_URL = `${baseUrl}/bot/v1/users/${userId}`;
+	console.log("✅ getUserDbInfo 시작"); // 추가
 
 	try {
 		const response = await axios.get(API_URL, {
@@ -114,13 +115,15 @@ async function getUserDbInfo(userId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}
 		});
-		console.log('응답 데이터:', response?.data?.message, response?.data);
-		return response.data.user ?? {};
+		console.log("✅ getUserDbInfo 응답 받음", response?.data);
+		return response?.data?.user ?? {};
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
-		return {}
+		console.error('❌ getUserDbInfo 실패:', error.response?.data || error.response?.data?.message);
+		return {};
 	}
 }
+
+
 
 /**
 * @param {String} userId 
@@ -128,8 +131,9 @@ async function getUserDbInfo(userId) {
 async function setUserAlarm(userId, alarm = null, avatarUrl = null) {
 	const API_URL = `${baseUrl}/bot/v1/users/${userId}`;
 	const body = {};
-	if (!alarm) body.discordAlarm = alarm;
-	if (!avatarUrl) body.avatar = avatarUrl;
+
+	if (alarm !== null) body.discordAlarm = alarm;
+	if (avatarUrl !== null) body.avatar = avatarUrl;
 	try {
 		const response = await axios.patch(API_URL, body, {
 			headers: {

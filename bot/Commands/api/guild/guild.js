@@ -50,12 +50,14 @@ async function guildMembersAdd(client, guild) {
 			// 봇이면 스킵할 수도 있음(원하면 로직 추가)
 			if (member.user.bot || member.permissions.has(PermissionsBitField.Flags.Administrator)) continue;
 			await addUser(member);
+			console.log("기록추가", member
+			);
 			await addUserHistory(member, guild, member.displayName ?? member.nickname, member.joinedAt);
 		}
 		console.log("Guild members inserted/updated successfully.");
 	}
 	catch (err) {
-		console.error("Error inserting users from guild:", err.response?.data?.message);
+		console.error("Error inserting users from guild:", err);
 	}
 }
 /**
@@ -83,11 +85,11 @@ async function deleteGuild(guildId) {
  * @param {Guild} guild 
  */
 async function guildAddProcess(client, guild) {
-	console.log("guildAddProcess()::::::::::::::", BEARER_TOKEN);
-	const guildOwner = await guild.members.fetch(guild.ownerId);
-	await addUser(guildOwner);
-	console.log("added owner ");
-	await addGuild(guild);
+	// console.log("guildAddProcess()::::::::::::::", BEARER_TOKEN);
+	// const guildOwner = await guild.members.fetch(guild.ownerId);
+	// await addUser(guildOwner);
+	// console.log("added owner ");
+	// await addGuild(guild);
 	console.log("added guild");
 	await guildMembersAdd(client, guild);
 	console.log("all guild add process done");

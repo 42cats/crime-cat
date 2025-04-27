@@ -8,6 +8,7 @@ const {
 
 const { getButtons } = require('./api/messageMacro/messageMacro');
 const { encodeToString } = require('./utility/delimiterGeter');
+const { isPermissionHas } = require('./api/user/permission');
 
 const nameOfCommand = "버튼";
 const description = "사이트에서 편집한 콘텐츠 불러오기";
@@ -45,6 +46,9 @@ module.exports = {
 		const showPressDetail = interaction.options.getBoolean('누가눌렀어') ?? false;
 		const changeColor = interaction.options.getBoolean('색변경') ?? false;
 
+		if (!await isPermissionHas(interaction.user.id, "버튼매크로")) {
+			interaction.reply("해당 기능을 사용할 권한이 없습니다. 권한을 구매해 주세요");
+		}
 		try {
 			const group = await getButtons(interaction.guildId, groupName);
 
@@ -63,7 +67,7 @@ module.exports = {
 			});
 		} catch (error) {
 			console.error("버튼 명령어 에러", error);
-			await interaction.reply({ content: `❌ 오류: ${String(error)}`, ephemeral: true });
+			await interaction.reply({ content: `❌ 오류: ${String(error)}` });
 		}
 	},
 
