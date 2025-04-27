@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { statsService } from "@/api/mainstatsService";
+import { statsService } from "@/api/statsService";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const container = {
@@ -86,12 +86,31 @@ const StatsSection: React.FC = () => {
                                 !!error
                             )}
                         </motion.div>
+
                         {error && (
                             <div className="text-center text-red-500 text-sm mt-4">
                                 스탯 조회에 실패했습니다. 잠시 후 다시
                                 시도해주세요.
                             </div>
                         )}
+
+                        {/* ✅ 봇 추가 버튼 */}
+                        <motion.div
+                            className="flex justify-center mt-12"
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5 }}
+                        >
+                            <a
+                                href="https://discord.com/oauth2/authorize?client_id=1069990761778659458"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center px-6 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-colors"
+                            >
+                                디스코드에 봇 추가하기 🚀
+                            </a>
+                        </motion.div>
                     </>
                 )}
             </div>
