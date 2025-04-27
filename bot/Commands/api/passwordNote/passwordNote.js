@@ -75,7 +75,7 @@ async function editPasswordContent(guildId, channelId, uuid, passwordKey, conten
 async function deletePasswordContent(guildId, passwordKey) {
 	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/password-notes/${passwordKey}`;  // 요청할 API 엔드포인트
 	try {
-		const response = await axios.delete(API_URL, {
+		const response = await axios.delete(API_URL, null, {
 			headers: {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}

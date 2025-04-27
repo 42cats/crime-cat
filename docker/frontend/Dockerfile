@@ -2,10 +2,10 @@
 FROM node:20-alpine
 WORKDIR /app
 
-COPY ./docker/frontend/entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+# COPY ./docker/frontend/entrypoint.sh /app/entrypoint.sh
+# RUN chmod +x /app/entrypoint.sh
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+# ENTRYPOINT ["/app/entrypoint.sh"]
 
 
 
