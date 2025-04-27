@@ -58,7 +58,7 @@ public class OAuth2TokenRefreshFilter extends OncePerRequestFilter {
                 TokenCookieUtil.clearAuthCookies(response); // 쿠키 삭제
 
                 try {
-                    String baseUrl = "https://crimecat.org";
+                    String baseUrl = serviceUrlConfig.getDomain();
                     response.sendRedirect(baseUrl + "/login");
                 } catch (Exception e) {
                     log.warn("❌ 디스코드 토큰 만료 리디렉션 실패: {}", e.toString());
