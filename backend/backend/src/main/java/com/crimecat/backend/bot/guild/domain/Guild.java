@@ -45,7 +45,7 @@ public class Guild {
     @Column(name = "OWNER_SNOWFLAKE", nullable = false)
     private String ownerSnowflake;
 
-    @JoinColumn(name = "OWNER_USER_ID", referencedColumnName = "ID", insertable = false, updatable = false)
+    @JoinColumn(name = "OWNER_USER_ID", referencedColumnName = "ID", updatable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
