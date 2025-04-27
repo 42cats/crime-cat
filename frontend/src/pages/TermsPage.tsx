@@ -1,92 +1,121 @@
-import React from 'react';
+import React from "react";
 
 const TermsPage: React.FC = () => {
-  return (
-    <div className="max-w-4xl mx-auto px-6 py-20 text-sm md:text-base leading-7">
-      <h1 className="text-3xl font-bold mb-6">디스코드 봇 서비스 이용 약관</h1>
-      <p className="text-muted-foreground mb-4">최종 수정일: 2025-01-24</p>
+    return (
+        <div className="max-w-4xl mx-auto px-6 py-20 text-sm md:text-base leading-7">
+            <h1 className="text-3xl font-bold mb-6">개인정보 처리방침</h1>
+            <p className="text-muted-foreground mb-4">
+                최종 수정일: 2025-04-27
+            </p>
 
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-2">1. 개요</h2>
-        <p>
-          본 약관은 디스코드 봇 및 관련 서비스(이하 &quot;서비스&quot;)를 이용하는 디스코드 사용자(이하 &quot;사용자&quot;)와
-          길드 관리자 및 구성원(이하 &quot;길드&quot;)에 적용됩니다. 서비스를 이용함으로써, 사용자는 본 약관에 동의한 것으로 간주됩니다.
-        </p>
-      </section>
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-2">
+                    1. 수집하는 개인정보 항목
+                </h2>
+                <ul className="list-disc list-inside mb-2">
+                    <li>디스코드 고유 식별자(ID)</li>
+                    <li>사용자명 및 태그</li>
+                    <li>프로필 사진 URL</li>
+                    <li>이메일(선택적 수집)</li>
+                    <li>가입일, 마지막 로그인 시각, 포인트 및 활동 기록</li>
+                </ul>
+            </section>
 
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-2">2. 데이터 수집 및 사용</h2>
-        <p className="mb-2 font-medium">1) 수집 데이터:</p>
-        <ul className="list-disc list-inside mb-2">
-          <li>길드 정보(길드 이름, ID, 소유자 ID, 생성 날짜 등)</li>
-          <li>길드 멤버 정보(사용자 ID, 닉네임, 활동 내역 등)</li>
-          <li>서비스 이용 기록(명령어 사용 내역, 상호작용 기록 등)</li>
-        </ul>
-        <p className="mb-2 font-medium">2) 데이터 사용 목적:</p>
-        <ul className="list-disc list-inside mb-2">
-          <li>디스코드 봇의 기능 제공 및 최적화</li>
-          <li>맞춤형 서비스 제공</li>
-          <li>상업적 목적의 분석 및 서비스 개선</li>
-          <li>웹사이트 및 기타 플랫폼 연계</li>
-        </ul>
-        <p className="mb-2 font-medium">3) 상업적 활용:</p>
-        <p>
-          데이터는 광고, 분석, 유료 서비스 제공 등의 상업적 목적을 위해 활용될 수 있습니다. 사용자는 이에 명시적으로 동의해야 하며,
-          동의하지 않을 경우 서비스 이용이 제한될 수 있습니다.
-        </p>
-      </section>
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-2">
+                    2. 개인정보 수집 방법
+                </h2>
+                <p>
+                    디스코드 OAuth 인증을 통한 자동 수집 및 서비스 이용 중
+                    생성되는 기록을 통해 수집합니다.
+                </p>
+            </section>
 
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-2">3. 길드 권한 사용</h2>
-        <p className="mb-2 font-medium">1) 필수 권한:</p>
-        <p>
-          봇은 메시지 읽기/쓰기, 멤버 관리, 채널 접근 등의 권한을 요청할 수 있으며,
-          해당 권한은 오직 기능 수행을 위한 용도로만 사용됩니다.
-        </p>
-        <p className="mb-2 font-medium mt-4">2) 권한 철회:</p>
-        <p>
-          길드 관리자는 언제든지 권한을 철회할 수 있으며, 철회 시 일부 기능이 제한될 수 있습니다.
-        </p>
-      </section>
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-2">
+                    3. 개인정보 이용 목적
+                </h2>
+                <ul className="list-disc list-inside mb-2">
+                    <li>서비스 제공 및 본인 인증</li>
+                    <li>포인트 및 권한 관리</li>
+                    <li>서비스 개선 및 신규 기능 개발</li>
+                    <li>법적 의무 준수 및 민원 처리</li>
+                </ul>
+            </section>
 
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-2">4. 웹사이트 및 타 플랫폼 연계</h2>
-        <p>
-          서비스는 길드 및 사용자의 데이터를 외부 플랫폼에 연동하여 표시하거나 활용할 수 있으며,
-          해당 데이터는 약관 및 개인정보 처리방침에 따라 보호됩니다.
-        </p>
-      </section>
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-2">
+                    4. 개인정보 보관 및 파기
+                </h2>
+                <p>
+                    회원 탈퇴 시 지체 없이 개인정보를 파기하며, 법령에 따라
+                    보관이 필요한 경우 별도로 보관 후 안전하게 삭제합니다.
+                </p>
+            </section>
 
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-2">5. 사용자의 권리와 책임</h2>
-        <ul className="list-disc list-inside mb-2">
-          <li>데이터 열람 및 수정 요청 가능</li>
-          <li>제3자 오용 방지를 위한 보호 조치</li>
-          <li>디스코드 및 관련 플랫폼 정책 준수 의무</li>
-        </ul>
-      </section>
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-2">
+                    5. 개인정보 제공 및 위탁
+                </h2>
+                <p>
+                    회사는 개인정보를 외부에 제공하거나 위탁하지 않습니다. 단,
+                    법령에 근거하거나 회원 동의 시 예외적으로 제공할 수
+                    있습니다.
+                </p>
+            </section>
 
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-2">6. 면책 조항</h2>
-        <ul className="list-disc list-inside mb-2">
-          <li>사용자/길드의 부주의로 인한 문제에 대해 책임지지 않음</li>
-          <li>외부 장애 또는 기술적 오류로 인한 데이터 손실 면책</li>
-        </ul>
-      </section>
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-2">
+                    6. 회원의 권리와 행사 방법
+                </h2>
+                <p>
+                    회원은 개인정보 조회, 수정 및 삭제 요청을 할 수 있으며,
+                    서비스 내 회원 탈퇴 기능을 통해 직접 탈퇴할 수 있습니다.
+                </p>
+            </section>
 
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold mb-2">7. 약관 변경</h2>
-        <ul className="list-disc list-inside mb-2">
-          <li>운영자는 필요 시 본 약관을 수정할 수 있으며, 변경 시 공지를 통해 고지함</li>
-          <li>변경된 약관에 동의하지 않을 경우, 사용자는 서비스 이용 중단 가능</li>
-        </ul>
-      </section>
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-2">7. 책임 제한</h2>
+                <ul className="list-disc list-inside mb-2">
+                    <li>
+                        회원의 과실로 인한 개인정보 유출에 대해 회사는 책임을
+                        지지 않습니다.
+                    </li>
+                    <li>
+                        디스코드 플랫폼의 문제로 인한 정보 유출에 대해 회사는
+                        책임을 지지 않습니다.
+                    </li>
+                </ul>
+            </section>
 
-      <div className="mt-12 text-center font-semibold text-muted-foreground">
-		위 약관은 봇 사용시에 자동으로 동의한것으로 간주합니다.
-      </div>
-    </div>
-  );
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-2">
+                    8. 개인정보 보호를 위한 조치
+                </h2>
+                <ul className="list-disc list-inside mb-2">
+                    <li>개인정보 암호화 저장</li>
+                    <li>최소 권한 접근 통제</li>
+                    <li>서버 보안 강화 및 접근 기록 관리</li>
+                    <li>정기적인 보안 점검 실시</li>
+                </ul>
+            </section>
+
+            <section className="mb-10">
+                <h2 className="text-xl font-semibold mb-2">
+                    9. 개인정보 보호책임자
+                </h2>
+                <p>
+                    이름: 변상훈 <br />
+                    이메일: hoone0802@gmail.com
+                </p>
+            </section>
+
+            <div className="mt-12 text-center font-semibold text-muted-foreground">
+                본 방침은 디스코드 OAuth 인증 및 서비스 이용 시 자동으로 동의한
+                것으로 간주합니다.
+            </div>
+        </div>
+    );
 };
 
 export default TermsPage;
