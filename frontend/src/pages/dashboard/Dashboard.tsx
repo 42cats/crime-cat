@@ -6,7 +6,8 @@ import { DashboardProfileCard } from "@/pages/dashboard/DashbordProfileCard"; //
 import { dailycheckService } from "@/api/dailycheckService";
 import { userInfocheckService } from "@/api/userInfoService";
 import { useToast } from "@/hooks/useToast";
-
+import { userGrantedPermissionService } from "@/api/userGrantedPermissionService";
+import { UserPermissionCard } from "@/components/UserPermissionCard";
 const fetchDailyCheck = async (id: string) => {
     const data = await dailycheckService.getDailyCheck(id);
     return data;
@@ -40,6 +41,13 @@ const Dashboard: React.FC = () => {
     const { data: additionalData } = useQuery({
         queryKey: ["additionalInfo", user?.id],
         queryFn: () => userInfocheckService.userInfoCheck(user!.id),
+        enabled: !!user?.id,
+    });
+
+    const { data: permissionData } = useQuery({
+        queryKey: ["userPermissions", user?.id],
+        queryFn: () =>
+            userGrantedPermissionService.fetchPermissions(user!.snowflake),
         enabled: !!user?.id,
     });
 
@@ -89,7 +97,12 @@ const Dashboard: React.FC = () => {
                         }}
                     />
                 )}
-
+                {/* ✅ 추가: 유저 권한 카드 */}
+                {permissionData && (
+                    <UserPermissionCard
+                        permissions={permissionData.permissions}
+                    />
+                )}
                 {/* ✅ 로딩 중일 때는 텍스트 표시 (선택사항) */}
                 {(isDailyCheckLoading || !additionalData) && (
                     <div className="text-sm text-muted-foreground">
