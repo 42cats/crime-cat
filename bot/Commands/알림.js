@@ -40,10 +40,13 @@ module.exports = {
 		 * @param {Array} args
 		 */
 		async execute(message, args) {
+			console.log("✅ execute 시작"); // 추가
 			try {
 				const userInfo = await getUserDbInfo(message.author.id);
+				console.log("✅ getUserDbInfo 리턴 완료");
 
 				if (!userInfo || Object.keys(userInfo).length === 0) {
+					console.log("❗ 유저 정보 없음");
 					await message.reply("❗ 유저 정보를 찾을 수 없습니다. 관리자에게 문의해 주세요.");
 					return;
 				}
@@ -52,9 +55,10 @@ module.exports = {
 				const msg = await message.channel.send(`알림이 ${!userInfo.discordAlarm ? "활성화 되었습니다." : "비활성화 되었습니다."}`);
 				delayedDeleteMessage(msg, 2);
 			} catch (error) {
-				console.log("message error", error.stack);
+				console.log("❌ execute error", error.stack);
 			}
 		}
+
 	},
 
 	upload: true,

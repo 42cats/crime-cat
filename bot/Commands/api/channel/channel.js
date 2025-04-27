@@ -55,7 +55,7 @@ async function addChannelMessage(guildId, channelId, input) {
 async function deleteChannelClean(guildId, channelId) {
 	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/channels/cleans/${channelId}`;  // 요청할 API 엔드포인트
 	try {
-		const response = await axios.delete(API_URL, null, {
+		const response = await axios.delete(API_URL, {
 			headers: {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}

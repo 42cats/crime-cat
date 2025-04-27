@@ -39,7 +39,7 @@ async function addCharacterInfo(guildId, characterName, roleId) {
 async function deleteCharacter(guildId, characterName) {
 	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/characters/${characterName}`;  // 요청할 API 엔드포인트
 	try {
-		const response = await axios.delete(API_URL, null, {
+		const response = await axios.delete(API_URL, {
 			headers: {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}

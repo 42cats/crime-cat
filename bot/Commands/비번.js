@@ -11,11 +11,12 @@ async function checkPasswordAndReply({ guild, user, passwordKey, channel }) {
 
 		const displayName = user.displayName ?? user.globalName ?? user.username;
 
-		await channel.send(`✅ ${displayName} 님이 비밀번호 \`${data.passwordKey}\` 를 푸셨습니다!`);
 		await targetChannel?.send(`🔐 \`${data.passwordKey}\`비밀번호 의 컨텐츠:\n${data.content}`);
+		return (`✅ ${displayName} 님이 비밀번호 \`${data.passwordKey}\` 를 푸셨습니다!`);
 	} catch (error) {
+		console.log("error", error);
 		const displayName = user.displayName ?? user.globalName ?? user.username;
-		await channel.send(`⛔ ${displayName} 님의 비밀번호 \`${passwordKey}\` 시도 실패\n오류: ${error.message ?? error}`);
+		return (`⛔ ${displayName} 님의 비밀번호 \`${passwordKey}\` 시도 실패\n오류: ${error?.message}`);
 	}
 }
 
@@ -34,12 +35,14 @@ module.exports = {
 	 */
 	async execute(interaction) {
 		const passwordKey = interaction.options.getString('비밀번호');
-		await checkPasswordAndReply({
+		const reply = await checkPasswordAndReply({
 			guild: interaction.guild,
 			user: interaction.user,
 			passwordKey,
 			channel: interaction.channel
 		});
+
+		interaction.reply(reply);
 	},
 
 	/**
