@@ -4,7 +4,9 @@ import com.crimecat.backend.bot.coupon.dto.CouponRedeemRequestDto;
 import com.crimecat.backend.bot.coupon.dto.MessageDto;
 import com.crimecat.backend.bot.coupon.dto.WebCouponRequestDto;
 import com.crimecat.backend.bot.coupon.service.CouponService;
+import com.crimecat.backend.bot.permission.domain.Permission;
 import com.crimecat.backend.bot.user.domain.User;
+import com.crimecat.backend.bot.user.domain.UserPermission;
 import com.crimecat.backend.bot.user.dto.UserGrantedPermissionResponseDto;
 import com.crimecat.backend.bot.user.repository.UserRepository;
 import com.crimecat.backend.bot.user.service.UserService;
@@ -12,6 +14,8 @@ import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.web.webUser.domain.WebUser;
 import com.crimecat.backend.web.webUser.repository.WebUserRepository;
 import com.crimecat.backend.web.webUser.service.WebUserService;
+
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -49,10 +53,10 @@ public class WebUserController {
    * @return
    */
   @GetMapping("/{user_id}/permissions")
-  public UserGrantedPermissionResponseDto getAllUserPermissions(
+  public ResponseEntity<List<UserPermission>> getAllUserPermissions(
           @PathVariable("user_id") String userId) {
     WebUser webUser = webUserRepository.findById(UUID.fromString(userId)).orElseThrow(ErrorStatus.USER_NOT_FOUND::asControllerException);
-    return userService.getAllUserPermissions(webUser.getDiscordUserSnowflake());
+    return userService.getAllUserPermissionsForWeb(webUser.getDiscordUserSnowflake());
   }
 
 }

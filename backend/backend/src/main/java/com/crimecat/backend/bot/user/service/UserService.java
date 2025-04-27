@@ -56,6 +56,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -241,6 +242,28 @@ public class UserService {
 
 		return new UserGrantedPermissionResponseDto(userSnowflake, userGrantedPermissions);
 	}
+
+	/**
+	 * 유저가 가진 모든 권한 조회
+	 * 유저 조회, 유저의 권한 목록 조회
+	 * @param userSnowflake
+	 * @return
+	 */
+	@Transactional(readOnly = true)
+	public ResponseEntity<List<UserPermission>> getAllUserPermissionsForWeb(String userSnowflake) {
+		if (StringUtils.isBlank(userSnowflake)) {
+			throw ErrorStatus.INVALID_INPUT.asServiceException();
+		}
+		DiscordUser user = findUserBySnowflake(userSnowflake);
+		if (user == null) {
+			throw ErrorStatus.USER_NOT_FOUND.asServiceException();
+		}
+
+		List<UserPermission> userGrantedPermissions
+				= userPermissionService.getActiveUserPermissions(user);
+		return ResponseEntity.ok().body(userGrantedPermissions);
+	}
+
 
 	/**
 	 * 유저의 현재 랭킹 반환
