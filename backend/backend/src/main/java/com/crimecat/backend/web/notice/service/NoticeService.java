@@ -1,7 +1,7 @@
 package com.crimecat.backend.web.notice.service;
 
 import com.crimecat.backend.exception.ErrorStatus;
-import com.crimecat.backend.web.notice.domain.Notices;
+import com.crimecat.backend.web.notice.domain.Notice;
 import com.crimecat.backend.web.notice.dto.NoticeResponseDto;
 import com.crimecat.backend.web.notice.dto.NoticeSummaryResponseDto;
 import com.crimecat.backend.web.notice.dto.PageResultDto;
@@ -23,7 +23,7 @@ public class NoticeService {
 
   public PageResultDto<NoticeSummaryResponseDto> getNotice(Integer limit, Integer page){
     Pageable pageable = PageRequest.of(page,limit);
-    Page<Notices> noticePage = noticeRepository.findAllNoticesOrdered(pageable);
+    Page<Notice> noticePage = noticeRepository.findAllNoticesOrdered(pageable);
     Page<NoticeSummaryResponseDto> dtoPage = noticePage.map(NoticeSummaryResponseDto::from);
     return PageResultDto.from(dtoPage);
   }
@@ -36,18 +36,18 @@ public class NoticeService {
         throw ErrorStatus.INVALID_INPUT.asServiceException();
       }
 
-      Notices notices = noticeRepository.findById(uuid)
+      Notice notice = noticeRepository.findById(uuid)
           .orElseThrow(ErrorStatus.RESOURCE_NOT_FOUND::asServiceException);
 
       return NoticeResponseDto.builder()
-          .id(notices.getId().toString())
-          .title(notices.getTitle())
-          .content(notices.getContent())
-          .createdAt(notices.getCreatedAt())
-          .isPinned(notices.getIsPinned())
-          .noticeType(notices.getNoticeType())
-          .summary(notices.getSummary())
-          .updatedAt(notices.getUpdatedAt())
+          .id(notice.getId().toString())
+          .title(notice.getTitle())
+          .content(notice.getContent())
+          .createdAt(notice.getCreatedAt())
+          .isPinned(notice.getIsPinned())
+          .noticeType(notice.getNoticeType())
+          .summary(notice.getSummary())
+          .updatedAt(notice.getUpdatedAt())
           .build();
     }
 
