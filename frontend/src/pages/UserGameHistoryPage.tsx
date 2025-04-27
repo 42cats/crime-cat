@@ -17,7 +17,7 @@ import { ko } from "date-fns/locale";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
-
+import { UTCToKST } from "@/lib/dateFormat";
 /* ------------------------------ 타입 ------------------------------ */
 export interface UserGameHistoryDto {
     uuid: string;
@@ -261,11 +261,7 @@ const UserGameHistoryPage: React.FC = () => {
                                             <span className="font-medium">
                                                 참여일:
                                             </span>{" "}
-                                            {format(
-                                                new Date(h.createdAt),
-                                                "yy.MM.dd HH:mm",
-                                                { locale: ko }
-                                            )}
+                                            <UTCToKST date={h.createdAt} />
                                         </div>
                                     </div>
                                     <Button
