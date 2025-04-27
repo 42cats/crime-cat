@@ -4,7 +4,10 @@ import com.crimecat.backend.bot.coupon.dto.CouponRedeemRequestDto;
 import com.crimecat.backend.bot.coupon.dto.MessageDto;
 import com.crimecat.backend.bot.coupon.dto.WebCouponRequestDto;
 import com.crimecat.backend.bot.coupon.service.CouponService;
+import com.crimecat.backend.bot.user.domain.User;
+import com.crimecat.backend.bot.user.dto.UserGrantedPermissionResponseDto;
 import com.crimecat.backend.bot.user.repository.UserRepository;
+import com.crimecat.backend.bot.user.service.UserService;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.web.webUser.domain.WebUser;
 import com.crimecat.backend.web.webUser.repository.WebUserRepository;
@@ -24,6 +27,7 @@ public class WebUserController {
   private final CouponService couponService;
   private final UserRepository userRepository;
   private final WebUserRepository webUserRepository;
+  private final UserService userService;
 
   @PostMapping("/daily_check/{user_id}")
   public ResponseEntity<Map<String, Object>> dailyCheck(@PathVariable("user_id") String userId) {
@@ -40,4 +44,16 @@ public class WebUserController {
         webUser.getDiscordUserSnowflake(), request.getCode());
     return couponService.redeemCoupon(couponRedeemRequestDto);
   }
+  /**
+   * 유저가 가진 모든 권한 조회
+   * @param userId
+   * @return
+   */
+  @GetMapping("/{user_id}/permissions")
+  public UserGrantedPermissionResponseDto getAllUserPermissions(
+          @PathVariable("user_id") String userId) {
+    User user = userRepository.findById(UUID.fromString(userId)).orElseThrow(ErrorStatus.USER_NOT_FOUND::asControllerException);
+    return userService.getAllUserPermissions(user.getDiscordSnowflake());
+  }
+
 }
