@@ -14,6 +14,7 @@ const Index: React.FC = () => {
                 <BotAddSection />
                 {/* <BotStatsSection /> */}
                 <AnnouncementSection />
+                <GameAdsSection />
                 {/* <LatestPostsSection />
         <GameAdsSection />
         <CurrentGamesSection /> */}
