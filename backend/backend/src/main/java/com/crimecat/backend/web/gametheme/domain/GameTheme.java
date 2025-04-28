@@ -5,6 +5,9 @@ import com.crimecat.backend.web.gametheme.dto.AddCrimesceneThemeRequest;
 import com.crimecat.backend.web.gametheme.dto.AddGameThemeRequest;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.UUID;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -14,11 +17,6 @@ import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Table(name = "GAME_THEMES")
@@ -87,8 +85,11 @@ public class GameTheme {
     private int playerMax;
 
     @Setter
-    @Column(name = "PLAYTIME")
-    private int playtime;
+    @Column(name = "PLAYTIME_MIN")
+    private int playtimeMin;
+    @Setter
+    @Column(name = "PLAYTIME_MAX")
+    private int playtimeMax;
 
     @Setter
     @Column(name = "PRICE")
@@ -127,7 +128,8 @@ public class GameTheme {
                 .content(request.getContent())
                 .playerMin(request.getPlayerMin())
                 .playerMax(request.getPlayerMax())
-                .playtime(request.getPlaytime())
+                .playtimeMin(request.getPlaytimeMin())
+            .playtimeMax(request.getPlaytimeMax())
                 .price(request.getPrice())
                 .difficulty(request.getDifficulty())
                 .publicStatus(request.isPublicStatus())
