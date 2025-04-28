@@ -1,7 +1,6 @@
 package com.crimecat.backend.auth.controller;
 
 import com.crimecat.backend.auth.jwt.JwtTokenProvider;
-import com.crimecat.backend.auth.service.DiscordRedisTokenService;
 import com.crimecat.backend.auth.service.JwtBlacklistService;
 import com.crimecat.backend.auth.service.RefreshTokenService;
 import com.crimecat.backend.auth.util.TokenCookieUtil;
@@ -36,7 +35,6 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final JwtBlacklistService jwtBlacklistService;
     private final WebUserRepository webUserRepository;
-    private final DiscordRedisTokenService discordRedisTokenService;
 
     @GetMapping("/login-success")
     public ResponseEntity<?> redirectLoginSuccess(HttpServletResponse response, Principal principal) throws IOException {
@@ -159,8 +157,6 @@ public class AuthController {
             long expiration = jwtTokenProvider.getRemainingTime(accessToken);
             jwtBlacklistService.blacklistToken(accessToken, expiration);
             log.info("✅ [토큰 블랙리스트 처리 완료] userId: {}", userId);
-            discordRedisTokenService.deleteAccessToken(userId);
-            log.info("✅ [디스코드 토큰 삭제 처리 완료] userId: {}", userId);
         } else {
             log.warn("⚠️ [유효한 액세스 토큰 없음]");
         }

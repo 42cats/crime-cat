@@ -2,7 +2,6 @@ package com.crimecat.backend.config;
 
 import com.crimecat.backend.auth.filter.DiscordBotTokenFilter;
 import com.crimecat.backend.auth.filter.JwtAuthenticationFilter;
-import com.crimecat.backend.auth.filter.OAuth2TokenRefreshFilter;
 import com.crimecat.backend.auth.handler.CustomOAuth2SuccessHandler;
 import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +34,6 @@ public class SecurityConfig {
     private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
     private final ServiceUrlConfig serviceUrlConfig;
 
-    private final OAuth2TokenRefreshFilter oAuth2TokenRefreshFilter;
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -95,8 +93,6 @@ public class SecurityConfig {
                 .addFilterBefore(discordBotTokenFilter,
                     UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(oAuth2TokenRefreshFilter,
                         UsernamePasswordAuthenticationFilter.class)
                         ;
 
