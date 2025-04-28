@@ -99,7 +99,7 @@ public class WebUserService {
                 this.PermissionsSet(u, "관전");
                 this.PermissionsSet(u, "주소추가");
                 this.PermissionsSet(u, "로컬음악");
-                this.PermissionsSet(u, "버튼매크로");
+                this.PermissionsSet(u, "메시지매크로");
             }
 
 
