@@ -2,7 +2,6 @@ package com.crimecat.backend.web.gametheme.dto;
 
 import com.crimecat.backend.web.gametheme.domain.GameTheme;
 import com.crimecat.backend.web.gametheme.domain.ThemeType;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Set;
@@ -11,10 +10,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.openapitools.jackson.nullable.JsonNullable;
-
-import java.util.Set;
-import java.util.UUID;
-import java.util.function.Consumer;
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,

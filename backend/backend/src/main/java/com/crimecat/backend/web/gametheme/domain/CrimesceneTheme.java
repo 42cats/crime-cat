@@ -13,10 +13,6 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.util.Map;
-import java.util.UUID;
 
 @Entity
 @Table(name = "CRIMESCENE_THEMES")
