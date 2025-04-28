@@ -1,10 +1,7 @@
 package com.crimecat.backend.web.gametheme.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
@@ -30,4 +27,8 @@ public class MakerTeam {
 
     @OneToMany(mappedBy = "team")
     private List<MakerTeamMember> members;
+
+    @Setter
+    @Column(name = "IS_INDIVIDUAL")
+    private boolean isIndividual;
 }
