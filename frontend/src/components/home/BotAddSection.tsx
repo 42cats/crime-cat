@@ -81,7 +81,7 @@ const StatsSection: React.FC = () => {
                                 !!error
                             )}
                             {renderCard(
-                                "실제 게임 플레이한 유저",
+                                "플레이 기록",
                                 data?.totalPlayers,
                                 !!error
                             )}
