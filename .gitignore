@@ -11,6 +11,7 @@ config.json
 .idea
 *.iws
 *.iml
+backup/**
 *.ipr
 out/
 !**/src/main/**/out/
