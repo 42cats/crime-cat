@@ -27,7 +27,8 @@ public class GameThemeDetailDto {
     private UUID author;
     private int playersMin;
     private int playersMax;
-    private int playtime;
+    private int playTimeMin;
+    private int playTimeMax;
     private int price;
     private int difficulty;
     private Set<String> tags;
@@ -52,7 +53,8 @@ public class GameThemeDetailDto {
                 .author(theme.getAuthorId())
                 .playersMin(theme.getPlayerMin())
                 .playersMax(theme.getPlayerMax())
-                .playtime(theme.getPlaytime())
+                .playTimeMin(theme.getPlayTimeMin())
+                .playTimeMax(theme.getPlayTimeMax())
                 .price(theme.getPrice())
                 .difficulty(theme.getDifficulty())
                 .tags(theme.getTags())

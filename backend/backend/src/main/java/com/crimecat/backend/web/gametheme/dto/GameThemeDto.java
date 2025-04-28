@@ -2,14 +2,12 @@ package com.crimecat.backend.web.gametheme.dto;
 
 import com.crimecat.backend.web.gametheme.domain.CrimesceneTheme;
 import com.crimecat.backend.web.gametheme.domain.GameTheme;
+import java.util.Set;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-
-import java.time.ZoneOffset;
-import java.util.Set;
-import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
@@ -26,7 +24,8 @@ public class GameThemeDto {
     private UUID author;
     private int playersMin;
     private int playersMax;
-    private int playtime;
+    private int playTimeMin;
+    private int playTimeMax;
     private int price;
     private int difficulty;
     private Set<String> tags;
@@ -47,7 +46,8 @@ public class GameThemeDto {
                 .author(theme.getAuthorId())
                 .playersMin(theme.getPlayerMin())
                 .playersMax(theme.getPlayerMax())
-                .playtime(theme.getPlaytime())
+                .playTimeMin(theme.getPlayTimeMin())
+                .playTimeMax(theme.getPlayTimeMax())
                 .price(theme.getPrice())
                 .difficulty(theme.getDifficulty())
                 .tags(theme.getTags())
