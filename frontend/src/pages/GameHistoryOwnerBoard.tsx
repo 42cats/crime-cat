@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Dialog,
@@ -17,7 +17,8 @@ import { ko } from "date-fns/locale";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api";
 import { UTCToKST } from "@/lib/dateFormat";
-/* ------------------------------ 타입 ------------------------------ */
+import { Loader2 } from "lucide-react"; // 🔥 로딩 스피너 추가
+
 export interface UserGameHistoryDto {
     uuid: string;
     guildSnowflake: string;
@@ -39,9 +40,7 @@ interface Page<T> {
     size: number;
 }
 
-/* 정렬 타입 */
 type SortType = "LATEST" | "OLDEST";
-
 const PAGE_SIZE = 10;
 
 /* ------------------------------ 쿼리 훅 ------------------------------ */
@@ -90,6 +89,7 @@ const GameHistoryManager: React.FC = () => {
     const [keyword, setKeyword] = useState("");
     const [editing, setEditing] = useState<UserGameHistoryDto | null>(null);
     const qc = useQueryClient();
+    const inputRef = useRef<HTMLInputElement>(null); // 🔥 검색창 포커스
 
     const { state } = useLocation();
     const params = useParams<{ guildId?: string }>();
@@ -132,6 +132,10 @@ const GameHistoryManager: React.FC = () => {
         [page, data]
     );
 
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [page]);
+
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!editing) return;
@@ -159,6 +163,13 @@ const GameHistoryManager: React.FC = () => {
         );
     };
 
+    const handleSearch = () => {
+        const trimmed = searchText.trim();
+        setKeyword(trimmed); // 빈 문자열이면 전체 검색
+        setPage(0);
+        inputRef.current?.focus(); // 🔥 검색 후 포커스
+    };
+
     return (
         <div className="space-y-6 px-4 md:px-8 lg:px-12 xl:px-20 py-6">
             <header className="text-center space-y-1">
@@ -177,174 +188,205 @@ const GameHistoryManager: React.FC = () => {
             {/* 검색 + 정렬 */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-center justify-center">
                 <Input
+                    ref={inputRef}
                     placeholder="검색 지원 예정"
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleSearch();
+                        }
+                    }}
                     className="w-full sm:max-w-md"
                 />
-                <Button
-                    onClick={() => {
-                        setPage(0);
-                        setKeyword(searchText.trim());
-                    }}
-                >
-                    검색
-                </Button>
+                <Button onClick={handleSearch}>검색</Button>
                 <div className="flex gap-2">
-                    <Button
-                        variant={sortType === "LATEST" ? "default" : "outline"}
-                        onClick={() => {
-                            setSortType("LATEST");
-                            setPage(0);
-                        }}
-                    >
-                        최신순
-                    </Button>
-                    <Button
-                        variant={sortType === "OLDEST" ? "default" : "outline"}
-                        onClick={() => {
-                            setSortType("OLDEST");
-                            setPage(0);
-                        }}
-                    >
-                        오래된순
-                    </Button>
+                    {(["LATEST", "OLDEST"] as SortType[]).map((type) => (
+                        <Button
+                            key={type}
+                            variant={sortType === type ? "default" : "outline"}
+                            onClick={() => {
+                                setSortType(type);
+                                setPage(0);
+                            }}
+                        >
+                            {type === "LATEST" && "최신순"}
+                            {type === "OLDEST" && "오래된순"}
+                        </Button>
+                    ))}
                 </div>
             </div>
 
-            {/* 데스크탑 테이블 */}
-            {!isError && !isFetching && data && (
-                <div className="hidden md:block">
-                    <div className="overflow-x-auto rounded-lg border">
-                        <table className="min-w-full text-sm">
-                            <thead className="bg-muted">
-                                <tr>
-                                    <th className="px-4 py-2 text-left">
-                                        플레이어
-                                    </th>
-                                    <th className="px-4 py-2 text-left">
-                                        캐릭터
-                                    </th>
-                                    <th className="px-4 py-2 text-left">
-                                        승패
-                                    </th>
-                                    <th className="px-4 py-2 text-left">
-                                        테마
-                                    </th>
-                                    <th className="px-4 py-2 text-left">
-                                        메모
-                                    </th>
-                                    <th className="px-4 py-2 text-left">
-                                        날짜
-                                    </th>
-                                    <th className="px-4 py-2"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {data.content.map((h) => (
-                                    <tr key={h.uuid} className="border-t">
-                                        <td className="px-4 py-2 font-medium">
-                                            {h.playerName}
-                                        </td>
-                                        <td className="px-4 py-2">
-                                            {h.characterName}
-                                        </td>
-                                        <td className="px-4 py-2">
-                                            {h.win ? "✅" : "❌"}
-                                        </td>
-                                        <td className="px-4 py-2">
-                                            {h.themeName ?? "(미등록)"}
-                                        </td>
-                                        <td className="px-4 py-2">
-                                            {h.ownerMemo || "-"}
-                                        </td>
-                                        <td className="px-4 py-2">
-                                            <UTCToKST date={h.createdAt} />
-                                        </td>
-                                        <td className="px-4 py-2 text-right">
-                                            <Button
-                                                size="sm"
-                                                onClick={() => setEditing(h)}
-                                            >
-                                                편집
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+            {/* 총 갯수 표시 */}
+            {data && (
+                <div className="text-center text-sm text-muted-foreground mb-4">
+                    총 {data.totalElements}건
                 </div>
             )}
 
-            {/* 모바일 카드 리스트 */}
-            {!isError && !isFetching && data && (
-                <ul className="md:hidden space-y-3">
-                    {data.content.map((h) => (
-                        <li
-                            key={h.uuid}
-                            className="glass rounded-xl p-4 flex flex-col gap-2 card-hover"
-                        >
-                            <div className="flex justify-between items-start">
-                                <div className="font-semibold text-base">
-                                    {h.playerName}
-                                </div>
-                                <div className="text-sm font-bold">
-                                    {h.win ? "✅ 승" : "❌ 패"}
-                                </div>
-                            </div>
-                            <div className="text-sm space-y-1 mt-1 text-muted-foreground">
-                                <div>
-                                    <span className="font-medium">캐릭터:</span>{" "}
-                                    {h.characterName}
-                                </div>
-                                <div>
-                                    <span className="font-medium">테마:</span>{" "}
-                                    {h.themeName ?? "(미등록)"}
-                                </div>
-                                <div>
-                                    <span className="font-medium">메모:</span>{" "}
-                                    {h.ownerMemo || "-"}
-                                </div>
-                                <div>
-                                    <span className="font-medium">날짜:</span>{" "}
-                                    {format(
-                                        new Date(h.createdAt),
-                                        "yy.MM.dd HH:mm",
-                                        { locale: ko }
-                                    )}
-                                </div>
-                            </div>
-                            <Button
-                                size="sm"
-                                className="self-end mt-3"
-                                onClick={() => setEditing(h)}
+            {/* 로딩 처리 */}
+            {isFetching ? (
+                <div className="flex justify-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            ) : !isError && data ? (
+                <>
+                    {/* 데스크탑 테이블 */}
+                    <div className="hidden md:block">
+                        <div className="overflow-x-auto rounded-lg border">
+                            <table className="min-w-full text-sm">
+                                <thead className="bg-muted">
+                                    <tr>
+                                        <th className="px-4 py-2 text-left">
+                                            플레이어
+                                        </th>
+                                        <th className="px-4 py-2 text-left">
+                                            캐릭터
+                                        </th>
+                                        <th className="px-4 py-2 text-left">
+                                            승패
+                                        </th>
+                                        <th className="px-4 py-2 text-left">
+                                            테마
+                                        </th>
+                                        <th className="px-4 py-2 text-left">
+                                            메모
+                                        </th>
+                                        <th className="px-4 py-2 text-left">
+                                            날짜
+                                        </th>
+                                        <th className="px-4 py-2"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {data.content.map((h) => (
+                                        <tr key={h.uuid} className="border-t">
+                                            <td className="px-4 py-2 font-medium">
+                                                {h.playerName}
+                                            </td>
+                                            <td className="px-4 py-2">
+                                                {h.characterName}
+                                            </td>
+                                            <td className="px-4 py-2">
+                                                {h.win ? "✅" : "❌"}
+                                            </td>
+                                            <td className="px-4 py-2">
+                                                {h.themeName ?? "(미등록)"}
+                                            </td>
+                                            <td className="px-4 py-2">
+                                                {h.ownerMemo || "-"}
+                                            </td>
+                                            <td className="px-4 py-2">
+                                                <UTCToKST date={h.createdAt} />
+                                            </td>
+                                            <td className="px-4 py-2 text-right">
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        setEditing(h)
+                                                    }
+                                                >
+                                                    편집
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* 모바일 카드 리스트 */}
+                    <ul className="md:hidden space-y-3">
+                        {data.content.map((h) => (
+                            <li
+                                key={h.uuid}
+                                className="glass rounded-xl p-4 flex flex-col gap-2 card-hover"
                             >
-                                편집
-                            </Button>
-                        </li>
-                    ))}
-                </ul>
+                                <div className="flex justify-between">
+                                    <div className="font-semibold">
+                                        {h.playerName}
+                                    </div>
+                                    <div className="font-bold">
+                                        {h.win ? "✅ 승" : "❌ 패"}
+                                    </div>
+                                </div>
+                                <div className="text-sm space-y-1 mt-1 text-muted-foreground">
+                                    <div>
+                                        <span className="font-medium">
+                                            캐릭터:
+                                        </span>{" "}
+                                        {h.characterName}
+                                    </div>
+                                    <div>
+                                        <span className="font-medium">
+                                            테마:
+                                        </span>{" "}
+                                        {h.themeName ?? "(미등록)"}
+                                    </div>
+                                    <div>
+                                        <span className="font-medium">
+                                            메모:
+                                        </span>{" "}
+                                        {h.ownerMemo || "-"}
+                                    </div>
+                                    <div>
+                                        <span className="font-medium">
+                                            날짜:
+                                        </span>{" "}
+                                        {format(
+                                            new Date(h.createdAt),
+                                            "yy.MM.dd HH:mm",
+                                            { locale: ko }
+                                        )}
+                                    </div>
+                                </div>
+                                <Button
+                                    size="sm"
+                                    className="self-end mt-2"
+                                    onClick={() => setEditing(h)}
+                                >
+                                    편집
+                                </Button>
+                            </li>
+                        ))}
+                    </ul>
+                </>
+            ) : (
+                <div className="text-center py-10 text-destructive">
+                    데이터를 불러오는 중 오류가 발생했습니다.
+                </div>
             )}
 
             {/* 페이지네이션 */}
             {data && data.totalPages > 1 && (
-                <nav className="flex justify-center items-center gap-4">
+                <nav className="flex justify-center items-center gap-4 mt-6">
                     <Button
                         variant="outline"
                         size="sm"
-                        disabled={pageInfo.isFirst}
+                        disabled={pageInfo.isFirst || isFetching}
                         onClick={() => setPage((p) => Math.max(p - 1, 0))}
                     >
                         이전
                     </Button>
-                    <span className="text-sm">
-                        {page + 1} / {data.totalPages}
-                    </span>
+
+                    {Array.from({ length: data.totalPages }, (_, i) => (
+                        <Button
+                            key={i}
+                            variant={page === i ? "default" : "outline"}
+                            size="sm"
+                            disabled={isFetching}
+                            onClick={() => setPage(i)}
+                        >
+                            {i + 1}
+                        </Button>
+                    ))}
+
                     <Button
                         variant="outline"
                         size="sm"
-                        disabled={pageInfo.isLast}
+                        disabled={pageInfo.isLast || isFetching}
                         onClick={() => setPage((p) => p + 1)}
                     >
                         다음
@@ -352,7 +394,7 @@ const GameHistoryManager: React.FC = () => {
                 </nav>
             )}
 
-            {/* 다이얼로그 (편집) */}
+            {/* 편집 다이얼로그 */}
             <Dialog open={!!editing} onOpenChange={() => setEditing(null)}>
                 {editing && (
                     <DialogContent className="max-w-lg">
@@ -389,7 +431,9 @@ const GameHistoryManager: React.FC = () => {
                                     name="memo"
                                     defaultValue={editing.ownerMemo}
                                     rows={3}
-                                    className="w-full border rounded-md p-2 text-sm"
+                                    className="w-full border rounded-md p-2 text-sm
+               text-foreground bg-background
+               focus:outline-none focus:ring-2 focus:ring-primary"
                                 />
                             </div>
                             <DialogFooter>
