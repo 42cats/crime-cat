@@ -46,7 +46,7 @@ module.exports = {
 		const showPressDetail = interaction.options.getBoolean('누가눌렀어') ?? false;
 		const changeColor = interaction.options.getBoolean('색변경') ?? false;
 
-		if (!await isPermissionHas(interaction.user.id, "버튼매크로")) {
+		if (!await isPermissionHas(interaction.user.id, "메시지매크로")) {
 			interaction.reply("해당 기능을 사용할 권한이 없습니다. 권한을 구매해 주세요");
 		}
 		try {
