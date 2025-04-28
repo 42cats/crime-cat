@@ -71,7 +71,7 @@ public class GameTheme {
 
     @Setter
     @Type(JsonType.class)
-    @Column(name = "`TAGS`", columnDefinition = "JSON")
+    @Column(name = "`TAGS`", columnDefinition = "LONGTEXT")
     private Set<String> tags;
 
     @Setter

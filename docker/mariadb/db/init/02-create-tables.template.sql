@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS `web_users` (
     `bio`             TEXT DEFAULT NULL COMMENT '자기소개',
     `password_hash`   VARCHAR(255) DEFAULT NULL COMMENT '비밀번호 해시',
     `profile_image_path` VARCHAR(255) DEFAULT NULL COMMENT '프로필 이미지 경로',
-    `settings` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '유저 설정 (JSON)',
-    `social_links` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'SNS 링크 (JSON)',
+    `settings` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '유저 설정 (LONGTEXT)',
+    `social_links` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'SNS 링크 (LONGTEXT)',
     `login_method` ENUM('DISCORD', 'GOOGLE', 'LOCAL') NOT NULL COMMENT '로그인 방식',
     `role`         ENUM('ADMIN', 'MANAGER', 'USER') NOT NULL COMMENT '권한 등급',
     PRIMARY KEY (`id`),
@@ -178,7 +178,7 @@ CREATE TABLE `game_themes` (
     `views`             INT DEFAULT 0 COMMENT '조회수',
     `play_count`        INT DEFAULT 0 COMMENT '총 플레이 횟수',
     `author`            BINARY(16) NOT NULL COMMENT '작성자 (users.id 참조)',
-    `tags`              JSON COMMENT '태그 배열 ["tag1", "tag2"]',
+    `tags`              LONGTEXT COMMENT '태그 배열 ["tag1", "tag2"]',
     `content`           TEXT COMMENT '게시글 본문',
     `player_min`        INT COMMENT '최소 인원수',
     `player_max`        INT COMMENT '최대 인원수',
@@ -208,7 +208,7 @@ CREATE TABLE `crimescene_themes` (
     `game_theme_id` BINARY(16) PRIMARY KEY COMMENT '게임 테마',
     `maker_teams_id` BINARY(16) COMMENT '제작 팀 정보',
     `guild_snowflake` VARCHAR(50) COMMENT '디스코드 서버 id',
-    `extra` JSON COMMENT '추가 정보 (JSON)',
+    `extra` LONGTEXT COMMENT '추가 정보 (LONGTEXT)',
     
     CONSTRAINT `fk_crimescene_game_theme` FOREIGN KEY (`game_theme_id`)
         REFERENCES `game_themes`(`id`)
@@ -514,8 +514,8 @@ CREATE TABLE `commands` (
   `category` VARCHAR(100) NOT NULL
     COMMENT '카테고리(예: "유틸리티", "게임" 등)',
 
-  `required_permissions` JSON NOT NULL
-    COMMENT '필수 권한 목록(JSON 배열, 예: ["공통"])',
+  `required_permissions` LONGTEXT NOT NULL
+    COMMENT '필수 권한 목록(LONGTEXT 배열, 예: ["공통"])',
 
   `content` TEXT NOT NULL
     COMMENT '명령어 상세 내용(Markdown 등으로 저장)',

@@ -1,154 +1,142 @@
 #!/bin/sh
-# 로깅 함수: 타임스탬프와 함께 메시지를 출력
-log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+set -e
+
+###############################################################################
+# 경로·환경 변수
+###############################################################################
+DATADIR="/var/lib/mysql"
+SOCKET="/var/run/mysqld/mysqld.sock"
+INITDIR="/var/lib/dbinit"                 # *.template.sql / *.sql 위치
+MYSQL_USER="mysql"
+
+###############################################################################
+# 로깅 함수
+###############################################################################
+log() { printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"; }
+
+###############################################################################
+# 0. 디렉터리 준비 (소켓·데이터)
+###############################################################################
+prepare_dirs() {
+  mkdir -p "$DATADIR" "$(dirname "$SOCKET")"
+  chown -R "$MYSQL_USER":"$MYSQL_USER" "$DATADIR" "$(dirname "$SOCKET")"
+  chmod 750 "$DATADIR"
+  chmod 755 "$(dirname "$SOCKET")"
 }
 
-# ──────────────────────────────────────────────────────────────────────────────────
-# (A) 디렉토리 권한 초기화 + "DB 존재 여부" 검사
-# ──────────────────────────────────────────────────────────────────────────────────
-prepare_environment() {
-    log "데이터베이스 환경 준비 시작..."
-
-    #이미 /var/lib/mysql/mysql 디렉토리가 있으면 -> DB가 존재한다고 판단
-    if [ -d "/var/lib/mysql/mysql" ]; then
-        log "데이터베이스가 이미 존재합니다. (초기화 스킵)"
-        chown -R mysql:mysql /var/lib/mysql /run/mysqld
-        chmod -R 750 /var/lib/mysql
-        chmod -R 755 /run/mysqld
-        return 0  # 함수 반환값 0은 "건너뛰기"
-    fi
-
-    # 이전 실행의 잔여물 정리
-    if [ -d "/var/lib/mysql/mysql" ]; then
-        log "기존 데이터베이스 디렉토리 정리 중..."
-        rm -rf /var/lib/mysql/*
-    fi
-
-    # 디렉토리 권한 재설정
-    chown -R mysql:mysql /var/lib/mysql /run/mysqld
-    chmod -R 750 /var/lib/mysql
-    chmod -R 755 /run/mysqld
-
-    log "데이터베이스 환경 준비 완료"
-    return 1  # 함수 반환값 1은 "초기화 필요"
+###############################################################################
+# 1. DB 존재 여부 체크
+###############################################################################
+is_initialized() {
+  [ -d "$DATADIR/mysql" ] && return 0 || return 1
 }
 
-# ──────────────────────────────────────────────────────────────────────────────────
-# (B) 시스템 DB (mariadb-install-db)를 이용한 기본 테이블 생성
-# ──────────────────────────────────────────────────────────────────────────────────
-initialize_system_db() {
-    log "시스템 데이터베이스 초기화 시작..."
-
-    mariadb-install-db --user=mysql \
-                       --datadir=/var/lib/mysql \
-                       --rpm \
-                       --auth-root-authentication-method=normal \
-                       --skip-test-db
-
-    if [ $? -ne 0 ]; then
-        log "시스템 DB(mariadb-install-db) 초기화 실패!"
-        exit 1
-    fi
-
-    log "시스템 데이터베이스 초기화 완료"
+###############################################################################
+# 2. 시스템 테이블 초기화 (mariadb-install-db)
+###############################################################################
+init_system_db() {
+  log "▶ 시스템 테이블 초기화 시작"
+  mariadb-install-db \
+      --user="$MYSQL_USER" \
+      --datadir="$DATADIR" \
+      --auth-root-authentication-method=normal \
+      --skip-test-db
+  log "✔ 시스템 테이블 초기화 완료"
 }
 
-# ──────────────────────────────────────────────────────────────────────────────────
-# (C) init 폴더 안의 모든 템플릿 *.template.sql → .sql 치환 후 실행
-# ──────────────────────────────────────────────────────────────────────────────────
+###############################################################################
+# 3. 임시 데몬 기동 + 준비 대기 + 종료
+###############################################################################
+start_temp_server() {
+  log "▶ 임시 mariadbd 기동"
+  mariadbd --user="$MYSQL_USER" \
+           --datadir="$DATADIR" \
+           --socket="$SOCKET" \
+           --skip-networking &
+}
+
+wait_for_ready() {
+  for i in $(seq 1 30); do
+    mariadb-admin --socket="$SOCKET" --user=root ping --silent && return 0
+    sleep 1
+  done
+  log "❌ mariadbd 준비 실패(30초 초과)"
+  exit 1
+}
+
+stop_temp_server() {
+  mariadb-admin --socket="$SOCKET" --user=root shutdown || true
+  # 안전장치
+  sleep 2
+  pkill -f "mariadbd.*$SOCKET" || true
+}
+
+###############################################################################
+# 4. SQL 실행 유틸
+###############################################################################
+run_sql() { mariadb --socket="$SOCKET" --user=root < "$1"; }
+
+substitute_env() { envsubst < "$1" > "$2"; }
+
+###############################################################################
+# 5. init 디렉터리 처리
+###############################################################################
 run_all_sql_scripts() {
-    log "SQL 초기화 스크립트(전체) 실행 시작..."
-    # 1) 모든 *.template.sql → .sql 변환 (환경 변수 치환)
-    for template in /var/lib/dbinit/*.template.sql; do
-        [ -f "$template" ] || continue
-        output="${template%.template.sql}.sql"
-        log "환경 변수 치환 중: $template -> $output"
-        envsubst < "$template" > "$output"
-    done
-    # 2) 실제 SQL 실행 (치환된 .sql)
-    for script in /var/lib/dbinit/*.sql; do
-        [ -f "$script" ] || continue
-        # 혹시 .template.sql이 남아있다면 제외 (이론상 위에서 이미 변환됨)
-        if [[ "$script" != *.template.sql ]]; then
-            log "실행 중: $script"
-            mariadb -u root < "$script"
-            if [ $? -ne 0 ]; then
-                log "SQL 스크립트 실행 실패: $script"
-                exit 1
-            fi
-        fi
-    done
-    log "SQL 초기화 스크립트(전체) 실행 완료"
+  log "▶ 초기화 SQL 실행 시작"
+  # (1) *.template.sql -> .sql 치환
+  for t in "$INITDIR"/*.template.sql; do
+    [ -f "$t" ] || continue
+    o="${t%.template.sql}.sql"
+    log "   • envsubst: $(basename "$t")"
+    substitute_env "$t" "$o"
+  done
+  # (2) .sql 실행
+  for s in "$INITDIR"/*.sql; do
+    case "$s" in *.template.sql) continue ;; esac
+    [ -f "$s" ] || continue
+    log "   • 실행: $(basename "$s")"
+    run_sql "$s"
+  done
+  log "✔ 초기화 SQL 실행 완료"
 }
 
-# ──────────────────────────────────────────────────────────────────────────────────
-# (D) "01-create-databases.template.sql"만 실행하기
-# ──────────────────────────────────────────────────────────────────────────────────
-run_create_databases_script() {
-    local tmpl="/var/lib/dbinit/01-create-databases.template.sql"
-    local output="/var/lib/dbinit/01-create-databases.sql"
-    if [ -f "$tmpl" ]; then
-        log "단일 스크립트 실행: 01-create-databases.template.sql → .sql 변환 후 실행"
-        envsubst < "$tmpl" > "$output"
-        log "실행 중: $output"
-        mariadb -u root < "$output"
-        if [ $? -ne 0 ]; then
-            log "SQL 스크립트 실행 실패: $output"
-            exit 1
-        fi
-    else
-        log "파일이 없습니다: $tmpl (유저/비번 생성 스크립트가 없음)"
-    fi
+run_create_databases_only() {
+  t="$INITDIR/01-create-databases.template.sql"
+  [ -f "$t" ] || { log "01-create-databases.template.sql 없음, 건너뜀"; return; }
+  o="${t%.template.sql}.sql"
+  substitute_env "$t" "$o"
+  log "   • 실행: $(basename "$o")"
+  run_sql "$o"
 }
 
-# ──────────────────────────────────────────────────────────────────────────────────
-# (E) 메인 실행 (전체 흐름)
-# ──────────────────────────────────────────────────────────────────────────────────
+###############################################################################
+# 6. 메인 흐름
+###############################################################################
 main() {
-    log "MariaDB 초기화 프로세스 시작..."
+  log "=== MariaDB EntryPoint 시작 ==="
+  prepare_dirs
 
-    # 1) 환경 준비 + DB 존재 여부 확인
-    prepare_environment
-    PREPARE_RESULT=$?  # 0이면 "이미 DB 있음 -> 초기화 스킵", 1이면 "DB 없음 -> 초기화 필요"
+  if is_initialized; then
+    log "기존 데이터베이스 감지 → 전체 초기화 스킵"
+    start_temp_server
+    wait_for_ready
+    run_create_databases_only         # 유저·비번·DB 재보증
+    stop_temp_server
+  else
+    log "신규 컨테이너 → 전체 초깃값 적용"
+    init_system_db
+    start_temp_server
+    wait_for_ready
+    run_all_sql_scripts
+    stop_temp_server
+  fi
 
-    # 2) DB가 없으면 전체 초기화 진행
-    if [ "$PREPARE_RESULT" -eq 1 ]; then
-        log "DB가 없어 전체 초기화를 진행합니다..."
-
-        # 시스템 DB(mariadb-install-db)
-        initialize_system_db
-
-        # 임시로 mariadbd 실행 후, SQL 스크립트 적용
-        mariadbd --user=mysql &
-        sleep 2  # mariadbd가 시작될 때까지 대기
-
-        # init 폴더 모든 SQL 실행
-        run_all_sql_scripts
-
-        # 백그라운드 mariadbd 종료
-        pkill mariadbd
-        sleep 2
-    else
-        # 3) DB가 이미 존재하는 경우: 전체 초기화 X,
-        #    하지만 "01-create-databases.template.sql"은 실행(유저/비번/DB 생성 보장)
-        log "DB가 이미 존재합니다. 초기화 스킵 후 '사용자/비번/DB 생성 스크립트'만 실행합니다..."
-        mariadbd --user=mysql &
-        sleep 2
-
-        # 01-create-databases.template.sql 만 실행
-        run_create_databases_script
-
-        # 백그라운드 mariadbd 종료
-        pkill mariadbd
-        sleep 2
-    fi
-
-    # 4) 마지막으로 서버를 정식 시작
-    rm -f /etc/my.cnf.d/mariadb-server.cnf
-    log "MariaDB 서버를 시작합니다..."
-    exec mariadbd --user=mysql
+  log "▶ 최종 mariadbd 실행"
+  exec mariadbd --user="$MYSQL_USER" \
+                --datadir="$DATADIR" \
+                --socket="$SOCKET" \
+                --port=3306 \
+                --skip-networking=0  
 }
 
-# 스크립트 실행
-main
+main "$@"
