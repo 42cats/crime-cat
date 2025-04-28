@@ -41,7 +41,7 @@ public class CrimesceneTheme extends GameTheme {
 
     @Setter
     @Type(JsonType.class)
-    @Column(name = "EXTRA", columnDefinition = "LONGTEXT")
+    @Column(name = "EXTRA", columnDefinition = "JSON")
     private Map<String, Object> extra;
 
     public static CrimesceneTheme from(AddCrimesceneThemeRequest request) {

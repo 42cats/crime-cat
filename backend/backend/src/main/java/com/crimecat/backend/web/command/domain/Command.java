@@ -40,7 +40,7 @@ public class Command {
   @Column(name = "category", length = 100, nullable = false)
   private String category;
 
-  @Lob
+  @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "required_permissions", columnDefinition = "JSON", nullable = false)
   private List<String> requiredPermissions;
 
