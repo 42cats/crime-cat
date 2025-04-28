@@ -1,13 +1,19 @@
 package com.crimecat.backend.web.gametheme.service;
 
+import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
+import com.crimecat.backend.bot.user.domain.User;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.storage.StorageService;
-import com.crimecat.backend.web.gametheme.domain.GameTheme;
+import com.crimecat.backend.web.gametheme.domain.*;
 import com.crimecat.backend.web.gametheme.dto.*;
 import com.crimecat.backend.web.gametheme.repository.GameThemeRepository;
+import com.crimecat.backend.web.gametheme.specification.GameThemeSpecification;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,18 +26,36 @@ import java.util.UUID;
 public class GameThemeService {
     private final StorageService storageService;
     private final GameThemeRepository themeRepository;
+    private final DiscordOAuth2UserService oAuth2UserService;
+    private final MakerTeamService teamService;
+
+    private static final String THUMBNAIL_LOCATION = "gametheme";
 
     @Transactional
     public void addGameTheme(MultipartFile file, AddGameThemeRequest request) {
         GameTheme gameTheme = GameTheme.from(request);
-        // TODO: 작성자 추가
-//        UUID userId = null;
-//        gameTheme.setAuthorId(userId);
+        User user = oAuth2UserService.getLoginUser();
+        gameTheme.setAuthorId(user.getId());
+        if (gameTheme instanceof CrimesceneTheme) {
+            checkTeam((CrimesceneTheme) gameTheme, user);
+        }
         gameTheme = themeRepository.save(gameTheme);
         if (file != null && !file.isEmpty()) {
-            String uri = storageService.storeAt(file, "gametheme", gameTheme.getId().toString());
-            gameTheme.setThumbnail(uri);
+            String path = storageService.storeAt(file, THUMBNAIL_LOCATION, gameTheme.getId().toString());
+            gameTheme.setThumbnail(path);
             themeRepository.save(gameTheme);
+        }
+    }
+
+    private void checkTeam(CrimesceneTheme gameTheme, User user) {
+        if (gameTheme.getTeamId() == null) {
+            List<MakerTeamMember> teams = teamService.getIndividualTeams(user.getId());
+            if (teams.size() == 0) {
+                UUID teamId = teamService.create(user.getName(), user.getId(), true);
+                gameTheme.setTeamId(teamId);
+            } else {
+                gameTheme.setTeamId(teams.get(0).getTeam().getId());
+            }
         }
     }
 
@@ -40,21 +64,20 @@ public class GameThemeService {
         if (gameTheme.isDeleted()) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
-        // TODO: 작성자 확인
+        if (!oAuth2UserService.getLoginUserId().equals(gameTheme.getAuthorId())) {
+            throw ErrorStatus.FORBIDDEN.asServiceException();
+        }
         gameTheme.setIsDelete(true);
         themeRepository.save(gameTheme);
     }
 
     public GetGameThemeResponse getGameTheme(UUID themeId) {
         GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        if (gameTheme.isDeleted()) {
+        if (gameTheme.isDeleted() && !gameTheme.isPublicStatus()) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
-        // TODO: publicStatus에 따라 작성자만 볼 수 있도록
-//        UUID userId = null;
-//        if (!gameTheme.isPublicStatus() && userId.equals(gameTheme.getAuthorId())) {
-//            throw ErrorStatus.FORBIDDEN.asServiceException();
-//        }
+        gameTheme.viewed();
+        gameTheme = themeRepository.save(gameTheme);
         return GetGameThemeResponse.builder()
                 .theme(GameThemeDetailDto.of(gameTheme))
                 .build();
@@ -63,33 +86,31 @@ public class GameThemeService {
     @Transactional
     public void updateGameTheme(UUID themeId, MultipartFile file, UpdateGameThemeRequest request) {
         GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        // TODO: soft delete 복구 처리?
         if (gameTheme.isDeleted()) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
+        UUID userId = oAuth2UserService.getLoginUserId();
+        if (!userId.equals(gameTheme.getAuthorId())) {
+            throw ErrorStatus.FORBIDDEN.asServiceException();
+        }
         request.update(gameTheme);
         if (file != null && !file.isEmpty()) {
-            storageService.storeAt(file, "gametheme", gameTheme.getId().toString());
-            gameTheme.setThumbnail("/gametheme/" + gameTheme.getId());
+            String path = storageService.storeAt(file, THUMBNAIL_LOCATION, gameTheme.getId().toString());
+            gameTheme.setThumbnail(path);
             themeRepository.save(gameTheme);
         }
     }
 
-    public GetGameThemesResponse getGameThemes(Specification<GameTheme> spec, Pageable pageable) {
-        UUID userId = null;
-        List<GameThemeDto> list = themeRepository.findAll(spec, pageable).stream()
-                // TODO: specification으로 처리
-                .filter(v -> v.isPublicStatus() || (userId != null && userId.equals(v.getAuthorId())))
-                .map(GameThemeDto::from)
-                .toList();
-        return GetGameThemesResponse.builder()
-                .themes(list)
-                .page(pageable.getPageNumber())
-                .size(list.size())
-                .build();
+    @Transactional
+    public GetGameThemesResponse getGameThemes(String category, int pageSize, int pageNumber) {
+        UUID userId = oAuth2UserService.getLoginUserId();
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Order.desc("createdAt")));
+        // TODO: QueryDSL
+        Specification<GameTheme> spec = Specification.where(GameThemeSpecification.defaultSpec(userId));
+        if (ThemeType.contains(category)) {
+            spec.and(GameThemeSpecification.equalCategory(category));
+        }
+        Page<GameThemeDto> page = themeRepository.findAll(spec, pageable).map(GameThemeDto::from);
+        return GetGameThemesResponse.from(page);
     }
 }
-
-
-
-

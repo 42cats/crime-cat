@@ -45,4 +45,9 @@ public class MakerTeamController {
     public void deleteTeamMembers(@PathVariable UUID teamId, @RequestBody ModifyMemberRequest request) {
         makerTeamService.deleteMembers(teamId, request.getMembers());
     }
+
+    @GetMapping("/me")
+    public GetTeamsResponse getMyTeams() {
+        return makerTeamService.getMyTeams();
+    }
 }

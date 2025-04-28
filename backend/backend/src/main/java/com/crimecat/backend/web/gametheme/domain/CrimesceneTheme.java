@@ -9,6 +9,8 @@ import java.util.UUID;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 
@@ -27,6 +29,7 @@ public class CrimesceneTheme extends GameTheme {
     @Setter
     @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "MAKER_TEAMS_ID")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private UUID teamId;
 
     @ManyToOne(fetch = FetchType.LAZY)

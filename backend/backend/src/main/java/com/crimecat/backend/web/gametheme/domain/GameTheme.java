@@ -123,7 +123,6 @@ public class GameTheme {
         return GameTheme.builder()
                 .title(request.getTitle())
                 .summary(request.getSummary())
-                .authorId(request.getAuthor())
                 .tags(request.getTags())
                 .content(request.getContent())
                 .playerMin(request.getPlayerMin())
@@ -141,5 +140,9 @@ public class GameTheme {
             return;
         }
         this.isDeleted = isDeleted;
+    }
+
+    public void viewed() {
+        this.views++;
     }
 }
