@@ -20,7 +20,7 @@ const gameAds = [
         players: "6명",
         time: "3시간 30분",
         author: "용사", // 🆕 추가
-        price: "10,000", // 🆕 추가
+        price: "10,000원", // 🆕 추가
         image: "./content/image/hero_crime_butterfly.png",
     },
     {
@@ -30,7 +30,7 @@ const gameAds = [
         players: "6명",
         time: "5시간",
         author: "용사", // 🆕 추가
-        price: "15,000", // 🆕 추가
+        price: "15,000원", // 🆕 추가
         image: "./content/image/hero_crime.png",
     },
 ];
