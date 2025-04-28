@@ -8,7 +8,7 @@ const gameAds = [
         title: "Ep.2 독충의밤:착란의시간",
         type: "크라임씬",
         players: "6명",
-        time: "120분",
+        time: "3시간",
         author: "용사", // 🆕 추가
         price: "8000원", // 🆕 추가
         image: "./content/image/hero_crime_poisonNight.jpg",
@@ -18,7 +18,7 @@ const gameAds = [
         title: "Ep.3 나비인간:환상의빛",
         type: "크라임씬",
         players: "6명",
-        time: "120분",
+        time: "3시간 30분",
         author: "용사", // 🆕 추가
         price: "10,000", // 🆕 추가
         image: "./content/image/hero_crime_butterfly.png",
@@ -28,7 +28,7 @@ const gameAds = [
         title: "Ep.4 곡두곡예:추락열차",
         type: "크라임씬",
         players: "6명",
-        time: "120분",
+        time: "5시간",
         author: "용사", // 🆕 추가
         price: "15,000", // 🆕 추가
         image: "./content/image/hero_crime.png",
