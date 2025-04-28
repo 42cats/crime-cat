@@ -174,6 +174,12 @@ const UserGameHistoryPage: React.FC = () => {
                     placeholder="길드 이름으로 검색"
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault(); // 기본 form submit 막기
+                            handleSearch();
+                        }
+                    }}
                     className="w-full sm:max-w-md"
                 />
                 <Button onClick={handleSearch}>검색</Button>
