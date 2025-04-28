@@ -36,5 +36,9 @@ public interface GuildRepository extends JpaRepository<Guild, UUID> {
     @Query("SELECT COUNT(DISTINCT g.ownerSnowflake) FROM Guild g WHERE g.isWithdraw = false")
     long countUniqueGuildOwners();
 
+    //hibernate pass
+    @Query(value = "SELECT COUNT(DISTINCT owner_snowflake) FROM guilds WHERE is_withdraw = false", nativeQuery = true)
+    long countUniqueGuildOwnersNative();
+
     List<Guild> findBySnowflakeAndOwnerSnowflake(String snowflake, String ownerSnowflake);
 }

@@ -3,18 +3,16 @@ package com.crimecat.backend.web.stats.service;
 import com.crimecat.backend.auth.util.RedisDbType;
 import com.crimecat.backend.auth.util.RedisInfoDb;
 import com.crimecat.backend.bot.guild.repository.GuildRepository;
-import com.crimecat.backend.bot.user.domain.User;
 import com.crimecat.backend.bot.user.repository.UserRepository;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.web.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.web.stats.proxy.WebStatsInfoServiceProxy;
+import com.crimecat.backend.web.webUser.domain.WebUser;
+import com.crimecat.backend.web.webUser.repository.WebUserRepository;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
-
-import com.crimecat.backend.web.webUser.domain.WebUser;
-import com.crimecat.backend.web.webUser.repository.WebUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -55,7 +53,7 @@ public class WebStatsInfoService {
         "totalCreators",
         getOrCache(
             RedisDbType.MAKER_COUNT,
-            () -> String.valueOf(guildRepository.countUniqueGuildOwners())));
+            () -> String.valueOf(guildRepository.countUniqueGuildOwnersNative())));
 
     return ResponseEntity.ok().body(result);
   }
