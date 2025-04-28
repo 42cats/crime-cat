@@ -5,33 +5,33 @@ import { Gamepad } from "lucide-react";
 const gameAds = [
     {
         id: 1,
-        title: "어둠의 저택",
-        type: "머더미스터리",
-        players: "6-12명",
+        title: "Ep.2 독충의밤:착란의시간",
+        type: "크라임씬",
+        players: "6명",
         time: "120분",
-        author: "크라임캣 스튜디오", // 🆕 추가
-        price: "25,000원", // 🆕 추가
-        image: "https://images.unsplash.com/photo-1505409859467-3a796fd5798e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+        author: "용사", // 🆕 추가
+        price: "8000원", // 🆕 추가
+        image: "./content/image/hero_crime_poisonNight.jpg",
     },
     {
         id: 2,
-        title: "타임 트래블러",
-        type: "방탈출",
-        players: "4-6명",
-        time: "90분",
-        author: "이스케이프 랩", // 🆕 추가
-        price: "18,000원", // 🆕 추가
-        image: "https://images.unsplash.com/photo-1501139083538-0139583c060f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+        title: "Ep.3 나비인간:환상의빛",
+        type: "크라임씬",
+        players: "6명",
+        time: "120분",
+        author: "용사", // 🆕 추가
+        price: "10,000", // 🆕 추가
+        image: "./content/image/hero_crime_butterfly.png",
     },
     {
         id: 3,
-        title: "도시의 비밀",
-        type: "리얼월드",
-        players: "8-16명",
-        time: "180분",
-        author: "어반 미스터리", // 🆕 추가
-        price: "30,000원", // 🆕 추가
-        image: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
+        title: "Ep.4 곡두곡예:추락열차",
+        type: "크라임씬",
+        players: "6명",
+        time: "120분",
+        author: "용사", // 🆕 추가
+        price: "15,000", // 🆕 추가
+        image: "./content/image/hero_crime.png",
     },
 ];
 
