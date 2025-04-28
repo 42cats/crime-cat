@@ -73,7 +73,7 @@ CREATE TABLE `users` (
  */
 CREATE TABLE IF NOT EXISTS `guilds` (
     `id`               BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
-    `owner_user_id`    BINARY(16) NOT NULL COMMENT '길드 소유자 user id',
+    `owner_snowflake`    BINARY(16) NOT NULL COMMENT '길드 소유자 user id',
     `snowflake`        VARCHAR(50) NOT NULL UNIQUE COMMENT 'snowflake discord 길드 ID',
     `name`             VARCHAR(255) NOT NULL COMMENT '길드 이름',
     `is_withdraw`      BOOLEAN NOT NULL DEFAULT 0 COMMENT '삭제여부',
