@@ -4,15 +4,13 @@ import com.crimecat.backend.bot.guild.domain.Guild;
 import com.crimecat.backend.web.gametheme.dto.AddCrimesceneThemeRequest;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
+import java.util.Map;
+import java.util.UUID;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.util.Map;
-import java.util.UUID;
 
 @Entity
 @Table(name = "CRIMESCENE_THEMES")
@@ -45,21 +43,22 @@ public class CrimesceneTheme extends GameTheme {
     private Map<String, Object> extra;
 
     public static CrimesceneTheme from(AddCrimesceneThemeRequest request) {
-        return CrimesceneTheme.builder()
-                .title(request.getTitle())
-                .summary(request.getSummary())
-                .authorId(request.getAuthor())
-                .tags(request.getTags())
-                .content(request.getContent())
-                .playerMin(request.getPlayerMin())
-                .playerMax(request.getPlayerMax())
-                .playtime(request.getPlaytime())
-                .price(request.getPrice())
-                .difficulty(request.getDifficulty())
-                .publicStatus(request.isPublicStatus())
-                .teamId(request.getMakerTeamsId())
-                .guildSnowflake(request.getGuildSnowflake())
-                .extra(request.getExtra())
-                .build();
+    return CrimesceneTheme.builder()
+        .title(request.getTitle())
+        .summary(request.getSummary())
+        .authorId(request.getAuthor())
+        .tags(request.getTags())
+        .content(request.getContent())
+        .playerMin(request.getPlayerMin())
+        .playerMax(request.getPlayerMax())
+        .playTimeMin(request.getPlaytimeMin())
+        .playTimeMax(request.getPlaytimeMax())
+        .price(request.getPrice())
+        .difficulty(request.getDifficulty())
+        .publicStatus(request.isPublicStatus())
+        .teamId(request.getMakerTeamsId())
+        .guildSnowflake(request.getGuildSnowflake())
+        .extra(request.getExtra())
+        .build();
     }
 }

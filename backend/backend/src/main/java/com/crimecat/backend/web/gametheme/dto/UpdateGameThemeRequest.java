@@ -2,17 +2,14 @@ package com.crimecat.backend.web.gametheme.dto;
 
 import com.crimecat.backend.web.gametheme.domain.GameTheme;
 import com.crimecat.backend.web.gametheme.domain.ThemeType;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.Set;
+import java.util.function.Consumer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.openapitools.jackson.nullable.JsonNullable;
-
-import java.util.Set;
-import java.util.UUID;
-import java.util.function.Consumer;
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
@@ -33,7 +30,8 @@ public class UpdateGameThemeRequest {
     private String content;
     private Integer playerMin;
     private Integer playerMax;
-    private Integer playtime;
+    private Integer playTimeMin;
+    private Integer playTimeMax;
     private Integer price;
     private Integer difficulty;
     private Boolean publicStatus;
@@ -58,7 +56,8 @@ public class UpdateGameThemeRequest {
         set(content, gameTheme::setContent);
         set(playerMin, gameTheme::setPlayerMin);
         set(playerMax, gameTheme::setPlayerMax);
-        set(playtime, gameTheme::setPlaytime);
+        set(playTimeMin, gameTheme::setPlayTimeMin);
+        set(playTimeMax, gameTheme::setPlayTimeMax);
         set(price, gameTheme::setPrice);
         set(difficulty, gameTheme::setDifficulty);
         set(publicStatus, gameTheme::setPublicStatus);

@@ -86,10 +86,10 @@ public class GameTheme {
 
     @Setter
     @Column(name = "PLAYTIME_MIN")
-    private int playtimeMin;
+    private int playTimeMin;
     @Setter
     @Column(name = "PLAYTIME_MAX")
-    private int playtimeMax;
+    private int playTimeMax;
 
     @Setter
     @Column(name = "PRICE")
@@ -128,8 +128,8 @@ public class GameTheme {
                 .content(request.getContent())
                 .playerMin(request.getPlayerMin())
                 .playerMax(request.getPlayerMax())
-                .playtimeMin(request.getPlaytimeMin())
-            .playtimeMax(request.getPlaytimeMax())
+                .playTimeMin(request.getPlaytimeMin())
+                .playTimeMax(request.getPlaytimeMax())
                 .price(request.getPrice())
                 .difficulty(request.getDifficulty())
                 .publicStatus(request.isPublicStatus())
