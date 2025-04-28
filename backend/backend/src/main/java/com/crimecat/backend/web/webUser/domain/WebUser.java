@@ -108,11 +108,13 @@ public class WebUser implements UserDetails {
     private LocalDateTime createdAt;
 
     // ✅ 사용자 설정 (JSON 형식)
-    @Column(columnDefinition = "LONGTEXT")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "JSON")
     private String settings;
 
     // ✅ SNS 링크들 (JSON)
-    @Column(name = "social_links", columnDefinition = "LONGTEXT")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "social_links", columnDefinition = "JSON")
     private String socialLinks;
 
     @PrePersist
