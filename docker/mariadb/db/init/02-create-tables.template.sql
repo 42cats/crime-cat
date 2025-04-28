@@ -207,12 +207,12 @@ CREATE TABLE `game_themes` (
     crimescene_themes
 */
 CREATE TABLE `crimescene_themes` (
-    `game_theme_id` BINARY(16) PRIMARY KEY COMMENT '게임 테마',
+    `id` BINARY(16) PRIMARY KEY COMMENT '게임 테마',
     `maker_teams_id` BINARY(16) COMMENT '제작 팀 정보',
     `guild_snowflake` VARCHAR(50) COMMENT '디스코드 서버 id',
     `extra` LONGTEXT COMMENT '추가 정보 (JSON)',
     
-    CONSTRAINT `fk_crimescene_game_theme` FOREIGN KEY (`game_theme_id`)
+    CONSTRAINT `fk_crimescene_game_theme` FOREIGN KEY (`id`)
         REFERENCES `game_themes`(`id`)
         ON DELETE CASCADE,
         
