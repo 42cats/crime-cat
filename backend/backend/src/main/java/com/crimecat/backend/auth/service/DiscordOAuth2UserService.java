@@ -33,8 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
     private final WebUserService webUserService;
-    private final DiscordRedisTokenService discordRedisTokenService;
-
     private final UserRepository userRepository;
 
     @Override
@@ -54,11 +52,6 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
         WebUser webUser = webUserService.processOAuthUser(discordId, email, username ,provider);// 리턴
         Instant expiresAt = discordAccessToken.getExpiresAt();
         long expiresInSeconds = Duration.between(Instant.now(), expiresAt).getSeconds();
-        discordRedisTokenService.saveAccessToken(
-                webUser.getId().toString(),
-                discordAccessToken.getTokenValue(),
-                expiresInSeconds
-        );
 
         log.debug("여기까진 잘오나?={} ",webUser.toString());
         return new DiscordOAuth2User(

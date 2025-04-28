@@ -132,4 +132,7 @@ public class JwtTokenProvider {
         return Duration.ofMinutes(accessTokenExpireMinutes).toMillis();
     }
 
+    public boolean isTokenExpired(String token) {
+        return getRemainingTime(token) < 0;
+    }
 }
