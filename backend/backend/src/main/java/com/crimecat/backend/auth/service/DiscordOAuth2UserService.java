@@ -33,8 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
     private final WebUserService webUserService;
-    private final DiscordRedisTokenService discordRedisTokenService;
-
     private final UserRepository userRepository;
 
     @Override
