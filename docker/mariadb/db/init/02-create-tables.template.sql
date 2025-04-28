@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS `discord_users`
     `name`          VARCHAR(100) NOT NULL COMMENT '디스코드 아이디',
     `avatar`        VARCHAR(255) NOT NULL COMMENT '프로필 사진 url',
     `discord_alarm` BOOLEAN NOT NULL COMMENT '디코 봇 알림 설정 여부',
-    `point`         INT NOT NULL DEFAULT 0 COMMENT '보유 포인트',
     `created_at`    TIMESTAMP NOT NULL COMMENT '개인정보 동의 시점',
     `is_withdraw`   BOOLEAN NOT NULL DEFAULT 0 COMMENT '삭제 여부'
 ) ENGINE=InnoDB
@@ -509,7 +508,7 @@ CREATE TABLE `commands` (
   `description` TEXT NOT NULL
     COMMENT '명령어 설명(간단한 안내 문구)',
 
-  `usage` VARCHAR(255) NOT NULL
+  `usage_example` VARCHAR(255) NOT NULL
     COMMENT '사용법 예시(예: "/계산 계산식:[계산식]")',
 
   `category` VARCHAR(100) NOT NULL
@@ -543,6 +542,7 @@ CREATE TABLE IF NOT EXISTS notices (
     summary     VARCHAR(300) NOT NULL,
     notice_type ENUM('SYSTEM','EVENT','UPDATE') NOT NULL DEFAULT 'SYSTEM',
     is_pinned   BOOLEAN      NOT NULL DEFAULT FALSE,
+    order_index INT          DEFAULT 0,
     created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_notice_type(created_at, notice_type)
