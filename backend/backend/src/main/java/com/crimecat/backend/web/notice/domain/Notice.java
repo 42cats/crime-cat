@@ -6,6 +6,7 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -19,7 +20,6 @@ import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import org.springframework.data.relational.core.mapping.Table;
 
 @Entity
 @Getter
@@ -36,34 +36,36 @@ public class Notice {
   private UUID id;
 
   @Setter
-  @Column(name = "TITLE", nullable = false)
+  @Column(name = "title", nullable = false)
   private String title;
 
   @Setter
-  @Column(name = "CONTENT", nullable = false)
+  @Column(name = "content", nullable = false, columnDefinition = "TEXT")
   private String content;
 
   @Setter
-  @Column(name = "SUMMARY", nullable = false)
+  @Column(name = "summary", nullable = false, length = 300)
   private String summary;
 
   @Setter
   @Enumerated(EnumType.STRING)
-  @Column(name = "NOTICE_TYPE", nullable = false)
+  @Column(name = "notice_type", nullable = false)
   private NoticeType noticeType = NoticeType.SYSTEM;
 
   @Setter
-  @Column(name = "IS_PINNED", nullable = false)
+  @Column(name = "is_pinned", nullable = false)
   private Boolean isPinned = false;
 
   @Setter
-  @Column(name = "ORDER_IDX")
+  @Column(name = "order_idx")
   private Integer orderIdx = 0;
 
   @CreatedDate
+  @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt;
 
   @LastModifiedDate
+  @Column(name = "updated_at", updatable = false)
   private LocalDateTime updatedAt;
 
 }
