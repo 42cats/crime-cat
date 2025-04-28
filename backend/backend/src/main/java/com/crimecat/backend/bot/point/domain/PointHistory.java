@@ -64,7 +64,7 @@ public class PointHistory {
     @Column(name = "MEMO")
     private String memo;
 
-    @Column(name = "CREATED_AT", nullable = false)
+    @Column(name = "USED_AT", nullable = false)
     @CreatedDate
     private LocalDateTime usedAt;
 
