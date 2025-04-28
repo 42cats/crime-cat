@@ -7,6 +7,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -29,6 +31,7 @@ public class CrimesceneTheme extends GameTheme {
     @Setter
     @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "MAKER_TEAMS_ID")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private UUID teamId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -48,7 +51,6 @@ public class CrimesceneTheme extends GameTheme {
         return CrimesceneTheme.builder()
                 .title(request.getTitle())
                 .summary(request.getSummary())
-                .authorId(request.getAuthor())
                 .tags(request.getTags())
                 .content(request.getContent())
                 .playerMin(request.getPlayerMin())

@@ -39,4 +39,8 @@ public class MakerTeamMember {
 
     @Column(name = "NAME")
     private String name;
+
+    @Column(name = "IS_LEADER")
+    @Builder.Default
+    private boolean isLeader = false;
 }

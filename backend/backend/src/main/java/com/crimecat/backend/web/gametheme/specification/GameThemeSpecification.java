@@ -12,11 +12,17 @@ import java.util.UUID;
 
 public class GameThemeSpecification {
     public static Specification<GameTheme> equalCategory(String type) {
-        return new Specification<>() {
-            @Override
-            public Predicate toPredicate(Root<GameTheme> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
-                return criteriaBuilder.equal(root.type(), Integer.toString(ThemeType.valueOf(type).ordinal()));
-            }
-        };
+        return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.type(), Integer.toString(ThemeType.valueOf(type).ordinal()));
+    }
+
+    public static Specification<GameTheme> defaultSpec(UUID userId) {
+        return (root, query, criteriaBuilder) ->
+            criteriaBuilder.and(
+                criteriaBuilder.isFalse(root.get("isDeleted")),
+                criteriaBuilder.or(
+                        criteriaBuilder.isTrue(root.get("isPublic")),
+                        criteriaBuilder.equal(root.get("author"), userId)
+                )
+            );
     }
 }
