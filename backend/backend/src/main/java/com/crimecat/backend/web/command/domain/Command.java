@@ -34,7 +34,7 @@ public class Command {
   @Column(name = "description", columnDefinition = "TEXT", nullable = false)
   private String description;
 
-  @Column(name = "usage_xample", length = 255, nullable = false)
+  @Column(name = "usage_example", length = 255, nullable = false)
   private String usageExample;
 
   @Column(name = "category", length = 100, nullable = false)
