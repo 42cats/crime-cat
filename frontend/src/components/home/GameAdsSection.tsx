@@ -67,11 +67,11 @@ const GameAdsSection: React.FC = () => {
                             className="block glass overflow-hidden rounded-lg transition-all hover:shadow-lg hover:shadow-primary/10"
                             variants={item}
                         >
-                            <div className="h-40 overflow-hidden">
+                            <div className="h-40 flex items-center justify-center overflow-hidden bg-muted">
                                 <img
                                     src={ad.image}
                                     alt={ad.title}
-                                    className="w-full h-full object-cover transition-transform hover:scale-105"
+                                    className="max-h-full object-contain"
                                 />
                             </div>
                             <div className="p-4">
