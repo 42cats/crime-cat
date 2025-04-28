@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS `web_users` (
     `bio`             TEXT DEFAULT NULL COMMENT '자기소개',
     `password_hash`   VARCHAR(255) DEFAULT NULL COMMENT '비밀번호 해시',
     `profile_image_path` VARCHAR(255) DEFAULT NULL COMMENT '프로필 이미지 경로',
-    `settings` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '유저 설정 (LONGTEXT)',
-    `social_links` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'SNS 링크 (LONGTEXT)',
+    `settings` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '유저 설정 (JSON)',
+    `social_links` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'SNS 링크 (JSON)',
     `login_method` ENUM('DISCORD', 'GOOGLE', 'LOCAL') NOT NULL COMMENT '로그인 방식',
     `role`         ENUM('ADMIN', 'MANAGER', 'USER') NOT NULL COMMENT '권한 등급',
     PRIMARY KEY (`id`),
@@ -208,7 +208,7 @@ CREATE TABLE `crimescene_themes` (
     `game_theme_id` BINARY(16) PRIMARY KEY COMMENT '게임 테마',
     `maker_teams_id` BINARY(16) COMMENT '제작 팀 정보',
     `guild_snowflake` VARCHAR(50) COMMENT '디스코드 서버 id',
-    `extra` LONGTEXT COMMENT '추가 정보 (LONGTEXT)',
+    `extra` LONGTEXT COMMENT '추가 정보 (JSON)',
     
     CONSTRAINT `fk_crimescene_game_theme` FOREIGN KEY (`game_theme_id`)
         REFERENCES `game_themes`(`id`)
@@ -363,7 +363,8 @@ CREATE TABLE IF NOT EXISTS `permissions`
     `id`        BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     `name`      VARCHAR(255) NOT NULL UNIQUE COMMENT '권한 이름',
     `price`     INT NOT NULL DEFAULT 0 COMMENT '권한 가격',
-    `duration`  INT NOT NULL DEFAULT 28 COMMENT '권한 유지기간 (달)'
+    `duration`  INT NOT NULL DEFAULT 28 COMMENT '권한 유지기간 (달)',
+    `info`      VARCHAR(500) DEFAULT "없음" COMMENT '권한 설명'
 ) ENGINE=InnoDB
     DEFAULT CHARSET=utf8mb4
     COLLATE=utf8mb4_unicode_ci
@@ -515,7 +516,7 @@ CREATE TABLE `commands` (
     COMMENT '카테고리(예: "유틸리티", "게임" 등)',
 
   `required_permissions` LONGTEXT NOT NULL
-    COMMENT '필수 권한 목록(LONGTEXT 배열, 예: ["공통"])',
+    COMMENT '필수 권한 목록(JSON 배열, 예: ["공통"])',
 
   `content` TEXT NOT NULL
     COMMENT '명령어 상세 내용(Markdown 등으로 저장)',
