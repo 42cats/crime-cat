@@ -72,19 +72,21 @@ CREATE TABLE `users` (
   길드 테이블
  */
 CREATE TABLE IF NOT EXISTS `guilds` (
-    `id`               BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
-    `owner_snowflake`  VARCHAR(50) NOT NULL COMMENT '길드 소유자 user id',
-    `snowflake`        VARCHAR(50) NOT NULL UNIQUE COMMENT 'snowflake discord 길드 ID',
+    `id`               BINARY(16) NOT NULL PRIMARY KEY COMMENT '내부 고유 식별자 (UUID)',
+    `snowflake`        VARCHAR(50) NOT NULL UNIQUE COMMENT '디스코드 길드 스노우플레이크 ID',
     `name`             VARCHAR(255) NOT NULL COMMENT '길드 이름',
-    `is_withdraw`      BOOLEAN NOT NULL DEFAULT 0 COMMENT '삭제여부',
-    `created_at`       TIMESTAMP NOT NULL COMMENT '길드 생성시점(discord 에서 최초생성시기)',
-    CONSTRAINT `fk_guilds_users` FOREIGN KEY (`owner_user_id`) REFERENCES `users`(`id`)
+    `is_withdraw`      BOOLEAN NOT NULL DEFAULT 0 COMMENT '삭제 여부',
+    `owner_snowflake`  VARCHAR(50) NOT NULL COMMENT '디스코드 유저 스노우플레이크 ID',
+    `owner_user_id`    BINARY(16) COMMENT '길드 소유자 User UUID',
+    `created_at`       TIMESTAMP NOT NULL COMMENT '길드 생성 시점',
+    CONSTRAINT `fk_guilds_users` FOREIGN KEY (`owner_user_id`) REFERENCES `users` (`id`)
         ON DELETE RESTRICT
         ON UPDATE CASCADE
 ) ENGINE=InnoDB
-    DEFAULT CHARSET=utf8mb4
-    COLLATE=utf8mb4_unicode_ci
-    COMMENT='길드 테이블';
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='디스코드 길드 정보 테이블';
+
 
 /**
   비번 테이블
