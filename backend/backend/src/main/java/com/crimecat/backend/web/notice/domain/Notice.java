@@ -57,7 +57,7 @@ public class Notice {
   private Boolean isPinned = false;
 
   @Setter
-  @Column(name = "order_idx")
+  @Column(name = "order_index")
   private Integer orderIdx = 0;
 
   @CreatedDate
