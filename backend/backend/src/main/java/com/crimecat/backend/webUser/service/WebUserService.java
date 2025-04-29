@@ -161,4 +161,13 @@ public class WebUserService {
 
     }
 
+    @Transactional
+    public void userProfileSet(String userId){
+        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
+            .orElseThrow(
+                ErrorStatus.USER_NOT_FOUND::asServiceException);
+        webUser.
+
+    }
+
 }
