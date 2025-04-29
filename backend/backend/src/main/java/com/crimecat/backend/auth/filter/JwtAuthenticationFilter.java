@@ -54,19 +54,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (!jwtTokenProvider.validateToken(accessToken)) {
-            if (jwtTokenProvider.isTokenExpired(accessToken)) {
-                if (!tryReissueTokens(request, response)) {
-                    unauthorized(response, "Refresh token invalid or expired");
-                    return;
-                }
-                return; // 새로 인증 완료했으므로 이번 요청은 여기서 끝
-            }
             unauthorized(response, "Access token invalid");
             return;
         }
-
         if (jwtBlacklistService.isBlacklisted(accessToken)) {
             unauthorized(response, "Access token blacklisted");
+            return;
+        }
+        if (jwtTokenProvider.isTokenExpired(accessToken)) {
+            unauthorized(response, "Access token expired");
             return;
         }
 
@@ -93,56 +89,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         return token;
-    }
-
-    private boolean tryReissueTokens(HttpServletRequest request, HttpServletResponse response) {
-        try {
-            String expiredAccessToken = extractAccessToken(request);
-            String userId = jwtTokenProvider.getUserIdFromToken(expiredAccessToken);
-
-            WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
-                .orElseThrow(ErrorStatus.USER_NOT_FOUND::asException);
-
-            String refreshToken = TokenCookieUtil.getCookieValue(request, "RefreshToken");
-            if (refreshToken == null || refreshToken.isEmpty()) {
-                log.warn("🔴 RefreshToken not found in cookie");
-                return false;
-            }
-
-            String refreshTokenFromRedis = refreshTokenService.getRefreshToken(userId);
-            if (refreshTokenFromRedis == null || !refreshTokenFromRedis.equals(refreshToken)) {
-                log.warn("🔴 RefreshToken mismatch or not found in Redis");
-                return false;
-            }
-
-            // 새 AccessToken, RefreshToken 발급
-            String newAccessToken = jwtTokenProvider.createAccessToken(
-                webUser.getId().toString(),
-                webUser.getNickname(),
-                webUser.getDiscordUserSnowflake()
-            );
-
-            String newRefreshToken = jwtTokenProvider.createRefreshToken(webUser.getId().toString());
-
-            log.info("✅ New AccessToken and RefreshToken generated");
-
-            // RefreshToken 갱신
-            refreshTokenService.saveRefreshToken(webUser.getId().toString(), newRefreshToken);
-            log.info("💾 RefreshToken updated in Redis");
-
-            // 기존 쿠키 클리어 + 새 쿠키 세팅
-            TokenCookieUtil.clearAuthCookies(response);
-            response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createAccessCookie(newAccessToken));
-            response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createRefreshCookie(newRefreshToken));
-
-            // 새 AccessToken으로 인증 설정
-            authenticateUser(webUser, request);
-
-            return true;
-        } catch (Exception e) {
-            log.error("❌ Failed to reissue tokens", e);
-            return false;
-        }
     }
 
     private void authenticateUserFromToken(String token, HttpServletRequest request) {
