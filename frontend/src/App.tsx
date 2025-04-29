@@ -81,7 +81,7 @@ const App = () => (
                 <Route path="/themes/:category" element={<ThemeList />} />
                 <Route path="/themes/:category/:id" element={<ThemeDetail />} />
                 <Route path="/themes/new" element={<CreateTheme />} />
-                <Route path="/themes/edit/:id" element={<EditTheme />} />
+                <Route path="/themes/:category/edit/:id" element={<EditTheme />} />
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/login" element={<Login />} />
