@@ -18,17 +18,19 @@ jobs:
 
       - name: 🚀 Deploy to Appropriate Server
         run: |
-          # 브랜치에 따라 서버 정보 결정
+          # 브랜치에 따라 서버 정보 및 명령 결정
           if [ "${{ github.ref }}" = "refs/heads/dev" ]; then
             SERVER_USER="cats"
             SERVER_IP="14.36.34.122"
             SERVER_PORT="23"
             ENV_FILE=".env.dev"
+            MAKE_CMD="make dev"
           elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
             SERVER_USER="sabyun"
             SERVER_IP="14.36.34.122"
             SERVER_PORT="22"
             ENV_FILE=".env.prod"
+            MAKE_CMD="make prod"
             echo "지금 메인은 사용하지 않습니다! sabyun 문의"
             exit 1
           else
@@ -41,19 +43,17 @@ jobs:
           ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP -p $SERVER_PORT << EOF
           echo "✅ 서버에 접속 완료"
 
+          # Keychain 잠금 해제 (macOS 환경에만 해당)
           echo ${{ secrets.CATS_USER_PASSWORD }} | security -v unlock-keychain ~/Library/Keychains/login.keychain-db
 
           # crime-cat 디렉토리 이동
           cd /Users/$SERVER_USER/dev/crime-cat
 
-          # 서브모듈(config) 업데이트
-          echo "🔄 서브모듈 업데이트..."
-          git submodule update --init --remote
 
           # crime-cat 저장소 업데이트
           echo "🔄 crime-cat 저장소 업데이트..."
-          git checkout $(git symbolic-ref --short HEAD) || git checkout -b $(git symbolic-ref --short HEAD) origin/$(git symbolic-ref --short HEAD)
-          git pull origin $(git symbolic-ref --short HEAD)
+          git checkout \$(git symbolic-ref --short HEAD) || git checkout -b \$(git symbolic-ref --short HEAD) origin/\$(git symbolic-ref --short HEAD)
+          git pull origin \$(git symbolic-ref --short HEAD)
 
           # 환경 변수 파일 적용
           echo "🔧 환경 변수 설정 적용 ($ENV_FILE)"
@@ -62,7 +62,7 @@ jobs:
           # 도커 컨테이너 재시작
           echo "🛠️ 도커 서비스 재시작 중..."
           make down
-          make up
+          $MAKE_CMD
 
           echo "✅ 배포 완료!"
           EOF
