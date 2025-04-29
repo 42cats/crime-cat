@@ -10,6 +10,7 @@ NC	    = \033[0m # 색상 초기화
 # 디렉토리 경로 정의
 DB_DATA_DIR  = database/mariadb/data
 DB_BASE_DIR  = database
+FRONT_BASE_DIR  = frontend/dist
 
 # 기본 타겟 설정
 .DEFAULT_GOAL := help
@@ -25,14 +26,15 @@ update_config:
 # 디렉토리 생성
 create_dirs:
 	@echo "${BLUE}필요한 디렉토리 확인 및 생성 중...${NC}"
-	@for dir in $(DB_DATA_DIR); do \
+	@for dir in $(DB_DATA_DIR) $(FRONT_BASE_DIR); do \
 		if [ ! -d $$dir ]; then \
 			echo "${YELLOW}디렉토리 생성 중: $$dir${NC}"; \
 			mkdir -p $$dir; \
 			chmod 777 $$dir; \
 		else \
 			echo "${GREEN}디렉토리가 이미 존재합니다: $$dir${NC}"; \
-		fi \
+			chmod 777 $$dir; \
+		fi; \
 	done
 
 # 환경변수 파일 복사 (루트 + frontend + backend + bot)
@@ -51,14 +53,7 @@ dev: update_config
 	@cp config/nginx/dev.nginx.conf docker/nginx/conf/http.d/nginx.conf
 	@$(MAKE) copy_env
 
-	@echo "${BLUE}인증서 디렉토리 및 self-signed 인증서 생성 중...${NC}"
 	@mkdir -p docker/nginx/certs
-	@openssl req -x509 -nodes -days 365 \
-		-newkey rsa:2048 \
-		-keyout docker/nginx/certs/dev.crimecat.org-key.pem \
-		-out docker/nginx/certs/dev.crimecat.org.pem \
-		-subj "/C=KR/ST=Seoul/L=Seoul/O=CrimeCat/OU=Dev/CN=dev.crimecat.org" > /dev/null 2>&1
-	@echo "${GREEN}✅ self-signed 인증서 생성 완료: docker/nginx/certs/dev.crimecat.org*.pem${NC}"
 
 	@$(MAKE) up
 

@@ -1,11 +1,11 @@
 # docker/frontend/Dockerfile
 FROM node:20-alpine
+RUN mkdir -p /app
 WORKDIR /app
+COPY ./docker/frontend/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# COPY ./docker/frontend/entrypoint.sh /app/entrypoint.sh
-# RUN chmod +x /app/entrypoint.sh
-
-# ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
 
 
 
