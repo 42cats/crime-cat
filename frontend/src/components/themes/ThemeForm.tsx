@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import MDEditor, { commands, EditorContext } from "@uiw/react-md-editor";
 import { useTheme } from "@/hooks/useTheme";
 import PageTransition from "@/components/PageTransition";
@@ -24,13 +25,7 @@ interface ThemeFormProps {
 }
 
 const initialExtraFieldsMap = {
-  CRIMESCENE: {
-    makerTeamsId: "",
-    makerTeamsName: "",
-    guildSnowflake: "",
-    guildName: "",
-    extra: { characters: [] },
-  },
+  CRIMESCENE: { makerTeamsId: "", makerTeamsName: "", guildSnowflake: "", guildName: "", extra: { characters: [] } },
   ESCAPE_ROOM: { extra: {} },
   MURDER_MYSTERY: { extra: {} },
   REALWORLD: { extra: {} },
@@ -56,7 +51,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
   const initialType = (state?.category?.toUpperCase() ?? "") as keyof typeof initialExtraFieldsMap;
 
   const [form, setForm] = useState({
-    type: initialData.type || initialType || "",
+    type: initialData.type || initialType || "CRIMESCENE",
     title: initialData.title || "",
     summary: initialData.summary || "",
     tags: initialData.tags || [],
@@ -68,6 +63,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
     difficulty: initialData.difficulty || 0,
     content: initialData.content || "",
     thumbnail: initialData.thumbnail || "",
+    publicStatus: initialData.publicStatus ?? true,
   });
 
   const [extraFields, setExtraFields] = useState<any>(
@@ -91,7 +87,6 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
     const { tagInput, ...data } = form;
     const formData = new FormData();
 
-
     if (thumbnailFile instanceof File) {
       formData.append("thumbnail", thumbnailFile);
     }
@@ -101,12 +96,12 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
       summary: data.summary,
       tags: data.tags,
       content: data.content,
-      playersMin: Number(data.playersMin),
-      playersMax: Number(data.playersMax),
+      playerMin: Number(data.playersMin),
+      playerMax: Number(data.playersMax),
       playtime: Number(data.playtime),
       price: Number(data.price),
       difficulty: Number(data.difficulty),
-      publicStatus: true,
+      publicStatus: data.publicStatus,
       type: data.type,
     };
 
@@ -117,9 +112,8 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
         jsonData["extra"] = extraFields.extra;
       }
     }
-    
-    formData.append("data", JSON.stringify(jsonData));
 
+    formData.append("data", new Blob([JSON.stringify(jsonData)], { type: "application/json" }));
     onSubmit(formData);
   };
 
@@ -128,10 +122,29 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
       <div className="max-w-3xl mx-auto px-6 py-20 space-y-6">
         <h1 className="text-3xl font-bold mb-8">{title}</h1>
 
-        {/* 카테고리 */}
+        {/* 카테고리 드롭다운 */}
         <div>
-          <Label className="font-bold mb-1 block">카테고리</Label>
-          <Input value={form.type} readOnly disabled />
+          <Label className="font-bold mb-1 block">카테고리 *</Label>
+          <select
+            className="w-full border rounded p-2"
+            value={form.type}
+            onChange={(e) => setForm({ ...form, type: e.target.value })}
+          >
+            <option value="CRIMESCENE">크라임씬</option>
+            <option value="ESCAPE_ROOM">방탈출</option>
+            <option value="MURDER_MYSTERY">머더미스터리</option>
+            <option value="REALWORLD">리얼월드</option>
+          </select>
+        </div>
+
+        {/* 공개 여부 토글 */}
+        <div className="flex items-center gap-4">
+          <Label className="font-bold mb-1">공개 여부 *</Label>
+          <Switch
+            checked={form.publicStatus}
+            onCheckedChange={(v) => setForm((prev) => ({ ...prev, publicStatus: v }))}
+          />
+          <span>{form.publicStatus ? "공개" : "비공개"}</span>
         </div>
 
         {/* 제목 */}
@@ -170,7 +183,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
           <Input value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} placeholder="간단한 테마 소개" required />
         </div>
 
-        {/* 태그 */}
+        {/* 태그 입력 */}
         <div>
           <Label className="font-bold mb-1 block">태그 *</Label>
           <div className="flex gap-2 mt-1 mb-2 flex-wrap">
@@ -195,7 +208,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
           />
         </div>
 
-        {/* 인원, 가격, 플레이타임, 난이도 */}
+        {/* 인원/가격/시간/난이도 */}
         <div className="flex flex-wrap gap-4">
           <div className="flex flex-col w-24">
             <Label className="font-bold mb-1 block">최소 인원 *</Label>
@@ -207,7 +220,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
           </div>
           <div className="flex flex-col w-28">
             <Label className="font-bold mb-1 block">가격 *</Label>
-            <Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} placeholder="₩" required />
+            <Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="₩" required />
           </div>
           <div className="flex flex-col w-32">
             <Label className="font-bold mb-1 block">시간 (분) *</Label>
@@ -228,24 +241,19 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
           </div>
         </div>
 
-        {/* 타입별 추가 필드 */}
+        {/* 타입별 추가필드 */}
         {form.type === "CRIMESCENE" && (
           <>
-            <CrimeSceneFields
-              extraFields={extraFields}
-              setExtraFields={setExtraFields}
-              onOpenTeamModal={() => setTeamModalOpen(true)}
-              onOpenGuildModal={() => setGuildModalOpen(true)}
-            />
-            <TeamSelectModal open={isTeamModalOpen} onOpenChange={setTeamModalOpen} onSelect={(id, name) => setExtraFields(prev => ({ ...prev, makerTeamsId: id, makerTeamsName: name }))} />
-            <GuildSelectModal open={isGuildModalOpen} onOpenChange={setGuildModalOpen} onSelect={(id, name) => setExtraFields(prev => ({ ...prev, guildSnowflake: id, guildName: name }))} />
+            <CrimeSceneFields extraFields={extraFields} setExtraFields={setExtraFields} onOpenTeamModal={() => setTeamModalOpen(true)} onOpenGuildModal={() => setGuildModalOpen(true)} />
+            <TeamSelectModal open={isTeamModalOpen} onOpenChange={setTeamModalOpen} onSelect={(id, name) => setExtraFields((prev) => ({ ...prev, makerTeamsId: id, makerTeamsName: name }))} />
+            <GuildSelectModal open={isGuildModalOpen} onOpenChange={setGuildModalOpen} onSelect={(id, name) => setExtraFields((prev) => ({ ...prev, guildSnowflake: id, guildName: name }))} />
           </>
         )}
-        {form.type === "ESCAPEROOM" && <EscapeRoomFields extraFields={extraFields} setExtraFields={setExtraFields} />}
-        {form.type === "MURDERMYSTERY" && <MurderMysteryFields extraFields={extraFields} setExtraFields={setExtraFields} />}
+        {form.type === "ESCAPE_ROOM" && <EscapeRoomFields extraFields={extraFields} setExtraFields={setExtraFields} />}
+        {form.type === "MURDER_MYSTERY" && <MurderMysteryFields extraFields={extraFields} setExtraFields={setExtraFields} />}
         {form.type === "REALWORLD" && <RealWorldFields extraFields={extraFields} setExtraFields={setExtraFields} />}
 
-        {/* 본문 에디터 */}
+        {/* 본문 */}
         <div>
           <Label className="font-bold mb-1 block">본문 내용 *</Label>
           <div data-color-mode={theme === "dark" ? "dark" : "light"}>
@@ -267,17 +275,8 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
           <Button
             onClick={handleSubmit}
             disabled={
-              !form.title ||
-              !form.tags.length ||
-              !form.playersMin ||
-              !form.playersMax ||
-              !form.playtime ||
-              !form.price ||
-              !form.difficulty ||
-              !form.content ||
-              !form.thumbnail ||
-              (form.type === "CRIMESCENE" && (!extraFields?.makerTeamsId || !extraFields?.guildSnowflake)) ||
-              isLoading
+              !form.title || !form.tags.length || !form.playersMin || !form.playersMax ||
+              !form.playtime || !form.price || !form.difficulty || !form.content || isLoading
             }
           >
             {mode === "edit" ? "수정" : "등록"}
@@ -288,4 +287,4 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
   );
 };
 
-export default ThemeForm;
+export default ThemeForm; 

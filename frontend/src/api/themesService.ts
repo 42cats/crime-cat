@@ -1,4 +1,4 @@
-import { Theme, ThemePage } from '@/lib/types';
+import { Theme, ThemePage, Like } from '@/lib/types';
 import { apiClient } from '@/lib/api';
  
 const baseURI = '/themes';
@@ -20,12 +20,12 @@ export const themesService = {
     category: 'CRIMESCENE' | 'ESCAPE_ROOM' | 'MURDER_MYSTERY' | 'REALWORLD',
     limit: number,
     page: number
-  ): Promise<Theme[]> => {
+  ): Promise<ThemePage> => {
     try {
     const response = await apiClient.get<ThemePage>(`${baseURI}?limit=${limit}&page=${page}&category=${category}`);
-    return response.themes;
+    return response;
     } catch (error) {
-    console.error('최신 테마 불러오기 실패:', error);
+    console.error('테마 불러오기 실패:', error);
     throw error;
     }
   },
@@ -64,6 +64,34 @@ export const themesService = {
       await apiClient.delete(`${baseURI}/${id}`);
     } catch (error) {
       console.error(`테마 삭제 실패:`, error);
+      throw error;
+    }
+  },
+
+  getLikeStatus: async (id: string): Promise<boolean> => {
+    try {
+      const response = await apiClient.get<Like>(`${baseURI}/${id}/like/status`);
+      return response.status;
+    } catch (error) {
+      console.error(`좋아요 조회 실패:`, error);
+      throw error;
+    }
+  },
+
+  setLike: async (id: string): Promise<void> => {
+    try {
+      await apiClient.post<void>(`${baseURI}/${id}/like`);
+    } catch (error) {
+      console.error(`좋아요 실패:`, error);
+      throw error;
+    }
+  },
+
+  cancelLike: async (id: string): Promise<void> => {
+    try {
+      await apiClient.delete<void>(`${baseURI}/${id}/like}`);
+    } catch (error) {
+      console.error(`좋아요 취소 실패:`, error);
       throw error;
     }
   },
