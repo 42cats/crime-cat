@@ -145,4 +145,12 @@ public class GameTheme {
     public void viewed() {
         this.views++;
     }
+
+    public void liked() {
+        this.recommendations++;
+    }
+
+    public void cancleLike() {
+        this.recommendations--;
+    }
 }
