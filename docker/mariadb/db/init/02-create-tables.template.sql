@@ -551,3 +551,17 @@ CREATE TABLE IF NOT EXISTS notices (
     INDEX idx_notice_type(created_at, notice_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `game_theme_recommendations` (
+  `id`          BINARY(16) PRIMARY KEY,
+  `user_id`     BINARY(16) NOT NULL,
+  `theme_id`    BINARY(16) NOT NULL,
+  `created_at`  TIMESTAMP DEFAULT now(),
+  CONSTRAINT `fk_gametheme_recommendations_user_id`
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_gametheme_recommendations_theme_id`
+    FOREIGN KEY (`theme_id`) REFERENCES `game_themes` (`id`),
+  UNIQUE KEY `uk_gametheme_recommendations_user_theme` (`user_id`, `theme_id`)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_general_ci
+  COMMENT='게임 테마 추천 정보 테이블';

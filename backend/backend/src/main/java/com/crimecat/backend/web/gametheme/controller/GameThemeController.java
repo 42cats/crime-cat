@@ -55,4 +55,19 @@ public class GameThemeController {
     public void deleteGameTheme(@PathVariable UUID themeId) {
         gameThemeService.deleteGameTheme(themeId);
     }
+
+    @GetMapping("/{themeId}/like/status")
+    public GetLikeStatusResponse getLikeStatus(@PathVariable UUID themeId) {
+        return new GetLikeStatusResponse(gameThemeService.getLikeStatus(themeId));
+    }
+
+    @DeleteMapping("/{themeId}/like")
+    public void deleteLike(@PathVariable UUID themeId) {
+        gameThemeService.cancleLike(themeId);
+    }
+
+    @PostMapping("/{themeId}/like")
+    public void likeGameTheme(@PathVariable UUID themeId) {
+        gameThemeService.like(themeId);
+    }
 }
