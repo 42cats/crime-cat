@@ -44,21 +44,41 @@ copy_env:
 	@echo "${GREEN}복사 완료: .env → frontend/.env, backend/.env, bot/.env${NC}"
 
 # 개발 환경 설정
+# 로컬 개발 환경 설정 (ex: Mac, 개인PC)
+local: update_config
+	@echo "${BLUE}로컬 개발 환경 설정 중 (config/.env.local → .env)...${NC}"
+	@cp config/.env.local .env
+	@cp config/dockercompose/docker-compose.local.yaml docker-compose.yaml
+	@cp config/nginx/local.nginx.conf docker/nginx/conf/http.d/nginx.conf
+	@$(MAKE) copy_env
+
+	@echo "${BLUE}인증서 디렉토리 및 self-signed 인증서 생성 중 (로컬)...${NC}"
+	@mkdir -p docker/nginx/certs
+	@openssl req -x509 -nodes -days 365 \
+		-newkey rsa:2048 \
+		-keyout docker/nginx/certs/local.crimecat.org-key.pem \
+		-out docker/nginx/certs/local.crimecat.org.pem \
+		-subj "/C=KR/ST=Seoul/L=Seoul/O=CrimeCat/OU=Local/CN=local.crimecat.org" > /dev/null 2>&1
+	@echo "${GREEN}✅ 로컬용 self-signed 인증서 생성 완료: docker/nginx/certs/local.crimecat.org*.pem${NC}"
+
+	@$(MAKE) up
+
+# 개발 서버(dev.crimecat.org) 설정
 dev: update_config
-	@echo "${BLUE}개발 환경 설정 중 (config/.env.dev → .env)...${NC}"
+	@echo "${BLUE}개발 서버용 환경 설정 중 (config/.env.dev → .env)...${NC}"
 	@cp config/.env.dev .env
 	@cp config/dockercompose/docker-compose.dev.yaml docker-compose.yaml
 	@cp config/nginx/dev.nginx.conf docker/nginx/conf/http.d/nginx.conf
 	@$(MAKE) copy_env
 
-	@echo "${BLUE}인증서 디렉토리 및 self-signed 인증서 생성 중...${NC}"
+	@echo "${BLUE}인증서 디렉토리 및 self-signed 인증서 생성 중 (dev)...${NC}"
 	@mkdir -p docker/nginx/certs
 	@openssl req -x509 -nodes -days 365 \
 		-newkey rsa:2048 \
 		-keyout docker/nginx/certs/dev.crimecat.org-key.pem \
 		-out docker/nginx/certs/dev.crimecat.org.pem \
 		-subj "/C=KR/ST=Seoul/L=Seoul/O=CrimeCat/OU=Dev/CN=dev.crimecat.org" > /dev/null 2>&1
-	@echo "${GREEN}✅ self-signed 인증서 생성 완료: docker/nginx/certs/dev.crimecat.org*.pem${NC}"
+	@echo "${GREEN}✅ dev용 self-signed 인증서 생성 완료: docker/nginx/certs/dev.crimecat.org*.pem${NC}"
 
 	@$(MAKE) up
 
