@@ -6,6 +6,7 @@ import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.web.gametheme.domain.*;
 import com.crimecat.backend.web.gametheme.dto.*;
+import com.crimecat.backend.web.gametheme.repository.GameThemeRecommendationRepository;
 import com.crimecat.backend.web.gametheme.repository.GameThemeRepository;
 import com.crimecat.backend.web.gametheme.specification.GameThemeSpecification;
 import jakarta.transaction.Transactional;
@@ -28,6 +29,7 @@ public class GameThemeService {
     private final GameThemeRepository themeRepository;
     private final DiscordOAuth2UserService oAuth2UserService;
     private final MakerTeamService teamService;
+    private final GameThemeRecommendationRepository themeRecommendationRepository;
 
     private static final String THUMBNAIL_LOCATION = "gametheme";
 
@@ -112,5 +114,34 @@ public class GameThemeService {
         }
         Page<GameThemeDto> page = themeRepository.findAll(spec, pageable).map(GameThemeDto::from);
         return GetGameThemesResponse.from(page);
+    }
+
+    @Transactional
+    public void like(UUID themeId) {
+        GameTheme theme = themeRepository.findById(themeId)
+                .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        UUID userId = oAuth2UserService.getLoginUserId();
+        themeRecommendationRepository.save(GameThemeRecommendation.builder().themeId(themeId).userId(userId).build());
+        theme.liked();
+        themeRepository.save(theme);
+    }
+
+    @Transactional
+    public void cancleLike(UUID themeId) {
+        GameTheme theme = themeRepository.findById(themeId)
+                .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        UUID userId = oAuth2UserService.getLoginUserId();
+        GameThemeRecommendation recommendation = themeRecommendationRepository.findByUserIdAndThemeId(userId, themeId)
+                .orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
+        themeRecommendationRepository.delete(recommendation);
+        theme.cancleLike();
+        themeRepository.save(theme);
+    }
+
+    public boolean getLikeStatus(UUID themeId) {
+        themeRepository.findById(themeId)
+                .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        UUID userId = oAuth2UserService.getLoginUserId();
+        return themeRecommendationRepository.findByUserIdAndThemeId(userId, themeId).isPresent();
     }
 }
