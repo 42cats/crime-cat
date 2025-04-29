@@ -1,6 +1,7 @@
 package com.crimecat.backend.web.gametheme.dto;
 
 import com.crimecat.backend.web.gametheme.domain.CrimesceneTheme;
+import com.crimecat.backend.web.gametheme.domain.ThemeType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
@@ -33,6 +34,7 @@ public class CrimesceneThemeDto extends GameThemeDto {
                 .difficulty(theme.getDifficulty())
                 .tags(theme.getTags())
                 .teamName(teamName)
+                .type(ThemeType.Values.CRIMESCENE)
                 .build();
     }
 }
