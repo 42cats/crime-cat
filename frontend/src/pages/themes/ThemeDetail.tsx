@@ -1,14 +1,14 @@
 import React from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageTransition from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Heart, ChevronLeft, Share2, Edit, Trash } from "lucide-react";
 import { themesService } from "@/api/themesService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/useToast";
-import ReactMarkdown from "react-markdown";
 import { useAuth } from "@/hooks/useAuth";
+import ReactMarkdown from "react-markdown";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,20 +23,36 @@ import {
 const ThemeDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { user, hasRole } = useAuth();
-  const [liked, setLiked] = React.useState(false);
+  const queryClient = useQueryClient();
+
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
-  const {
-    data: theme,
-    isLoading,
-    error,
-  } = useQuery({
+  const { data: theme, isLoading, error } = useQuery({
     queryKey: ["theme", id],
     queryFn: () => (id ? themesService.getThemeById(id) : Promise.reject("No ID provided")),
     enabled: !!id,
   });
+
+  const { data: liked = false } = useQuery({
+    queryKey: ["theme-like", id],
+    queryFn: () => (id ? themesService.getLikeStatus(id) : false),
+    enabled: !!id,
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: () => id && themesService.setLike(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["theme-like", id] }),
+  });
+
+  const unlikeMutation = useMutation({
+    mutationFn: () => id && themesService.cancelLike(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["theme-like", id] }),
+  });
+
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const formatPlayTime = (minutes: number): string => {
     const hours = Math.floor(minutes / 60);
@@ -50,53 +66,36 @@ const ThemeDetail: React.FC = () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
       toast({ title: "링크 복사 완료", description: "현재 페이지 링크가 복사되었습니다." });
-    } catch (error) {
-      toast({
-        title: "복사 실패",
-        description: "링크 복사에 실패했습니다. 브라우저를 확인해주세요.",
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: "복사 실패", description: "브라우저 설정을 확인해주세요.", variant: "destructive" });
     }
   };
 
-  const toggleLike = () => {
-    setLiked((prev) => !prev);
+  const handleToggleLike = () => {
+    if (!id) return;
+    liked ? unlikeMutation.mutate() : likeMutation.mutate();
   };
 
   const handleDelete = async () => {
+    if (!theme) return;
     try {
-      if (!theme) return;
       await themesService.deleteTheme(theme.id);
       toast({ title: "삭제 완료", description: "테마가 삭제되었습니다." });
       navigate(`/themes/${theme.type.toLowerCase()}`);
-    } catch (err) {
-      toast({
-        title: "삭제 실패",
-        description: "문제가 발생했습니다. 다시 시도해주세요.",
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: "삭제 실패", description: "문제가 발생했습니다.", variant: "destructive" });
     }
+  };
+
+  const handleBackToList = () => {
+    navigate(`/themes/${theme?.type.toLowerCase()}`);
   };
 
   if (isLoading) {
     return (
       <PageTransition>
         <div className="container mx-auto px-6 py-20">
-          <div className="mb-8">
-            <Link to="/themes" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
-              <ChevronLeft className="h-4 w-4 mr-1" /> 테마 목록으로 돌아가기
-            </Link>
-          </div>
-          <div className="max-w-4xl mx-auto flex flex-col gap-8">
-            <Skeleton className="w-full aspect-video rounded-xl" />
-            <Skeleton className="h-10 w-1/2" />
-            <Skeleton className="h-6 w-full" />
-            <div className="space-y-4">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-            </div>
-          </div>
+          <SkeletonPage />
         </div>
       </PageTransition>
     );
@@ -113,30 +112,36 @@ const ThemeDetail: React.FC = () => {
     );
   }
 
-  const playerText =
-    theme.playersMin === theme.playersMax
-      ? `${theme.playersMin}인`
-      : `${theme.playersMin}~${theme.playersMax}인`;
+  const playerText = theme.playersMin === theme.playersMax
+    ? `${theme.playersMin}인`
+    : `${theme.playersMin}~${theme.playersMax}인`;
 
   return (
     <PageTransition>
       <div className="container mx-auto px-6 py-20">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
-            <Link to={`/themes/${theme.type}`} className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
+            <button
+              onClick={handleBackToList}
+              className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors"
+            >
               <ChevronLeft className="h-4 w-4 mr-1" /> 테마 목록으로 돌아가기
-            </Link>
+            </button>
           </div>
 
           <div className="flex flex-col gap-8">
             <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-              <img src={encodeURI(theme.thumbnail)} alt={theme.title} className="w-full h-full object-cover" />
+              <img
+                src={`${backendUrl}${encodeURI(theme.thumbnail)}`}
+                alt={theme.title}
+                className="w-full h-full object-cover"
+              />
             </div>
 
             <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4">
               <h1 className="text-3xl md:text-4xl font-bold">{theme.title}</h1>
               <div className="flex items-center gap-2 flex-wrap">
-                <Button variant="outline" size="sm" className={`group ${liked ? "text-red-500" : ""}`} onClick={toggleLike}>
+                <Button variant="outline" size="sm" className={`group ${liked ? "text-red-500" : ""}`} onClick={handleToggleLike}>
                   <Heart className={`h-4 w-4 mr-2 ${liked ? "fill-red-500" : "group-hover:fill-red-500/10"}`} />
                   추천 {theme.recommendations + (liked ? 1 : 0)}
                 </Button>
@@ -181,7 +186,7 @@ const ThemeDetail: React.FC = () => {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
-              <AlertDialogDescription>이 작업은 되돌릴 수 없습니다. 테마가 영구적으로 삭제되며 복구할 수 없습니다.</AlertDialogDescription>
+              <AlertDialogDescription>이 작업은 되돌릴 수 없습니다.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>취소</AlertDialogCancel>
@@ -195,5 +200,20 @@ const ThemeDetail: React.FC = () => {
     </PageTransition>
   );
 };
+
+const SkeletonPage = () => (
+  <div className="mb-8">
+    <div className="max-w-4xl mx-auto flex flex-col gap-8">
+      <Skeleton className="w-full aspect-video rounded-xl" />
+      <Skeleton className="h-10 w-1/2" />
+      <Skeleton className="h-6 w-full" />
+      <div className="space-y-4">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-3/4" />
+      </div>
+    </div>
+  </div>
+);
 
 export default ThemeDetail;
