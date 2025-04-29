@@ -216,40 +216,16 @@ export interface CrimeSceneTheme extends BaseTheme {
   extra: CrimeSceneExtra;
 }
 
-export interface CrimeScenePage {
-  themes: CrimeSceneTheme[];
-  page: number;
-  size: number;
-}
-
 export interface EscapeRoomTheme extends BaseTheme {
   type: 'ESCAPE_ROOM';
-}
-
-export interface EscapeRoomPage {
-  themes: EscapeRoomTheme[];
-  page: number;
-  size: number;
 }
 
 export interface MurderMysteryTheme extends BaseTheme {
   type: 'MURDER_MYSTERY';
 }
 
-export interface MurderMysteryPage {
-  themes: MurderMysteryTheme[];
-  page: number;
-  size: number;
-}
-
 export interface RealWorldTheme extends BaseTheme {
   type: 'REALWORLD';
-}
-
-export interface RealWorldPage extends BaseTheme {
-  themes: RealWorldTheme[];
-  page: number;
-  size: number;
 }
 
 interface BaseThemeInput {
@@ -288,8 +264,20 @@ export interface RealWorldInput extends BaseThemeInput {
 }
 
 export type Theme = CrimeSceneTheme | EscapeRoomTheme | MurderMysteryTheme | RealWorldTheme;
-export type ThemePage = CrimeScenePage | EscapeRoomPage | MurderMysteryPage | RealWorldPage;
+export type ThemePage = {
+  themes: Theme[],
+  page: number,
+  size: number,
+  totalPages: number,
+  totalElements: number,
+  hasNext: boolean,
+  hasPrevious: boolean,
+};
 export type ThemeInput = CrimeSceneInput | EscapeRoomInput | MurderMysteryInput | RealWorldInput;
+
+export type Like = {
+  status: boolean,
+};
 
 export interface TeamMember {
   id: string;

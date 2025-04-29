@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Card, CardContent } from "../ui/card";
 import { User, Users, Tag, Coins, Clock, Heart, Eye } from "lucide-react";
 import { Theme } from "@/lib/types";
@@ -22,6 +22,8 @@ const formatCount = (num: number): string => {
 };
 
 const ThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
+  const location = useLocation();
+
   const playerText =
     theme.playersMin === theme.playersMax
       ? `${theme.playersMin}인`
@@ -33,20 +35,17 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
         {/* 썸네일 */}
         <div className="relative w-full h-48">
           <img
-            src={encodeURI(theme.thumbnail)}
+            src={`http://localhost:8080/${encodeURI(theme.thumbnail)}`}
             alt={theme.title}
             className="w-full h-full object-cover"
           />
 
           {/* 조회수 + 추천수 */}
           <div className="absolute bottom-2 right-2 flex gap-2">
-            {/* 조회 수 */}
             <div className="flex items-center bg-black/60 text-white rounded-full px-2 py-1 shadow-md">
               <Eye className="w-4 h-4 mr-1" />
               <span className="text-xs">{formatCount(theme.views)}</span>
             </div>
-
-            {/* 추천 수 */}
             <div className="flex items-center bg-black/60 text-white rounded-full px-2 py-1 shadow-md">
               <Heart className="w-4 h-4 text-red-500 fill-current mr-1" />
               <span className="text-xs">{formatCount(theme.recommendations)}</span>
