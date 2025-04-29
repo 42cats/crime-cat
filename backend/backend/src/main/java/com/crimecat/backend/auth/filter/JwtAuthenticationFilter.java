@@ -3,7 +3,6 @@ package com.crimecat.backend.auth.filter;
 import com.crimecat.backend.auth.jwt.JwtTokenProvider;
 import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import com.crimecat.backend.auth.service.JwtBlacklistService;
-import com.crimecat.backend.auth.service.RefreshTokenService;
 import com.crimecat.backend.auth.util.TokenCookieUtil;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.web.webUser.domain.WebUser;
@@ -31,7 +30,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final WebUserRepository webUserRepository;
     private final JwtBlacklistService jwtBlacklistService;
-    private final RefreshTokenService refreshTokenService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
