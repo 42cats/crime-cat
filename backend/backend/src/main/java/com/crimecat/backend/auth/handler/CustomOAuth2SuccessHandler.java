@@ -77,9 +77,10 @@ public void onAuthenticationSuccess(HttpServletRequest request,
     response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createAccessCookie(accessToken));
     response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createRefreshCookie(refreshToken));
 
-    String baseUrl = serviceUrlConfig.getDomain();
-    log.info("🔁 [리다이렉트 수행 → {}]", baseUrl);
-    response.sendRedirect(baseUrl);
+     // 리다이렉트 없이 직접 응답
+    response.setStatus(HttpServletResponse.SC_OK);
+    response.setContentType("application/json");
+    response.getWriter().write("{\"message\":\"Authentication successful\"}");
 }
 
 }
