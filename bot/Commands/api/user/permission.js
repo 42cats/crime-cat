@@ -1,3 +1,4 @@
+const logger = require('../../utility/logger');
 const axios = require('axios');
 const { User, Guild } = require('discord.js');
 const dotenv = require('dotenv');
@@ -19,10 +20,10 @@ async function isPermissionHas(userId, permissionName) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
 		});
-		console.log('응답 데이터:', response.data.message);
+		logger.info('응답 데이터:', response.data.message);
 		return response.status === 200;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return false; // ✅ 반드시 false 반환
 	}
 }
@@ -38,10 +39,10 @@ async function getPermissons() {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}
 		});
-		console.log('응답 데이터 전체 퍼미션:', response?.data?.permissionList);
+		logger.info('응답 데이터 전체 퍼미션:', response?.data?.permissionList);
 		return response?.data?.permissionList ?? [];
 	} catch (error) {
-		console.error('API 요청 실패 전체퍼미션:', error.response.data);
+		logger.error('API 요청 실패 전체퍼미션:', error.response.data);
 		return [];
 	}
 }
@@ -70,10 +71,10 @@ async function addPermisson(name, price, info, duration = 28) {
 				'Content-Type': 'application/json'
 			}
 		});
-		console.log('응답 데이터:', response.data.message, response.data);
+		logger.info('응답 데이터:', response.data.message, response.data);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
@@ -100,10 +101,10 @@ async function editPermisson(name, price, duration = 28) {
 				'Content-Type': 'application/json'
 			}
 		});
-		console.log('응답 데이터:', response.data.message, response.data);
+		logger.info('응답 데이터:', response.data.message, response.data);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
@@ -119,10 +120,10 @@ async function deletePermisson(name) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}
 		});
-		console.log('응답 데이터:', response.data.message, response.data);
+		logger.info('응답 데이터:', response.data.message, response.data);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 

@@ -1,4 +1,11 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { 
+    SlashCommandBuilder, 
+    ModalBuilder, 
+    TextInputBuilder, 
+    TextInputStyle, 
+    ActionRowBuilder 
+} = require('discord.js');
+const logger = require('./utility/logger');
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -6,49 +13,38 @@ const nameOfCommand = "bc";
 const description = "개발자 전용: 모든 서버 오너에게 메시지를 브로드캐스트";
 
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName(nameOfCommand)
-		.setDescription(description)
-		.addStringOption(option =>
-			option.setName('메시지')
-				.setDescription('서버 오너에게 보낼 메시지')
-				.setRequired(true)),
+    data: new SlashCommandBuilder()
+        .setName(nameOfCommand)
+        .setDescription(description),
 
-	async execute(interaction) {
-		// ✅ 개발자 인증
-		if (interaction.user.id !== '317655426868969482') {
-			return await interaction.reply({ content: '⛔ 이 명령어는 개발자 전용입니다.', ephemeral: true });
-		}
+    async execute(interaction) {
+        // ✅ 개발자 인증
+        if (interaction.user.id !== '317655426868969482') {
+            return await interaction.reply({ 
+                content: '⛔ 이 명령어는 개발자 전용입니다.', 
+                ephemeral: true 
+            });
+        }
 
-		const client = interaction.client;
-		const messageContent = interaction.options.getString('메시지');
-		const guilds = client.guilds.cache;
-		const ownerSet = new Set();
-		let counter = 0;
+        // 모달 생성
+        const modal = new ModalBuilder()
+            .setCustomId('broadcast_modal')
+            .setTitle('서버 오너 브로드캐스트 메시지');
 
-		// 먼저 오너 ID 수집
-		for (const guild of guilds.values()) {
-			if (!ownerSet.has(guild.ownerId) && guild.ownerId !== "288302173912170497") {
-				ownerSet.add(guild.ownerId);
-			}
-		}
+        const messageInput = new TextInputBuilder()
+            .setCustomId('broadcast_message')
+            .setLabel('전송할 메시지 (최대 2000자)')
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(true)
+            .setMaxLength(2000)
+            .setPlaceholder('모든 서버 오너에게 전송될 메시지를 입력하세요.');
 
-		await interaction.reply({ content: `📢 브로드캐스트 시작: ${ownerSet.size}명의 오너에게 전송 시도`, ephemeral: true });
+        const actionRow = new ActionRowBuilder().addComponents(messageInput);
+        modal.addComponents(actionRow);
 
-		for (const ownerId of ownerSet) {
-			try {
-				const owner = await client.users.fetch(ownerId);
-				await owner.send(messageContent);
-				counter++;
-				console.log(`✅ DM 전송됨: ${owner.globalName} (${ownerId})`);
-			} catch (err) {
-				console.error(`❌ DM 실패: ${ownerId}`, err);
-			}
-		}
+        await interaction.showModal(modal);
+    },
 
-		await interaction.followUp({ content: `📨 메시지 전송 완료: ${counter}/${ownerSet.size}명에게 성공`, ephemeral: true });
-	},
-
-	upload: true,
-	permissionLevel: -1
+    upload: true,
+    permissionLevel: -1
 };

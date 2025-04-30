@@ -1,3 +1,4 @@
+const logger = require('../../utility/logger');
 const axios = require('axios');
 const { User, Guild } = require('discord.js');
 const dotenv = require('dotenv');
@@ -13,7 +14,7 @@ const baseUrl = process.env.BASE_URL
  */
 async function createCoupon(value, count, duration) {
 	const API_URL = `${baseUrl}/bot/v1/coupons`;  // 요청할 API 엔드포인트
-	console.log("API URL = ", API_URL);
+	logger.info("API URL = ", API_URL);
 	const body = {
 		"value": value,  // coupon price
 		"count": count, //number of coupons
@@ -26,10 +27,10 @@ async function createCoupon(value, count, duration) {
 				'Content-Type': 'application/json'  // JSON 형식 요청
 			}
 		});
-		console.log('응답 데이터:', response.status);
+		logger.info('응답 데이터:', response.status);
 		return response.data;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
@@ -52,10 +53,10 @@ async function redeemCoupon(userId, code) {
 				'Content-Type': 'application/json'  // JSON 형식 요청
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response.data;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response.data);
+		logger.error('API 요청 실패:', error.response.data);
 		return error.response.data.message;
 	}
 }

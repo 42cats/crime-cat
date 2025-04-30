@@ -1,3 +1,4 @@
+const logger = require('../../utility/logger');
 const axios = require('axios');
 const { User, Guild } = require('discord.js');
 const dotenv = require('dotenv');
@@ -24,10 +25,10 @@ async function addGuildMusic(guildId, { title, url, thumbnail, duration }) {
 				'Content-Type': 'application/json'  // JSON 형식 요청
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response.data;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data, error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data, error.response?.data?.message);
 	}
 }
 
@@ -44,10 +45,10 @@ async function deleteGuildMusic(guildId, title) {
 				'title': encodeURI(title)
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response.data;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
@@ -63,10 +64,10 @@ async function getGuildMusic(guildId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response.data.musicList ? response.data.musicList : [];
 	} catch (error) {
-		console.error('API 요청 실패:', error.response ? error?.response?.data : error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response ? error?.response?.data : error.response?.data?.message);
 		return [];
 	}
 }
