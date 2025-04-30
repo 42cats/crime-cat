@@ -8,7 +8,8 @@ import org.springframework.http.HttpStatus;
 @Getter
 public enum ErrorStatus {
 
-
+    // 서버에러
+    SERVER_ERROR("서버 인증에러", HttpStatus.INTERNAL_SERVER_ERROR),
     // 🔐 인증/인가 관련
     NOT_GUILD_OWNER("길드의 오너가 아닙니다.", HttpStatus.FORBIDDEN),
     UNAUTHORIZED("인증이 필요합니다.", HttpStatus.UNAUTHORIZED),                     // 401
