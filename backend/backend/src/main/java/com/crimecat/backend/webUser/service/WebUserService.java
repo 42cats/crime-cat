@@ -145,11 +145,20 @@ public class WebUserService {
     }
 
     @Transactional
-    public void PermissionsSet(User user, String name) {
+    public void permissionsSet(User user, String name) {
         Permission permission = permissionService.findPermissionByPermissionName(name);
         if (permission != null) {
             userPermissionService.purchasePermission(user.getDiscordUser(), permission);
         }
+    }
+    
+    @Transactional
+    public void userProfileSet(String userId){
+        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
+            .orElseThrow(
+                ErrorStatus.USER_NOT_FOUND::asServiceException);
+        webUser.
+
     }
 
 }
