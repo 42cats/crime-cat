@@ -2,13 +2,10 @@ package com.crimecat.backend.web.webUser.service;
 
 import com.crimecat.backend.auth.util.UserDailyCheckUtil;
 import com.crimecat.backend.bot.permission.domain.Permission;
-import com.crimecat.backend.bot.permission.repository.PermissionRepository;
 import com.crimecat.backend.bot.permission.service.PermissionService;
 import com.crimecat.backend.bot.point.service.PointHistoryService;
 import com.crimecat.backend.bot.user.domain.DiscordUser;
 import com.crimecat.backend.bot.user.domain.User;
-import com.crimecat.backend.bot.user.domain.UserPermission;
-import com.crimecat.backend.bot.user.dto.UserPermissionPurchaseFailedResponseDto;
 import com.crimecat.backend.bot.user.repository.DiscordUserRepository;
 import com.crimecat.backend.bot.user.repository.UserRepository;
 import com.crimecat.backend.bot.user.service.UserPermissionService;
@@ -17,9 +14,7 @@ import com.crimecat.backend.web.webUser.LoginMethod;
 import com.crimecat.backend.web.webUser.UserRole;
 import com.crimecat.backend.web.webUser.domain.WebUser;
 import com.crimecat.backend.web.webUser.repository.WebUserRepository;
-import io.micrometer.common.util.StringUtils;
 import jakarta.transaction.Transactional;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -88,19 +83,19 @@ public class WebUserService {
                 u.setDiscordUser(discordUser.get());
                 u = userRepository.findByDiscordUser(discordUser.get()).orElse(u);
                 u.setWebUser(newUser);
+                /// 이벤트 최초 7일이내 권한 한달무료
+                Instant eventStart = Instant.parse("2025-04-28T03:00:00Z"); // 한국시간 4/28 12:00
+                Instant eventEnd = eventStart.plus(Duration.ofDays(7)); // 일주일 후 종료
+                Instant now = Instant.now();
+
+                if (!now.isBefore(eventStart) && !now.isAfter(eventEnd)) {
+                    this.PermissionsSet(u, "관전");
+                    this.PermissionsSet(u, "주소추가");
+                    this.PermissionsSet(u, "로컬음악");
+                    this.PermissionsSet(u, "메시지매크로");
+                }
             }
 
-            /// 이벤트 최초 7일이내 권한 한달무료
-            Instant eventStart = Instant.parse("2025-04-28T03:00:00Z"); // 한국시간 4/28 12:00
-            Instant eventEnd = eventStart.plus(Duration.ofDays(7)); // 일주일 후 종료
-            Instant now = Instant.now();
-
-            if (!now.isBefore(eventStart) && !now.isAfter(eventEnd)) {
-                this.PermissionsSet(u, "관전");
-                this.PermissionsSet(u, "주소추가");
-                this.PermissionsSet(u, "로컬음악");
-                this.PermissionsSet(u, "메시지매크로");
-            }
 
 
             userRepository.save(u);
