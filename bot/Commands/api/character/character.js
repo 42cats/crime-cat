@@ -1,3 +1,4 @@
+const logger = require('../../utility/logger');
 const axios = require('axios');
 const { User, Guild } = require('discord.js');
 const dotenv = require('dotenv');
@@ -12,7 +13,7 @@ const baseUrl = process.env.BASE_URL
  */
 async function addCharacterInfo(guildId, characterName, roleId) {
 	const API_URL = `${baseUrl}/bot/v1/guilds/characters`;  // 요청할 API 엔드포인트
-	console.log("API URL = ", API_URL);
+	logger.info("API URL = ", API_URL);
 	const body = {
 		"guildSnowflake": guildId,
 		"characterName": characterName,
@@ -25,10 +26,10 @@ async function addCharacterInfo(guildId, characterName, roleId) {
 				'Content-Type': 'application/json'  // JSON 형식 요청
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response.data;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
@@ -44,10 +45,10 @@ async function deleteCharacter(guildId, characterName) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response.data;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
@@ -62,10 +63,10 @@ async function getCharacterNames(guildId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response.data;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 

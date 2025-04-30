@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { User, Guild } = require('discord.js');
 const dotenv = require('dotenv');
+const logger = require('../../utility/logger');
 dotenv.config();
 const BEARER_TOKEN = process.env.DISCORD_CLIENT_SECRET;
 const baseUrl = process.env.BASE_URL
@@ -17,11 +18,11 @@ async function addChannelClean(guildId, channelId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response.data.message;
 	} catch (error) {
+		logger.error('API 요청 실패:', logger.formatApiError(error));
 		return error?.response?.data?.detail || "알수없는 에러";
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 /**
@@ -33,7 +34,6 @@ async function addChannelMessage(guildId, channelId, input) {
 	const body = {
 		"channelSnowflake": channelId,  // discord channel_id snowflake, 봇에서 확인
 		"message": input,  //string
-
 	};
 	try {
 		const response = await axios.post(API_URL, body, {
@@ -41,10 +41,10 @@ async function addChannelMessage(guildId, channelId, input) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response.data.message;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', logger.formatApiError(error));
 		return error?.response?.data?.detail || "알수없는 에러";
 	}
 }
@@ -60,10 +60,10 @@ async function deleteChannelClean(guildId, channelId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data, response.data.message);
+		logger.info('응답 데이터:', response.status, response.data, response.data.message);
 		return response.data.message;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', logger.formatApiError(error));
 		return error?.response?.data?.detail || "알수없는 에러";
 	}
 }
@@ -80,10 +80,10 @@ async function deleteChannelMessage(guildId, channelId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data, response.data.message);
+		logger.info('응답 데이터:', response.status, response.data, response.data.message);
 		return response.data.message;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', logger.formatApiError(error));
 		return error?.response?.data?.detail || "알수없는 에러";
 	}
 }
@@ -100,10 +100,10 @@ async function getChannelClean(guildId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response?.data?.channels ?? [];
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', logger.formatApiError(error));
 		return [];
 	}
 }
@@ -119,10 +119,10 @@ async function getGuildChannelMessage(guildId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response?.data?.records ?? [];
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', logger.formatApiError(error));
 		return [];
 	}
 }

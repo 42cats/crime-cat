@@ -35,7 +35,6 @@ const redisManager = require('./Commands/utility/redis');
 const { initClientVariables } = require('./Commands/utility/clientVariables');
 const { loadSlashAndPrefixCommands } = require('./Commands/utility/loadCommand');
 const { loadEvents } = require('./Commands/utility/loadEvent');
-const { postBotStatus } = require('./Commands/api/koreanDiscord/updateBotStatus');
 const { guildAddProcess } = require('./Commands/api/guild/guild');
 
 initClientVariables(client);
@@ -48,14 +47,6 @@ client.once(Events.ClientReady, async (readyClient) => {
 	console.log(`Ready! Logged in as !!${readyClient.user.tag}`);
 	updateActivity(client, messege, currentIndex);
 	client.master = await client.users.fetch('317655426868969482');
-	postBotStatus(client)
-		.then(() => {
-			console.log("✅ 한국 디스코드 서버에 등록 성공");
-		})
-		.catch((err) => {
-			console.error("❌ 한국 디스코드 서버에 등록 실패:", err);
-		});
-
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -92,7 +83,7 @@ client.on(Events.GuildCreate, async (guild) => {
 		// 마스터에게 전송
 		client.master.send(payload);
 
-		await guildAddProcess(client, tagetGuild);
+		await guildAddProcess(client, targetGuild);
 		client.master.send()
 	}
 	catch (err) {
