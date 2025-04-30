@@ -19,8 +19,6 @@ async function addGuild({ id, name, ownerId, createdAt }) {
 		ownerSnowflake: ownerId,
 		createdAt: createdAt.toISOString()
 	};
-	console.log("1111111111", body);
-
 	try {
 		const response = await axios.post(API_URL, body, {
 			headers: {
@@ -50,8 +48,6 @@ async function guildMembersAdd(client, guild) {
 			// 봇이면 스킵할 수도 있음(원하면 로직 추가)
 			if (member.user.bot || member.permissions.has(PermissionsBitField.Flags.Administrator)) continue;
 			await addUser(member);
-			console.log("기록추가", member
-			);
 			await addUserHistory(member, guild, member.displayName ?? member.nickname, member.joinedAt);
 		}
 		console.log("Guild members inserted/updated successfully.");
@@ -85,7 +81,6 @@ async function deleteGuild(guildId) {
  * @param {Guild} guild 
  */
 async function guildAddProcess(client, guild) {
-	console.log("guildAddProcess()::::::::::::::", BEARER_TOKEN);
 	const guildOwner = await guild.members.fetch(guild.ownerId);
 	await addUser(guildOwner);
 	console.log("added owner ");

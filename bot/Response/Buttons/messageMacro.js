@@ -17,7 +17,7 @@ module.exports = {
 	 * @param {import('discord.js').Client} client
 	 * @param {import('discord.js').ButtonInteraction} interaction
 	 * @param {import('./types').ButtonMetaData} data
-	 */
+	*/
 	execute: async (client, interaction, data) => {
 		const { head, option } = data;
 
@@ -25,8 +25,11 @@ module.exports = {
 		const isAdminOnly = option?.[1] === '1';
 		const showPressDetail = option?.[2] === '1';
 		const changeColor = option?.[3] === '1';
+		const toDm = option?.[4] === '1';
+		const showOnlyMe = option?.[5] === '1';
 		const buttonName = interaction.component.label;
 
+		await interaction.deferReply({ ephemeral: true }); // 👈 가장 첫 줄에 추가
 		// 관리자 제한
 		if (isAdminOnly && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
 			return await interaction.reply({
@@ -90,14 +93,37 @@ module.exports = {
 
 
 
-		// 실제 메시지 전송
 		try {
 			const contents = await getContents(head);
 			for (const content of contents) {
 				const text = content.text;
 				const channelId = content.channelId;
-				if (!text || text.trim().length === 0) continue;
 
+				if (!text || text.trim().length === 0) continue;
+				// ✅ 버튼 누른 유저에게 DM 전송
+				if (toDm) {
+					try {
+						await interaction.user.send(text);
+					} catch (err) {
+						console.error(`❌ DM 전송 실패`, err);
+						await interaction.followUp({
+							content: `❌ DM 전송에 실패했습니다. 디엠이 차단되어 있거나, 설정이 막혀 있을 수 있어요.`,
+							ephemeral: true
+						});
+					}
+					continue; // DM 전송했으면 다음 콘텐츠로
+				}
+
+				// ✅ 인터랙션 응답자에게만 보이는 메시지 (ephemeral)
+				if (showOnlyMe) {
+					await interaction.followUp({
+						content: text,
+						ephemeral: true
+					});
+					continue;
+				}
+
+				// ✅ 일반 채널 전송
 				if (!channelId || channelId === 'none') {
 					await interaction.channel.send(text);
 					continue;
@@ -117,11 +143,11 @@ module.exports = {
 			}
 		} catch (error) {
 			console.error("버튼 콘텐츠 출력 에러:", error);
-			return await interaction.reply({ content: `❌ 오류: ${String(error)}`, ephemeral: true });
+			return await interaction.followUp({ content: `❌ 오류: ${String(error)}`, ephemeral: true });
 		}
 
 		// 기본 응답
-		await interaction.reply({
+		await interaction.followUp({
 			content: `✅ 버튼 \`${buttonName}\`을 눌렀습니다.`,
 			ephemeral: true
 		});

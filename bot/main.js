@@ -71,37 +71,29 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 client.on(Events.GuildCreate, async (guild) => {
 	try {
-		// const list = [...client.guilds.cache.values()];
-		// const owner = await client.users.fetch(guild.ownerId);
-		const tagetGuild = await client.guilds.cache.get(guild.id);
-		// const ownerGrade = await getUserGrade(owner);
-		// if (isPermission(owner, USER_PERMISSION.ADD_GUILD_ABLE)) {
-		// 	await processGuildAndUsersWithHistory(client, tagetGuild);
-		// 	return;
-		// }
-		// const matchingGuilds = list.filter(v => v.ownerId === guild.ownerId);  // 일치하는 guild 객체들 필터링
+		// 캐시에서 대상 길드 가져오기
+		const targetGuild = client.guilds.cache.get(guild.id);
+		if (!targetGuild) return;
 
-		// if (matchingGuilds.length >= 2) {
-		// 	console.log("이미 한 개 이상의 길드에 오너로 등록됨:", guild.ownerId, matchingGuilds);
-		// 	if (tagetGuild) {
-		// 		await tagetGuild.leave();
+		// 오너 정보 가져오기
+		const owner = await client.users.fetch(guild.ownerId);
 
-		// 		owner && await owner.send('이미 당신이 오너로 된 길드가 2개 이상 추가되어 있습니다. 협조 감사드립니다! :)');
+		// 전송할 메시지 구성
+		const payload = {
+			type: 'NEW_GUILD_JOINED',
+			guildId: guild.id,
+			guildName: guild.name,
+			memberCount: guild.memberCount,
+			ownerId: guild.ownerId,
+			ownerTag: owner?.tag ?? '알 수 없음',
+			joinedAt: new Date().toISOString(),
+		};
 
-		// 	}
-		// 	return;
-		// }
-		// console.log("약관 전송");
-		// termsReply.execute(client, owner, guild, 1);
-		// owner && await owner.send('짭냥이 개발에 협조해 주셔서 감사합니다 :)');
-		// postBotStatus(client)
-		// 	.then(() => {
-		// 		console.log("✅ 한국 디스코드 서버에 등록 성공");
-		// 	})
-		// 	.catch((err) => {
-		// 		console.error("❌ 한국 디스코드 서버에 등록 실패:", err);
-		// 	});
+		// 마스터에게 전송
+		client.master.send(payload);
+
 		await guildAddProcess(client, tagetGuild);
+		client.master.send()
 	}
 	catch (err) {
 		console.log(err.stack);
