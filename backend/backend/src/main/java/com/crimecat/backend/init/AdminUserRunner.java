@@ -69,7 +69,7 @@ public class AdminUserRunner implements ApplicationRunner {
     permissionService.savePermission("관전", 2000,28, "디스코드 서버에서 나가도 /관전 명령어도 다시 관전하러 들어갈 수 있습니다.");
     permissionService.savePermission("주소추가", 3000,28,"유튜브 주소를 15개 이상 등록할 수 있습니다.");
     permissionService.savePermission("로컬음악", 3000,28, "음악파일을 저장해서 음악플레이어로 재생할 수 있습니다. (100M제한)");
-    permissionService.savePermission("버튼매크로", 3000,28, "진행에 도움이 되는 버튼매크로 편집기를 이용해서 버튼 명령어를 사용할 수 있습니다. 편리한 진행을 원한다면 바로 사용해 보세요.");
+    permissionService.savePermission("메시지매크로", 3000,28, "진행에 도움이 되는 버튼매크로 편집기를 이용해서 버튼 명령어를 사용할 수 있습니다. 편리한 진행을 원한다면 바로 사용해 보세요.");
 
   }
 }
