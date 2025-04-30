@@ -1,3 +1,4 @@
+const logger = require('../../utility/logger');
 const axios = require('axios');
 const { User, Guild, Client, PermissionsBitField } = require('discord.js');
 const dotenv = require('dotenv');
@@ -29,10 +30,10 @@ async function addGuild({ id, name, ownerId, createdAt }) {
 		return response;
 	} catch (error) {
 		if (error.response?.data?.message === 'already created') {
-			console.log("⛔ 이미 등록된 길드, 처리 생략");
+			logger.info("⛔ 이미 등록된 길드, 처리 생략");
 			return { status: 200, data: error.response.data.guild }; // ✅ 응답 모양 맞춰서 반환
 		}
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return null;
 	}
 }
@@ -50,10 +51,10 @@ async function guildMembersAdd(client, guild) {
 			await addUser(member);
 			await addUserHistory(member, guild, member.displayName ?? member.nickname, member.joinedAt);
 		}
-		console.log("Guild members inserted/updated successfully.");
+		logger.info("Guild members inserted/updated successfully.");
 	}
 	catch (err) {
-		console.error("Error inserting users from guild:", err);
+		logger.error("Error inserting users from guild:", err);
 	}
 }
 /**
@@ -67,10 +68,10 @@ async function deleteGuild(guildId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data, response.data.message);
+		logger.info('응답 데이터:', response.status, response.data, response.data.message);
 		return response.data.message;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return error.response.data.message;
 	}
 }
@@ -83,11 +84,11 @@ async function deleteGuild(guildId) {
 async function guildAddProcess(client, guild) {
 	const guildOwner = await guild.members.fetch(guild.ownerId);
 	await addUser(guildOwner);
-	console.log("added owner ");
+	logger.info("added owner ");
 	await addGuild(guild);
-	console.log("added guild");
+	logger.info("added guild");
 	await guildMembersAdd(client, guild);
-	console.log("all guild add process done");
+	logger.info("all guild add process done");
 
 }
 

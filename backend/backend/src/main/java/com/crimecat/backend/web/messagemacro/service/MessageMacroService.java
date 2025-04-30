@@ -54,9 +54,14 @@ public class MessageMacroService {
 
     private Group upsertGroup(String guildId, GroupDto dto) {
         // 중복 이름 검증
-        if (!groupRepository.existsById(dto.getId())
-                && groupRepository.existsByGuildSnowflakeAndName(guildId, dto.getName())) {
-            throw ErrorStatus.GROUP_ALREADY_EXISTS.asDomainException();
+        if (!groupRepository.existsById(dto.getId())) {
+            // 이름 비교 시 대소문자 구분 없이 공백 제거하여 비교
+            String normalizedName = dto.getName().trim().toLowerCase();
+
+            if (groupRepository.findAllByGuildSnowflakeOrderByIndex(guildId).stream()
+                .anyMatch(g -> g.getName().trim().toLowerCase().equals(normalizedName))) {
+                throw ErrorStatus.GROUP_ALREADY_EXISTS.asDomainException();
+            }
         }
         Group group = groupRepository.findById(dto.getId())
                 .orElseGet(() -> Group.builder().id(dto.getId()).build());

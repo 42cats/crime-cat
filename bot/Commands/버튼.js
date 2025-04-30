@@ -56,6 +56,7 @@ module.exports = {
 
 		if (!await isPermissionHas(interaction.user.id, "메시지매크로")) {
 			interaction.reply("해당 기능을 사용할 권한이 없습니다. 권한을 구매해 주세요");
+			return;
 		}
 
 		if (toDm && showOnlyMe) {

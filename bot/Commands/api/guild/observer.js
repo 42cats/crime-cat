@@ -1,3 +1,4 @@
+const logger = require('../../utility/logger');
 const axios = require('axios');
 const { User, Guild } = require('discord.js');
 const dotenv = require('dotenv');
@@ -19,7 +20,7 @@ async function addGuildObserverSet(guildId, headTitle = "-관전", roleId = null
 	if (roleId) {
 		body.roleSnowflake = roleId;
 	}
-	console.log("body = ", body);
+	logger.info("body = ", body);
 	try {
 		const response = await axios.post(API_URL, body, {
 			headers: {
@@ -27,10 +28,10 @@ async function addGuildObserverSet(guildId, headTitle = "-관전", roleId = null
 				'Content-Type': 'application/json'  // JSON 형식 요청
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return error.response;
 	}
 }
@@ -50,7 +51,7 @@ async function editGuildObserverSet(guildId, headTitle = "-관전", roleId = nul
 	if (roleId) {
 		body.roleSnowflake = roleId;
 	}
-	console.log("body = ", body);
+	logger.info("body = ", body);
 	try {
 		const response = await axios.patch(API_URL, body, {
 			headers: {
@@ -58,10 +59,10 @@ async function editGuildObserverSet(guildId, headTitle = "-관전", roleId = nul
 				'Content-Type': 'application/json'  // JSON 형식 요청
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return error.response;
 	}
 }
@@ -80,10 +81,10 @@ async function editGuildObserverSet(guildId, headTitle = "-관전", roleId = nul
 // 				'title': encodeURI(title)
 // 			}
 // 		});
-// 		console.log('응답 데이터:', response.status, response.data);
+// 		logger.info('응답 데이터:', response.status, response.data);
 // 		return response.data;
 // 	} catch (error) {
-// 		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+// 		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 // 	}
 // }
 
@@ -99,10 +100,10 @@ async function getGuildObserverSet(guildId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return error.response;
 	}
 }

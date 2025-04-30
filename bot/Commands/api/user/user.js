@@ -1,3 +1,4 @@
+const logger = require('../../utility/logger');
 const axios = require('axios');
 const { User, Guild } = require('discord.js');
 const dotenv = require('dotenv');
@@ -28,9 +29,9 @@ async function addUser(user) {
 				'Content-Type': 'application/json'
 			}
 		});
-		console.log('응답 데이터:', response?.data?.message);
+		logger.info('응답 데이터:', response?.data?.message);
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
@@ -54,10 +55,10 @@ async function addUserPermisson(user, permissionName) {
 				'Content-Type': 'application/json'
 			}
 		});
-		console.log('응답 데이터:', response?.data?.message);
+		logger.info('응답 데이터:', response?.data?.message);
 		return response;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
@@ -74,10 +75,10 @@ async function getUserRank(userId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}
 		});
-		console.log('응답 데이터:', response?.data?.message, response?.data);
+		logger.info('응답 데이터:', response?.data?.message, response?.data);
 		return response.data;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 	}
 }
 
@@ -94,10 +95,10 @@ async function getUserPermissons(userId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}
 		});
-		console.log('응답 데이터 유저 퍼미션:', response?.data?.permissions);
+		logger.info('응답 데이터 유저 퍼미션:', response?.data?.permissions);
 		return response?.data?.permissions ?? [];
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return [];
 	}
 }
@@ -107,7 +108,7 @@ async function getUserPermissons(userId) {
  */
 async function getUserDbInfo(userId) {
 	const API_URL = `${baseUrl}/bot/v1/users/${userId}`;
-	console.log("✅ getUserDbInfo 시작"); // 추가
+	logger.info("✅ getUserDbInfo 시작"); // 추가
 
 	try {
 		const response = await axios.get(API_URL, {
@@ -115,10 +116,10 @@ async function getUserDbInfo(userId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}
 		});
-		console.log("✅ getUserDbInfo 응답 받음", response?.data);
+		logger.info("✅ getUserDbInfo 응답 받음", response?.data);
 		return response?.data?.user ?? {};
 	} catch (error) {
-		console.error('❌ getUserDbInfo 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('❌ getUserDbInfo 실패:', error.response?.data || error.response?.data?.message);
 		return {};
 	}
 }
@@ -140,10 +141,10 @@ async function setUserAlarm(userId, alarm = null, avatarUrl = null) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}
 		});
-		console.log('응답 데이터:', response?.data?.message, response?.data);
+		logger.info('응답 데이터:', response?.data?.message, response?.data);
 		return response?.data?.message ?? "알림 설정 실패";
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
 		return error.response.data.message;
 	}
 }
