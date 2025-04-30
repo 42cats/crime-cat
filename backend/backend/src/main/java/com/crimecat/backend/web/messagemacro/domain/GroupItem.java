@@ -11,9 +11,7 @@ import java.sql.Timestamp;
 import java.util.UUID;
 
 @Entity
-@Table(name = "group_items", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"group_id", "type", "name"})
-})
+@Table(name = "group_items")
 @Getter @Setter @Builder
 @NoArgsConstructor @AllArgsConstructor
 public class GroupItem {

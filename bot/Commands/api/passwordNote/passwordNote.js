@@ -1,3 +1,4 @@
+const logger = require('../../utility/logger');
 const axios = require('axios');
 const { User, Guild } = require('discord.js');
 const dotenv = require('dotenv');
@@ -27,10 +28,10 @@ async function addPasswordContent(guildId, channelId, passwordKey, content) {
 				'Content-Type': 'application/json'  // JSON 형식 요청
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response.data.passwordNote;
 	} catch (error) {
-		console.error('API 요청 실패:', error.response?.data, error?.response?.data?.message);
+		logger.error('API 요청 실패:', error.response?.data, error?.response?.data?.message);
 		throw error?.response?.data?.message ?? "알수없는 오류";
 	}
 }
@@ -58,11 +59,11 @@ async function editPasswordContent(guildId, channelId, uuid, passwordKey, conten
 				'Content-Type': 'application/json'  // JSON 형식 요청
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response.data.passwordNote;
 	} catch (error) {
 		const errorMessage = error.response?.data?.detail || "알 수 없는 오류";
-		console.error('비밀번호 수정 API 요청 실패:', error.response?.data);
+		logger.error('비밀번호 수정 API 요청 실패:', error.response?.data);
 		throw Error(errorMessage);
 	}
 }
@@ -80,11 +81,11 @@ async function deletePasswordContent(guildId, passwordKey) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response.data.message;
 	} catch (error) {
 		const errorMessage = error.response?.data?.detail || "알 수 없는 오류";
-		console.error('비밀번호 삭제 API 요청 실패:', error.response?.data);
+		logger.error('비밀번호 삭제 API 요청 실패:', error.response?.data);
 		throw Error(errorMessage);
 	}
 }
@@ -103,11 +104,11 @@ async function getPasswordContents(guildId) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}
 		});
-		console.log('응답 데이터11:', response.status, response.data);
+		logger.info('응답 데이터11:', response.status, response.data);
 		return response.data.passwordNotes;
 	} catch (error) {
 		const errorMessage = error.response?.data?.detail || "알 수 없는 오류";
-		console.error('비밀번호 정성 확인 API 요청 실패:', error.response?.data);
+		logger.error('비밀번호 정성 확인 API 요청 실패:', error.response?.data);
 		throw Error(errorMessage)
 	}
 }
@@ -125,11 +126,11 @@ async function matchPasswordContent(guildId, passwordKey) {
 				'Authorization': `Bearer ${BEARER_TOKEN}`,
 			}
 		});
-		console.log('응답 데이터:', response.status, response.data);
+		logger.info('응답 데이터:', response.status, response.data);
 		return response.data.passwordNote;
 	} catch (error) {
 		const errorMessage = error.response?.data?.detail || error.response?.data?.message || error.message || "알 수 없는 오류";
-		console.error('비밀번호 매칭 API 요청 실패:', errorMessage);
+		logger.error('비밀번호 매칭 API 요청 실패:', errorMessage);
 		throw Error(errorMessage);
 	}
 }
