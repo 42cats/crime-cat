@@ -7,12 +7,9 @@ import com.crimecat.backend.exception.CrimeCatException;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.web.webUser.UserRole;
 import com.crimecat.backend.web.webUser.domain.WebUser;
-import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
@@ -128,32 +125,6 @@ public class AuthenticationUtil {
 
     if (!hasAuthority) {
       throw ErrorStatus.FORBIDDEN.asException();
-    }
-  }
-
-
-  /**
-   * 현재 사용자가 모든 필수 권한을 가지고 있는지 확인합니다.
-   * 하나라도 없으면 에러를 발생시킵니다.
-   *
-   * @param requiredAuthorities 필요한 권한 목록 (모두 가지고 있어야 함)
-   */
-  public static void validateUserHasAllAuthorities(String... requiredAuthorities) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-    if (authentication == null || !authentication.isAuthenticated()) {
-      throw ErrorStatus.UNAUTHORIZED.asException();
-    }
-
-    Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
-    List<String> userAuthorities = authorities.stream()
-        .map(GrantedAuthority::getAuthority)
-        .toList();
-
-    for (String required : requiredAuthorities) {
-      if (!userAuthorities.contains(required)) {
-        throw ErrorStatus.FORBIDDEN.asException();
-      }
     }
   }
 
