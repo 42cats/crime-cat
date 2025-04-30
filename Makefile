@@ -46,10 +46,28 @@ copy_env:
 	@echo "${GREEN}복사 완료: .env → frontend/.env, backend/.env, bot/.env${NC}"
 
 # 개발 환경 설정
+local: update_config
+	@echo "${BLUE}개발 환경 설정 중 (config/.env.local → .env)...${NC}"
+	@cp config/.env.local .env
+	@cp config/dockercompose/docker-compose.local.yaml docker-compose.yaml
+	@cp config/nginx/local.nginx.conf docker/nginx/conf/http.d/nginx.conf
+	@$(MAKE) copy_env
+
+	@mkdir -p docker/nginx/certs
+
+	@openssl req -x509 -nodes -days 365 \
+		-newkey rsa:2048 \
+		-keyout docker/nginx/certs/dev.crimecat.org-key.pem \
+		-out docker/nginx/certs/dev.crimecat.org.pem \
+		-subj "/C=KR/ST=Seoul/L=Seoul/O=CrimeCat/OU=Dev/CN=dev.crimecat.org" > /dev/null 2>&1
+	@echo "${GREEN}✅ self-signed 인증서 생성 완료: docker/nginx/certs/dev.crimecat.org*.pem${NC}"
+
+	@$(MAKE) up
+
 dev: update_config
 	@echo "${BLUE}개발 환경 설정 중 (config/.env.dev → .env)...${NC}"
 	@cp config/.env.dev .env
-	@cp config/dockercompose/docker-compose.dev.yaml docker-compose.yaml
+	@cp config/dockercompose/docker-compose.local.yaml docker-compose.yaml
 	@cp config/nginx/dev.nginx.conf docker/nginx/conf/http.d/nginx.conf
 	@$(MAKE) copy_env
 

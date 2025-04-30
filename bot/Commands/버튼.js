@@ -33,7 +33,13 @@ module.exports = {
 				.setDescription('누가 몇 번 눌렀는지 표시할까요? (기본값: false)'))
 		.addBooleanOption(option =>
 			option.setName('색변경')
-				.setDescription('버튼을 누르면 전체 버튼 색깔이 바뀌도록 할까요? (기본값: false)')),
+				.setDescription('버튼을 누르면 전체 버튼 색깔이 바뀌도록 할까요? (기본값: false)'))
+		.addBooleanOption(option =>
+			option.setName('디엠으로')
+				.setDescription('버튼을 누르면 해당정보를 누른 사람의 디엠으로 전송할까요? (기본값: false)'))
+		.addBooleanOption(option =>
+			option.setName('나만보기')
+				.setDescription('버튼을 누르면 누른 사람에게만 보이도록 할까요? (기본값: false)')),
 
 
 	/**
@@ -45,10 +51,20 @@ module.exports = {
 		const isAdminOnly = interaction.options.getBoolean('admin_only관리자만') ?? false;
 		const showPressDetail = interaction.options.getBoolean('누가눌렀어') ?? false;
 		const changeColor = interaction.options.getBoolean('색변경') ?? false;
+		const toDm = interaction.options.getBoolean('디엠으로') ?? false;
+		const showOnlyMe = interaction.options.getBoolean('나만보기') ?? false;
 
 		if (!await isPermissionHas(interaction.user.id, "메시지매크로")) {
 			interaction.reply("해당 기능을 사용할 권한이 없습니다. 권한을 구매해 주세요");
 		}
+
+		if (toDm && showOnlyMe) {
+			return await interaction.reply({
+				content: "❌ '디엠으로'와 '나만보기'는 동시에 사용할 수 없습니다. 둘 중 하나만 선택해주세요.",
+				ephemeral: true
+			});
+		}
+
 		try {
 			const group = await getButtons(interaction.guildId, groupName);
 
@@ -63,7 +79,9 @@ module.exports = {
 				isOneTime,
 				isAdminOnly,
 				showPressDetail,
-				changeColor
+				changeColor,
+				toDm,
+				showOnlyMe
 			});
 		} catch (error) {
 			console.error("버튼 명령어 에러", error);
@@ -87,7 +105,9 @@ async function sendButtonGroupWithPagination(interaction, group, options = {}) {
 		isOneTime = false,
 		isAdminOnly = false,
 		showPressDetail = false,
-		changeColor = false
+		changeColor = false,
+		toDm = false,
+		showOnlyMe = false,
 	} = options;
 
 	const rows = [];
@@ -97,7 +117,7 @@ async function sendButtonGroupWithPagination(interaction, group, options = {}) {
 		const row = new ActionRowBuilder();
 
 		for (const button of slice) {
-			const optionBits = `${+isOneTime}${+isAdminOnly}${+showPressDetail}${+changeColor}`; // e.g. "101"
+			const optionBits = `${+isOneTime}${+isAdminOnly}${+showPressDetail}${+changeColor}${+toDm}${+showOnlyMe}`; // e.g. "101"
 			const customId = encodeToString(button.id, "messageMacro", optionBits);
 
 			row.addComponents(
