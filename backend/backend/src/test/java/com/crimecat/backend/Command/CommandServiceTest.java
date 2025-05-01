@@ -3,14 +3,14 @@ package com.crimecat.backend.Command;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.crimecat.backend.web.command.service.CommandService;
+import com.crimecat.backend.command.service.CommandService;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import com.crimecat.backend.exception.ErrorStatus;
-import com.crimecat.backend.web.command.domain.Command;
-import com.crimecat.backend.web.command.repository.CommandRepository;
+import com.crimecat.backend.command.domain.Command;
+import com.crimecat.backend.command.repository.CommandRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
