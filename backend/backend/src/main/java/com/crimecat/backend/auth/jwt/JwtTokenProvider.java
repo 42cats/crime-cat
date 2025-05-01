@@ -1,6 +1,7 @@
 package com.crimecat.backend.auth.jwt;
 
 import java.time.Duration;
+import java.util.Base64;
 import java.util.Date;
 
 import javax.crypto.SecretKey;
@@ -120,8 +121,8 @@ public class JwtTokenProvider {
     }
 
     private SecretKey getSigningKey() {
-        // base64 디코딩 + hmacShaKeyFor
-        return Keys.hmacShaKeyFor(secretKeyString.getBytes());
+        byte[] keyBytes = Base64.getDecoder().decode(secretKeyString);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public long getRefreshTokenValidity() {
