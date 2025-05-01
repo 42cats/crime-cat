@@ -12,7 +12,6 @@ import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.exception.ServiceException;
 import com.crimecat.backend.gametheme.domain.MakerTeam;
 import com.crimecat.backend.gametheme.domain.MakerTeamMember;
-import com.crimecat.backend.web.gametheme.dto.*;
 import com.crimecat.backend.gametheme.repository.MakerTeamMemberRepository;
 import com.crimecat.backend.gametheme.repository.MakerTeamRepository;
 import jakarta.transaction.Transactional;
