@@ -14,8 +14,7 @@ const ThemeList: React.FC = () => {
   const navigate = useNavigate();
   const { category } = useParams<{ category: string }>();
   const [searchParams] = useSearchParams();
-  const page = Number(searchParams.get("page")) || 0; // 쿼리스트링에서 읽기
-
+  const page = Number(searchParams.get("page")) || 0;
   const validCategory = category?.toUpperCase() as Theme["type"];
 
   const { data, isLoading, error } = useQuery<ThemePage>({

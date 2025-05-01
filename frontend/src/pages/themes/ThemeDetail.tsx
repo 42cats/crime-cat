@@ -29,12 +29,15 @@ const ThemeDetail: React.FC = () => {
   const queryClient = useQueryClient();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const [showLoginDialog, setShowLoginDialog] = React.useState(false);
 
-  const { data: theme, isLoading, error } = useQuery({
+  const { data: themeData, isLoading, error } = useQuery({
     queryKey: ["theme", id],
     queryFn: () => (id ? themesService.getThemeById(id) : Promise.reject("No ID provided")),
     enabled: !!id,
   });
+
+  const theme = themeData?.theme || themeData;
 
   const { data: liked = false } = useQuery({
     queryKey: ["theme-like", id],
@@ -54,13 +57,17 @@ const ThemeDetail: React.FC = () => {
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  const formatPlayTime = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0 && mins > 0) return `${hours}시간 ${mins}분`;
-    if (hours > 0) return `${hours}시간`;
-    return `${mins}분`;
+  const formatPlayTime = (min: number, max: number): string => {
+  const toHourText = (m: number) => {
+    const h = Math.floor(m / 60);
+    const mm = m % 60;
+    return `${h > 0 ? `${h}시간` : ""}${mm > 0 ? ` ${mm}분` : ""}`.trim();
   };
+
+  return min === max
+    ? toHourText(min)
+    : `${toHourText(min)} ~ ${toHourText(max)}`;
+ };
 
   const handleShare = async () => {
     try {
@@ -73,6 +80,10 @@ const ThemeDetail: React.FC = () => {
 
   const handleToggleLike = () => {
     if (!id) return;
+    if (!user?.id) {
+      setShowLoginDialog(true);
+      return;
+    }
     liked ? unlikeMutation.mutate() : likeMutation.mutate();
   };
 
@@ -86,7 +97,7 @@ const ThemeDetail: React.FC = () => {
       toast({ title: "삭제 실패", description: "문제가 발생했습니다.", variant: "destructive" });
     }
   };
-
+  
   const handleBackToList = () => {
     navigate(`/themes/${theme?.type.toLowerCase()}`);
   };
@@ -112,9 +123,10 @@ const ThemeDetail: React.FC = () => {
     );
   }
 
-  const playerText = theme.playersMin === theme.playersMax
-    ? `${theme.playersMin}인`
-    : `${theme.playersMin}~${theme.playersMax}인`;
+  const playerText =
+    theme.playersMin === theme.playersMax
+      ? `${theme.playersMin}인`
+      : `${theme.playersMin}~${theme.playersMax}인`;
 
   return (
     <PageTransition>
@@ -132,7 +144,7 @@ const ThemeDetail: React.FC = () => {
           <div className="flex flex-col gap-8">
             <div className="relative w-full aspect-video rounded-xl overflow-hidden">
               <img
-                src={`${backendUrl}${encodeURI(theme.thumbnail)}`}
+                src={`${theme.thumbnail}`}
                 alt={theme.title}
                 className="w-full h-full object-cover"
               />
@@ -143,14 +155,14 @@ const ThemeDetail: React.FC = () => {
               <div className="flex items-center gap-2 flex-wrap">
                 <Button variant="outline" size="sm" className={`group ${liked ? "text-red-500" : ""}`} onClick={handleToggleLike}>
                   <Heart className={`h-4 w-4 mr-2 ${liked ? "fill-red-500" : "group-hover:fill-red-500/10"}`} />
-                  추천 {theme.recommendations + (liked ? 1 : 0)}
+                  추천 {(theme.recommendations || 0) + (liked ? 1 : 0)}
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleShare}>
                   <Share2 className="h-4 w-4 mr-2" /> 공유
                 </Button>
-                {(user?.id === theme.authorId || hasRole(["ADMIN", "MANAGER"])) && (
+                {(user?.id === theme.author || hasRole(["ADMIN", "MANAGER"])) && (
                   <>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/themes/edit/${theme.id}`, { state: { theme } })}>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/themes/edit/${theme.id}`)}>
                       <Edit className="h-4 w-4 mr-2" /> 수정
                     </Button>
                     <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => setIsDeleteDialogOpen(true)}>
@@ -165,12 +177,12 @@ const ThemeDetail: React.FC = () => {
 
             <div className="space-y-2 text-sm md:text-base">
               <div><strong>인원:</strong> {playerText}</div>
-              <div><strong>플레이 시간:</strong> {formatPlayTime(theme.playtime)}</div>
-              <div><strong>가격:</strong> {theme.price.toLocaleString()}원</div>
-              <div><strong>태그:</strong> {theme.tags.join(", ")}</div>
+              <div><strong>플레이 시간:</strong> {formatPlayTime(theme.playTimeMin, theme.playTimeMax)}</div>
+              <div><strong>가격:</strong> {typeof theme.price === "number" ? theme.price.toLocaleString() + "원" : "정보 없음"}</div>
+              <div><strong>태그:</strong> {Array.isArray(theme.tags) ? theme.tags.join(", ") : ""}</div>
               {theme.type === "CRIMESCENE" && (
                 <>
-                  <div><strong>길드 ID:</strong> {theme.guildSnowflake}</div>
+                  <div><strong>길드 ID:</strong> {theme.makerTeamsId}</div>
                   <div><strong>캐릭터 수:</strong> {(theme.extra?.characters?.length || 0).toLocaleString()}</div>
                 </>
               )}
@@ -182,6 +194,7 @@ const ThemeDetail: React.FC = () => {
           </div>
         </div>
 
+        {/* 삭제 확인 다이얼로그 */}
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -190,8 +203,32 @@ const ThemeDetail: React.FC = () => {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>취소</AlertDialogCancel>
-              <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={handleDelete}
+              >
                 삭제
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* 로그인 유도 다이얼로그 */}
+        <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
+              <AlertDialogDescription>추천 기능은 로그인한 사용자만 사용할 수 있습니다.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>닫기</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setShowLoginDialog(false);
+                  navigate("/login");
+                }}
+              >
+                로그인 하러 가기
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
