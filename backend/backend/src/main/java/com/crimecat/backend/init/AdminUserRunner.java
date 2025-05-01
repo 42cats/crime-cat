@@ -1,14 +1,13 @@
 package com.crimecat.backend.init;
 
-import com.crimecat.backend.utils.TokenCookieUtil.DomainHolder;
+import com.crimecat.backend.config.AdminProperties;
 import com.crimecat.backend.permission.service.PermissionService;
 import com.crimecat.backend.user.domain.DiscordUser;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.repository.DiscordUserRepository;
 import com.crimecat.backend.user.repository.UserRepository;
-import com.crimecat.backend.config.AdminProperties;
-import com.crimecat.backend.webUser.enums.UserRole;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.enums.UserRole;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,6 @@ public class AdminUserRunner implements ApplicationRunner {
   private final UserRepository userRepository;
   private final WebUserRepository webUserRepository;
   private final DiscordUserRepository discordUserRepository;
-  private final DomainHolder domainHolder;
   private final AdminProperties adminProperties;
   private final PermissionService permissionService;
 

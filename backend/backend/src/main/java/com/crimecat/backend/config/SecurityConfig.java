@@ -42,7 +42,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) /// 세션인증 끔
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health", "/actuator/info", "/oauth2/**","/bot/v1/**","/login/**", "/api/v1/public/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info", "/oauth2/**","/bot/v1/**","/login/**", "/api/v1/public/**", "/api/v1/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
             .exceptionHandling(ex -> ex
