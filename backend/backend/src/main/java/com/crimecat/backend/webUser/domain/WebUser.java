@@ -1,5 +1,6 @@
 package com.crimecat.backend.webUser.domain;
 
+import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
 import com.crimecat.backend.webUser.enums.LoginMethod;
