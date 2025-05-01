@@ -194,7 +194,8 @@ interface BaseTheme {
   authorId: string;
   playersMin: number;
   playersMax: number;
-  playtime: number;
+  playTimeMin: number;
+  playTimeMax: number;
   price: number;
   difficulty: number;
   tags: string[];
@@ -232,9 +233,10 @@ interface BaseThemeInput {
   title: string;
   thumbnail: File;
   summary: string;
-  playersMin: number;
-  playersMax: number;
-  playtime: number;
+  playerMin: number;
+  playerMax: number;
+  playtimeMix: number;
+  playtimeMax: number;
   price: number;
   difficulty: number;
   tags: string[];

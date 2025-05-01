@@ -18,7 +18,7 @@ const CrimeSceneFields: React.FC<Props> = ({ extraFields, setExtraFields, onOpen
   const [characterInput, setCharacterInput] = useState("");
   const [isComposing, setIsComposing] = useState(false);
 
-  const mode = extraFields?.makerMode || "team"; // "personal" or "team"
+  const mode = extraFields?.makerMode || "team";
 
   const addCharactersFromInput = () => {
     const parts = characterInput
@@ -40,15 +40,13 @@ const CrimeSceneFields: React.FC<Props> = ({ extraFields, setExtraFields, onOpen
 
   const handleModeChange = (val: "personal" | "team") => {
     if (val === "personal") {
-      // 개인 모드 선택 → 사용자 정보로 세팅
       setExtraFields((prev: any) => ({
         ...prev,
         makerMode: "personal",
-        makerTeamsId: user?.id || "",
-        makerTeamsName: user?.nickname || "",
+        makerTeamsId: "",
+        makerTeamsName: "",
       }));
     } else {
-      // 팀 모드 선택 → 초기화
       setExtraFields((prev: any) => ({
         ...prev,
         makerMode: "team",
@@ -82,7 +80,6 @@ const CrimeSceneFields: React.FC<Props> = ({ extraFields, setExtraFields, onOpen
       {/* 팀 선택 */}
       {mode === "team" && (
         <div>
-          <Label className="font-bold mb-1 block">팀 선택 *</Label>
           <Button variant="outline" onClick={onOpenTeamModal}>
             {"팀 선택"}
           </Button>
@@ -95,22 +92,9 @@ const CrimeSceneFields: React.FC<Props> = ({ extraFields, setExtraFields, onOpen
         </div>
       )}
 
-      {/* 개인 선택 */}
-      {mode === "personal" && (
-        <div>
-          <Label className="font-bold mb-1 block">개인 정보</Label>
-          <Input
-            className="mt-2"
-            readOnly
-            value={user?.nickname || ""}
-            placeholder="개인 닉네임"
-          />
-        </div>
-      )}
-
       {/* 길드 선택 */}
       <div>
-        <Label className="font-bold mb-1 block">길드 선택 *</Label>
+        <Label className="font-bold mb-1 block">길드 선택</Label>
         <Button variant="outline" onClick={onOpenGuildModal}>
           {"길드 선택"}
         </Button>

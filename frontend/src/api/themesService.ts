@@ -89,7 +89,7 @@ export const themesService = {
 
   cancelLike: async (id: string): Promise<void> => {
     try {
-      await apiClient.delete<void>(`${baseURI}/${id}/like}`);
+      await apiClient.delete<void>(`${baseURI}/${id}/like`);
     } catch (error) {
       console.error(`좋아요 취소 실패:`, error);
       throw error;
