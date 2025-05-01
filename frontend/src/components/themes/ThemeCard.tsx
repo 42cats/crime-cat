@@ -1,7 +1,7 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Card, CardContent } from "../ui/card";
-import { User, Users, Tag, Coins, Clock, Heart, Eye } from "lucide-react";
+import { Users, Tag, Coins, Clock, Heart, Eye } from "lucide-react";
 import { Theme } from "@/lib/types";
 
 interface ThemeCardProps {
@@ -9,12 +9,16 @@ interface ThemeCardProps {
   index: number;
 }
 
-const formatPlayTime = (minutes: number): string => {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours > 0 && mins > 0) return `${hours}시간 ${mins}분`;
-  if (hours > 0) return `${hours}시간`;
-  return `${mins}분`;
+const formatPlayTime = (min: number, max: number): string => {
+  const toHourText = (m: number) => {
+    const h = Math.floor(m / 60);
+    const mm = m % 60;
+    return `${h > 0 ? `${h}시간` : ""}${mm > 0 ? ` ${mm}분` : ""}`.trim();
+  };
+
+  return min === max
+    ? toHourText(min)
+    : `${toHourText(min)} ~ ${toHourText(max)}`;
 };
 
 const formatCount = (num: number): string => {
@@ -22,7 +26,6 @@ const formatCount = (num: number): string => {
 };
 
 const ThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
-  const location = useLocation();
 
   const playerText =
     theme.playersMin === theme.playersMax
@@ -35,7 +38,7 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
         {/* 썸네일 */}
         <div className="relative w-full h-48">
           <img
-            src={`http://localhost:8080/${encodeURI(theme.thumbnail)}`}
+            src={`${theme.thumbnail}`}
             alt={theme.title}
             className="w-full h-full object-cover"
           />
@@ -75,7 +78,7 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
             </div>
             <div className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
-              {formatPlayTime(theme.playtime)}
+              {formatPlayTime(theme.playTimeMin, theme.playTimeMax)}
             </div>
           </div>
         </CardContent>
