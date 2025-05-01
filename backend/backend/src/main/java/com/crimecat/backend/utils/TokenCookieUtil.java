@@ -1,39 +1,28 @@
 package com.crimecat.backend.utils;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
+@Component
 public class TokenCookieUtil {
-
-
-    private static int ACCESS_TOKEN_EXPIRE_MINUTES;           // 분
-    private static int REFRESH_TOKEN_EXPIRE_DAY; // 일
     private static String appDomain;
+    private static int accessTokenExpireMinutes;
+    private static int refreshTokenExpireDay;
 
-
-    @Component
-    public static class DomainHolder {
-        @Value("${spring.domain}")
-        private String appDomain;
-        @Value("${spring.oauth.refresh-token-expire-days}")
-        private int refreshTokenExpireDay;
-        @Value("${spring.oauth.access-token-expire-minutes}")
-        private int accessTokenExpireMinutes;
-
-        @PostConstruct
-        public void init() {
-            TokenCookieUtil.ACCESS_TOKEN_EXPIRE_MINUTES = accessTokenExpireMinutes;
-            TokenCookieUtil.REFRESH_TOKEN_EXPIRE_DAY = refreshTokenExpireDay;
-            TokenCookieUtil.appDomain = appDomain;
-        }
+    @Autowired
+    public TokenCookieUtil(
+        @Value("${spring.domain}") String domain,
+        @Value("${spring.oauth.access-token-expire-minutes}") int accessExpire,
+        @Value("${spring.oauth.refresh-token-expire-days}") int refreshExpire) {
+        appDomain = domain;
+        accessTokenExpireMinutes = accessExpire;
+        refreshTokenExpireDay = refreshExpire;
     }
     // ✅ 쿠키에서 특정 이름의 값 꺼내기
     public static String getCookieValue(HttpServletRequest request, String name) {
@@ -68,7 +57,7 @@ public class TokenCookieUtil {
             .httpOnly(true)
             .secure(true)
             .path("/")
-            .maxAge(Duration.ofMinutes(ACCESS_TOKEN_EXPIRE_MINUTES))
+            .maxAge(Duration.ofMinutes(accessTokenExpireMinutes))
 //            .domain(appDomain) /// 개발시 제외 서비스시 활성
 //            .sameSite("Strict")  // 또는 "Lax", "Lax"
             .build();
@@ -81,7 +70,7 @@ public class TokenCookieUtil {
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .maxAge(Duration.ofDays(REFRESH_TOKEN_EXPIRE_DAY))
+                .maxAge(Duration.ofDays(refreshTokenExpireDay))
 //                .domain(appDomain)/// 개발시 제외 서비스시 활성
 //                .sameSite("Strict")  // 또는 "Lax", "None"
                 .build();
