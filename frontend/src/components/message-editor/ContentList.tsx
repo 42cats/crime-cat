@@ -22,15 +22,13 @@ interface ContentListProps {
   onChange: (contentId: string, updatedData: Partial<ContentData>) => void;
   onRemove: (contentId: string) => void;
   onAdd: () => void;
-  channels: any[];
 }
 
 export function ContentList({ 
   contents, 
   onChange, 
   onRemove, 
-  onAdd, 
-  channels 
+  onAdd 
 }: ContentListProps) {
   const [selectedContents, setSelectedContents] = useState<string[]>([]);
   const [isAllSelected, setIsAllSelected] = useState(false);

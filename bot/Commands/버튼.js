@@ -29,7 +29,7 @@ module.exports = {
 			option.setName('관리자만')
 				.setDescription('길드 관리자만 버튼을 누를 수 있도록 제한할까요? (기본값: false)'))
 		.addBooleanOption(option =>
-			option.setName('누가눌렀어')
+			option.setName('몇번눌렀어')
 				.setDescription('누가 몇 번 눌렀는지 표시할까요? (기본값: false)'))
 		.addBooleanOption(option =>
 			option.setName('색변경')
@@ -39,7 +39,10 @@ module.exports = {
 				.setDescription('버튼을 누르면 해당정보를 누른 사람의 디엠으로 전송할까요? (기본값: false)'))
 		.addBooleanOption(option =>
 			option.setName('나만보기')
-				.setDescription('버튼을 누르면 누른 사람에게만 보이도록 할까요? (기본값: false)')),
+				.setDescription('버튼을 누르면 누른 사람에게만 보이도록 할까요? (기본값: false)'))
+		.addBooleanOption(option =>
+			option.setName('누름표시')
+				.setDescription('버튼을 누르면 누른 사람의 이름이 해당버튼에 표기됨 (기본값: false)')),
 
 
 	/**
@@ -48,11 +51,12 @@ module.exports = {
 	async execute(interaction) {
 		const groupName = interaction.options.getString('groupname');
 		const isOneTime = interaction.options.getBoolean('한번만') ?? false;
-		const isAdminOnly = interaction.options.getBoolean('admin_only관리자만') ?? false;
-		const showPressDetail = interaction.options.getBoolean('누가눌렀어') ?? false;
+		const isAdminOnly = interaction.options.getBoolean('관리자만') ?? false;
+		const showPressDetail = interaction.options.getBoolean('몇번눌렀어') ?? false;
 		const changeColor = interaction.options.getBoolean('색변경') ?? false;
 		const toDm = interaction.options.getBoolean('디엠으로') ?? false;
 		const showOnlyMe = interaction.options.getBoolean('나만보기') ?? false;
+		const labelName = interaction.options.getBoolean('누름표시') ?? false;
 
 		if (!await isPermissionHas(interaction.user.id, "메시지매크로")) {
 			interaction.reply("해당 기능을 사용할 권한이 없습니다. 권한을 구매해 주세요");
@@ -62,6 +66,12 @@ module.exports = {
 		if (toDm && showOnlyMe) {
 			return await interaction.reply({
 				content: "❌ '디엠으로'와 '나만보기'는 동시에 사용할 수 없습니다. 둘 중 하나만 선택해주세요.",
+				ephemeral: true
+			});
+		}
+		if (!isOneTime && labelName) {
+			return await interaction.reply({
+				content: "❌ '버튼에 이름표시'는 '한번만'과 같이 사용해야 합니다.",
 				ephemeral: true
 			});
 		}
@@ -82,7 +92,8 @@ module.exports = {
 				showPressDetail,
 				changeColor,
 				toDm,
-				showOnlyMe
+				showOnlyMe,
+				labelName
 			});
 		} catch (error) {
 			console.error("버튼 명령어 에러", error);
@@ -109,6 +120,7 @@ async function sendButtonGroupWithPagination(interaction, group, options = {}) {
 		changeColor = false,
 		toDm = false,
 		showOnlyMe = false,
+		labelName = false,
 	} = options;
 
 	const rows = [];
@@ -118,7 +130,7 @@ async function sendButtonGroupWithPagination(interaction, group, options = {}) {
 		const row = new ActionRowBuilder();
 
 		for (const button of slice) {
-			const optionBits = `${+isOneTime}${+isAdminOnly}${+showPressDetail}${+changeColor}${+toDm}${+showOnlyMe}`; // e.g. "101"
+			const optionBits = `${+isOneTime}${+isAdminOnly}${+showPressDetail}${+changeColor}${+toDm}${+showOnlyMe}${+labelName}`; // e.g. "101"
 			const customId = encodeToString(button.id, "messageMacro", optionBits);
 
 			row.addComponents(

@@ -9,7 +9,6 @@ interface SortableButtonListProps {
   buttons: ButtonData[];
   groupId: string;
   onChange: (groupId: string, updatedData: Partial<{ buttons: ButtonData[] }>) => void;
-  channels: any[];
   isButtonNameDuplicate?: (groupId: string, buttonId: string, name: string) => boolean;
 }
 
@@ -17,7 +16,6 @@ export function SortableButtonList({
   buttons, 
   groupId, 
   onChange, 
-  channels,
   isButtonNameDuplicate
 }: SortableButtonListProps) {
   const sensors = useSensors(
@@ -73,7 +71,6 @@ export function SortableButtonList({
               button={button}
               onChange={handleButtonChange}
               onRemove={handleButtonRemove}
-              channels={channels}
               isButtonNameDuplicate={isButtonNameDuplicate}
             />
           ))}
