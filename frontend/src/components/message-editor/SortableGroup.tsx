@@ -42,7 +42,6 @@ interface SortableGroupProps {
   index: number;
   onChange: (groupId: string, updatedData: Partial<GroupData>) => void;
   onRemove: (groupId: string) => void;
-  channels: any[];
   onButtonAdd: (groupId: string) => void;
   isButtonNameDuplicate?: (groupId: string, buttonId: string, name: string) => boolean;
 }
@@ -52,7 +51,6 @@ export function SortableGroup({
   index,
   onChange,
   onRemove,
-  channels,
   onButtonAdd,
   isButtonNameDuplicate
 }: SortableGroupProps) {
@@ -256,7 +254,6 @@ export function SortableGroup({
                 buttons={group.buttons} 
                 groupId={group.id}
                 onChange={onChange}
-                channels={channels}
                 isButtonNameDuplicate={isButtonNameDuplicate}
               />
               

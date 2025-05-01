@@ -1,6 +1,7 @@
 // handlers/messageMacro.js
 const { PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getContents } = require('../../Commands/api/messageMacro/messageMacro');
+const logger = require('../../Commands/utility/logger');
 
 const COLORS = [ButtonStyle.Primary, ButtonStyle.Danger, ButtonStyle.Success];
 function getNextColor(currentStyle) {
@@ -108,6 +109,7 @@ module.exports = {
 			const changeColor = option?.[3] === '1';
 			const toDm = option?.[4] === '1';
 			const showOnlyMe = option?.[5] === '1';
+			const labelName = option?.[6] === '1';
 			const buttonName = interaction.component?.label || '알 수 없는 버튼';
 
 			await interaction.deferReply({ ephemeral: true }); // 👈 가장 첫 줄에 추가
@@ -155,8 +157,9 @@ module.exports = {
 			}
 
 			// 버튼 색상 변경 또는 비활성화
-			if (changeColor || isOneTime) {
+			if (changeColor || isOneTime || (labelName && isOneTime)) {
 				try {
+					console.log(`버튼 옵션 상태 - isOneTime: ${isOneTime}, labelName: ${labelName}, changeColor: ${changeColor}`);
 					const newComponents = interaction.message.components.map(row => {
 						const newRow = ActionRowBuilder.from(row);
 						newRow.components = row.components.map(button => {
@@ -170,9 +173,24 @@ module.exports = {
 								builder = builder.setStyle(getNextColor(button.style));
 							}
 
-							// 클릭된 버튼만 비활성화
-							if (isOneTime && button.customId === interaction.customId) {
-								builder = builder.setDisabled(true);
+							// 클릭된 버튼만 처리
+							if (button.customId === interaction.customId) {
+								console.log(`클릭된 버튼 처리 중 - customId: ${button.customId}`);
+
+								// 라벨 이름 옵션이 켜져있고 원타임 옵션도 켜져있을 경우, 버튼 이름에 유저 이름 추가
+								if (labelName && isOneTime) {
+									const userName = interaction.member.displayName;
+									const currentLabel = button.label || '알 수 없는 버튼';
+									console.log(`버튼 라벨 변경 - 이전: "${currentLabel}", 사용자: "${userName}"`);
+									builder = builder.setLabel(`${currentLabel} (${userName})`);
+									console.log(`버튼 라벨 변경 완료 - 새 라벨: "${currentLabel} (${userName})"`);
+								}
+
+								// 클릭된 버튼 비활성화
+								if (isOneTime) {
+									builder = builder.setDisabled(true);
+									console.log(`버튼 비활성화 완료`);
+								}
 							}
 
 							return builder;
@@ -180,9 +198,11 @@ module.exports = {
 						return newRow;
 					});
 
+					console.log(`메시지 컴포넌트 업데이트 시도`);
 					await interaction.message.edit({ components: newComponents }).catch(err => {
 						console.warn(`버튼 색상/상태 업데이트 실패:`, err.message);
 					});
+					console.log(`메시지 컴포넌트 업데이트 완료`);
 				} catch (componentError) {
 					console.error("버튼 컴포넌트 업데이트 오류:", componentError);
 					// 컴포넌트 업데이트는 중요하지 않으므로 실패해도 계속 진행
