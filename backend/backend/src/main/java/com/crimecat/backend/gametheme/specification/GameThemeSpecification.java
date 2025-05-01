@@ -16,8 +16,8 @@ public class GameThemeSpecification {
             criteriaBuilder.and(
                 criteriaBuilder.isFalse(root.get("isDeleted")),
                 criteriaBuilder.or(
-                        criteriaBuilder.isTrue(root.get("isPublic")),
-                        criteriaBuilder.equal(root.get("author"), userId)
+                        criteriaBuilder.isTrue(root.get("publicStatus")),
+                        criteriaBuilder.equal(root.get("authorId"), userId)
                 )
             );
     }
