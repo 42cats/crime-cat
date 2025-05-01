@@ -96,10 +96,10 @@ public class WebUserService {
                 Instant now = Instant.now();
 
                 if (!now.isBefore(eventStart) && !now.isAfter(eventEnd)) {
-                    this.PermissionsSet(u, "관전");
-                    this.PermissionsSet(u, "주소추가");
-                    this.PermissionsSet(u, "로컬음악");
-                    this.PermissionsSet(u, "메시지매크로");
+                    this.permissionsSet(u, "관전");
+                    this.permissionsSet(u, "주소추가");
+                    this.permissionsSet(u, "로컬음악");
+                    this.permissionsSet(u, "메시지매크로");
                 }
             }
 
