@@ -32,7 +32,15 @@ instance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (originalRequest.url?.includes('/auth/reissue')) {
+      return Promise.reject(error);
+    }
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/auth/me')
+    ) {
       originalRequest._retry = true;
 
       if (isRefreshing) {
@@ -48,7 +56,6 @@ instance.interceptors.response.use(
 
       try {
         await instance.post('/auth/reissue');
-
         processQueue();
         return instance(originalRequest);
       } catch (err) {
