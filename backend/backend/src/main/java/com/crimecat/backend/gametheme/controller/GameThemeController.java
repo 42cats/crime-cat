@@ -5,7 +5,6 @@ import com.crimecat.backend.gametheme.dto.GetGameThemeResponse;
 import com.crimecat.backend.gametheme.dto.GetGameThemesResponse;
 import com.crimecat.backend.gametheme.dto.GetLikeStatusResponse;
 import com.crimecat.backend.gametheme.dto.UpdateGameThemeRequest;
-import com.crimecat.backend.web.gametheme.dto.*;
 import com.crimecat.backend.gametheme.service.GameThemeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
