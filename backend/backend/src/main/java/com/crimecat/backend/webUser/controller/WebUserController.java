@@ -7,7 +7,9 @@ import com.crimecat.backend.coupon.service.CouponService;
 import com.crimecat.backend.user.dto.UserGrantedPermissionDto;
 import com.crimecat.backend.user.service.UserService;
 import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import com.crimecat.backend.webUser.service.WebUserService;
 
@@ -15,8 +17,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -57,7 +61,7 @@ public class WebUserController {
 
   @PatchMapping("profile")
   public ResponseEntity<Void> editUserProfile(@RequestPart(name = "profileImage", required = false)
-      MultipartFile file, @RequestPart(name = "data") WebUserProfileEditRequestDto webUserProfileEditRequestDto){
+  MultipartFile file, @RequestPart(name = "data") WebUserProfileEditRequestDto webUserProfileEditRequestDto){
 
     //유저인증
     AuthenticationUtil.validateAdminOrSameUser(UUID.fromString(webUserProfileEditRequestDto.getUserId()));
