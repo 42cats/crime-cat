@@ -15,4 +15,6 @@ public interface WebUserRepository extends JpaRepository<WebUser, UUID> {
 
     Optional<WebUser> findWebUserByEmail(String email);
 
+    Optional<WebUser> findByNickname(String nickname);
+
 }

@@ -1,19 +1,22 @@
 package com.crimecat.backend.webUser.service;
 
-import com.crimecat.backend.utils.UserDailyCheckUtil;
+import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.permission.domain.Permission;
 import com.crimecat.backend.permission.service.PermissionService;
 import com.crimecat.backend.point.service.PointHistoryService;
+import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.user.domain.DiscordUser;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.repository.DiscordUserRepository;
 import com.crimecat.backend.user.repository.UserRepository;
 import com.crimecat.backend.user.service.UserPermissionService;
-import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.utils.UserDailyCheckUtil;
+import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
 import com.crimecat.backend.webUser.enums.LoginMethod;
 import com.crimecat.backend.webUser.enums.UserRole;
-import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import java.time.Duration;
 import java.time.Instant;
@@ -27,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -40,6 +44,9 @@ public class WebUserService {
     private final PointHistoryService pointHistoryService;
     private final PermissionService permissionService;
     private final UserPermissionService userPermissionService;
+    private final StorageService storageService;
+    private final ObjectMapper objectMapper;
+    private static final String PROFILE_IMAGE_LOCATION = "profileImage";
 
     /**
      * OAuth 로그인 시 사용자 정보를 기준으로 신규 생성 또는 기존 유저 반환
@@ -162,12 +169,35 @@ public class WebUserService {
     }
 
     @Transactional
-    public void userProfileSet(String userId){
-        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
-            .orElseThrow(
-                ErrorStatus.USER_NOT_FOUND::asServiceException);
-        webUser.
+    public void userProfileSet(MultipartFile file, WebUserProfileEditRequestDto webUserProfileEditRequestDto){
+        WebUser webUser = webUserRepository.findById(
+                UUID.fromString(webUserProfileEditRequestDto.getUserId()))
+            .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
 
+        //유저장보 업데이트
+        if(webUserProfileEditRequestDto.getNickName() != null){
+            Optional<WebUser> byNickname = webUserRepository.findByNickname(
+                webUserProfileEditRequestDto.getNickName());
+            if(byNickname.isPresent()){
+                WebUser checker = byNickname.get();
+                if (!webUser.getId().equals(checker.getId())){
+                    throw ErrorStatus.NICK_NAME_ALREADY_EXISTS.asServiceException();
+                }
+            }
+        }
+        webUser.updateProfile(webUserProfileEditRequestDto, objectMapper);
+
+        //프로필파일 저장
+        if(file != null && !file.isEmpty()){
+            try{
+            String path = storageService.storeAt(file, PROFILE_IMAGE_LOCATION, webUser.getId().toString());
+            webUser.setProfileImagePath(path);
+      } catch (Exception e) {
+                log.error("프로필 이미지 저장 실패 : {}", e.getMessage());
+        throw ErrorStatus.UNPROCESSABLE_ENTITY.asServiceException();
+      }
+        }
+        webUserRepository.save(webUser);
     }
 
 }
