@@ -18,6 +18,7 @@ import lombok.Data;
 public class AddGameThemeRequest {
     private String title; //"테마 제목"
     private String summary; // 간략 설명
+    private String author;
     private Set<String> tags; // 태그 배열
     private String content; // 게시글 본문
     private int playerMin; // 최소 인원수

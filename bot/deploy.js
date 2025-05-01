@@ -18,7 +18,7 @@ try {
 
     for (const entry of entries) {
         const entryPath = path.join(foldersPath, entry.name);
-        
+
         if (entry.isFile() && entry.name.endsWith('.js')) {
             try {
                 const command = require(entryPath);
@@ -58,7 +58,7 @@ async function deployCommands() {
         }
 
         if (guildCommands.length > 0) {
-            const guildId = process.env.DEV_GUILD_ID;
+            const guildId = process.env.PROD_GUILD_ID;
             console.log(`길드(${guildId}) 커맨드 등록 시작`);
             const guildResult = await rest.put(
                 Routes.applicationGuildCommands(process.env.APP_ID, guildId),
