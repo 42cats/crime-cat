@@ -13,10 +13,10 @@ import org.springframework.stereotype.Component;
 
 import com.crimecat.backend.auth.jwt.JwtTokenProvider;
 import com.crimecat.backend.auth.service.RefreshTokenService;
-import com.crimecat.backend.auth.util.TokenCookieUtil;
+import com.crimecat.backend.utils.TokenCookieUtil;
 import com.crimecat.backend.config.ServiceUrlConfig;
-import com.crimecat.backend.web.webUser.domain.WebUser;
-import com.crimecat.backend.web.webUser.repository.WebUserRepository;
+import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.repository.WebUserRepository;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -7,8 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.crimecat.backend.auth.jwt.JwtTokenProvider;
 import com.crimecat.backend.auth.service.JwtBlacklistService;
 import com.crimecat.backend.auth.service.RefreshTokenService;
-import com.crimecat.backend.web.webUser.domain.WebUser;
-import com.crimecat.backend.web.webUser.repository.WebUserRepository;
+import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.servlet.http.Cookie;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;

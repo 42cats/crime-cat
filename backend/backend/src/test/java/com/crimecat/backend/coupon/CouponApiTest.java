@@ -19,12 +19,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.crimecat.backend.bot.coupon.domain.Coupon;
-import com.crimecat.backend.bot.coupon.dto.CouponCreateRequestDto;
-import com.crimecat.backend.bot.coupon.dto.CouponRedeemRequestDto;
-import com.crimecat.backend.bot.coupon.repository.CouponRepository;
-import com.crimecat.backend.bot.user.domain.DiscordUser;
-import com.crimecat.backend.bot.user.repository.DiscordUserRepository;
+import com.crimecat.backend.coupon.domain.Coupon;
+import com.crimecat.backend.coupon.dto.CouponCreateRequestDto;
+import com.crimecat.backend.coupon.dto.CouponRedeemRequestDto;
+import com.crimecat.backend.coupon.repository.CouponRepository;
+import com.crimecat.backend.user.domain.DiscordUser;
+import com.crimecat.backend.user.repository.DiscordUserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest

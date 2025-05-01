@@ -5,9 +5,9 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import com.crimecat.backend.web.command.controller.CommandController;
-import com.crimecat.backend.web.command.dto.CommandRequestDto;
-import com.crimecat.backend.web.command.service.CommandService;
+import com.crimecat.backend.command.controller.CommandController;
+import com.crimecat.backend.command.dto.CommandRequestDto;
+import com.crimecat.backend.command.service.CommandService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
