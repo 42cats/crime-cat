@@ -47,7 +47,6 @@ interface SortableButtonProps {
   button: ButtonData;
   onChange: (buttonId: string, updatedData: Partial<ButtonData>) => void;
   onRemove: (buttonId: string) => void;
-  channels: any[];
   isButtonNameDuplicate?: (groupId: string, buttonId: string, name: string) => boolean;
 }
 
@@ -55,7 +54,6 @@ export function SortableButton({
   button, 
   onChange, 
   onRemove, 
-  channels,
   isButtonNameDuplicate 
 }: SortableButtonProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -342,7 +340,6 @@ export function SortableButton({
             onChange={handleContentChange}
             onRemove={removeContent}
             onAdd={addContent}
-            channels={channels}
           />
         </div>
       )}

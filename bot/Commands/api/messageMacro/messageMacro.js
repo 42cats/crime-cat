@@ -8,9 +8,11 @@ const logger = require('../../utility/logger');
 
 const axios = require('axios');
 const { formatApiError } = require('../../utility/logger');
+const { type } = require('node:os');
 // API 기본 설정
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
-const API_PREFIX = '/api/v1';
+const BEARER_TOKEN = process.env.DISCORD_CLIENT_SECRET;
+const API_PREFIX = '/bot/v1';
 const API_TIMEOUT = 8000; // 8초
 
 /**
@@ -33,7 +35,8 @@ async function safeApiRequest(options) {
 			timeout,
 			headers: {
 				'Content-Type': 'application/json',
-				'Accept': 'application/json'
+				'Accept': 'application/json',
+				'Authorization': `Bearer ${BEARER_TOKEN}`
 			}
 		};
 
@@ -89,7 +92,7 @@ async function safeApiRequest(options) {
 /**
  * 버튼 ID에 해당하는 콘텐츠 목록 조회
  * @param {string} buttonId 버튼 ID
- * @returns {Promise<Array>} 콘텐츠 목록
+ * @returns {Promise<Object>} 콘텐츠 목록
  * @throws {Error} 조회 실패 시 오류
  */
 async function getContents(buttonId) {
@@ -105,21 +108,27 @@ async function getContents(buttonId) {
 		}
 
 		// API 요청
-		const endpoint = `/messageMacros/buttons/${buttonId}/contents`;
+		const endpoint = `/messageMacros/contents/${buttonId}`;
 		const response = await safeApiRequest({ endpoint });
 
 		// 응답 검증
-		if (!response || !Array.isArray(response)) {
-			console.warn(`⚠️ 버튼 콘텐츠 조회 응답이 배열이 아님:`, response);
-			return [];
+		if (!response || typeof response !== 'object') {
+			console.warn(`⚠️ 버튼 그룹 조회 응답이 객체가 아님:`, response);
+			return { name: groupName, index: 0, buttons: [] };
+		}
+
+		// 버튼 배열 검증
+		if (!Array.isArray(response.contents)) {
+			console.warn(`⚠️ 버튼 그룹에 buttons 배열이 없음:`, response);
+			response.buttons = [];
 		}
 
 		// 유효한 콘텐츠만 필터링
-		const validContents = response.filter(item =>
+		const validContents = response.contents.filter(item =>
 			item && (typeof item.text === 'string' || typeof item.channelId === 'string')
 		);
 
-		if (validContents.length === 0 && response.length > 0) {
+		if (validContents.length === 0) {
 			console.warn(`⚠️ 버튼에 유효한 콘텐츠가 없음. 원본 응답:`, response);
 		}
 
@@ -191,8 +200,64 @@ setInterval(() => {
 	}
 }, 10 * 60 * 1000); // 10분마다 실행
 
+/**
+ * 그룹 내 버튼 목록 조회
+ * @param {string} guildId 길드 ID
+ * @param {string} groupName 버튼 그룹 이름
+ * @returns {Promise<Object>} 그룹 정보와 버튼 목록을 포함한 객체
+ * @throws {Error} 조회 실패 시 오류
+ */
+async function getButtons(guildId, groupName) {
+	try {
+		// 파라미터 검증
+		if (!guildId || typeof guildId !== 'string') {
+			throw new Error('유효하지 않은 길드 ID입니다.');
+		}
+
+		if (!groupName || typeof groupName !== 'string') {
+			throw new Error('유효하지 않은 그룹 이름입니다.');
+		}
+
+		// API 요청
+		const endpoint = `/messageMacros/buttons/${guildId}/${encodeURIComponent(groupName)}`;
+		const response = await safeApiRequest({ endpoint });
+
+		// 응답 검증
+		if (!response || typeof response !== 'object') {
+			console.warn(`⚠️ 버튼 그룹 조회 응답이 객체가 아님:`, response);
+			return { name: groupName, index: 0, buttons: [] };
+		}
+
+		// 버튼 배열 검증
+		if (!Array.isArray(response.buttons)) {
+			console.warn(`⚠️ 버튼 그룹에 buttons 배열이 없음:`, response);
+			response.buttons = [];
+		}
+
+		// 유효한 버튼만 필터링
+		response.buttons = response.buttons.filter(button =>
+			button && typeof button === 'object' &&
+			typeof button.id === 'string' &&
+			typeof button.name === 'string'
+		);
+
+		// 버튼을 index 순서로 정렬
+		response.buttons.sort((a, b) => (a.index || 0) - (b.index || 0));
+
+		return response;
+	} catch (error) {
+		// 오류 로그 및 재전파
+		logger.error(`❌ 버튼 그룹 조회 실패 (길드 ID: ${guildId}, 그룹: ${groupName}):`, error);
+
+		// 더 명확한 오류 메시지로 래핑
+		const errorMessage = error.message || '버튼 그룹 조회 중 오류가 발생했습니다.';
+		throw new Error(`버튼 그룹 조회 실패: ${errorMessage}`);
+	}
+}
+
 // 모듈 내보내기
 module.exports = {
 	getContents,
-	getCachedContents
+	getCachedContents,
+	getButtons
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,8 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { fetchChannels } from "@/api/messageButtonService";
 import { Channel } from "@/lib/types";
-import { useParams, useLocation } from "react-router-dom";
+import { useChannels } from "@/contexts/ChannelContext";
 
 interface ChannelSelectProps {
     value: string;
@@ -33,25 +32,10 @@ export function ChannelSelect({
     disabled,
     className,
 }: ChannelSelectProps) {
-    // ✅ guildId 안전하게 가져오기 (params → state → sessionStorage)
-    const params = useParams<{ guildId?: string }>();
-    const location = useLocation();
-    const state = location.state as { guildId?: string } | null;
-
-    const guildId = useMemo(() => {
-        return (
-            params.guildId ||
-            state?.guildId ||
-            sessionStorage.getItem("guildId") ||
-            ""
-        );
-    }, [params.guildId, state]);
-
+    const { channels, isLoading } = useChannels();
+    
     const [open, setOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [channels, setChannels] = useState<Channel[]>([]);
     const [selectedChannel, setSelectedChannel] = useState<Channel>();
-    const [initialized, setInitialized] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
     // 👑 초성검색 포함 매칭 함수
@@ -63,30 +47,6 @@ export function ChannelSelect({
             Hangul.search(Hangul.d(target, true).join(""), k) >= 0
         );
     };
-
-    // ✅ 1회 채널 로드 + 가나다 정렬
-    useEffect(() => {
-        if (initialized || !guildId) return;
-
-        setIsLoading(true);
-        fetchChannels(guildId)
-            .then((fetched) => {
-                const sorted = [...fetched].sort((a, b) =>
-                    a.name.localeCompare(b.name, "ko-KR")
-                );
-                setChannels(sorted);
-                if (value) {
-                    setSelectedChannel(sorted.find((c) => c.id === value));
-                }
-            })
-            .catch((e) => {
-                console.error("채널 로드 실패", e);
-            })
-            .finally(() => {
-                setInitialized(true);
-                setIsLoading(false);
-            });
-    }, [guildId, initialized, value]);
 
     // ✅ value 변경 시 selected 동기화
     useEffect(() => {

@@ -7,11 +7,12 @@ import { GroupData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { fetchGroupsFromServer, saveData, fetchChannels } from "@/api/messageButtonService";
+import { fetchGroupsFromServer, saveData } from "@/api/messageButtonService";
 import { useLocation, useParams } from "react-router-dom";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, verticalListSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
+import { ChannelProvider } from "@/contexts/ChannelContext";
 import {
   Tooltip,
   TooltipContent,
@@ -63,7 +64,6 @@ const MessageButtonEditor: React.FC = () => {
 
     const [groups, setGroups] = useState<GroupData[]>([]);
     const [isSaving, setIsSaving] = useState(false);
-    const [channels, setChannels] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const saveTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -85,22 +85,18 @@ const MessageButtonEditor: React.FC = () => {
         );
     }
 
-    // 최초 로딩 시 서버에서 그룹 목록 및 채널 목록을 받아옴
+    // 최초 로딩 시 서버에서 그룹 목록을 받아옴
     useEffect(() => {
         let mounted = true;
         setIsLoading(true);
 
         const loadInitialData = async () => {
             try {
-                // 채널 정보 가져오기
-                const channelList = await fetchChannels(guildId);
-                
                 // 그룹 정보 가져오기
                 const serverGroups = await fetchGroupsFromServer(guildId);
                 
                 if (!mounted) return;
                 
-                setChannels(channelList);
                 setGroups(
                     serverGroups.length > 0
                         ? serverGroups
@@ -397,98 +393,99 @@ const MessageButtonEditor: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
-            <div className="container mx-auto py-12 px-4">
-                {/* 헤더 카드 */}
-                <Card className="mb-12">
-                    <CardHeader>
-                        <CardTitle className="text-3xl font-bold">
-                            {guildName} 서버 메시지 매크로 에디터
-                        </CardTitle>
-                        <CardDescription>
-                            메시지를 버튼 하나로 쉽게 보낼 수 있도록 편집하세요.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardFooter className="flex justify-between">
-                        <UIButton
-                            onClick={() => {
-                                setGroups((prev) => [
-                                    ...prev,
-                                    initializeNewGroup(),
-                                ]);
-                            }}
-                            variant="outline"
-                            className="flex items-center gap-2"
-                        >
-                            <FolderPlus className="h-5 w-5" />
-                            그룹 추가
-                        </UIButton>
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <UIButton
-                                        onClick={handleSave}
-                                        disabled={isSaving}
-                                        className={cn(
-                                            "inline-flex items-center gap-2 px-6 py-2 font-medium",
-                                            isSaving && "opacity-50 cursor-not-allowed"
-                                        )}
-                                    >
-                                        <Save className="h-5 w-5" />
-                                        {isSaving ? "저장 중…" : "저장하기"}
-                                    </UIButton>
-                                </TooltipTrigger>
-                                <TooltipContent>모든 변경사항을 저장합니다</TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </CardFooter>
-                </Card>
+        <ChannelProvider guildId={guildId}>
+            <div className="min-h-screen bg-background text-foreground">
+                <div className="container mx-auto py-12 px-4">
+                    {/* 헤더 카드 */}
+                    <Card className="mb-12">
+                        <CardHeader>
+                            <CardTitle className="text-3xl font-bold">
+                                {guildName} 서버 메시지 매크로 에디터
+                            </CardTitle>
+                            <CardDescription>
+                                메시지를 버튼 하나로 쉽게 보낼 수 있도록 편집하세요.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardFooter className="flex justify-between">
+                            <UIButton
+                                onClick={() => {
+                                    setGroups((prev) => [
+                                        ...prev,
+                                        initializeNewGroup(),
+                                    ]);
+                                }}
+                                variant="outline"
+                                className="flex items-center gap-2"
+                            >
+                                <FolderPlus className="h-5 w-5" />
+                                그룹 추가
+                            </UIButton>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <UIButton
+                                            onClick={handleSave}
+                                            disabled={isSaving}
+                                            className={cn(
+                                                "inline-flex items-center gap-2 px-6 py-2 font-medium",
+                                                isSaving && "opacity-50 cursor-not-allowed"
+                                            )}
+                                        >
+                                            <Save className="h-5 w-5" />
+                                            {isSaving ? "저장 중…" : "저장하기"}
+                                        </UIButton>
+                                    </TooltipTrigger>
+                                    <TooltipContent>모든 변경사항을 저장합니다</TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </CardFooter>
+                    </Card>
 
-                {/* 그룹 리스트 */}
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                    modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}
-                >
-                    <SortableContext
-                        items={groups.map(group => group.id)}
-                        strategy={verticalListSortingStrategy}
+                    {/* 그룹 리스트 */}
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                        modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}
                     >
-                        <div className="space-y-6">
-                            {groups.map((group, idx) => (
-                                <SortableGroup
-                                    key={group.id}
-                                    group={group}
-                                    index={idx}
-                                    onChange={handleGroupChange}
-                                    onRemove={handleGroupRemove}
-                                    channels={channels}
-                                    onButtonAdd={addButtonToGroup}
-                                    isButtonNameDuplicate={isButtonNameDuplicate}
-                                />
-                            ))}
-                            
-                            {/* 그룹 추가 버튼 */}
-                            <div className="flex justify-center mt-8">
-                                <UIButton
-                                    onClick={() => {
-                                        setGroups((prev) => [
-                                            ...prev,
-                                            initializeNewGroup(),
-                                        ]);
-                                    }}
-                                    className="w-full flex items-center gap-2 text-sm hover:bg-muted/50 px-3 py-2 rounded border border-dashed border-border transition-colors"
-                                    variant="outline"
-                                >
-                                    <Plus className="h-5 w-5" /> 그룹 추가
-                                </UIButton>
+                        <SortableContext
+                            items={groups.map(group => group.id)}
+                            strategy={verticalListSortingStrategy}
+                        >
+                            <div className="space-y-6">
+                                {groups.map((group, idx) => (
+                                    <SortableGroup
+                                        key={group.id}
+                                        group={group}
+                                        index={idx}
+                                        onChange={handleGroupChange}
+                                        onRemove={handleGroupRemove}
+                                        onButtonAdd={addButtonToGroup}
+                                        isButtonNameDuplicate={isButtonNameDuplicate}
+                                    />
+                                ))}
+                                
+                                {/* 그룹 추가 버튼 */}
+                                <div className="flex justify-center mt-8">
+                                    <UIButton
+                                        onClick={() => {
+                                            setGroups((prev) => [
+                                                ...prev,
+                                                initializeNewGroup(),
+                                            ]);
+                                        }}
+                                        className="w-full flex items-center gap-2 text-sm hover:bg-muted/50 px-3 py-2 rounded border border-dashed border-border transition-colors"
+                                        variant="outline"
+                                    >
+                                        <Plus className="h-5 w-5" /> 그룹 추가
+                                    </UIButton>
+                                </div>
                             </div>
-                        </div>
-                    </SortableContext>
-                </DndContext>
+                        </SortableContext>
+                    </DndContext>
+                </div>
             </div>
-        </div>
+        </ChannelProvider>
     );
 };
 
