@@ -60,6 +60,21 @@ public class SecurityConfig {
   private final CsrfTokenConfig csrfTokenConfig;
   private final ServiceUrlConfig serviceUrlConfig;
 
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)  // crsf 사이트간 위조공격 보호 해제.
+                .formLogin(AbstractHttpConfigurer::disable)         // ← 기본 /login 폼 비활성화
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) /// 세션인증 끔
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/health", "/actuator/info", "/oauth2/**","/bot/v1/**","/login/**", "/api/v1/public/**", "/api/v1/auth/**").permitAll()
+                        .anyRequest().authenticated()
+                )
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                  response.setContentType("application/json");
+                  response.setCharacterEncoding("UTF-8");
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
