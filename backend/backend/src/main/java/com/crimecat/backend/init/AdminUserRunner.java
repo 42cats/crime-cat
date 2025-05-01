@@ -1,15 +1,15 @@
 package com.crimecat.backend.init;
 
-import com.crimecat.backend.auth.util.TokenCookieUtil.DomainHolder;
-import com.crimecat.backend.bot.permission.service.PermissionService;
-import com.crimecat.backend.bot.user.domain.DiscordUser;
-import com.crimecat.backend.bot.user.domain.User;
-import com.crimecat.backend.bot.user.repository.DiscordUserRepository;
-import com.crimecat.backend.bot.user.repository.UserRepository;
+import com.crimecat.backend.utils.TokenCookieUtil.DomainHolder;
+import com.crimecat.backend.permission.service.PermissionService;
+import com.crimecat.backend.user.domain.DiscordUser;
+import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.user.repository.DiscordUserRepository;
+import com.crimecat.backend.user.repository.UserRepository;
 import com.crimecat.backend.config.AdminProperties;
-import com.crimecat.backend.web.webUser.UserRole;
-import com.crimecat.backend.web.webUser.domain.WebUser;
-import com.crimecat.backend.web.webUser.repository.WebUserRepository;
+import com.crimecat.backend.webUser.enums.UserRole;
+import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.repository.WebUserRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
