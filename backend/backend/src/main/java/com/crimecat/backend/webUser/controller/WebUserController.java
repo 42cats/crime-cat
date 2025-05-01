@@ -27,7 +27,6 @@ public class WebUserController {
   private final CouponService couponService;
   private final WebUserRepository webUserRepository;
   private final UserService userService;
-  private final DiscordOAuth2UserService discordOAuth2UserService;
 
   @PostMapping("/daily_check/{user_id}")
   public ResponseEntity<Map<String, Object>> dailyCheck(@PathVariable("user_id") String userId) {
@@ -56,12 +55,14 @@ public class WebUserController {
     return userService.getAllUserPermissionsForWeb(webUser.getDiscordUserSnowflake());
   }
 
-  @PatchMapping("profile/{user_id}")
-  public ResponseEntity<Void> editUserProfile(@PathVariable("user_id", @RequestBody) String userId){
-    UUID loginUserId = discordOAuth2UserService.getLoginUserId();
-    if(!userId.equals(loginUserId.toString())){
-      throw ErrorStatus.INVALID_ACCESS.asControllerException();
-    }
+  @PatchMapping("profile")
+  public ResponseEntity<Void> editUserProfile(@RequestPart(name = "profileImage", required = false)
+      MultipartFile file, @RequestPart(name = "data") WebUserProfileEditRequestDto webUserProfileEditRequestDto){
+
+    //유저인증
+    AuthenticationUtil.validateAdminOrSameUser(UUID.fromString(webUserProfileEditRequestDto.getUserId()));
+    webUserService.userProfileSet(file,webUserProfileEditRequestDto);
+    return ResponseEntity.status(HttpStatus.ACCEPTED).build();
   }
 
 }

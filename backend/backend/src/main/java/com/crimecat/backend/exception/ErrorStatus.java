@@ -32,6 +32,7 @@ public enum ErrorStatus {
     GROUP_ALREADY_EXISTS("이미 존재하는 그룹 이름입니다.", HttpStatus.CONFLICT),      // 409
     EMAIL_ALREADY_REGISTERED("이미 등록된 이메일입니다.", HttpStatus.CONFLICT),      // 409
     TEAM_MEMBER_ALREADY_REGISTERED("이미 등록된 멤버입니다.", HttpStatus.CONFLICT),
+    NICK_NAME_ALREADY_EXISTS("이미 사용중인 닉네임 입니다.", HttpStatus.CONFLICT),
 
     // 🛑 잘못된 요청
     INVALID_INPUT("잘못된 요청입니다.", HttpStatus.BAD_REQUEST),    //400                 // 400

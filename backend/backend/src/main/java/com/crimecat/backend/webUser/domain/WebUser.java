@@ -1,35 +1,36 @@
 package com.crimecat.backend.webUser.domain;
 
+import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.user.domain.User;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.OneToOne;
-import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
-
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-
+import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
 import com.crimecat.backend.webUser.enums.LoginMethod;
 import com.crimecat.backend.webUser.enums.UserRole;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Entity
 @Table(name = "web_users")
@@ -169,9 +170,25 @@ public class WebUser implements UserDetails {
         return user.getPoint();
     }
 
-    public void subtractPoint(int amount) {
-        this.user.subtractPoint(amount);
-    }
 
-    public void addPoint(Integer point) {this.user.addPoint(point);}
+    public void updateProfile(WebUserProfileEditRequestDto request, ObjectMapper socialLinks) {
+        if(request.getNickName() != null){
+            this.nickname = request.getNickName();
+        }
+        if(request.getSocialLink() != null){
+            try{
+                this.socialLinks = socialLinks.writeValueAsString(request.getSocialLink());
+            } catch (JsonProcessingException e) {
+                throw ErrorStatus.UNPROCESSABLE_ENTITY.asServiceException();
+            }
+        }
+        if(request.getDiscordAlert() != null){
+            if(getUser().getDiscordUser() != null){
+                getUser().getDiscordUser().setDiscordAlarm(request.getDiscordAlert());
+            }
+        }
+        if(request.getBio() != null){
+            this.bio = request.getBio();
+        }
+    }
 }
