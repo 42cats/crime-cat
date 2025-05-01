@@ -266,6 +266,9 @@ export interface RealWorldInput extends BaseThemeInput {
 }
 
 export type Theme = CrimeSceneTheme | EscapeRoomTheme | MurderMysteryTheme | RealWorldTheme;
+export type ThemeType = {
+  theme: Theme,
+};
 export type ThemePage = {
   themes: Theme[],
   page: number,

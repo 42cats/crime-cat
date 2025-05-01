@@ -17,15 +17,15 @@ const ThemeList: React.FC = () => {
   const page = Number(searchParams.get("page")) || 0;
   const validCategory = category?.toUpperCase() as Theme["type"];
 
-  const { data, isLoading, error } = useQuery<ThemePage>({
+  const { data, isLoading, isFetching, error } = useQuery<ThemePage, Error, ThemePage, [string, Theme["type"], number]>({
     queryKey: ["themes", validCategory, page],
     queryFn: () => themesService.getThemes(validCategory, PAGE_SIZE, page),
+    placeholderData: (prev) => prev,
     enabled: !!validCategory,
-    keepPreviousData: true,
   });
 
   const goToPage = (pageNum: number) => {
-    navigate(`/themes/${category}?page=${pageNum}`);
+    navigate(`/themes/${category?.toLowerCase()}?page=${pageNum}`);
   };
 
   const renderPagination = () => {
@@ -67,7 +67,10 @@ const ThemeList: React.FC = () => {
     );
   };
 
-  if (!category || !["CRIMESCENE", "ESCAPE_ROOM", "MURDER_MYSTERY", "REALWORLD"].includes(validCategory)) {
+  if (
+    !category ||
+    !["CRIMESCENE", "ESCAPE_ROOM", "MURDER_MYSTERY", "REALWORLD"].includes(validCategory)
+  ) {
     return (
       <PageTransition>
         <div className="container mx-auto px-6 py-20 text-center">
@@ -77,7 +80,7 @@ const ThemeList: React.FC = () => {
     );
   }
 
-  if (isLoading) {
+  if (isLoading && !data) {
     return (
       <PageTransition>
         <div className="container mx-auto px-6 py-20">
@@ -108,10 +111,11 @@ const ThemeList: React.FC = () => {
       <div className="container mx-auto px-6 py-20">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">{validCategory} 테마</h1>
-          <Button onClick={() => navigate("/themes/new", { state: { category, page } })}>글쓰기</Button>
+          <Button onClick={() => navigate("/themes/new", { state: { category, page } })}>
+            글쓰기
+          </Button>
         </div>
 
-        {/* 테마 목록 */}
         {data.themes.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             {data.themes.map((theme, i) => (
@@ -124,7 +128,6 @@ const ThemeList: React.FC = () => {
           </div>
         )}
 
-        {/* 페이지네이션 */}
         {renderPagination()}
       </div>
     </PageTransition>

@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageTransition from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,6 @@ import {
 const ThemeDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
   const { user, hasRole } = useAuth();
   const queryClient = useQueryClient();
@@ -37,7 +36,7 @@ const ThemeDetail: React.FC = () => {
     enabled: !!id,
   });
 
-  const theme = themeData?.theme || themeData;
+  const theme = themeData;
 
   const { data: liked = false } = useQuery({
     queryKey: ["theme-like", id],
@@ -47,15 +46,19 @@ const ThemeDetail: React.FC = () => {
 
   const likeMutation = useMutation({
     mutationFn: () => id && themesService.setLike(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["theme-like", id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["theme-like", id] });
+      queryClient.invalidateQueries({ queryKey: ["theme", id] });
+    },
   });
 
   const unlikeMutation = useMutation({
     mutationFn: () => id && themesService.cancelLike(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["theme-like", id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["theme-like", id] });
+      queryClient.invalidateQueries({ queryKey: ["theme", id] });
+    },
   });
-
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const formatPlayTime = (min: number, max: number): string => {
   const toHourText = (m: number) => {
@@ -155,12 +158,12 @@ const ThemeDetail: React.FC = () => {
               <div className="flex items-center gap-2 flex-wrap">
                 <Button variant="outline" size="sm" className={`group ${liked ? "text-red-500" : ""}`} onClick={handleToggleLike}>
                   <Heart className={`h-4 w-4 mr-2 ${liked ? "fill-red-500" : "group-hover:fill-red-500/10"}`} />
-                  추천 {(theme.recommendations || 0) + (liked ? 1 : 0)}
+                  추천 {(theme.recommendations || 0)}
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleShare}>
                   <Share2 className="h-4 w-4 mr-2" /> 공유
                 </Button>
-                {(user?.id === theme.author || hasRole(["ADMIN", "MANAGER"])) && (
+                {(user?.id === theme.authorId || hasRole(["ADMIN", "MANAGER"])) && (
                   <>
                     <Button variant="outline" size="sm" onClick={() => navigate(`/themes/edit/${theme.id}`)}>
                       <Edit className="h-4 w-4 mr-2" /> 수정
