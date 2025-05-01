@@ -1,4 +1,4 @@
-import { Theme, ThemePage, Like } from '@/lib/types';
+import { Theme, ThemePage, ThemeType, Like } from '@/lib/types';
 import { apiClient } from '@/lib/api';
  
 const baseURI = '/themes';
@@ -32,7 +32,8 @@ export const themesService = {
 
   getThemeById: async (id: string): Promise<Theme> => {
     try {
-      return await apiClient.get<Theme>(`${baseURI}/${id}`);
+      const response = await apiClient.get<ThemeType>(`${baseURI}/${id}`);
+      return response.theme;
     } catch (error) {
       console.error(`테마 ID로 조회 실패:`, error);
       throw error;

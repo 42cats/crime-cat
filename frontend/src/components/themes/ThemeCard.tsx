@@ -33,7 +33,7 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
       : `${theme.playersMin}~${theme.playersMax}인`;
 
   return (
-    <Link to={`/themes/${theme.type}/${theme.id}`}>
+    <Link to={`/themes/${theme.type.toLowerCase()}/${theme.id}`}>
       <Card className="hover:shadow-lg transition-shadow duration-300 rounded-xl overflow-hidden">
         {/* 썸네일 */}
         <div className="relative w-full h-48">

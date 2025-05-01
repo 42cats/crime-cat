@@ -95,7 +95,7 @@ const SidebarInner = () => {
                     <Link to="/" className="flex items-center space-x-2">
                         <div className="relative w-10 h-10 rounded-full overflow-hidden">
                             <img
-                                src="../content/image/icon.png"
+                                src="/content/image/icon.png"
                                 alt="짭냥이 로고"
                                 className="w-full h-full object-cover"
                             />

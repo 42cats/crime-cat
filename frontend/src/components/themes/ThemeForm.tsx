@@ -83,12 +83,12 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
     if (!data.title) newErrors.title = "제목은 필수입니다.";
     if (!data.summary) newErrors.summary = "설명은 필수입니다.";
     if (!data.tags || data.tags.length === 0) newErrors.tags = "태그를 하나 이상 입력해주세요.";
-    if (!data.playerMin || data.playerMin <= 0) newErrors.playerMin = "최소 인원은 1명 이상이어야 합니다.";
-    if (!data.playerMax || data.playerMax < data.playerMin) newErrors.playerMax = "최대 인원은 최소 인원보다 같거나 커야 합니다.";
-    if (!data.playtimeMin || data.playtimeMin <= 0) newErrors.playtimeMin = "최소 시간은 1분 이상이어야 합니다.";
-    if (!data.playtimeMax || data.playtimeMax < data.playtimeMin) newErrors.playtimeMax = "최대 시간은 최소 시간보다 같거나 커야 합니다.";
-    if (!data.price || data.price < 0) newErrors.price = "가격은 0 이상이어야 합니다.";
-    if (!data.difficulty || data.difficulty < 1) newErrors.difficulty = "난이도를 선택해주세요.";
+    if (!data.playerMin || Number(data.playerMin) <= 0) newErrors.playerMin = "최소 인원은 1명 이상이어야 합니다.";
+    if (!data.playerMax || Number(data.playerMax) < Number(data.playerMin)) newErrors.playerMax = "최대 인원은 최소 인원보다 같거나 커야 합니다.";
+    if (!data.playtimeMin || Number(data.playtimeMin) <= 0) newErrors.playtimeMin = "최소 시간은 1분 이상이어야 합니다.";
+    if (!data.playtimeMax || Number(data.playtimeMax) < Number(data.playtimeMin)) newErrors.playtimeMax = "최대 시간은 최소 시간보다 같거나 커야 합니다.";
+    if (!data.price || Number(data.price) < 0) newErrors.price = "가격은 0 이상이어야 합니다.";
+    if (!data.difficulty || Number(data.difficulty) < 1) newErrors.difficulty = "난이도를 선택해주세요.";
     if (!data.content) newErrors.content = "본문 내용을 작성해주세요.";
     if (
       data.type === "CRIMESCENE" &&
