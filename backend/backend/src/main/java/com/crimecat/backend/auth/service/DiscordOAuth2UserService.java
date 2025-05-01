@@ -6,8 +6,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
-import com.crimecat.backend.bot.user.domain.User;
-import com.crimecat.backend.bot.user.repository.UserRepository;
+import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.user.repository.UserRepository;
 import com.crimecat.backend.exception.ErrorStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,8 +21,8 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
-import com.crimecat.backend.web.webUser.domain.WebUser;
-import com.crimecat.backend.web.webUser.service.WebUserService;
+import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.service.WebUserService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

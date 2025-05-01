@@ -1,10 +1,10 @@
 package com.crimecat.backend.authorization;
 
-import com.crimecat.backend.web.webUser.LoginMethod;
-import com.crimecat.backend.web.webUser.UserRole;
-import com.crimecat.backend.web.webUser.domain.WebUser;
-import com.crimecat.backend.web.webUser.repository.WebUserRepository;
-import com.crimecat.backend.web.webUser.service.WebUserService;
+import com.crimecat.backend.webUser.enums.LoginMethod;
+import com.crimecat.backend.webUser.enums.UserRole;
+import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.repository.WebUserRepository;
+import com.crimecat.backend.webUser.service.WebUserService;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

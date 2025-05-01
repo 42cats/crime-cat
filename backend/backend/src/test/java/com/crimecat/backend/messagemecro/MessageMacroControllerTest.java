@@ -2,10 +2,10 @@ package com.crimecat.backend.messagemecro;
 
 import com.crimecat.backend.exception.ControllerException;
 import com.crimecat.backend.exception.ErrorStatus;
-import com.crimecat.backend.bot.guild.repository.GuildRepository;
-import com.crimecat.backend.web.messagemacro.controller.MessageMacroController;
-import com.crimecat.backend.web.messagemacro.dto.GroupDto;
-import com.crimecat.backend.web.messagemacro.service.MessageMacroService;
+import com.crimecat.backend.guild.repository.GuildRepository;
+import com.crimecat.backend.messagemacro.controller.MessageMacroController;
+import com.crimecat.backend.messagemacro.dto.GroupDto;
+import com.crimecat.backend.messagemacro.service.MessageMacroService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
