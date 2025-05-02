@@ -16,6 +16,13 @@ import RealWorldFields from "@/components/themes/type/RealWorldFields";
 import TeamSelectModal from "@/components/themes/modals/TeamSelectModal";
 import GuildSelectModal from "@/components/themes/modals/GuildSelectModal";
 import { useFormValidator } from "@/hooks/useFormValidator";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 interface ThemeFormProps {
   mode: "create" | "edit";
@@ -153,16 +160,20 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
         {/* 카테고리 드롭다운 */}
         <div>
           <Label className="font-bold mb-1 block">카테고리 *</Label>
-          <select
-            className="w-full border rounded p-2"
-            value={form.type}
-            onChange={(e) => setForm({ ...form, type: e.target.value })}
-          >
-            <option value="CRIMESCENE">크라임씬</option>
-            <option value="ESCAPE_ROOM">방탈출</option>
-            <option value="MURDER_MYSTERY">머더미스터리</option>
-            <option value="REALWORLD">리얼월드</option>
-          </select>
+		  <Select
+  value={form.type}
+  onValueChange={(val) => setForm({ ...form, type: val })}
+>
+  <SelectTrigger>
+    <SelectValue placeholder="타입을 선택하세요" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="CRIMESCENE">크라임씬</SelectItem>
+    <SelectItem value="ESCAPE_ROOM">방탈출</SelectItem>
+    <SelectItem value="MURDER_MYSTERY">머더미스터리</SelectItem>
+    <SelectItem value="REALWORLD">리얼월드</SelectItem>
+  </SelectContent>
+</Select>
           {errors.type && <p className="text-red-500 text-sm mt-1">{errors.type}</p>}
         </div>
   
@@ -190,7 +201,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
   
         {/* 썸네일 */}
         <div>
-          <Label className="font-bold mb-1 block">썸네일 *</Label>
+          <Label className="font-bold mb-1 block">썸네일</Label>
           {form.thumbnail && (
             <div className="mb-2 flex justify-center">
               <div className="w-full max-w-sm h-48 rounded overflow-hidden border border-muted bg-muted/20">

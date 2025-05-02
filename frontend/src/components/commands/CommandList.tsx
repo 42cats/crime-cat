@@ -114,7 +114,7 @@ const CommandList: React.FC<CommandListProps> = ({ commands }) => {
                                                             (!isNew ||
                                                                 command.createdAt !==
                                                                     command.updatedAt) && (
-                                                                <span className="twinkle-badge twinkle-badge-yellow">
+                                                                <span className="twinkle-badge twinkle-badge-blue">
                                                                     Updated
                                                                 </span>
                                                             )}
