@@ -23,11 +23,6 @@ public class MakerTeamController {
         makerTeamService.create(createTeamRequest.getName());
     }
 
-    @GetMapping
-    public GetTeamsResponse getTeams() {
-        return makerTeamService.get();
-    }
-
     @GetMapping("/{teamId}")
     public GetTeamResponse getTeam(@PathVariable UUID teamId) {
         return makerTeamService.get(teamId);

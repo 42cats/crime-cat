@@ -76,15 +76,14 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_" + webUser.getRole())));
     }
 
-    public User getLoginUser() {
+    public Optional<User> getLoginUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
-        return userRepository.findByWebUser(principal.getWebUser())
-                .orElseThrow(ErrorStatus.FORBIDDEN::asControllerException);
+        return userRepository.findByWebUser(principal.getWebUser());
     }
 
-    public UUID getLoginUserId() {
-        return getLoginUser().getId();
+    public Optional<UUID> getLoginUserId() {
+        return getLoginUser().map(User::getId);
     }
 
     /**

@@ -31,7 +31,7 @@ public class MakerTeamService {
     private final DiscordOAuth2UserService oAuth2UserService;
 
     public void create(String name) {
-        create(name, oAuth2UserService.getLoginUserId(), false);
+        create(name, oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.FORBIDDEN::asServiceException), false);
     }
 
     @Transactional
@@ -148,7 +148,7 @@ public class MakerTeamService {
                 }
             }
         } catch (ServiceException e) {
-            UUID userId = oAuth2UserService.getLoginUserId();
+            UUID userId = oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
             if (e.getStatus() == HttpStatus.FORBIDDEN && deletedMembers.contains(userId.toString())) {
                 teamMemberRepository.deleteById(userId);
             } else {
@@ -159,7 +159,7 @@ public class MakerTeamService {
     }
 
     private void isTeamLeaderOrThrow(UUID teamId) {
-        UUID userId = oAuth2UserService.getLoginUserId();
+        UUID userId = oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
         MakerTeamMember makerTeamMember = teamMemberRepository.findByUserIdAndTeamId(userId, teamId)
                 .orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
         if (!makerTeamMember.isLeader()) {
@@ -168,8 +168,9 @@ public class MakerTeamService {
     }
 
     public GetTeamsResponse getMyTeams() {
+        UUID userId = oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
         return new GetTeamsResponse(
-                teamMemberRepository.findByUserId(oAuth2UserService.getLoginUserId()).stream()
+                teamMemberRepository.findByUserId(userId).stream()
                         .map(v -> TeamDto.from(v.getTeam()))
                         .toList()
         );

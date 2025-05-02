@@ -44,7 +44,7 @@ public class GameThemeService {
     @Transactional
     public void addGameTheme(MultipartFile file, AddGameThemeRequest request) {
         GameTheme gameTheme = GameTheme.from(request);
-        User user = oAuth2UserService.getLoginUser();
+        User user = oAuth2UserService.getLoginUser().orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
         gameTheme.setAuthorId(user.getId());
         if (gameTheme instanceof CrimesceneTheme) {
             checkTeam((CrimesceneTheme) gameTheme, user);
@@ -83,7 +83,8 @@ public class GameThemeService {
 
     public GetGameThemeResponse getGameTheme(UUID themeId) {
         GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        if (gameTheme.isDeleted() && !gameTheme.isPublicStatus()) {
+        UUID userId = oAuth2UserService.getLoginUserId().orElse(null);
+        if (gameTheme.isDeleted() && (!gameTheme.isPublicStatus() && !gameTheme.isAuthor(userId))) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
         gameTheme.viewed();
@@ -99,7 +100,7 @@ public class GameThemeService {
         if (gameTheme.isDeleted()) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
-        UUID userId = oAuth2UserService.getLoginUserId();
+        UUID userId = oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
         if (!userId.equals(gameTheme.getAuthorId())) {
             throw ErrorStatus.FORBIDDEN.asServiceException();
         }
@@ -113,7 +114,7 @@ public class GameThemeService {
 
     @Transactional
     public GetGameThemesResponse getGameThemes(String category, int pageSize, int pageNumber) {
-        UUID userId = oAuth2UserService.getLoginUserId();
+        UUID userId = oAuth2UserService.getLoginUserId().orElse(null);
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Order.desc("createdAt")));
         // TODO: QueryDSL
         Specification<GameTheme> spec = Specification.where(GameThemeSpecification.defaultSpec(userId));
@@ -128,7 +129,7 @@ public class GameThemeService {
     public void like(UUID themeId) {
         GameTheme theme = themeRepository.findById(themeId)
                 .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        UUID userId = oAuth2UserService.getLoginUserId();
+        UUID userId = oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
         themeRecommendationRepository.save(GameThemeRecommendation.builder().themeId(themeId).userId(userId).build());
         theme.liked();
         themeRepository.save(theme);
@@ -138,7 +139,7 @@ public class GameThemeService {
     public void cancleLike(UUID themeId) {
         GameTheme theme = themeRepository.findById(themeId)
                 .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        UUID userId = oAuth2UserService.getLoginUserId();
+        UUID userId = oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
         GameThemeRecommendation recommendation = themeRecommendationRepository.findByUserIdAndThemeId(userId, themeId)
                 .orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
         themeRecommendationRepository.delete(recommendation);
@@ -149,7 +150,7 @@ public class GameThemeService {
     public boolean getLikeStatus(UUID themeId) {
         themeRepository.findById(themeId)
                 .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        UUID userId = oAuth2UserService.getLoginUserId();
+        UUID userId = oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
         return themeRecommendationRepository.findByUserIdAndThemeId(userId, themeId).isPresent();
     }
 }
