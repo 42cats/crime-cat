@@ -25,7 +25,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
@@ -61,7 +60,7 @@ public class SecurityConfig {
                         "/bot/v1/**", // 디스코드 봇 API 경로\
                         "/api/v1/csrf/token" // csrf 인증경로
                         )) // crsf 사이트간 위조공격 보호 해제.
-        .addFilterAfter(csrfCookieFilter, BasicAuthenticationFilter.class)
+//        .addFilterAfter(csrfCookieFilter, CsrfFilter.class)
         .formLogin(AbstractHttpConfigurer::disable) // ← 기본 /login 폼 비활성화
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // / 세션인증 끔

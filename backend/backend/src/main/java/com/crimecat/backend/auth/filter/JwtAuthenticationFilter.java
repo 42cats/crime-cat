@@ -4,7 +4,6 @@ import com.crimecat.backend.auth.jwt.JwtTokenProvider;
 import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import com.crimecat.backend.auth.service.JwtBlacklistService;
 import com.crimecat.backend.auth.service.RefreshTokenService;
-import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.utils.TokenCookieUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
@@ -13,6 +12,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,8 +64,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             unauthorized(response, "Access token expired");
             return;
         }
-
-        authenticateUserFromToken(accessToken, request);
+        String userId = jwtTokenProvider.getUserIdFromToken(accessToken);
+        Optional<WebUser> optUser = webUserRepository.findById(UUID.fromString(userId));
+        if (optUser.isEmpty()) {
+            unauthorized(response, "User not found");
+            return;
+        }
+        WebUser webUser = optUser.get();
+        authenticateUser(webUser, request);
         filterChain.doFilter(request, response);
     }
 
@@ -82,15 +88,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String extractAccessToken(HttpServletRequest request) {
         return TokenCookieUtil.getCookieValue(request, "Authorization");
-    }
-
-    private void authenticateUserFromToken(String token, HttpServletRequest request) {
-        String userId = jwtTokenProvider.getUserIdFromToken(token);
-
-        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
-            .orElseThrow(ErrorStatus.USER_NOT_FOUND::asException);
-
-        authenticateUser(webUser, request);
     }
 
     private void authenticateUser(WebUser webUser, HttpServletRequest request) {
