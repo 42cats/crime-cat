@@ -191,7 +191,7 @@ CREATE TABLE `game_themes` (
     `difficulty`        INT COMMENT '난이도',
     `is_public`         BOOLEAN DEFAULT TRUE COMMENT '공개 여부',
     `is_deleted`        BOOLEAN DEFAULT FALSE COMMENT '소프트 삭제 여부',
-    `type`              ENUM('CRIMESCENE', 'ESCAPE_ROOM', 'MURDER_MYSTERY', 'REALWORLD') NOT NULL,
+    `type`              VARCHAR(50) NOT NULL COMMENT 'CRIMESCENE', 'ESCAPE_ROOM', 'MURDER_MYSTERY', 'REALWORLD',
     `created_at`        DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at`        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
