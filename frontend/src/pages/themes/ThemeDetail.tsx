@@ -146,7 +146,7 @@ const ThemeDetail: React.FC = () => {
           </button>
 
           <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-            <img src={theme.thumbnail} alt={theme.title} className="w-full h-full object-cover" />
+            <img src={`/content/image/${theme.thumbnail}`} alt={theme.title} className="w-full h-full object-cover" />
           </div>
 
           <div className="flex flex-col sm:flex-row justify-between gap-4">

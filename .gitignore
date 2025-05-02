@@ -19,3 +19,5 @@ out/
 bot/dat/**
 bot/sound/**
 bot/MusicData/**
+
+frontend/public/content/image/*/**

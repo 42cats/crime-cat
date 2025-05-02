@@ -1,6 +1,7 @@
 import { Theme, ThemePage, ThemeType, Like } from '@/lib/types';
 import { apiClient } from '@/lib/api';
- 
+
+const publicBaseURI = '/public/themes';
 const baseURI = '/themes';
 
 export const themesService = {
@@ -8,7 +9,7 @@ export const themesService = {
     category: 'CRIMESCENE' | 'ESCAPE_ROOM' | 'MURDER_MYSTERY' | 'REALWORLD'
   ): Promise<Theme[]> => {
     try {
-    const response = await apiClient.get<ThemePage>(`${baseURI}?limit=5&category=${category}`);
+    const response = await apiClient.get<ThemePage>(`${publicBaseURI}?limit=5&category=${category}`);
     return response.themes;
     } catch (error) {
     console.error('최신 테마 불러오기 실패:', error);
@@ -22,7 +23,7 @@ export const themesService = {
     page: number
   ): Promise<ThemePage> => {
     try {
-    const response = await apiClient.get<ThemePage>(`${baseURI}?limit=${limit}&page=${page}&category=${category}`);
+    const response = await apiClient.get<ThemePage>(`${publicBaseURI}?limit=${limit}&page=${page}&category=${category}`);
     return response;
     } catch (error) {
     console.error('테마 불러오기 실패:', error);
@@ -32,7 +33,7 @@ export const themesService = {
 
   getThemeById: async (id: string): Promise<Theme> => {
     try {
-      const response = await apiClient.get<ThemeType>(`${baseURI}/${id}`);
+      const response = await apiClient.get<ThemeType>(`${publicBaseURI}/${id}`);
       return response.theme;
     } catch (error) {
       console.error(`테마 ID로 조회 실패:`, error);

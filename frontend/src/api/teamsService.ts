@@ -1,12 +1,13 @@
 import { apiClient } from '@/lib/api';
 import { Team, Teams, TeamMember } from '@/lib/types';
 
+const publicBaseURI = '/public/teams';
 const baseURI = '/teams';
 
 export const teamsService = {
   getTeams: async (memberId : string): Promise<Team[]> => {
     try {
-      const response = await apiClient.get<Teams>(`${baseURI}?memberId=${memberId}`);
+      const response = await apiClient.get<Teams>(`${publicBaseURI}?memberId=${memberId}`);
       return response.teams;
     } catch (error) {
       console.error('팀 목록 조회 오류:', error);

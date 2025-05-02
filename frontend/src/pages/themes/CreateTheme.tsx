@@ -12,11 +12,11 @@ const CreateTheme: React.FC = () => {
   const state = location.state as { category?: string };
   const initialCategory = state?.category?.toLowerCase() || '';
 
-//   useEffect(() => {
-//     if (!isLoading && !isAuthenticated) {
-//       navigate('/login');
-//     }
-//   }, [isAuthenticated, isLoading, navigate]);
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   const handleSubmit = async (formData: FormData) => {
     try {

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import MDEditor, { commands, EditorContext } from "@uiw/react-md-editor";
 import { useTheme } from "@/hooks/useTheme";
+import { useToast } from "@/hooks/useToast";
 import PageTransition from "@/components/PageTransition";
 import { useLocation } from "react-router-dom";
 import { Star } from "lucide-react";
@@ -57,6 +58,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
   const location = useLocation();
   const state = location.state as { category?: string };
   const initialType = (state?.category?.toUpperCase() ?? "") as keyof typeof initialExtraFieldsMap;
+  const { toast } = useToast();
 
   const [form, setForm] = useState({
     type: initialData.type || initialType || "CRIMESCENE",
@@ -152,6 +154,61 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
     onSubmit(formData);
   };
 
+  const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
+
+  const isValidImageFile = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(img.src); // 메모리 해제
+        resolve(true);
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(img.src);
+        resolve(false);
+      };
+    });
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const resetFileInput = () => {
+    fileInputRef.current!.value = "";
+    setForm((prev) => ({ ...prev, thumbnail: "" }));
+    setThumbnailFile(undefined);
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      toast({
+        title: "파일 크기 초과",
+        description: "2MB 이하의 이미지만 업로드할 수 있습니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const isImage = await isValidImageFile(file);
+    if (!isImage) {
+      toast({
+        title: "유효하지 않은 이미지입니다",
+        description: "정상적인 이미지 파일만 업로드 가능합니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const previewURL = URL.createObjectURL(file);
+    setThumbnailFile(file);
+    setForm((prev) => ({ ...prev, thumbnail: previewURL }));
+  };
+
   return (
     <PageTransition>
       <div className="max-w-3xl mx-auto px-6 py-20 space-y-6">
@@ -160,20 +217,20 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
         {/* 카테고리 드롭다운 */}
         <div>
           <Label className="font-bold mb-1 block">카테고리 *</Label>
-		  <Select
-  value={form.type}
-  onValueChange={(val) => setForm({ ...form, type: val })}
->
-  <SelectTrigger>
-    <SelectValue placeholder="타입을 선택하세요" />
-  </SelectTrigger>
-  <SelectContent>
-    <SelectItem value="CRIMESCENE">크라임씬</SelectItem>
-    <SelectItem value="ESCAPE_ROOM">방탈출</SelectItem>
-    <SelectItem value="MURDER_MYSTERY">머더미스터리</SelectItem>
-    <SelectItem value="REALWORLD">리얼월드</SelectItem>
-  </SelectContent>
-</Select>
+          <Select
+            value={form.type}
+            onValueChange={(val) => setForm({ ...form, type: val })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="타입을 선택하세요" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="CRIMESCENE">크라임씬</SelectItem>
+              <SelectItem value="ESCAPE_ROOM">방탈출</SelectItem>
+              <SelectItem value="MURDER_MYSTERY">머더미스터리</SelectItem>
+              <SelectItem value="REALWORLD">리얼월드</SelectItem>
+            </SelectContent>
+          </Select>
           {errors.type && <p className="text-red-500 text-sm mt-1">{errors.type}</p>}
         </div>
   
@@ -212,17 +269,11 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
           <Input
             type="file"
             accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                setThumbnailFile(file);
-                const url = URL.createObjectURL(file);
-                setForm((prev) => ({ ...prev, thumbnail: url }));
-              }
-            }}
-          />
+            ref={fileInputRef}
+            onClick={resetFileInput}
+            onChange={handleImageChange}/>
         </div>
-  
+
         {/* 설명 */}
         <div>
           <Label className="font-bold mb-1 block">설명 *</Label>
