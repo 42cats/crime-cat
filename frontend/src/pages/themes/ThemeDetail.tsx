@@ -8,7 +8,7 @@ import { themesService } from "@/api/themesService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/hooks/useAuth";
-import ReactMarkdown from "react-markdown";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +19,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { UTCToKST } from "@/lib/dateFormat";
 
 const ThemeDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -30,13 +32,11 @@ const ThemeDetail: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [showLoginDialog, setShowLoginDialog] = React.useState(false);
 
-  const { data: themeData, isLoading, error } = useQuery({
+  const { data: theme, isLoading, error } = useQuery({
     queryKey: ["theme", id],
-    queryFn: () => (id ? themesService.getThemeById(id) : Promise.reject("No ID provided")),
+    queryFn: () => (id ? themesService.getThemeById(id) : Promise.reject("No ID")),
     enabled: !!id,
   });
-
-  const theme = themeData;
 
   const { data: liked = false } = useQuery({
     queryKey: ["theme-like", id],
@@ -46,31 +46,46 @@ const ThemeDetail: React.FC = () => {
 
   const likeMutation = useMutation({
     mutationFn: () => id && themesService.setLike(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["theme-like", id] });
-      queryClient.invalidateQueries({ queryKey: ["theme", id] });
+    onMutate: async () => {
+      const prevTheme = queryClient.getQueryData(["theme", id]);
+      const prevLike = queryClient.getQueryData(["theme-like", id]);
+      queryClient.setQueryData(["theme", id], (old: any) =>
+        old ? { ...old, recommendations: (old.recommendations ?? 0) + 1 } : old
+      );
+      queryClient.setQueryData(["theme-like", id], true);
+      return { prevTheme, prevLike };
+    },
+    onError: (_err, _var, context) => {
+      if (context?.prevTheme) queryClient.setQueryData(["theme", id], context.prevTheme);
+      if (context?.prevLike !== undefined) queryClient.setQueryData(["theme-like", id], context.prevLike);
     },
   });
 
   const unlikeMutation = useMutation({
     mutationFn: () => id && themesService.cancelLike(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["theme-like", id] });
-      queryClient.invalidateQueries({ queryKey: ["theme", id] });
+    onMutate: async () => {
+      const prevTheme = queryClient.getQueryData(["theme", id]);
+      const prevLike = queryClient.getQueryData(["theme-like", id]);
+      queryClient.setQueryData(["theme", id], (old: any) =>
+        old ? { ...old, recommendations: Math.max(0, (old.recommendations ?? 1) - 1) } : old
+      );
+      queryClient.setQueryData(["theme-like", id], false);
+      return { prevTheme, prevLike };
+    },
+    onError: (_err, _var, context) => {
+      if (context?.prevTheme) queryClient.setQueryData(["theme", id], context.prevTheme);
+      if (context?.prevLike !== undefined) queryClient.setQueryData(["theme-like", id], context.prevLike);
     },
   });
 
   const formatPlayTime = (min: number, max: number): string => {
-  const toHourText = (m: number) => {
-    const h = Math.floor(m / 60);
-    const mm = m % 60;
-    return `${h > 0 ? `${h}시간` : ""}${mm > 0 ? ` ${mm}분` : ""}`.trim();
+    const toHourText = (m: number) => {
+      const h = Math.floor(m / 60);
+      const mm = m % 60;
+      return `${h > 0 ? `${h}시간` : ""}${mm > 0 ? ` ${mm}분` : ""}`.trim();
+    };
+    return min === max ? toHourText(min) : `${toHourText(min)} ~ ${toHourText(max)}`;
   };
-
-  return min === max
-    ? toHourText(min)
-    : `${toHourText(min)} ~ ${toHourText(max)}`;
- };
 
   const handleShare = async () => {
     try {
@@ -100,10 +115,6 @@ const ThemeDetail: React.FC = () => {
       toast({ title: "삭제 실패", description: "문제가 발생했습니다.", variant: "destructive" });
     }
   };
-  
-  const handleBackToList = () => {
-    navigate(`/themes/${theme?.type.toLowerCase()}`);
-  };
 
   if (isLoading) {
     return (
@@ -126,39 +137,27 @@ const ThemeDetail: React.FC = () => {
     );
   }
 
-  const playerText =
-    theme.playersMin === theme.playersMax
-      ? `${theme.playersMin}인`
-      : `${theme.playersMin}~${theme.playersMax}인`;
-
   return (
     <PageTransition>
       <div className="container mx-auto px-6 py-20">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <button
-              onClick={handleBackToList}
-              className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors"
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" /> 테마 목록으로 돌아가기
-            </button>
+        <div className="max-w-4xl mx-auto space-y-8">
+          <button onClick={() => navigate(`/themes/${theme.type.toLowerCase()}`)} className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
+            <ChevronLeft className="h-4 w-4 mr-1" /> 테마 목록으로 돌아가기
+          </button>
+
+          <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+            <img src={theme.thumbnail} alt={theme.title} className="w-full h-full object-cover" />
           </div>
 
-          <div className="flex flex-col gap-8">
-            <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-              <img
-                src={`${theme.thumbnail}`}
-                alt={theme.title}
-                className="w-full h-full object-cover"
-              />
+          <div className="flex flex-col sm:flex-row justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-3xl font-bold break-words">{theme.title}</h1>
             </div>
-
-            <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4">
-              <h1 className="text-3xl md:text-4xl font-bold">{theme.title}</h1>
-              <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-col gap-2 items-end text-right w-full sm:w-auto">
+              <div className="flex justify-end gap-2 flex-wrap">
                 <Button variant="outline" size="sm" className={`group ${liked ? "text-red-500" : ""}`} onClick={handleToggleLike}>
                   <Heart className={`h-4 w-4 mr-2 ${liked ? "fill-red-500" : "group-hover:fill-red-500/10"}`} />
-                  추천 {(theme.recommendations || 0)}
+                  추천 {theme.recommendations}
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleShare}>
                   <Share2 className="h-4 w-4 mr-2" /> 공유
@@ -174,30 +173,97 @@ const ThemeDetail: React.FC = () => {
                   </>
                 )}
               </div>
-            </div>
-
-            <p className="text-lg text-muted-foreground">{theme.summary}</p>
-
-            <div className="space-y-2 text-sm md:text-base">
-              <div><strong>인원:</strong> {playerText}</div>
-              <div><strong>플레이 시간:</strong> {formatPlayTime(theme.playTimeMin, theme.playTimeMax)}</div>
-              <div><strong>가격:</strong> {typeof theme.price === "number" ? theme.price.toLocaleString() + "원" : "정보 없음"}</div>
-              <div><strong>태그:</strong> {Array.isArray(theme.tags) ? theme.tags.join(", ") : ""}</div>
-              {theme.type === "CRIMESCENE" && (
-                <>
-                  <div><strong>길드 ID:</strong> {theme.makerTeamsId}</div>
-                  <div><strong>캐릭터 수:</strong> {(theme.extra?.characters?.length || 0).toLocaleString()}</div>
-                </>
-              )}
-            </div>
-
-            <div className="prose prose-lg max-w-none dark:prose-invert">
-              <ReactMarkdown>{theme.content}</ReactMarkdown>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <div><strong>생성일</strong> <UTCToKST date={theme.createdAt} /></div>
+                <div><strong>수정일</strong> <UTCToKST date={theme.updatedAt} /></div>
+              </div>
             </div>
           </div>
+
+          {theme.summary && (
+            <section>
+              <h2 className="text-sm font-semibold text-muted-foreground mb-1">설명</h2>
+              <p className="text-base text-foreground break-words whitespace-pre-line">{theme.summary}</p>
+            </section>
+          )}
+
+          <section className="mt-6">
+            <h2 className="text-sm font-semibold text-muted-foreground mb-1">카테고리</h2>
+            <Badge variant="secondary">{theme.type}</Badge>
+          </section>
+
+          <section className="mt-6">
+            <h2 className="text-sm font-semibold text-muted-foreground mb-1">인원</h2>
+            <p className="text-base text-foreground">
+              {theme.playersMin === theme.playersMax
+              ? `${theme.playersMin}인`
+              : `${theme.playersMin}~${theme.playersMax}인`}
+              </p>
+          </section>
+
+          <section className="mt-6">
+            <h2 className="text-sm font-semibold text-muted-foreground mb-1">플레이 시간</h2>
+            <p className="text-base text-foreground">{formatPlayTime(theme.playTimeMin, theme.playTimeMax)}</p>
+          </section>
+
+          <section className="mt-6">
+            <h2 className="text-sm font-semibold text-muted-foreground mb-1">가격</h2>
+            <p className="text-base text-foreground">{typeof theme.price === "number" ? `${theme.price.toLocaleString()}원` : "정보 없음"}</p>
+          </section>
+
+          {theme.tags?.length > 0 && (
+            <section className="mt-6">
+              <h2 className="text-sm font-semibold text-muted-foreground mb-1">태그</h2>
+              <div className="flex flex-wrap gap-2">
+                {theme.tags.map((tag, idx) => (
+                  <Badge key={idx} variant="outline">#{tag}</Badge>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {theme.type === "CRIMESCENE" && (theme.extra?.characters?.length || theme.makerTeamsId || theme.guildSnowflake) && (
+            <>
+              {(theme.makerTeamsId || theme.guildSnowflake) && (
+                <section className="mt-6">
+                  {theme.makerTeamsId && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-muted-foreground mb-1">팀 이름</h3>
+                      <p className="text-base text-foreground">{theme.makerTeamsId}</p>
+                    </div>
+                  )}
+                  {theme.guildSnowflake && (
+                    <div className="mt-2">
+                      <h3 className="text-sm font-semibold text-muted-foreground mb-1">길드 이름</h3>
+                      <p className="text-base text-foreground">{theme.guildSnowflake}</p>
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {theme.extra?.characters?.length > 0 && (
+                <section className="mt-6">
+                  <h2 className="text-sm font-semibold text-muted-foreground mb-1">등장 캐릭터</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {theme.extra.characters.map((char, idx) => (
+                      <Badge key={idx} variant="secondary">{char}</Badge>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
+
+          <section className="mt-6">
+            <h2 className="text-sm font-semibold text-muted-foreground mb-2">
+            내용
+            </h2>
+            <div className="prose max-w-none dark:prose-invert mt-2">
+              <MarkdownRenderer content={theme.content} />
+            </div>
+          </section>
         </div>
 
-        {/* 삭제 확인 다이얼로그 */}
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -216,7 +282,6 @@ const ThemeDetail: React.FC = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* 로그인 유도 다이얼로그 */}
         <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
