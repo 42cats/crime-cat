@@ -79,7 +79,10 @@ public void onAuthenticationSuccess(HttpServletRequest request,
 
     String baseUrl = serviceUrlConfig.getDomain();
     log.info("🔁 [리다이렉트 수행 → {}]", baseUrl);
-    response.sendRedirect(baseUrl);
+    response.sendRedirect("https://" + baseUrl+ "/");
+    // response.setContentType("application/json");
+    // response.setCharacterEncoding("UTF-8");
+    // response.getWriter().write("{\"status\":\"success\"}");
 }
 
 }
