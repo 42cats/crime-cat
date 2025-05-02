@@ -45,7 +45,8 @@ public class SecurityConfig {
                         "/api/v1/public/**", // 기존 공개 API
                         "/oauth2/**", // OAuth2 인증 경로
                         "/login/**", // 로그인 관련 경로
-                        "/bot/v1/**" // 디스코드 봇 API 경로
+                        "/bot/v1/**", // 디스코드 봇 API 경로\
+                        "/api/v1/csrf/token" // csrf 인증경로
                         )) // crsf 사이트간 위조공격 보호 해제.
         .formLogin(AbstractHttpConfigurer::disable) // ← 기본 /login 폼 비활성화
         .sessionManagement(
@@ -58,7 +59,9 @@ public class SecurityConfig {
                         "/oauth2/**",
                         "/bot/v1/**",
                         "/login/**",
-                        "/api/v1/public/**")
+                        "/api/v1/public/**",
+                        "/api/v1/csrf/token"
+                    )
                     .permitAll()
                     .anyRequest()
                     .authenticated())

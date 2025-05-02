@@ -76,6 +76,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             || uri.startsWith("/api/v1/auth/reissue")
             || uri.startsWith("/actuator/health")
             || uri.startsWith("/actuator/info")
+            || uri.startsWith("/api/v1/csrf/token")
             || uri.startsWith("/api/v1/public/");
     }
 
