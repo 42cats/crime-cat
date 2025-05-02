@@ -4,9 +4,17 @@ import { apiClient } from "@/lib/api";
 export const authService = {
     getCurrentUser: async (): Promise<User | null> => {
         try {
-            return await apiClient.get<User>("/auth/me");
+            // auth/me 요청
+            const user = await apiClient.get<User>("/auth/me");
+            console.log("getCurrentUser API 성공:", user ? '사용자 정보 있음' : '사용자 정보 없음');
+            return user;
         } catch (error) {
-            console.error("Error in getCurrentUser:", error);
+            console.error("Error in getCurrentUser API:", error);
+            // 401 오류인 경우 null 반환, 그 외의 오류는 전파
+            if (error.response?.status === 401) {
+                console.log('인증되지 않은 사용자');
+                return null;
+            }
             throw error;
         }
     },

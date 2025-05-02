@@ -1,25 +1,73 @@
 import { apiClient } from "@/lib/api";
 
 /**
- * CSRF 토큰을 서버에서 가져와 쿠키에 설정하는 함수
- * 애플리케이션 시작 시 호출하여 CSRF 보호를 활성화
+ * CSRF 토큰을 서버에서 가져와 저장하는 함수
+ * 세션스토리지에 토큰이 있으면 재사용, 없을 때만 서버에 요청
  */
-export const fetchCsrfToken = async (): Promise<void> => {
+export const fetchCsrfToken = async (): Promise<string | undefined> => {
     try {
-        // 스프링에서 제공하는 CSRF 토큰 엔드포인트 호출
-        // 일반적으로 GET 요청을 보내면 서버가 XSRF-TOKEN 쿠키를 설정
-        await apiClient.get("/csrf/token");
-        console.log("CSRF 토큰 설정 완료");
+        // 1. 세션스토리지에 토큰이 있는지 먼저 확인
+        const existingToken = sessionStorage.getItem("csrfToken");
+        if (existingToken) {
+            console.log("세션스토리지에 저장된 CSRF 토큰 사용");
+            return existingToken;
+        }
+
+        // 2. 토큰이 없는 경우에만 서버에 요청
+        const response = await apiClient.get("/csrf/token");
+
+        // 3. 응답 헤더에서 토큰 가져오기 시도
+        const headerToken =
+            response.headers && response.headers["x-csrf-token"];
+
+        // 4. 쿠키에서 토큰 확인 (백업)
+        const cookieToken = getCsrfTokenFromCookie();
+
+        // 5. 헤더 또는 쿠키에서 가져온 토큰 사용
+        const token = headerToken || cookieToken;
+
+        if (token) {
+            // 토큰을 세션스토리지에 저장
+            sessionStorage.setItem("csrfToken", token);
+            console.log("CSRF 토큰 설정 완료: 토큰이 저장됨");
+            return token;
+        } else {
+            console.warn("CSRF 토큰 응답에 토큰이 없음");
+            return undefined;
+        }
     } catch (error) {
         console.error("CSRF 토큰 설정 실패:", error);
+        throw error; // 호출자가 오류를 처리할 수 있도록
     }
 };
 
 /**
- * 현재 설정된 CSRF 토큰을 쿠키에서 가져오는 함수
- * 필요할 때 직접 토큰을 사용해야 하는 경우 호출
+ * 세션스토리지에서 CSRF 토큰을 가져오는 함수
  */
 export const getCsrfToken = (): string | undefined => {
+    // 1. 세션스토리지에서 토큰 가져오기 시도
+    const sessionToken = sessionStorage.getItem("csrfToken");
+
+    // 2. 세션스토리지에 있으면 그것을 반환
+    if (sessionToken) {
+        return sessionToken;
+    }
+
+    // 3. 없으면 쿠키에서 가져오기 시도
+    const cookieToken = getCsrfTokenFromCookie();
+
+    // 4. 쿠키에서 가져온 토큰이 있으면 세션스토리지에 저장
+    if (cookieToken) {
+        sessionStorage.setItem("csrfToken", cookieToken);
+    }
+
+    return cookieToken;
+};
+
+/**
+ * 쿠키에서 CSRF 토큰을 가져오는 함수
+ */
+export const getCsrfTokenFromCookie = (): string | undefined => {
     return document.cookie
         .split("; ")
         .find((row) => row.startsWith("XSRF-TOKEN="))
@@ -27,8 +75,15 @@ export const getCsrfToken = (): string | undefined => {
 };
 
 /**
+ * CSRF 토큰을 제거하는 함수 (로그아웃 시 호출)
+ */
+export const clearCsrfToken = (): void => {
+    sessionStorage.removeItem("csrfToken");
+    console.log("CSRF 토큰이 세션스토리지에서 제거됨");
+};
+
+/**
  * HTML 폼 요소에 CSRF 토큰을 추가하는 함수
- * @param form HTML 폼 요소
  */
 export const addCsrfTokenToForm = (form: HTMLFormElement): void => {
     const token = getCsrfToken();
@@ -48,7 +103,6 @@ export const addCsrfTokenToForm = (form: HTMLFormElement): void => {
 
 /**
  * FormData 객체에 CSRF 토큰을 추가하는 함수
- * @param formData FormData 객체
  */
 export const addCsrfTokenToFormData = (formData: FormData): void => {
     const token = getCsrfToken();
