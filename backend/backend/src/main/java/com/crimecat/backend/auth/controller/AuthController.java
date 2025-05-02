@@ -149,6 +149,7 @@ public class AuthController {
         log.info("🚪 [로그아웃 요청]");
         String accessToken = TokenCookieUtil.getCookieValue(request, "Authorization");
 
+    System.out.println("webUserId = ");
         String nickname = "";
         if (accessToken != null && jwtTokenProvider.validateToken(accessToken)) {
             String userId = jwtTokenProvider.getUserIdFromToken(accessToken);

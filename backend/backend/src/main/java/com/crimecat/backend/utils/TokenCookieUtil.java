@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
@@ -45,12 +46,6 @@ public class TokenCookieUtil {
         response.addCookie(cookie);
     }
 
-    // ✅ 인증 관련 쿠키 전부 제거
-    public static void clearAuthCookies(HttpServletResponse response) {
-        clearCookie(response, "Authorization");
-        clearCookie(response, "RefreshToken");
-    }
-
     // ✅ Access 토큰 쿠키 생성
     public static String createAccessCookie(String accessToken) {
         ResponseCookie cookie = ResponseCookie.from("Authorization", accessToken)
@@ -76,5 +71,49 @@ public class TokenCookieUtil {
                 .build();
         return cookie.toString();
     }
+
+    public static void clearAuthCookies(HttpServletResponse response) {
+        // 1) Authorization 쿠키 제거
+        ResponseCookie clearAccess = ResponseCookie.from("Authorization", "")
+            .path("/")
+            .maxAge(0)
+            .httpOnly(true)
+            .secure(true)
+            .sameSite("Strict")
+            .build();
+
+        // 2) RefreshToken 쿠키 제거
+        ResponseCookie clearRefresh = ResponseCookie.from("RefreshToken", "")
+            .path("/")
+            .maxAge(0)
+            .httpOnly(true)
+            .secure(true)
+            .sameSite("Strict")
+            .build();
+
+        // 3) CSRF 토큰 쿠키 제거
+        ResponseCookie clearCsrf = ResponseCookie.from("XSRF-TOKEN", "")
+            .path("/")
+            .maxAge(0)
+            .httpOnly(false)
+            .secure(true)
+            .sameSite("Strict")
+            .build();
+
+        // 4) JSESSIONID 쿠키 제거 (세션 사용 시)
+        ResponseCookie clearSession = ResponseCookie.from("JSESSIONID", "")
+            .path("/")
+            .maxAge(0)
+            .httpOnly(true)
+            .secure(true)
+            .sameSite("Strict")
+            .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, clearAccess.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, clearRefresh.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, clearCsrf.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, clearSession.toString());
+    }
+
 
 }
