@@ -4,8 +4,8 @@ import com.crimecat.backend.auth.jwt.JwtTokenProvider;
 import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import com.crimecat.backend.auth.service.JwtBlacklistService;
 import com.crimecat.backend.auth.service.RefreshTokenService;
-import com.crimecat.backend.utils.TokenCookieUtil;
 import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.utils.TokenCookieUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.servlet.FilterChain;
@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -38,13 +37,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         HttpServletResponse response,
         FilterChain filterChain) throws ServletException, IOException {
 
+        log.info("🔵 Incoming Request URI = {}", request.getRequestURI());
         // 인증 제외 경로
         if (isExcludedPath(request.getRequestURI())) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        log.info("🔵 Incoming Request URI = {}", request.getRequestURI());
 
         String accessToken = extractAccessToken(request);
 
@@ -74,6 +73,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return uri.startsWith("/bot/v1/")
             || uri.startsWith("/login/")
             || uri.startsWith("/api/v1/auth/reissue")
+            || uri.startsWith("/api/v1/auth/logout")
             || uri.startsWith("/actuator/health")
             || uri.startsWith("/actuator/info")
             || uri.startsWith("/api/v1/csrf/token")
@@ -81,16 +81,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String extractAccessToken(HttpServletRequest request) {
-        String token = TokenCookieUtil.getCookieValue(request, "Authorization");
-
-        if (token == null) {
-            String bearer = request.getHeader(HttpHeaders.AUTHORIZATION);
-            if (bearer != null && bearer.startsWith("Bearer ")) {
-                token = bearer.substring(7);
-            }
-        }
-
-        return token;
+        return TokenCookieUtil.getCookieValue(request, "Authorization");
     }
 
     private void authenticateUserFromToken(String token, HttpServletRequest request) {
