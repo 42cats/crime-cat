@@ -115,7 +115,7 @@ const ThemeList: React.FC = () => {
             글쓰기
           </Button>
         </div>
-
+  
         {data.themes.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             {data.themes.map((theme, i) => (
@@ -127,7 +127,7 @@ const ThemeList: React.FC = () => {
             <p className="text-lg text-muted-foreground">등록된 테마가 없습니다.</p>
           </div>
         )}
-
+  
         {renderPagination()}
       </div>
     </PageTransition>
