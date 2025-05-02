@@ -91,7 +91,7 @@ public class TokenCookieUtil {
             .sameSite("Strict")
             .build();
 
-        // 3) CSRF 토큰 쿠키 제거
+        // CSRF 토큰 쿠키 제거
         ResponseCookie clearCsrf = ResponseCookie.from("XSRF-TOKEN", "")
             .path("/")
             .maxAge(0)
@@ -100,19 +100,10 @@ public class TokenCookieUtil {
             .sameSite("Strict")
             .build();
 
-        // 4) JSESSIONID 쿠키 제거 (세션 사용 시)
-        ResponseCookie clearSession = ResponseCookie.from("JSESSIONID", "")
-            .path("/")
-            .maxAge(0)
-            .httpOnly(true)
-            .secure(true)
-            .sameSite("Strict")
-            .build();
-
+        response.addHeader(HttpHeaders.SET_COOKIE, clearCsrf.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, clearAccess.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, clearRefresh.toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, clearCsrf.toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, clearSession.toString());
+
     }
 
 
