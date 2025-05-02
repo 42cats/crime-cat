@@ -23,7 +23,11 @@ export const authService = {
     login: async (code: string, role: string): Promise<User | null> => {
         try {
             let user: User;
-
+            
+            // 여기에 실제 로그인 로직 구현 필요
+            // let response = await apiClient.post<User>("/auth/login", { code, role });
+            // user = response;
+            
             return user;
         } catch (error) {
             console.error("Error in login:", error);

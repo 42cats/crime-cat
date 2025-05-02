@@ -72,6 +72,7 @@ public class SecurityConfig {
                         "/actuator/info",
                         "/oauth2/**",
                         "/bot/v1/**",
+                        "/api/v1/auth/logout",
                         "/login/**",
                         "/api/v1/public/**",
                         "/api/v1/csrf/token")
