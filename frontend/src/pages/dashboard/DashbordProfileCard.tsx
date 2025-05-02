@@ -92,17 +92,6 @@ export const DashboardProfileCard: React.FC<Props> = ({
         }
     };
 
-    const formatDate = (dateString: string) => {
-        const d = new Date(dateString);
-        return d.toLocaleString("ko-KR", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    };
-
     return (
         <>
             <Card className="w-full max-w-2xl space-y-6">

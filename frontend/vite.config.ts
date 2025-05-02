@@ -44,6 +44,18 @@ export default defineConfig({
                     });
                 },
             },
+            "/csrf/token": {
+                target: "http://localhost:8080",
+                changeOrigin: true,
+                configure(proxy) {
+                    proxy.on("proxyReq", (proxyReq) => {
+                        proxyReq.setHeader(
+                            "X-Forwarded-Host",
+                            "localhost:5173"
+                        );
+                    });
+                },
+            },
         },
     },
     plugins: [react()],
