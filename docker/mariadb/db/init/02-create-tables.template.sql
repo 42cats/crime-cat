@@ -145,7 +145,8 @@ CREATE TABLE IF NOT EXISTS `musics`
 */
 CREATE TABLE `maker_teams` (
     `id`            BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
-    `name`          VARCHAR(50) NOT NULL COMMENT '팀 이름'
+    `name`          VARCHAR(50) NOT NULL COMMENT '팀 이름',
+    `is_individual` tinyint(1) NOT NULL DEFAULT 0 COMMENT '개인 팀 여부'
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci
