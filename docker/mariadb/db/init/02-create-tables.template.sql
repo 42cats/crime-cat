@@ -209,27 +209,21 @@ CREATE TABLE `game_themes` (
     crimescene_themes
 */
 CREATE TABLE `crimescene_themes` (
-    `id` BINARY(16) PRIMARY KEY COMMENT '게임 테마',
-    `maker_teams_id` BINARY(16) COMMENT '제작 팀 정보',
-    `guild_snowflake` VARCHAR(50) COMMENT '디스코드 서버 id',
-    `extra` LONGTEXT COMMENT '추가 정보 (JSON)',
-
-    CONSTRAINT `fk_crimescene_game_theme` FOREIGN KEY (`id`)
-        REFERENCES `game_themes`(`id`)
-        ON DELETE CASCADE,
-
-    CONSTRAINT `fk_maker_teams_id` FOREIGN KEY (`maker_teams_id`)
-        REFERENCES `maker_teams`(`id`)
-        ON DELETE CASCADE,
-
-    CONSTRAINT `fk_guild_snowflake` FOREIGN KEY (`guild_snowflake`)
-        REFERENCES `guilds`(`snowflake`)
-        ON DELETE CASCADE
-)
-ENGINE=InnoDB
-DEFAULT CHARSET=utf8mb4
-COLLATE=utf8mb4_unicode_ci
-COMMENT='크라임씬 테마 테이블';
+     `game_theme_id`     BINARY(16) PRIMARY KEY COMMENT '게임 테마',
+     `maker_teams_id`     BINARY(16) COMMENT '제작 팀 정보',
+     `guild_snowflake`   VARCHAR(50) COMMENT '디스코드 서버 id',
+     `extra`             LONGTEXT COMMENT '추가 정보 (JSON)'
+         CHECK (JSON_VALID(`extra`)),
+     CONSTRAINT `fk_maker_teams_id` FOREIGN KEY (`maker_teams_id`)
+         REFERENCES `maker_teams`(`id`)
+         ON DELETE SET NULL,
+     CONSTRAINT `fk_guild_snowflake` FOREIGN KEY (`guild_snowflake`)
+         REFERENCES `guilds`(`snowflake`)
+         ON DELETE CASCADE
+ ) ENGINE = InnoDB
+   DEFAULT CHARSET = utf8mb4
+   COLLATE = utf8mb4_unicode_ci
+   COMMENT = '크라임씬 테마 테이블';
 
 
 CREATE TABLE IF NOT EXISTS `game_histories`
