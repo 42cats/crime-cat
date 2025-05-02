@@ -18,6 +18,8 @@ import com.crimecat.backend.gametheme.repository.GameThemeRepository;
 import com.crimecat.backend.gametheme.specification.GameThemeSpecification;
 import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.utils.AuthenticationUtil;
+import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.UUID;
@@ -35,7 +37,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class GameThemeService {
     private final StorageService storageService;
     private final GameThemeRepository themeRepository;
-    private final DiscordOAuth2UserService oAuth2UserService;
     private final MakerTeamService teamService;
     private final GameThemeRecommendationRepository themeRecommendationRepository;
 
@@ -44,10 +45,10 @@ public class GameThemeService {
     @Transactional
     public void addGameTheme(MultipartFile file, AddGameThemeRequest request) {
         GameTheme gameTheme = GameTheme.from(request);
-        User user = oAuth2UserService.getLoginUser().orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
-        gameTheme.setAuthorId(user.getId());
+        WebUser webUser = AuthenticationUtil.getCurrentWebUser();
+        gameTheme.setAuthorId(webUser.getId());
         if (gameTheme instanceof CrimesceneTheme) {
-            checkTeam((CrimesceneTheme) gameTheme, user);
+            checkTeam((CrimesceneTheme) gameTheme, webUser);
         }
         gameTheme = themeRepository.save(gameTheme);
         if (file != null && !file.isEmpty()) {
@@ -57,14 +58,14 @@ public class GameThemeService {
         }
     }
 
-    private void checkTeam(CrimesceneTheme gameTheme, User user) {
+    private void checkTeam(CrimesceneTheme gameTheme, WebUser webUser) {
         if (gameTheme.getTeamId() == null) {
-            List<MakerTeamMember> teams = teamService.getIndividualTeams(user.getId());
-            if (teams.size() == 0) {
-                UUID teamId = teamService.create(user.getName(), user.getId(), true);
+            List<MakerTeamMember> teams = teamService.getIndividualTeams(webUser.getId());
+            if (teams.isEmpty()) {
+                UUID teamId = teamService.create(webUser.getNickname(), webUser.getId(), true);
                 gameTheme.setTeamId(teamId);
             } else {
-                gameTheme.setTeamId(teams.get(0).getTeam().getId());
+                gameTheme.setTeamId(teams.getFirst().getTeam().getId());
             }
         }
     }
@@ -74,17 +75,15 @@ public class GameThemeService {
         if (gameTheme.isDeleted()) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
-        if (!oAuth2UserService.getLoginUserId().equals(gameTheme.getAuthorId())) {
-            throw ErrorStatus.FORBIDDEN.asServiceException();
-        }
+        AuthenticationUtil.validateCurrentUserMatches(gameTheme.getAuthorId());
         gameTheme.setIsDelete(true);
         themeRepository.save(gameTheme);
     }
 
     public GetGameThemeResponse getGameTheme(UUID themeId) {
         GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        UUID userId = oAuth2UserService.getLoginUserId().orElse(null);
-        if (gameTheme.isDeleted() && (!gameTheme.isPublicStatus() && !gameTheme.isAuthor(userId))) {
+        UUID webUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
+        if (gameTheme.isDeleted() && (!gameTheme.isPublicStatus() && !gameTheme.isAuthor(webUserId))) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
         gameTheme.viewed();
@@ -100,10 +99,7 @@ public class GameThemeService {
         if (gameTheme.isDeleted()) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
-        UUID userId = oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        if (!userId.equals(gameTheme.getAuthorId())) {
-            throw ErrorStatus.FORBIDDEN.asServiceException();
-        }
+        AuthenticationUtil.validateCurrentUserMatches(gameTheme.getAuthorId());
         request.update(gameTheme);
         if (file != null && !file.isEmpty()) {
             String path = storageService.storeAt(file, THUMBNAIL_LOCATION, gameTheme.getId().toString());
@@ -114,10 +110,10 @@ public class GameThemeService {
 
     @Transactional
     public GetGameThemesResponse getGameThemes(String category, int pageSize, int pageNumber) {
-        UUID userId = oAuth2UserService.getLoginUserId().orElse(null);
+        UUID webUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Order.desc("createdAt")));
         // TODO: QueryDSL
-        Specification<GameTheme> spec = Specification.where(GameThemeSpecification.defaultSpec(userId));
+        Specification<GameTheme> spec = Specification.where(GameThemeSpecification.defaultSpec(webUserId));
         if (ThemeType.contains(category)) {
             spec.and(GameThemeSpecification.equalCategory(category));
         }
@@ -129,8 +125,8 @@ public class GameThemeService {
     public void like(UUID themeId) {
         GameTheme theme = themeRepository.findById(themeId)
                 .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        UUID userId = oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        themeRecommendationRepository.save(GameThemeRecommendation.builder().themeId(themeId).userId(userId).build());
+        UUID webUserId = AuthenticationUtil.getCurrentWebUserId();
+        themeRecommendationRepository.save(GameThemeRecommendation.builder().themeId(themeId).webUserId(webUserId).build());
         theme.liked();
         themeRepository.save(theme);
     }
@@ -139,8 +135,8 @@ public class GameThemeService {
     public void cancleLike(UUID themeId) {
         GameTheme theme = themeRepository.findById(themeId)
                 .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        UUID userId = oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        GameThemeRecommendation recommendation = themeRecommendationRepository.findByUserIdAndThemeId(userId, themeId)
+        UUID webUserId = AuthenticationUtil.getCurrentWebUserId();
+        GameThemeRecommendation recommendation = themeRecommendationRepository.findByWebUserIdAndThemeId(webUserId, themeId)
                 .orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
         themeRecommendationRepository.delete(recommendation);
         theme.cancleLike();
@@ -150,7 +146,7 @@ public class GameThemeService {
     public boolean getLikeStatus(UUID themeId) {
         themeRepository.findById(themeId)
                 .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        UUID userId = oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        return themeRecommendationRepository.findByUserIdAndThemeId(userId, themeId).isPresent();
+        UUID webUserId = AuthenticationUtil.getCurrentWebUserId();
+        return themeRecommendationRepository.findByWebUserIdAndThemeId(webUserId, themeId).isPresent();
     }
 }

@@ -8,9 +8,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface MakerTeamMemberRepository extends JpaRepository<MakerTeamMember, UUID> {
-    List<MakerTeamMember> findByUserIdAndIsLeader(UUID leaderId, boolean isLeader);
+    List<MakerTeamMember> findByWebUserIdAndIsLeader(UUID webUserId, boolean isLeader);
 
-    Optional<MakerTeamMember> findByUserIdAndTeamId(UUID userId, UUID id);
+    Optional<MakerTeamMember> findByWebUserIdAndTeamId(UUID webUserId, UUID id);
 
-    List<MakerTeamMember> findByUserId(UUID leaderId);
+    List<MakerTeamMember> findByWebUserId(UUID webUserId);
 }

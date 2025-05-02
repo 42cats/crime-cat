@@ -1,19 +1,19 @@
 package com.crimecat.backend.gametheme.service;
 
-import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
 import com.crimecat.backend.gametheme.dto.GetTeamResponse;
 import com.crimecat.backend.gametheme.dto.GetTeamsResponse;
 import com.crimecat.backend.gametheme.dto.MemberDto;
 import com.crimecat.backend.gametheme.dto.MemberRequestDto;
 import com.crimecat.backend.gametheme.dto.TeamDto;
-import com.crimecat.backend.user.domain.User;
-import com.crimecat.backend.user.repository.UserRepository;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.exception.ServiceException;
 import com.crimecat.backend.gametheme.domain.MakerTeam;
 import com.crimecat.backend.gametheme.domain.MakerTeamMember;
 import com.crimecat.backend.gametheme.repository.MakerTeamMemberRepository;
 import com.crimecat.backend.gametheme.repository.MakerTeamRepository;
+import com.crimecat.backend.utils.AuthenticationUtil;
+import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,12 +26,10 @@ import java.util.*;
 public class MakerTeamService {
     private final MakerTeamRepository teamRepository;
     private final MakerTeamMemberRepository teamMemberRepository;
-    private final UserRepository userRepository;
-
-    private final DiscordOAuth2UserService oAuth2UserService;
+    private final WebUserRepository webUserRepository;
 
     public void create(String name) {
-        create(name, oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.FORBIDDEN::asServiceException), false);
+        create(name, AuthenticationUtil.getCurrentWebUserId(), false);
     }
 
     @Transactional
@@ -41,7 +39,7 @@ public class MakerTeamService {
                 .isIndividual(isIndividual)
                 .build());
         teamMemberRepository.save(MakerTeamMember.builder()
-                .userId(leader)
+                .webUserId(leader)
                 .team(team)
                 .isLeader(true)
                 .build());
@@ -65,7 +63,7 @@ public class MakerTeamService {
     }
 
     public List<MakerTeamMember> getIndividualTeams(UUID leaderId) {
-        List<MakerTeamMember> teams = teamMemberRepository.findByUserIdAndIsLeader(leaderId, true);
+        List<MakerTeamMember> teams = teamMemberRepository.findByWebUserIdAndIsLeader(leaderId, true);
         return teams.stream().filter(v -> v.getTeam().isIndividual()).toList();
     }
 
@@ -79,7 +77,7 @@ public class MakerTeamService {
     @Transactional
     public void addMembers(UUID teamId, Set<MemberRequestDto> members) {
         isTeamLeaderOrThrow(teamId);
-        if (members.size() == 0) {
+        if (members.isEmpty()) {
             return;
         }
         MakerTeam team = teamRepository.findById(teamId).orElseThrow(ErrorStatus.TEAM_NOT_FOUND::asServiceException);
@@ -92,15 +90,15 @@ public class MakerTeamService {
             if (m.getUserId() != null) {
                 // 유저 id 입력 시 유저 검색해서 삽입
                 // TODO: 리스트 추가 시 에러 > exception 던질지 나머지는 처리할지
-                User user = userRepository.findById(m.getUserId())
+                WebUser webUser = webUserRepository.findById(m.getUserId())
                         .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
-                builder.userId(user.getId());
+                builder.webUserId(webUser.getId());
                 // 팀 멤버 이름 명시하지 않았고, 유저 존재할 때 유저 정보에서 이름 가져오기
                 if (name == null) {
-                    name = user.getName();
+                    name = webUser.getNickname();
                 }
-                // userId로 중복 유저 확인
-                if (team.getMembers().stream().anyMatch(v -> user.getId().equals(v.getUserId()))) {
+                // webUserId로 중복 유저 확인
+                if (team.getMembers().stream().anyMatch(v -> webUser.getId().equals(v.getWebUserId()))) {
                     // TODO: 리스트 추가 시 에러 > exception 던질지 나머지는 처리할지
                     throw ErrorStatus.TEAM_MEMBER_ALREADY_REGISTERED.asServiceException();
                 }
@@ -119,7 +117,7 @@ public class MakerTeamService {
 
     @Transactional
     public void deleteMembers(UUID teamId, List<String> deletedMembers) {
-        if (deletedMembers.size() == 0) {
+        if (deletedMembers.isEmpty()) {
             return;
         }
         try {
@@ -148,9 +146,9 @@ public class MakerTeamService {
                 }
             }
         } catch (ServiceException e) {
-            UUID userId = oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
-            if (e.getStatus() == HttpStatus.FORBIDDEN && deletedMembers.contains(userId.toString())) {
-                teamMemberRepository.deleteById(userId);
+            UUID webUserId = AuthenticationUtil.getCurrentWebUserId();
+            if (e.getStatus() == HttpStatus.FORBIDDEN && deletedMembers.contains(webUserId.toString())) {
+                teamMemberRepository.deleteById(webUserId);
             } else {
                 throw e;
             }
@@ -159,8 +157,8 @@ public class MakerTeamService {
     }
 
     private void isTeamLeaderOrThrow(UUID teamId) {
-        UUID userId = oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
-        MakerTeamMember makerTeamMember = teamMemberRepository.findByUserIdAndTeamId(userId, teamId)
+        UUID webUserId = AuthenticationUtil.getCurrentWebUserId();
+        MakerTeamMember makerTeamMember = teamMemberRepository.findByWebUserIdAndTeamId(webUserId, teamId)
                 .orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
         if (!makerTeamMember.isLeader()) {
             throw ErrorStatus.FORBIDDEN.asServiceException();
@@ -168,9 +166,9 @@ public class MakerTeamService {
     }
 
     public GetTeamsResponse getMyTeams() {
-        UUID userId = oAuth2UserService.getLoginUserId().orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
+        UUID webUserId = AuthenticationUtil.getCurrentWebUserId();
         return new GetTeamsResponse(
-                teamMemberRepository.findByUserId(userId).stream()
+                teamMemberRepository.findByWebUserId(webUserId).stream()
                         .map(v -> TeamDto.from(v.getTeam()))
                         .toList()
         );

@@ -7,6 +7,8 @@ import com.crimecat.backend.exception.CrimeCatException;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.webUser.enums.UserRole;
 import com.crimecat.backend.webUser.domain.WebUser;
+
+import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -59,6 +61,30 @@ public class AuthenticationUtil {
       log.error("Authentication error", e);
       throw ErrorStatus.UNAUTHORIZED.asException();
     }
+  }
+
+  public static UUID getCurrentWebUserId() {
+    return getCurrentWebUser().getId();
+  }
+
+  public static Optional<WebUser> getCurrentWebUserOptional() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+    if (authentication == null || !authentication.isAuthenticated()) {
+      return Optional.empty();
+    }
+
+    Object principal = authentication.getPrincipal();
+
+    if (!(principal instanceof DiscordOAuth2User discordUser)) {
+      return Optional.empty();
+    }
+
+    return Optional.of(discordUser.getWebUser());
+  }
+
+  public static Optional<UUID> getCurrentWebUserIdOptional() {
+    return getCurrentWebUserOptional().map(WebUser::getId);
   }
 
   /**

@@ -1,6 +1,6 @@
 package com.crimecat.backend.gametheme.domain;
 
-import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -30,12 +30,12 @@ public class MakerTeamMember {
     private MakerTeam team;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "USER_ID", insertable = false, updatable = false)
-    private User user;
+    @JoinColumn(name = "WEB_USER_ID", insertable = false, updatable = false)
+    private WebUser webUser;
 
-    @Column(name = "USER_ID")
+    @Column(name = "WEB_USER_ID")
     @JdbcTypeCode(SqlTypes.BINARY)
-    private UUID userId;
+    private UUID webUserId;
 
     @Column(name = "NAME")
     private String name;

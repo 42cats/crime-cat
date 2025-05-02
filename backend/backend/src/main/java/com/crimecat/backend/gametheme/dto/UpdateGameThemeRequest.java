@@ -4,6 +4,8 @@ import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.enums.ThemeType;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.function.Consumer;
 import lombok.AllArgsConstructor;
@@ -64,5 +66,6 @@ public class UpdateGameThemeRequest {
         if (thumbnail == null) {
             gameTheme.setThumbnail(null);
         }
+        gameTheme.update();
     }
 }
