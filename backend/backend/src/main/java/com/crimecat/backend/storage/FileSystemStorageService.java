@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 public class FileSystemStorageService implements StorageService {
 
     private final Path rootLocation;
+    private final int rootIndex;
 
     @Autowired
     public FileSystemStorageService(StorageProperties properties) {
@@ -28,6 +29,7 @@ public class FileSystemStorageService implements StorageService {
         }
 
         this.rootLocation = Paths.get(properties.getLocation());
+        this.rootIndex = this.rootLocation.getNameCount();
     }
 
     @Override
@@ -51,7 +53,7 @@ public class FileSystemStorageService implements StorageService {
         } catch (IOException e) {
             throw new RuntimeException("Failed to store file " + file.getOriginalFilename(), e);
         }
-        return savePath.subpath(1, savePath.getNameCount()).toString();
+        return savePath.subpath(this.rootIndex, savePath.getNameCount()).toString();
     }
 
     @Override

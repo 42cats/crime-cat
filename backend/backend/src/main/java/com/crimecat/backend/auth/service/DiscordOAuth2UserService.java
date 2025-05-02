@@ -78,8 +78,10 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
 
     public Optional<User> getLoginUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
-        return userRepository.findByWebUser(principal.getWebUser());
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof DiscordOAuth2User)
+            return userRepository.findByWebUser(((DiscordOAuth2User) principal).getWebUser());
+        return Optional.empty();
     }
 
     public Optional<UUID> getLoginUserId() {
