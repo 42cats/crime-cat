@@ -159,12 +159,12 @@ CREATE TABLE `maker_team_members` (
      `id`         BINARY(16) PRIMARY KEY,
      `team_id`    BINARY(16),
      `name`       VARCHAR(50),
-     `user_id`    BINARY(16),
+     `web_user_id`    BINARY(16),
      `is_leader`  BOOLEAN NOT NULL DEFAULT FALSE,
  
      CONSTRAINT `fk_team_id` FOREIGN KEY (`team_id`) REFERENCES `maker_teams`(`id`)
          ON DELETE CASCADE,
-     CONSTRAINT `fk_user_id` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+     CONSTRAINT `fk_web_user_id` FOREIGN KEY (`web_user_id`) REFERENCES `web_users`(`id`)
  ) ENGINE = InnoDB
  DEFAULT CHARSET = utf8mb4
  COLLATE = utf8mb4_unicode_ci
@@ -181,7 +181,7 @@ CREATE TABLE `game_themes` (
     `recommendations`   INT DEFAULT 0 COMMENT '추천수',
     `views`             INT DEFAULT 0 COMMENT '조회수',
     `play_count`        INT DEFAULT 0 COMMENT '총 플레이 횟수',
-    `author`            BINARY(16) NOT NULL COMMENT '작성자 (users.id 참조)',
+    `author`            BINARY(16) NOT NULL COMMENT '작성자 (web_users.id 참조)',
     `tags`              LONGTEXT COMMENT '태그 배열 ["tag1", "tag2"]',
     `content`           TEXT COMMENT '게시글 본문',
     `player_min`        INT COMMENT '최소 인원수',
@@ -192,12 +192,12 @@ CREATE TABLE `game_themes` (
     `difficulty`        INT COMMENT '난이도',
     `is_public`         BOOLEAN DEFAULT TRUE COMMENT '공개 여부',
     `is_deleted`        BOOLEAN DEFAULT FALSE COMMENT '소프트 삭제 여부',
-    `type`              VARCHAR(50) NOT NULL COMMENT 'CRIMESCENE', 'ESCAPE_ROOM', 'MURDER_MYSTERY', 'REALWORLD',
+    `type`              VARCHAR(50) NOT NULL COMMENT 'CRIMESCENE, ESCAPE_ROOM, MURDER_MYSTERY, REALWORLD',
     `created_at`        DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at`        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT `fk_author` FOREIGN KEY (`author`)
-        REFERENCES `users`(`id`)
+        REFERENCES `web_users`(`id`)
         ON DELETE CASCADE
 
 ) ENGINE = InnoDB
@@ -549,14 +549,14 @@ CREATE TABLE IF NOT EXISTS notices (
 
 CREATE TABLE IF NOT EXISTS `game_theme_recommendations` (
   `id`          BINARY(16) PRIMARY KEY,
-  `user_id`     BINARY(16) NOT NULL,
+  `web_user_id`     BINARY(16) NOT NULL,
   `theme_id`    BINARY(16) NOT NULL,
   `created_at`  TIMESTAMP DEFAULT now(),
   CONSTRAINT `fk_gametheme_recommendations_user_id`
-    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+    FOREIGN KEY (`web_user_id`) REFERENCES `web_users` (`id`),
   CONSTRAINT `fk_gametheme_recommendations_theme_id`
     FOREIGN KEY (`theme_id`) REFERENCES `game_themes` (`id`),
-  UNIQUE KEY `uk_gametheme_recommendations_user_theme` (`user_id`, `theme_id`)
+  UNIQUE KEY `uk_gametheme_recommendations_user_theme` (`web_user_id`, `theme_id`)
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_general_ci

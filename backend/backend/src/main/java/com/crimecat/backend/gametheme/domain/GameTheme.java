@@ -3,6 +3,7 @@ package com.crimecat.backend.gametheme.domain;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.gametheme.dto.AddCrimesceneThemeRequest;
 import com.crimecat.backend.gametheme.dto.AddGameThemeRequest;
+import com.crimecat.backend.webUser.domain.WebUser;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -59,7 +60,7 @@ public class GameTheme {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "AUTHOR", updatable = false, insertable = false)
-    private User author;
+    private WebUser author;
 
     @Setter
     @JdbcTypeCode(SqlTypes.BINARY)
@@ -156,5 +157,9 @@ public class GameTheme {
 
     public boolean isAuthor(UUID userId) {
         return authorId.equals(userId);
+    }
+
+    public void update() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

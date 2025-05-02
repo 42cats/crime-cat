@@ -7,5 +7,5 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface GameThemeRecommendationRepository extends JpaRepository<GameThemeRecommendation, UUID> {
-    Optional<GameThemeRecommendation> findByUserIdAndThemeId(UUID userId, UUID themeId);
+    Optional<GameThemeRecommendation> findByWebUserIdAndThemeId(UUID webUserId, UUID themeId);
 }

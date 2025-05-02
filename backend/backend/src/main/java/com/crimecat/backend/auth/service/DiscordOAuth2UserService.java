@@ -76,18 +76,6 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_" + webUser.getRole())));
     }
 
-    public Optional<User> getLoginUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof DiscordOAuth2User)
-            return userRepository.findByWebUser(((DiscordOAuth2User) principal).getWebUser());
-        return Optional.empty();
-    }
-
-    public Optional<UUID> getLoginUserId() {
-        return getLoginUser().map(User::getId);
-    }
-
     /**
      * OAuth 로그인 시 사용자 정보를 기준으로 신규 생성 또는 기존 유저 반환
      *

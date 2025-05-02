@@ -18,8 +18,8 @@ public class MemberDto {
 
     public static MemberDto from(MakerTeamMember member) {
         MemberDtoBuilder builder = MemberDto.builder().id(member.getId()).name(member.getName());
-        if (member.getUserId() != null) {
-            builder.userId(member.getUserId());
+        if (member.getWebUserId() != null) {
+            builder.userId(member.getWebUserId());
         }
         return builder.build();
     }
