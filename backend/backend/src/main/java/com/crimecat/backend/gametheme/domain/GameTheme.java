@@ -15,7 +15,6 @@ import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
@@ -112,7 +111,6 @@ public class GameTheme {
     @Column(name = "CREATED_AT")
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
     @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
 
@@ -132,6 +130,7 @@ public class GameTheme {
                 .price(request.getPrice())
                 .difficulty(request.getDifficulty())
                 .publicStatus(request.isPublicStatus())
+                .updatedAt(LocalDateTime.now())
                 .build();
     }
 
@@ -140,6 +139,7 @@ public class GameTheme {
             return;
         }
         this.isDeleted = isDeleted;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void viewed() {
@@ -152,5 +152,9 @@ public class GameTheme {
 
     public void cancleLike() {
         this.recommendations--;
+    }
+
+    public boolean isAuthor(UUID userId) {
+        return authorId.equals(userId);
     }
 }

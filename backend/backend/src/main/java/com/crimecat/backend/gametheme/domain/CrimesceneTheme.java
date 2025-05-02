@@ -5,6 +5,8 @@ import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.gametheme.dto.AddCrimesceneThemeRequest;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 import lombok.*;
@@ -59,6 +61,7 @@ public class CrimesceneTheme extends GameTheme {
         .price(request.getPrice())
         .difficulty(request.getDifficulty())
         .publicStatus(request.isPublicStatus())
+        .updatedAt(LocalDateTime.now())
         .teamId(request.getMakerTeamsId())
         .guildSnowflake(request.getGuildSnowflake())
         .extra(request.getExtra())
