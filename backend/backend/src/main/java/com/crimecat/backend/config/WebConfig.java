@@ -17,6 +17,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOrigins( "https://" + serviceUrlConfig.getDomain(),"https://www." + serviceUrlConfig.getDomain(), "http://localhost:5173") // 접근허용 주소
                 .allowCredentials(true)  //쿠키 및 인증 헤더 적용
                 .allowedMethods("*") //post, get, put ,delete 다 적용
-                .allowedHeaders("*");
+                .allowedHeaders("*")
+                .maxAge(3600);
     }
 }
