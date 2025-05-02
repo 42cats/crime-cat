@@ -40,6 +40,7 @@ import Guilds from "@/pages/dashboard/Guilds";
 import Profile from "@/pages/dashboard/Profile";
 import MessageFormat from "@/pages/MessageButtonEditor";
 import Teams from "@/pages/dashboard/Teams";
+import MessageEditorRoute from "@/routes/MessageEditorRoute";
 
 import { queryClient } from "@/lib/reactQuery";
 import GameHistoryManager from "@/pages/GameHistoryOwnerBoard";
@@ -89,42 +90,46 @@ const App = () => (
                 <Route path="/donate" element={<DonationPage />} />
               </Route>
 
-                            {/* Dashboard Layout Routes */}
-                            <Route
-                                path="/dashboard"
-                                element={<DashboardLayout />}
-                            >
-                                <Route index element={<Dashboard />} />
-                                <Route path="guilds" element={<Guilds />} />
-                                <Route
-                                    path="guilds/message-format"
-                                    element={<MessageFormat />}
-                                />
-                                <Route
-                                    path="guilds/crime-scene-history"
-                                    element={<GameHistoryManager />}
-                                />
-                                <Route
-                                    path="users/my-history"
-                                    element={<UserGameHistoryPage />}
-                                />
-                                <Route path="profile" element={<Profile />} />
-                                <Route path="teams" element={<Teams />} />
-                            </Route>
+              {/* Dashboard Layout Routes */}
+              <Route
+                path="/dashboard"
+                element={<DashboardLayout />}
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="guilds" element={<Guilds />} />
+                <Route
+                  path="guilds/message-format"
+                  element={<MessageFormat />}
+                />
+                <Route
+                  path="guilds/message-editor"
+                  element={<MessageEditorRoute />}
+                />
+                <Route
+                  path="guilds/crime-scene-history"
+                  element={<GameHistoryManager />}
+                />
+                <Route
+                  path="users/my-history"
+                  element={<UserGameHistoryPage />}
+                />
+                <Route path="profile" element={<Profile />} />
+                <Route path="teams" element={<Teams />} />
+              </Route>
 
-                            {/* 404 Route */}
-                            <Route path="*" element={<NotFound />} />
+              {/* 404 Route */}
+              <Route path="*" element={<NotFound />} />
 
-                            <Route
-                                path="/unauthorized"
-                                element={<Unauthorized />}
-                            />
-                        </Routes>
-                    </AnimatePresence>
-                </BrowserRouter>
-            </TooltipProvider>
-        </QueryClientProvider>
-    </RecoilRoot>
+              <Route
+                path="/unauthorized"
+                element={<Unauthorized />}
+              />
+            </Routes>
+          </AnimatePresence>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </RecoilRoot>
 );
 
 export default App;

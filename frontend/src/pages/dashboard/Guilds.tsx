@@ -47,6 +47,12 @@ const Guilds: React.FC = () => {
         });
     };
 
+    const multiSelectMessageEditor = (guildId: string, guildName: string) => {
+        navigate(`/dashboard/guilds/message-editor`, {
+            state: { guildName, guildId },
+        });
+    };
+
     if (isLoading) {
         return (
             <PageTransition>
@@ -187,6 +193,19 @@ const Guilds: React.FC = () => {
                                     >
                                         <Settings className="h-4 w-4 mr-2" />
                                         히스토리
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        className="w-full"
+                                        onClick={() =>
+                                            multiSelectMessageEditor(
+                                                guild.id,
+                                                guild.name
+                                            )
+                                        }
+                                    >
+                                        <Settings className="h-4 w-4 mr-2" />
+                                        메시지 에디터
                                     </Button>
                                 </CardFooter>
                             </Card>
