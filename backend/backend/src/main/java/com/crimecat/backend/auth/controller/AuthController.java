@@ -3,8 +3,8 @@ package com.crimecat.backend.auth.controller;
 import com.crimecat.backend.auth.jwt.JwtTokenProvider;
 import com.crimecat.backend.auth.service.JwtBlacklistService;
 import com.crimecat.backend.auth.service.RefreshTokenService;
-import com.crimecat.backend.utils.TokenCookieUtil;
 import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.utils.TokenCookieUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -162,6 +162,8 @@ public class AuthController {
         }
 
         TokenCookieUtil.clearAuthCookies(response);
+
+
         log.info("🧹 [쿠키 제거 완료]");
 
         return ResponseEntity.ok(Map.of(
