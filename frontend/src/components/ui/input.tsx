@@ -1,15 +1,15 @@
-import * as React from "react"
-
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   ({ className, type, onWheel, ...props }, ref) => {
     const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
-        if (type === "number") {
-          e.currentTarget.blur();
-        }
-        if (onWheel) onWheel(e);
+      if (type === "number") {
+        e.currentTarget.blur();
+      }
+      if (onWheel) onWheel(e);
     };
+
     return (
       <input
         type={type}
@@ -26,9 +26,9 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
         onWheel={handleWheel}
         {...props}
       />
-    )
-  }
-)
-Input.displayName = "Input"
+    );
+  });
 
-export { Input }
+Input.displayName = "Input";
+
+export { Input };

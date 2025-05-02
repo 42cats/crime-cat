@@ -155,18 +155,19 @@ CREATE TABLE `maker_teams` (
     maker_team_members
 */
 CREATE TABLE `maker_team_members` (
-    `id`         BINARY(16) PRIMARY KEY,
-    `team_id`    BINARY(16),
-    `name`       VARCHAR(50),
-    `user_id`    BINARY(16),
-
-    CONSTRAINT `fk_team_id` FOREIGN KEY (`team_id`) REFERENCES `maker_teams`(`id`)
-        ON DELETE CASCADE,
-    CONSTRAINT `fk_user_id` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
-) ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4
-COLLATE = utf8mb4_unicode_ci
-COMMENT = '제작 팀 멤버 테이블';
+     `id`         BINARY(16) PRIMARY KEY,
+     `team_id`    BINARY(16),
+     `name`       VARCHAR(50),
+     `user_id`    BINARY(16),
+     `is_leader`  BOOLEAN NOT NULL DEFAULT FALSE,
+ 
+     CONSTRAINT `fk_team_id` FOREIGN KEY (`team_id`) REFERENCES `maker_teams`(`id`)
+         ON DELETE CASCADE,
+     CONSTRAINT `fk_user_id` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+ ) ENGINE = InnoDB
+ DEFAULT CHARSET = utf8mb4
+ COLLATE = utf8mb4_unicode_ci
+ COMMENT = '제작 팀 멤버 테이블';
 
 /*
     game_themes
