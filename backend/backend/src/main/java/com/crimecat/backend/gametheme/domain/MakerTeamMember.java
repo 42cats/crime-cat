@@ -30,8 +30,7 @@ public class MakerTeamMember {
     private MakerTeam team;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "web_user_id", nullable = false,
-        foreignKey = @ForeignKey(name = "fk_web_user_id"))
+    @JoinColumn(name = "WEB_USER_ID", insertable = false, updatable = false)
     private WebUser webUser;
 
     @Column(name = "WEB_USER_ID")
