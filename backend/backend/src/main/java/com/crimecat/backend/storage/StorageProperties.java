@@ -5,14 +5,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConfigurationProperties("storage")
+@ConfigurationProperties(prefix = "custom-storage")
 public class StorageProperties {
 
     /**
      * Folder location for storing files
      */
-    @Value("${custom-storage.location}")
-    private String location;
+    @Value("location") private String location = "/frontend/content/image";
 
     public String getLocation() {
         return location;
