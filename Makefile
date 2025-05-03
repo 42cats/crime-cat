@@ -67,7 +67,7 @@ local: update_config
 dev: update_config
 	@echo "${BLUE}개발 환경 설정 중 (config/.env.dev → .env)...${NC}"
 	@cp config/.env.dev .env
-	@cp config/dockercompose/docker-compose.local.yaml docker-compose.yaml
+	@cp config/dockercompose/docker-compose.dev.yaml docker-compose.yaml
 	@cp config/nginx/dev.nginx.conf docker/nginx/conf/http.d/nginx.conf
 	@$(MAKE) copy_env
 
