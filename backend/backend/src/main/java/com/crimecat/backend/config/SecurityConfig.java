@@ -39,7 +39,8 @@ public class SecurityConfig {
   private final CsrfTokenConfig csrfTokenConfig;
   private final CsrfCookieFilter csrfCookieFilter;
   private final SpaCsrfTokenRequestHandler spaCsrfTokenRequestHandler;
-  private final NullSecurityContextRepository nullSecurityContextRepository;
+
+
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http.csrf(
@@ -62,7 +63,7 @@ public class SecurityConfig {
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // / 세션인증 끔
         /* ❶ SecurityContext는 절대 세션에 저장하지 않도록 명시 */
         .securityContext(sc ->
-            sc.securityContextRepository(nullSecurityContextRepository))
+            sc.securityContextRepository(new NullSecurityContextRepository()))
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(
