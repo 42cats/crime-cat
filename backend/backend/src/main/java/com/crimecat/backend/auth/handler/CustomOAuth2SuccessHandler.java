@@ -77,6 +77,8 @@ public void onAuthenticationSuccess(HttpServletRequest request,
     response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createAccessCookie(accessToken));
     response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createRefreshCookie(refreshToken));
 
+    var session = request.getSession(false);
+    if (session != null) session.invalidate();
     String baseUrl = serviceUrlConfig.getDomain();
     log.info("🔁 [리다이렉트 수행 → {}]", baseUrl);
     response.sendRedirect("https://" + baseUrl+ "/");
