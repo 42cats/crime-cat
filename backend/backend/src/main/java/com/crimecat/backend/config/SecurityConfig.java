@@ -4,7 +4,6 @@ import com.crimecat.backend.auth.filter.CsrfCookieFilter;
 import com.crimecat.backend.auth.filter.DiscordBotTokenFilter;
 import com.crimecat.backend.auth.filter.JwtAuthenticationFilter;
 import com.crimecat.backend.auth.handler.CustomOAuth2SuccessHandler;
-import com.crimecat.backend.auth.handler.SpaCsrfTokenRequestHandler;
 import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +24,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.NullSecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @RequiredArgsConstructor
 @Configuration
@@ -38,7 +38,6 @@ public class SecurityConfig {
   private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
   private final CsrfTokenConfig csrfTokenConfig;
   private final CsrfCookieFilter csrfCookieFilter;
-  private final SpaCsrfTokenRequestHandler spaCsrfTokenRequestHandler;
 
 
   @Bean
@@ -46,7 +45,7 @@ public class SecurityConfig {
     http.csrf(
             csrf ->
                 csrf.csrfTokenRepository(csrfTokenConfig.csrfTokenRepository())
-                    .csrfTokenRequestHandler(spaCsrfTokenRequestHandler)
+                    .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                     .ignoringRequestMatchers(
                         "/actuator/health", // 도커 컴포즈 헬스체크
                         "/actuator/info", // 도커 컴포즈 헬스체크
@@ -57,13 +56,12 @@ public class SecurityConfig {
                         "/bot/v1/**", // 디스코드 봇 API 경로\
                         "/api/v1/csrf/token" // csrf 인증경로
                         )) // crsf 사이트간 위조공격 보호 해제.
-                .addFilterAfter(csrfCookieFilter, CsrfFilter.class)
+        .addFilterAfter(csrfCookieFilter, CsrfFilter.class)
         .formLogin(AbstractHttpConfigurer::disable) // ← 기본 /login 폼 비활성화
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // / 세션인증 끔
         /* ❶ SecurityContext는 절대 세션에 저장하지 않도록 명시 */
-        .securityContext(sc ->
-            sc.securityContextRepository(new NullSecurityContextRepository()))
+        .securityContext(sc -> sc.securityContextRepository(new NullSecurityContextRepository()))
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(
