@@ -9,6 +9,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Command, CommandInput } from "@/lib/types";
 import PageTransition from "@/components/PageTransition";
 import { useFormValidator } from "@/hooks/useFormValidator";
+import { useToast } from "@/hooks/useToast";
 
 interface CommandFormProps {
   mode: "create" | "edit";
@@ -39,6 +40,7 @@ const CommandForm: React.FC<CommandFormProps> = ({
   isLoading = false,
 }) => {
   const { theme } = useTheme();
+  const { toast } = useToast();
 
   const [form, setForm] = useState<CommandInput>({
     name: initialData.name || "",
@@ -52,7 +54,7 @@ const CommandForm: React.FC<CommandFormProps> = ({
   const [permInput, setPermInput] = useState("");
   const [isComposing, setIsComposing] = useState(false);
 
-  const { errors, validate, validateField } = useFormValidator<CommandInput>((data) => {
+  const { errors, validateField, validateWithErrors } = useFormValidator<CommandInput>((data) => {
     const newErrors: Record<string, string> = {};
     if (!data.name) newErrors.name = "이름을 입력해주세요.";
     if (!data.description) newErrors.description = "설명을 입력해주세요.";
@@ -75,7 +77,24 @@ const CommandForm: React.FC<CommandFormProps> = ({
   };
 
   const handleSubmit = () => {
-    if (!validate(form)) return;
+    const currentErrors = validateWithErrors(form);
+    const errorMessages = Object.values(currentErrors);
+  
+    if (errorMessages.length > 0) {
+      toast({
+        title: "입력 오류",
+        description: (
+          <div>
+            {errorMessages.map((msg, idx) => (
+              <div key={idx}>{msg}</div>
+            ))}
+          </div>
+        ),
+        variant: "destructive",
+      });
+      return;
+    }
+
     onSubmit(form);
   };
 
