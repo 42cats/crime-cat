@@ -5,98 +5,153 @@ const API_BASE_URL = "/api/v1";
 const API_TIMEOUT = 30000;
 
 const instance = axios.create({
-    baseURL: API_BASE_URL,
-    timeout: API_TIMEOUT,
-    headers: {
-        Accept: "application/json",
-    },
-    withCredentials: true,
-    xsrfCookieName: "XSRF-TOKEN", // 서버가 발급한 쿠키 이름 :contentReference[oaicite:0]{index=0}
-    xsrfHeaderName: "X-XSRF-TOKEN", // 전송할 헤더 이름 :contentReference[oaicite:1]{index=1}
+  baseURL: API_BASE_URL,
+  timeout: API_TIMEOUT,
+  headers: {
+    Accept: "application/json",
+  },
+  withCredentials: true,
+  xsrfCookieName: "XSRF-TOKEN",
+  xsrfHeaderName: "X-XSRF-TOKEN",
 });
 
-let isRefreshing = false;
-let failedQueue: {
-    resolve: () => void;
-    reject: (reason?: any) => void;
+let isRefreshingToken = false;
+let isRefreshingCsrf = false;
+
+let failedAuthQueue: {
+  resolve: () => void;
+  reject: (reason?: any) => void;
 }[] = [];
 
-const processQueue = (error: any = null) => {
-    failedQueue.forEach(({ resolve, reject }) => {
-        if (error) reject(error);
-        else resolve();
-    });
-    failedQueue = [];
+let failedCsrfQueue: {
+  resolve: () => void;
+  reject: (reason?: any) => void;
+}[] = [];
+
+const processQueue = (
+  queue: typeof failedAuthQueue,
+  error: any = null
+) => {
+  queue.forEach(({ resolve, reject }) => {
+    if (error) reject(error);
+    else resolve();
+  });
+  queue.length = 0;
 };
 
+instance.interceptors.request.use(async (config) => {
+	const xsrfToken = getCookie("XSRF-TOKEN");
+  
+	if (!xsrfToken && !config.url?.includes("/csrf/token")) {
+	  if (isRefreshingCsrf) {
+		return new Promise((resolve, reject) => {
+		  failedCsrfQueue.push({
+			resolve: () => resolve(config),
+			reject,
+		  });
+		});
+	  }
+  
+	  isRefreshingCsrf = true;
+  
+	  try {
+		await instance.get("/csrf/token");
+		processQueue(failedCsrfQueue);
+		return config;
+	  } catch (err) {
+		processQueue(failedCsrfQueue, err);
+	  } finally {
+		isRefreshingCsrf = false;
+	  }
+  
+	}
+  
+	return config;
+  });
+
 instance.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-        const originalRequest = error.config;
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
 
-        if (originalRequest.url?.includes("/auth/reissue")) {
-            return Promise.reject(error);
-        }
-
-        if (
-            error.response?.status === 401 &&
-            !originalRequest._retry &&
-            !originalRequest.url?.includes("/auth/me")
-        ) {
-            originalRequest._retry = true;
-
-            if (isRefreshing) {
-                return new Promise((resolve, reject) => {
-                    failedQueue.push({
-                        resolve: () => resolve(instance(originalRequest)),
-                        reject,
-                    });
-                });
-            }
-
-            isRefreshing = true;
-
-            try {
-                await instance.post("/auth/reissue");
-                processQueue();
-                return instance(originalRequest);
-            } catch (err) {
-                processQueue(err);
-                resetUserState();
-                window.location.href = "/login";
-                return Promise.reject(err);
-            } finally {
-                isRefreshing = false;
-            }
-        }
-
-        return Promise.reject(error);
+    if (originalRequest.url?.includes("/auth/reissue")) {
+      return Promise.reject(error);
     }
+
+    const status = error.response?.status;
+
+    if (status === 401 && !originalRequest._retry && !originalRequest.url?.includes("/auth/me")) {
+      originalRequest._retry = true;
+
+      if (isRefreshingToken) {
+        return new Promise((resolve, reject) => {
+          failedAuthQueue.push({
+            resolve: () => resolve(instance(originalRequest)),
+            reject,
+          });
+        });
+      }
+
+      isRefreshingToken = true;
+
+      try {
+        await instance.post("/auth/reissue");
+        processQueue(failedAuthQueue);
+        return instance(originalRequest);
+      } catch (err) {
+        processQueue(failedAuthQueue, err);
+        resetUserState();
+        window.location.href = "/login";
+        return Promise.reject(err);
+      } finally {
+        isRefreshingToken = false;
+      }
+    }
+
+    if (status === 403 && !originalRequest._csrfRetry) {
+      originalRequest._csrfRetry = true;
+
+      try {
+        await instance.get("/csrf/token");
+        return instance(originalRequest);
+      } catch (err) {
+        return Promise.reject(err);
+      }
+    }
+
+    return Promise.reject(error);
+  }
 );
 
+function getCookie(name: string) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift();
+}
+
 export const apiClient = {
-    get: async <T>(endpoint: string, config = {}): Promise<T> => {
-        const res = await instance.get<T>(endpoint, config);
-        return res.data;
-    },
+  get: async <T>(endpoint: string, config = {}): Promise<T> => {
+    const res = await instance.get<T>(endpoint, config);
+    return res.data;
+  },
 
-    post: async <T>(endpoint: string, data?: any, config = {}): Promise<T> => {
-        const res = await instance.post<T>(endpoint, data, config);
-        return res.data;
-    },
+  post: async <T>(endpoint: string, data?: any, config = {}): Promise<T> => {
+    const res = await instance.post<T>(endpoint, data, config);
+    return res.data;
+  },
 
-    put: async <T>(endpoint: string, data?: any, config = {}): Promise<T> => {
-        const res = await instance.put<T>(endpoint, data, config);
-        return res.data;
-    },
+  put: async <T>(endpoint: string, data?: any, config = {}): Promise<T> => {
+    const res = await instance.put<T>(endpoint, data, config);
+    return res.data;
+  },
 
-    patch: async <T>(endpoint: string, data?: any, config = {}): Promise<T> => {
-        const res = await instance.patch<T>(endpoint, data, config);
-        return res.data;
-    },
+  patch: async <T>(endpoint: string, data?: any, config = {}): Promise<T> => {
+    const res = await instance.patch<T>(endpoint, data, config);
+    return res.data;
+  },
 
-    delete: async <T>(endpoint: string, config = {}): Promise<T> => {
-        const res = await instance.delete<T>(endpoint, config);
-        return res.data;
-    },
+  delete: async <T>(endpoint: string, config = {}): Promise<T> => {
+    const res = await instance.delete<T>(endpoint, config);
+    return res.data;
+  },
 };
