@@ -87,7 +87,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
   const [isTeamModalOpen, setTeamModalOpen] = useState(false);
   const [isGuildModalOpen, setGuildModalOpen] = useState(false);
 
-  const { errors, validate, validateField } = useFormValidator((data: Record<string, any>) => {
+  const { errors, validateField, validateWithErrors } = useFormValidator((data: Record<string, any>) => {
     const newErrors: Record<string, string> = {};
     if (!data.title) newErrors.title = "제목은 필수입니다.";
     if (!data.summary) newErrors.summary = "설명은 필수입니다.";
@@ -117,8 +117,23 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
   };
 
   const handleSubmit = () => {
-    const isValid = validate(form);
-    if (!isValid) return;
+    const currentErrors = validateWithErrors(form);
+    const errorMessages = Object.values(currentErrors);
+    
+    if (errorMessages.length > 0) {
+      toast({
+        title: "입력 오류",
+        description: (
+          <div>
+            {errorMessages.map((msg, idx) => (
+              <div key={idx}>{msg}</div>
+            ))}
+          </div>
+        ),
+        variant: "destructive",
+      });
+      return;
+    }
 
     const { tagInput, ...data } = form;
     const formData = new FormData();

@@ -4,10 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Notice, NoticeInput, NoticeType } from '@/lib/types';
 import PageTransition from '@/components/PageTransition';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
 import MDEditor, { commands, EditorContext } from '@uiw/react-md-editor';
 import { useTheme } from '@/hooks/useTheme';
 import { useFormValidator } from '@/hooks/useFormValidator';
+import { useToast } from '@/hooks/useToast';
 
 interface NoticeFormProps {
   mode: 'create' | 'edit';
@@ -24,8 +31,18 @@ const WritePreviewToggle = () => {
   const unselected = 'text-gray-500';
   return (
     <div className="flex items-center">
-      <button onClick={() => dispatch({ preview: 'edit' })} className={`${base} ${preview === 'edit' ? selected : unselected}`}>작성</button>
-      <button onClick={() => dispatch({ preview: 'preview' })} className={`${base} ${preview === 'preview' ? selected : unselected}`}>미리보기</button>
+      <button
+        onClick={() => dispatch({ preview: 'edit' })}
+        className={`${base} ${preview === 'edit' ? selected : unselected}`}
+      >
+        작성
+      </button>
+      <button
+        onClick={() => dispatch({ preview: 'preview' })}
+        className={`${base} ${preview === 'preview' ? selected : unselected}`}
+      >
+        미리보기
+      </button>
     </div>
   );
 };
@@ -38,6 +55,7 @@ const NoticeForm: React.FC<NoticeFormProps> = ({
   isLoading = false,
 }) => {
   const { theme } = useTheme();
+  const { toast } = useToast();
   const [form, setForm] = useState<NoticeInput>({
     title: initialData.title || '',
     summary: initialData.summary || '',
@@ -46,7 +64,7 @@ const NoticeForm: React.FC<NoticeFormProps> = ({
     isPinned: initialData.isPinned || false,
   });
 
-  const { errors, validate, validateField } = useFormValidator<NoticeInput>((data) => {
+  const { errors, validateWithErrors, validateField } = useFormValidator<NoticeInput>((data) => {
     const errs: Partial<Record<keyof NoticeInput, string>> = {};
     if (!data.title) errs.title = '공지 제목을 입력해주세요.';
     if (!data.summary) errs.summary = '요약을 입력해주세요.';
@@ -56,7 +74,24 @@ const NoticeForm: React.FC<NoticeFormProps> = ({
   });
 
   const handleSubmit = () => {
-    if (!validate(form)) return;
+    const currentErrors = validateWithErrors(form);
+    const errorMessages = Object.values(currentErrors);
+
+    if (errorMessages.length > 0) {
+      toast({
+        title: '입력 오류',
+        description: (
+          <div>
+            {errorMessages.map((msg, idx) => (
+              <div key={idx}>{msg}</div>
+            ))}
+          </div>
+        ),
+        variant: 'destructive',
+      });
+      return;
+    }
+
     onSubmit(form);
   };
 
