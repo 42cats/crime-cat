@@ -1,10 +1,12 @@
 package com.crimecat.backend.config;
 
-import com.crimecat.backend.auth.filter.CsrfCookieFilter;
 import com.crimecat.backend.auth.filter.DiscordBotTokenFilter;
 import com.crimecat.backend.auth.filter.JwtAuthenticationFilter;
 import com.crimecat.backend.auth.handler.CustomOAuth2SuccessHandler;
 import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,8 +25,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.NullSecurityContextRepository;
-import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
+import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
 
 @RequiredArgsConstructor
 @Configuration
@@ -37,7 +41,6 @@ public class SecurityConfig {
   private final DiscordBotTokenFilter discordBotTokenFilter;
   private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
   private final CsrfTokenConfig csrfTokenConfig;
-  private final CsrfCookieFilter csrfCookieFilter;
 
 
   @Bean
@@ -45,7 +48,7 @@ public class SecurityConfig {
     http.csrf(
             csrf ->
                 csrf.csrfTokenRepository(csrfTokenConfig.csrfTokenRepository())
-                    .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                    .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
                     .ignoringRequestMatchers(
                         "/actuator/health", // 도커 컴포즈 헬스체크
                         "/actuator/info", // 도커 컴포즈 헬스체크
@@ -56,7 +59,6 @@ public class SecurityConfig {
                         "/bot/v1/**", // 디스코드 봇 API 경로\
                         "/api/v1/csrf/token" // csrf 인증경로
                         )) // crsf 사이트간 위조공격 보호 해제.
-        .addFilterAfter(csrfCookieFilter, CsrfFilter.class)
         .formLogin(AbstractHttpConfigurer::disable) // ← 기본 /login 폼 비활성화
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // / 세션인증 끔
@@ -132,4 +134,31 @@ public class SecurityConfig {
 
     return http.build();
   }
+
+  final class SpaCsrfTokenRequestHandler implements CsrfTokenRequestHandler {
+    private final CsrfTokenRequestHandler plain =
+        new CsrfTokenRequestAttributeHandler();
+    private final CsrfTokenRequestHandler xor =
+        new XorCsrfTokenRequestAttributeHandler();
+
+    @Override
+    public void handle(HttpServletRequest request,
+        HttpServletResponse response,
+        Supplier<CsrfToken> csrfToken) {
+      // BREACH 보호용 XOR 처리
+      this.xor.handle(request, response, csrfToken);
+      // 토큰을 쿠키로 밀어내기 위해 실제 값 로드
+      csrfToken.get();
+    }
+
+    @Override
+    public String resolveCsrfTokenValue(HttpServletRequest request,
+        CsrfToken csrfToken) {
+      String headerValue = request.getHeader(csrfToken.getHeaderName());
+      return (org.springframework.util.StringUtils.hasText(headerValue)
+          ? this.plain
+          : this.xor).resolveCsrfTokenValue(request, csrfToken);
+    }
+  }
+
 }
