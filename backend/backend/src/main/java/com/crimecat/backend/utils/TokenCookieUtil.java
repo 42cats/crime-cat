@@ -38,12 +38,15 @@ public class TokenCookieUtil {
 
     // ✅ 쿠키 삭제
     public static void clearCookie(HttpServletResponse response, String name) {
-        Cookie cookie = new Cookie(name, null);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
+        ResponseCookie delete = ResponseCookie.from(name, "")
+            .path("/")
+            .domain(appDomain)
+            .maxAge(0)
+            .httpOnly(true)
+            .secure(true)
+            .sameSite("Strict")
+            .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, delete.toString());
     }
 
     // ✅ Access 토큰 쿠키 생성
@@ -74,35 +77,9 @@ public class TokenCookieUtil {
 
     public static void clearAuthCookies(HttpServletResponse response) {
         // 1) Authorization 쿠키 제거
-        ResponseCookie clearAccess = ResponseCookie.from("Authorization", "")
-            .path("/")
-            .maxAge(0)
-            .httpOnly(true)
-            .secure(true)
-            .sameSite("Strict")
-            .build();
-
-        // 2) RefreshToken 쿠키 제거
-        ResponseCookie clearRefresh = ResponseCookie.from("RefreshToken", "")
-            .path("/")
-            .maxAge(0)
-            .httpOnly(true)
-            .secure(true)
-            .sameSite("Strict")
-            .build();
-
-        // CSRF 토큰 쿠키 제거
-        ResponseCookie clearCsrf = ResponseCookie.from("XSRF-TOKEN", "")
-            .path("/")
-            .maxAge(0)
-            .httpOnly(false)
-            .secure(true)
-            .sameSite("Strict")
-            .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, clearCsrf.toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, clearAccess.toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, clearRefresh.toString());
+        clearCookie(response, "Authorization");
+        clearCookie(response, "RefreshToken");
+        clearCookie(response, "XSRF-TOKEN");
 
     }
 

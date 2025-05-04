@@ -163,7 +163,6 @@ public class AuthController {
 
         TokenCookieUtil.clearAuthCookies(response);
 
-
         log.info("🧹 [쿠키 제거 완료]");
 
         return ResponseEntity.ok(Map.of(
