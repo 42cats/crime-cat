@@ -1,5 +1,6 @@
 package com.crimecat.backend.auth.handler;
 
+import com.crimecat.backend.utils.ProfileChecker;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,7 +37,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     private final WebUserRepository webUserRepository;
     private final RefreshTokenService refreshTokenService;
     private final ServiceUrlConfig serviceUrlConfig;
-
+    private final ProfileChecker profileChecker;
     /**
      * 인증 성공 시 후속 처리를 담당
      *
@@ -81,7 +82,12 @@ public void onAuthenticationSuccess(HttpServletRequest request,
     if (session != null) session.invalidate();
     String baseUrl = serviceUrlConfig.getDomain();
     log.info("🔁 [리다이렉트 수행 → {}]", baseUrl);
-    response.sendRedirect("https://" + baseUrl+ "/");
+    if(profileChecker.check()){
+        response.sendRedirect("https://" + baseUrl+ "/");
+    }
+    else {
+        response.sendRedirect("http://" + baseUrl+ "/");
+    }
     // response.setContentType("application/json");
     // response.setCharacterEncoding("UTF-8");
     // response.getWriter().write("{\"status\":\"success\"}");
