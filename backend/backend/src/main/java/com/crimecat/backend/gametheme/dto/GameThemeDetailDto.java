@@ -24,7 +24,7 @@ public class GameThemeDetailDto {
     private int recommendations;
     private int views;
     private int playCount;
-    private UUID author;
+    private AuthorDto author;
     private int playersMin;
     private int playersMax;
     private int playTimeMin;
@@ -50,7 +50,7 @@ public class GameThemeDetailDto {
                 .recommendations(theme.getRecommendations())
                 .views(theme.getViews())
                 .playCount(theme.getPlayCount())
-                .author(theme.getAuthorId())
+                .author(AuthorDto.from(theme.getAuthor()))
                 .playersMin(theme.getPlayerMin())
                 .playersMax(theme.getPlayerMax())
                 .playTimeMin(theme.getPlayTimeMin())
