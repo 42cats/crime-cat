@@ -27,7 +27,7 @@ export interface ProfileUpdateParams {
     nickname?: string;
     bio?: string;
     badge?: string;
-    social_links?: SocialLinks;
+    socialLinks?: SocialLinks;
     avatar?: File;
 }
 
