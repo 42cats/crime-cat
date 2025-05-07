@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS `web_users` (
     `profile_image_path` VARCHAR(255) DEFAULT NULL COMMENT '프로필 이미지 경로',
     `settings` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '유저 설정 (JSON)',
     `social_links` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'SNS 링크 (JSON)',
+    `email_alarm` BIT(1) NOT NULL DEFAULT b'0' COMMENT '이메일 수신설정',
     `login_method` ENUM('DISCORD', 'GOOGLE', 'LOCAL') NOT NULL COMMENT '로그인 방식',
     `role`         ENUM('ADMIN', 'MANAGER', 'USER') NOT NULL COMMENT '권한 등급',
     PRIMARY KEY (`id`),
