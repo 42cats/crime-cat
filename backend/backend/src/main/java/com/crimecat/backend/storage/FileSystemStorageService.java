@@ -32,18 +32,18 @@ public class FileSystemStorageService implements StorageService {
         this.rootIndex = this.rootLocation.getNameCount();
     }
 
-    @Override
-    public String store(MultipartFile file) {
-        return this.storeAt(file, null, file.getOriginalFilename());
-    }
+//    @Override
+//    public String store(MultipartFile file) {
+//        return this.storeAt(file, null, file.getOriginalFilename());
+//    }
 
     @Override
-    public String storeAt(MultipartFile file, String location, String filename) {
+    public String storeAt(StorageFileType type, MultipartFile file, String filename) {
         Path savePath = this.rootLocation;
         try {
-            if (location != null) {
-                Files.createDirectories(this.rootLocation.resolve(location));
-                savePath = savePath.resolve(location);
+            if (type.getUploadDir() != null) {
+                Files.createDirectories(this.rootLocation.resolve(type.getUploadDir()));
+                savePath = savePath.resolve(type.getUploadDir());
             }
             savePath = savePath.resolve(filename + FileUtil.getExtension(file.getOriginalFilename()));
             if (file.isEmpty()) {
@@ -53,7 +53,7 @@ public class FileSystemStorageService implements StorageService {
         } catch (IOException e) {
             throw new RuntimeException("Failed to store file " + file.getOriginalFilename(), e);
         }
-        return savePath.subpath(this.rootIndex, savePath.getNameCount()).toString();
+        return type.getBaseUrl() + filename;
     }
 
     @Override
