@@ -13,7 +13,7 @@ DB_BASE_DIR  = database
 FRONT_BASE_DIR  = frontend/dist
 IMAGE_DATA_DIR = images
 AVATAR_DIR = images/avatars/
-GAME_THEME_DIR = images/gametheme/ 
+GAME_THEME_DIR = images/gamethemes/
 
 # 기본 타겟 설정
 .DEFAULT_GOAL := help
