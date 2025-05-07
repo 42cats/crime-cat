@@ -11,6 +11,7 @@ NC	    = \033[0m # 색상 초기화
 DB_DATA_DIR  = database/mariadb/data
 DB_BASE_DIR  = database
 FRONT_BASE_DIR  = frontend/dist
+IMAGE_DATA_DIR = images
 
 # 기본 타겟 설정
 .DEFAULT_GOAL := help
@@ -26,7 +27,7 @@ update_config:
 # 디렉토리 생성
 create_dirs:
 	@echo "${BLUE}필요한 디렉토리 확인 및 생성 중...${NC}"
-	@for dir in $(DB_DATA_DIR) $(FRONT_BASE_DIR); do \
+	@for dir in $(DB_DATA_DIR) $(FRONT_BASE_DIR) ${IMAGE_DATA_DIR}; do \
 		if [ ! -d $$dir ]; then \
 			echo "${YELLOW}디렉토리 생성 중: $$dir${NC}"; \
 			mkdir -p $$dir; \
