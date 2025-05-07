@@ -15,6 +15,9 @@ public class TeamDto {
     private String name;
 
     public static TeamDto from(MakerTeam makerTeam) {
+        if (makerTeam == null) {
+            return null;
+        }
         return TeamDto.builder()
                 .id(makerTeam.getId())
                 .name(makerTeam.getName())

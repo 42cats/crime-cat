@@ -2,6 +2,7 @@ package com.crimecat.backend.gametheme.dto;
 
 import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
 import com.crimecat.backend.gametheme.enums.ThemeType;
+import com.crimecat.backend.guild.dto.bot.GuildDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
@@ -14,7 +15,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @SuperBuilder
 public class CrimesceneThemeDetailDto extends GameThemeDetailDto {
-    private UUID makerTeamsId;
+    private TeamDto team;
+    private GuildDto guild;
     private String guildSnowflake;
     private Map<String, Object> extra;
 
@@ -27,7 +29,7 @@ public class CrimesceneThemeDetailDto extends GameThemeDetailDto {
                 .recommendations(theme.getRecommendations())
                 .views(theme.getViews())
                 .playCount(theme.getPlayCount())
-                .author(theme.getAuthorId())
+                .author(AuthorDto.from(theme.getAuthor()))
                 .playersMin(theme.getPlayerMin())
                 .playersMax(theme.getPlayerMax())
                 .playTimeMin(theme.getPlayTimeMin())
@@ -40,7 +42,8 @@ public class CrimesceneThemeDetailDto extends GameThemeDetailDto {
                 .createdAt(theme.getCreatedAt().toInstant(ZoneOffset.UTC))
                 .updatedAt(theme.getUpdatedAt().toInstant(ZoneOffset.UTC))
                 .type(ThemeType.Values.CRIMESCENE)
-                .makerTeamsId(theme.getTeamId())
+                .team(TeamDto.from(theme.getTeam()))
+                .guild(GuildDto.from(theme.getGuild()))
                 .guildSnowflake(theme.getGuildSnowflake())
                 .extra(theme.getExtra())
                 .build();
