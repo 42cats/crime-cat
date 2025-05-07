@@ -12,6 +12,8 @@ DB_DATA_DIR  = database/mariadb/data
 DB_BASE_DIR  = database
 FRONT_BASE_DIR  = frontend/dist
 IMAGE_DATA_DIR = images
+AVATAR_DIR = images/avatars/
+GAME_THEME_DIR = images/gametheme/ 
 
 # 기본 타겟 설정
 .DEFAULT_GOAL := help
@@ -27,14 +29,14 @@ update_config:
 # 디렉토리 생성
 create_dirs:
 	@echo "${BLUE}필요한 디렉토리 확인 및 생성 중...${NC}"
-	@for dir in $(DB_DATA_DIR) $(FRONT_BASE_DIR) ${IMAGE_DATA_DIR}; do \
+	@for dir in $(DB_DATA_DIR) $(FRONT_BASE_DIR) ${IMAGE_DATA_DIR} ${AVATAR_DIR} ${GAME_THEME_DIR}; do \
 		if [ ! -d $$dir ]; then \
 			echo "${YELLOW}디렉토리 생성 중: $$dir${NC}"; \
 			mkdir -p $$dir; \
-			chmod 777 $$dir; \
+			chmod 755 $$dir; \
 		else \
 			echo "${GREEN}디렉토리가 이미 존재합니다: $$dir${NC}"; \
-			chmod 777 $$dir; \
+			chmod 755 $$dir; \
 		fi; \
 	done
 
