@@ -5,15 +5,20 @@ import com.crimecat.backend.permission.service.PermissionService;
 import com.crimecat.backend.point.service.PointHistoryService;
 import com.crimecat.backend.storage.StorageFileType;
 import com.crimecat.backend.storage.StorageService;
+import com.crimecat.backend.user.domain.DiscordUser;
 import com.crimecat.backend.user.repository.DiscordUserRepository;
 import com.crimecat.backend.user.repository.UserRepository;
 import com.crimecat.backend.user.service.UserPermissionService;
 import com.crimecat.backend.utils.UserDailyCheckUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.dto.NicknameCheckResponseDto;
+import com.crimecat.backend.webUser.dto.NotificationSettingsRequestDto;
+import com.crimecat.backend.webUser.dto.NotificationSettingsResponseDto;
+import com.crimecat.backend.webUser.dto.NotificationToggleRequest;
+import com.crimecat.backend.webUser.dto.UserProfileInfoResponseDto;
 import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
@@ -40,6 +46,7 @@ public class WebUserService {
     private final UserPermissionService userPermissionService;
     private final StorageService storageService;
     private final ObjectMapper objectMapper;
+
 
 
 
@@ -72,7 +79,7 @@ public class WebUserService {
         throw ErrorStatus.INVALID_INPUT.asServiceException();
     }
 
-    
+
     @Transactional
     public void userProfileSet(MultipartFile file, WebUserProfileEditRequestDto webUserProfileEditRequestDto){
         WebUser webUser = webUserRepository.findById(
@@ -105,4 +112,90 @@ public class WebUserService {
         webUserRepository.save(webUser);
     }
 
+    @Transactional(readOnly = true)
+    public NicknameCheckResponseDto checkNicknameDuplicate(String nickname) {
+        log.info("닉네임 체크로직");
+            if (nickname == null || nickname.trim().isEmpty()) {
+                return NicknameCheckResponseDto.builder()
+                    .available(false)
+                    .message("닉네임을 입력해주세요.")
+                        .build();
+            }
+
+            // 닉네임 길이 검사
+            if (nickname.length() < 2 || nickname.length() > 20) {
+                return NicknameCheckResponseDto.builder()
+                    .available(false)
+                    .message("닉네임은 2~20자 사이여야 합니다.")
+                        .build();
+            }
+
+            // 닉네임 형식 검사 (특수문자 _, - 만 허용)
+            if (!nickname.matches("^[\\\\w가-힣_-]+$")) {
+            return NicknameCheckResponseDto.builder()
+                .available(false)
+                .message("닉네임은 한글, 영문, 숫자, 언더바(_), 하이픈(-)만 사용 가능합니다.")
+                    .build();
+            }
+        // 닉네임 중복 검사
+        Optional<WebUser> existingUser = webUserRepository.findByNickname(nickname);
+
+        if (existingUser.isPresent()) {
+            return NicknameCheckResponseDto.builder()
+                .available(false)
+                .message("이미 사용 중인 닉네임입니다.")
+                    .build();
+        }
+
+        return NicknameCheckResponseDto.builder()
+            .available(true)
+            .message("사용 가능한 닉네임입니다.")
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public UserProfileInfoResponseDto getUserInfo(String userId) {
+        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
+            .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+        return UserProfileInfoResponseDto.from(webUser);
+    }
+
+    @Transactional(readOnly = true)
+    public NotificationSettingsResponseDto getUserNotificationSettings(String userId) {
+        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
+            .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+        return NotificationSettingsResponseDto.from(webUser);
+    }
+
+    @Transactional
+    public NotificationSettingsResponseDto setEmailAlarm(String userId, NotificationToggleRequest body) {
+        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
+            .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+        webUser.setEmailAlarm(body.getEnabled());
+        return NotificationSettingsResponseDto.from(webUser);
+    }
+    @Transactional
+    public NotificationSettingsResponseDto setDiscordAlarm(String userId, NotificationToggleRequest body) {
+        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
+            .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+        if(webUser.getUser().getDiscordUser() != null){
+            DiscordUser discordUser = webUser.getUser()
+                .getDiscordUser();
+            discordUser.setDiscordAlarm(body.getEnabled());
+        }
+        return NotificationSettingsResponseDto.from(webUser);
+    }
+
+    @Transactional
+    public NotificationSettingsResponseDto setAllNotificationSetting(String userId, NotificationSettingsRequestDto body) {
+        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
+            .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+        if(webUser.getUser().getDiscordUser() != null){
+            DiscordUser discordUser = webUser.getUser()
+                .getDiscordUser();
+            discordUser.setDiscordAlarm(body.getDiscord());
+        }
+        webUser.setEmailAlarm(body.getEmail());
+        return NotificationSettingsResponseDto.from(webUser);
+    }
 }
