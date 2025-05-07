@@ -80,7 +80,7 @@ public class GameThemeService {
     public GetGameThemeResponse getGameTheme(UUID themeId) {
         GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
         UUID webUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
-        if (gameTheme.isDeleted() && (!gameTheme.isPublicStatus() && !gameTheme.isAuthor(webUserId))) {
+        if (gameTheme.isDeleted() || (!gameTheme.isPublicStatus() && !gameTheme.isAuthor(webUserId))) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
         gameTheme.viewed();
