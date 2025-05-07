@@ -14,34 +14,38 @@ export const useProfileAPI = () => {
   const [error, setError] = useState<string | null>(null);
 
   // 닉네임 중복 체크
-  const checkNickname = useCallback(async (nickname: string): Promise<boolean> => {
+  const checkNickname = useCallback(async (nickname: string): Promise<any> => {
     try {
       setLoading(true);
       setError(null);
       
       const result = await ProfileAPI.checkNicknameDuplicate(nickname);
+      console.log('API 닉네임 중복 확인 결과:', result);
+      
+      // API 결과 { message: "사용 가능한 닉네임입니다.", available: true } 형식인지 확인
+      const isAvailable = result?.available === true;
       
       // 이미 사용 중인 닉네임인 경우
-      if (!result.isAvailable) {
+      if (!isAvailable) {
         toast({
-          title: '닉네임 중복',
-          description: result.message || '이미 사용 중인 닉네임입니다.',
+          title: '닉네임 사용 불가',
+          description: result.message || '사용할 수 없는 닉네임입니다.',
         });
-        return false;
+        return result; // 원본 결과를 그대로 반환
       }
       
       toast({
         title: '사용 가능한 닉네임',
-        description: '사용 가능한 닉네임입니다.',
+        description: result.message || '사용 가능한 닉네임입니다.',
       });
-      return true;
+      return result; // 원본 결과를 그대로 반환
     } catch (err: any) {
       setError(err.message || '닉네임 중복 확인 중 오류가 발생했습니다.');
       toast({
         title: '오류',
         description: '닉네임 중복 확인 중 오류가 발생했습니다.',
       });
-      return false;
+      return { available: false, message: '오류가 발생했습니다.' };
     } finally {
       setLoading(false);
     }

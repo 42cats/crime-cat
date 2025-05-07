@@ -82,7 +82,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
           </Button>
         </div>
         {nicknameChecked && !isNicknameValid && (
-          <p className="text-xs text-red-500 mt-1">이미 사용 중인 닉네임입니다.</p>
+          <p className="text-xs text-red-500 mt-1">사용할 수 없는 닉네임입니다.</p>
         )}
         {nicknameChecked && isNicknameValid && (
           <p className="text-xs text-green-500 mt-1">사용 가능한 닉네임입니다.</p>

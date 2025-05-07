@@ -9,9 +9,9 @@ import { UserProfile, ProfileUpdateParams } from "./types";
 export const getUserProfile = async (userId: string): Promise<UserProfile> => {
     try {
         const response = await apiClient.get<UserProfile>(
-            `/users/${userId}/profile`
+            `/web_user/profile/${userId}`
         );
-        return response.data;
+        return response;
     } catch (error) {
         console.error("프로필 정보 조회 실패:", error);
         throw error;
@@ -42,7 +42,7 @@ export const updateUserProfile = async (
             formData.append("data", JSON.stringify(profileDataWithoutAvatar));
 
             const response = await apiClient.put(
-                `/users/${userId}/profile`,
+                `/web_user/${userId}/profile`,
                 formData,
                 {
                     headers: {
@@ -54,7 +54,7 @@ export const updateUserProfile = async (
         } else {
             // 이미지가 없는 경우 일반 JSON 요청
             const response = await apiClient.put<UserProfile>(
-                `/users/${userId}/profile`,
+                `/web_user/${userId}/profile`,
                 profileData
             );
             return response.data;
@@ -80,7 +80,7 @@ export const updateProfileImage = async (
         formData.append("avatar", imageFile);
 
         const response = await apiClient.put<{ avatarUrl: string }>(
-            `/users/${userId}/profile/avatar`,
+            `/web_user/${userId}/profile/avatar`,
             formData,
             {
                 headers: {
@@ -107,7 +107,7 @@ export const updateSocialLinks = async (
 ): Promise<any> => {
     try {
         const response = await apiClient.put(
-            `/users/${userId}/profile/social-links`,
+            `/web_user/${userId}/profile/social-links`,
             { socialLinks }
         );
         return response.data;

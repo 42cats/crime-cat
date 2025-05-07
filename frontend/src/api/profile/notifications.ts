@@ -11,9 +11,9 @@ export const getNotificationSettings = async (
 ): Promise<NotificationSettings> => {
     try {
         const response = await apiClient.get<NotificationSettings>(
-            `/users/${userId}/notifications/settings`
+            `/web_user/${userId}/notifications/settings`
         );
-        return response.data;
+        return response;
     } catch (error) {
         console.error("알림 설정 조회 실패:", error);
         throw error;
@@ -32,12 +32,12 @@ export const updateEmailNotifications = async (
 ): Promise<NotificationSettings> => {
     try {
         const response = await apiClient.put<NotificationSettings>(
-            `/users/${userId}/notifications/email`,
+            `/web_user/${userId}/notifications/email`,
             {
                 enabled,
             }
         );
-        return response.data;
+        return response;
     } catch (error) {
         console.error("이메일 알림 설정 업데이트 실패:", error);
         throw error;
@@ -56,12 +56,12 @@ export const updateDiscordNotifications = async (
 ): Promise<NotificationSettings> => {
     try {
         const response = await apiClient.put<NotificationSettings>(
-            `/users/${userId}/notifications/discord`,
+            `/web_user/${userId}/notifications/discord`,
             {
                 enabled,
             }
         );
-        return response.data;
+        return response;
     } catch (error) {
         console.error("디스코드 알림 설정 업데이트 실패:", error);
         throw error;
@@ -80,10 +80,10 @@ export const updateAllNotificationSettings = async (
 ): Promise<NotificationSettings> => {
     try {
         const response = await apiClient.put<NotificationSettings>(
-            `/users/${userId}/notifications/settings`,
+            `/web_user/${userId}/notifications/settings`,
             settings
         );
-        return response.data;
+        return response;
     } catch (error) {
         console.error("알림 설정 전체 업데이트 실패:", error);
         throw error;
