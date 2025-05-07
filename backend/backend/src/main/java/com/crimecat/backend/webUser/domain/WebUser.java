@@ -1,11 +1,9 @@
 package com.crimecat.backend.webUser.domain;
 
-import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
 import com.crimecat.backend.webUser.enums.LoginMethod;
 import com.crimecat.backend.webUser.enums.UserRole;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,7 +17,9 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -61,6 +61,10 @@ public class WebUser implements UserDetails {
     // ✅ 이메일 정보 및 인증 여부
     @Column(name = "email", unique = true, length = 100)
     private String email;
+
+    @Builder.Default
+    @Column(name = "email_alarm" , nullable = false)
+    private Boolean emailAlarm = false;
 
     @OneToOne(mappedBy = "webUser", fetch = FetchType.LAZY)
     private User user;
@@ -111,12 +115,12 @@ public class WebUser implements UserDetails {
     // ✅ 사용자 설정 (JSON 형식)
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSON")
-    private String settings;
+    private Map<String,Object> settings;
 
     // ✅ SNS 링크들 (JSON)
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "social_links", columnDefinition = "JSON")
-    private String socialLinks;
+    private Map<String,String> socialLinks;
 
     @PrePersist
     public void prePersist() {
@@ -175,12 +179,16 @@ public class WebUser implements UserDetails {
         if(request.getNickName() != null){
             this.nickname = request.getNickName();
         }
-        if(request.getSocialLink() != null){
-            try{
-                this.socialLinks = socialLinks.writeValueAsString(request.getSocialLink());
-            } catch (JsonProcessingException e) {
-                throw ErrorStatus.UNPROCESSABLE_ENTITY.asServiceException();
+        if (request.getSocialLink() != null) {
+            // 기존에 null 이었다면 새 맵 만들어 주기
+            if (this.socialLinks == null) {
+                this.socialLinks = new HashMap<>();
+                this.socialLinks.put("instagram?", "");
+                this.socialLinks.put("x", "");
+                this.socialLinks.put("openkakao", "");
             }
+            // putAll 하면 같은 key 는 덮어쓰고, 새로운 key 는 추가
+            this.socialLinks.putAll(request.getSocialLink());
         }
         if(request.getDiscordAlert() != null){
             if(getUser().getDiscordUser() != null){
