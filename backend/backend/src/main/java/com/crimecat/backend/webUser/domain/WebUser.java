@@ -4,7 +4,6 @@ import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
 import com.crimecat.backend.webUser.enums.LoginMethod;
 import com.crimecat.backend.webUser.enums.UserRole;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -175,11 +174,11 @@ public class WebUser implements UserDetails {
     }
 
 
-    public void updateProfile(WebUserProfileEditRequestDto request, ObjectMapper socialLinks) {
+    public void updateProfile(WebUserProfileEditRequestDto request) {
         if(request.getNickName() != null){
             this.nickname = request.getNickName();
         }
-        if (request.getSocialLink() != null) {
+        if (request.getSocialLinks() != null) {
             // 기존에 null 이었다면 새 맵 만들어 주기
             if (this.socialLinks == null) {
                 this.socialLinks = new HashMap<>();
@@ -188,7 +187,7 @@ public class WebUser implements UserDetails {
                 this.socialLinks.put("openkakao", "");
             }
             // putAll 하면 같은 key 는 덮어쓰고, 새로운 key 는 추가
-            this.socialLinks.putAll(request.getSocialLink());
+            this.socialLinks.putAll(request.getSocialLinks());
         }
         if(request.getDiscordAlert() != null){
             if(getUser().getDiscordUser() != null){
