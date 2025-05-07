@@ -27,11 +27,15 @@ public class UserProfileInfoResponseDto {
       alertSetting.put("discord", webUser.getUser().getDiscordUser().isDiscordAlarm());
     }
     alertSetting.put("email", webUser.getEmailAlarm());
+    String avatarUrl = webUser.getProfileImagePath();
+    if(avatarUrl == null){
+      avatarUrl = "https://cdn.discordapp.com/embed/avatars/1.png";
+    }
     return UserProfileInfoResponseDto.builder()
             .id(webUser.getId().toString())
             .nickName(webUser.getNickname())
             .bio(webUser.getBio())
-            .avatar(webUser.getProfileImagePath())
+            .avatar(avatarUrl)
             .notificationSettings(alertSetting)
             .socialLinks(webUser.getSocialLinks()) // 필드명 수정: socialLick -> socialLinks
             .build();

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -63,12 +64,18 @@ public class WebUserController {
     return userService.getAllUserPermissionsForWeb(webUser.getDiscordUserSnowflake());
   }
 
-  @PatchMapping("profile")
-  public ResponseEntity<Void> editUserProfile(@RequestPart(name = "profileImage", required = false)
-  MultipartFile file, @RequestPart(name = "data") WebUserProfileEditRequestDto webUserProfileEditRequestDto){
-
+  @PutMapping(
+      path = "{user_id}/profile",
+      consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+  )
+  public ResponseEntity<Void> editUserProfile(
+      @RequestPart(name = "avatar", required = false) MultipartFile file,
+      @RequestPart(name = "data") WebUserProfileEditRequestDto webUserProfileEditRequestDto,
+      @PathVariable("user_id") String userId
+  ){
     //유저인증
-    AuthenticationUtil.validateCurrentUserMatches(UUID.fromString(webUserProfileEditRequestDto.getUserId()));
+    AuthenticationUtil.validateCurrentUserMatches(UUID.fromString(userId));
+    webUserProfileEditRequestDto.setUserId(userId);
     webUserService.userProfileSet(file,webUserProfileEditRequestDto);
     return ResponseEntity.status(HttpStatus.ACCEPTED).build();
   }

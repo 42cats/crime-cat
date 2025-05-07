@@ -18,7 +18,6 @@ import com.crimecat.backend.webUser.dto.NotificationToggleRequest;
 import com.crimecat.backend.webUser.dto.UserProfileInfoResponseDto;
 import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,7 +44,6 @@ public class WebUserService {
     private final PermissionService permissionService;
     private final UserPermissionService userPermissionService;
     private final StorageService storageService;
-    private final ObjectMapper objectMapper;
 
 
 
@@ -97,7 +95,7 @@ public class WebUserService {
                 }
             }
         }
-        webUser.updateProfile(webUserProfileEditRequestDto, objectMapper);
+        webUser.updateProfile(webUserProfileEditRequestDto);
 
         //프로필파일 저장
         if(file != null && !file.isEmpty()){
@@ -140,12 +138,12 @@ public class WebUserService {
         // 닉네임 중복 검사
         Optional<WebUser> existingUser = webUserRepository.findByNickname(nickname);
 
-        if (existingUser.isPresent()) {
-            return NicknameCheckResponseDto.builder()
-                .available(false)
-                .message("이미 사용 중인 닉네임입니다.")
-                    .build();
-        }
+//        if (existingUser.isPresent()) {
+//            return NicknameCheckResponseDto.builder()
+//                .available(false)
+//                .message("이미 사용 중인 닉네임입니다.")
+//                    .build();
+//        }
 
         return NicknameCheckResponseDto.builder()
             .available(true)
