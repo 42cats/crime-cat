@@ -6,6 +6,8 @@ COPY docker/nginx/conf/nginx.conf /etc/nginx/nginx.conf
 
 COPY docker/nginx/conf/http.d /etc/nginx/http.d
 RUN mkdir -p /usr/share/nginx/html
+RUN mkdir -p /images /images/avatars /images/gametheme
+RUN chmod -R 777 /images
 # COPY frontend/dist /usr/share/nginx/html
 
 # RUN chmod +rwx /etc/nginx/tools/nginx.sh
