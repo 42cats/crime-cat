@@ -1,6 +1,5 @@
 package com.crimecat.backend.gametheme.service;
 
-import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
 import com.crimecat.backend.gametheme.domain.GameTheme;
@@ -16,8 +15,8 @@ import com.crimecat.backend.gametheme.enums.ThemeType;
 import com.crimecat.backend.gametheme.repository.GameThemeRecommendationRepository;
 import com.crimecat.backend.gametheme.repository.GameThemeRepository;
 import com.crimecat.backend.gametheme.specification.GameThemeSpecification;
+import com.crimecat.backend.storage.StorageFileType;
 import com.crimecat.backend.storage.StorageService;
-import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.transaction.Transactional;
@@ -40,8 +39,6 @@ public class GameThemeService {
     private final MakerTeamService teamService;
     private final GameThemeRecommendationRepository themeRecommendationRepository;
 
-    private static final String THUMBNAIL_LOCATION = "gametheme";
-
     @Transactional
     public void addGameTheme(MultipartFile file, AddGameThemeRequest request) {
         GameTheme gameTheme = GameTheme.from(request);
@@ -52,7 +49,7 @@ public class GameThemeService {
         }
         gameTheme = themeRepository.save(gameTheme);
         if (file != null && !file.isEmpty()) {
-            String path = storageService.storeAt(file, THUMBNAIL_LOCATION, gameTheme.getId().toString());
+            String path = storageService.storeAt(StorageFileType.GAME_THEME, file, gameTheme.getId().toString());
             gameTheme.setThumbnail(path);
             themeRepository.save(gameTheme);
         }
@@ -102,7 +99,7 @@ public class GameThemeService {
         AuthenticationUtil.validateCurrentUserMatches(gameTheme.getAuthorId());
         request.update(gameTheme);
         if (file != null && !file.isEmpty()) {
-            String path = storageService.storeAt(file, THUMBNAIL_LOCATION, gameTheme.getId().toString());
+            String path = storageService.storeAt(StorageFileType.GAME_THEME, file, gameTheme.getId().toString());
             gameTheme.setThumbnail(path);
             themeRepository.save(gameTheme);
         }

@@ -3,6 +3,7 @@ package com.crimecat.backend.webUser.service;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.permission.service.PermissionService;
 import com.crimecat.backend.point.service.PointHistoryService;
+import com.crimecat.backend.storage.StorageFileType;
 import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.user.repository.DiscordUserRepository;
 import com.crimecat.backend.user.repository.UserRepository;
@@ -39,7 +40,7 @@ public class WebUserService {
     private final UserPermissionService userPermissionService;
     private final StorageService storageService;
     private final ObjectMapper objectMapper;
-    private static final String PROFILE_IMAGE_LOCATION = "profileImage";
+
 
 
     public ResponseEntity<Map<String, Object>> isDailyCheck(String userId) {
@@ -94,7 +95,7 @@ public class WebUserService {
         //프로필파일 저장
         if(file != null && !file.isEmpty()){
             try{
-            String path = storageService.storeAt(file, PROFILE_IMAGE_LOCATION, webUser.getId().toString());
+            String path = storageService.storeAt(StorageFileType.AVATAR, file, webUser.getId().toString());
             webUser.setProfileImagePath(path);
       } catch (Exception e) {
                 log.error("프로필 이미지 저장 실패 : {}", e.getMessage());
