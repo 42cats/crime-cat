@@ -29,36 +29,35 @@ export const updateUserProfile = async (
     profileData: ProfileUpdateParams
 ): Promise<UserProfile> => {
     try {
-        // 이미지가 포함된 경우 FormData로 처리
+        const formData = new FormData();
+
+        // 1) avatar가 있으면 추가
         if (profileData.avatar) {
-            const formData = new FormData();
-
-            // 이미지 추가
             formData.append("avatar", profileData.avatar);
-
-            // 나머지 데이터는 JSON 형태로 추가
-            const profileDataWithoutAvatar = { ...profileData };
-            delete profileDataWithoutAvatar.avatar;
-            formData.append("data", JSON.stringify(profileDataWithoutAvatar));
-
-            const response = await apiClient.put(
-                `/web_user/${userId}/profile`,
-                formData,
-                {
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                    },
-                }
-            );
-            return response.data;
-        } else {
-            // 이미지가 없는 경우 일반 JSON 요청
-            const response = await apiClient.put<UserProfile>(
-                `/web_user/${userId}/profile`,
-                profileData
-            );
-            return response.data;
         }
+
+        // 2) JSON Blob으로 data 파트 추가
+        //    WebUserProfileEditRequestDto DTO 필드명(social_links 등)에 맞춰
+        //    profileData 객체의 키를 snake_case로 맞추거나,
+        //    DTO에 @JsonProperty로 선언된 이름(social_links)을 사용해야 합니다.
+        const payload = {
+            nickname: profileData.nickname,
+            bio: profileData.bio,
+            badge: profileData.badge,
+            socialLinks: profileData.socialLinks, // camelCase → snake_case 변환
+            // emailAlert, discordAlert 등도 필요하다면 추가
+        };
+        const jsonBlob = new Blob([JSON.stringify(payload)], {
+            type: "application/json",
+        });
+        formData.append("data", jsonBlob);
+
+        // 3) headers 전체 생략 — 브라우저가 boundary 포함한 multipart/form-data 헤더를 자동 설정
+        const response = await apiClient.put<UserProfile>(
+            `/web_user/${userId}/profile`,
+            formData
+        );
+        return response.data;
     } catch (error) {
         console.error("프로필 정보 업데이트 실패:", error);
         throw error;

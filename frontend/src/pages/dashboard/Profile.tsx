@@ -106,7 +106,7 @@ const Profile: React.FC = () => {
     const [discordValid, setDiscordValid] = useState<boolean | null>(null);
 
     // 칭호 목록
-    const [badgeList, setBadgeList] = useState<Array<any>>([]);
+    // const [badgeList, setBadgeList] = useState<Array<any>>([]);
 
     // 원본 데이터 (변경 감지용)
     const [originalData, setOriginalData] = useState<any>({});
@@ -323,12 +323,12 @@ const Profile: React.FC = () => {
     /**
      * 칭호 선택 핸들러
      */
-    const handleBadgeSelection = async (badgeId: string | null) => {
-        setSelectedBadge(badgeId);
-        if (user?.id) {
-            await setActiveBadge(badgeId);
-        }
-    };
+    // const handleBadgeSelection = async (badgeId: string | null) => {
+    //     setSelectedBadge(badgeId);
+    //     if (user?.id) {
+    //         await setActiveBadge(badgeId);
+    //     }
+    // };
 
     /**
      * 계정 탈퇴 핸들러
@@ -409,7 +409,7 @@ const Profile: React.FC = () => {
             }
 
             setTimeout(() => {
-                navigate("/dashboard");
+                navigate("/dashboard/profile");
             }, 1000);
         } catch {
             // 에러 처리는 useProfileAPI 내부에서 처리됨
@@ -481,12 +481,7 @@ const Profile: React.FC = () => {
                                                 handleImageChange
                                             }
                                         />
-                                        <div className="mt-8 sm:ml-28 sm:mt-0 flex-1">
-                                            <CardDescription className="mt-1">
-                                                {bio?.slice(0, 50)}
-                                                {bio?.length > 50 ? "..." : ""}
-                                            </CardDescription>
-                                        </div>
+                                        <div className="mt-8 sm:ml-28 sm:mt-0 flex-1 text-center"></div>
                                     </div>
                                 </CardHeader>
 
@@ -535,8 +530,8 @@ const Profile: React.FC = () => {
 
                                 <Separator />
 
-                                <CardFooter className="justify-between py-6">
-                                    <Button
+                                <CardFooter className="justify-end py-6">
+                                    {/* <Button
                                         type="button"
                                         variant="outline"
                                         className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-red-800 dark:hover:bg-red-950 dark:hover:text-red-400 gap-2"
@@ -544,7 +539,7 @@ const Profile: React.FC = () => {
                                     >
                                         <Trash2 className="w-4 h-4" />
                                         계정 탈퇴하기
-                                    </Button>
+                                    </Button> */}
                                     <Button
                                         type="submit"
                                         className="gap-2"
@@ -590,14 +585,14 @@ const Profile: React.FC = () => {
                 />
 
                 {/* 칭호 선택 모달 */}
-                <BadgeSelectModal
+                {/* <BadgeSelectModal
                     showModal={showBadgeModal}
                     setShowModal={setShowBadgeModal}
                     badgeList={badgeList}
                     selectedBadge={selectedBadge}
                     setSelectedBadge={handleBadgeSelection}
                     isDark={isDark}
-                />
+                /> */}
 
                 {/* 계정 탈퇴 확인 모달 */}
                 <Dialog
