@@ -14,7 +14,7 @@ public class WebUserProfileEditRequestDto {
   private Map<String,String> socialLink;
 //  private String title;
 //  private String badge;
-//  private Boolean emailAlert;
+  private Boolean emailAlert;
   private Boolean discordAlert;
   private String bio;
 }

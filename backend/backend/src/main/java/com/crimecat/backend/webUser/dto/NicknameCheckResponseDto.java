@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NicknameCheckResponseDto {
-    private boolean isAvailable;
+    private boolean available; // isAvailable -> available
     private String message;
 }
