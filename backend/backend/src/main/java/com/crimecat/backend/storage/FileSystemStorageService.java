@@ -40,10 +40,10 @@ public class FileSystemStorageService implements StorageService {
     @Override
     public String storeAt(StorageFileType type, MultipartFile file, String filename) {
         Path savePath = this.rootLocation;
+        savePath = savePath.resolve(type.getUploadDir());
         try {
-            if (type.getUploadDir() != null) {
-                Files.createDirectories(this.rootLocation.resolve(type.getUploadDir()));
-                savePath = savePath.resolve(type.getUploadDir());
+            if (Files.notExists(savePath)) {
+                Files.createDirectories(savePath);
             }
             savePath = savePath.resolve(filename + FileUtil.getExtension(file.getOriginalFilename()));
             if (file.isEmpty()) {

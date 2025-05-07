@@ -40,8 +40,14 @@ services:
         networks:
             - discord-network
         volumes:
-            - image_data:/usr/share/nginx/html/images
-
+        - image_data:/usr/share/nginx/html/images
+        command: >
+            sh -c "
+                mkdir -p /usr/share/nginx/html/images/avatars \
+                        /usr/share/nginx/html/images/gametheme && \
+                chmod -R 777 /usr/share/nginx/html/images && \
+                nginx -g 'daemon off;'
+            "
 networks:
     discord-network:
         driver: bridge
@@ -51,6 +57,6 @@ volumes:
     image_data:
         driver: local
         driver_opts:
-        type: none
-        o: bind
-        device: ${PWD}/images
+            type: none
+            o: bind
+            device: ${PWD}/images
