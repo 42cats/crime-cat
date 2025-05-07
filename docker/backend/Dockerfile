@@ -8,6 +8,8 @@ RUN chmod +x gradlew && ./gradlew clean build -x test
 FROM eclipse-temurin:21-jdk-alpine
 RUN apk update && apk add --no-cache curl
 WORKDIR /app
+RUN mkdir -p /images /images/avatars /images/gametheme
+RUN chmod -R 777 /images
 COPY --from=builder /app/backend/build/libs/*.jar app.jar
 #RUN #chmod +x app.jar
 EXPOSE 8080
