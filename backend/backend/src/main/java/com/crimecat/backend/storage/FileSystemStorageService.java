@@ -42,8 +42,9 @@ public class FileSystemStorageService implements StorageService {
         Path savePath = this.rootLocation;
         savePath = savePath.resolve(type.getUploadDir());
         try {
-            if (Files.notExists(savePath)) {
-                Files.createDirectories(savePath);
+            if (type.getUploadDir() != null) {
+                Files.createDirectories(this.rootLocation.resolve(type.getUploadDir()));
+                savePath = savePath.resolve(type.getUploadDir());
             }
             savePath = savePath.resolve(filename + FileUtil.getExtension(file.getOriginalFilename()));
             if (file.isEmpty()) {
