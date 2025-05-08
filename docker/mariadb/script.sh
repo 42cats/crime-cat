@@ -125,7 +125,10 @@ stop_temp_server() {
 ###############################################################################
 run_sql() { mariadb --socket="$SOCKET" --user=root < "$1"; }
 
-substitute_env() { envsubst < "$1" > "$2"; }
+substitute_env() {
+  log "환경변수 치환: $1 -> $2 (DB_DISCORD=${DB_DISCORD}, DB_USER=${DB_USER}, DB_PASS=${DB_PASS})"
+  envsubst < "$1" > "$2"
+}
 
 ###############################################################################
 # 5. init 디렉터리 처리
@@ -180,8 +183,17 @@ run_migrations() {
 init_tables_only() {
   log "▶ 테이블만 초기화 시작 (기존 데이터베이스 유지)"
   
-  # 02-create-tables.sql 실행하기
-  for s in "$INITDIR"/02-create-tables*.sql; do
+  # 테이블 템플릿 파일 처리 - 이 부분 추가
+  for t in "$INITDIR"/02-create-tables*.template.sql "$INITDIR"/02b-create-tables*.template.sql; do
+    [ -f "$t" ] || continue
+    o="${t%.template.sql}.sql"
+    log "   • envsubst: $(basename "$t")"
+    substitute_env "$t" "$o"
+  done
+  
+  # 테이블 SQL 실행
+  for s in "$INITDIR"/02*-create-tables*.sql; do
+    case "$s" in *.template.sql) continue ;; esac
     [ -f "$s" ] || continue
     log "   • 테이블 생성: $(basename "$s")"
     run_sql "$s"
@@ -193,7 +205,11 @@ init_tables_only() {
   if [ "$SCHEMA_EXISTS" -eq "0" ]; then
     if [ -f "$MIGRATIONDIR/schema_version.sql" ]; then
       log "   • 스키마 버전 테이블 생성"
-      run_sql "$MIGRATIONDIR/schema_version.sql"
+      # 환경 변수 치환 추가
+      TMP_SCHEMA="/tmp/schema_version.sql"
+      substitute_env "$MIGRATIONDIR/schema_version.sql" "$TMP_SCHEMA"
+      run_sql "$TMP_SCHEMA"
+      rm -f "$TMP_SCHEMA"
     fi
   fi
   
@@ -242,7 +258,8 @@ main() {
                 --datadir="$DATADIR" \
                 --socket="$SOCKET" \
                 --port=3306 \
-                --skip-networking=0  
+                --bind-address=0.0.0.0 \
+                --skip-networking=0
 }
 
 main "$@"
