@@ -8,4 +8,3 @@ ALTER TABLE `web_users`
   ADD COLUMN `email_alarm` BIT(1) NOT NULL DEFAULT b'0'
     COMMENT '이메일 수신설정'
     AFTER `social_links`;
-가
