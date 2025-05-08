@@ -26,10 +26,58 @@ prepare_dirs() {
 }
 
 ###############################################################################
-# 1. DB 존재 여부 체크
+# 1. DB 및 테이블 존재 여부 체크
 ###############################################################################
 is_initialized() {
-  [ -d "$DATADIR/mysql" ] && return 0 || return 1
+  # 기존 디렉토리 체크는 유지
+  [ -d "$DATADIR/mysql" ] || return 1
+  
+  # 테이블이 있는지 확인 (스키마 버전 테이블 확인)
+  log "▶ 기존 테이블 존재 여부 확인 중"
+  
+  # 임시 서버 시작
+  start_temp_server_silent
+  wait_for_ready_silent
+  
+  # 테이블 존재 여부 확인
+  TABLE_CHECK=$(mariadb --socket="$SOCKET" --user=root -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${DB_DISCORD:-discord}';" --skip-column-names 2>/dev/null || echo "0")
+  
+  # 스키마 버전 테이블 확인
+  SCHEMA_VERSION_EXISTS=$(mariadb --socket="$SOCKET" --user=root -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${DB_DISCORD:-discord}' AND table_name='schema_version';" --skip-column-names 2>/dev/null || echo "0")
+  
+  # 임시 서버 종료
+  stop_temp_server_silent
+  
+  # 테이블이 없거나 스키마 버전 테이블이 없으면 초기화 필요
+  if [ "$TABLE_CHECK" -eq "0" ] || [ "$SCHEMA_VERSION_EXISTS" -eq "0" ]; then
+    log "⚠ 테이블이 없거나 스키마 버전 테이블이 없음 → 테이블 초기화 필요"
+    return 1
+  fi
+  
+  log "✔ 기존 테이블 확인 완료 - 정상"
+  return 0
+}
+
+# 테이블 체크용 임시 서버 (로그 없이 조용히 실행)
+start_temp_server_silent() {
+  mariadbd --user="$MYSQL_USER" \
+           --datadir="$DATADIR" \
+           --socket="$SOCKET" \
+           --skip-networking >/dev/null 2>&1 &
+}
+
+wait_for_ready_silent() {
+  for i in $(seq 1 30); do
+    mariadb-admin --socket="$SOCKET" --user=root ping --silent >/dev/null 2>&1 && return 0
+    sleep 1
+  done
+  return 1
+}
+
+stop_temp_server_silent() {
+  mariadb-admin --socket="$SOCKET" --user=root shutdown >/dev/null 2>&1 || true
+  sleep 2
+  pkill -f "mariadbd.*$SOCKET" >/dev/null 2>&1 || true
 }
 
 ###############################################################################
@@ -127,26 +175,64 @@ run_migrations() {
 }
 
 ###############################################################################
-# 7. 메인 흐름
+# 7. 테이블만 초기화 (기존 DB는 있지만 테이블이 없는 경우)
+###############################################################################
+init_tables_only() {
+  log "▶ 테이블만 초기화 시작 (기존 데이터베이스 유지)"
+  
+  # 02-create-tables.sql 실행하기
+  for s in "$INITDIR"/02-create-tables*.sql; do
+    [ -f "$s" ] || continue
+    log "   • 테이블 생성: $(basename "$s")"
+    run_sql "$s"
+  done
+  
+  # schema_version 테이블이 없으면 생성
+  SCHEMA_EXISTS=$(mariadb --socket="$SOCKET" --user=root -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${DB_DISCORD:-discord}' AND table_name='schema_version';" --skip-column-names 2>/dev/null || echo "0")
+  
+  if [ "$SCHEMA_EXISTS" -eq "0" ]; then
+    if [ -f "$MIGRATIONDIR/schema_version.sql" ]; then
+      log "   • 스키마 버전 테이블 생성"
+      run_sql "$MIGRATIONDIR/schema_version.sql"
+    fi
+  fi
+  
+  log "✔ 테이블 초기화 완료"
+}
+
+###############################################################################
+# 8. 메인 흐름
 ###############################################################################
 main() {
   log "=== MariaDB EntryPoint 시작 ==="
   prepare_dirs
 
-  if is_initialized; then
-    log "기존 데이터베이스 감지 → 전체 초기화 스킵"
-    start_temp_server
-    wait_for_ready
-    run_create_databases_only         # 유저·비번·DB 재보증
-    run_migrations                    # 마이그레이션 실행 (신규 추가)
-    stop_temp_server
+  # 기본 시스템 DB가 있는지 확인
+  if [ -d "$DATADIR/mysql" ]; then
+    # 시스템 DB는 있지만 테이블이 없는지 확인
+    if is_initialized; then
+      log "정상 데이터베이스 및 테이블 감지 → 전체 초기화 스킵"
+      start_temp_server
+      wait_for_ready
+      run_create_databases_only         # 유저·비번·DB 재보증
+      run_migrations                    # 마이그레이션 실행
+      stop_temp_server
+    else
+      log "데이터베이스는 있지만 테이블이 없음 → 테이블만 초기화"
+      start_temp_server
+      wait_for_ready
+      run_create_databases_only         # 유저·비번·DB 재보증
+      init_tables_only                  # 테이블만 초기화
+      run_migrations                    # 마이그레이션 실행
+      stop_temp_server
+    fi
   else
     log "신규 컨테이너 → 전체 초깃값 적용"
     init_system_db
     start_temp_server
     wait_for_ready
     run_all_sql_scripts
-    # 초기 데이터베이스 설정 후 마이그레이션 실행 (신규 추가)
+    # 초기 데이터베이스 설정 후 마이그레이션 실행
     run_migrations
     stop_temp_server
   fi
