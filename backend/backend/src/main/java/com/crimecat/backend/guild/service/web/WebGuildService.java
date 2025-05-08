@@ -1,6 +1,10 @@
 package com.crimecat.backend.guild.service.web;
 
+import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.gameHistory.domain.GameHistory;
+import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.guild.domain.Guild;
+import com.crimecat.backend.guild.dto.web.GuildInfoResponseDto;
 import com.crimecat.backend.guild.repository.GuildRepository;
 import com.crimecat.backend.api.discord.DiscordBotApi;
 import com.crimecat.backend.guild.dto.web.ApiGetGuildInfoDto;
@@ -8,10 +12,13 @@ import com.crimecat.backend.guild.dto.web.ChannelDto;
 import com.crimecat.backend.guild.dto.web.GuildBotInfoDto;
 import com.crimecat.backend.guild.dto.web.GuildResponseDto;
 import com.crimecat.backend.webUser.domain.WebUser;
+import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +30,7 @@ public class WebGuildService {
 
     private final GuildRepository guildRepository;
     private final DiscordBotApi discordBotApi;
+    private final GameHistoryRepository gameHistoryRepository;
 
     public GuildResponseDto guildBotInfoDTOS(WebUser webUser) {
         String discordUserSnowflake = webUser.getDiscordUserSnowflake();
@@ -108,4 +116,63 @@ public class WebGuildService {
     }
 
 
+  /**
+   * 길드의 공개 정보를 조회합니다.
+   * 
+   * @param guildSnowFlake 조회할 길드의 UUID 문자열
+   * @return 길드 정보가 포함된 GuildInfoResponseDto 객체
+   * @throws com.crimecat.backend.exception.CrimeCatException 길드를 찾을 수 없거나, API 호출 실패, 또는 매개변수 형식이 잘못된 경우
+   */
+  public GuildInfoResponseDto getGuildPublicInfo(String guildSnowFlake) {
+      // 1. guildId 유효성 검사
+      // 2. Guild 조회
+      Guild guild = guildRepository.findBySnowflake(guildSnowFlake)
+          .orElseThrow(() -> {
+              log.error("길드를 찾을 수 없음: {}", guildSnowFlake);
+              return ErrorStatus.GUILD_NOT_FOUND.asServiceException();
+          });
+
+      UUID guildUuid = guild.getId();
+      String guildId = guild.getId().toString();
+
+      // 3. Discord API 호출 (예외 처리 추가)
+      ApiGetGuildInfoDto apiGuildInfo;
+      try {
+          apiGuildInfo = discordBotApi.getGuildInfo(guild.getSnowflake())
+              .timeout(Duration.ofSeconds(5))  // 5초 타임아웃 설정
+              .block();
+          
+          if (apiGuildInfo == null) {
+              throw new RuntimeException("Discord API 응답이 null입니다.");
+          }
+      } catch (Exception e) {
+          log.error("Discord API 호출 실패: guildId={}, error={}", guildId, e.getMessage(), e);
+          throw ErrorStatus.INTERNAL_ERROR.asServiceException();
+      }
+      
+      // 4. 게임 히스토리 조회 (예외 처리 추가)
+      long totalCount = 0;
+      LocalDateTime latestPlayTime = null;
+      
+      try {
+          List<GameHistory> allById = gameHistoryRepository.findByGuild_Id(guildUuid);
+          totalCount = allById.size();
+          
+          latestPlayTime = allById.stream()
+              .map(GameHistory::getCreatedAt)
+              .max(LocalDateTime::compareTo)
+              .orElse(null);  // 기록이 없으면 null
+      } catch (Exception e) {
+          log.error("게임 히스토리 조회 실패: guildId={}, error={}", guildId, e.getMessage(), e);
+          // 조회 실패 시 기본값 사용 (예외를 던지지 않고 진행)
+      }
+      
+      // 5. DTO 변환 및 반환
+      try {
+          return GuildInfoResponseDto.from(guild, apiGuildInfo, totalCount, latestPlayTime);
+      } catch (Exception e) {
+          log.error("DTO 변환 실패: guildId={}, error={}", guildId, e.getMessage(), e);
+          throw ErrorStatus.INTERNAL_ERROR.asServiceException();
+      }
+  }
 }

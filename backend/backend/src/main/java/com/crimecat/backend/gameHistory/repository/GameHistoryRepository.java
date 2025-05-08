@@ -122,4 +122,6 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 				@Param("keyword") String keyword,
 				Pageable pageable
 		);
+
+	List<GameHistory> findByGuild_Id(UUID guildId);
 	}
