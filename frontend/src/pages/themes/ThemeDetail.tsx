@@ -21,6 +21,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { UTCToKST } from "@/lib/dateFormat";
+import ContactUserModal from "@/components/themes/modals/ContactUserModal";
+import TeamInfoModal from "@/components/themes/modals/TeamInfoModal";
+import GuildInfoModal from "@/components/themes/modals/GuildInfoModal";
 
 const ThemeDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,6 +34,9 @@ const ThemeDetail: React.FC = () => {
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [showLoginDialog, setShowLoginDialog] = React.useState(false);
+  const [showContactModal, setShowContactModal] = React.useState(false);
+  const [showTeamModal, setShowTeamModal] = React.useState(false);
+  const [showGuildModal, setShowGuildModal] = React.useState(false);
 
   const { data: theme, isLoading, error } = useQuery({
     queryKey: ["theme", id],
@@ -146,7 +152,7 @@ const ThemeDetail: React.FC = () => {
           </button>
 
           <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-            <img src={`/content/image/${theme.thumbnail}`} alt={theme.title} className="w-full h-full object-cover" />
+            <img src={`${theme.thumbnail}`} alt={theme.title} className="w-full h-full object-cover" />
           </div>
 
           <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -162,9 +168,9 @@ const ThemeDetail: React.FC = () => {
                 <Button variant="outline" size="sm" onClick={handleShare}>
                   <Share2 className="h-4 w-4 mr-2" /> 공유
                 </Button>
-                {(user?.id === theme.authorId || hasRole(["ADMIN", "MANAGER"])) && (
+                {(user?.id === theme.author.id || hasRole(["ADMIN", "MANAGER"])) && (
                   <>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/themes/edit/${theme.id}`)}>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/themes/${theme.type.toLowerCase()}/edit/${theme.id}`)}>
                       <Edit className="h-4 w-4 mr-2" /> 수정
                     </Button>
                     <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => setIsDeleteDialogOpen(true)}>
@@ -174,6 +180,15 @@ const ThemeDetail: React.FC = () => {
                 )}
               </div>
               <div className="text-sm text-muted-foreground space-y-1">
+                <div>
+                  <strong>작성자</strong>{" "}
+                  <button
+                    className="hover:text-primary transition-colors"
+                    onClick={() => setShowContactModal(true)}
+                  >
+                    {theme.author.nickname}
+                  </button>
+                </div>
                 <div><strong>생성일</strong> <UTCToKST date={theme.createdAt} /></div>
                 <div><strong>수정일</strong> <UTCToKST date={theme.updatedAt} /></div>
               </div>
@@ -222,20 +237,30 @@ const ThemeDetail: React.FC = () => {
             </section>
           )}
 
-          {theme.type === "CRIMESCENE" && (theme.extra?.characters?.length || theme.makerTeamsId || theme.guildSnowflake) && (
+          {theme.type === "CRIMESCENE" && (theme.extra?.characters?.length || theme.team || theme.guild) && (
             <>
-              {(theme.makerTeamsId || theme.guildSnowflake) && (
+              {(theme.team || theme.guild) && (
                 <section className="mt-6">
-                  {theme.makerTeamsId && (
+                  {theme.team && (
                     <div>
                       <h3 className="text-sm font-semibold text-muted-foreground mb-1">팀 이름</h3>
-                      <p className="text-base text-foreground">{theme.makerTeamsId}</p>
+                      <button
+                        className="hover:text-primary transition-colors"
+                        onClick={() => setShowTeamModal(true)}
+                      >
+                        {theme.team.name}
+                      </button>
                     </div>
                   )}
-                  {theme.guildSnowflake && (
+                  {theme.guild && (
                     <div className="mt-2">
                       <h3 className="text-sm font-semibold text-muted-foreground mb-1">길드 이름</h3>
-                      <p className="text-base text-foreground">{theme.guildSnowflake}</p>
+                      <button
+                        className="hover:text-primary transition-colors"
+                        onClick={() => setShowGuildModal(true)}
+                      >
+                        {theme.guild.name}
+                      </button>
                     </div>
                   )}
                 </section>
@@ -302,6 +327,25 @@ const ThemeDetail: React.FC = () => {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+      <ContactUserModal
+        open={showContactModal}
+        userId={theme.author.id}
+        onOpenChange={setShowContactModal}
+      />
+      {theme.type === "CRIMESCENE" && theme.team && (
+        <TeamInfoModal
+          open={showTeamModal}
+          teamId={theme.team.id}
+          onOpenChange={setShowTeamModal}
+        />
+      )}
+      {theme.type === "CRIMESCENE" && theme.guild && (
+        <GuildInfoModal
+          open={showGuildModal}
+          guildSnowflake={theme.guild.snowflake}
+          onOpenChange={setShowGuildModal}
+        />
+      )}
     </PageTransition>
   );
 };
