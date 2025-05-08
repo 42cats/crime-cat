@@ -129,7 +129,7 @@ public class WebUserService {
             }
 
             // 닉네임 형식 검사 (특수문자 _, - 만 허용)
-            if (!nickname.matches("^[\\\\w가-힣_-]+$")) {
+            if (!nickname.matches("^[\w가-힣_-]+$")) {
             return NicknameCheckResponseDto.builder()
                 .available(false)
                 .message("닉네임은 한글, 영문, 숫자, 언더바(_), 하이픈(-)만 사용 가능합니다.")
@@ -138,12 +138,12 @@ public class WebUserService {
         // 닉네임 중복 검사
         Optional<WebUser> existingUser = webUserRepository.findByNickname(nickname);
 
-//        if (existingUser.isPresent()) {
-//            return NicknameCheckResponseDto.builder()
-//                .available(false)
-//                .message("이미 사용 중인 닉네임입니다.")
-//                    .build();
-//        }
+        if (existingUser.isPresent()) {
+            return NicknameCheckResponseDto.builder()
+                .available(true)
+                .message("이미 사용 중인 닉네임입니다.")
+                    .build();
+        }
 
         return NicknameCheckResponseDto.builder()
             .available(true)
