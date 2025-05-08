@@ -50,6 +50,7 @@ SET @comment_likes_exists = (SELECT COUNT(*) FROM information_schema.tables
 
 -- COMMENTS 테이블이 존재하고 COMMENT_LIKES 테이블이 없는 경우에만 COMMENT_LIKES 테이블 생성
 IF @comments_exists_now > 0 AND @comment_likes_exists = 0 THEN
+  CREATE TABLE COMMENT_LIKES (
   ID           BINARY(16) PRIMARY KEY,
   USER_ID      BINARY(16) NOT NULL,
   COMMENT_ID   BINARY(16) NOT NULL,
@@ -64,6 +65,7 @@ IF @comments_exists_now > 0 AND @comment_likes_exists = 0 THEN
     REFERENCES COMMENTS(ID)
     ON DELETE CASCADE,
   UNIQUE KEY UK_COMMENT_LIKES_USER_COMMENT (USER_ID, COMMENT_ID)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 END IF;
 
 -- COMMENTS 테이블이 존재할 경우에만 인덱스 작업 실행
