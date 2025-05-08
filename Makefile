@@ -51,7 +51,7 @@ copy_env:
 	@echo "${GREEN}복사 완료: .env → frontend/.env, backend/.env, bot/.env${NC}"
 
 # 개발 환경 설정
-local: update_config
+local: update_config prepare_migration
 	@echo "${BLUE}개발 환경 설정 중 (config/.env.local → .env)...${NC}"
 	@cp config/.env.local .env
 	@cp config/dockercompose/docker-compose.local.yaml docker-compose.yaml
@@ -67,9 +67,18 @@ local: update_config
 		-subj "/C=KR/ST=Seoul/L=Seoul/O=CrimeCat/OU=Dev/CN=dev.crimecat.org" > /dev/null 2>&1
 	@echo "${GREEN}✅ self-signed 인증서 생성 완료: docker/nginx/certs/dev.crimecat.org*.pem${NC}"
 
+	@echo "${BLUE}서비스 시작 전 백업 생성...${NC}"
+	@$(MAKE) backup || true
+
 	@$(MAKE) up
 
-dev: update_config
+	@echo "${BLUE}마이그레이션 실행 중...${NC}"
+	@$(MAKE) migrate || true
+
+	@echo "${GREEN}로컬 환경으로 전환 완료!${NC}"
+	@echo "${YELLOW}문제 발생 시 'make rollback RESTORE_DIR=$(BACKUP_DIR)' 명령으로 롤백 가능${NC}"
+
+dev: update_config prepare_migration
 	@echo "${BLUE}개발 환경 설정 중 (config/.env.dev → .env)...${NC}"
 	@cp config/.env.dev .env
 	@cp config/dockercompose/docker-compose.dev.yaml docker-compose.yaml
@@ -78,7 +87,16 @@ dev: update_config
 
 	@mkdir -p docker/nginx/certs
 
+	@echo "${BLUE}서비스 시작 전 백업 생성...${NC}"
+	@$(MAKE) backup || true
+
 	@$(MAKE) up
+
+	@echo "${BLUE}마이그레이션 실행 중...${NC}"
+	@$(MAKE) migrate || true
+
+	@echo "${GREEN}개발 환경으로 전환 완료!${NC}"
+	@echo "${YELLOW}문제 발생 시 'make rollback RESTORE_DIR=$(BACKUP_DIR)' 명령으로 롤백 가능${NC}"
 
 # 특정 서비스만 다시 빌드하고 띄우기
 target:
