@@ -1,12 +1,12 @@
 package com.crimecat.backend.guild.controller.web;
 
-import com.crimecat.backend.guild.service.web.WebGuildService;
 import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.guild.repository.GuildRepository;
+import com.crimecat.backend.guild.service.web.WebGuildService;
+import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.crimecat.backend.webUser.domain.WebUser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 
 @Slf4j
 @RestController
