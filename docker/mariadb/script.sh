@@ -119,7 +119,7 @@ run_migrations() {
   if [ -d "$MIGRATIONDIR" ] && [ -f "/script/migration.sh" ]; then
     chmod +x "/script/migration.sh"
     log "   • 마이그레이션 스크립트 실행"
-    /script/migration.sh
+    sh /script/migration.sh
   else
     log "   ⚠ 마이그레이션 디렉토리 또는 스크립트가 없음, 건너뜀"
   fi

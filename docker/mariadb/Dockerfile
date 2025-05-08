@@ -31,7 +31,7 @@ RUN apk update && apk upgrade && \
 # 설정 파일과 스크립트를 한 번에 복사
 COPY docker/mariadb/db/init /var/lib/dbinit/
 COPY docker/mariadb/db/config /etc/my.cnf.d
-COPY docker/mariadb/script.sh /script/
+COPY docker/mariadb/script.sh /script/script.sh
 
 # 마이그레이션 스크립트와 디렉토리 복사 (신규 추가)
 COPY docker/mariadb/db/migrations /var/lib/dbinit/migrations/
