@@ -15,6 +15,7 @@ RUN apk update && apk upgrade && \
         gettext && \
     # 필요한 디렉토리 생성
     mkdir -p /var/lib/dbinit \
+             /var/lib/dbinit/migrations \
              /etc/my.cnf.d \
              ${MYSQL_RUN_DIR} \
              ${MYSQL_LOG_DIR} \
@@ -32,12 +33,17 @@ COPY docker/mariadb/db/init /var/lib/dbinit/
 COPY docker/mariadb/db/config /etc/my.cnf.d
 COPY docker/mariadb/script.sh /script/
 
+# 마이그레이션 스크립트와 디렉토리 복사 (신규 추가)
+COPY docker/mariadb/db/migrations /var/lib/dbinit/migrations/
+COPY docker/mariadb/migration.sh /script/migration.sh
+
 # 스크립트 권한 설정
 RUN chown -R mysql:mysql /var/lib/dbinit/ \
 						/etc/my.cnf.d
 	
 RUN chmod +x /var/lib/dbinit/*.*
 RUN chmod +x /script/script.sh
+RUN chmod +x /script/migration.sh
 
 # 볼륨 설정
 VOLUME ["${MYSQL_DATA_DIR}", "${MYSQL_LOG_DIR}"]
