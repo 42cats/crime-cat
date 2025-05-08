@@ -143,7 +143,7 @@ public class WebGuildService {
               .block();
           
           if (apiGuildInfo == null) {
-              throw new RuntimeException("Discord API 응답이 null입니다.");
+            throw ErrorStatus.INTERNAL_ERROR.asServiceException();
           }
       } catch (Exception e) {
           log.error("Discord API 호출 실패: guildId={}, error={}", guildId, e.getMessage(), e);
