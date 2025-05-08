@@ -86,7 +86,7 @@ public void onAuthenticationSuccess(HttpServletRequest request,
         response.sendRedirect("https://" + baseUrl+ "/");
     }
     else {
-        response.sendRedirect("http://" + baseUrl+ "/");
+        response.sendRedirect("https://" + baseUrl+ "/");
     }
     // response.setContentType("application/json");
     // response.setCharacterEncoding("UTF-8");
