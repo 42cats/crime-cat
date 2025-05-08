@@ -9,6 +9,7 @@ import com.crimecat.backend.user.domain.DiscordUser;
 import com.crimecat.backend.user.repository.DiscordUserRepository;
 import com.crimecat.backend.user.repository.UserRepository;
 import com.crimecat.backend.user.service.UserPermissionService;
+import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.utils.UserDailyCheckUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.dto.NicknameCheckResponseDto;
@@ -17,6 +18,7 @@ import com.crimecat.backend.webUser.dto.NotificationSettingsResponseDto;
 import com.crimecat.backend.webUser.dto.NotificationToggleRequest;
 import com.crimecat.backend.webUser.dto.UserProfileInfoResponseDto;
 import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
+import com.crimecat.backend.webUser.enums.UserRole;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -138,18 +140,28 @@ public class WebUserService {
             
             // 관리자/운영자 사칭 닉네임 필터링
             if (isImpersonatingStaff(nickname)) {
-                return NicknameCheckResponseDto.builder()
+                try{
+
+                    AuthenticationUtil.validateUserHasAuthority(UserRole.ADMIN);
+
+                }
+
+                catch (Exception e) {
+
+                    return NicknameCheckResponseDto.builder()
                     .available(false)
                     .message("관리자, 운영자 등의 공식 계정을 사칭하는 닉네임은 사용할 수 없습니다.")
                     .build();
-            }
-            
+
+                }
+      }
+
         // 닉네임 중복 검사
         Optional<WebUser> existingUser = webUserRepository.findByNickname(nickname);
 
         if (existingUser.isPresent()) {
             return NicknameCheckResponseDto.builder()
-                .available(false)
+                .available(true)
                 .message("이미 사용 중인 닉네임입니다.")
                     .build();
         }
