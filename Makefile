@@ -121,16 +121,30 @@ prepare_migration:
 # 마이그레이션 명령어
 migrate:
 	@echo "${BLUE}데이터베이스 마이그레이션 실행...${NC}"
-	@docker exec -it crime-cat-mariadb /bin/sh -c "/script/migration.sh"
+	@# 컨테이너가 동작 중이고 migration.sh 파일이 존재하는지 확인
+	@if docker ps | grep -q cat_db; then \
+		if docker exec cat_db ls /script/migration.sh > /dev/null 2>&1; then \
+			docker exec -it cat_db /bin/sh -c "chmod +x /script/migration.sh && /script/migration.sh"; \
+		else \
+			echo "${RED}마이그레이션 스크립트를 찾을 수 없습니다: /script/migration.sh${NC}"; \
+			docker exec -it cat_db ls -la /script/; \
+		fi \
+	else \
+		echo "${RED}cat_db 컨테이너가 실행 중이지 않습니다${NC}"; \
+	fi
 	@echo "${GREEN}마이그레이션 완료${NC}"
 
 # 백업 명령어
 backup:
 	@echo "${BLUE}데이터베이스 백업 생성 중...${NC}"
 	@mkdir -p $(BACKUP_DIR)
-	@docker exec crime-cat-mariadb /bin/sh -c "mysqldump -u\$${DB_USER} -p\$${DB_PASS} \$${DB_DISCORD} > /tmp/backup.sql"
-	@docker cp crime-cat-mariadb:/tmp/backup.sql $(BACKUP_DIR)/backup.sql
-	@echo "${GREEN}백업 완료: $(BACKUP_DIR)/backup.sql${NC}"
+	@if docker ps | grep -q cat_db; then \
+		docker exec cat_db /bin/sh -c "mysqldump -u\$${DB_USER} -p\$${DB_PASS} \$${DB_DISCORD} > /tmp/backup.sql" || true; \
+		docker cp cat_db:/tmp/backup.sql $(BACKUP_DIR)/backup.sql || true; \
+		echo "${GREEN}백업 완료: $(BACKUP_DIR)/backup.sql${NC}"; \
+	else \
+		echo "${YELLOW}cat_db 컨테이너가 실행 중이지 않아 백업을 건너뜁니다${NC}"; \
+	fi
 
 # 롤백 명령어
 rollback:
@@ -139,8 +153,16 @@ rollback:
 		exit 1; \
 	fi; \
 	echo "${BLUE}$(RESTORE_DIR)/backup.sql에서 데이터베이스 복원 중...${NC}"; \
-	docker cp $(RESTORE_DIR)/backup.sql crime-cat-mariadb:/tmp/restore.sql; \
-	docker exec crime-cat-mariadb /bin/sh -c "mysql -u\$${DB_USER} -p\$${DB_PASS} \$${DB_DISCORD} < /tmp/restore.sql"; \
+	if [ ! -f "$(RESTORE_DIR)/backup.sql" ]; then \
+		echo "${RED}백업 파일이 존재하지 않습니다: $(RESTORE_DIR)/backup.sql${NC}"; \
+		exit 1; \
+	fi; \
+	if ! docker ps | grep -q cat_db; then \
+		echo "${RED}cat_db 컨테이너가 실행 중이지 않습니다${NC}"; \
+		exit 1; \
+	fi; \
+	docker cp $(RESTORE_DIR)/backup.sql cat_db:/tmp/restore.sql; \
+	docker exec cat_db /bin/sh -c "mysql -u\$${DB_USER} -p\$${DB_PASS} \$${DB_DISCORD} < /tmp/restore.sql"; \
 	echo "${GREEN}롤백 완료${NC}"
 
 # 새 마이그레이션 생성 명령어
