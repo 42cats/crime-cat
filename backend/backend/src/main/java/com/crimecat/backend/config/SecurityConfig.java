@@ -56,6 +56,7 @@ public class SecurityConfig {
                         "/oauth2/**", // OAuth2 인증 경로
                         "/login/**", // 로그인 관련 경로
                         "/api/v1/auth/logout",
+                        "/api/v1/auth/reissue",
                         "/bot/v1/**", // 디스코드 봇 API 경로\
                         "/api/v1/csrf/token" // csrf 인증경로
                         )
@@ -74,6 +75,7 @@ public class SecurityConfig {
                         "/oauth2/**",
                         "/bot/v1/**",
                         "/api/v1/auth/logout",
+                        "/api/v1/auth/reissue",
                         "/login/**",
                         "/api/v1/public/**",
                         "/api/v1/csrf/token")

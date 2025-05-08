@@ -183,6 +183,11 @@ export interface AdditionalUserInfo {
     mostFavoriteCrimeSeenMaker?: string; // 가장 자주 플레이한 제작자
 }
 
+interface AuthorInfo {
+  id: string;
+  nickname: string;
+}
+
 interface BaseTheme {
   id: string;
   title: string;
@@ -191,7 +196,7 @@ interface BaseTheme {
   recommendations: number;
   views: number;
   playCount: number;
-  authorId: string;
+  author: AuthorInfo;
   playersMin: number;
   playersMax: number;
   playTimeMin: number;
@@ -210,10 +215,22 @@ interface CrimeSceneExtra {
   characters: string[];
 }
 
+interface GuildInfo {
+  snowflake: string;
+  name: string;
+  onwerSnowflake: string;
+  createAt: string;
+}
+
+interface TeamInfo {
+  id: string;
+  name: string;
+}
+
 export interface CrimeSceneTheme extends BaseTheme {
   type: 'CRIMESCENE';
-  makerTeamsId: string;
-  guildSnowflake: string;
+  team: TeamInfo;
+  guild: GuildInfo;
   extra: CrimeSceneExtra;
 }
 
@@ -298,4 +315,16 @@ export interface Team {
 
 export interface Teams {
   teams: Team[];
+}
+
+export interface GuildDetail {
+  guildId: string;
+  guildName: string;
+  guildOwnerName: string;
+  guildIcon: string;
+  guildOnlineMemeberCount: number;
+  guildMemberCount: number;
+  totalHistoryUserCount: number;
+  guildCreatedAt: string;
+  lastPlayTime: string;
 }

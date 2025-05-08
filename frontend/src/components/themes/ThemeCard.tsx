@@ -38,7 +38,7 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
         {/* 썸네일 */}
         <div className="relative w-full h-48">
           <img
-            src={`/content/image/${theme.thumbnail}`}
+            src={`${theme.thumbnail}`}
             alt={theme.title}
             className="w-full h-full object-cover"
           />

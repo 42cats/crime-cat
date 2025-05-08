@@ -66,10 +66,10 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
     summary: initialData.summary || "",
     tags: initialData.tags || [],
     tagInput: "",
-    playerMin: initialData.playerMin || "",
-    playerMax: initialData.playerMax || "",
-    playtimeMin: initialData.playtimeMin || "",
-    playtimeMax: initialData.playtimeMax || "",
+    playerMin: initialData.playersMin || "",
+    playerMax: initialData.playersMax || "",
+    playtimeMin: initialData.playTimeMin || "",
+    playtimeMax: initialData.playTimeMax || "",
     price: initialData.price || "",
     difficulty: initialData.difficulty || 0,
     content: initialData.content || "",
@@ -77,9 +77,21 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
     publicStatus: initialData.publicStatus ?? true,
   });
 
-  const [extraFields, setExtraFields] = useState<any>(
-    initialExtraFieldsMap[form.type as keyof typeof initialExtraFieldsMap] || {}
-  );
+  const initialExtraFields = React.useMemo(() => {
+    if (mode === "edit" && initialData && initialData.type === "CRIMESCENE") {
+      return {
+        makerMode: initialData.team ? "team" : "personal",
+        makerTeamsId: initialData.team?.id || "",
+        makerTeamsName: initialData.team?.name || "",
+        guildSnowflake: initialData.guild?.snowflake || "",
+        guildName: initialData.guild?.name || "",
+        extra: initialData.extra || { characters: [] },
+      };
+    }
+    return initialExtraFieldsMap[initialType] || {};
+  }, []);
+
+  const [extraFields, setExtraFields] = useState<any>(initialExtraFields);
 
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [hovered, setHovered] = useState<number | null>(null);
@@ -87,6 +99,15 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
   const [isTeamModalOpen, setTeamModalOpen] = useState(false);
   const [isGuildModalOpen, setGuildModalOpen] = useState(false);
 
+  const didMountRef = useRef(false);
+
+  React.useEffect(() => {
+    if (didMountRef.current) {
+      setExtraFields(initialExtraFieldsMap[form.type as keyof typeof initialExtraFieldsMap]);
+    } else {
+      didMountRef.current = true;
+    }
+  }, [form.type]);
   const { errors, validateField, validateWithErrors } = useFormValidator((data: Record<string, any>) => {
     const newErrors: Record<string, string> = {};
     if (!data.title) newErrors.title = "제목은 필수입니다.";
