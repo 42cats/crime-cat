@@ -135,12 +135,21 @@ public class WebUserService {
                 .message("닉네임은 한글, 영문, 숫자, 언더바(_), 하이픈(-)만 사용 가능합니다.")
                     .build();
             }
+            
+            // 관리자/운영자 사칭 닉네임 필터링
+            if (isImpersonatingStaff(nickname)) {
+                return NicknameCheckResponseDto.builder()
+                    .available(false)
+                    .message("관리자, 운영자 등의 공식 계정을 사칭하는 닉네임은 사용할 수 없습니다.")
+                    .build();
+            }
+            
         // 닉네임 중복 검사
         Optional<WebUser> existingUser = webUserRepository.findByNickname(nickname);
 
         if (existingUser.isPresent()) {
             return NicknameCheckResponseDto.builder()
-                .available(true)
+                .available(false)
                 .message("이미 사용 중인 닉네임입니다.")
                     .build();
         }
@@ -149,6 +158,62 @@ public class WebUserService {
             .available(true)
             .message("사용 가능한 닉네임입니다.")
                 .build();
+    }
+    
+    /**
+     * 관리자/운영자 사칭 닉네임인지 확인하는 메소드
+     * @param nickname 확인할 닉네임
+     * @return 사칭 여부 (true: 사칭, false: 정상)
+     */
+    private boolean isImpersonatingStaff(String nickname) {
+        // 소문자로 변환하여 비교
+        String lowerNickname = nickname.toLowerCase();
+        
+        // 금지할 키워드 목록
+        String[] restrictedKeywords = {
+            "admin", "administrator", "어드민", "관리자", "운영자", "매니저", "스태프", "staff", "official", 
+            "crime_cat", "crimecat", "크라임캣", "공식", "moderator", "모더레이터", "mod", "dev", "developer", "개발자",
+            "master", "마스터", "ceo", "대표", "support", "서포트", "system", "시스템", "help", "헬프",
+            "service", "서비스", "team", "팀", "owner", "오너", "police", "경찰", "customer_service", "고객센터"
+        };
+        
+        // 접두사/접미사로 함께 확인할 단어들
+        String[] modifiers = {
+            "_", "-", "0", "o", "official", "공식", "real", "진짜", "original", "오리지널",
+            "team", "팀", "crew", "크루", "main", "메인", "chief", "총괄"
+        };
+        
+        // 기본 키워드 확인
+        for (String keyword : restrictedKeywords) {
+            // 정확히 일치하는 경우
+            if (lowerNickname.equals(keyword)) {
+                return true;
+            }
+            
+            // 포함되어 있는 경우 (부분 일치)
+            if (lowerNickname.contains(keyword)) {
+                // 추가 확인: 접두사/접미사가 있는 경우
+                for (String modifier : modifiers) {
+                    if (lowerNickname.contains(keyword + modifier) || 
+                        lowerNickname.contains(modifier + keyword)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        // [관리자], (운영자), 『스태프』 등 특수 기호로 강조된 형태 확인
+        String cleanNickname = lowerNickname.replaceAll("[\\[\\]\\(\\)\\{\\}『』〈〉「」《》<>]", "");
+        if (!cleanNickname.equals(lowerNickname)) {
+            // 특수 기호가 제거된 상태에서 다시 키워드 확인
+            for (String keyword : restrictedKeywords) {
+                if (cleanNickname.contains(keyword)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 
     @Transactional(readOnly = true)

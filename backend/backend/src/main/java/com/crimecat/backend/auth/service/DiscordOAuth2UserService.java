@@ -92,10 +92,15 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
 
         WebUser user = userByEmail.orElseGet(() -> {
             log.info("🆕 [신규 사용자] 이메일로 조회된 유저 없음 → 새로 생성");
+            
+            // 닉네임 중복 검사 및 중복 방지 처리
+            String finalNickname = generateUniqueNickname(nickname);
+            log.info("닉네임 중복 체크 완료: {} → {}", nickname, finalNickname);
+            
             WebUser newUser = WebUser.builder()
                 .discordUserSnowflake(discordUserId)
                 .email(email)
-                .nickname(nickname)
+                .nickname(finalNickname)
                 .emailVerified(false)
                 .isActive(true)
                 .isBanned(false)
@@ -158,4 +163,56 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
         }
     }
 
+    /**
+     * 닉네임 중복 체크 후 고유한 닉네임 생성
+     * 중복일 경우 닉네임 뒤에 숫자를 추가(1, 2, 3...)하여 고유한 닉네임 생성
+     * 
+     * @param nickname 기본 닉네임
+     * @return 고유한 닉네임
+     */
+    private String generateUniqueNickname(String nickname) {
+        // 기본 닉네임 유효성 검사
+        if (nickname == null || nickname.trim().isEmpty()) {
+            nickname = "User"; // 기본값 설정
+        }
+        
+        // 20자 제한 (숫자 추가 여유 공간 확보)
+        if (nickname.length() > 16) {
+            nickname = nickname.substring(0, 16);
+        }
+        
+        String baseNickname = nickname;
+        String uniqueNickname = baseNickname;
+        int suffix = 1;
+        
+        // 닉네임 중복 확인 및 숫자 추가 로직
+        while (true) {
+            Optional<WebUser> existingUser = webUserRepository.findByNickname(uniqueNickname);
+            
+            if (existingUser.isEmpty()) {
+                // 중복 없음 - 현재 닉네임 사용 가능
+                return uniqueNickname;
+            }
+            
+            // 중복 발견 - 숫자 접미사 추가 후 다시 확인
+            uniqueNickname = baseNickname + suffix;
+            
+            // 20자 제한 확인
+            if (uniqueNickname.length() > 20) {
+                // 기존 닉네임을 더 줄여서 숫자를 추가할 공간 확보
+                baseNickname = baseNickname.substring(0, baseNickname.length() - 1);
+                uniqueNickname = baseNickname + suffix;
+            }
+            
+            suffix++;
+            
+            // 안전장치: 최대 1000번 반복 후 임의의 고유 식별자 추가
+            if (suffix > 1000) {
+                uniqueNickname = baseNickname + UUID.randomUUID().toString().substring(0, 4);
+                break;
+            }
+        }
+        
+        return uniqueNickname;
+    }
 }
