@@ -1,4 +1,4 @@
-.PHONY: build up down clean fclean logs help create_dirs copy_env dev prod update_config
+.PHONY: build up down clean fclean logs help create_dirs copy_env dev prod update_config migrate backup rollback new-migration prepare_migration
 
 # 출력용 색상 정의 
 BLUE	= \033[0;34m
@@ -14,6 +14,8 @@ FRONT_BASE_DIR  = frontend/dist
 IMAGE_DATA_DIR = images
 AVATAR_DIR = images/avatars/
 GAME_THEME_DIR = images/gamethemes/
+MIGRATION_DIR = docker/mariadb/db/migrations
+BACKUP_DIR = backup/$(shell date +%Y%m%d_%H%M%S)
 
 # 기본 타겟 설정
 .DEFAULT_GOAL := help
@@ -88,15 +90,75 @@ target:
 		docker compose up -d --build $(filter-out $@,$(MAKECMDGOALS)); \
 	fi
 
+# 마이그레이션 스크립트 준비
+prepare_migration:
+	@echo "${BLUE}마이그레이션 디렉토리 준비 중...${NC}"
+	@mkdir -p $(MIGRATION_DIR)
+	@if [ ! -f "$(MIGRATION_DIR)/schema_version.sql" ]; then \
+		echo "${YELLOW}스키마 버전 테이블 스크립트 생성 중...${NC}"; \
+		cp docker/mariadb/db/schema_version.sql $(MIGRATION_DIR)/schema_version.sql || true; \
+	fi
+	@echo "${GREEN}마이그레이션 환경 준비 완료${NC}"
 
-# 운영 환경 설정
-prod: update_config
+# 마이그레이션 명령어
+migrate:
+	@echo "${BLUE}데이터베이스 마이그레이션 실행...${NC}"
+	@docker exec -it crime-cat-mariadb /bin/sh -c "/script/migration.sh"
+	@echo "${GREEN}마이그레이션 완료${NC}"
+
+# 백업 명령어
+backup:
+	@echo "${BLUE}데이터베이스 백업 생성 중...${NC}"
+	@mkdir -p $(BACKUP_DIR)
+	@docker exec crime-cat-mariadb /bin/sh -c "mysqldump -u\$${DB_USER} -p\$${DB_PASS} \$${DB_DISCORD} > /tmp/backup.sql"
+	@docker cp crime-cat-mariadb:/tmp/backup.sql $(BACKUP_DIR)/backup.sql
+	@echo "${GREEN}백업 완료: $(BACKUP_DIR)/backup.sql${NC}"
+
+# 롤백 명령어
+rollback:
+	@if [ -z "$(RESTORE_DIR)" ]; then \
+		echo "${RED}롤백할 백업 디렉토리를 지정해야 합니다. 예: make rollback RESTORE_DIR=backup/20230101_120000${NC}"; \
+		exit 1; \
+	fi; \
+	echo "${BLUE}$(RESTORE_DIR)/backup.sql에서 데이터베이스 복원 중...${NC}"; \
+	docker cp $(RESTORE_DIR)/backup.sql crime-cat-mariadb:/tmp/restore.sql; \
+	docker exec crime-cat-mariadb /bin/sh -c "mysql -u\$${DB_USER} -p\$${DB_PASS} \$${DB_DISCORD} < /tmp/restore.sql"; \
+	echo "${GREEN}롤백 완료${NC}"
+
+# 새 마이그레이션 생성 명령어
+new-migration:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "${RED}버전을 지정해야 합니다. 예: make new-migration VERSION=1.1.0 DESC=add_new_table${NC}"; \
+		exit 1; \
+	fi; \
+	if [ -z "$(DESC)" ]; then \
+		echo "${RED}설명을 지정해야 합니다. 예: make new-migration VERSION=1.1.0 DESC=add_new_table${NC}"; \
+		exit 1; \
+	fi; \
+	echo "${BLUE}새 마이그레이션 생성: V$(VERSION)_$(DESC).sql${NC}"; \
+	mkdir -p $(MIGRATION_DIR)/V$(VERSION); \
+	echo "-- Migration: V$(VERSION)_$(DESC).sql\n-- Created: $(shell date '+%Y-%m-%d %H:%M:%S')\n\nUSE \$${DB_DISCORD};\n\n-- 여기에 마이그레이션 SQL을 작성하세요\n\n" > $(MIGRATION_DIR)/V$(VERSION)/V$(VERSION)_$(DESC).sql; \
+	echo "${GREEN}마이그레이션 파일 생성 완료: $(MIGRATION_DIR)/V$(VERSION)/V$(VERSION)_$(DESC).sql${NC}"
+
+# 운영 환경 설정 (마이그레이션 관련 업데이트)
+prod: update_config prepare_migration
 	@echo "${BLUE}운영 환경 설정 중 (config/.env.prod → .env)...${NC}"
 	@cp config/.env.prod .env
 	@cp config/dockercompose/docker-compose.prod.yaml docker-compose.yaml
 	@cp config/nginx/prod.nginx.conf docker/nginx/conf/http.d/nginx.conf
 	@$(MAKE) copy_env
+	
+	@echo "${BLUE}서비스 재시작 전 백업 생성...${NC}"
+	@$(MAKE) backup || true
+	
+	@echo "${BLUE}서비스 재시작 중...${NC}"
 	@$(MAKE) up
+	
+	@echo "${BLUE}마이그레이션 실행 중...${NC}"
+	@$(MAKE) migrate || true
+	
+	@echo "${GREEN}운영 환경으로 전환 완료!${NC}"
+	@echo "${YELLOW}문제 발생 시 'make rollback RESTORE_DIR=$(BACKUP_DIR)' 명령으로 롤백 가능${NC}"
 
 # 도움말 표시
 help:
@@ -110,6 +172,10 @@ help:
 	@echo "${GREEN}make clean${NC}   - 컨테이너와 볼륨 제거"
 	@echo "${GREEN}make fclean${NC}  - 모든 Docker 리소스 제거"
 	@echo "${GREEN}make logs${NC}    - 로그 보기"
+	@echo "${GREEN}make migrate${NC} - DB 마이그레이션 실행"
+	@echo "${GREEN}make backup${NC}  - DB 백업 생성"
+	@echo "${GREEN}make rollback RESTORE_DIR=백업경로${NC} - DB 롤백"
+	@echo "${GREEN}make new-migration VERSION=1.x.x DESC=설명${NC} - 새 마이그레이션 생성"
 
 # Docker 이미지 빌드
 build: create_dirs

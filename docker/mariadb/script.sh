@@ -7,6 +7,7 @@ set -e
 DATADIR="/var/lib/mysql"
 SOCKET="/var/run/mysqld/mysqld.sock"
 INITDIR="/var/lib/dbinit"                 # *.template.sql / *.sql 위치
+MIGRATIONDIR="/var/lib/dbinit/migrations" # 마이그레이션 스크립트 위치
 MYSQL_USER="mysql"
 
 ###############################################################################
@@ -110,7 +111,23 @@ run_create_databases_only() {
 }
 
 ###############################################################################
-# 6. 메인 흐름
+# 6. 마이그레이션 처리 (신규 추가)
+###############################################################################
+run_migrations() {
+  log "▶ 마이그레이션 실행 시작"
+  # 마이그레이션 스크립트가 있는지 확인
+  if [ -d "$MIGRATIONDIR" ] && [ -f "/script/migration.sh" ]; then
+    chmod +x "/script/migration.sh"
+    log "   • 마이그레이션 스크립트 실행"
+    /script/migration.sh
+  else
+    log "   ⚠ 마이그레이션 디렉토리 또는 스크립트가 없음, 건너뜀"
+  fi
+  log "✔ 마이그레이션 실행 완료"
+}
+
+###############################################################################
+# 7. 메인 흐름
 ###############################################################################
 main() {
   log "=== MariaDB EntryPoint 시작 ==="
@@ -121,6 +138,7 @@ main() {
     start_temp_server
     wait_for_ready
     run_create_databases_only         # 유저·비번·DB 재보증
+    run_migrations                    # 마이그레이션 실행 (신규 추가)
     stop_temp_server
   else
     log "신규 컨테이너 → 전체 초깃값 적용"
@@ -128,6 +146,8 @@ main() {
     start_temp_server
     wait_for_ready
     run_all_sql_scripts
+    # 초기 데이터베이스 설정 후 마이그레이션 실행 (신규 추가)
+    run_migrations
     stop_temp_server
   fi
 
