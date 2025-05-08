@@ -26,7 +26,7 @@ module.exports = {
 		const title = interaction.options.getString('수식어'); // 캐릭터이름 옵션 값 가져오기
 		const role = interaction.options.getRole('권한'); // 권한 역할 옵션 값 가져오기
 		console.log("role = ", role);
-		const isAdd = await ObserverSet(interaction,  title, role );
+		const isAdd = await ObserverSet(interaction, title, role);
 	},
 	prefixCommand: {
 		name: nameOfCommand,

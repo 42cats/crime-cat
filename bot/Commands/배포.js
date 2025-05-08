@@ -31,35 +31,35 @@ module.exports = {
 
         try {
             const deployScope = interaction.options.getString('범위');
-            
+
             const globalCommands = [];
             const guildCommands = [];
-            
+
             // 명령어 파일 로드
             const progressEmbed = new EmbedBuilder()
                 .setTitle('⏳ 명령어 배포 진행 중...')
                 .setDescription('명령어 파일을 로드하는 중입니다.')
                 .setColor(0xFFAA00)
                 .setTimestamp();
-            
+
             await interaction.editReply({ embeds: [progressEmbed] });
-            
+
             // Command 폴더 경로
             const foldersPath = path.join(process.cwd(), 'Commands');
-            
+
             try {
                 const entries = fs.readdirSync(foldersPath, { withFileTypes: true });
                 const loadedFiles = [];
-                
+
                 for (const entry of entries) {
                     const entryPath = path.join(foldersPath, entry.name);
-                    
+
                     if (entry.isFile() && entry.name.endsWith('.js')) {
                         try {
                             // 캐시 초기화를 위해 require 캐시 제거
                             delete require.cache[require.resolve(entryPath)];
                             const command = require(entryPath);
-                            
+
                             if ('data' in command && 'execute' in command && command.upload) {
                                 if (command.permissionLevel === -1) {
                                     guildCommands.push(command.data.toJSON());
@@ -76,28 +76,28 @@ module.exports = {
                         }
                     }
                 }
-                
+
                 // 로드 상태 업데이트
                 progressEmbed.setDescription(`명령어 파일 로드 완료:\n${loadedFiles.slice(0, 15).join('\n')}${loadedFiles.length > 15 ? `\n...외 ${loadedFiles.length - 15}개` : ''}`);
                 progressEmbed.addFields({ name: '명령어 수', value: `전역 명령어: ${globalCommands.length}개\n서버 명령어: ${guildCommands.length}개`, inline: true });
-                
+
                 await interaction.editReply({ embeds: [progressEmbed] });
-                
+
             } catch (readError) {
                 console.error('디렉토리 읽기 오류:', readError);
                 return await interaction.editReply({
                     content: `❌ 명령어 폴더를 읽는 중 오류가 발생했습니다: ${readError.message}`
                 });
             }
-            
+
             // REST API 설정
             const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
             const results = [];
-            
+
             // 배포 시작
             progressEmbed.setDescription('명령어를 Discord API에 등록하는 중입니다...');
             await interaction.editReply({ embeds: [progressEmbed] });
-            
+
             // 선택된 범위에 따라 명령어 배포
             if (deployScope === 'all' || deployScope === 'global') {
                 if (globalCommands.length > 0) {
@@ -115,7 +115,7 @@ module.exports = {
                     results.push('ℹ️ 배포할 글로벌 명령어가 없습니다.');
                 }
             }
-            
+
             if (deployScope === 'all' || deployScope === 'guild') {
                 if (guildCommands.length > 0) {
                     try {
@@ -133,7 +133,7 @@ module.exports = {
                     results.push('ℹ️ 배포할 서버 명령어가 없습니다.');
                 }
             }
-            
+
             // 최종 결과 업데이트
             const successEmbed = new EmbedBuilder()
                 .setTitle('🚀 명령어 배포 결과')
@@ -141,18 +141,18 @@ module.exports = {
                 .setColor(results.some(r => r.includes('❌')) ? 0xFF0000 : 0x00FF00)
                 .setFooter({ text: '명령어가 등록되기까지 최대 1시간이 소요될 수 있습니다.' })
                 .setTimestamp();
-            
+
             await interaction.editReply({ embeds: [successEmbed] });
-            
+
         } catch (error) {
             console.error('명령어 배포 중 오류 발생:', error);
-            
+
             const errorEmbed = new EmbedBuilder()
                 .setTitle('❌ 명령어 배포 실패')
                 .setDescription(`명령어 배포 중 오류가 발생했습니다: ${error.message}`)
                 .setColor(0xFF0000)
                 .setTimestamp();
-            
+
             await interaction.editReply({ embeds: [errorEmbed] });
         }
     },
@@ -166,7 +166,7 @@ module.exports = {
             if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
                 return await message.reply('🚫 이 명령어는 관리자만 사용할 수 있습니다.');
             }
-            
+
             // 명령어 범위 확인
             let deployScope = 'all';
             if (args.length > 0) {
@@ -176,39 +176,39 @@ module.exports = {
                     return await message.reply('❌ 유효한 배포 범위가 아닙니다. `all`, `global`, `guild` 중 하나를 입력해주세요.');
                 }
             }
-            
+
             // 배포 시작 메시지
             const processingMsg = await message.reply('⏳ 명령어 배포를 시작합니다...');
-            
+
             try {
                 const globalCommands = [];
                 const guildCommands = [];
-                
+
                 // 명령어 파일 로드
                 const progressEmbed = new EmbedBuilder()
                     .setTitle('⏳ 명령어 배포 진행 중...')
                     .setDescription('명령어 파일을 로드하는 중입니다.')
                     .setColor(0xFFAA00)
                     .setTimestamp();
-                
+
                 await processingMsg.edit({ content: null, embeds: [progressEmbed] });
-                
+
                 // Command 폴더 경로
                 const foldersPath = path.join(process.cwd(), 'Commands');
-                
+
                 try {
                     const entries = fs.readdirSync(foldersPath, { withFileTypes: true });
                     const loadedFiles = [];
-                    
+
                     for (const entry of entries) {
                         const entryPath = path.join(foldersPath, entry.name);
-                        
+
                         if (entry.isFile() && entry.name.endsWith('.js')) {
                             try {
                                 // 캐시 초기화를 위해 require 캐시 제거
                                 delete require.cache[require.resolve(entryPath)];
                                 const command = require(entryPath);
-                                
+
                                 if ('data' in command && 'execute' in command && command.upload) {
                                     if (command.permissionLevel === -1) {
                                         guildCommands.push(command.data.toJSON());
@@ -225,13 +225,13 @@ module.exports = {
                             }
                         }
                     }
-                    
+
                     // 로드 상태 업데이트
                     progressEmbed.setDescription(`명령어 파일 로드 완료:\n${loadedFiles.slice(0, 15).join('\n')}${loadedFiles.length > 15 ? `\n...외 ${loadedFiles.length - 15}개` : ''}`);
                     progressEmbed.addFields({ name: '명령어 수', value: `전역 명령어: ${globalCommands.length}개\n서버 명령어: ${guildCommands.length}개`, inline: true });
-                    
+
                     await processingMsg.edit({ embeds: [progressEmbed] });
-                    
+
                 } catch (readError) {
                     console.error('디렉토리 읽기 오류:', readError);
                     return await processingMsg.edit({
@@ -239,15 +239,15 @@ module.exports = {
                         embeds: []
                     });
                 }
-                
+
                 // REST API 설정
                 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
                 const results = [];
-                
+
                 // 배포 시작
                 progressEmbed.setDescription('명령어를 Discord API에 등록하는 중입니다...');
                 await processingMsg.edit({ embeds: [progressEmbed] });
-                
+
                 // 선택된 범위에 따라 명령어 배포
                 if (deployScope === 'all' || deployScope === 'global') {
                     if (globalCommands.length > 0) {
@@ -265,7 +265,7 @@ module.exports = {
                         results.push('ℹ️ 배포할 글로벌 명령어가 없습니다.');
                     }
                 }
-                
+
                 if (deployScope === 'all' || deployScope === 'guild') {
                     if (guildCommands.length > 0) {
                         try {
@@ -283,7 +283,7 @@ module.exports = {
                         results.push('ℹ️ 배포할 서버 명령어가 없습니다.');
                     }
                 }
-                
+
                 // 최종 결과 업데이트
                 const successEmbed = new EmbedBuilder()
                     .setTitle('🚀 명령어 배포 결과')
@@ -291,22 +291,22 @@ module.exports = {
                     .setColor(results.some(r => r.includes('❌')) ? 0xFF0000 : 0x00FF00)
                     .setFooter({ text: '명령어가 등록되기까지 최대 1시간이 소요될 수 있습니다.' })
                     .setTimestamp();
-                
+
                 await processingMsg.edit({ embeds: [successEmbed] });
-                
+
             } catch (error) {
                 console.error('명령어 배포 중 오류 발생:', error);
-                
+
                 const errorEmbed = new EmbedBuilder()
                     .setTitle('❌ 명령어 배포 실패')
                     .setDescription(`명령어 배포 중 오류가 발생했습니다: ${error.message}`)
                     .setColor(0xFF0000)
                     .setTimestamp();
-                
+
                 await processingMsg.edit({ content: null, embeds: [errorEmbed] });
             }
         }
     },
     upload: true,
-    permissionLevel: PermissionFlagsBits.Administrator
+    permissionLevel: -1
 };
