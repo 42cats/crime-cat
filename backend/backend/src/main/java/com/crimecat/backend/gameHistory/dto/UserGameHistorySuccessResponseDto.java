@@ -8,6 +8,6 @@ import lombok.Getter;
 @Getter
 public class UserGameHistorySuccessResponseDto implements UserGameHistoryResponseDto {
 
-	private String userSnowflake;
+	private String discordSnowflake;
 	private List<UserGameHistoryDto> userGameHistoryDtos;
 }

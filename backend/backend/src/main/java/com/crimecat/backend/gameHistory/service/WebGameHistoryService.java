@@ -5,7 +5,6 @@ import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.repository.GuildRepository;
 import com.crimecat.backend.guild.service.bot.GuildQueryService;
 import com.crimecat.backend.guild.service.bot.GuildService;
-import com.crimecat.backend.user.domain.DiscordUser;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.service.UserService;
 import com.crimecat.backend.exception.ErrorStatus;
@@ -47,7 +46,7 @@ public class WebGameHistoryService {
 	public SaveUserHistoryResponseDto saveCrimeSceneUserGameHistory(
 			SaveUserGameHistoryRequestDto saveUserGameHistoryRequestDto) {
 
-		DiscordUser user = userService.findUserBySnowflake(saveUserGameHistoryRequestDto.getUserSnowflake());
+		User user = userService.findUserByDiscordSnowflake(saveUserGameHistoryRequestDto.getUserSnowflake());
 		if (user == null) {
 			return new SaveUserHistoryResponseDto("History recorded failed");
 		}
@@ -58,7 +57,7 @@ public class WebGameHistoryService {
 		}
 
 		GameHistory gameHistoryByUserSnowFlakeAndGuildSnowflake = gameHistoryQueryService.findGameHistoryByUserSnowFlakeAndGuildSnowflake(
-				user.getSnowflake(),
+				user.getDiscordSnowflake(),
 				guild.getSnowflake());
 		if (gameHistoryByUserSnowFlakeAndGuildSnowflake != null) {
 			return new SaveUserHistoryResponseDto("History already recorded");
@@ -80,13 +79,13 @@ public class WebGameHistoryService {
 	}
 
 	@Transactional(readOnly = true)
-	public Page<UserGameHistoryToUserDto> getUserCrimeSceneGameHistoryByDiscordUserSnowflake(String userSnowflake, Pageable pageable, String keyword) {
+	public Page<UserGameHistoryToUserDto> getUserCrimeSceneGameHistoryByDiscordUserSnowflake(String discordSnowflake, Pageable pageable, String keyword) {
 
-		DiscordUser user = userService.findUserBySnowflake(userSnowflake);
+		User user = userService.findUserByDiscordSnowflake(discordSnowflake);
 		if (user == null) {
 			throw  ErrorStatus.USER_NOT_FOUND.asServiceException();
 		}
-		return gameHistoryRepository.findByDiscordUserSnowflakeAndKeyword(userSnowflake,keyword, pageable).map(UserGameHistoryToUserDto::from);
+		return gameHistoryRepository.findByUserSnowflakeAndKeyword(discordSnowflake,keyword, pageable).map(UserGameHistoryToUserDto::from);
 	}
 
 		@Transactional(readOnly = true)
@@ -102,21 +101,21 @@ public class WebGameHistoryService {
 	}
 
 	@Transactional
-	public void WebUpdateGameHistory(WebUser webUser,String userSnowflake, String guildSnowflake,
+	public void WebUpdateGameHistory(WebUser webUser,String discordSnowflake, String guildSnowflake,
 			GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
-		if (userService.findUserBySnowflake(userSnowflake) == null) {
+		if (userService.findUserByDiscordSnowflake(discordSnowflake) == null) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user not exists");
 		}
 		if (!guildQueryService.existsBySnowflake(guildSnowflake)) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "guild not exists");
 		}
 		GameHistory gameHistory = gameHistoryQueryService.findGameHistoryByUserSnowFlakeAndGuildSnowflake(
-				userSnowflake, guildSnowflake);
+				discordSnowflake, guildSnowflake);
 		if (gameHistory == null) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "game history not exists");
 		}
 		if (
-				!gameHistory.getDiscordUser().getSnowflake().equals(webUser.getDiscordUserSnowflake()) &&
+				!gameHistory.getUser().getDiscordSnowflake().equals(webUser.getDiscordUserSnowflake()) &&
 						!gameHistory.getGuild().getOwnerSnowflake().equals(webUser.getDiscordUserSnowflake())
 		) {
 			throw ErrorStatus.INVALID_ACCESS.asServiceException();  //플레이한 유저도 아니고 오너도 아닐경우

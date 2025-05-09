@@ -22,8 +22,8 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 * - WHERE user.snowflake = :userSnowflake
 	 * - 성능 고려: user.snowflake에 인덱스 필요
 	 */
-	@Query("SELECT gh FROM GameHistory gh JOIN FETCH gh.discordUser JOIN FETCH gh.guild WHERE gh.discordUser.snowflake = :userSnowflake")
-	List<GameHistory> getGameHistoryByUserSnowflake(@Param("userSnowflake") String userSnowflake);
+	@Query("SELECT gh FROM GameHistory gh JOIN FETCH gh.user JOIN FETCH gh.guild WHERE gh.user.discordSnowflake = :discordSnowflake")
+	List<GameHistory> getGameHistoryByUserSnowflake(@Param("discordSnowflake") String discordSnowflake);
 
 	/**
 	 * 플레이 횟수가 특정 수치 이상인 유저들의 기록 목록
@@ -31,7 +31,7 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 * - 성능주의: group by + having → 대량 데이터시 느릴 수 있음
 	 * - Snowflake 기준 집계, COUNT(*) 기준
 	 */
-	@Query("SELECT gh FROM GameHistory gh JOIN FETCH gh.discordUser u GROUP BY u.snowflake HAVING COUNT(*) > :playCount")
+	@Query("SELECT gh FROM GameHistory gh JOIN FETCH gh.user u GROUP BY u.discordSnowflake HAVING COUNT(*) > :playCount")
 	List<GameHistory> getGameHistoryWithPlayCountGreaterThan(@Param("playCount") Integer playCount);
 
 	/**
@@ -40,21 +40,21 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 * - Pageable 지원
 	 * - 성능 고려: COUNT + GROUP BY + ORDER BY → user.snowflake 인덱스 필요
 	 */
-	@Query(value = "SELECT gh.discordUser.snowflake as userSnowflake, COUNT(gh) as playCount "
+	@Query(value = "SELECT gh.user.discordSnowflake as userSnowflake, COUNT(gh) as playCount "
 		+ "FROM GameHistory gh " +
-		"GROUP BY gh.discordUser.snowflake " +
+		"GROUP BY gh.user.discordSnowflake " +
 		"ORDER BY playCount DESC")
 	List<IGameHistoryRankingDto> getGameHistorySortingByPlayTimeWithPagination(Pageable pageable);
 
 
 	/**
 	 * 특정 유저가 특정 길드에서 게임 기록이 있는지 조회 (단건)
-	 * - WHERE user.snowflake AND guild.snowflake 조건
+	 * - WHERE gh.user의 discordSnowflake AND guild.snowflake 조건
 	 * - 로그인 사용자에게 관전 버튼/배지 표시 여부 판단 등에 활용
-	 * - user_snowflake + guild_snowflake 복합 인덱스 강력 권장
+	 * - user.discordSnowflake + guild_snowflake 복합 인덱스 강력 권장
 	 */
-	@Query("SELECT gh FROM GameHistory gh WHERE gh.discordUser.snowflake = :userSnowflake AND gh.guild.snowflake = :guildSnowflake")
-	GameHistory findGameHistoryByUserSnowFlakeAndGuildSnowflake(@Param("userSnowflake") String userSnowflake, @Param("guildSnowflake") String guildSnowflake);
+	@Query("SELECT gh FROM GameHistory gh WHERE gh.user.discordSnowflake = :discordSnowflake AND gh.guild.snowflake = :guildSnowflake")
+	GameHistory findGameHistoryByUserSnowFlakeAndGuildSnowflake(@Param("discordSnowflake") String discordSnowflake, @Param("guildSnowflake") String guildSnowflake);
 
 	/**
 	 * 전체 게임 히스토리 조회 (단순 select)
@@ -70,9 +70,9 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 * - WHERE 절 내 OR + NULL 체크 → 쿼리 플랜 비효율 가능
 	 * - guild_snowflake, discord_alarm 인덱스 필요
 	 */
-	@Query("SELECT gh FROM GameHistory gh " +
+	@Query("SELECT gh FROM GameHistory gh JOIN gh.user u JOIN u.discordUser du " +
 			"WHERE (:guildSnowflake IS NULL OR gh.guild.snowflake = :guildSnowflake) " +
-			"AND (:discordAlarm IS NULL OR gh.discordUser.discordAlarm = :discordAlarm)")
+			"AND (:discordAlarm IS NULL OR du.discordAlarm = :discordAlarm)")
 	List<GameHistory> findUsersByGuildSnowflakeAndDiscordAlarm(@Param("guildSnowflake") String guildSnowflake,
 														 @Param("discordAlarm") Boolean discordAlarm);
 
@@ -80,14 +80,14 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 * 특정 유저의 게임 기록을 최신 순으로 정렬하여 조회
 	 *
 	 * ✅ 목적:
-	 *   - 해당 유저(userSnowflake)의 게임 참여 이력을 최신순(createdAt DESC)으로 정렬하여 리스트로 반환
+	 *   - 해당 유저의 게임 참여 이력을 최신순(createdAt DESC)으로 정렬하여 리스트로 반환
 	 *   - 마이페이지, 유저 프로필, 활동 내역 등에서 사용 가능
 	 *
 	 */
 	@Query("SELECT gh FROM GameHistory gh " +
-			"WHERE gh.discordUser.snowflake = :userSnowflake " +
+			"WHERE gh.user.discordSnowflake = :discordSnowflake " +
 			"ORDER BY gh.createdAt DESC")
-	List<GameHistory> findGameHistoriesByUserSnowflakeOrderByCreatedAtDesc(@Param("userSnowflake") String userSnowflake);
+	List<GameHistory> findGameHistoriesByUserSnowflakeOrderByCreatedAtDesc(@Param("discordSnowflake") String discordSnowflake);
 
 	/**
 	 * 전체 게임 히스토리 레코드 수
@@ -101,23 +101,23 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 
 	Page<GameHistory> searchByGuild_Snowflake(String guildSnowflake, Pageable pageable);
 
-	Page<GameHistory> searchByDiscordUser_Snowflake(String discordUserSnowflake, Pageable pageable);
+	Page<GameHistory> searchByUser_DiscordSnowflake(String discordUserSnowflake, Pageable pageable);
 
-	Page<GameHistory> findByDiscordUser_Snowflake(String discordUserSnowflake, Pageable pageable);
+	Page<GameHistory> findByUser_DiscordSnowflake(String discordUserSnowflake, Pageable pageable);
 
 		@Query("""
         SELECT gh
         FROM GameHistory gh
         JOIN gh.guild g
         LEFT JOIN gh.gameTheme gt
-        WHERE gh.discordUser.snowflake = :discordUserSnowflake
+        WHERE gh.user.discordSnowflake = :discordUserSnowflake
         AND (
             (:keyword IS NULL OR :keyword = '' OR 
             LOWER(g.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
             LOWER(gt.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
         )
     """)
-		Page<GameHistory> findByDiscordUserSnowflakeAndKeyword(
+		Page<GameHistory> findByUserSnowflakeAndKeyword(
 				@Param("discordUserSnowflake") String discordUserSnowflake,
 				@Param("keyword") String keyword,
 				Pageable pageable

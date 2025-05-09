@@ -11,7 +11,7 @@ import com.crimecat.backend.gameHistory.domain.GameHistory;
 import com.crimecat.backend.gameHistory.dto.IGameHistoryRankingDto;
 import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.guild.domain.Guild;
-import com.crimecat.backend.user.domain.DiscordUser;
+import com.crimecat.backend.user.domain.User;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,12 +22,12 @@ public class GameHistoryQueryService {
 	private final GameHistoryRepository gameHistoryRepository;
 
 	public void saveCrimeSceneUserGameHistory(boolean isWin,
-									LocalDateTime createdAt, String characterName, DiscordUser user, Guild guild, GameTheme gameTheme) {
+									LocalDateTime createdAt, String characterName, User user, Guild guild, GameTheme gameTheme) {
 		gameHistoryRepository.save(new GameHistory(isWin, createdAt, characterName, user, guild, gameTheme));
 	}
 
-	public List<GameHistory> getGameHistoryByUserSnowflake(String userSnowflake) {
-		return gameHistoryRepository.getGameHistoryByUserSnowflake(userSnowflake);
+	public List<GameHistory> getGameHistoryByUserSnowflake(String discordSnowflake) {
+		return gameHistoryRepository.getGameHistoryByUserSnowflake(discordSnowflake);
 	}
 
 	public List<GameHistory> getGameHistoryWithPlayCountGreaterThan(Integer playCount) {
@@ -38,8 +38,8 @@ public class GameHistoryQueryService {
 		  return gameHistoryRepository.getGameHistorySortingByPlayTimeWithPagination(pageable);
 	}
 
-	public GameHistory findGameHistoryByUserSnowFlakeAndGuildSnowflake(String userSnowflake, String guildSnowflake) {
-		return gameHistoryRepository.findGameHistoryByUserSnowFlakeAndGuildSnowflake(userSnowflake,
+	public GameHistory findGameHistoryByUserSnowFlakeAndGuildSnowflake(String discordSnowflake, String guildSnowflake) {
+		return gameHistoryRepository.findGameHistoryByUserSnowFlakeAndGuildSnowflake(discordSnowflake,
 				guildSnowflake);
 	}
 	public List<GameHistory> getAllGameHistory(){

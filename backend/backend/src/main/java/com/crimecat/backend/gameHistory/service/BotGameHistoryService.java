@@ -4,7 +4,7 @@ import com.crimecat.backend.gametheme.repository.CrimesceneThemeRepository;
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.service.bot.GuildQueryService;
 import com.crimecat.backend.guild.service.bot.GuildService;
-import com.crimecat.backend.user.domain.DiscordUser;
+import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.service.UserService;
 import com.crimecat.backend.gameHistory.domain.GameHistory;
 import com.crimecat.backend.gameHistory.dto.GameHistoryUpdateRequestDto;
@@ -43,7 +43,7 @@ public class BotGameHistoryService {
 	public SaveUserHistoryResponseDto BotSaveCrimeSceneUserGameHistory(
 			SaveUserGameHistoryRequestDto saveUserGameHistoryRequestDto) {
 
-		DiscordUser user = userService.findUserBySnowflake(saveUserGameHistoryRequestDto.getUserSnowflake());
+		User user = userService.findUserByDiscordSnowflake(saveUserGameHistoryRequestDto.getUserSnowflake());
 		if (user == null) {
 			return new SaveUserHistoryResponseDto("History recorded failed");
 		}
@@ -54,7 +54,7 @@ public class BotGameHistoryService {
 		}
 
 		GameHistory gameHistoryByUserSnowFlakeAndGuildSnowflake = gameHistoryQueryService.findGameHistoryByUserSnowFlakeAndGuildSnowflake(
-				user.getSnowflake(),
+				user.getDiscordSnowflake(),
 				guild.getSnowflake());
 		if (gameHistoryByUserSnowFlakeAndGuildSnowflake != null) {
 			return new SaveUserHistoryResponseDto("History already recorded");
@@ -77,31 +77,31 @@ public class BotGameHistoryService {
 	}
 
 	@Transactional(readOnly = true)
-	public UserGameHistoryResponseDto BotGetUserCrimeSceneGameHistoryByUserSnowflake(String userSnowflake) {
+	public UserGameHistoryResponseDto BotGetUserCrimeSceneGameHistoryByUserSnowflake(String discordSnowflake) {
 
-		DiscordUser user = userService.findUserBySnowflake(userSnowflake);
+		User user = userService.findUserByDiscordSnowflake(discordSnowflake);
 		if (user == null) {
 			return new UserGameHistoryFailedResponseDto("user not found");
 		}
 
 		List<UserGameHistoryDto> userGameHistoryDtos = gameHistoryQueryService.getGameHistoryByUserSnowflake(
-						userSnowflake)
+						discordSnowflake)
 				.stream()
 				.map(UserGameHistoryDto::from)
 				.toList();
-		return new UserGameHistorySuccessResponseDto(userSnowflake, userGameHistoryDtos);
+		return new UserGameHistorySuccessResponseDto(discordSnowflake, userGameHistoryDtos);
 	}
 
-	public void BotUpdateGameHistory(String userSnowflake, String guildSnowflake,
+	public void BotUpdateGameHistory(String discordSnowflake, String guildSnowflake,
 			GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
-		if (userService.findUserBySnowflake(userSnowflake) == null) {
+		if (userService.findUserByDiscordSnowflake(discordSnowflake) == null) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user not exists");
 		}
 		if (!guildQueryService.existsBySnowflake(guildSnowflake)) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "guild not exists");
 		}
 		GameHistory gameHistory = gameHistoryQueryService.findGameHistoryByUserSnowFlakeAndGuildSnowflake(
-				userSnowflake, guildSnowflake);
+				discordSnowflake, guildSnowflake);
 		if (gameHistory == null) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "game history not exists");
 		}

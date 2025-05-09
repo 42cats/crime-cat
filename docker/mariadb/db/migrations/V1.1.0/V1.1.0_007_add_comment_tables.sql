@@ -2,7 +2,7 @@
 -- Description: 코멘트와 라이크 테이블 생성 (케이스 정정 버전)
 -- Created: 2025-05-08 14:30:00
 
-USE `${DB_DISCORD}`;
+USE ${DB_DISCORD};
 
 -- 1) comments 테이블
 CREATE TABLE IF NOT EXISTS `comments` (

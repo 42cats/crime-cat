@@ -74,14 +74,14 @@ public class WebGameHistoryController {
 	}
 
 	@PatchMapping("/crime_scene/{user_snowflake}/guild/{guild_snowflake}")
-	public MessageDto<?> updateUserGameHistory(@PathVariable("user_snowflake") String userSnowflake,
-											   @PathVariable("guild_snowflake") String guildSnowflake,
-											   @RequestBody GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
-		WebUser webUser = principal.getWebUser();
-		webGameHistoryService.WebUpdateGameHistory(webUser, userSnowflake, guildSnowflake, gameHistoryUpdateRequestDto);
-		return new MessageDto<>("History updated successfully");
+	public MessageDto<?> updateUserGameHistory(@PathVariable("user_snowflake") String discordSnowflake,
+	@PathVariable("guild_snowflake") String guildSnowflake,
+	@RequestBody GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
+	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+	DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
+	WebUser webUser = principal.getWebUser();
+	webGameHistoryService.WebUpdateGameHistory(webUser, discordSnowflake, guildSnowflake, gameHistoryUpdateRequestDto);
+	return new MessageDto<>("History updated successfully");
 	}
 
 	@GetMapping("/crime_scene/owner/{guild_id}")
