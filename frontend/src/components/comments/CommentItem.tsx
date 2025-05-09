@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { UTCToKST } from "@/lib/dateFormat";
 import {
     MoreHorizontal,
     MessageSquare,
@@ -90,7 +91,7 @@ export function CommentItem({
 
     const handleLike = async () => {
         await onLike(comment.id, isLiked);
-        
+
         // depth 2 이상에서도 좋아요가 즉시 반영되도록 직접 업데이트
         if (depth >= 2) {
             // 로컬 상태 업데이트
@@ -127,7 +128,7 @@ export function CommentItem({
                             {comment.authorName.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                     </Avatar>
-                    
+
                     <div className="flex-1 overflow-hidden">
                         <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -136,27 +137,25 @@ export function CommentItem({
                                         {comment.authorName}
                                     </span>
                                     <span className="text-xs text-muted-foreground">
-                                        {format(
-                                            new Date(comment.createdAt),
-                                            "yyyy-MM-dd HH:mm",
-                                            { locale: ko }
-                                        )}
+                                        <UTCToKST date={comment.createdAt} />
                                     </span>
                                 </div>
-                                
+
                                 <div className="whitespace-pre-wrap break-words text-muted-foreground text-sm mt-2 mb-2 italic">
                                     삭제된 댓글입니다.
                                 </div>
                             </div>
                         </div>
-                        
+
                         {/* 삭제된 댓글은 온곤 삭제되지만 답글은 유지 */}
                         {comment.replies && comment.replies.length > 0 && (
                             <div className="mt-2 ml-0 md:ml-4">
                                 <div className="flex items-center mb-1">
                                     <button
                                         className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                                        onClick={() => setShowReplies(!showReplies)}
+                                        onClick={() =>
+                                            setShowReplies(!showReplies)
+                                        }
                                     >
                                         {showReplies
                                             ? "답글 숨기기"
@@ -211,22 +210,20 @@ export function CommentItem({
                                     {comment.authorName}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                    {format(
-                                        new Date(comment.createdAt),
-                                        "yyyy-MM-dd HH:mm",
-                                        { locale: ko }
-                                    )}
+                                    <UTCToKST date={comment.createdAt} />
                                 </span>
                             </div>
-                            
+
                             {/* 댓글 내용 (스포일러 처리) */}
                             <div className="whitespace-pre-wrap break-words text-foreground text-sm mt-2 mb-2">
                                 {/* 스포일러가 아니거나 게임을 플레이한 경우 - 그냥 내용 표시 */}
-                                {(!isSpoiler || hasPlayedGame) ? (
+                                {!isSpoiler || hasPlayedGame ? (
                                     <>
                                         {/* 게임을 플레이했더라도 스포일러면 경고 표시 */}
                                         {isSpoiler && hasPlayedGame && (
-                                            <SpoilerWarning isOwnComment={isOwnComment} />
+                                            <SpoilerWarning
+                                                isOwnComment={isOwnComment}
+                                            />
                                         )}
                                         <div>{comment.content}</div>
                                     </>
@@ -236,13 +233,15 @@ export function CommentItem({
                                         {/* 내가 쓴 스포일러 - 블러 없이 표시하고 경고 문구만 */}
                                         {isOwnComment ? (
                                             <>
-                                                <SpoilerWarning isOwnComment={true} />
+                                                <SpoilerWarning
+                                                    isOwnComment={true}
+                                                />
                                                 <div>{comment.content}</div>
                                             </>
                                         ) : (
                                             /* 다른 사람의 스포일러 - 블러 처리 및 경고 문구 */
                                             <div className="relative cursor-pointer group">
-                                                <div 
+                                                <div
                                                     className="blur-[12px] select-none group-hover:blur-none transition-all duration-200 p-2"
                                                     onClick={handleSpoilerClick}
                                                 >
@@ -250,31 +249,56 @@ export function CommentItem({
                                                 </div>
                                                 <div className="absolute inset-0 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity duration-200 text-amber-500 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-900/30 backdrop-blur-sm p-2 rounded">
                                                     <AlertTriangle className="h-4 w-4 mr-1" />
-                                                    <span>스포일러 내용입니다. 게임을 플레이한 후 확인하세요.</span>
+                                                    <span>
+                                                        스포일러 내용입니다.
+                                                        게임을 플레이한 후
+                                                        확인하세요.
+                                                    </span>
                                                 </div>
                                             </div>
                                         )}
                                     </>
                                 )}
                             </div>
-                            
+
                             <div className="flex items-center gap-4">
                                 <button
-                                    className={`text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors ${isLiked ? "text-blue-500 dark:text-blue-400" : ""}`}
+                                    className={`text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors ${
+                                        isLiked
+                                            ? "text-blue-500 dark:text-blue-400"
+                                            : ""
+                                    }`}
                                     onClick={handleLike}
                                 >
-                                    <ThumbsUp className={`h-3.5 w-3.5 ${isLiked ? "fill-blue-500 dark:fill-blue-400" : ""}`} />
-                                    <span>좋아요 {comment.likes > 0 && <span className="ml-0.5 font-medium">({comment.likes})</span>}</span>
+                                    <ThumbsUp
+                                        className={`h-3.5 w-3.5 ${
+                                            isLiked
+                                                ? "fill-blue-500 dark:fill-blue-400"
+                                                : ""
+                                        }`}
+                                    />
+                                    <span>
+                                        좋아요{" "}
+                                        {comment.likes > 0 && (
+                                            <span className="ml-0.5 font-medium">
+                                                ({comment.likes})
+                                            </span>
+                                        )}
+                                    </span>
                                 </button>
 
                                 {/* 답글의 답글까지만 허용 (depth < 2) */}
                                 {depth < 2 && (
                                     <button
                                         className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-                                        onClick={() => setIsReplying(!isReplying)}
+                                        onClick={() =>
+                                            setIsReplying(!isReplying)
+                                        }
                                     >
                                         <MessageSquare className="h-3.5 w-3.5" />
-                                        <span>답글{isReplying ? " 취소" : ""}</span>
+                                        <span>
+                                            답글{isReplying ? " 취소" : ""}
+                                        </span>
                                     </button>
                                 )}
                             </div>
@@ -282,13 +306,13 @@ export function CommentItem({
 
                         {comment.isOwnComment && (
                             <div className="flex gap-2 text-xs text-muted-foreground whitespace-nowrap ml-2">
-                                <button 
+                                <button
                                     className="hover:text-foreground transition-colors"
                                     onClick={() => setIsEditing(true)}
                                 >
                                     수정
                                 </button>
-                                <button 
+                                <button
                                     className="hover:text-destructive transition-colors"
                                     onClick={() => setIsDeleteDialogOpen(true)}
                                 >
@@ -371,7 +395,7 @@ export function CommentItem({
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>취소</AlertDialogCancel>
-                        <AlertDialogAction 
+                        <AlertDialogAction
                             onClick={handleDelete}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
