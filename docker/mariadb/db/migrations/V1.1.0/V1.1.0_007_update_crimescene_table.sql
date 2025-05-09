@@ -4,12 +4,15 @@
 
 SET FOREIGN_KEY_CHECKS=0;
 
+-- 1) 컬럼명이 남아있다면 변경
 ALTER TABLE `crimescene_themes`
-  CHANGE COLUMN `game_theme_id` `id` BINARY(16) NOT NULL
-    COMMENT '게임 테마';
+  CHANGE COLUMN IF EXISTS
+    `game_theme_id` `id` BINARY(16) NOT NULL COMMENT '게임 테마';
 
+-- 2) 이미 존재하는 외래키 제거 후, 없으면 추가
 ALTER TABLE `crimescene_themes`
-  ADD CONSTRAINT `fk_id`
+  DROP FOREIGN KEY IF EXISTS `fk_id`,
+  ADD CONSTRAINT IF NOT EXISTS `fk_id`
     FOREIGN KEY (`id`) REFERENCES `game_themes`(`id`)
     ON DELETE CASCADE;
 
