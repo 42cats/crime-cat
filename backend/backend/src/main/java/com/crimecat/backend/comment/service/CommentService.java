@@ -91,7 +91,6 @@ public class CommentService {
         }
         
         boolean isLiked = commentLikeRepository.existsByUser_IdAndComment_Id(userId, commentId);
-        log.info("like me ={}", isLiked);
         boolean canViewSpoiler = hasPlayedGameTheme(userId, comment.getGameThemeId());
         
         return CommentResponse.from(updatedComment, isLiked, true, canViewSpoiler, replies);
@@ -132,7 +131,6 @@ public class CommentService {
         
         return comments.map(comment -> {
             boolean isLiked = commentLikeRepository.existsByUser_IdAndComment_Id(userId, comment.getId());
-            log.info("like me ={}", isLiked);
             boolean isOwnComment = comment.getAuthorId().equals(userId);
             List<CommentResponse> replies = getCommentReplies(comment.getId(), userId, CommentSortType.OLDEST);
             
