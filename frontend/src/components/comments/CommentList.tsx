@@ -27,7 +27,15 @@ interface CommentListProps {
     hasPlayedGame: boolean;
 }
 
-type SortOption = "latest" | "popular";
+// 백엔드 CommentController에서 제공하는 정렬 옵션과 동일하게 설정
+type CommentSortType = "LATEST" | "OLDEST" | "LIKES";
+
+// 정렬 옵션 라벨 표시를 위한 맵핑
+const sortTypeLabels: Record<CommentSortType, string> = {
+    LATEST: "최신순",
+    OLDEST: "오래된순",
+    LIKES: "인기순"
+};
 
 export function CommentList({
     gameThemeId,
@@ -37,37 +45,31 @@ export function CommentList({
     const { toast } = useToast();
     const navigate = useNavigate();
     const [comments, setComments] = useState<Comment[]>([]);
-    const [sortOption, setSortOption] = useState<SortOption>("latest");
+    const [sortType, setSortType] = useState<CommentSortType>("LATEST");
     const [isLoading, setIsLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [totalComments, setTotalComments] = useState(0);
     const [showLoginDialog, setShowLoginDialog] = useState(false);
+    // 페이지네이션을 위한 상태 추가
+    const [totalPages, setTotalPages] = useState(0);
+    const [pageSize, setPageSize] = useState(10);
 
-    const fetchComments = async (page = 0, sortBy: SortOption = "latest") => {
+    const fetchComments = async (page = 0, sort: CommentSortType = "LATEST", size = pageSize) => {
         if (!gameThemeId) return;
 
         setIsLoading(true);
         try {
-            const result =
-                sortBy === "latest"
-                    ? await commentService.getComments(gameThemeId, page)
-                    : await commentService.getPopularComments(
-                          gameThemeId,
-                          page
-                      );
-
+            const result = await commentService.getComments(gameThemeId, page, size, sort);
             const newComments = result.content;
 
-            if (page === 0) {
-                setComments(newComments);
-            } else {
-                setComments((prev) => [...prev, ...newComments]);
-            }
-
+            // 항상 현재 페이지의 댓글만 표시 (이전 무한 스크롤 방식에서 페이지네이션 방식으로 변경)
+            setComments(newComments);
+            
             setHasMore(!result.last);
             setTotalComments(result.totalElements);
             setCurrentPage(page);
+            setTotalPages(result.totalPages);
         } catch (error) {
             console.error("댓글을 불러오는 중 오류가 발생했습니다:", error);
             toast({
@@ -81,19 +83,27 @@ export function CommentList({
     };
 
     useEffect(() => {
-        fetchComments(0, sortOption);
-    }, [gameThemeId, sortOption]);
+        fetchComments(0, sortType, pageSize);
+    }, [gameThemeId, sortType, pageSize]);
 
-    const handleLoadMore = () => {
-        if (!isLoading && hasMore) {
-            fetchComments(currentPage + 1, sortOption);
+    // 페이지 변경 핸들러
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 0 && newPage < totalPages && !isLoading) {
+            fetchComments(newPage, sortType, pageSize);
         }
     };
+    
+    // 페이지 크기 변경 핸들러
+    const handlePageSizeChange = (newSize: number) => {
+        setPageSize(newSize);
+        fetchComments(0, sortType, newSize);
+    };
 
-    const handleSortChange = (value: SortOption) => {
-        if (value !== sortOption) {
-            setSortOption(value);
+    const handleSortChange = (value: CommentSortType) => {
+        if (value !== sortType) {
+            setSortType(value);
             setCurrentPage(0);
+            fetchComments(0, value, pageSize);
         }
     };
 
@@ -114,7 +124,7 @@ export function CommentList({
                 title: "댓글 작성 완료",
                 description: "댓글이 성공적으로 등록되었습니다.",
             });
-            fetchComments(0, sortOption);
+            fetchComments(0, sortType, pageSize);
         } catch (error) {
             console.error("댓글 작성 중 오류가 발생했습니다:", error);
             toast({
@@ -140,7 +150,7 @@ export function CommentList({
                 title: "답글 작성 완료",
                 description: "답글이 성공적으로 등록되었습니다.",
             });
-            fetchComments(0, sortOption);
+            fetchComments(0, sortType, pageSize);
         } catch (error) {
             console.error("답글 작성 중 오류가 발생했습니다:", error);
             toast({
@@ -163,7 +173,7 @@ export function CommentList({
                 title: "댓글 수정 완료",
                 description: "댓글이 성공적으로 수정되었습니다.",
             });
-            fetchComments(0, sortOption);
+            fetchComments(0, sortType, pageSize);
         } catch (error) {
             console.error("댓글 수정 중 오류가 발생했습니다:", error);
             toast({
@@ -183,7 +193,7 @@ export function CommentList({
                 title: "댓글 삭제 완료",
                 description: "댓글이 성공적으로 삭제되었습니다.",
             });
-            fetchComments(0, sortOption);
+            fetchComments(0, sortType, pageSize);
         } catch (error) {
             console.error("댓글 삭제 중 오류가 발생했습니다:", error);
             toast({
@@ -204,36 +214,32 @@ export function CommentList({
                 await commentService.likeComment(gameThemeId, commentId);
             }
 
-            // 좋아요 상태 업데이트
-            setComments((prevComments) =>
-                prevComments.map((comment) => {
+            // 재귀적 함수를 사용하여 모든 깊이의 댓글 처리
+            const updateCommentsLike = (comments: Comment[]): Comment[] => {
+                return comments.map(comment => {
+                    // 현재 댓글이 대상인 경우
                     if (comment.id === commentId) {
                         return {
                             ...comment,
-                            likes: isLiked
-                                ? comment.likes - 1
-                                : comment.likes + 1,
+                            likes: isLiked ? comment.likes - 1 : comment.likes + 1,
                             isLikedByCurrentUser: !isLiked,
                         };
-                    } else if (comment.replies) {
+                    }
+                    
+                    // 댓글에 답글이 있는 경우 재귀적으로 처리
+                    if (comment.replies && comment.replies.length > 0) {
                         return {
                             ...comment,
-                            replies: comment.replies.map((reply) =>
-                                reply.id === commentId
-                                    ? {
-                                          ...reply,
-                                          likes: isLiked
-                                              ? reply.likes - 1
-                                              : reply.likes + 1,
-                                          isLikedByCurrentUser: !isLiked,
-                                      }
-                                    : reply
-                            ),
+                            replies: updateCommentsLike(comment.replies)
                         };
                     }
+                    
                     return comment;
-                })
-            );
+                });
+            };
+
+            // 현재 목록에 있는 모든 댓글에 대해 처리
+            setComments(prevComments => updateCommentsLike(prevComments));
         } catch (error) {
             console.error("좋아요 처리 중 오류가 발생했습니다:", error);
             toast({
@@ -252,20 +258,18 @@ export function CommentList({
                 </h2>
 
                 <RadioGroup
-                    value={sortOption}
+                    value={sortType}
                     onValueChange={(value) =>
-                        handleSortChange(value as SortOption)
+                        handleSortChange(value as CommentSortType)
                     }
                     className="flex items-center space-x-4"
                 >
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="latest" id="sort-latest" />
-                        <Label htmlFor="sort-latest">최신순</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="popular" id="sort-popular" />
-                        <Label htmlFor="sort-popular">인기순</Label>
-                    </div>
+                    {Object.entries(sortTypeLabels).map(([type, label]) => (
+                        <div key={type} className="flex items-center space-x-2">
+                            <RadioGroupItem value={type} id={`sort-${type.toLowerCase()}`} />
+                            <Label htmlFor={`sort-${type.toLowerCase()}`}>{label}</Label>
+                        </div>
+                    ))}
                 </RadioGroup>
             </div>
 
@@ -285,26 +289,93 @@ export function CommentList({
                             onUpdate={handleUpdateComment}
                             onDelete={handleDeleteComment}
                             onLike={handleToggleLike}
+                            depth={0} // 최상위 댓글의 깊이는 0
                         />
                     ))}
 
-                    {hasMore && (
-                        <div className="flex justify-center pt-4">
+                    {/* 페이지네이션 컴포넌트 */}
+                    {comments.length > 0 && totalPages > 0 && (
+                        <div className="flex justify-center items-center mt-6 space-x-2">
                             <Button
                                 variant="outline"
-                                onClick={handleLoadMore}
-                                disabled={isLoading}
-                                className="text-sm"
+                                size="sm"
+                                onClick={() => handlePageChange(0)}
+                                disabled={currentPage === 0 || isLoading}
                             >
-                                {isLoading ? (
-                                    <>
-                                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                        <span>로딩 중...</span>
-                                    </>
-                                ) : (
-                                    <span>더 보기</span>
-                                )}
+                                처음
                             </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                disabled={currentPage === 0 || isLoading}
+                            >
+                                이전
+                            </Button>
+                            
+                            <div className="flex items-center space-x-1">
+                                {/* 현재 페이지 주변 5개 페이지 버튼만 표시 */}
+                                {Array.from({ length: totalPages })
+                                    .map((_, index) => {
+                                        // 현재 페이지 주변 2개 페이지와 첫/마지막 페이지 표시
+                                        if (
+                                            index === 0 ||
+                                            index === totalPages - 1 ||
+                                            (index >= currentPage - 2 && index <= currentPage + 2)
+                                        ) {
+                                            return (
+                                                <Button
+                                                    key={index}
+                                                    variant={currentPage === index ? "default" : "outline"}
+                                                    size="sm"
+                                                    onClick={() => handlePageChange(index)}
+                                                    disabled={isLoading}
+                                                    className="w-8 h-8 p-0"
+                                                >
+                                                    {index + 1}
+                                                </Button>
+                                            );
+                                        } else if (
+                                            (index === currentPage - 3 && currentPage > 3) ||
+                                            (index === currentPage + 3 && currentPage < totalPages - 4)
+                                        ) {
+                                            // 생략 부호 표시
+                                            return <span key={index}>...</span>;
+                                        }
+                                        return null;
+                                    })
+                                    .filter(Boolean)}
+                            </div>
+                            
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                disabled={currentPage === totalPages - 1 || isLoading}
+                            >
+                                다음
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handlePageChange(totalPages - 1)}
+                                disabled={currentPage === totalPages - 1 || isLoading}
+                            >
+                                마지막
+                            </Button>
+                            
+                            {/* 페이지 크기 선택 */}
+                            <select
+                                className="ml-4 p-1 border rounded text-sm"
+                                value={pageSize}
+                                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                                disabled={isLoading}
+                            >
+                                <option value="5">5개씩</option>
+                                <option value="10">10개씩</option>
+                                <option value="20">20개씩</option>
+                                <option value="50">50개씩</option>
+                            </select>
                         </div>
                     )}
                 </div>

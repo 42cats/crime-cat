@@ -172,8 +172,8 @@ public class CommentService {
             boolean isLiked = commentLikeRepository.existsByUser_IdAndComment_Id(userId, reply.getId());
             boolean isOwnReply = reply.getAuthorId().equals(userId);
             boolean canViewSpoiler = hasPlayedGameTheme(userId, reply.getGameThemeId());
-            
-            replyResponses.add(CommentResponse.from(reply, isLiked, isOwnReply, canViewSpoiler, new ArrayList<>()));
+            List<CommentResponse> commentReplies = getCommentReplies(reply.getId(), userId, sortType);
+            replyResponses.add(CommentResponse.from(reply, isLiked, isOwnReply, canViewSpoiler, commentReplies));
         }
         
         return replyResponses;
