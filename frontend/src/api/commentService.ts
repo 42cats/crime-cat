@@ -4,31 +4,17 @@ import { Comment, CommentRequest, CommentPage } from "@/types/comment";
 const BASE_URL = "/api/v1/gamethemes";
 
 export const commentService = {
-    // 댓글 목록 조회 (최신순)
+    // 댓글 목록 조회 (정렬 옵션 적용)
     getComments: async (
         gameThemeId: string,
         page = 0,
-        size = 10
+        size = 10,
+        sortType = "LATEST" // LATEST, OLDEST, LIKES 등 백엔드에서 지원하는 정렬 옵션
     ): Promise<CommentPage> => {
         const response = await axios.get(
             `${BASE_URL}/${gameThemeId}/comments`,
             {
-                params: { page, size },
-            }
-        );
-        return response.data;
-    },
-
-    // 댓글 목록 조회 (인기순)
-    getPopularComments: async (
-        gameThemeId: string,
-        page = 0,
-        size = 10
-    ): Promise<CommentPage> => {
-        const response = await axios.get(
-            `${BASE_URL}/${gameThemeId}/comments/popular`,
-            {
-                params: { page, size },
+                params: { page, size, sortType },
             }
         );
         return response.data;

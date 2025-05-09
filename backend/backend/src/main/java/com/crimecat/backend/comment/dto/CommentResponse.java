@@ -44,7 +44,7 @@ public class CommentResponse {
         
         return CommentResponse.builder()
                 .id(comment.getId())
-                .content(comment.isSpoiler() && !canViewSpoiler ? "[스포일러]" : comment.getContent())
+                .content(comment.isSpoiler() && !canViewSpoiler && !isOwnComment ? "[스포일러]" : comment.getContent())
                 .authorName(comment.getAuthor().getUser().getName())
                 .authorProfileImage(comment.getAuthor().getProfileImagePath())
                 .authorId(comment.getAuthorId())
