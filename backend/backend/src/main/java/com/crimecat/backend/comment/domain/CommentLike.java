@@ -48,4 +48,11 @@ public class CommentLike {
     @CreatedDate
     @Column(name = "CREATED_AT")
     private LocalDateTime createdAt;
+
+    public static CommentLike from(UUID commentId, UUID userId){
+        return CommentLike.builder()
+            .userId(userId)
+            .commentId(commentId)
+            .build();
+    }
 }
