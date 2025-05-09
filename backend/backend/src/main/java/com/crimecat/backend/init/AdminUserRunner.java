@@ -49,15 +49,25 @@ public class AdminUserRunner implements ApplicationRunner {
             .build();
 
     webUserRepository.save(webUser);
+    Optional<DiscordUser> bySnowflake = discordUserRepository.findBySnowflake(
+        adminProperties.getOwner());
+
+    DiscordUser user = null;
+    if(bySnowflake.isEmpty()){
+
     DiscordUser discordUser =
         DiscordUser.of(adminProperties.getOwner(), "어드민", "");
 
+    user = discordUser;
     discordUserRepository.save(discordUser);
-
+    }
+    else {
+      user = bySnowflake.get();
+    }
     User admin =
         User.builder()
             .webUser(webUser)
-            .discordUser(discordUser)
+            .discordUser(user)
             .discordSnowflake(adminProperties.getOwner())
             .build();
 

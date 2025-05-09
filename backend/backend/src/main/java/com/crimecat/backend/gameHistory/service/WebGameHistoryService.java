@@ -1,5 +1,6 @@
 package com.crimecat.backend.gameHistory.service;
 
+import com.crimecat.backend.gametheme.repository.CrimesceneThemeRepository;
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.repository.GuildRepository;
 import com.crimecat.backend.guild.service.bot.GuildQueryService;
@@ -40,6 +41,7 @@ public class WebGameHistoryService {
 	private final GameThemeRepository gameThemeRepository;
 	private final GuildRepository guildRepository;
 	private final GameHistoryRepository gameHistoryRepository;
+	private final CrimesceneThemeRepository crimesceneThemeRepository;
 
 	@Transactional
 	public SaveUserHistoryResponseDto saveCrimeSceneUserGameHistory(
@@ -62,7 +64,7 @@ public class WebGameHistoryService {
 			return new SaveUserHistoryResponseDto("History already recorded");
 		}
 
-		CrimesceneTheme byGuildSnowflake = gameThemeRepository.findByGuildSnowflake(
+		CrimesceneTheme byGuildSnowflake = crimesceneThemeRepository.findByGuildSnowflake(
 				guild.getSnowflake())
 				.orElse(null);
 
