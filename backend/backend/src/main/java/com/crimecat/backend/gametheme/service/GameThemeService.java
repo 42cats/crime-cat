@@ -21,6 +21,7 @@ import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -38,6 +41,7 @@ public class GameThemeService {
     private final GameThemeRepository themeRepository;
     private final MakerTeamService teamService;
     private final GameThemeRecommendationRepository themeRecommendationRepository;
+    private final ViewCountService viewCountService;
 
     @Transactional
     public void addGameTheme(MultipartFile file, AddGameThemeRequest request) {
@@ -77,14 +81,19 @@ public class GameThemeService {
         themeRepository.save(gameTheme);
     }
 
+    @Transactional
     public GetGameThemeResponse getGameTheme(UUID themeId) {
         GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
         UUID webUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
         if (gameTheme.isDeleted() || (!gameTheme.isPublicStatus() && !gameTheme.isAuthor(webUserId))) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
-        gameTheme.viewed();
-        gameTheme = themeRepository.save(gameTheme);
+        String clientIp = (String) ((ServletRequestAttributes) Objects.requireNonNull(
+            RequestContextHolder
+                .getRequestAttributes()))
+            .getRequest()
+            .getAttribute("clientIp");
+        viewCountService.increment(gameTheme, clientIp);
         return GetGameThemeResponse.builder()
                 .theme(GameThemeDetailDto.of(gameTheme))
                 .build();
@@ -146,4 +155,5 @@ public class GameThemeService {
         UUID webUserId = AuthenticationUtil.getCurrentWebUserId();
         return themeRecommendationRepository.findByWebUserIdAndThemeId(webUserId, themeId).isPresent();
     }
+
 }
