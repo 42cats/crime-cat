@@ -31,7 +31,7 @@ public class CommentResponse {
     private boolean isLikedByCurrentUser;
     @JsonProperty("isOwnComment")
     private boolean isOwnComment;
-    @JsonProperty("isDeleted;")
+    @JsonProperty("isDeleted")
     private boolean isDeleted;
     private List<CommentResponse> replies;
     
