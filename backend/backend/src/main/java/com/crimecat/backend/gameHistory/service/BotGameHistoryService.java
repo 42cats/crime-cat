@@ -1,5 +1,6 @@
 package com.crimecat.backend.gameHistory.service;
 
+import com.crimecat.backend.gametheme.repository.CrimesceneThemeRepository;
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.service.bot.GuildQueryService;
 import com.crimecat.backend.guild.service.bot.GuildService;
@@ -18,11 +19,13 @@ import com.crimecat.backend.gametheme.repository.GameThemeRepository;
 import com.crimecat.backend.gametheme.service.GameThemeService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BotGameHistoryService {
@@ -34,6 +37,7 @@ public class BotGameHistoryService {
 	private final GuildQueryService guildQueryService;
 	private final GameThemeService gameThemeService;
 	private final GameThemeRepository gameThemeRepository;
+	private final CrimesceneThemeRepository crimesceneThemeRepository;
 
 	@Transactional
 	public SaveUserHistoryResponseDto BotSaveCrimeSceneUserGameHistory(
@@ -56,10 +60,11 @@ public class BotGameHistoryService {
 			return new SaveUserHistoryResponseDto("History already recorded");
 		}
 
-		CrimesceneTheme byGuildSnowflake = gameThemeRepository.findByGuildSnowflake(
+		CrimesceneTheme byGuildSnowflake = crimesceneThemeRepository.findByGuildSnowflake(
 						guild.getSnowflake())
 				.orElse(null);
 
+		log.info("theme = {}", byGuildSnowflake);
 		gameHistoryQueryService.saveCrimeSceneUserGameHistory(
 				saveUserGameHistoryRequestDto.isWin(),
 				saveUserGameHistoryRequestDto.getCreatedAt(),
