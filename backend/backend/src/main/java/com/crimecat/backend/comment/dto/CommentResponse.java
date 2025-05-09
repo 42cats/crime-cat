@@ -1,6 +1,7 @@
 package com.crimecat.backend.comment.dto;
 
 import com.crimecat.backend.comment.domain.Comment;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -9,6 +10,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
 
 @Getter
 @Builder
@@ -22,6 +24,7 @@ public class CommentResponse {
     private UUID authorId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    @JsonProperty("isSpoiler")
     private boolean isSpoiler;
     private int likes;
     private boolean isLikedByCurrentUser;
@@ -39,7 +42,7 @@ public class CommentResponse {
         return CommentResponse.builder()
                 .id(comment.getId())
                 .content(comment.isSpoiler() && !canViewSpoiler ? "[스포일러]" : comment.getContent())
-                .authorName(comment.getAuthor().getNickname())
+                .authorName(comment.getAuthor().getUser().getName())
                 .authorProfileImage(comment.getAuthor().getProfileImagePath())
                 .authorId(comment.getAuthorId())
                 .createdAt(comment.getCreatedAt())

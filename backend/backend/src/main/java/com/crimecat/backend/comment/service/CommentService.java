@@ -17,6 +17,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.repository.WebUserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,28 +30,44 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CommentService {
     private final CommentRepository commentRepository;
     private final CommentLikeRepository commentLikeRepository;
     private final GameThemeRepository gameThemeRepository;
     private final GameHistoryRepository gameHistoryRepository;
+    private final WebUserRepository webUserRepository;
     
     // 댓글 작성
     @Transactional
     public CommentResponse createComment(UUID gameThemeId, UUID userId, CommentRequest request) {
-        GameTheme gameTheme = gameThemeRepository.findById(gameThemeId)
-                .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+    GameTheme gameTheme = gameThemeRepository.findById(gameThemeId)
+    .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+    
+    // 디버그 로그: 스포일러 값 확인
+    log.info("CommentRequest isSpoiler 값: {}", request.isSpoiler());
+    
+        // 사용자 정보 조회
+    WebUser author = webUserRepository.findById(userId)
+            .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
 
-        Comment comment = Comment.from(gameThemeId, userId, request);
+    // author 객체를 전달하여 댓글 생성
+    Comment comment = Comment.from(gameThemeId, userId, request, author);
+    
+    // 디버그 로그: Comment 객체의 isSpoiler 값 확인
+    log.info("Comment isSpoiler 값: {}", comment.isSpoiler());
 
-        Comment savedComment = commentRepository.save(comment);
-        
+    Comment savedComment = commentRepository.save(comment);
+    
         // 대댓글이 아닌 경우만 빈 replies 목록 생성
         List<CommentResponse> replies = new ArrayList<>();
         
         boolean canViewSpoiler = hasPlayedGameTheme(userId, gameThemeId);
         
-        return CommentResponse.from(savedComment, false, true, canViewSpoiler, replies);
+        CommentResponse response = CommentResponse.from(savedComment, false, true, canViewSpoiler, replies);
+        log.info("CommentResponse isSpoiler 값: {}", response.isSpoiler());
+        
+        return response;
     }
     
     // 댓글 수정

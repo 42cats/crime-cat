@@ -1,17 +1,15 @@
 package com.crimecat.backend.gameHistory.repository;
 
+import com.crimecat.backend.gameHistory.domain.GameHistory;
+import com.crimecat.backend.gameHistory.dto.IGameHistoryRankingDto;
 import java.util.List;
 import java.util.UUID;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
-import com.crimecat.backend.gameHistory.domain.GameHistory;
-import com.crimecat.backend.gameHistory.dto.IGameHistoryRankingDto;
 
 @Repository
 public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> {
@@ -133,5 +131,7 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 			"JOIN gh.user u " +
 			"JOIN u.webUser wu " +
 			"WHERE wu.id = :webUserId AND gh.gameTheme.id = :gameThemeId")
-	boolean existsByDiscordUserIdAndGameThemeId(@Param("userId") UUID webUserId, @Param("gameThemeId") UUID gameThemeId);
+	boolean existsByDiscordUserIdAndGameThemeId(@Param("webUserId") UUID webUserId, @Param("gameThemeId") UUID gameThemeId);
+
+	boolean existsByGameTheme_IdAndUser_Id(UUID gameThemeId, UUID userId);
 }

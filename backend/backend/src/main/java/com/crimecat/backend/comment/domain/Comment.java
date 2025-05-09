@@ -3,6 +3,7 @@ package com.crimecat.backend.comment.domain;
 import com.crimecat.backend.comment.dto.CommentRequest;
 import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -42,12 +43,25 @@ public class Comment {
 
     // 작성자 연결
     @JdbcTypeCode(SqlTypes.BINARY)
-    @Column(name = "AUTHOR_ID")
+    @Column(name = "AUTHOR_ID", insertable = false, updatable = false)
     private UUID authorId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "AUTHOR_ID", updatable = false, insertable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "AUTHOR_ID")
     private WebUser author;
+    
+    // authorId를 설정하는 메서드
+    public void setAuthorId(UUID authorId) {
+        this.authorId = authorId;
+    }
+    
+    // author를 설정하는 메서드
+    public void setAuthor(WebUser author) {
+        this.author = author;
+        if (author != null) {
+            this.authorId = author.getId();
+        }
+    }
 
     // 부모 댓글 (대댓글인 경우)
     @JdbcTypeCode(SqlTypes.BINARY)
@@ -61,6 +75,7 @@ public class Comment {
     // 스포일러 여부
     @Column(name = "IS_SPOILER")
     @Builder.Default
+    @JsonProperty("isSpoiler")
     private boolean isSpoiler = false;
 
     // 추천 수
@@ -106,14 +121,18 @@ public class Comment {
         }
     }
 
-    public static Comment from(UUID gameThemeId, UUID userId, CommentRequest request){
-        return Comment.builder()
+    public static Comment from(UUID gameThemeId, UUID userId, CommentRequest request, WebUser author){
+        Comment comment = Comment.builder()
             .content(request.getContent())
             .gameThemeId(gameThemeId)
-            .authorId(userId)
             .parentId(request.getParentId())
-            .isSpoiler(request.isSpoiler())
+            .isSpoiler(request.isSpoiler()) // 명시적으로 isSpoiler 값 설정
             .updatedAt(LocalDateTime.now())
             .build();
+        
+        // 작성자 객체 설정
+        comment.setAuthor(author);
+        
+        return comment;
     }
 }

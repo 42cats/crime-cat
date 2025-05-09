@@ -1,6 +1,8 @@
 package com.crimecat.backend.gameHistory.controller;
 
 import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
+import com.crimecat.backend.gameHistory.dto.CheckPlayResponseDto;
+import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.utils.sort.SortUtil;
 import com.crimecat.backend.guild.dto.bot.MessageDto;
 import com.crimecat.backend.exception.ErrorStatus;
@@ -13,6 +15,7 @@ import com.crimecat.backend.gameHistory.service.WebGameHistoryService;
 import com.crimecat.backend.gameHistory.sort.GameHistorySortType;
 import com.crimecat.backend.webUser.domain.WebUser;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -106,4 +109,15 @@ public class WebGameHistoryController {
 		return ResponseEntity.ok().body(
 				webGameHistoryService.WebGetGuildOwnerHistory(webUser.getUser(), guidId, pageable));
 	}
+
+  @GetMapping("/check-played/{game_theme_id}")
+  public ResponseEntity<CheckPlayResponseDto> checkPlayTheme(
+      @PathVariable("game_theme_id") UUID gameThemeId) {
+    WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
+    if (currentWebUser == null) {
+      return ResponseEntity.ok().body(CheckPlayResponseDto.from(false));
+    }
+    return ResponseEntity.ok()
+        .body(webGameHistoryService.checkHasPlayed(gameThemeId, currentWebUser));
+		}
 }
