@@ -89,6 +89,11 @@ public class UserService {
 		return discordUserQueryService.findByUserSnowflake(userSnowflake);
 	}
 
+	@Transactional(readOnly = true)
+	public User findUserByDiscordSnowflake(String userSnowflake) {
+		return userRepository.findByDiscordSnowflake(userSnowflake).orElse(null);
+	}
+
 	@Transactional
 	public UserInfoResponseDto saveUserInfo(String snowflake, String name, String avatar) {
 		if (StringUtils.isBlank(snowflake) || StringUtils.isBlank(name) || StringUtils.isBlank(avatar)) {
@@ -402,8 +407,8 @@ public class UserService {
 		}
 		return new UserListResponseDto(
 				gameHistoryQueryService.findUsersByGuildSnowflakeAndDiscordAlarm(guildSnowflake, discordAlarm).stream()
-						.map(GameHistory::getDiscordUser)
-						.map(DiscordUser::getSnowflake)
+						.map(GameHistory::getUser)
+						.map(User::getDiscordSnowflake)
 						.toList()
 		);
 	}

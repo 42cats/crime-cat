@@ -38,9 +38,9 @@ public class UserGameHistoryToUserDto {
 		return new UserGameHistoryToUserDto(
 				gameHistory.getId(),
 				gameHistory.getGuild().getSnowflake(),
-				gameHistory.getDiscordUser().getSnowflake(),
+				gameHistory.getUser().getDiscordSnowflake(),
 				gameHistory.getGuild().getName(),
-				gameHistory.getDiscordUser().getUser().getName(),
+				gameHistory.getUser().getName(),
 				gameHistory.isWin(),
 				gameHistory.getCreatedAt(),
 				gameHistory.getCharacterName(),

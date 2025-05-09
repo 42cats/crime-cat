@@ -37,8 +37,8 @@ public class UserGameHistoryToOwnerDto {
 		return new UserGameHistoryToOwnerDto(
 				gameHistory.getId(),
 				gameHistory.getGuild().getSnowflake(),
-				gameHistory.getDiscordUser().getSnowflake(),
-				gameHistory.getDiscordUser().getUser().getName(),
+				gameHistory.getUser().getDiscordSnowflake(),
+				gameHistory.getUser().getName(),
 				gameHistory.isWin(),
 				gameHistory.getCreatedAt(),
 				gameHistory.getCharacterName(),
