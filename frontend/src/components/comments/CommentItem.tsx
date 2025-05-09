@@ -137,7 +137,7 @@ export function CommentItem({
                                     onClick={handleLike}
                                 >
                                     <ThumbsUp className={`h-3.5 w-3.5 ${isLiked ? "fill-blue-500 dark:fill-blue-400" : ""}`} />
-                                    <span>좋아요</span>
+                                    <span>좋아요 {comment.likes > 0 && <span className="ml-0.5 font-medium">({comment.likes})</span>}</span>
                                 </button>
 
                                 {/* 답글의 답글까지만 허용 (depth < 2) */}

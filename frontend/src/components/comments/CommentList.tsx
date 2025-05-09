@@ -1,10 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/useToast";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Loader2, MessageSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Comment, CommentRequest } from "@/types/comment";
 import { commentService } from "@/api/commentService";
 import { CommentForm } from "./CommentForm";
@@ -20,6 +16,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CommentListProps {
     gameThemeId: string;
@@ -44,6 +41,7 @@ export function CommentList({
 }: CommentListProps) {
     const { toast } = useToast();
     const navigate = useNavigate();
+    const { isAuthenticated } = useAuth();
     const [comments, setComments] = useState<Comment[]>([]);
     const [sortType, setSortType] = useState<CommentSortType>("LATEST");
     const [isLoading, setIsLoading] = useState(false);
@@ -51,25 +49,46 @@ export function CommentList({
     const [hasMore, setHasMore] = useState(true);
     const [totalComments, setTotalComments] = useState(0);
     const [showLoginDialog, setShowLoginDialog] = useState(false);
-    // 페이지네이션을 위한 상태 추가
-    const [totalPages, setTotalPages] = useState(0);
-    const [pageSize, setPageSize] = useState(10);
+    const loaderRef = useRef<HTMLDivElement>(null);
+    const pageSize = 10; // 한 번에 로드할 댓글 수
 
+    // 무한 스크롤을 위한 Intersection Observer 설정
+    useEffect(() => {
+        const options = {
+            root: null,
+            rootMargin: '20px',
+            threshold: 1.0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            const [entry] = entries;
+            if (entry.isIntersecting && hasMore && !isLoading) {
+                fetchMoreComments();
+            }
+        }, options);
+
+        if (loaderRef.current) {
+            observer.observe(loaderRef.current);
+        }
+
+        return () => {
+            if (loaderRef.current) {
+                observer.unobserve(loaderRef.current);
+            }
+        };
+    }, [hasMore, isLoading, currentPage]);
+
+    // 초기 댓글 로드
     const fetchComments = async (page = 0, sort: CommentSortType = "LATEST", size = pageSize) => {
         if (!gameThemeId) return;
-
+        
         setIsLoading(true);
         try {
-            const result = await commentService.getComments(gameThemeId, page, size, sort);
-            const newComments = result.content;
-
-            // 항상 현재 페이지의 댓글만 표시 (이전 무한 스크롤 방식에서 페이지네이션 방식으로 변경)
-            setComments(newComments);
-            
+            const result = await commentService.getComments(gameThemeId, page, size, sort, isAuthenticated);
+            setComments(result.content);
             setHasMore(!result.last);
             setTotalComments(result.totalElements);
             setCurrentPage(page);
-            setTotalPages(result.totalPages);
         } catch (error) {
             console.error("댓글을 불러오는 중 오류가 발생했습니다:", error);
             toast({
@@ -82,22 +101,29 @@ export function CommentList({
         }
     };
 
-    useEffect(() => {
-        fetchComments(0, sortType, pageSize);
-    }, [gameThemeId, sortType, pageSize]);
-
-    // 페이지 변경 핸들러
-    const handlePageChange = (newPage: number) => {
-        if (newPage >= 0 && newPage < totalPages && !isLoading) {
-            fetchComments(newPage, sortType, pageSize);
+    // 추가 댓글 로드 (무한 스크롤)
+    const fetchMoreComments = async () => {
+        if (!gameThemeId || isLoading || !hasMore) return;
+        
+        setIsLoading(true);
+        try {
+            const nextPage = currentPage + 1;
+            const result = await commentService.getComments(gameThemeId, nextPage, pageSize, sortType, isAuthenticated);
+            
+            // 기존 댓글에 새로운 댓글 추가
+            setComments(prevComments => [...prevComments, ...result.content]);
+            setHasMore(!result.last);
+            setCurrentPage(nextPage);
+        } catch (error) {
+            console.error("추가 댓글을 불러오는 중 오류가 발생했습니다:", error);
+        } finally {
+            setIsLoading(false);
         }
     };
-    
-    // 페이지 크기 변경 핸들러
-    const handlePageSizeChange = (newSize: number) => {
-        setPageSize(newSize);
-        fetchComments(0, sortType, newSize);
-    };
+
+    useEffect(() => {
+        fetchComments(0, sortType, pageSize);
+    }, [gameThemeId, sortType]);
 
     const handleSortChange = (value: CommentSortType) => {
         if (value !== sortType) {
@@ -124,7 +150,9 @@ export function CommentList({
                 title: "댓글 작성 완료",
                 description: "댓글이 성공적으로 등록되었습니다.",
             });
-            fetchComments(0, sortType, pageSize);
+            // 댓글 새로고침 (최신순으로 정렬된 첫 페이지 로드)
+            setSortType("LATEST");
+            fetchComments(0, "LATEST", pageSize);
         } catch (error) {
             console.error("댓글 작성 중 오류가 발생했습니다:", error);
             toast({
@@ -150,6 +178,7 @@ export function CommentList({
                 title: "답글 작성 완료",
                 description: "답글이 성공적으로 등록되었습니다.",
             });
+            // 댓글 새로고침 (현재 정렬 상태 유지)
             fetchComments(0, sortType, pageSize);
         } catch (error) {
             console.error("답글 작성 중 오류가 발생했습니다:", error);
@@ -173,6 +202,7 @@ export function CommentList({
                 title: "댓글 수정 완료",
                 description: "댓글이 성공적으로 수정되었습니다.",
             });
+            // 댓글 새로고침 (현재 정렬 상태 유지)
             fetchComments(0, sortType, pageSize);
         } catch (error) {
             console.error("댓글 수정 중 오류가 발생했습니다:", error);
@@ -193,6 +223,7 @@ export function CommentList({
                 title: "댓글 삭제 완료",
                 description: "댓글이 성공적으로 삭제되었습니다.",
             });
+            // 댓글 새로고침 (현재 정렬 상태 유지)
             fetchComments(0, sortType, pageSize);
         } catch (error) {
             console.error("댓글 삭제 중 오류가 발생했습니다:", error);
@@ -274,6 +305,11 @@ export function CommentList({
                 </div>
             </div>
 
+            {/* 댓글 입력 폼 (상단에 배치) */}
+            <div className="border-t border-border/30 mb-6 pt-4">
+                <CommentForm onSubmit={handleCreateComment} />
+            </div>
+
             {comments.length === 0 && !isLoading ? (
                 <div className="py-8 text-center text-muted-foreground">
                     <p className="text-sm">아직 댓글이 없습니다. 첫 댓글을 작성해보세요!</p>
@@ -294,76 +330,17 @@ export function CommentList({
                         />
                     ))}
 
-                    {/* 페이지네이션 컴포넌트 */}
-                    {comments.length > 0 && totalPages > 1 && (
-                        <div className="flex justify-center items-center mt-4 gap-2">
-                            <button
-                                className={`px-2 py-1 text-xs ${currentPage === 0 ? 'text-muted-foreground/50' : 'text-muted-foreground hover:text-foreground transition-colors'}`}
-                                onClick={() => handlePageChange(currentPage - 1)}
-                                disabled={currentPage === 0 || isLoading}
-                            >
-                                이전
-                            </button>
-                            
-                            {/* 페이지 번호 */}
-                            <div className="flex items-center">
-                                {Array.from({ length: totalPages })
-                                    .map((_, index) => {
-                                        // 현재 페이지 주변 페이지만 표시
-                                        if (
-                                            index === 0 ||
-                                            index === totalPages - 1 ||
-                                            (index >= currentPage - 1 && index <= currentPage + 1)
-                                        ) {
-                                            return (
-                                                <button
-                                                    key={index}
-                                                    className={`w-7 h-7 mx-0.5 text-xs ${currentPage === index ? "bg-primary/10 text-primary rounded-full" : "text-muted-foreground hover:text-foreground"}`}
-                                                    onClick={() => handlePageChange(index)}
-                                                    disabled={isLoading}
-                                                >
-                                                    {index + 1}
-                                                </button>
-                                            );
-                                        } else if (
-                                            (index === currentPage - 2 && currentPage > 2) ||
-                                            (index === currentPage + 2 && currentPage < totalPages - 3)
-                                        ) {
-                                            // 생략 부호 표시
-                                            return <span key={index} className="text-muted-foreground mx-0.5">...</span>;
-                                        }
-                                        return null;
-                                    })
-                                    .filter(Boolean)}
-                            </div>
-                            
-                            <button
-                                className={`px-2 py-1 text-xs ${currentPage === totalPages - 1 ? 'text-muted-foreground/50' : 'text-muted-foreground hover:text-foreground transition-colors'}`}
-                                onClick={() => handlePageChange(currentPage + 1)}
-                                disabled={currentPage === totalPages - 1 || isLoading}
-                            >
-                                다음
-                            </button>
-                            
-                            {/* 페이지 크기 선택 */}
-                            <select
-                                className="ml-2 px-1 py-0.5 text-xs border border-border rounded text-muted-foreground"
-                                value={pageSize}
-                                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                                disabled={isLoading}
-                            >
-                                <option value="5">5개</option>
-                                <option value="10">10개</option>
-                                <option value="20">20개</option>
-                                <option value="50">50개</option>
-                            </select>
-                        </div>
-                    )}
+                    {/* 무한 스크롤을 위한 로딩 표시기 */}
+                    <div ref={loaderRef} className="flex justify-center py-4">
+                        {isLoading && (
+                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        )}
+                        {!isLoading && !hasMore && comments.length > 0 && (
+                            <p className="text-sm text-muted-foreground">모든 댓글을 불러왔습니다.</p>
+                        )}
+                    </div>
                 </div>
             )}
-            <div className="border-t border-border/30 mt-4 pt-4">
-                <CommentForm onSubmit={handleCreateComment} />
-            </div>
 
             {/* 로그인 필요 다이얼로그 */}
             <AlertDialog
