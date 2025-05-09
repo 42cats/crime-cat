@@ -42,6 +42,18 @@ interface CommentItemProps {
     depth?: number; // 댓글 깊이 추적을 위한 프로퍼티
 }
 
+// 스포일러 알림 블록 컴포넌트
+const SpoilerWarning = ({ isOwnComment }: { isOwnComment: boolean }) => (
+    <div className="flex items-center mb-2 text-amber-500 dark:text-amber-400 p-1 rounded-md bg-amber-50 dark:bg-amber-900/20">
+        <AlertTriangle className="h-4 w-4 mr-1" />
+        <span className="text-xs">
+            {isOwnComment
+                ? "스포일러로 작성된 내용입니다"
+                : "스포일러 내용입니다. 게임을 플레이한 후 확인하세요."}
+        </span>
+    </div>
+);
+
 export function CommentItem({
     comment,
     gameThemeId,
@@ -63,10 +75,23 @@ export function CommentItem({
     const isLiked = comment.isLikedByCurrentUser;
     const isOwnComment = comment.isOwnComment;
 
+    // 스포일러 처리 관련 함수
+    const handleSpoilerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        // 마우스 클릭시에도 블러가 해제되도록 추가 (터치 스크린용)
+        const target = e.currentTarget;
+        target.classList.remove("blur-[12px]");
+        target.classList.add("blur-none");
+        // 경고문구 숨기기
+        const warningEl = target.nextElementSibling;
+        if (warningEl) {
+            warningEl.classList.add("opacity-0");
+        }
+    };
+
     const handleLike = async () => {
         await onLike(comment.id, isLiked);
         
-        // depth 2 이상에서도 좌아요가 즉시 반영되도록 직접 업데이트
+        // depth 2 이상에서도 좋아요가 즉시 반영되도록 직접 업데이트
         if (depth >= 2) {
             // 로컬 상태 업데이트
             comment.likes = isLiked ? comment.likes - 1 : comment.likes + 1;
@@ -113,7 +138,7 @@ export function CommentItem({
 
                 <div className="flex-1 overflow-hidden">
                     <div className="flex items-start justify-between">
-                        <div className="flex flex-col">
+                        <div className="flex-1">
                             <div className="flex items-center gap-2">
                                 <span className="font-medium text-foreground text-sm">
                                     {comment.authorName}
@@ -127,11 +152,46 @@ export function CommentItem({
                                 </span>
                             </div>
                             
-                            <div className="whitespace-pre-wrap break-words text-foreground text-sm mt-1">
-                                {comment.content}
+                            {/* 댓글 내용 (스포일러 처리) */}
+                            <div className="whitespace-pre-wrap break-words text-foreground text-sm mt-2 mb-2">
+                                {/* 스포일러가 아니거나 게임을 플레이한 경우 - 그냥 내용 표시 */}
+                                {(!isSpoiler || hasPlayedGame) ? (
+                                    <>
+                                        {/* 게임을 플레이했더라도 스포일러면 경고 표시 */}
+                                        {isSpoiler && hasPlayedGame && (
+                                            <SpoilerWarning isOwnComment={isOwnComment} />
+                                        )}
+                                        <div>{comment.content}</div>
+                                    </>
+                                ) : (
+                                    /* 스포일러인 경우 */
+                                    <>
+                                        {/* 내가 쓴 스포일러 - 블러 없이 표시하고 경고 문구만 */}
+                                        {isOwnComment ? (
+                                            <>
+                                                <SpoilerWarning isOwnComment={true} />
+                                                <div>{comment.content}</div>
+                                            </>
+                                        ) : (
+                                            /* 다른 사람의 스포일러 - 블러 처리 및 경고 문구 */
+                                            <div className="relative cursor-pointer group">
+                                                <div 
+                                                    className="blur-[12px] select-none group-hover:blur-none transition-all duration-200 p-2"
+                                                    onClick={handleSpoilerClick}
+                                                >
+                                                    {comment.content}
+                                                </div>
+                                                <div className="absolute inset-0 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity duration-200 text-amber-500 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-900/30 backdrop-blur-sm p-2 rounded">
+                                                    <AlertTriangle className="h-4 w-4 mr-1" />
+                                                    <span>스포일러 내용입니다. 게임을 플레이한 후 확인하세요.</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
                             </div>
                             
-                            <div className="flex items-center gap-4 mt-2">
+                            <div className="flex items-center gap-4">
                                 <button
                                     className={`text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors ${isLiked ? "text-blue-500 dark:text-blue-400" : ""}`}
                                     onClick={handleLike}
@@ -154,7 +214,7 @@ export function CommentItem({
                         </div>
 
                         {comment.isOwnComment && (
-                            <div className="flex gap-2 text-xs text-muted-foreground">
+                            <div className="flex gap-2 text-xs text-muted-foreground whitespace-nowrap ml-2">
                                 <button 
                                     className="hover:text-foreground transition-colors"
                                     onClick={() => setIsEditing(true)}
