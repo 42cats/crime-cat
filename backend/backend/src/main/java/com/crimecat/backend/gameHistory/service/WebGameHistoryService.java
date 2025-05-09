@@ -1,14 +1,8 @@
 package com.crimecat.backend.gameHistory.service;
 
-import com.crimecat.backend.gametheme.repository.CrimesceneThemeRepository;
-import com.crimecat.backend.guild.domain.Guild;
-import com.crimecat.backend.guild.repository.GuildRepository;
-import com.crimecat.backend.guild.service.bot.GuildQueryService;
-import com.crimecat.backend.guild.service.bot.GuildService;
-import com.crimecat.backend.user.domain.User;
-import com.crimecat.backend.user.service.UserService;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gameHistory.domain.GameHistory;
+import com.crimecat.backend.gameHistory.dto.CheckPlayResponseDto;
 import com.crimecat.backend.gameHistory.dto.GameHistoryUpdateRequestDto;
 import com.crimecat.backend.gameHistory.dto.SaveUserGameHistoryRequestDto;
 import com.crimecat.backend.gameHistory.dto.SaveUserHistoryResponseDto;
@@ -16,9 +10,17 @@ import com.crimecat.backend.gameHistory.dto.UserGameHistoryToOwnerDto;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryToUserDto;
 import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
+import com.crimecat.backend.gametheme.repository.CrimesceneThemeRepository;
 import com.crimecat.backend.gametheme.repository.GameThemeRepository;
 import com.crimecat.backend.gametheme.service.GameThemeService;
+import com.crimecat.backend.guild.domain.Guild;
+import com.crimecat.backend.guild.repository.GuildRepository;
+import com.crimecat.backend.guild.service.bot.GuildQueryService;
+import com.crimecat.backend.guild.service.bot.GuildService;
+import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.user.service.UserService;
 import com.crimecat.backend.webUser.domain.WebUser;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -137,4 +139,10 @@ public class WebGameHistoryService {
 		gameHistoryQueryService.save(gameHistory);
 	}
 
+	public CheckPlayResponseDto checkHasPlayed(UUID gameThemeId,WebUser currentWebUser) {
+		boolean hasPlayed = gameHistoryRepository.existsByDiscordUserIdAndGameThemeId(
+				gameThemeId, currentWebUser.getUser()
+						.getId());
+		return CheckPlayResponseDto.from(hasPlayed);
+	}
 }
