@@ -11,19 +11,18 @@ import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.repository.GameThemeRepository;
+import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import com.crimecat.backend.webUser.domain.WebUser;
-import com.crimecat.backend.webUser.repository.WebUserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -100,31 +99,31 @@ public class CommentService {
     @Transactional
     public void deleteComment(UUID commentId, UUID userId) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new EntityNotFoundException("댓글을 찾을 수 없습니다"));
+                .orElseThrow(ErrorStatus.NOT_FOUND_COMMENT::asServiceException);
         
         // 댓글 작성자 본인만 삭제 가능
         if (!comment.getAuthorId().equals(userId)) {
-            throw new AccessDeniedException("댓글을 삭제할 권한이 없습니다");
+            throw ErrorStatus.FORBIDDEN.asServiceException();
         }
         
         comment.delete();
         commentRepository.save(comment);
         
-        // 대댓글도 함께 삭제 처리
-        if (comment.getParentId() == null) {
-            List<Comment> replies = commentRepository.findByParentIdAndIsDeletedFalse(commentId, Sort.by(Sort.Direction.ASC, "createdAt"));
-            for (Comment reply : replies) {
-                reply.delete();
-                commentRepository.save(reply);
-            }
-        }
+//        // 대댓글도 함께 삭제 처리
+//        if (comment.getParentId() == null) {
+//            List<Comment> replies = commentRepository.findByParentIdAndIsDeletedFalse(commentId, Sort.by(Sort.Direction.ASC, "createdAt"));
+//            for (Comment reply : replies) {
+//                reply.delete();
+//                commentRepository.save(reply);
+//            }
+//        }
     }
     
     // 댓글 목록 조회 (SortType을 통한 정렬 옵션 적용)
     @Transactional(readOnly = true)
     public Page<CommentResponse> getComments(UUID gameThemeId, UUID userId, int page, int size, CommentSortType sortType) {
         Pageable pageable = PageRequest.of(page, size, sortType.getSort());
-        Page<Comment> comments = commentRepository.findByGameThemeIdAndParentIdIsNullAndIsDeletedFalse(
+        Page<Comment> comments = commentRepository.findByGameThemeIdAndParentIdIsNull(
                 gameThemeId, pageable);
         
         boolean canViewSpoiler = hasPlayedGameTheme(userId, gameThemeId);
@@ -142,7 +141,7 @@ public class CommentService {
     @Transactional(readOnly = true)
     public Page<CommentResponse> getPublicComments(UUID gameThemeId, int page, int size, CommentSortType sortType) {
         Pageable pageable = PageRequest.of(page, size, sortType.getSort());
-        Page<Comment> comments = commentRepository.findByGameThemeIdAndParentIdIsNullAndIsDeletedFalse(
+        Page<Comment> comments = commentRepository.findByGameThemeIdAndParentIdIsNull(
                 gameThemeId, pageable);
         
         // 비로그인 사용자는 스포일러 내용을 볼 수 없음

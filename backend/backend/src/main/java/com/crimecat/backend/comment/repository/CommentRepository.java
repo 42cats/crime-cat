@@ -15,7 +15,9 @@ public interface CommentRepository extends JpaRepository<Comment, UUID> {
     // 게임 테마에 대한 최상위 댓글 조회 (페이징, 정렬 옵션 적용)
     Page<Comment> findByGameThemeIdAndParentIdIsNullAndIsDeletedFalse(
             UUID gameThemeId, Pageable pageable);
-    
+
+    Page<Comment> findByGameThemeIdAndParentIdIsNull(UUID gameThemeId, Pageable pageable);
+
     // 부모 댓글에 대한 대댓글 조회
     List<Comment> findByParentIdAndIsDeletedFalse(UUID parentId, Sort sort);
     

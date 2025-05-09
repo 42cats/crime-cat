@@ -17,6 +17,7 @@ public enum ErrorStatus {
     LOGIN_REQUIRED("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED),                 // 401
 
     // 🔎 조회 실패
+    NOT_FOUND_COMMENT("댓글을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     BUTTON_ID_NOT_EXISTS("버튼을 찾을 수 없습니다.", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),              // 404
     GUILD_NOT_FOUND("길드를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),              // 404
