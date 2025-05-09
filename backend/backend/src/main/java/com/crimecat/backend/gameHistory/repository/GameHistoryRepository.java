@@ -130,8 +130,8 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 * - 스포일러 기능(게임을 플레이한 사용자에게만 보이는 기능)을 위한 메서드
 	 */
 	@Query("SELECT COUNT(gh) > 0 FROM GameHistory gh " +
-			"JOIN gh.discordUser du " +
-			"JOIN du.webUser wu " +
-			"WHERE wu.id = :userId AND gh.gameTheme.id = :gameThemeId")
-	boolean existsByDiscordUserIdAndGameThemeId(@Param("userId") UUID userId, @Param("gameThemeId") UUID gameThemeId);
+			"JOIN gh.user u " +
+			"JOIN u.webUser wu " +
+			"WHERE wu.id = :webUserId AND gh.gameTheme.id = :gameThemeId")
+	boolean existsByDiscordUserIdAndGameThemeId(@Param("userId") UUID webUserId, @Param("gameThemeId") UUID gameThemeId);
 }
