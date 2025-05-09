@@ -269,12 +269,6 @@ export function CommentList({
                 </RadioGroup>
             </div>
 
-            <div className="mb-6">
-                <CommentForm onSubmit={handleCreateComment} />
-            </div>
-
-            <Separator className="my-6" />
-
             {comments.length === 0 && !isLoading ? (
                 <div className="py-12 text-center text-muted-foreground">
                     아직 댓글이 없습니다. 첫 댓글을 작성해보세요!
@@ -315,6 +309,11 @@ export function CommentList({
                     )}
                 </div>
             )}
+            <Separator className="my-6" />
+
+            <div className="mb-6">
+                <CommentForm onSubmit={handleCreateComment} />
+            </div>
 
             {/* 로그인 필요 다이얼로그 */}
             <AlertDialog
