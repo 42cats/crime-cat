@@ -208,12 +208,12 @@ public class CommentService {
     }
     
     // 해당 게임 테마를 플레이했는지 확인 (스포일러 표시 여부 결정)
-    private boolean hasPlayedGameTheme(UUID userId, UUID gameThemeId) {
+    private boolean hasPlayedGameTheme(UUID webUserId, UUID gameThemeId) {
         // userId가 null이면 (비로그인 사용자) 게임을 플레이하지 않은 것으로 간주
-        if (userId == null) {
+        if (webUserId == null) {
             return false;
         }
         // GameHistory를 통해 확인
-        return gameHistoryRepository.existsByDiscordUserIdAndGameThemeId(userId, gameThemeId);
+        return gameHistoryRepository.existsByDiscordUserIdAndGameThemeId(webUserId, gameThemeId);
     }
 }
