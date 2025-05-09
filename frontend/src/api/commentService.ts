@@ -1,4 +1,4 @@
-import axios from "axios";
+import { apiClient } from "@/lib/api";
 import { Comment, CommentRequest, CommentPage } from "@/types/comment";
 
 export const commentService = {
@@ -10,14 +10,13 @@ export const commentService = {
         sortType = "LATEST", // LATEST, OLDEST, LIKES 등 백엔드에서 지원하는 정렬 옵션
         isAuthenticated = false // 로그인 상태를 매개변수로 받음
     ): Promise<CommentPage> => {
-        const BASE_URL = isAuthenticated
-            ? `/api/v1/gamethemes/${gameThemeId}/comments`
-            : `/api/v1/public/gamethemes/${gameThemeId}/comments`;
+        const basePath = isAuthenticated
+            ? `/gamethemes/${gameThemeId}/comments`
+            : `/public/gamethemes/${gameThemeId}/comments`;
         
-        const response = await axios.get(BASE_URL, {
+        return apiClient.get(basePath, {
             params: { page, size, sortType },
         });
-        return response.data;
     },
 
     // 댓글 작성
@@ -26,11 +25,7 @@ export const commentService = {
         commentData: CommentRequest
     ): Promise<Comment> => {
         // 로그인된 사용자만 실행 가능하므로 인증 경로 사용
-        const response = await axios.post(
-            `/api/v1/gamethemes/${gameThemeId}/comments`,
-            commentData
-        );
-        return response.data;
+        return apiClient.post(`/gamethemes/${gameThemeId}/comments`, commentData);
     },
 
     // 댓글 수정
@@ -39,11 +34,7 @@ export const commentService = {
         commentId: string,
         commentData: CommentRequest
     ): Promise<Comment> => {
-        const response = await axios.put(
-            `/api/v1/gamethemes/${gameThemeId}/comments/${commentId}`,
-            commentData
-        );
-        return response.data;
+        return apiClient.put(`/gamethemes/${gameThemeId}/comments/${commentId}`, commentData);
     },
 
     // 댓글 삭제
@@ -51,7 +42,7 @@ export const commentService = {
         gameThemeId: string,
         commentId: string
     ): Promise<void> => {
-        return axios.delete(`/api/v1/gamethemes/${gameThemeId}/comments/${commentId}`);
+        return apiClient.delete(`/gamethemes/${gameThemeId}/comments/${commentId}`);
     },
 
     // 댓글 좋아요
@@ -59,9 +50,7 @@ export const commentService = {
         gameThemeId: string,
         commentId: string
     ): Promise<void> => {
-        return axios.post(
-            `/api/v1/gamethemes/${gameThemeId}/comments/${commentId}/like`
-        );
+        return apiClient.post(`/gamethemes/${gameThemeId}/comments/${commentId}/like`);
     },
 
     // 댓글 좋아요 취소
@@ -69,19 +58,15 @@ export const commentService = {
         gameThemeId: string,
         commentId: string
     ): Promise<void> => {
-        return axios.delete(
-            `/api/v1/gamethemes/${gameThemeId}/comments/${commentId}/like`
-        );
+        return apiClient.delete(`/gamethemes/${gameThemeId}/comments/${commentId}/like`);
     },
 
     // 사용자가 해당 게임을 플레이했는지 확인 (스포일러 표시 여부용)
     checkGamePlayed: async (gameThemeId: string): Promise<boolean> => {
         try {
             // 실제 API 엔드포인트는 프로젝트에 맞게 수정 필요
-            const response = await axios.get(
-                `/api/v1/histories/check-played/${gameThemeId}`
-            );
-            return response.data.hasPlayed;
+            const response = await apiClient.get<{hasPlayed: boolean}>(`/histories/check-played/${gameThemeId}`);
+            return response.hasPlayed;
         } catch (error) {
             console.error("게임 플레이 여부 확인 중 오류 발생:", error);
             return false;
