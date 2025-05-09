@@ -20,6 +20,8 @@ public interface CommentRepository extends JpaRepository<Comment, UUID> {
 
     // 부모 댓글에 대한 대댓글 조회
     List<Comment> findByParentIdAndIsDeletedFalse(UUID parentId, Sort sort);
+
+    List<Comment> findByParentId(UUID parentId, Sort sort);
     
     // 특정 사용자가 작성한 댓글 조회
     Page<Comment> findByAuthorIdAndIsDeletedFalse(
