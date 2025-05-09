@@ -11,8 +11,8 @@ import java.util.UUID;
 @Repository
 public interface CommentLikeRepository extends JpaRepository<CommentLike, UUID> {
     // 사용자가 특정 댓글에 좋아요를 눌렀는지 확인
-    boolean existsByUserIdAndCommentId(UUID userId, UUID commentId);
-    
+    boolean existsByUser_IdAndComment_Id(UUID userId, UUID commentId);
+
     // 사용자의 특정 댓글 좋아요 찾기
     Optional<CommentLike> findByUserIdAndCommentId(UUID userId, UUID commentId);
     

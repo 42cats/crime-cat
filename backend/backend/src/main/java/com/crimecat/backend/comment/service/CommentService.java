@@ -90,7 +90,8 @@ public class CommentService {
             replies = getCommentReplies(commentId, userId, CommentSortType.OLDEST);
         }
         
-        boolean isLiked = commentLikeRepository.existsByUserIdAndCommentId(userId, commentId);
+        boolean isLiked = commentLikeRepository.existsByUser_IdAndComment_Id(userId, commentId);
+        log.info("like me ={}", isLiked);
         boolean canViewSpoiler = hasPlayedGameTheme(userId, comment.getGameThemeId());
         
         return CommentResponse.from(updatedComment, isLiked, true, canViewSpoiler, replies);
@@ -130,7 +131,8 @@ public class CommentService {
         boolean canViewSpoiler = hasPlayedGameTheme(userId, gameThemeId);
         
         return comments.map(comment -> {
-            boolean isLiked = commentLikeRepository.existsByUserIdAndCommentId(userId, comment.getId());
+            boolean isLiked = commentLikeRepository.existsByUser_IdAndComment_Id(userId, comment.getId());
+            log.info("like me ={}", isLiked);
             boolean isOwnComment = comment.getAuthorId().equals(userId);
             List<CommentResponse> replies = getCommentReplies(comment.getId(), userId, CommentSortType.OLDEST);
             
@@ -167,7 +169,7 @@ public class CommentService {
         List<CommentResponse> replyResponses = new ArrayList<>();
         
         for (Comment reply : replies) {
-            boolean isLiked = commentLikeRepository.existsByUserIdAndCommentId(userId, reply.getId());
+            boolean isLiked = commentLikeRepository.existsByUser_IdAndComment_Id(userId, reply.getId());
             boolean isOwnReply = reply.getAuthorId().equals(userId);
             boolean canViewSpoiler = hasPlayedGameTheme(userId, reply.getGameThemeId());
             
@@ -200,7 +202,7 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("댓글을 찾을 수 없습니다"));
         
-        boolean exists = commentLikeRepository.existsByUserIdAndCommentId(userId, commentId);
+        boolean exists = commentLikeRepository.existsByUser_IdAndComment_Id(userId, commentId);
         
         if (!exists) {
             CommentLike commentLike = CommentLike.from(commentId, userId);
