@@ -162,7 +162,7 @@ public class CommentService {
     
     // 대댓글 조회
     private List<CommentResponse> getCommentReplies(UUID commentId, UUID userId, CommentSortType sortType) {
-        List<Comment> replies = commentRepository.findByParentIdAndIsDeletedFalse(commentId, sortType.getSort());
+        List<Comment> replies = commentRepository.findByParentId(commentId, sortType.getSort());
         List<CommentResponse> replyResponses = new ArrayList<>();
         
         for (Comment reply : replies) {
@@ -178,7 +178,7 @@ public class CommentService {
     
     // 비로그인 사용자를 위한 대댓글 조회 (스포일러 아닌 내용만)
     private List<CommentResponse> getPublicCommentReplies(UUID commentId, CommentSortType sortType) {
-        List<Comment> replies = commentRepository.findByParentIdAndIsDeletedFalse(commentId, sortType.getSort());
+        List<Comment> replies = commentRepository.findByParentId(commentId, sortType.getSort());
         List<CommentResponse> replyResponses = new ArrayList<>();
         
         for (Comment reply : replies) {

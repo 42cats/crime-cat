@@ -116,8 +116,75 @@ export function CommentItem({
 
     if (isDeleted) {
         return (
-            <div className="py-3 px-3 text-muted-foreground text-sm">
-                삭제된 댓글입니다.
+            <div className="py-3 border-b border-border/50 last:border-0 transition-colors duration-200">
+                <div className="flex gap-3">
+                    <Avatar className="h-8 w-8 rounded-full border bg-muted/20 shrink-0">
+                        <AvatarImage
+                            src={comment.authorProfileImage}
+                            alt={comment.authorName}
+                        />
+                        <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                            {comment.authorName.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1 overflow-hidden">
+                        <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-medium text-foreground text-sm">
+                                        {comment.authorName}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        {format(
+                                            new Date(comment.createdAt),
+                                            "yyyy-MM-dd HH:mm",
+                                            { locale: ko }
+                                        )}
+                                    </span>
+                                </div>
+                                
+                                <div className="whitespace-pre-wrap break-words text-muted-foreground text-sm mt-2 mb-2 italic">
+                                    삭제된 댓글입니다.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* 삭제된 댓글은 온곤 삭제되지만 답글은 유지 */}
+                        {comment.replies && comment.replies.length > 0 && (
+                            <div className="mt-2 ml-0 md:ml-4">
+                                <div className="flex items-center mb-1">
+                                    <button
+                                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                        onClick={() => setShowReplies(!showReplies)}
+                                    >
+                                        {showReplies
+                                            ? "답글 숨기기"
+                                            : `답글 ${comment.replies.length}개 보기`}
+                                    </button>
+                                </div>
+
+                                {showReplies && (
+                                    <div className="space-y-4">
+                                        {comment.replies.map((reply) => (
+                                            <CommentItem
+                                                key={reply.id}
+                                                comment={reply}
+                                                gameThemeId={gameThemeId}
+                                                hasPlayedGame={hasPlayedGame}
+                                                onReply={onReply}
+                                                onUpdate={onUpdate}
+                                                onDelete={onDelete}
+                                                onLike={onLike}
+                                                depth={depth + 1}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         );
     }
