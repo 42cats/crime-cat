@@ -1,5 +1,6 @@
 package com.crimecat.backend.comment.domain;
 
+import com.crimecat.backend.comment.dto.CommentRequest;
 import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
@@ -103,5 +104,16 @@ public class Comment {
         if (this.likes > 0) {
             this.likes--;
         }
+    }
+
+    public static Comment from(UUID gameThemeId, UUID userId, CommentRequest request){
+        return Comment.builder()
+            .content(request.getContent())
+            .gameThemeId(gameThemeId)
+            .authorId(userId)
+            .parentId(request.getParentId())
+            .isSpoiler(request.isSpoiler())
+            .updatedAt(LocalDateTime.now())
+            .build();
     }
 }

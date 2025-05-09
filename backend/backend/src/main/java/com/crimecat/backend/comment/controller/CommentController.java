@@ -3,6 +3,7 @@ package com.crimecat.backend.comment.controller;
 import com.crimecat.backend.comment.dto.CommentRequest;
 import com.crimecat.backend.comment.dto.CommentResponse;
 import com.crimecat.backend.comment.service.CommentService;
+import com.crimecat.backend.comment.sort.CommentSortType;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/gamethemes/{gameThemeId}/comments")
+@RequestMapping("/api/v1/gamethemes/{gameThemeId}/comments")
 @RequiredArgsConstructor
 public class CommentController {
     private final CommentService commentService;
@@ -54,27 +55,16 @@ public class CommentController {
         return ResponseEntity.noContent().build();
     }
     
-    // 댓글 목록 조회 (최신순)
+    // 댓글 목록 조회 (정렬 옵션 적용)
     @GetMapping
     public ResponseEntity<Page<CommentResponse>> getComments(
             @PathVariable UUID gameThemeId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "LATEST") CommentSortType sortType,
             @AuthenticationPrincipal WebUser currentUser) {
         
-        Page<CommentResponse> comments = commentService.getComments(gameThemeId, currentUser.getId(), page, size);
-        return ResponseEntity.ok(comments);
-    }
-    
-    // 댓글 목록 조회 (인기순)
-    @GetMapping("/popular")
-    public ResponseEntity<Page<CommentResponse>> getPopularComments(
-            @PathVariable UUID gameThemeId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @AuthenticationPrincipal WebUser currentUser) {
-        
-        Page<CommentResponse> comments = commentService.getPopularComments(gameThemeId, currentUser.getId(), page, size);
+        Page<CommentResponse> comments = commentService.getComments(gameThemeId, currentUser.getId(), page, size, sortType);
         return ResponseEntity.ok(comments);
     }
     
