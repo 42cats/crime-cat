@@ -27,8 +27,11 @@ public class CommentResponse {
     @JsonProperty("isSpoiler")
     private boolean isSpoiler;
     private int likes;
+    @JsonProperty("isLikedByCurrentUser")
     private boolean isLikedByCurrentUser;
+    @JsonProperty("isOwnComment")
     private boolean isOwnComment;
+    @JsonProperty("isDeleted;")
     private boolean isDeleted;
     private List<CommentResponse> replies;
     

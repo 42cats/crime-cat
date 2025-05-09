@@ -92,7 +92,7 @@ export const commentService = {
         try {
             // 실제 API 엔드포인트는 프로젝트에 맞게 수정 필요
             const response = await axios.get(
-                `/api/gamehistories/check-played/${gameThemeId}`
+                `/api/v1/histories/check-played/${gameThemeId}`
             );
             return response.data.hasPlayed;
         } catch (error) {

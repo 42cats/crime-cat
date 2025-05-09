@@ -34,7 +34,7 @@ public class CommentLike {
     private UUID userId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "USER_ID", updatable = false, insertable = false)
+    @JoinColumn(name = "USER_ID", referencedColumnName = "ID",updatable = false, insertable = false)
     private WebUser user;
 
     @JdbcTypeCode(SqlTypes.BINARY)
@@ -42,7 +42,7 @@ public class CommentLike {
     private UUID commentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "COMMENT_ID", updatable = false, insertable = false)
+    @JoinColumn(name = "COMMENT_ID", referencedColumnName = "ID",updatable = false, insertable = false)
     private Comment comment;
 
     @CreatedDate
