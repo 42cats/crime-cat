@@ -1,22 +1,22 @@
 import axios from "axios";
 import { Comment, CommentRequest, CommentPage } from "@/types/comment";
 
-const BASE_URL = "/api/v1/gamethemes";
-
 export const commentService = {
     // 댓글 목록 조회 (정렬 옵션 적용)
     getComments: async (
         gameThemeId: string,
         page = 0,
         size = 10,
-        sortType = "LATEST" // LATEST, OLDEST, LIKES 등 백엔드에서 지원하는 정렬 옵션
+        sortType = "LATEST", // LATEST, OLDEST, LIKES 등 백엔드에서 지원하는 정렬 옵션
+        isAuthenticated = false // 로그인 상태를 매개변수로 받음
     ): Promise<CommentPage> => {
-        const response = await axios.get(
-            `${BASE_URL}/${gameThemeId}/comments`,
-            {
-                params: { page, size, sortType },
-            }
-        );
+        const BASE_URL = isAuthenticated
+            ? `/api/v1/gamethemes/${gameThemeId}/comments`
+            : `/api/v1/public/gamethemes/${gameThemeId}/comments`;
+        
+        const response = await axios.get(BASE_URL, {
+            params: { page, size, sortType },
+        });
         return response.data;
     },
 
@@ -25,8 +25,9 @@ export const commentService = {
         gameThemeId: string,
         commentData: CommentRequest
     ): Promise<Comment> => {
+        // 로그인된 사용자만 실행 가능하므로 인증 경로 사용
         const response = await axios.post(
-            `${BASE_URL}/${gameThemeId}/comments`,
+            `/api/v1/gamethemes/${gameThemeId}/comments`,
             commentData
         );
         return response.data;
@@ -39,7 +40,7 @@ export const commentService = {
         commentData: CommentRequest
     ): Promise<Comment> => {
         const response = await axios.put(
-            `${BASE_URL}/${gameThemeId}/comments/${commentId}`,
+            `/api/v1/gamethemes/${gameThemeId}/comments/${commentId}`,
             commentData
         );
         return response.data;
@@ -50,7 +51,7 @@ export const commentService = {
         gameThemeId: string,
         commentId: string
     ): Promise<void> => {
-        return axios.delete(`${BASE_URL}/${gameThemeId}/comments/${commentId}`);
+        return axios.delete(`/api/v1/gamethemes/${gameThemeId}/comments/${commentId}`);
     },
 
     // 댓글 좋아요
@@ -59,7 +60,7 @@ export const commentService = {
         commentId: string
     ): Promise<void> => {
         return axios.post(
-            `${BASE_URL}/${gameThemeId}/comments/${commentId}/like`
+            `/api/v1/gamethemes/${gameThemeId}/comments/${commentId}/like`
         );
     },
 
@@ -69,7 +70,7 @@ export const commentService = {
         commentId: string
     ): Promise<void> => {
         return axios.delete(
-            `${BASE_URL}/${gameThemeId}/comments/${commentId}/like`
+            `/api/v1/gamethemes/${gameThemeId}/comments/${commentId}/like`
         );
     },
 
