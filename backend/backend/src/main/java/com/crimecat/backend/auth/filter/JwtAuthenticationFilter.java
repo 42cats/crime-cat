@@ -1,7 +1,6 @@
 package com.crimecat.backend.auth.filter;
 
 import com.crimecat.backend.auth.jwt.JwtTokenProvider;
-import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import com.crimecat.backend.auth.service.JwtBlacklistService;
 import com.crimecat.backend.auth.service.RefreshTokenService;
 import com.crimecat.backend.utils.TokenCookieUtil;
@@ -93,7 +92,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void authenticateUser(WebUser webUser, HttpServletRequest request) {
         UsernamePasswordAuthenticationToken authentication =
             new UsernamePasswordAuthenticationToken(
-                new DiscordOAuth2User(webUser, null, null),
+                webUser,                    // WebUser 직접 사용
                 null,
                 webUser.getAuthorities()
             );

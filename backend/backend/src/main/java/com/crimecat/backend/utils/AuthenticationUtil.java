@@ -1,6 +1,5 @@
 package com.crimecat.backend.utils;
 
-import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import com.crimecat.backend.user.domain.DiscordUser;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.exception.CrimeCatException;
@@ -39,12 +38,11 @@ public class AuthenticationUtil {
 
       Object principal = authentication.getPrincipal();
 
-      if (!(principal instanceof DiscordOAuth2User)) {
+      if (!(principal instanceof WebUser)) {
         throw ErrorStatus.INVALID_ACCESS.asException();
       }
 
-      DiscordOAuth2User discordUser = (DiscordOAuth2User) principal;
-      WebUser webUser = discordUser.getWebUser();
+      WebUser webUser = (WebUser) principal;
 
       if (webUser == null) {
         throw ErrorStatus.USER_NOT_FOUND.asException();
@@ -76,11 +74,11 @@ public class AuthenticationUtil {
 
     Object principal = authentication.getPrincipal();
 
-    if (!(principal instanceof DiscordOAuth2User discordUser)) {
+    if (!(principal instanceof WebUser webUser)) {
       return Optional.empty();
     }
 
-    return Optional.of(discordUser.getWebUser());
+    return Optional.of(webUser);
   }
 
   public static Optional<UUID> getCurrentWebUserIdOptional() {
@@ -115,7 +113,7 @@ public class AuthenticationUtil {
   public static boolean isAuthenticated() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     return authentication != null && authentication.isAuthenticated() &&
-        authentication.getPrincipal() instanceof DiscordOAuth2User;
+        authentication.getPrincipal() instanceof WebUser;
   }
 
   /**

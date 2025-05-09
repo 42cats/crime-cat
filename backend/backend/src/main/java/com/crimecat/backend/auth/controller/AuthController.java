@@ -14,6 +14,7 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,14 +39,29 @@ public class AuthController {
 
     @GetMapping("/login-success")
     public ResponseEntity<?> redirectLoginSuccess(HttpServletResponse response, Principal principal) throws IOException {
-        String webUserId = principal.getName();
-        log.info("🔐 [OAuth 로그인 성공] 사용자 ID: {}", webUserId);
-
-        WebUser webUser = webUserRepository.findById(UUID.fromString(webUserId))
-                .orElseThrow(() -> new IllegalArgumentException("해당 유저 없음"));
-        log.info("🔍 [유저 확인 완료] 닉네임: {}", webUser.getNickname());
+        // Principal이 직접 WebUser 인스턴스인지 확인
+        WebUser webUser = null;
+        if (principal instanceof UsernamePasswordAuthenticationToken) {
+            Object principalObj = ((UsernamePasswordAuthenticationToken) principal).getPrincipal();
+            if (principalObj instanceof WebUser) {
+                webUser = (WebUser) principalObj;
+            }
+        }
         
-        String accessToken = jwtTokenProvider.createAccessToken(webUserId, webUser.getNickname(),webUser.getDiscordUserSnowflake());
+        String webUserId;
+        if (webUser != null) {
+            webUserId = webUser.getId().toString();
+            log.info("🔐 [OAuth 로그인 성공] WebUser 객체에서 직접 ID 사용: {}", webUserId);
+        } else {
+            webUserId = principal.getName();
+            log.info("🔐 [OAuth 로그인 성공] Principal에서 ID 사용: {}", webUserId);
+        }
+
+        WebUser foundWebUser = webUserRepository.findById(UUID.fromString(webUserId))
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저 없음"));
+        log.info("🔍 [유저 확인 완료] 닉네임: {}", foundWebUser.getNickname());
+        
+        String accessToken = jwtTokenProvider.createAccessToken(webUserId, foundWebUser.getNickname(),foundWebUser.getDiscordUserSnowflake());
         String refreshToken = jwtTokenProvider.createRefreshToken(webUserId);
         log.info("✅ [토큰 발급 완료]");
 
@@ -56,21 +72,36 @@ public class AuthController {
         response.addHeader(HttpHeaders.SET_COOKIE,TokenCookieUtil.createRefreshCookie(refreshToken));
         log.info("🍪 [쿠키 설정 완료]");
         return ResponseEntity.ok(Map.of(
-                "nickname", webUser.getNickname(),
+                "nickname", foundWebUser.getNickname(),
                 "message", "로그인 성공"
         ));
     }
 
     @PostMapping("/login-success")
     public ResponseEntity<?> issueToken(HttpServletResponse response, Principal principal) {
-        String webUserId = principal.getName();
-        log.info("🔐 [토큰 요청] 사용자 ID: {}", principal.getName());
+        // Principal이 직접 WebUser 인스턴스인지 확인
+        WebUser webUser = null;
+        if (principal instanceof UsernamePasswordAuthenticationToken) {
+            Object principalObj = ((UsernamePasswordAuthenticationToken) principal).getPrincipal();
+            if (principalObj instanceof WebUser) {
+                webUser = (WebUser) principalObj;
+            }
+        }
+        
+        String webUserId;
+        if (webUser != null) {
+            webUserId = webUser.getId().toString();
+            log.info("🔐 [토큰 요청] WebUser 객체에서 직접 ID 사용: {}", webUserId);
+        } else {
+            webUserId = principal.getName();
+            log.info("🔐 [토큰 요청] Principal에서 ID 사용: {}", webUserId);
+        }
 
-        WebUser webUser = webUserRepository.findById(UUID.fromString(webUserId))
+        WebUser foundWebUser = webUserRepository.findById(UUID.fromString(webUserId))
                 .orElseThrow(() -> new IllegalArgumentException("해당 유저 없음"));
-        log.info("🔍 [유저 확인 완료] 닉네임: {}", webUser.getNickname());
+        log.info("🔍 [유저 확인 완료] 닉네임: {}", foundWebUser.getNickname());
 
-        String accessToken = jwtTokenProvider.createAccessToken(webUserId, webUser.getNickname(),webUser.getDiscordUserSnowflake());
+        String accessToken = jwtTokenProvider.createAccessToken(webUserId, foundWebUser.getNickname(),foundWebUser.getDiscordUserSnowflake());
         String refreshToken = jwtTokenProvider.createRefreshToken(webUserId);
         log.info("✅ [토큰 발급 완료]");
 
@@ -82,7 +113,7 @@ public class AuthController {
         log.info("🍪 [쿠키 설정 완료]");
 
         return ResponseEntity.ok(Map.of(
-                "nickname", webUser.getNickname(),
+                "nickname", foundWebUser.getNickname(),
                 "message", "토큰 발급 완료"
         ));
     }

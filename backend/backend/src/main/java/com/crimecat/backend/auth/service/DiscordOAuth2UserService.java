@@ -21,6 +21,7 @@ import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.repository.UserRepository;
 import com.crimecat.backend.exception.ErrorStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -31,7 +32,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
+// DiscordOAuth2User 임포트 제거
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.service.WebUserService;
 
@@ -70,10 +71,16 @@ public class DiscordOAuth2UserService implements OAuth2UserService<OAuth2UserReq
         long expiresInSeconds = Duration.between(Instant.now(), expiresAt).getSeconds();
 
         log.debug("여기까진 잘오나?={} ",webUser.toString());
-        return new DiscordOAuth2User(
+        
+        // WebUser 객체를 직접 인증 주체로 사용
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
                 webUser,
-                attributes,
-                Collections.singleton(new SimpleGrantedAuthority("ROLE_" + webUser.getRole())));
+                null,
+                Collections.singleton(new SimpleGrantedAuthority("ROLE_" + webUser.getRole()))
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        
+        return webUser; // WebUser 객체 반환
     }
 
     /**
