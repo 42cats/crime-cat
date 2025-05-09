@@ -2,6 +2,7 @@ package com.crimecat.backend.gametheme.controller;
 
 import com.crimecat.backend.gametheme.dto.GetGameThemeResponse;
 import com.crimecat.backend.gametheme.dto.GetGameThemesResponse;
+import com.crimecat.backend.gametheme.dto.GetLikeStatusResponse;
 import com.crimecat.backend.gametheme.service.GameThemeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -24,5 +25,10 @@ public class GameThemePublicController {
     @GetMapping("/{themeId}")
     public GetGameThemeResponse getGameTheme(@PathVariable UUID themeId) {
         return gameThemeService.getGameTheme(themeId);
+    }
+
+    @GetMapping("/{themeId}/like/status")
+    public GetLikeStatusResponse getLikeStatus(@PathVariable UUID themeId) {
+        return new GetLikeStatusResponse(gameThemeService.getLikeStatus(themeId));
     }
 }

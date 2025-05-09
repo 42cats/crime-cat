@@ -72,7 +72,7 @@ export const themesService = {
 
   getLikeStatus: async (id: string): Promise<boolean> => {
     try {
-      const response = await apiClient.get<Like>(`${baseURI}/${id}/like/status`);
+      const response = await apiClient.get<Like>(`${publicBaseURI}/${id}/like/status`);
       return response.status;
     } catch (error) {
       console.error(`좋아요 조회 실패:`, error);
