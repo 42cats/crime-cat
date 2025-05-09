@@ -30,6 +30,7 @@ import org.hibernate.type.SqlTypes;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 @Entity
 @Table(name = "web_users")
@@ -38,7 +39,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WebUser implements UserDetails {
+public class WebUser implements UserDetails, OAuth2User {
 
     // ✅ 고유 ID (UUID → BINARY(16) 저장)
     @Id
@@ -142,7 +143,23 @@ public class WebUser implements UserDetails {
     // ✅ 사용자명 (UserDetails 기준 → 여기선 nickname 사용)
     @Override
     public String getUsername() {
-        return user.getName();
+        return user != null ? user.getName() : nickname;
+    }
+    
+    // OAuth2User 구현 메서드
+    @Override
+    public Map<String, Object> getAttributes() {
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("id", id.toString());
+        attributes.put("nickname", nickname);
+        attributes.put("discordId", discordUserSnowflake);
+        attributes.put("email", email);
+        return attributes;
+    }
+    
+    @Override
+    public String getName() {
+        return id.toString();
     }
 
     // ✅ 계정 만료 여부 (true면 만료 안됨)
