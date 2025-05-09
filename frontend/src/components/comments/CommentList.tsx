@@ -3,7 +3,7 @@ import { useToast } from "@/hooks/useToast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Comment, CommentRequest } from "@/types/comment";
 import { commentService } from "@/api/commentService";
@@ -252,9 +252,13 @@ export function CommentList({
 
     return (
         <div className="mt-12">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold">
-                    댓글 {totalComments > 0 ? `(${totalComments})` : ""}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                    댓글 {totalComments > 0 && (
+                        <span className="text-base px-2 py-0.5 bg-primary/10 text-primary rounded-full">
+                            {totalComments}
+                        </span>
+                    )}
                 </h2>
 
                 <RadioGroup
@@ -262,20 +266,30 @@ export function CommentList({
                     onValueChange={(value) =>
                         handleSortChange(value as CommentSortType)
                     }
-                    className="flex items-center space-x-4"
+                    className="flex items-center space-x-2 p-1 bg-muted/30 rounded-lg"
                 >
                     {Object.entries(sortTypeLabels).map(([type, label]) => (
-                        <div key={type} className="flex items-center space-x-2">
-                            <RadioGroupItem value={type} id={`sort-${type.toLowerCase()}`} />
-                            <Label htmlFor={`sort-${type.toLowerCase()}`}>{label}</Label>
+                        <div key={type} className="flex items-center space-x-1 relative">
+                            <RadioGroupItem 
+                                value={type} 
+                                id={`sort-${type.toLowerCase()}`} 
+                                className="peer sr-only" 
+                            />
+                            <Label 
+                                htmlFor={`sort-${type.toLowerCase()}`} 
+                                className="px-3 py-1.5 text-sm font-medium rounded-md cursor-pointer hover:bg-muted transition-colors duration-150 peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground"
+                            >
+                                {label}
+                            </Label>
                         </div>
                     ))}
                 </RadioGroup>
             </div>
 
             {comments.length === 0 && !isLoading ? (
-                <div className="py-12 text-center text-muted-foreground">
-                    아직 댓글이 없습니다. 첫 댓글을 작성해보세요!
+                <div className="py-12 text-center text-muted-foreground bg-muted/10 rounded-lg border border-dashed border-border">
+                    <MessageSquare className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                    <p className="text-base">아직 댓글이 없습니다. 첫 댓글을 작성해보세요!</p>
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -295,94 +309,120 @@ export function CommentList({
 
                     {/* 페이지네이션 컴포넌트 */}
                     {comments.length > 0 && totalPages > 0 && (
-                        <div className="flex justify-center items-center mt-6 space-x-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handlePageChange(0)}
-                                disabled={currentPage === 0 || isLoading}
-                            >
-                                처음
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handlePageChange(currentPage - 1)}
-                                disabled={currentPage === 0 || isLoading}
-                            >
-                                이전
-                            </Button>
+                        <div className="flex flex-col sm:flex-row justify-center items-center mt-8 gap-4">
+                            <div className="flex items-center gap-1">
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => handlePageChange(0)}
+                                    disabled={currentPage === 0 || isLoading}
+                                    title="처음 페이지"
+                                >
+                                    <span className="sr-only">처음 페이지</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                                    </svg>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 0 || isLoading}
+                                    title="이전 페이지"
+                                >
+                                    <span className="sr-only">이전 페이지</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                </Button>
                             
-                            <div className="flex items-center space-x-1">
-                                {/* 현재 페이지 주변 5개 페이지 버튼만 표시 */}
-                                {Array.from({ length: totalPages })
-                                    .map((_, index) => {
-                                        // 현재 페이지 주변 2개 페이지와 첫/마지막 페이지 표시
-                                        if (
-                                            index === 0 ||
-                                            index === totalPages - 1 ||
-                                            (index >= currentPage - 2 && index <= currentPage + 2)
-                                        ) {
-                                            return (
-                                                <Button
-                                                    key={index}
-                                                    variant={currentPage === index ? "default" : "outline"}
-                                                    size="sm"
-                                                    onClick={() => handlePageChange(index)}
-                                                    disabled={isLoading}
-                                                    className="w-8 h-8 p-0"
-                                                >
-                                                    {index + 1}
-                                                </Button>
-                                            );
-                                        } else if (
-                                            (index === currentPage - 3 && currentPage > 3) ||
-                                            (index === currentPage + 3 && currentPage < totalPages - 4)
-                                        ) {
-                                            // 생략 부호 표시
-                                            return <span key={index}>...</span>;
-                                        }
-                                        return null;
-                                    })
-                                    .filter(Boolean)}
+                                <div className="flex items-center gap-1">
+                                    {/* 현재 페이지 주변 5개 페이지 버튼만 표시 */}
+                                    {Array.from({ length: totalPages })
+                                        .map((_, index) => {
+                                            // 현재 페이지 주변 2개 페이지와 첫/마지막 페이지 표시
+                                            if (
+                                                index === 0 ||
+                                                index === totalPages - 1 ||
+                                                (index >= currentPage - 2 && index <= currentPage + 2)
+                                            ) {
+                                                return (
+                                                    <Button
+                                                        key={index}
+                                                        variant={currentPage === index ? "default" : "outline"}
+                                                        size="icon"
+                                                        onClick={() => handlePageChange(index)}
+                                                        disabled={isLoading}
+                                                        className={`w-8 h-8 p-0 ${currentPage === index ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}`}
+                                                    >
+                                                        <span>{index + 1}</span>
+                                                    </Button>
+                                                );
+                                            } else if (
+                                                (index === currentPage - 3 && currentPage > 3) ||
+                                                (index === currentPage + 3 && currentPage < totalPages - 4)
+                                            ) {
+                                                // 생략 부호 표시
+                                                return <span key={index} className="px-1 text-muted-foreground">...</span>;
+                                            }
+                                            return null;
+                                        })
+                                        .filter(Boolean)}
+                                </div>
+                            
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === totalPages - 1 || isLoading}
+                                    title="다음 페이지"
+                                >
+                                    <span className="sr-only">다음 페이지</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => handlePageChange(totalPages - 1)}
+                                    disabled={currentPage === totalPages - 1 || isLoading}
+                                    title="마지막 페이지"
+                                >
+                                    <span className="sr-only">마지막 페이지</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                        <path fillRule="evenodd" d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                </Button>
                             </div>
                             
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handlePageChange(currentPage + 1)}
-                                disabled={currentPage === totalPages - 1 || isLoading}
-                            >
-                                다음
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handlePageChange(totalPages - 1)}
-                                disabled={currentPage === totalPages - 1 || isLoading}
-                            >
-                                마지막
-                            </Button>
-                            
                             {/* 페이지 크기 선택 */}
-                            <select
-                                className="ml-4 p-1 border rounded text-sm"
-                                value={pageSize}
-                                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                                disabled={isLoading}
-                            >
-                                <option value="5">5개씩</option>
-                                <option value="10">10개씩</option>
-                                <option value="20">20개씩</option>
-                                <option value="50">50개씩</option>
-                            </select>
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-muted-foreground">페이지 크기:</span>
+                                <select
+                                    className="p-1.5 text-sm rounded-md border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                                    value={pageSize}
+                                    onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                                    disabled={isLoading}
+                                >
+                                    <option value="5">5개</option>
+                                    <option value="10">10개</option>
+                                    <option value="20">20개</option>
+                                    <option value="50">50개</option>
+                                </select>
+                            </div>
                         </div>
                     )}
                 </div>
             )}
-            <Separator className="my-6" />
+            <Separator className="my-8" />
 
-            <div className="mb-6">
+            <div className="mb-6 rounded-lg border border-border p-4 bg-muted/5">
                 <CommentForm onSubmit={handleCreateComment} />
             </div>
 
@@ -391,20 +431,21 @@ export function CommentList({
                 open={showLoginDialog}
                 onOpenChange={setShowLoginDialog}
             >
-                <AlertDialogContent>
+                <AlertDialogContent className="max-w-md">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
-                        <AlertDialogDescription>
+                        <AlertDialogTitle className="text-foreground">로그인이 필요합니다</AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
                             댓글 기능은 로그인한 사용자만 이용할 수 있습니다.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>닫기</AlertDialogCancel>
+                        <AlertDialogCancel className="border-border hover:bg-muted">닫기</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => {
                                 setShowLoginDialog(false);
                                 navigate("/login");
                             }}
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
                         >
                             로그인 하러 가기
                         </AlertDialogAction>
