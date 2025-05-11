@@ -88,7 +88,7 @@ async function timerSet(client, message, time) {
 			if (!i.member.permissions.has(PermissionFlagsBits.Administrator)) {
 				return i.reply({ content: '이 타이머를 종료할 권한이 없습니다.', ephemeral: true });
 			}
-			if (i.message.deletable)
+			if (message.deletable && !message.system)
 				i.message.delete();
 			collector.stop(); // 이벤트 수집 종료
 			clearInterval(interval);

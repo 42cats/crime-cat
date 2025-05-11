@@ -392,13 +392,20 @@ class GuildURLManager {
     }
 
     // 모든 리소스 정리
+    // 모든 리소스 정리
     destroy() {
         this.audioPlayerManager.destroy();
         this.playlistManager.destroy();
         this.buttons = [];
         if (this.interactionMsg) {
-            this.interactionMsg.delete();
-            return true;
+            // 시스템 메시지 확인 추가
+            if (this.interactionMsg.deletable && !this.interactionMsg.system) {
+                this.interactionMsg.delete().catch(err => console.error('메시지 삭제 오류:', err));
+                return true;
+            } else {
+                console.log("시스템 메시지이거나 삭제할 수 없는 메시지입니다.");
+                return false;
+            }
         }
         return false;
     }
