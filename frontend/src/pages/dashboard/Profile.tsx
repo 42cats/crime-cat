@@ -197,7 +197,7 @@ const Profile: React.FC = () => {
         };
 
         loadProfileData();
-        loadBadges();
+        // loadBadges();
         loadNotificationSettings();
     }, [fetchProfile, fetchUserBadges, fetchNotificationSettings, user?.id]);
 

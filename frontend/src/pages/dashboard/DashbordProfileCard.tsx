@@ -117,11 +117,11 @@ export const DashboardProfileCard: React.FC<Props> = ({
                     {/* 기본 정보 */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <ProfileField label="닉네임" value={user.nickname} />
-                        <ProfileField label="타이틀" value={user.title} />
+                        {/* <ProfileField label="타이틀" value={user.title} />
                         <ProfileField
                             label="뱃지"
                             value={<Badge>{user.badge || "없음"}</Badge>}
-                        />
+                        /> */}
                         <ProfileField
                             label="포인트"
                             value={
