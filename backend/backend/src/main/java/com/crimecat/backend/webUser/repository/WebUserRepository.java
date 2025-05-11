@@ -27,7 +27,7 @@ public interface WebUserRepository extends JpaRepository<WebUser, UUID> {
      * @param pageable 페이징 정보
      * @return 페이징된 WebUser 목록
      */
-    @Query("SELECT w FROM WebUser w WHERE w.nickname LIKE %:keyword%")
+    @Query("SELECT w FROM WebUser w WHERE w.nickname LIKE CONCAT('%', :keyword, '%')")
     Page<WebUser> findByNicknameContaining(@Param("keyword") String keyword, Pageable pageable);
     
     /**
