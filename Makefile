@@ -52,7 +52,7 @@ copy_env:
 	@echo "${GREEN}복사 완료: .env → frontend/.env, backend/.env, bot/.env${NC}"
 
 # 개발 환경 설정
-local: update_config prepare_migration
+local: create_dirs update_config prepare_migration
 	@echo "${BLUE}개발 환경 설정 중 (config/.env.local → .env)...${NC}"
 	@cp config/.env.local .env
 	@cp config/dockercompose/docker-compose.local.yaml docker-compose.yaml

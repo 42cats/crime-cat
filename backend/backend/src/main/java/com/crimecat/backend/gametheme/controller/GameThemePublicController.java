@@ -26,9 +26,4 @@ public class GameThemePublicController {
     public GetGameThemeResponse getGameTheme(@PathVariable UUID themeId) {
         return gameThemeService.getGameTheme(themeId);
     }
-
-    @GetMapping("/{themeId}/like/status")
-    public GetLikeStatusResponse getLikeStatus(@PathVariable UUID themeId) {
-        return new GetLikeStatusResponse(gameThemeService.getLikeStatus(themeId));
-    }
 }
