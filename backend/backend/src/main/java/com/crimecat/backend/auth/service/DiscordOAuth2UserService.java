@@ -32,7 +32,6 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-// DiscordOAuth2User 임포트 제거
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.service.WebUserService;
 

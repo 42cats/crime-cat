@@ -1,11 +1,7 @@
 package com.crimecat.backend.gameHistory.controller;
 
-import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
-import com.crimecat.backend.gameHistory.dto.CheckPlayResponseDto;
-import com.crimecat.backend.utils.AuthenticationUtil;
-import com.crimecat.backend.utils.sort.SortUtil;
-import com.crimecat.backend.guild.dto.bot.MessageDto;
 import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.gameHistory.dto.CheckPlayResponseDto;
 import com.crimecat.backend.gameHistory.dto.GameHistoryUpdateRequestDto;
 import com.crimecat.backend.gameHistory.dto.SaveUserGameHistoryRequestDto;
 import com.crimecat.backend.gameHistory.dto.SaveUserHistoryResponseDto;
@@ -13,6 +9,9 @@ import com.crimecat.backend.gameHistory.dto.UserGameHistoryToOwnerDto;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryToUserDto;
 import com.crimecat.backend.gameHistory.service.WebGameHistoryService;
 import com.crimecat.backend.gameHistory.sort.GameHistorySortType;
+import com.crimecat.backend.guild.dto.bot.MessageDto;
+import com.crimecat.backend.utils.AuthenticationUtil;
+import com.crimecat.backend.utils.sort.SortUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import java.util.List;
 import java.util.UUID;
@@ -22,8 +21,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -57,9 +54,7 @@ public class WebGameHistoryController {
 			@RequestParam(required = false) List<String> sort,
 			@RequestParam(name = "query", required = false) String keyword // ✅
 	) {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
-		WebUser webUser = principal.getWebUser();
+		WebUser webUser = AuthenticationUtil.getCurrentWebUser();
 		if(!webuserId.equals(webUser.getId().toString())){
 			throw ErrorStatus.INVALID_ACCESS.asControllerException();
 		}
@@ -80,9 +75,7 @@ public class WebGameHistoryController {
 	public MessageDto<?> updateUserGameHistory(@PathVariable("user_snowflake") String discordSnowflake,
 	@PathVariable("guild_snowflake") String guildSnowflake,
 	@RequestBody GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
-	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-	DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
-	WebUser webUser = principal.getWebUser();
+	WebUser webUser = AuthenticationUtil.getCurrentWebUser();
 	webGameHistoryService.WebUpdateGameHistory(webUser, discordSnowflake, guildSnowflake, gameHistoryUpdateRequestDto);
 	return new MessageDto<>("History updated successfully");
 	}
@@ -103,9 +96,7 @@ public class WebGameHistoryController {
 		Sort resolvedSort = SortUtil.combineSorts(sortTypes);
 		Pageable pageable = PageRequest.of(page, size, resolvedSort);
 
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		DiscordOAuth2User principal = (DiscordOAuth2User) authentication.getPrincipal();
-		WebUser webUser = principal.getWebUser();
+		WebUser webUser = AuthenticationUtil.getCurrentWebUser();
 		return ResponseEntity.ok().body(
 				webGameHistoryService.WebGetGuildOwnerHistory(webUser.getUser(), guidId, pageable));
 	}
