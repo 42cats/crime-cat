@@ -71,7 +71,7 @@ module.exports = {
 					break;
 				case `exit`:
 					const isdel = await musicData.destroy();
-					if (!isdel) await interaction.message.delete();
+					if (this.interactionMsg.deletable && !this.interactionMsg.system) await interaction.message.delete();
 					await interaction.client.serverMusicData.delete(guildId);
 					return;
 			}
