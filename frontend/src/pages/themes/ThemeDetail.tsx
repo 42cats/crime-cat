@@ -56,9 +56,8 @@ const ThemeDetail: React.FC = () => {
 
     const { data: liked = false } = useQuery({
         queryKey: ["theme-like", id],
-        queryFn: () =>
-            id ? themesService.getLikeStatus(id) : Promise.resolve(false),
-        enabled: !!id,
+        queryFn: () => id ? themesService.getLikeStatus(id) : Promise.resolve(false),
+        enabled: !!id && !!user?.id,
     });
 
     useEffect(() => {
