@@ -24,3 +24,4 @@ bot/MusicData/**
 frontend/public/content/image/*/**
 /images/**
 docker-compose.yaml
+docker/nginx/conf/http.d/nginx.conf
