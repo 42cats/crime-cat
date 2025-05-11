@@ -101,7 +101,7 @@ module.exports = {
 	*/
 	execute: async (client, interaction, data) => {
 		try {
-			const { head, option } = data;
+			const { head, option, otherOption } = data;
 
 			const isOneTime = option?.[0] === '1';
 			const isAdminOnly = option?.[1] === '1';
@@ -110,6 +110,7 @@ module.exports = {
 			const toDm = option?.[4] === '1';
 			const showOnlyMe = option?.[5] === '1';
 			const labelName = option?.[6] === '1';
+			const isMulti = option?.[7] === '1';  // 추가: 멀티 모드 여부 확인
 			const buttonName = interaction.component?.label || '알 수 없는 버튼';
 
 			await interaction.deferReply({ ephemeral: true }); // 👈 가장 첫 줄에 추가
@@ -125,7 +126,25 @@ module.exports = {
 			// 로그 남기기
 			if (showPressDetail) {
 				try {
-					const originalContent = interaction.message.content || '';
+					let messageToUpdate;
+					
+					// 멀티 모드이고 통계 메시지 ID가 있으면 해당 메시지 업데이트
+					if (isMulti && otherOption) {
+						try {
+							// 통계 메시지 가져오기
+							messageToUpdate = await interaction.channel.messages.fetch(otherOption);
+							console.log(`통계 메시지 가져오기 성공 (메시지 ID: ${otherOption})`);
+						} catch (fetchError) {
+							console.error(`통계 메시지 가져오기 실패 (메시지 ID: ${otherOption}):`, fetchError.message);
+							// 통계 메시지를 가져올 수 없으면 현재 메시지 사용
+							messageToUpdate = interaction.message;
+						}
+					} else {
+						// 단일 모드이거나 통계 메시지 ID가 없으면 현재 메시지 사용
+						messageToUpdate = interaction.message;
+					}
+					
+					const originalContent = messageToUpdate.content || '';
 					const lines = originalContent.split('\n');
 					const userName = interaction.member.displayName;
 					const userLogLines = lines.filter(line => line.startsWith('👤'));
@@ -147,7 +166,8 @@ module.exports = {
 
 					const headerLine = lines.find(line => !line.startsWith('👤')) || '**버튼 로그**';
 					const newContent = [headerLine, ...updatedLogLines].join('\n');
-					await interaction.message.edit({ content: newContent }).catch(err => {
+					
+					await messageToUpdate.edit({ content: newContent }).catch(err => {
 						console.warn(`버튼 로그 업데이트 실패:`, err.message);
 					});
 				} catch (logError) {
