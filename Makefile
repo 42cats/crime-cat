@@ -16,6 +16,7 @@ AVATAR_DIR = images/avatars/
 GAME_THEME_DIR = images/gamethemes/
 MIGRATION_DIR = docker/mariadb/db/migrations
 BACKUP_DIR = backup/$(shell date +%Y%m%d_%H%M%S)
+NGINX_CONF_DIR = docker/nginx/conf/http.d
 
 # 기본 타겟 설정
 .DEFAULT_GOAL := help
@@ -31,7 +32,7 @@ update_config:
 # 디렉토리 생성
 create_dirs:
 	@echo "${BLUE}필요한 디렉토리 확인 및 생성 중...${NC}"
-	@for dir in $(DB_DATA_DIR) $(FRONT_BASE_DIR) ${IMAGE_DATA_DIR} ${AVATAR_DIR} ${GAME_THEME_DIR}; do \
+	@for dir in $(DB_DATA_DIR) $(FRONT_BASE_DIR) ${IMAGE_DATA_DIR} ${AVATAR_DIR} ${GAME_THEME_DIR} ${NGINX_CONF_DIR}; do \
 		if [ ! -d $$dir ]; then \
 			echo "${YELLOW}디렉토리 생성 중: $$dir${NC}"; \
 			mkdir -p $$dir; \
