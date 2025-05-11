@@ -9,12 +9,14 @@ import com.crimecat.backend.user.dto.UserGrantedPermissionDto;
 import com.crimecat.backend.user.service.UserService;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.dto.FindUserInfo;
 import com.crimecat.backend.webUser.dto.NicknameCheckResponseDto;
 import com.crimecat.backend.webUser.dto.NotificationSettingsRequestDto;
 import com.crimecat.backend.webUser.dto.NotificationSettingsResponseDto;
 import com.crimecat.backend.webUser.dto.NotificationToggleRequest;
 import com.crimecat.backend.webUser.dto.UserProfileInfoResponseDto;
 import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
+import com.crimecat.backend.webUser.enums.UserRole;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import com.crimecat.backend.webUser.service.WebUserService;
 import java.util.List;
@@ -137,5 +139,25 @@ public class WebUserController {
     NotificationSettingsResponseDto notificationSettingsResponseDto = webUserService.setAllNotificationSetting(
         userId, body);
     return ResponseEntity.ok().body(notificationSettingsResponseDto);
+  }
+
+  /**
+   * 사용자 검색 API
+   * @param keyword 검색 키워드 (닉네임 또는 Discord Snowflake)
+   * @param searchType 검색 타입("nickname", "discord" 또는 "auto") - 자동 판별 기본값
+   * @param page 페이지 번호 (기본값: 0)
+   * @param size 페이지 크기 (기본값: 10)
+   * @return 검색 결과 및 페이지 정보
+   */
+  @GetMapping("/find/users")
+  public ResponseEntity<FindUserInfo> findUser (
+      @RequestParam(required = false) String keyword,
+      @RequestParam(defaultValue = "auto") String searchType,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size
+  ) {
+    AuthenticationUtil.validateUserHasAuthority(UserRole.USER);
+    FindUserInfo result = webUserService.findUsers(keyword, searchType, page, size);
+    return ResponseEntity.ok(result);
   }
 }

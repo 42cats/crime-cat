@@ -12,11 +12,13 @@ import com.crimecat.backend.user.service.UserPermissionService;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.utils.UserDailyCheckUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.dto.FindUserInfo;
 import com.crimecat.backend.webUser.dto.NicknameCheckResponseDto;
 import com.crimecat.backend.webUser.dto.NotificationSettingsRequestDto;
 import com.crimecat.backend.webUser.dto.NotificationSettingsResponseDto;
 import com.crimecat.backend.webUser.dto.NotificationToggleRequest;
 import com.crimecat.backend.webUser.dto.UserProfileInfoResponseDto;
+import com.crimecat.backend.webUser.dto.UserSearchResponseDto;
 import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
 import com.crimecat.backend.webUser.enums.UserRole;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
@@ -25,8 +27,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -272,5 +279,80 @@ public class WebUserService {
         }
         webUser.setEmailAlarm(body.getEmail());
         return NotificationSettingsResponseDto.from(webUser);
+        }
+
+  /**
+   * 사용자 검색 메소드
+   * @param keyword 검색 키워드
+   * @param searchType 검색 타입 ("nickname", "discord" 또는 "auto")
+   * @param page 페이지 번호
+   * @param size 페이지 크기
+   * @return 검색 결과를 담은 FindUserInfo 객체
+   */
+  @Transactional(readOnly = true)
+  public FindUserInfo findUsers(String keyword, String searchType, int page, int size) {
+    Pageable pageable = PageRequest.of(page, size);
+    Page<UserSearchResponseDto> resultPage;
+    
+    if (keyword == null || keyword.trim().isEmpty()) {
+      // 키워드가 없는 경우 빈 결과 반환
+      return FindUserInfo.builder()
+          .content(java.util.Collections.emptyList())
+          .page(page)
+          .size(size)
+          .totalPages(0)
+          .totalElements(0)
+          .hasNext(false)
+          .hasPrevious(false)
+          .searchType(searchType)
+          .build();
     }
+    
+    // 검색 타입이 자동일 경우, 키워드 형식에 따라 검색 타입 결정
+    if ("auto".equalsIgnoreCase(searchType) || searchType == null) {
+      searchType = determineSearchType(keyword);
+    }
+    
+    if ("discord".equalsIgnoreCase(searchType)) {
+      // Discord Snowflake 검색
+      Page<WebUser> users = webUserRepository.findByDiscordUserSnowflake(keyword, pageable);
+      resultPage = users.map(UserSearchResponseDto::fromForDiscordSnowflake);
+    } else {
+      // 기본값은 닉네임 검색: 부분 일치
+      Page<WebUser> users = webUserRepository.findByNicknameContaining(keyword, pageable);
+      resultPage = users.map(UserSearchResponseDto::fromForNickname);
+    }
+    
+    return FindUserInfo.from(resultPage, searchType);
+  }
+  
+  /**
+   * 키워드 형식에 따라 검색 타입을 결정하는 메소드
+   * @param keyword 검색 키워드
+   * @return 결정된 검색 타입 ("nickname" 또는 "discord")
+   */
+  private String determineSearchType(String keyword) {
+    // Discord Snowflake 형식 확인 (17-19자리 숫자 문자열)
+    if (isDiscordSnowflake(keyword)) {
+      return "discord";
+    }
+    
+    // 기본은 닉네임 검색
+    return "nickname";
+  }
+  
+  /**
+   * Discord Snowflake 형식인지 확인하는 메소드
+   * @param value 확인할 문자열
+   * @return Discord Snowflake 이면 true, 아니면 false
+   */
+  private boolean isDiscordSnowflake(String value) {
+    // Discord Snowflake는 일반적으로 17-19자리의 숫자로 이루어진 문자열
+    if (value == null || value.length() < 17 || value.length() > 19) {
+      return false;
+    }
+    
+    // 모든 문자가 숫자인지 확인
+    return value.matches("^\\d+$");
+  }
 }
