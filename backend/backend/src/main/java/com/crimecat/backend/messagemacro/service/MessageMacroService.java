@@ -208,6 +208,7 @@ public class MessageMacroService {
                 .map(content -> ContentDto.builder()
                         .channelId(content.getChannelId())
                         .text(content.getText())
+                        .index(content.getIndex())
                         .build())
                 .toList();
 
