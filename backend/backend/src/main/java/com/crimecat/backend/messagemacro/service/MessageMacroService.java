@@ -9,6 +9,7 @@ import com.crimecat.backend.messagemacro.dto.GroupDto;
 import com.crimecat.backend.messagemacro.repository.GroupItemRepository;
 import com.crimecat.backend.messagemacro.repository.GroupRepository;
 import java.util.*;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -32,13 +33,48 @@ public class MessageMacroService {
     @Transactional
     public void syncMacroData(String guildId, List<GroupDto> groupDtos) {
         try {
-            // 1) Batch upsert Groups
+            // 1) 기존 그룹 ID 조회
+            Set<UUID> existingGroupIds = groupRepository.findAllByGuildSnowflakeOrderByIndex(guildId)
+                    .stream()
+                    .map(Group::getId)
+                    .collect(Collectors.toSet());
+            
+            // 2) 유지할 그룹 ID 수집
+            Set<UUID> keepGroupIds = groupDtos.stream()
+                    .map(GroupDto::getId)
+                    .collect(Collectors.toSet());
+            
+            // 3) 삭제할 그룹 ID 계산
+            Set<UUID> groupIdsToDelete = new HashSet<>(existingGroupIds);
+            groupIdsToDelete.removeAll(keepGroupIds);
+            
+            // 4) 삭제할 그룹이 있다면 삭제 (하위 아이템도 함께 삭제되어야 함)
+            if (!groupIdsToDelete.isEmpty()) {
+                // 삭제할 그룹의 모든 아이템 먼저 삭제
+                for (UUID groupId : groupIdsToDelete) {
+                    List<UUID> itemIds = groupItemRepository.findAllIdsByGroupId(groupId);
+                    if (!itemIds.isEmpty()) {
+                        List<GroupItem> itemsToDelete = itemIds.stream()
+                                .map(id -> GroupItem.builder().id(id).build())
+                                .collect(Collectors.toList());
+                        groupItemRepository.deleteAllInBatch(itemsToDelete);
+                    }
+                }
+                
+                // 그룹 삭제
+                List<Group> groupsToDelete = groupIdsToDelete.stream()
+                        .map(id -> Group.builder().id(id).build())
+                        .collect(Collectors.toList());
+                groupRepository.deleteAllInBatch(groupsToDelete);
+            }
+            
+            // 5) Batch upsert Groups
             List<Group> groupsToSave = groupDtos.stream()
                     .map(dto -> upsertGroup(guildId, dto))
                     .collect(Collectors.toList());
             groupRepository.saveAll(groupsToSave);
 
-            // 2) For each group, upsert items and delete removed
+            // 6) For each group, upsert items and delete removed
             for (GroupDto dto : groupDtos) {
                 List<GroupItem> itemsToSave = collectItems(dto.getId(), dto);
                 groupItemRepository.saveAll(itemsToSave);

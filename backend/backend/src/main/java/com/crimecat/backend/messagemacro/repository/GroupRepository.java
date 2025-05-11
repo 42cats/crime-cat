@@ -23,4 +23,7 @@ public interface GroupRepository extends JpaRepository<Group, UUID> {
     );
 
     List<Group> findAllByGuildSnowflake(String guildSnowflake);
+    
+    // JpaRepository에서 제공하는 메서드지만 명시적으로 선언
+    void deleteAllInBatch(Iterable<Group> entities);
 }
