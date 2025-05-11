@@ -40,7 +40,7 @@ module.exports = {
 			console.error(error.stack);
 			await message.channel.send(`프리픽스 명령어 ${commandName}실행 중 오류가 발생했습니다.`);
 		};
-			if (message.deletable)
+			if (message.deletable && !message.system)
 				await message.delete();
 		}
 		catch (e) {
