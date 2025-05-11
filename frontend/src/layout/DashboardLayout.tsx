@@ -1,7 +1,7 @@
-import React from 'react';
-import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import React from "react";
+import { Navigate, Outlet, Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
     LayoutDashboard,
     Server,
@@ -91,17 +91,21 @@ const SidebarInner = () => {
     return (
         <>
             {!isCollapsed && (
-              <div className="flex h-14 justify-between items-center px-4 border-b">
-                <Link to="/" className="flex items-center space-x-2">
-                  <div className="relative w-10 h-10 rounded-full overflow-hidden">
-                    <img src="../content/image/icon.png" alt="짭냥이 로고" className="w-full h-full object-cover" />
-                  </div>
-                  <span className="text-xl font-semibold">짭냥이</span>
-                </Link>
-                <div className="ml-auto">
-                  <ThemeToggle />
+                <div className="flex h-14 justify-between items-center px-4 border-b">
+                    <Link to="/" className="flex items-center space-x-2">
+                        <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                            <img
+                                src="/content/image/icon.png"
+                                alt="짭냥이 로고"
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                        <span className="text-xl font-semibold">짭냥이</span>
+                    </Link>
+                    <div className="ml-auto">
+                        <ThemeToggle />
+                    </div>
                 </div>
-              </div>
             )}
 
             <SidebarContent>
@@ -147,38 +151,38 @@ const SidebarInner = () => {
                                                     "USER",
                                                 ],
                                             },
-                                            {
-                                                name: "프로필",
-                                                path: "/dashboard/profile",
-                                                icon: UserRoundPen,
-                                                roles: [
-                                                    "ADMIN",
-                                                    "MANAGER",
-                                                    "USER",
-                                                ],
-                                            },
-                                            {
-                                                name: "팀",
-                                                path: "/dashboard/teams",
-                                                icon: Users,
-                                                roles: [
-                                                    "ADMIN",
-                                                    "MANAGER",
-                                                    "USER",
-                                                ],
-                                            },
-                                            {
-                                                name: "사용자 관리",
-                                                path: "/dashboard/users",
-                                                icon: UserCog,
-                                                roles: ["ADMIN"],
-                                            },
-                                            {
-                                                name: "설정",
-                                                path: "/dashboard/settings",
-                                                icon: Settings,
-                                                roles: ["ADMIN", "MANAGER"],
-                                            },
+                                            // {
+                                            //     name: "프로필",
+                                            //     path: "/dashboard/profile",
+                                            //     icon: UserRoundPen,
+                                            //     roles: [
+                                            //         "ADMIN",
+                                            //         "MANAGER",
+                                            //         "USER",
+                                            //     ],
+                                            // },
+                                            // {
+                                            //     name: "팀",
+                                            //     path: "/dashboard/teams",
+                                            //     icon: Users,
+                                            //     roles: [
+                                            //         "ADMIN",
+                                            //         "MANAGER",
+                                            //         "USER",
+                                            //     ],
+                                            // },
+                                            // {
+                                            //     name: "사용자 관리",
+                                            //     path: "/dashboard/users",
+                                            //     icon: UserCog,
+                                            //     roles: ["ADMIN"],
+                                            // },
+                                            // {
+                                            //     name: "설정",
+                                            //     path: "/dashboard/settings",
+                                            //     icon: Settings,
+                                            //     roles: ["ADMIN", "MANAGER"],
+                                            // },
                                         ]
                                             .filter((item) =>
                                                 item.roles.includes(

@@ -308,5 +308,5 @@ module.exports = {
         }
     },
     upload: true,
-    permissionLevel: PermissionFlagsBits.Administrator
+    permissionLevel: -1
 };

@@ -53,7 +53,7 @@ public class WebStatsInfoService {
         "totalCreators",
         getOrCache(
             RedisDbType.MAKER_COUNT,
-            () -> String.valueOf(guildRepository.countUniqueGuildOwnersNative())));
+            () -> String.valueOf(guildRepository.countUniqueGuildOwners())));
 
     return ResponseEntity.ok().body(result);
   }
