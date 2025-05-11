@@ -90,12 +90,12 @@ async function termsReply(client, target, guild, time) {
 			try {
 				if (i.customId === channelName + 'accept') {
 					console.log("약관 수락", guild.name);
-					if (i.message.deletable) await i.message.delete();
+					if (i.message.deletable && !message.system) await i.message.delete();
 					target.send("협조에 감사드립니다!");
 					await guildAddProcess(client, guild);
 				} else if (i.customId === channelName + 'refuse') {
 					console.log("약관 거절", guild.name);
-					if (i.message.deletable) await i.message.delete();
+					if (i.message.deletable && !message.system) await i.message.delete();
 					try {
 						target.send("약관에 동의하지 않으면 사용할 수 없습니다.");
 
