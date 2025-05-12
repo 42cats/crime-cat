@@ -1,43 +1,57 @@
-package com.crimecat.backend.post.domain;
+package com.crimecat.backend.postComment.domain;
 
-import com.crimecat.backend.post.enums.BoardType;
-import com.crimecat.backend.post.enums.PostType;
+import com.crimecat.backend.post.domain.Post;
 import com.crimecat.backend.webUser.domain.WebUser;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
-import jakarta.persistence.*;
-import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "POSTS")
+@Table(name = "POST_COMMENTS")
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Post {
+public class PostComment {
     @Id
     @UuidGenerator
     @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @Column(name = "SUBJECT", length = 200)
-    private String subject;
-
     @Column(name = "CONTENT", columnDefinition = "TEXT")
     private String content;
 
-    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "USER")
     private UUID userId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "USER", updatable = false, insertable = false)
     private WebUser user;
+
+    @Column(name = "POST")
+    private UUID postId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "POST", updatable = false, insertable = false)
+    private Post post;
+
+    // 부모 댓글 (대댓글인 경우)
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(name = "PARENT")
+    private UUID parentId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "PARENT", updatable = false, insertable = false)
+    private PostComment parent;
 
     @Builder.Default
     @Column(name = "CREATED_AT")
@@ -50,18 +64,6 @@ public class Post {
     @Column(name = "IS_DELETED")
     private Boolean isDeleted = false;
 
-    @Builder.Default
-    @Column(name = "VIEWS")
-    private Integer views = 0;
-
     @Column(name = "SECRET")
     private Boolean secret;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "POST_TYPE")
-    private PostType postType;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "BOARD_TYPE")
-    private BoardType boardtype;
 }
