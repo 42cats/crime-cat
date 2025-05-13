@@ -81,4 +81,33 @@ public class GuildService {
     public List<Guild> findAllGuild(){
         return guildRepository.findAllActiveGuilds();
     }
+
+    /**
+     * 길드의 공개 상태 조회
+     * @param snowflake 길드 snowflake
+     * @return 공개 여부 (true: 공개, false: 비공개)
+     */
+    @Transactional(readOnly = true)
+    public boolean getGuildPublicStatus(String snowflake) {
+        Guild guild = guildRepository.findBySnowflake(snowflake).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guild not found")
+        );
+        return guild.getIsPublic();
+    }
+
+    /**
+     * 길드의 공개 상태 토글
+     * @param snowflake 길드 snowflake
+     * @return 변경된 공개 상태 (true: 공개, false: 비공개)
+     */
+    @Transactional
+    public boolean toggleGuildPublicStatus(String snowflake) {
+        Guild guild = guildRepository.findBySnowflake(snowflake).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guild not found")
+        );
+        boolean newStatus = !guild.getIsPublic();
+        guild.setIsPublic(newStatus);
+        guildRepository.save(guild);
+        return newStatus;
+    }
 }
