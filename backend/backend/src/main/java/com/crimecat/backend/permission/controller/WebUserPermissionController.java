@@ -2,10 +2,10 @@ package com.crimecat.backend.permission.controller;
 
 import com.crimecat.backend.permission.dto.AllPermissionsWithUserStatusResponseDto;
 import com.crimecat.backend.permission.dto.PermissionExtendResponseDto;
+import com.crimecat.backend.permission.dto.PermissionPurchaseResponseDto;
 import com.crimecat.backend.permission.dto.PermissionPurchaseWebRequestDto;
 import com.crimecat.backend.permission.service.WebUserPermissionService;
 import com.crimecat.backend.user.dto.UserGrantedPermissionDto;
-import com.crimecat.backend.user.dto.UserPermissionPurchaseResponseDto;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -52,13 +52,13 @@ public class WebUserPermissionController {
      * 권한 구매
      */
     @PostMapping("/user/{user_id}/purchase")
-    public ResponseEntity<UserPermissionPurchaseResponseDto> purchasePermission(
+    public ResponseEntity<PermissionPurchaseResponseDto> purchasePermission(
             @PathVariable("user_id") String userId,
             @RequestBody PermissionPurchaseWebRequestDto request) {
         // 현재 사용자 검증
         AuthenticationUtil.validateCurrentUserMatches(UUID.fromString(userId));
         
-        UserPermissionPurchaseResponseDto response = 
+        PermissionPurchaseResponseDto response = 
                 webUserPermissionService.purchasePermission(userId, request.getPermissionId());
         return ResponseEntity.ok(response);
     }
