@@ -13,12 +13,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Server, Users, Settings } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Search, Server, Users, Settings, Globe, Lock } from "lucide-react";
 import { authService } from "@/api/authService";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const Guilds: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState("");
+    const [guildPublicStatuses, setGuildPublicStatuses] = useState<Record<string, boolean>>({});
+    const [loadingStatuses, setLoadingStatuses] = useState<Record<string, boolean>>({});
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     const {
         data: guilds,
@@ -27,6 +32,22 @@ const Guilds: React.FC = () => {
     } = useQuery({
         queryKey: ["guilds"],
         queryFn: authService.getUserGuilds,
+    });
+
+    // 길드 공개 상태 업데이트 뮤테이션
+    const togglePublicMutation = useMutation({
+        mutationFn: authService.toggleGuildPublicStatus,
+        onMutate: async (guildId: string) => {
+            setLoadingStatuses(prev => ({ ...prev, [guildId]: true }));
+        },
+        onSuccess: (newStatus: boolean, guildId: string) => {
+            setGuildPublicStatuses(prev => ({ ...prev, [guildId]: newStatus }));
+            setLoadingStatuses(prev => ({ ...prev, [guildId]: false }));
+        },
+        onError: (error, guildId: string) => {
+            console.error('길드 공개 상태 토글 실패:', error);
+            setLoadingStatuses(prev => ({ ...prev, [guildId]: false }));
+        },
     });
 
     const filteredGuilds = Array.isArray(guilds)
@@ -46,6 +67,34 @@ const Guilds: React.FC = () => {
             state: { guildName, guildId },
         });
     };
+
+    // 길드 공개 상태 초기 로드
+    const loadGuildPublicStatus = async (guildId: string) => {
+        try {
+            if (!guildPublicStatuses.hasOwnProperty(guildId)) {
+                const status = await authService.getGuildPublicStatus(guildId);
+                setGuildPublicStatuses(prev => ({ ...prev, [guildId]: status }));
+            }
+        } catch (error) {
+            console.error(`Failed to load public status for guild ${guildId}:`, error);
+        }
+    };
+
+    // 길드 공개 상태 토글
+    const handleTogglePublicStatus = (guildId: string) => {
+        if (!loadingStatuses[guildId]) {
+            togglePublicMutation.mutate(guildId);
+        }
+    };
+
+    // 금드 목록이 로드되면 각 길드의 공개 상태 로드
+    React.useEffect(() => {
+        if (guilds) {
+            guilds.forEach(guild => {
+                loadGuildPublicStatus(guild.id);
+            });
+        }
+    }, [guilds]);
 
     if (isLoading) {
         return (
@@ -159,6 +208,23 @@ const Guilds: React.FC = () => {
                                                 {feature}
                                             </span>
                                         ))} */}
+                                    </div>
+                                    <div className="mt-4 flex items-center justify-between p-3 bg-muted/50 rounded-md">
+                                        <div className="flex items-center gap-2">
+                                            {guildPublicStatuses[guild.id] ? (
+                                                <Globe className="h-4 w-4 text-green-600" />
+                                            ) : (
+                                                <Lock className="h-4 w-4 text-gray-500" />
+                                            )}
+                                            <span className="text-sm font-medium">
+                                                {guildPublicStatuses[guild.id] ? "공개" : "비공개"}
+                                            </span>
+                                        </div>
+                                        <Switch
+                                            checked={guildPublicStatuses[guild.id] || false}
+                                            onCheckedChange={() => handleTogglePublicStatus(guild.id)}
+                                            disabled={loadingStatuses[guild.id]}
+                                        />
                                     </div>
                                 </CardContent>
                                 <CardFooter className="flex justify-end gap-2">
