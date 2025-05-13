@@ -56,7 +56,6 @@ public enum ErrorStatus {
     PERMISSION_NOT_OWNED("보유하지 않은 권한입니다.", HttpStatus.BAD_REQUEST),
     PERMISSION_ALREADY_OWNED("이미 보유한 권한입니다.", HttpStatus.CONFLICT),
     DISCORD_USER_NOT_FOUND("연결된 디스코드 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
-련
     // 포인트 관련
     INSUFFICIENT_POINT("포인트가 부족합니다.", HttpStatus.BAD_REQUEST);                    // 400
 
