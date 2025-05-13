@@ -67,6 +67,18 @@ export const DashboardProfileCard: React.FC<Props> = ({
     const [point, setPoint] = useState(user.point);
     const { toast } = useToast();
 
+    // 포인트 변경 핸들러 - 연장 시 특별 처리
+    const handlePointChange = (newPoint: number) => {
+        if (newPoint === -1) {
+            // 특별한 시그널 값으로 전체 새로고침 필요
+            // 이 경우 페이지 새로고침 스드 언주를 내지 않고
+            // 대신 전체 사용자 정보를 다시 불러오는 방식을 추천
+            window.location.reload();
+        } else {
+            setPoint(newPoint);
+        }
+    };
+
     const handleApplyCoupon = async () => {
         try {
             const res = await couponService.requestCoupon(user.id, couponCode);
@@ -297,7 +309,7 @@ export const DashboardProfileCard: React.FC<Props> = ({
                     <div className="mt-8">
                         <UserPermissionCard 
                             userId={user.id} 
-                            onPointChange={(newPoint) => setPoint(newPoint)}
+                            onPointChange={handlePointChange}
                         />
                     </div>
                 </CardContent>
