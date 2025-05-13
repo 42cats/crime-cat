@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,6 +37,28 @@ public class WebGuildController {
             throw ErrorStatus.NOT_GUILD_OWNER.asControllerException(); // 해당길드의 오너가 아님
         }
         return ResponseEntity.ok(webGuildService.getGuildChannels(guildSnowflake));
+    }
+
+    @GetMapping("/settings/{guild_id}/public")
+    public ResponseEntity<Boolean> getIsPublic(@PathVariable("guild_id") String guildSnowflake){
+        WebUser webUser = AuthenticationUtil.getCurrentWebUser();
+        boolean isOwner = guildRepository.existsBySnowflakeAndOwnerSnowflake(guildSnowflake, webUser.getDiscordUserSnowflake());
+        if (!isOwner) {
+            throw ErrorStatus.NOT_GUILD_OWNER.asControllerException();
+        }
+        boolean isPublic = webGuildService.getGuildPublicStatus(guildSnowflake);
+        return ResponseEntity.ok(isPublic);
+    }
+
+    @PatchMapping("/settings/{guild_id}/public")
+    public ResponseEntity<Boolean> setIsPublic(@PathVariable("guild_id") String guildSnowflake){
+        WebUser webUser = AuthenticationUtil.getCurrentWebUser();
+        boolean isOwner = guildRepository.existsBySnowflakeAndOwnerSnowflake(guildSnowflake, webUser.getDiscordUserSnowflake());
+        if (!isOwner) {
+            throw ErrorStatus.NOT_GUILD_OWNER.asControllerException();
+        }
+        boolean newStatus = webGuildService.toggleGuildPublicStatus(guildSnowflake);
+        return ResponseEntity.ok(newStatus);
     }
 
 }

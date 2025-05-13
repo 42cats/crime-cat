@@ -117,6 +117,43 @@ public class WebGuildService {
 
 
   /**
+   * 길드의 공개 상태를 조회합니다.
+   * 
+   * @param guildSnowflake 조회할 길드의 스노우플레이크
+   * @return 길드의 공개 여부 (true: 공개, false: 비공개)
+   * @throws com.crimecat.backend.exception.CrimeCatException 길드를 찾을 수 없는 경우
+   */
+  public boolean getGuildPublicStatus(String guildSnowflake) {
+      Guild guild = guildRepository.findBySnowflake(guildSnowflake)
+          .orElseThrow(() -> {
+              log.error("길드를 찾을 수 없음: {}", guildSnowflake);
+              return ErrorStatus.GUILD_NOT_FOUND.asServiceException();
+          });
+      return guild.getIsPublic();
+  }
+  
+  /**
+   * 길드의 공개 상태를 토글합니다.
+   * 
+   * @param guildSnowflake 토글할 길드의 스노우플레이크
+   * @return 변경된 공개 상태 (true: 공개, false: 비공개)
+   * @throws com.crimecat.backend.exception.CrimeCatException 길드를 찾을 수 없는 경우
+   */
+  @org.springframework.transaction.annotation.Transactional
+  public boolean toggleGuildPublicStatus(String guildSnowflake) {
+      Guild guild = guildRepository.findBySnowflake(guildSnowflake)
+          .orElseThrow(() -> {
+              log.error("길드를 찾을 수 없음: {}", guildSnowflake);
+              return ErrorStatus.GUILD_NOT_FOUND.asServiceException();
+          });
+      boolean newStatus = !guild.getIsPublic();
+      guild.setIsPublic(newStatus);
+      guildRepository.save(guild);
+      log.info("길드 공개 상태 변경: guildId={}, newStatus={}", guildSnowflake, newStatus);
+      return newStatus;
+  }
+
+  /**
    * 길드의 공개 정보를 조회합니다.
    * 
    * @param guildSnowFlake 조회할 길드의 UUID 문자열
