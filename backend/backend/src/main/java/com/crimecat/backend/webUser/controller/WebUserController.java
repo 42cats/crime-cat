@@ -149,6 +149,7 @@ public class WebUserController {
    * @param size 페이지 크기 (기본값: 10)
    * @return 검색 결과 및 페이지 정보
    */
+  // 과거 버전에서는 여기에 권한 관련 메서드가 있었으나, 지금은 WebUserPermissionController로 이동하였습니다.
   @GetMapping("/find/users")
   public ResponseEntity<FindUserInfo> findUser (
       @RequestParam(required = false) String keyword,

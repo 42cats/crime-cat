@@ -29,4 +29,14 @@ public class UserPermissionQueryService {
 	public List<UserPermission> getActiveUserPermissions(DiscordUser user) {
 		return userPermissionRepository.getActiveUserPermissions(user.getSnowflake(), LocalDateTime.now());
 	}
+
+	/**
+	 * 권한 연장
+	 * @param userPermission 연장할 사용자 권한
+	 * @param newExpiredDate 새로운 만료일
+	 */
+	public void extendPermission(UserPermission userPermission, LocalDateTime newExpiredDate) {
+		userPermission.setExpiredAt(newExpiredDate);
+		userPermissionRepository.save(userPermission);
+	}
 }
