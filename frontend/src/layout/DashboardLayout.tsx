@@ -14,6 +14,7 @@ import {
     ChevronRight,
     Menu,
     History,
+    Coins,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -145,6 +146,16 @@ const SidebarInner = () => {
                                                 name: "플레이기록",
                                                 path: "/dashboard/users/my-history",
                                                 icon: History,
+                                                roles: [
+                                                    "ADMIN",
+                                                    "MANAGER",
+                                                    "USER",
+                                                ],
+                                            },
+                                            {
+                                                name: "포인트 내역",
+                                                path: "/dashboard/point-history",
+                                                icon: Coins,
                                                 roles: [
                                                     "ADMIN",
                                                     "MANAGER",

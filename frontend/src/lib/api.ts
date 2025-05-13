@@ -1,5 +1,6 @@
 import axios from "axios";
 import { resetUserState } from "@/utils/authUtils";
+import { PointHistory, PointSummary, PageResponse } from '@/types/pointHistory';
 
 const API_BASE_URL = "/api/v1";
 const API_TIMEOUT = 30000;
@@ -154,4 +155,32 @@ export const apiClient = {
     const res = await instance.delete<T>(endpoint, config);
     return res.data;
   },
+};
+
+// Point History API
+export const pointHistoryApi = {
+  // 포인트 내역 조회 (with pagination and filtering)
+  getPointHistory: (params?: {
+    page?: number;
+    size?: number;
+    type?: string;
+    sort?: string[];
+  }): Promise<PageResponse<PointHistory>> => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      if (params.page !== undefined) searchParams.append('page', params.page.toString());
+      if (params.size !== undefined) searchParams.append('size', params.size.toString());
+      if (params.type) searchParams.append('type', params.type);
+      if (params.sort && params.sort.length > 0) {
+        params.sort.forEach(sortOption => {
+          searchParams.append('sort', sortOption);
+        });
+      }
+    }
+    const query = searchParams.toString();
+    return apiClient.get(`/point-history${query ? '?' + query : ''}`);
+  },
+
+  // 포인트 내역 요약 정보 조회
+  getPointSummary: (): Promise<PointSummary> => apiClient.get('/point-history/summary'),
 };
