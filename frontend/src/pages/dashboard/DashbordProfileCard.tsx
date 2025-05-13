@@ -71,7 +71,7 @@ export const DashboardProfileCard: React.FC<Props> = ({
     const handlePointChange = (newPoint: number) => {
         if (newPoint === -1) {
             // 특별한 시그널 값으로 전체 새로고침 필요
-            // 이 경우 페이지 새로고침 스드 언주를 내지 않고
+            // 이 경우 페이지 새로고침
             // 대신 전체 사용자 정보를 다시 불러오는 방식을 추천
             window.location.reload();
         } else {
@@ -179,7 +179,9 @@ export const DashboardProfileCard: React.FC<Props> = ({
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={() => copyToClipboard(user.snowflake!)}
+                                            onClick={() =>
+                                                copyToClipboard(user.snowflake!)
+                                            }
                                             className="h-8 w-8 p-0"
                                         >
                                             <Copy className="h-4 w-4" />
@@ -304,11 +306,11 @@ export const DashboardProfileCard: React.FC<Props> = ({
                             />
                         </div>
                     )}
-                    
+
                     {/* 권한 관리 섹션 */}
                     <div className="mt-8">
-                        <UserPermissionCard 
-                            userId={user.id} 
+                        <UserPermissionCard
+                            userId={user.id}
                             onPointChange={handlePointChange}
                         />
                     </div>
