@@ -15,7 +15,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Gift, CheckCircle } from "lucide-react";
+import { Gift, CheckCircle, Copy } from "lucide-react";
 import { couponService } from "@/api/couponService";
 import { useToast } from "@/hooks/useToast";
 import { UserPermissionCard } from "@/components/UserPermissionCard";
@@ -92,6 +92,22 @@ export const DashboardProfileCard: React.FC<Props> = ({
         }
     };
 
+    const copyToClipboard = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            toast({
+                title: "복사 완료",
+                description: "고유 아이디가 클립보드에 복사되었습니다.",
+            });
+        } catch (error) {
+            toast({
+                title: "복사 실패",
+                description: "클립보드 복사에 실패했습니다.",
+                variant: "destructive",
+            });
+        }
+    };
+
     return (
         <>
             <Card className="w-full max-w-2xl space-y-6">
@@ -145,6 +161,26 @@ export const DashboardProfileCard: React.FC<Props> = ({
                                     <UTCToKST date={user.last_login_at} />
                                 ) : (
                                     "-"
+                                )
+                            }
+                        />
+                        <ProfileField
+                            label="고유 아이디"
+                            value={
+                                user.snowflake ? (
+                                    <div className="flex items-center gap-2">
+                                        <span>{user.snowflake}</span>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => copyToClipboard(user.snowflake!)}
+                                            className="h-8 w-8 p-0"
+                                        >
+                                            <Copy className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    "디스코드 정보가 없습니다."
                                 )
                             }
                         />
