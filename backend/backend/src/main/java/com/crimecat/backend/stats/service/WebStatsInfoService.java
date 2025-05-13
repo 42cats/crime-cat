@@ -36,7 +36,7 @@ public class WebStatsInfoService {
     result.put(
         "totalServers",
         getOrCache(
-            RedisDbType.MAKER_COUNT, () -> String.valueOf(guildRepository.countAllActiveGuilds())));
+            RedisDbType.ALL_DISCORD_SERVER, () -> String.valueOf(guildRepository.countAllActiveGuilds())));
 
     result.put(
         "totalUsers",
@@ -53,7 +53,7 @@ public class WebStatsInfoService {
         "totalCreators",
         getOrCache(
             RedisDbType.MAKER_COUNT,
-            () -> String.valueOf(guildRepository.countUniqueGuildOwnersNative())));
+            () -> String.valueOf(guildRepository.countUniqueGuildOwners())));
 
     return ResponseEntity.ok().body(result);
   }
