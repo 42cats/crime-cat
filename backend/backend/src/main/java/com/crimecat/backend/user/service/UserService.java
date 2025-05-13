@@ -240,7 +240,7 @@ public class UserService {
 				= userPermissionService.getActiveUserPermissions(user)
 				.stream()
 				.map(aup -> new UserGrantedPermissionDto(
-						aup.getPermission().getId(),
+						aup.getPermission().getId().toString(),
 						aup.getPermission().getName(),
 						aup.getExpiredAt(),
 						aup.getPermission().getInfo()))

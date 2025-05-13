@@ -1,7 +1,6 @@
 package com.crimecat.backend.user.dto;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import com.crimecat.backend.user.domain.UserPermission;
 import lombok.AllArgsConstructor;
@@ -13,17 +12,17 @@ import lombok.Getter;
 @Builder
 public class UserGrantedPermissionDto {
 
-	private UUID permissionId;
+	private String permissionId;
 	private String permissionName;
 	private LocalDateTime expiredDate;
 	private String info;
 
 	public static UserGrantedPermissionDto of(UserPermission userPermission) {
-		return UserGrantedPermissionDto.builder()
-				.permissionId(userPermission.getId())
-				.permissionName(userPermission.getPermission().getName())
-				.expiredDate(userPermission.getExpiredAt())
-				.info(userPermission.getPermission().getInfo())
-				.build();
+	return UserGrantedPermissionDto.builder()
+	.permissionId(userPermission.getId().toString())
+	.permissionName(userPermission.getPermission().getName())
+	.expiredDate(userPermission.getExpiredAt())
+	.info(userPermission.getPermission().getInfo())
+	.build();
 	}
 }
