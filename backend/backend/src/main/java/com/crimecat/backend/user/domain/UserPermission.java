@@ -46,6 +46,10 @@ public class UserPermission {
         expiredAt = expiredAt.plusDays(duration);
     }
 
+    public void setExpiredAt(LocalDateTime expiredAt) {
+        this.expiredAt = expiredAt;
+    }
+
     public UserPermission(DiscordUser user, Permission permission) {
         this.user = user;
         this.permission = permission;

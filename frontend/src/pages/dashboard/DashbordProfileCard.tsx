@@ -52,12 +52,7 @@ interface Props {
         recentlyPlayCrimeSeenThemeTime?: string;
         mostFavoriteCrimeSeenMaker?: string;
     };
-    permissions?: {
-        permissionId: string;
-        permissionName: string;
-        info?: string;
-        expiredDate: string;
-    }[];
+    // permissions: 기존 prop 제거 - 이제 UserPermissionCard에서 직접 fetch
 }
 
 export const DashboardProfileCard: React.FC<Props> = ({
@@ -66,7 +61,6 @@ export const DashboardProfileCard: React.FC<Props> = ({
     onCheckDaily,
     isChecking,
     additionalInfo,
-    permissions,
 }) => {
     const [isCouponModalOpen, setCouponModalOpen] = useState(false);
     const [couponCode, setCouponCode] = useState("");
@@ -298,17 +292,14 @@ export const DashboardProfileCard: React.FC<Props> = ({
                             />
                         </div>
                     )}
-                    {permissions && permissions.length > 0 && (
-                        <div className="mt-8">
-                            <UserPermissionCard permissions={permissions} />
-                        </div>
-                    )}
-                    {/* 퍼미션이 없을 경우 */}
-                    {(!permissions || permissions.length === 0) && (
-                        <div className="mt-8 text-center text-muted-foreground text-sm">
-                            보유한 권한이 없습니다.
-                        </div>
-                    )}
+                    
+                    {/* 권한 관리 섹션 */}
+                    <div className="mt-8">
+                        <UserPermissionCard 
+                            userId={user.id} 
+                            onPointChange={(newPoint) => setPoint(newPoint)}
+                        />
+                    </div>
                 </CardContent>
             </Card>
 

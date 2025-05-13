@@ -51,7 +51,12 @@ public enum ErrorStatus {
     // 🧱 서버 내부 오류
     INTERNAL_ERROR("서버 내부 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR), // 500
 
-    //포인트관련
+    // 분류 시스템
+    PERMISSION_NOT_FOUND("권한을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    PERMISSION_NOT_OWNED("보유하지 않은 권한입니다.", HttpStatus.BAD_REQUEST),
+    PERMISSION_ALREADY_OWNED("이미 보유한 권한입니다.", HttpStatus.CONFLICT),
+
+    // 분일발매 모카흠에
     INSUFFICIENT_POINT("포인트가 부족합니다.", HttpStatus.BAD_REQUEST);                    // 400
 
     private final String message;
