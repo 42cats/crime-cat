@@ -61,4 +61,24 @@ export const authService = {
             throw error;
         }
     },
+
+    getGuildPublicStatus: async (guildId: string): Promise<boolean> => {
+        try {
+            const response = await apiClient.get<boolean>(`/auth/guilds/settings/${guildId}/public`);
+            return response;
+        } catch (error) {
+            console.error("Error in getGuildPublicStatus:", error);
+            throw error;
+        }
+    },
+
+    toggleGuildPublicStatus: async (guildId: string): Promise<boolean> => {
+        try {
+            const response = await apiClient.patch<boolean>(`/auth/guilds/settings/${guildId}/public`);
+            return response;
+        } catch (error) {
+            console.error("Error in toggleGuildPublicStatus:", error);
+            throw error;
+        }
+    },
 };
