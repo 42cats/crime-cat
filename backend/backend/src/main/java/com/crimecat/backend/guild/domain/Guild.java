@@ -53,6 +53,9 @@ public class Guild {
     @Column(name = "CREATED_AT", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "IS_PUBLIC", nullable = false)
+    Boolean isPublic = false;
+
     public static Guild of(GuildDto guildDto,User user) {
         Guild guild = new Guild();
         guild.snowflake = guildDto.getSnowflake();
@@ -72,4 +75,6 @@ public class Guild {
     public void setIsWithdraw(boolean isWithdraw) {
         this.isWithdraw = isWithdraw;
     }
+
+    public void setIsPublic(boolean isPublic) {this.isPublic = isPublic;}
 }

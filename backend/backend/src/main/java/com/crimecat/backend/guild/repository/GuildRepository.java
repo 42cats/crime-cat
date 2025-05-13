@@ -23,7 +23,7 @@ public interface GuildRepository extends JpaRepository<Guild, UUID> {
     Optional<Guild> findGuildByGuildSnowflake(@Param("snowflake") String guildSnowflake);
     @Query("SELECT g FROM Guild g WHERE g.ownerSnowflake = :ownerSnowflake AND g.isWithdraw = false")
     List<Guild> findActiveGuildsByOwner(@Param("ownerSnowflake") String ownerSnowflake);
-    @Query("SELECT g FROM Guild g WHERE g.isWithdraw = false")
+    @Query("SELECT g FROM Guild g WHERE g.isWithdraw = false AND g.isPublic = true")
     List<Guild> findAllActiveGuilds();
 
     boolean existsBySnowflakeAndOwnerSnowflake(String guildSnowflake, String ownerSnowflake);
