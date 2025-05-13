@@ -17,7 +17,7 @@ public class MemberDto {
     private boolean isLeader;
 
     public static MemberDto from(MakerTeamMember member) {
-        MemberDtoBuilder builder = MemberDto.builder().id(member.getId()).name(member.getName());
+        MemberDtoBuilder builder = MemberDto.builder().id(member.getId()).name(member.getName()).isLeader(member.isLeader());
         if (member.getWebUserId() != null) {
             builder.userId(member.getWebUserId());
         }

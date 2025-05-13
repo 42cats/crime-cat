@@ -63,7 +63,7 @@ public class GameThemeService {
         if (gameTheme.getTeamId() == null) {
             List<MakerTeamMember> teams = teamService.getIndividualTeams(webUser.getId());
             if (teams.isEmpty()) {
-                UUID teamId = teamService.create(webUser.getNickname(), webUser.getId(), true);
+                UUID teamId = teamService.create(webUser.getNickname(), webUser, true);
                 gameTheme.setTeamId(teamId);
             } else {
                 gameTheme.setTeamId(teams.getFirst().getTeam().getId());

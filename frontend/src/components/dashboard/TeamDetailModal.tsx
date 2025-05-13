@@ -1,13 +1,29 @@
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import React, { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2 } from "lucide-react";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Trash2, Check, Plus, Search, Crown } from "lucide-react";
 import { Team } from "@/lib/types";
 import { teamsService } from "@/api/teamsService";
-import { useToast } from "@/hooks/useToast"; // ✅ 토스트 훅 추가
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from "@/components/ui/alert-dialog";
+import { searchUserService } from "@/api/searchUserService";
+import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/useToast";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { SearchUser, SearchUsers } from "@/lib/types";
+import clsx from "clsx";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Props {
   team: Team;
@@ -16,34 +32,106 @@ interface Props {
 }
 
 const TeamDetailModal: React.FC<Props> = ({ team, onClose, onUpdated }) => {
-  const { toast } = useToast(); // ✅ 토스트 사용
-  const [newMemberName, setNewMemberName] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null); // ✅ 삭제할 멤버 ID 저장
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [teamDetail, setTeamDetail] = useState<Team | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [fetchedUsers, setFetchedUsers] = useState<SearchUser[]>([]);
+  const [hasNext, setHasNext] = useState(false);
 
-  const handleAddMember = async () => {
-    if (!newMemberName.trim()) return;
+  const fetchTeam = async () => {
+    const res = await teamsService.getTeamById(team.id);
+    if (res) setTeamDetail(res);
+  };
+
+  useEffect(() => {
+    fetchTeam();
+  }, [team.id]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setPage(0);
+      setFetchedUsers([]);
+    }, 200);
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
+
+  const { data: searchResult, isFetching } = useQuery<SearchUsers>({
+    queryKey: ["search-user", debouncedQuery, page],
+    queryFn: () =>
+      searchUserService.getSearchUser(
+        `keyword=${debouncedQuery}&page=${page}&size=5`
+      ),
+    enabled: !!debouncedQuery.trim(),
+  });
+
+  useEffect(() => {
+    if (searchResult) {
+      setFetchedUsers((prev) =>
+        page === 0 ? searchResult.content : [...prev, ...searchResult.content]
+      );
+      setHasNext(searchResult.hasNext);
+    }
+  }, [searchResult, page]);
+
+  const handleAddMember = async (user: SearchUser) => {
     try {
-      await teamsService.updateTeamMember(team.id, { name: newMemberName });
-      setNewMemberName("");
+      await teamsService.updateTeamMember(team.id, { userId: user.id });
+      toast({
+        title: "멤버 추가 완료",
+        description: `${user.nickname} 님이 추가되었습니다.`,
+      });
+      await fetchTeam();
       onUpdated();
-      toast({ title: "멤버 추가 완료", description: `${newMemberName} 님이 추가되었습니다.` });
     } catch (error) {
-      console.error("멤버 추가 실패:", error);
-      toast({ title: "오류", description: "멤버 추가에 실패했습니다.", variant: "destructive" });
+      toast({
+        title: "오류",
+        description: "멤버 추가 실패",
+        variant: "destructive",
+      });
     }
   };
 
   const handleDeleteMember = async (memberId: string) => {
     try {
-      await teamsService.deleteTeamMember(team.id, [{ id: memberId }]);
+      await teamsService.deleteTeamMember(team.id, { members: [memberId] });
       setDeleteTarget(null);
-      onUpdated();
       toast({ title: "멤버 삭제 완료", description: `멤버가 삭제되었습니다.` });
+      await fetchTeam();
+      onUpdated();
     } catch (error) {
-      console.error("멤버 삭제 실패:", error);
-      toast({ title: "오류", description: "멤버 삭제에 실패했습니다.", variant: "destructive" });
+      toast({
+        title: "오류",
+        description: "멤버 삭제 실패",
+        variant: "destructive",
+      });
     }
   };
+
+  const handlePromoteToLeader = async (memberId: string) => {
+    try {
+      //TODO: 권한 임명 API 작성 필요
+      //await teamsService.updateTeamMember(team.id, { id: memberId, isLeader: true });
+      toast({ title: "리더 임명 완료", description: "해당 멤버가 팀 리더로 지정되었습니다." });
+      await fetchTeam();
+      onUpdated();
+    } catch (error) {
+      toast({
+        title: "오류",
+        description: "리더 임명 실패",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const isUserInTeam = (userId: string) =>
+    teamDetail?.members.some((member) => member.userId === userId);
+
+  const currentLeaderId = teamDetail?.members.find(m => m.leader)?.userId;
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -53,44 +141,94 @@ const TeamDetailModal: React.FC<Props> = ({ team, onClose, onUpdated }) => {
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* 멤버 추가 */}
-          <div className="flex gap-2">
-            <Input
-              placeholder="추가할 멤버 이름"
-              value={newMemberName}
-              onChange={(e) => setNewMemberName(e.target.value)}
-            />
-            <Button onClick={handleAddMember} disabled={!newMemberName.trim()}>
-              추가
-            </Button>
-          </div>
-
-          {/* 멤버 목록 */}
-          <div className="grid grid-cols-1 gap-3 max-h-[400px] overflow-y-auto">
-            {team.members && team.members.length > 0 ? (
-              team.members.map((member) => (
-                <Card key={member.id} className="flex justify-between items-center p-4">
-                  <div>
-                    <CardTitle className="text-sm">{member.name}</CardTitle>
-                    <CardContent className="text-xs text-muted-foreground">
-                      {member.userId ? `User ID: ${member.userId}` : "User ID 없음"}
-                    </CardContent>
-                  </div>
+          {/* 유저 검색 */}
+          <div className="relative space-y-1">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="닉네임으로 유저 검색"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            {fetchedUsers.length > 0 && (
+              <div className="absolute z-20 w-full max-h-60 mt-1 bg-white border shadow-md rounded-md overflow-y-auto">
+                {fetchedUsers.map((user) => {
+                  const inTeam = isUserInTeam?.(user.id);
+                  return (
+                    <div
+                      key={user.id}
+                      className={clsx(
+                        "flex justify-between items-center px-3 py-2 hover:bg-accent transition cursor-pointer"
+                      )}
+                    >
+                      <span>{user.nickname}</span>
+                      {inTeam ? (
+                        <Check className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleAddMember(user)}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+                {hasNext && (
                   <Button
-                    size="icon"
+                    onClick={() => setPage((prev) => prev + 1)}
+                    className="w-full rounded-none"
                     variant="ghost"
-                    onClick={() => setDeleteTarget(member.id)} // ✅ 삭제 대상 설정
+                    disabled={isFetching}
                   >
-                    <Trash2 className="w-4 h-4 text-destructive" />
+                    더보기
                   </Button>
-                </Card>
-              ))
-            ) : (
-              <p className="text-center text-muted-foreground">팀에 등록된 멤버가 없습니다.</p>
+                )}
+              </div>
             )}
           </div>
 
-          {/* 닫기 버튼 */}
+          {/* 멤버 목록 */}
+          <div className="grid grid-cols-1 gap-3 max-h-[400px] overflow-y-auto mt-6">
+            {teamDetail?.members.length ? (
+              teamDetail.members.map((member) => (
+                <Card key={member.id} className="flex justify-between items-center p-4">
+                  <div className="flex items-center gap-2">
+                    {member.leader && <Crown className="w-4 h-4 text-yellow-500" />}
+                    <CardTitle className="text-sm">{member.name}</CardTitle>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {user?.id === currentLeaderId && !member.leader && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handlePromoteToLeader(member.id)}
+                      >
+                        <Crown className="w-4 h-4 text-blue-500" />
+                      </Button>
+                    )}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setDeleteTarget(member.id)}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <p className="text-center text-muted-foreground">
+                팀에 등록된 멤버가 없습니다.
+              </p>
+            )}
+          </div>
+
+          {/* 닫기 */}
           <div className="flex justify-end">
             <Button variant="secondary" onClick={onClose}>
               닫기

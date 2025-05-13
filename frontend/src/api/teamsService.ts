@@ -49,7 +49,7 @@ export const teamsService = {
 
   deleteTeamMember: async (
     id: string,
-    data: Partial<TeamMember[]>,
+    data: { members: string[] }
   ): Promise<void> => {
     try {
       await apiClient.patch<void>(`${baseURI}/${id}/members`, data);

@@ -305,6 +305,7 @@ export interface TeamMember {
   id: string;
   userId?: string;
   name?: string;
+  leader?: boolean;
 }
 
 export interface Team {
@@ -327,4 +328,20 @@ export interface GuildDetail {
   totalHistoryUserCount: number;
   guildCreatedAt: string;
   lastPlayTime: string;
+}
+
+export interface SearchUser {
+  id: string;
+  nickname: string;
+}
+
+export interface SearchUsers {
+  content: SearchUser[];
+  page: number;
+  size: number;
+  totalPages: number;
+  totalElements: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+  searchType: string;
 }

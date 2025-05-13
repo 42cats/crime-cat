@@ -91,11 +91,6 @@ const DashboardTeams: React.FC = () => {
                   <Trash2 className="w-5 h-5 text-destructive" />
                 </Button>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  멤버 수: {team.members?.length ?? 0}
-                </p>
-              </CardContent>
             </Card>
           ))}
         </div>

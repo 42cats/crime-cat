@@ -29,17 +29,18 @@ public class MakerTeamService {
     private final WebUserRepository webUserRepository;
 
     public void create(String name) {
-        create(name, AuthenticationUtil.getCurrentWebUserId(), false);
+        create(name, AuthenticationUtil.getCurrentWebUser(), false);
     }
 
     @Transactional
-    public UUID create(String name, UUID leader, boolean isIndividual) {
+    public UUID create(String name, WebUser leader, boolean isIndividual) {
         MakerTeam team = teamRepository.save(MakerTeam.builder()
                 .name(name)
                 .isIndividual(isIndividual)
                 .build());
         teamMemberRepository.save(MakerTeamMember.builder()
-                .webUserId(leader)
+                .webUserId(leader.getId())
+                .name(leader.getUsername())
                 .team(team)
                 .isLeader(true)
                 .build());
