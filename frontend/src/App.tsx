@@ -40,6 +40,7 @@ import Guilds from "@/pages/dashboard/Guilds";
 import Profile from "@/pages/dashboard/Profile";
 import MessageFormat from "@/pages/MessageButtonEditor";
 import Teams from "@/pages/dashboard/Teams";
+import PointHistoryPage from "@/pages/PointHistory/PointHistoryPage";
 
 import { queryClient } from "@/lib/reactQuery";
 import GameHistoryManager from "@/pages/GameHistoryOwnerBoard";
@@ -107,6 +108,10 @@ const App = () => (
                                 <Route
                                     path="users/my-history"
                                     element={<UserGameHistoryPage />}
+                                />
+                                <Route
+                                    path="point-history"
+                                    element={<PointHistoryPage />}
                                 />
                                 <Route path="profile" element={<Profile />} />
                                 <Route path="teams" element={<Teams />} />
