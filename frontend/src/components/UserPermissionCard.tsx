@@ -1,45 +1,28 @@
 import React, { useState, useEffect } from "react";
-
 import { motion } from "framer-motion";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-    CardFooter,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogDescription,
     DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/useToast";
-import { UTCToKST } from "@/lib/dateFormat";
 import {
     permissionService,
     PermissionWithStatus,
-    PurchaseResponse,
-    ExtendResponse,
 } from "@/api/permissionService";
 import {
     ShoppingCart,
     Clock,
-    Check,
-    X,
-    Calendar,
     Crown,
     Package,
-    Sparkles,
-    Timer,
-    Coins,
 } from "lucide-react";
 import { UTCToKSTMultiline } from "@/lib/UTCToKSTMultiline";
+import { MobilePermissionCard } from "./MobilePermissionCard";
+import { DesktopPermissionCard } from "./DesktopPermissionCard";
 
 interface UserPermissionCardProps {
     userId: string;
@@ -447,272 +430,5 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
                 </DialogContent>
             </Dialog>
         </section>
-    );
-};
-
-// 모바일 권한 카드 컴포넌트
-const MobilePermissionCard: React.FC<{
-    permission: PermissionWithStatus;
-    expiryStatus: any;
-    daysLeft: number;
-    formatDate: (date: string) => React.ReactNode;
-    onPurchase: () => void;
-    onExtend: () => void;
-}> = ({
-    permission,
-    expiryStatus,
-    daysLeft,
-    formatDate,
-    onPurchase,
-    onExtend,
-}) => (
-    <Card
-        className={`h-full transition-all duration-300 hover:shadow-lg relative ${
-            permission.isOwned
-                ? "border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100"
-                : "hover:border-gray-300 hover:shadow-md"
-        }`}
-    >
-        {/* 상태 뱃지 - 수정된 위치 */}
-        {permission.isOwned && (
-            <div className="absolute top-3 right-3 z-10">
-                <Badge
-                    className={`px-3 py-1 text-xs ${
-                        expiryStatus.urgency === "critical"
-                            ? "bg-red-500 hover:bg-red-600"
-                            : expiryStatus.urgency === "warning"
-                            ? "bg-orange-500 hover:bg-orange-600"
-                            : "bg-emerald-500 hover:bg-emerald-600"
-                    }`}
-                >
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    보유 중
-                </Badge>
-            </div>
-        )}
-
-        <CardHeader className="pb-4">
-            <CardTitle className="text-xl flex items-center gap-3 pr-16">
-                <div
-                    className={`p-2 rounded-lg ${
-                        permission.isOwned
-                            ? "bg-blue-100 text-blue-600"
-                            : "bg-gray-100 text-gray-600"
-                    }`}
-                >
-                    <Crown className="h-5 w-5" />
-                </div>
-                {permission.permissionName}
-            </CardTitle>
-            {permission.info && (
-                <CardDescription className="text-sm mt-2 leading-relaxed">
-                    {permission.info}
-                </CardDescription>
-            )}
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-            {/* 가격 정보 */}
-            <div className="p-4 rounded-lg bg-white/70 border border-gray-200">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Coins className="h-4 w-4 text-amber-600" />
-                        <span className="text-sm font-medium text-gray-700">
-                            가격
-                        </span>
-                    </div>
-                    <span className="text-lg font-bold text-amber-600">
-                        {permission.price}P
-                    </span>
-                </div>
-                <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center gap-2">
-                        <Timer className="h-4 w-4 text-gray-600" />
-                        <span className="text-sm font-medium text-gray-700">
-                            기간
-                        </span>
-                    </div>
-                    <span className="text-sm font-semibold text-gray-800">
-                        {permission.duration}일
-                    </span>
-                </div>
-            </div>
-
-            {/* 만료일 정보 */}
-            {permission.isOwned && permission.expiredDate && (
-                <div
-                    className={`p-4 rounded-lg border ${expiryStatus.bgColor} border-current`}
-                >
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Calendar
-                                className={`h-4 w-4 ${expiryStatus.color}`}
-                            />
-                            <span
-                                className={`text-sm font-medium ${expiryStatus.color}`}
-                            >
-                                만료일
-                            </span>
-                        </div>
-                        <div className="text-right">
-                            <p
-                                className={`text-sm font-semibold ${expiryStatus.color}`}
-                            >
-                                {formatDate(permission.expiredDate)}
-                            </p>
-                            <p className={`text-xs mt-1 ${expiryStatus.color}`}>
-                                {daysLeft > 0 ? `${daysLeft}일 남음` : "만료됨"}
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* 진행률 바 */}
-                    <div className="mt-3">
-                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                                className={`h-full transition-all duration-300 ${
-                                    expiryStatus.urgency === "critical"
-                                        ? "bg-red-500"
-                                        : expiryStatus.urgency === "warning"
-                                        ? "bg-orange-500"
-                                        : "bg-emerald-500"
-                                }`}
-                                style={{
-                                    width: `${Math.max(
-                                        0,
-                                        Math.min(
-                                            100,
-                                            (daysLeft / permission.duration) *
-                                                100
-                                        )
-                                    )}%`,
-                                }}
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
-        </CardContent>
-
-        <CardFooter className="pt-4">
-            {permission.isOwned ? (
-                permission.canExtend && daysLeft > 0 ? (
-                    <Button
-                        variant="outline"
-                        className="w-full h-12 text-lg font-medium border-blue-300 text-blue-700 hover:bg-blue-50"
-                        onClick={onExtend}
-                    >
-                        <Clock className="h-5 w-5 mr-2" />
-                        연장하기
-                    </Button>
-                ) : (
-                    <Button
-                        variant="secondary"
-                        className="w-full h-12 text-lg font-medium bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                        disabled
-                    >
-                        <Check className="h-5 w-5 mr-2" />
-                        {daysLeft > 0 ? "보유 중" : "만료됨"}
-                    </Button>
-                )
-            ) : (
-                <Button
-                    className="w-full h-12 text-lg font-medium bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                    onClick={onPurchase}
-                >
-                    <ShoppingCart className="h-5 w-5 mr-2" />
-                    구매하기
-                </Button>
-            )}
-        </CardFooter>
-    </Card>
-);
-
-// 데스크탑 권한 카드 컴포넌트 - 가로형 레이아웃
-const DesktopPermissionCard: React.FC<{
-    permission: PermissionWithStatus;
-    expiryStatus: any;
-    daysLeft: number;
-    formatDate: (date: string) => React.ReactNode;
-    onPurchase: () => void;
-    onExtend: () => void;
-}> = ({
-    permission,
-    expiryStatus,
-    daysLeft,
-    formatDate,
-    onPurchase,
-    onExtend,
-}) => {
-    const progress = Math.max(0, Math.min(100, (daysLeft / permission.duration) * 100));
-
-    return (
-        <Card className="w-full max-w-[22rem] p-4 flex flex-col gap-2 hover:shadow-md transition-all duration-300">
-            <div className="flex items-start gap-3">
-                {/* 아이콘과 권한명 */}
-                <div className={`p-2 rounded-md ${permission.isOwned ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-600"}`}>
-                    <Crown className="h-4 w-4" />
-                </div>
-                <div className="flex-1">
-                    <h3 className="truncate text-base font-semibold">{permission.permissionName}</h3>
-                    <div className="flex items-center gap-2 mt-1 text-xs">
-                        <div className="flex items-center gap-1">
-                            <Coins className="h-3 w-3 text-amber-600" />
-                            <span className="font-semibold text-amber-600">{permission.price}P</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <Timer className="h-3 w-3 text-gray-600" />
-                            <span>{permission.duration}일</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* 만료일 정보 */}
-            {permission.isOwned && permission.expiredDate && (
-                <div className={`p-2 rounded-md border ${expiryStatus.bgColor} text-center text-xs`}>
-                    <div className="flex justify-center items-center gap-1 mb-1">
-                        <Calendar className={`h-3 w-3 ${expiryStatus.color}`} />
-                        <span className={`font-medium ${expiryStatus.color}`}>만료일</span>
-                    </div>
-                    <div className={`font-semibold ${expiryStatus.color}`}>
-                        {formatDate(permission.expiredDate)}
-                    </div>
-                    <div className={`mt-1 ${expiryStatus.color}`}>
-                        {daysLeft > 0 ? `${daysLeft}일 남음` : "만료됨"}
-                    </div>
-                    <div className="mt-1">
-                        <div className="h-[3px] bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                                className={`h-full ${expiryStatus.urgency === "critical" ? "bg-red-500" : expiryStatus.urgency === "warning" ? "bg-orange-500" : "bg-emerald-500"}`}
-                                style={{ width: `${progress}%` }}
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* 액션 버튼 */}
-            <div>
-                {permission.isOwned ? (
-                    permission.canExtend && daysLeft > 0 ? (
-                        <Button size="sm" variant="outline" className="w-full border-blue-300 text-blue-700 hover:bg-blue-50" onClick={onExtend}>
-                            <Clock className="h-4 w-4 mr-1" />
-                            연장하기
-                        </Button>
-                    ) : (
-                        <Button size="sm" variant="secondary" className="w-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200" disabled>
-                            <Check className="h-4 w-4 mr-1" />
-                            {daysLeft > 0 ? "보유 중" : "만료됨"}
-                        </Button>
-                    )
-                ) : (
-                    <Button size="sm" className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white" onClick={onPurchase}>
-                        <ShoppingCart className="h-4 w-4 mr-1" />
-                        구매하기
-                    </Button>
-                )}
-            </div>
-        </Card>
     );
 };
