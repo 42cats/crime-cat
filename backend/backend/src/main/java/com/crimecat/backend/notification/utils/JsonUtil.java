@@ -46,6 +46,16 @@ public class JsonUtil {
     }
     
     /**
+     * JSON 문자열에서 특정 필드를 String으로 추출
+     * @param json JSON 문자열
+     * @param fieldName 추출할 필드명
+     * @return 추출된 문자열 값 (없으면 null)
+     */
+    public static String extractField(String json, String fieldName) {
+        return getField(json, fieldName, String.class);
+    }
+    
+    /**
      * JSON 문자열에서 특정 필드 추출
      */
     public static <T> T getField(String json, String fieldName, Class<T> targetClass) {
