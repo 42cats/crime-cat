@@ -120,49 +120,49 @@ public class MakerTeamService {
         if (deletedMembers.isEmpty()) {
             return;
         }
-        try {
-            isTeamLeaderOrThrow(teamId);
-            MakerTeam team = teamRepository.findById(teamId).orElseThrow(ErrorStatus.TEAM_NOT_FOUND::asServiceException);
-            // 효율적으로 처리하기 위해 정렬
-            deletedMembers.sort(Comparator.naturalOrder());
-            List<MakerTeamMember> members = team.getMembers();
-            members.sort(Comparator.comparing(MakerTeamMember::getId));
-            Iterator<MakerTeamMember> iterator = members.iterator();
-            for (String deletedId : deletedMembers) {
-                if (!iterator.hasNext()) {
-                    break;
-                }
-                // 삭제하고자 하는 ID와 같은 ID 찾기
-                MakerTeamMember member = iterator.next();
-                String id = member.getId().toString();
-                while (id.compareTo(deletedId) < 0 && iterator.hasNext()) {
-                    member = iterator.next();
-                    id = member.getId().toString();
-                }
-                // 같으면 제거
-                if (deletedId.equals(id)) {
-                    teamMemberRepository.deleteById(member.getId());
-                    members.remove(member);
-                }
-            }
-        } catch (ServiceException e) {
+        MakerTeam team = teamRepository.findById(teamId).orElseThrow(ErrorStatus.TEAM_NOT_FOUND::asServiceException);
+        if (!isTeamLeader(teamId)) {
             UUID webUserId = AuthenticationUtil.getCurrentWebUserId();
-            if (e.getStatus() == HttpStatus.FORBIDDEN && deletedMembers.contains(webUserId.toString())) {
-                teamMemberRepository.deleteById(webUserId);
-            } else {
-                throw e;
+            if (deletedMembers.contains(webUserId.toString())) {
+                teamMemberRepository.deleteByWebUserId(webUserId);
+            }
+            return;
+        }
+        // 효율적으로 처리하기 위해 정렬
+        deletedMembers.sort(Comparator.naturalOrder());
+        List<MakerTeamMember> members = team.getMembers();
+        members.sort(Comparator.comparing(MakerTeamMember::getId));
+        Iterator<MakerTeamMember> iterator = members.iterator();
+        for (String deletedId : deletedMembers) {
+            if (!iterator.hasNext()) {
+                break;
+            }
+            // 삭제하고자 하는 ID와 같은 ID 찾기
+            MakerTeamMember member = iterator.next();
+            String id = member.getId().toString();
+            while (id.compareTo(deletedId) < 0 && iterator.hasNext()) {
+                member = iterator.next();
+                id = member.getId().toString();
+            }
+            // 같고 팀 리더가 아니면 제거
+            if (deletedId.equals(id) && !member.isLeader()) {
+                teamMemberRepository.deleteById(member.getId());
+                members.remove(member);
             }
         }
-
     }
 
     private void isTeamLeaderOrThrow(UUID teamId) {
+        if (!isTeamLeader(teamId)) {
+            throw ErrorStatus.FORBIDDEN.asServiceException();
+        }
+    }
+
+    private boolean isTeamLeader(UUID teamId) {
         UUID webUserId = AuthenticationUtil.getCurrentWebUserId();
         MakerTeamMember makerTeamMember = teamMemberRepository.findByWebUserIdAndTeamId(webUserId, teamId)
                 .orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
-        if (!makerTeamMember.isLeader()) {
-            throw ErrorStatus.FORBIDDEN.asServiceException();
-        }
+        return makerTeamMember.isLeader();
     }
 
     public GetTeamsResponse getMyTeams() {

@@ -13,4 +13,6 @@ public interface MakerTeamMemberRepository extends JpaRepository<MakerTeamMember
     Optional<MakerTeamMember> findByWebUserIdAndTeamId(UUID webUserId, UUID id);
 
     List<MakerTeamMember> findByWebUserId(UUID webUserId);
+
+    long deleteByWebUserId(UUID webUserId);
 }
