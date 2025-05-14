@@ -166,45 +166,6 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
         }
     };
 
-    // 만료일까지 남은 일수 계산
-    const getDaysUntilExpiry = (expiredDate: string) => {
-        const today = new Date();
-        const expiry = new Date(expiredDate);
-        const diffTime = expiry.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
-    };
-
-    // 만료 상태에 따른 색상 결정
-    const getExpiryStatus = (permission: PermissionWithStatus) => {
-        if (!permission.isOwned || !permission.expiredDate) {
-            return {
-                color: "text-gray-500",
-                bgColor: "bg-gray-50",
-                urgency: "normal",
-            };
-        }
-
-        const daysLeft = getDaysUntilExpiry(permission.expiredDate);
-        if (daysLeft <= 3)
-            return {
-                color: "text-red-600",
-                bgColor: "bg-red-50",
-                urgency: "critical",
-            };
-        if (daysLeft <= 7)
-            return {
-                color: "text-orange-600",
-                bgColor: "bg-orange-50",
-                urgency: "warning",
-            };
-        return {
-            color: "text-emerald-600",
-            bgColor: "bg-emerald-50",
-            urgency: "normal",
-        };
-    };
-
     // 날짜 포맷터 - UTCToKST 컴포넌트 사용
     const formatDate = (dateString: string) => {
         try {
@@ -268,11 +229,6 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
                 }}
             >
                 {permissions.map((permission) => {
-                    const expiryStatus = getExpiryStatus(permission);
-                    const daysLeft = permission.expiredDate
-                        ? getDaysUntilExpiry(permission.expiredDate)
-                        : 0;
-
                     return (
                         <motion.div
                             key={permission.permissionId}
@@ -289,8 +245,6 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
                                 // 모바일 버전 - 세로형
                                 <MobilePermissionCard
                                     permission={permission}
-                                    expiryStatus={expiryStatus}
-                                    daysLeft={daysLeft}
                                     formatDate={formatDate}
                                     onPurchase={() => {
                                         setSelectedPermission(permission);
@@ -305,8 +259,6 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
                                 // 데스크탑 버전 - 가로형
                                 <DesktopPermissionCard
                                     permission={permission}
-                                    expiryStatus={expiryStatus}
-                                    daysLeft={daysLeft}
                                     formatDate={formatDate}
                                     onPurchase={() => {
                                         setSelectedPermission(permission);
