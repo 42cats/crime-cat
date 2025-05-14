@@ -16,7 +16,7 @@ public class PointHistoryQueryService {
 
 	private final PointHistoryRepository pointHistoryRepository;
 
-	public void logPermissionPurchase(User user, TransactionType type, Permission permission) {
+	public void  logPermissionPurchase(User user, TransactionType type, Permission permission) {
 		PointHistory history = PointHistory.builder()
 				.user(user)
 				.type(type)
