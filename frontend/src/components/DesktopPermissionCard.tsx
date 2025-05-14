@@ -1,6 +1,7 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
     ShoppingCart,
     Clock,
@@ -9,6 +10,7 @@ import {
     Crown,
     Timer,
     Coins,
+    Sparkles,
 } from "lucide-react";
 import { PermissionWithStatus } from "@/api/permissionService";
 
@@ -35,7 +37,25 @@ export const DesktopPermissionCard: React.FC<DesktopPermissionCardProps> = ({
     );
 
     return (
-        <Card className="w-full p-4 hover:shadow-md transition-all duration-300">
+        <Card className="w-full p-4 hover:shadow-md transition-all duration-300 relative">
+            {/* 상태 뱃지 - 오른쪽 상단 */}
+            {permission.isOwned && (
+                <div className="absolute top-3 right-7 z-10">
+                    <Badge
+                        className={`px-3 py-1 text-xs ${
+                            expiryStatus.urgency === "critical"
+                                ? "bg-red-500 hover:bg-red-600"
+                                : expiryStatus.urgency === "warning"
+                                ? "bg-orange-500 hover:bg-orange-600"
+                                : "bg-emerald-500 hover:bg-emerald-600"
+                        }`}
+                    >
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        보유 중
+                    </Badge>
+                </div>
+            )}
+            
             {/* 상단 가로 레이아웃 - 권한 정보, 만료일, 버튼 */}
             <div className="flex flex-row items-center gap-4">
                 {/* 권한 정보 섹션 - 가로 레이아웃 */}
