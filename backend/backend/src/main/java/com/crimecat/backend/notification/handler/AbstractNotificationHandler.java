@@ -1,12 +1,11 @@
 package com.crimecat.backend.notification.handler;
 
-import com.crimecat.backend.notification.domain.Notification;
-import com.crimecat.backend.notification.enums.NotificationType;
-import com.crimecat.backend.notification.repository.NotificationRepository;
 import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.notification.domain.Notification;
+import com.crimecat.backend.notification.repository.NotificationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * 알림 핸들러의 공통 기능을 제공하는 추상 클래스
@@ -34,7 +33,7 @@ public abstract class AbstractNotificationHandler implements NotificationHandler
      */
     protected Notification findNotification(UUID notificationId) {
         return notificationRepository.findById(notificationId)
-            .orElseThrow(() -> ErrorStatus.NOTIFICATION_NOT_FOUND.asServiceException());
+            .orElseThrow(ErrorStatus.NOTIFICATION_NOT_FOUND::asServiceException);
     }
     
     /**
