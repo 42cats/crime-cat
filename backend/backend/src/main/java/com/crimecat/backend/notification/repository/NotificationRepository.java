@@ -41,6 +41,17 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     Page<Notification> findByUserIdOrderByCreatedAtDesc(@Param("userId") UUID userId, Pageable pageable);
     
     /**
+     * 특정 사용자의 특정 타입들 알림 페이징 조회
+     */
+    @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.type IN :types")
+    Page<Notification> findByUserIdAndTypeIn(@Param("userId") UUID userId, @Param("types") List<NotificationType> types, Pageable pageable);
+    
+    /**
+     * 특정 사용자의 특정 타입 알림 페이징 조회
+     */
+    Page<Notification> findByUserIdAndType(UUID userId, NotificationType type, Pageable pageable);
+    
+    /**
      * 특정 사용자의 특정 타입 알림 조회 (User 객체 사용)
      */
     List<Notification> findByUserAndTypeOrderByCreatedAtDesc(User user, NotificationType type);

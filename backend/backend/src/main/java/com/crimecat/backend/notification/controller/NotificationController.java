@@ -1,6 +1,7 @@
 package com.crimecat.backend.notification.controller;
 
 import com.crimecat.backend.notification.dto.response.NotificationDto;
+import com.crimecat.backend.notification.enums.NotificationType;
 import com.crimecat.backend.notification.service.NotificationHandlerService;
 import com.crimecat.backend.notification.service.NotificationService;
 import com.crimecat.backend.notification.sort.NotificationSortType;
@@ -35,7 +36,8 @@ public class NotificationController {
     public ResponseEntity<Page<NotificationDto>> getNotifications(
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "20") int size,
-        @RequestParam(required = false) List<String> sort
+        @RequestParam(required = false) List<String> sort,
+        @RequestParam(required = false) List<NotificationType> types
     ) {
         List<NotificationSortType> sortTypes = (sort != null && !sort.isEmpty()) ?
                 sort.stream()
@@ -48,7 +50,7 @@ public class NotificationController {
         Pageable pageable = PageRequest.of(page, size, resolvedSort);
         
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
-        Page<NotificationDto> notifications = notificationService.getUserNotifications(currentUserId, pageable);
+        Page<NotificationDto> notifications = notificationService.getUserNotifications(currentUserId, pageable, types);
         
         return ResponseEntity.ok(notifications);
     }
