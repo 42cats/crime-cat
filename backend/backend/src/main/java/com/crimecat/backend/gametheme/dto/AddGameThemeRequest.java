@@ -28,4 +28,6 @@ public class AddGameThemeRequest {
     private int difficulty; // 난이도 1~10
     private boolean publicStatus; // 공개 여부
     private String type;
+    private boolean recommendationEnabled;
+    private boolean commentEnabled;
 }

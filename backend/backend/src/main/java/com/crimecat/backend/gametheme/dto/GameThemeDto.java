@@ -29,6 +29,7 @@ public class GameThemeDto {
     private int price;
     private int difficulty;
     private Set<String> tags;
+    private boolean recommendationEnabled;
     private String type;
 
     public static GameThemeDto from(GameTheme theme) {
@@ -50,6 +51,7 @@ public class GameThemeDto {
                 .playTimeMax(theme.getPlayTimeMax())
                 .price(theme.getPrice())
                 .difficulty(theme.getDifficulty())
+                .recommendationEnabled(theme.isRecommendationEnabled())
                 .tags(theme.getTags())
                 .build();
     }
