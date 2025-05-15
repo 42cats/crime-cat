@@ -3,13 +3,15 @@ package com.crimecat.backend.notification.controller;
 import com.crimecat.backend.notification.dto.response.NotificationDto;
 import com.crimecat.backend.notification.service.NotificationHandlerService;
 import com.crimecat.backend.notification.service.NotificationService;
+import com.crimecat.backend.notification.sort.NotificationSortType;
 import com.crimecat.backend.utils.AuthenticationUtil;
+import com.crimecat.backend.utils.sort.SortUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -34,9 +36,20 @@ public class NotificationController {
      */
     @GetMapping
     public ResponseEntity<Page<NotificationDto>> getNotifications(
-        @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) 
-        Pageable pageable
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size,
+        @RequestParam(required = false) List<String> sort
     ) {
+        List<NotificationSortType> sortTypes = (sort != null && !sort.isEmpty()) ?
+                sort.stream()
+                        .map(String::toUpperCase)
+                        .map(NotificationSortType::valueOf)
+                        .toList()
+                : List.of(NotificationSortType.LATEST);
+
+        Sort resolvedSort = SortUtil.combineSorts(sortTypes);
+        Pageable pageable = PageRequest.of(page, size, resolvedSort);
+        
         UUID currentUserId = AuthenticationUtil.getCurrentWebUserId();
         Page<NotificationDto> notifications = notificationService.getUserNotifications(currentUserId, pageable);
         
