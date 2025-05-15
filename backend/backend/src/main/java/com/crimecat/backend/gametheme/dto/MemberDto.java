@@ -17,10 +17,11 @@ public class MemberDto {
     private boolean isLeader;
 
     public static MemberDto from(MakerTeamMember member) {
-        MemberDtoBuilder builder = MemberDto.builder().id(member.getId()).name(member.getName()).isLeader(member.isLeader());
-        if (member.getWebUserId() != null) {
-            builder.userId(member.getWebUserId());
-        }
-        return builder.build();
+        return MemberDto.builder()
+                .id(member.getId())
+                .name(member.getName())
+                .isLeader(member.isLeader())
+                .userId(member.getWebUserId())
+                .build();
     }
 }

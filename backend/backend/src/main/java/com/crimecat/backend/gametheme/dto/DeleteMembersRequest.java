@@ -3,10 +3,10 @@ package com.crimecat.backend.gametheme.dto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.List;
+import java.util.Set;
 
 @Getter
 @AllArgsConstructor
-public class ModifyMemberRequest {
-    private List<String> members;
+public class DeleteMembersRequest {
+    private Set<String> members;
 }

@@ -10,9 +10,7 @@ import java.util.UUID;
 public interface MakerTeamMemberRepository extends JpaRepository<MakerTeamMember, UUID> {
     List<MakerTeamMember> findByWebUserIdAndIsLeader(UUID webUserId, boolean isLeader);
 
-    Optional<MakerTeamMember> findByWebUserIdAndTeamId(UUID webUserId, UUID id);
+    Optional<MakerTeamMember> findByWebUserIdAndTeamId(UUID webUserId, UUID teamId);
 
     List<MakerTeamMember> findByWebUserId(UUID webUserId);
-
-    long deleteByWebUserId(UUID webUserId);
 }
