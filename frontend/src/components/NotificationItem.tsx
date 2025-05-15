@@ -1,7 +1,9 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 import { Notification, NotificationType } from '@/types/notification';
+import { handleNotificationRouting } from '@/utils/notificationRouting';
 import { cn } from '@/lib/utils';
 import { Gamepad2, Users, MessageSquare, Megaphone, Mail } from 'lucide-react';
 
@@ -17,10 +19,14 @@ const getNotificationIcon = (type: NotificationType) => {
       return <Gamepad2 className="w-5 h-5 text-blue-500" />;
     case NotificationType.FRIEND_REQUEST:
       return <Users className="w-5 h-5 text-green-500" />;
-    case NotificationType.COMMENT:
+    case NotificationType.COMMENT_ALERT:
       return <MessageSquare className="w-5 h-5 text-purple-500" />;
     case NotificationType.SYSTEM_NOTICE:
       return <Megaphone className="w-5 h-5 text-orange-500" />;
+    case NotificationType.NEW_THEME:
+      return <Megaphone className="w-5 h-5 text-green-500" />;
+    case NotificationType.GAME_NOTICE:
+      return <Gamepad2 className="w-5 h-5 text-orange-500" />;
     default:
       return <Mail className="w-5 h-5 text-gray-500" />;
   }
@@ -31,11 +37,20 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   onRead,
   onClick,
 }) => {
+  const navigate = useNavigate();
+  
   const handleClick = () => {
-    if (!notification.read) {
+    if (notification.status === 'UNREAD') {
       onRead(notification.id);
     }
-    onClick?.(notification);
+    
+    // onClick prop이 있으면 먼저 실행
+    if (onClick) {
+      onClick(notification);
+    } else {
+      // onClick prop이 없으면 기본 라우팅 처리
+      handleNotificationRouting.navigate(notification, navigate);
+    }
   };
   
   const timeAgo = formatDistanceToNow(new Date(notification.createdAt), {
@@ -43,12 +58,14 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     locale: ko,
   });
   
+  const isUnread = notification.status === 'UNREAD';
+  
   return (
     <div
       className={cn(
         "flex items-start gap-3 p-3 rounded-lg transition-colors cursor-pointer",
         "hover:bg-muted/50",
-        notification.read ? "bg-muted/20" : "bg-background"
+        isUnread ? "bg-background" : "bg-muted/20"
       )}
       onClick={handleClick}
     >
@@ -61,7 +78,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           <p className="text-sm font-medium text-foreground truncate">
             {notification.title}
           </p>
-          {!notification.read && (
+          {isUnread && (
             <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 ml-2" />
           )}
         </div>
