@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -56,6 +56,15 @@ export const GameRecordAcceptModal: React.FC<GameRecordAcceptModalProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   
+  // 디버깅을 위한 로깅
+  useEffect(() => {
+    console.log('🚀 GameRecordAcceptModal rendered, isOpen:', isOpen);
+  }, [isOpen]);
+  
+  useEffect(() => {
+    console.log('🚀 Modal is closing, onClose called');
+  }, []);
+  
   const {
     register,
     handleSubmit,
@@ -109,14 +118,32 @@ export const GameRecordAcceptModal: React.FC<GameRecordAcceptModalProps> = ({
   }
   
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      console.log('🔥 Dialog onOpenChange called:', { 
+        open, 
+        currentIsOpen: isOpen,
+        timestamp: new Date().toISOString()
+      });
+      if (!open) {
+        onClose();
+      }
+    }}>
       <div onClick={(e) => e.stopPropagation()}>
         <DialogContent 
           className="sm:max-w-md" 
           style={{ zIndex: 9999 }}
-          onClick={(e) => e.stopPropagation()}
-          onPointerDown={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            console.log('🔍 DialogContent clicked:', e.target);
+            e.stopPropagation();
+          }}
+          onPointerDown={(e) => {
+            console.log('🔍 DialogContent pointerDown:', e.target);
+            e.stopPropagation();
+          }}
+          onMouseDown={(e) => {
+            console.log('🔍 DialogContent mouseDown:', e.target);
+            e.stopPropagation();
+          }}
         >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -188,33 +215,37 @@ export const GameRecordAcceptModal: React.FC<GameRecordAcceptModalProps> = ({
             {/* 게임 시간 */}
             <div className="space-y-2">
               <Label>게임 시간 *</Label>
-              <Select 
-                value={gameTime} 
-                onValueChange={(value) => setValue('gameTime', value)}
-                onOpenChange={(open, event) => {
-                  // Select가 닫힐 때 이벤트 전파 차단
-                  if (!open && event) {
-                    // 이벤트 버블링 그지
-                    (event as Event).stopPropagation();
-                    (event as Event).preventDefault();
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="시간을 선택하세요" />
-                </SelectTrigger>
-                <SelectContent 
-                  style={{ zIndex: 10000 }}
-                  onPointerDownOutside={(e) => e.preventDefault()}
-                  onInteractOutside={(e) => e.preventDefault()}
-                >
-                  {timeOptions.map((time) => (
-                    <SelectItem key={time} value={time}>
-                      {time}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-between text-left font-normal",
+                      !gameTime && "text-muted-foreground"
+                    )}
+                  >
+                    <span>{gameTime || "시간을 선택하세요"}</span>
+                    <Clock className="ml-2 h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2" style={{ zIndex: 10000 }}>
+                  <div className="grid grid-cols-2 gap-1 max-h-60 overflow-y-auto">
+                    {timeOptions.map((time) => (
+                      <Button
+                        key={time}
+                        variant={gameTime === time ? "default" : "ghost"}
+                        className="justify-start h-8 text-sm"
+                        onClick={() => {
+                          console.log('🕰️ Time selected:', time);
+                          setValue('gameTime', time);
+                        }}
+                      >
+                        {time}
+                      </Button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
               {errors.gameTime && (
                 <p className="text-sm text-destructive">{errors.gameTime.message}</p>
               )}

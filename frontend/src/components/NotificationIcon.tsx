@@ -23,6 +23,13 @@ export const NotificationIcon: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (!isDropdownOpen) return;
       
+      // Select가 열려있는지 확인
+      const selectContent = document.querySelector('[data-radix-select-content]');
+      if (selectContent) {
+        console.log('🕰️ Select가 열려있으므로 외부 클릭 무시');
+        return;
+      }
+      
       const target = event.target as Node;
       console.log('🔥 외부 클릭 감지됨', {
         isDropdownOpen,
