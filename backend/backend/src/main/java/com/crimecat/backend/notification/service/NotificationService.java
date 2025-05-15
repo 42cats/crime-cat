@@ -91,6 +91,28 @@ public class NotificationService {
     }
     
     /**
+     * 사용자별 알림 목록 조회 (상태, 타입, 검색 필터링 포함)
+     */
+    @Transactional(readOnly = true)
+    public Page<NotificationDto> getUserNotifications(
+        UUID userId, 
+        Pageable pageable, 
+        List<NotificationType> types,
+        List<NotificationStatus> statuses,
+        String keyword
+    ) {
+        // 빈 문자열 처리
+        if (keyword != null && keyword.trim().isEmpty()) {
+            keyword = null;
+        }
+        
+        Page<Notification> notifications = notificationRepository
+            .findByUserIdWithFilters(userId, types, statuses, keyword, pageable);
+        
+        return notifications.map(this::convertToDto);
+    }
+    
+    /**
      * 특정 알림 조회
      */
     @Transactional(readOnly = true)
