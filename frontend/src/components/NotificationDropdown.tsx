@@ -1,10 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { NotificationItem } from '@/components/NotificationItem';
 import { useNotification } from '@/hooks/useNotification';
+import { handleNotificationRouting } from '@/utils/notificationRouting';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { Notification } from '@/types/notification';
 
 interface NotificationDropdownProps {
   onClose?: () => void;
@@ -14,6 +16,12 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   onClose,
 }) => {
   const { recentNotifications, markAsRead } = useNotification();
+  const navigate = useNavigate();
+  
+  // 알림 클릭 처리를 위한 함수
+  const handleNotificationClick = (notification: Notification) => {
+    handleNotificationRouting.navigateFromDropdown(notification, navigate, onClose!);
+  };
   
   return (
     <div className="w-80 max-w-[90vw] bg-background rounded-lg shadow-lg border border-border">
@@ -40,10 +48,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 <NotificationItem
                   notification={notification}
                   onRead={markAsRead}
-                  onClick={(notification) => {
-                    // TODO: Navigate to notification detail
-                    onClose?.();
-                  }}
+                  onClick={handleNotificationClick}
                 />
                 {index < recentNotifications.length - 1 && (
                   <Separator className="mx-3" />
@@ -60,21 +65,21 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       </ScrollArea>
       
       {recentNotifications.length > 0 && (
-        <>
-          <Separator />
-          <div className="p-4 pt-2">
-            <Link
-              to="/notifications"
-              className={cn(
-                "block text-center text-sm text-primary hover:underline",
-                "py-2 rounded-md hover:bg-muted/50 transition-colors"
-              )}
-              onClick={onClose}
-            >
-              전체 보기 →
-            </Link>
-          </div>
-        </>
+      <>
+      <Separator />
+      <div className="p-4 pt-2">
+      <Link
+      to="/notifications"
+      className={cn(
+      "block text-center text-sm text-primary hover:underline",
+      "py-2 rounded-md hover:bg-muted/50 transition-colors"
+      )}
+      onClick={onClose}
+      >
+      전체 보기 →
+      </Link>
+      </div>
+      </>
       )}
     </div>
   );
