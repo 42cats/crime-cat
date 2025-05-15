@@ -34,8 +34,8 @@ const schema = z.object({
     required_error: '게임 시간을 선택해주세요.',
   }),
   characterName: z.string()
-    .min(1, '캐릭터명을 입력해주세요.')
-    .max(50, '캐릭터명은 50자를 초과할 수 없습니다.'),
+    .optional()
+    .transform(val => val || ''),
   ownerMemo: z.string().optional(),
 });
 
@@ -46,6 +46,7 @@ interface GameRecordAcceptModalProps {
   onClose: () => void;
   onSubmit: (data: GameRecordAcceptDto) => void;
   notificationId: string;
+  requesterNickname?: string;
 }
 
 export const GameRecordAcceptModal: React.FC<GameRecordAcceptModalProps> = ({
@@ -53,6 +54,7 @@ export const GameRecordAcceptModal: React.FC<GameRecordAcceptModalProps> = ({
   onClose,
   onSubmit,
   notificationId,
+  requesterNickname,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   
@@ -66,6 +68,7 @@ export const GameRecordAcceptModal: React.FC<GameRecordAcceptModalProps> = ({
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
+      isWin: false,
       gameDate: new Date(),
       gameTime: '18:00',
     },
@@ -86,7 +89,7 @@ export const GameRecordAcceptModal: React.FC<GameRecordAcceptModalProps> = ({
       const submitData: GameRecordAcceptDto = {
         isWin: data.isWin,
         gameDate: gameDateTime.toISOString(),
-        characterName: data.characterName,
+        characterName: data.characterName || requesterNickname || '',
         ownerMemo: data.ownerMemo || undefined,
       };
       
@@ -227,13 +230,17 @@ export const GameRecordAcceptModal: React.FC<GameRecordAcceptModalProps> = ({
             
             {/* 캐릭터명 */}
             <div className="space-y-2">
-              <Label htmlFor="characterName">캐릭터명 *</Label>
+              <Label htmlFor="characterName">캐릭터명</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="characterName"
                   {...register('characterName')}
-                  placeholder="사용하신 캐릭터명을 입력하세요"
+                  placeholder={
+                    requesterNickname 
+                      ? `미입력 시 ${requesterNickname} 님의 닉네임이 자동으로 입력됩니다`
+                      : '캐릭터명을 입력하세요'
+                  }
                   className="pl-10"
                 />
               </div>

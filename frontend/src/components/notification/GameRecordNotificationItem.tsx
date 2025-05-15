@@ -163,6 +163,7 @@ export const GameRecordNotificationItem: React.FC<GameRecordNotificationItemProp
           onClose={() => setShowAcceptModal(false)}
           onSubmit={handleAccept}
           notificationId={notification.id}
+          requesterNickname={requesterName}
         />
       )}
       
