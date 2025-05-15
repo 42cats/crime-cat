@@ -30,9 +30,20 @@ public class Notification {
     @Column(name = "id", columnDefinition = "BINARY(16)")
     private UUID id;
     
-    // User 엔티티와의 관계 설정
+    // 수신자 (받는 사람)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
+    @JoinColumn(name = "receiver_id", referencedColumnName = "id", nullable = false)
+    private User receiver;
+    
+    // 발신자 (보내는 사람, null이면 시스템 알림)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sender_id", referencedColumnName = "id", nullable = true)
+    private User sender;
+    
+    // 하위 호환성을 위한 deprecated 필드
+    @Deprecated
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, insertable = false, updatable = false)
     private User user;
     
     @Enumerated(EnumType.STRING)
@@ -72,7 +83,22 @@ public class Notification {
                                    String message, Object data) {
         return Notification.builder()
             .type(type)
-            .user(user)
+            .receiver(user)
+            .title(title)
+            .message(message)
+            .dataJson(JsonUtil.toJson(data))
+            .build();
+    }
+    
+    /**
+     * 발신자가 있는 알림 생성 (User 객체 사용)
+     */
+    public static Notification from(NotificationType type, User receiver, User sender, 
+                                   String title, String message, Object data) {
+        return Notification.builder()
+            .type(type)
+            .receiver(receiver)
+            .sender(sender)
             .title(title)
             .message(message)
             .dataJson(JsonUtil.toJson(data))
@@ -86,7 +112,7 @@ public class Notification {
                                    String message, Object data) {
         return Notification.builder()
             .type(type)
-            .user(User.builder().id(userId).build()) // 프록시 객체
+            .receiver(User.builder().id(userId).build()) // 프록시 객체
             .title(title)
             .message(message)
             .dataJson(JsonUtil.toJson(data))
@@ -94,13 +120,44 @@ public class Notification {
     }
     
     /**
-     * 만료시간이 있는 알림 생성 (User 객체 사용)
+     * 발신자가 있는 알림 생성 (UUID 사용)
+     */
+    public static Notification from(NotificationType type, UUID receiverId, UUID senderId,
+                                   String title, String message, Object data) {
+        return Notification.builder()
+            .type(type)
+            .receiver(User.builder().id(receiverId).build()) // 프록시 객체
+            .sender(senderId != null ? User.builder().id(senderId).build() : null)
+            .title(title)
+            .message(message)
+            .dataJson(JsonUtil.toJson(data))
+            .build();
+    }
+    
+    /**
+     * 만료시间이 있는 알림 생성 (User 객체 사용)
      */
     public static Notification from(NotificationType type, User user, String title, 
                                    String message, Object data, LocalDateTime expiresAt) {
         return Notification.builder()
             .type(type)
-            .user(user)
+            .receiver(user)
+            .title(title)
+            .message(message)
+            .dataJson(JsonUtil.toJson(data))
+            .expiresAt(expiresAt)
+            .build();
+    }
+    
+    /**
+     * 발신자와 만료시간이 있는 알림 생성 (User 객체 사용)
+     */
+    public static Notification from(NotificationType type, User receiver, User sender,
+                                   String title, String message, Object data, LocalDateTime expiresAt) {
+        return Notification.builder()
+            .type(type)
+            .receiver(receiver)
+            .sender(sender)
             .title(title)
             .message(message)
             .dataJson(JsonUtil.toJson(data))
@@ -115,7 +172,7 @@ public class Notification {
                                    String message, Object data, LocalDateTime expiresAt) {
         return Notification.builder()
             .type(type)
-            .user(User.builder().id(userId).build()) // 프록시 객체
+            .receiver(User.builder().id(userId).build()) // 프록시 객체
             .title(title)
             .message(message)
             .dataJson(JsonUtil.toJson(data))
@@ -124,10 +181,48 @@ public class Notification {
     }
     
     /**
+     * 발신자와 만료시간이 있는 알림 생성 (UUID 사용)
+     */
+    public static Notification from(NotificationType type, UUID receiverId, UUID senderId,
+                                   String title, String message, Object data, LocalDateTime expiresAt) {
+        return Notification.builder()
+            .type(type)
+            .receiver(User.builder().id(receiverId).build()) // 프록시 객체
+            .sender(senderId != null ? User.builder().id(senderId).build() : null)
+            .title(title)
+            .message(message)
+            .dataJson(JsonUtil.toJson(data))
+            .expiresAt(expiresAt)
+            .build();
+    }
+    
+    /**
+     * 수신자 ID 가져오기
+     */
+    public UUID getReceiverId() {
+        return receiver != null ? receiver.getId() : null;
+    }
+    
+    /**
+     * 발신자 ID 가져오기
+     */
+    public UUID getSenderId() {
+        return sender != null ? sender.getId() : null;
+    }
+    
+    /**
+     * 시스템 알림인지 확인
+     */
+    public boolean isSystemNotification() {
+        return sender == null;
+    }
+    
+    /**
      * 사용자 ID 가져오기 (하위 호환성)
      */
+    @Deprecated
     public UUID getUserId() {
-        return user != null ? user.getId() : null;
+        return getReceiverId();
     }
     
     /**
