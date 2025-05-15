@@ -117,7 +117,10 @@ export const GameRecordNotificationItem: React.FC<GameRecordNotificationItemProp
                     <div className="flex gap-2">
                       <Button
                         size="sm"
-                        onClick={() => setShowAcceptModal(true)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAcceptModal(true);
+                        }}
                         disabled={isLoading}
                         className="bg-green-600 hover:bg-green-700"
                       >
@@ -127,7 +130,10 @@ export const GameRecordNotificationItem: React.FC<GameRecordNotificationItemProp
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setShowDeclineModal(true)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDeclineModal(true);
+                        }}
                         disabled={isLoading}
                         className="border-red-200 text-red-600 hover:bg-red-50"
                       >
@@ -150,7 +156,7 @@ export const GameRecordNotificationItem: React.FC<GameRecordNotificationItemProp
         </CardContent>
       </Card>
       
-      {/* 승인 모달 */}
+      {/* 승인 모달 - z-index 조정 */}
       {showAcceptModal && (
         <GameRecordAcceptModal
           isOpen={showAcceptModal}
@@ -160,7 +166,7 @@ export const GameRecordNotificationItem: React.FC<GameRecordNotificationItemProp
         />
       )}
       
-      {/* 거절 모달 */}
+      {/* 거절 모달 - z-index 조정 */}
       {showDeclineModal && (
         <GameRecordDeclineModal
           isOpen={showDeclineModal}
