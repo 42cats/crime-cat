@@ -27,6 +27,10 @@ public class NotificationDto {
     private LocalDateTime createdAt;
     private LocalDateTime expiresAt;
     
+    // Sender 정보 (시스템 알림인 경우 null)
+    private UUID senderId;
+    private String senderName;
+    
     /**
      * static factory method
      */
@@ -39,6 +43,8 @@ public class NotificationDto {
             .status(notification.getStatus())
             .createdAt(notification.getCreatedAt())
             .expiresAt(notification.getExpiresAt())
+            .senderId(notification.getSenderId())
+            .senderName(notification.getSender() != null ? notification.getSender().getName() : null)
             .build();
     }
 }
