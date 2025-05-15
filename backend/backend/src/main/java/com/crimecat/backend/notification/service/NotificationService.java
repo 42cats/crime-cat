@@ -73,6 +73,24 @@ public class NotificationService {
     }
     
     /**
+     * 사용자별 특정 타입 알림 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public Page<NotificationDto> getUserNotifications(UUID userId, Pageable pageable, List<NotificationType> types) {
+        Page<Notification> notifications;
+        
+        if (types == null || types.isEmpty()) {
+            // 타입 지정이 없으면 모든 알림 조회
+            notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        } else {
+            // 특정 타입들만 필터링
+            notifications = notificationRepository.findByUserIdAndTypeIn(userId, types, pageable);
+        }
+        
+        return notifications.map(this::convertToDto);
+    }
+    
+    /**
      * 특정 알림 조회
      */
     @Transactional(readOnly = true)
