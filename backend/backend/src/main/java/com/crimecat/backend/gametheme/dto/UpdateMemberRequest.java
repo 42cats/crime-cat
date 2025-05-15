@@ -9,5 +9,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UpdateMemberRequest {
     private String name;
-    private boolean isLeader;
+    private boolean leader;
 }
