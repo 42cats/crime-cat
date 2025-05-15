@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NotificationIcon } from '@/components/NotificationIcon';
 
 const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -95,6 +96,7 @@ const Navbar: React.FC = () => {
           {/* 사용자 메뉴 */}
           <div className="hidden md:flex items-center space-x-2">
             <ThemeToggle />
+            {isAuthenticated && <NotificationIcon />}
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -123,6 +125,7 @@ const Navbar: React.FC = () => {
           {/* 모바일 메뉴 토글 */}
           <div className="md:hidden flex items-center space-x-2">
             <ThemeToggle />
+            {isAuthenticated && <NotificationIcon />}
             <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </Button>
