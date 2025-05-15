@@ -1,26 +1,27 @@
 package com.crimecat.backend.notification.handler;
 
+import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.gameHistory.domain.GameHistory;
+import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
+import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
+import com.crimecat.backend.gametheme.domain.GameTheme;
+import com.crimecat.backend.gametheme.repository.CrimesceneThemeRepository;
+import com.crimecat.backend.gametheme.repository.GameThemeRepository;
+import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.notification.domain.Notification;
 import com.crimecat.backend.notification.dto.request.GameRecordAcceptDto;
 import com.crimecat.backend.notification.dto.request.GameRecordDeclineDto;
+import com.crimecat.backend.notification.enums.NotificationStatus;
 import com.crimecat.backend.notification.enums.NotificationType;
 import com.crimecat.backend.notification.service.NotificationService;
 import com.crimecat.backend.notification.utils.JsonUtil;
-import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
-import com.crimecat.backend.gameHistory.domain.GameHistory;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.repository.UserRepository;
-import com.crimecat.backend.guild.domain.Guild;
-import com.crimecat.backend.guild.repository.GuildRepository;
-import com.crimecat.backend.gametheme.domain.GameTheme;
-import com.crimecat.backend.gametheme.repository.GameThemeRepository;
-import com.crimecat.backend.exception.ErrorStatus;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 /**
  * 게임 기록 요청 알림 처리 핸들러
@@ -33,9 +34,8 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
     private final NotificationService notificationService;
     private final JsonUtil jsonUtil;
     private final UserRepository userRepository;
-    private final GuildRepository guildRepository;
     private final GameThemeRepository gameThemeRepository;
-    
+    private final CrimesceneThemeRepository crimesceneThemeRepository;
     @Override
     public boolean supports(NotificationType type) {
         return type == NotificationType.GAME_RECORD_REQUEST;
@@ -64,22 +64,24 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
         
         // 사용자 조회
         User user = userRepository.findById(notification.getUserId())
-            .orElseThrow(() -> ErrorStatus.USER_NOT_FOUND.asServiceException());
-        
-        // 골드 조회 (알림 데이터에서 추출)
-        UUID guildId = extractGuildId(notification.getDataJson());
-        Guild guild = guildRepository.findById(guildId)
-            .orElseThrow(() -> ErrorStatus.GUILD_NOT_FOUND.asServiceException());
+            .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
         
         // 게임 테마 조회 (알림 데이터에서 추출)
         UUID gameThemeId = extractGameThemeId(notification.getDataJson());
         GameTheme gameTheme = gameThemeRepository.findById(gameThemeId)
-            .orElseThrow(() -> ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException());
-        
+            .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+
+        CrimesceneTheme crimesceneTheme = crimesceneThemeRepository.findById(gameThemeId)
+            .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        Guild guild = null;
+        if(crimesceneTheme.getGuild() != null){
+            guild = crimesceneTheme.getGuild();
+        }
+
         // 게임 기록 생성
         GameHistory gameHistory = new GameHistory(
-            dto.getIsWin().equals("WIN"),
-            dto.getGameDate().atStartOfDay(),
+            dto.getIsWin(),
+            dto.getGameDate(),
             dto.getCharacterName(),
             user,
             guild,
@@ -98,6 +100,7 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
             "회원님의 게임 기록 요청이 승인되었습니다.",
             Map.of("originalNotificationId", notificationId.toString())
         );
+        notification.setStatus(NotificationStatus.PROCESSED);
     }
     
     /**
@@ -117,20 +120,7 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
             dto.getDeclineMessage(),
             Map.of("originalNotificationId", notificationId.toString())
         );
-    }
-    
-    /**
-     * 알림 데이터에서 게임 ID 추출
-     */
-    private UUID extractGameId(String data) {
-        return UUID.fromString(jsonUtil.extractField(data, "gameId"));
-    }
-    
-    /**
-     * 알림 데이터에서 골드 ID 추출
-     */
-    private UUID extractGuildId(String data) {
-        return UUID.fromString(jsonUtil.extractField(data, "guildId"));
+        notification.setStatus(NotificationStatus.PROCESSED);
     }
     
     /**

@@ -67,7 +67,7 @@ public class NotificationHandlerService {
         return handlers.stream()
             .filter(handler -> handler.supports(type))
             .findFirst()
-            .orElseThrow(() -> ErrorStatus.INVALID_NOTIFICATION_ACTION.asServiceException());
+            .orElseThrow(ErrorStatus.INVALID_NOTIFICATION_ACTION::asServiceException);
     }
     
     /**
@@ -84,6 +84,6 @@ public class NotificationHandlerService {
      */
     private Notification findNotification(UUID notificationId) {
         return notificationRepository.findById(notificationId)
-            .orElseThrow(() -> ErrorStatus.NOTIFICATION_NOT_FOUND.asServiceException());
+            .orElseThrow(ErrorStatus.NOTIFICATION_NOT_FOUND::asServiceException);
     }
 }
