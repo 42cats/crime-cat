@@ -65,8 +65,6 @@ public class NotificationService {
      */
     @Transactional(readOnly = true)
     public Page<NotificationDto> getUserNotifications(UUID userId, Pageable pageable) {
-        // 권한 검증: 본인 데이터만 조회 가능
-        AuthenticationUtil.validateCurrentUserMatches(userId);
         
         Page<Notification> notifications = notificationRepository
             .findByUserIdOrderByCreatedAtDesc(userId, pageable);
@@ -110,7 +108,6 @@ public class NotificationService {
      */
     @Transactional(readOnly = true)
     public long getUnreadCount(UUID userId) {
-        AuthenticationUtil.validateCurrentUserMatches(userId);
         return notificationRepository.countByUserIdAndStatus(userId, NotificationStatus.UNREAD);
     }
     

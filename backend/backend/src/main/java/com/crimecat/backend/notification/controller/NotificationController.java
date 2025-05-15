@@ -6,26 +6,23 @@ import com.crimecat.backend.notification.service.NotificationService;
 import com.crimecat.backend.notification.sort.NotificationSortType;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.utils.sort.SortUtil;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import java.util.List;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * 알림 관련 API 컨트롤러
  */
 @RestController
-@RequestMapping("/api/notifications")
+@RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('USER')")
 public class NotificationController {
     
     private final NotificationService notificationService;
@@ -50,7 +47,7 @@ public class NotificationController {
         Sort resolvedSort = SortUtil.combineSorts(sortTypes);
         Pageable pageable = PageRequest.of(page, size, resolvedSort);
         
-        UUID currentUserId = AuthenticationUtil.getCurrentWebUserId();
+        UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         Page<NotificationDto> notifications = notificationService.getUserNotifications(currentUserId, pageable);
         
         return ResponseEntity.ok(notifications);
@@ -79,7 +76,7 @@ public class NotificationController {
      */
     @GetMapping("/unread/count")
     public ResponseEntity<Map<String, Long>> getUnreadCount() {
-        UUID currentUserId = AuthenticationUtil.getCurrentWebUserId();
+        UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         long count = notificationService.getUnreadCount(currentUserId);
         return ResponseEntity.ok(Map.of("count", count));
     }
