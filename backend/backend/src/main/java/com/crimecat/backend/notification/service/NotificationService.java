@@ -80,10 +80,10 @@ public class NotificationService {
     @Transactional(readOnly = true)
     public NotificationDto getNotification(UUID notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
-            .orElseThrow(() -> ErrorStatus.NOTIFICATION_NOT_FOUND.asServiceException());
+            .orElseThrow(ErrorStatus.NOTIFICATION_NOT_FOUND::asServiceException);
         
         // 권한 검증: 알림 소유자 또는 관리자만 접근 가능
-        AuthenticationUtil.validateSelfOrHasRole(notification.getUserId(), UserRole.ADMIN);
+        AuthenticationUtil.validateSelfOrHasRole(notification.getReceiverId(), UserRole.ADMIN);
         
         return convertToDto(notification);
     }
@@ -93,10 +93,10 @@ public class NotificationService {
      */
     public void markAsRead(UUID notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
-            .orElseThrow(() -> ErrorStatus.NOTIFICATION_NOT_FOUND.asServiceException());
+            .orElseThrow(ErrorStatus.NOTIFICATION_NOT_FOUND::asServiceException);
         
         // 권한 검증
-        AuthenticationUtil.validateCurrentUserMatches(notification.getUserId());
+        AuthenticationUtil.validateCurrentUserMatches(notification.getReceiverId());
         
         if (notification.getStatus() == NotificationStatus.UNREAD) {
             notification.setStatus(NotificationStatus.READ);
@@ -125,7 +125,7 @@ public class NotificationService {
         String message,
         Map<String, Object> data
     ) {
-        return Notification.from(type, recipientId, title, message, data);
+        return Notification.from(type, recipientId, senderId, title, message, data);
     }
     
     /**
