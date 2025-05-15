@@ -40,6 +40,11 @@ public class MakerTeamController {
         return new DeleteMembersResponse(makerTeamService.deleteMembers(teamId, request.getMembers()));
     }
 
+    @PutMapping("/{teamId}/members/{memberId}")
+    public void updateTeamMember(@PathVariable UUID teamId, @PathVariable UUID memberId, UpdateMemberRequest request) {
+        makerTeamService.updateMember(teamId, memberId, request);
+    }
+
     @GetMapping("/me")
     public GetTeamsResponse getMyTeams() {
         return makerTeamService.getMyTeams();

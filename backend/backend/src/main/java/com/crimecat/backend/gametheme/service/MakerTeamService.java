@@ -1,10 +1,6 @@
 package com.crimecat.backend.gametheme.service;
 
-import com.crimecat.backend.gametheme.dto.GetTeamResponse;
-import com.crimecat.backend.gametheme.dto.GetTeamsResponse;
-import com.crimecat.backend.gametheme.dto.MemberDto;
-import com.crimecat.backend.gametheme.dto.MemberRequestDto;
-import com.crimecat.backend.gametheme.dto.TeamDto;
+import com.crimecat.backend.gametheme.dto.*;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.exception.ServiceException;
 import com.crimecat.backend.gametheme.domain.MakerTeam;
@@ -166,5 +162,24 @@ public class MakerTeamService {
                         .map(v -> TeamDto.from(v.getTeam()))
                         .toList()
         );
+    }
+
+    @Transactional
+    public void updateMember(UUID teamId, UUID memberId, UpdateMemberRequest updateInfo) {
+        MakerTeam team = teamRepository.findById(teamId).orElseThrow(ErrorStatus.TEAM_NOT_FOUND::asServiceException);
+        MakerTeamMember member = teamMemberRepository.findById(memberId).orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
+        if (!isTeamLeader(teamId)) {
+            AuthenticationUtil.validateCurrentUserMatches(member.getWebUserId());
+            member.setName(updateInfo.getName());
+            return;
+        }
+        if (memberId.equals(AuthenticationUtil.getCurrentWebUserId()) && !updateInfo.isLeader()) {
+            long leaderCount = team.getMembers().stream().filter(MakerTeamMember::isLeader).count();
+            if (leaderCount == 1) {
+                throw ErrorStatus.INVALID_INPUT.asServiceException();
+            }
+        }
+        member.setName(updateInfo.getName());
+        member.setLeader(updateInfo.isLeader());
     }
 }
