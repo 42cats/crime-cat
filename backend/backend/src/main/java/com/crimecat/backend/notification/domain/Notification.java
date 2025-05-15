@@ -145,6 +145,20 @@ public class Notification {
     }
     
     /**
+     * 상태 변경 (Setter)
+     */
+    public void setStatus(NotificationStatus status) {
+        this.status = status;
+    }
+    
+    /**
+     * 업데이트 시간 변경 (Setter)
+     */
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+    
+    /**
      * 읽음 처리
      */
     public void markAsRead() {
