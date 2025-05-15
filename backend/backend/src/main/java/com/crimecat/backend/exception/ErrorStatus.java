@@ -57,7 +57,13 @@ public enum ErrorStatus {
     PERMISSION_ALREADY_OWNED("이미 보유한 권한입니다.", HttpStatus.CONFLICT),
     DISCORD_USER_NOT_FOUND("연결된 디스코드 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     // 포인트 관련
-    INSUFFICIENT_POINT("포인트가 부족합니다.", HttpStatus.BAD_REQUEST);                    // 400
+    INSUFFICIENT_POINT("포인트가 부족합니다.", HttpStatus.BAD_REQUEST),                    // 400
+    
+    // 알림 관련
+    NOTIFICATION_NOT_FOUND("알림을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    NOTIFICATION_ALREADY_PROCESSED("이미 처리된 알림입니다.", HttpStatus.CONFLICT),
+    INVALID_NOTIFICATION_ACTION("잘못된 액션입니다.", HttpStatus.BAD_REQUEST),
+    NOTIFICATION_ACCESS_DENIED("알림에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN);
 
     private final String message;
     private final HttpStatus status;
