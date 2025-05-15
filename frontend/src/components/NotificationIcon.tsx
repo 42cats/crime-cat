@@ -21,17 +21,53 @@ export const NotificationIcon: React.FC = () => {
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        isDropdownOpen &&
-        dropdownRef.current &&
-        buttonRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
+      if (!isDropdownOpen) return;
+      
+      const target = event.target as Node;
+      console.log('🔥 외부 클릭 감지됨', {
+        isDropdownOpen,
+        target: event.target,
+        dropdown: dropdownRef.current,
+        button: buttonRef.current,
+        containsCheck: dropdownRef.current?.contains(target)
+      });
+      
+      // 드롭다운이 존재하지 않는 경우 바로 닫기
+      if (!dropdownRef.current || !buttonRef.current) {
+        console.log('🔥 ref가 없어서 닫기');
         closeDropdown();
+        return;
       }
+      
+      // 타겟이 드롭다운 내부에 있는지 심화 검사
+      let currentElement = target as Element;
+      let isInsideDropdown = false;
+      
+      // DOM 트리를 거슬로 올라가며 확인
+      while (currentElement && currentElement !== document.body) {
+        if (currentElement === dropdownRef.current) {
+          isInsideDropdown = true;
+          break;
+        }
+        // 드롭다운 별마다 현재 사용하는 클래스명도 확인
+        if (currentElement.matches && currentElement.matches('.notification-dropdown')) {
+          isInsideDropdown = true;
+          break;
+        }
+        currentElement = currentElement.parentElement!;
+      }
+      
+      // 버튼 자체나 드롭다운 내부에 있으면 닫지 않기
+      if (currentElement === buttonRef.current || isInsideDropdown) {
+        console.log('🔥 드롭다운 내부 클릭이므로 닫지 않음');
+        return;
+      }
+      
+      console.log('🔥 실제 외부 클릭이므로 드롭다운 닫기');
+      closeDropdown();
     };
     
+    // 지연 실행 (이벤트 전파 후에 실행)
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isDropdownOpen, closeDropdown]);

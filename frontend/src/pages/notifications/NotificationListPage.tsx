@@ -113,17 +113,17 @@ const NotificationListPage: React.FC = () => {
   // 알림 타입별 컴포넌트 렌더링
   const renderNotificationItem = (notification: Notification) => {
     const commonProps = {
-      key: notification.id,
       notification,
       onRead: markAsReadMutation.mutate,
     };
     
     switch (notification.type) {
       case NotificationType.SYSTEM_NOTICE:
-        return <SystemNotificationItem {...commonProps} />;
+        return <SystemNotificationItem key={notification.id} {...commonProps} />;
       case NotificationType.GAME_RECORD_REQUEST:
         return (
           <GameRecordNotificationItem
+            key={notification.id}
             {...commonProps}
             onAction={(action, data) => 
               processActionMutation.mutate({ 
@@ -136,7 +136,7 @@ const NotificationListPage: React.FC = () => {
           />
         );
       default:
-        return <NotificationItem {...commonProps} />;
+        return <NotificationItem key={notification.id} {...commonProps} />;
     }
   };
   
