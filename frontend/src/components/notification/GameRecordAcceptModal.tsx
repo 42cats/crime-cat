@@ -56,6 +56,15 @@ export const GameRecordAcceptModal: React.FC<GameRecordAcceptModalProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   
+  // 디버깅을 위한 로깅
+  useEffect(() => {
+    console.log('🚀 GameRecordAcceptModal rendered, isOpen:', isOpen);
+  }, [isOpen]);
+  
+  useEffect(() => {
+    console.log('🚀 Modal is closing, onClose called');
+  }, []);
+  
   const {
     register,
     handleSubmit,
@@ -110,6 +119,11 @@ export const GameRecordAcceptModal: React.FC<GameRecordAcceptModalProps> = ({
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
+      console.log('🔥 Dialog onOpenChange called:', { 
+        open, 
+        currentIsOpen: isOpen,
+        timestamp: new Date().toISOString()
+      });
       if (!open) {
         onClose();
       }
@@ -118,6 +132,18 @@ export const GameRecordAcceptModal: React.FC<GameRecordAcceptModalProps> = ({
         <DialogContent 
           className="sm:max-w-md" 
           style={{ zIndex: 9999 }}
+          onClick={(e) => {
+            console.log('🔍 DialogContent clicked:', e.target);
+            e.stopPropagation();
+          }}
+          onPointerDown={(e) => {
+            console.log('🔍 DialogContent pointerDown:', e.target);
+            e.stopPropagation();
+          }}
+          onMouseDown={(e) => {
+            console.log('🔍 DialogContent mouseDown:', e.target);
+            e.stopPropagation();
+          }}
         >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -210,6 +236,7 @@ export const GameRecordAcceptModal: React.FC<GameRecordAcceptModalProps> = ({
                         variant={gameTime === time ? "default" : "ghost"}
                         className="justify-start h-8 text-sm"
                         onClick={() => {
+                          console.log('🕰️ Time selected:', time);
                           setValue('gameTime', time);
                         }}
                       >
