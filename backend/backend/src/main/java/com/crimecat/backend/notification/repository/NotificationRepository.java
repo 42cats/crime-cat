@@ -95,4 +95,20 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
                             @Param("status") NotificationStatus status,
                             @Param("currentStatus") NotificationStatus currentStatus);
     
+    /**
+     * 복합 조건 검색 (타입, 상태, 제목/메시지 검색)
+     */
+    @Query("SELECT n FROM Notification n WHERE n.user.id = :userId " +
+           "AND (:types IS NULL OR n.type IN :types) " +
+           "AND (:statuses IS NULL OR n.status IN :statuses) " +
+           "AND (:keyword IS NULL OR LOWER(n.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "OR LOWER(n.message) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Notification> findByUserIdWithFilters(
+        @Param("userId") UUID userId,
+        @Param("types") List<NotificationType> types,
+        @Param("statuses") List<NotificationStatus> statuses,
+        @Param("keyword") String keyword,
+        Pageable pageable
+    );
+    
 }
