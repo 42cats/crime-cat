@@ -110,132 +110,155 @@ export const GameRecordAcceptModal: React.FC<GameRecordAcceptModalProps> = ({
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-green-600" />
-            게임 기록 승인
-          </DialogTitle>
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
-          {/* 승리 여부 */}
-          <div className="space-y-2">
-            <Label>승리 여부 *</Label>
-            <RadioGroup
-              value={isWin?.toString()}
-              onValueChange={(value) => setValue('isWin', value === 'true')}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="true" id="win" />
-                <Label htmlFor="win" className="flex items-center gap-2 cursor-pointer">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  승리
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="false" id="lose" />
-                <Label htmlFor="lose" className="flex items-center gap-2 cursor-pointer">
-                  <XCircle className="w-4 h-4 text-red-600" />
-                  패배
-                </Label>
-              </div>
-            </RadioGroup>
-            {errors.isWin && (
-              <p className="text-sm text-destructive">{errors.isWin.message}</p>
-            )}
-          </div>
+      <div onClick={(e) => e.stopPropagation()}>
+        <DialogContent 
+          className="sm:max-w-md" 
+          style={{ zIndex: 9999 }}
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              게임 기록 승인
+            </DialogTitle>
+          </DialogHeader>
           
-          {/* 게임 날짜 */}
-          <div className="space-y-2">
-            <Label>게임 날짜 *</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !gameDate && "text-muted-foreground"
-                  )}
+          <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
+            {/* 승리 여부 */}
+            <div className="space-y-2">
+              <Label>승리 여부 *</Label>
+              <RadioGroup
+                value={isWin?.toString()}
+                onValueChange={(value) => setValue('isWin', value === 'true')}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="true" id="win" />
+                  <Label htmlFor="win" className="flex items-center gap-2 cursor-pointer">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    승리
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="false" id="lose" />
+                  <Label htmlFor="lose" className="flex items-center gap-2 cursor-pointer">
+                    <XCircle className="w-4 h-4 text-red-600" />
+                    패배
+                  </Label>
+                </div>
+              </RadioGroup>
+              {errors.isWin && (
+                <p className="text-sm text-destructive">{errors.isWin.message}</p>
+              )}
+            </div>
+          
+            {/* 게임 날짜 */}
+            <div className="space-y-2">
+              <Label>게임 날짜 *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !gameDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {gameDate ? format(gameDate, 'PPP', { locale: ko }) : '날짜를 선택하세요'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" style={{ zIndex: 10000 }}>
+                  <Calendar
+                    mode="single"
+                    selected={gameDate}
+                    onSelect={(date) => date && setValue('gameDate', date)}
+                    disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
+                    initialFocus
+                    locale={ko}
+                  />
+                </PopoverContent>
+              </Popover>
+              {errors.gameDate && (
+                <p className="text-sm text-destructive">{errors.gameDate.message}</p>
+              )}
+            </div>
+            
+            {/* 게임 시간 */}
+            <div className="space-y-2">
+              <Label>게임 시간 *</Label>
+              <Select 
+                value={gameTime} 
+                onValueChange={(value) => setValue('gameTime', value)}
+                onOpenChange={(open, event) => {
+                  // Select가 닫힐 때 이벤트 전파 차단
+                  if (!open && event) {
+                    // 이벤트 버블링 그지
+                    (event as Event).stopPropagation();
+                    (event as Event).preventDefault();
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="시간을 선택하세요" />
+                </SelectTrigger>
+                <SelectContent 
+                  style={{ zIndex: 10000 }}
+                  onPointerDownOutside={(e) => e.preventDefault()}
+                  onInteractOutside={(e) => e.preventDefault()}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {gameDate ? format(gameDate, 'PPP', { locale: ko }) : '날짜를 선택하세요'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={gameDate}
-                  onSelect={(date) => date && setValue('gameDate', date)}
-                  disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
-                  initialFocus
-                  locale={ko}
+                  {timeOptions.map((time) => (
+                    <SelectItem key={time} value={time}>
+                      {time}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.gameTime && (
+                <p className="text-sm text-destructive">{errors.gameTime.message}</p>
+              )}
+            </div>
+            
+            {/* 캐릭터명 */}
+            <div className="space-y-2">
+              <Label htmlFor="characterName">캐릭터명 *</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="characterName"
+                  {...register('characterName')}
+                  placeholder="사용하신 캐릭터명을 입력하세요"
+                  className="pl-10"
                 />
-              </PopoverContent>
-            </Popover>
-            {errors.gameDate && (
-              <p className="text-sm text-destructive">{errors.gameDate.message}</p>
-            )}
-          </div>
-          
-          {/* 게임 시간 */}
-          <div className="space-y-2">
-            <Label>게임 시간 *</Label>
-            <Select value={gameTime} onValueChange={(value) => setValue('gameTime', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="시간을 선택하세요" />
-              </SelectTrigger>
-              <SelectContent>
-                {timeOptions.map((time) => (
-                  <SelectItem key={time} value={time}>
-                    {time}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.gameTime && (
-              <p className="text-sm text-destructive">{errors.gameTime.message}</p>
-            )}
-          </div>
-          
-          {/* 캐릭터명 */}
-          <div className="space-y-2">
-            <Label htmlFor="characterName">캐릭터명 *</Label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                id="characterName"
-                {...register('characterName')}
-                placeholder="사용하신 캐릭터명을 입력하세요"
-                className="pl-10"
+              </div>
+              {errors.characterName && (
+                <p className="text-sm text-destructive">{errors.characterName.message}</p>
+              )}
+            </div>
+            
+            {/* 오너 메모 */}
+            <div className="space-y-2">
+              <Label htmlFor="ownerMemo">오너 메모 (선택)</Label>
+              <Textarea
+                id="ownerMemo"
+                {...register('ownerMemo')}
+                placeholder="게임에 대한 메모를 남기세요..."
+                rows={3}
               />
             </div>
-            {errors.characterName && (
-              <p className="text-sm text-destructive">{errors.characterName.message}</p>
-            )}
-          </div>
-          
-          {/* 오너 메모 */}
-          <div className="space-y-2">
-            <Label htmlFor="ownerMemo">오너 메모 (선택)</Label>
-            <Textarea
-              id="ownerMemo"
-              {...register('ownerMemo')}
-              placeholder="게임에 대한 메모를 남기세요..."
-              rows={3}
-            />
-          </div>
-          
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              취소
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? '처리 중...' : '승인'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
+                취소
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? '처리 중...' : '승인'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </div>
     </Dialog>
   );
 };
