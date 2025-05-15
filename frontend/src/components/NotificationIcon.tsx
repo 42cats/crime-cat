@@ -26,22 +26,13 @@ export const NotificationIcon: React.FC = () => {
       // Select가 열려있는지 확인
       const selectContent = document.querySelector('[data-radix-select-content]');
       if (selectContent) {
-        console.log('🕰️ Select가 열려있으므로 외부 클릭 무시');
         return;
       }
       
       const target = event.target as Node;
-      console.log('🔥 외부 클릭 감지됨', {
-        isDropdownOpen,
-        target: event.target,
-        dropdown: dropdownRef.current,
-        button: buttonRef.current,
-        containsCheck: dropdownRef.current?.contains(target)
-      });
       
       // 드롭다운이 존재하지 않는 경우 바로 닫기
       if (!dropdownRef.current || !buttonRef.current) {
-        console.log('🔥 ref가 없어서 닫기');
         closeDropdown();
         return;
       }
@@ -66,11 +57,9 @@ export const NotificationIcon: React.FC = () => {
       
       // 버튼 자체나 드롭다운 내부에 있으면 닫지 않기
       if (currentElement === buttonRef.current || isInsideDropdown) {
-        console.log('🔥 드롭다운 내부 클릭이므로 닫지 않음');
         return;
       }
       
-      console.log('🔥 실제 외부 클릭이므로 드롭다운 닫기');
       closeDropdown();
     };
     
