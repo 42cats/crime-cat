@@ -41,7 +41,7 @@ public class MakerTeamController {
     }
 
     @PutMapping("/{teamId}/members/{memberId}")
-    public void updateTeamMember(@PathVariable UUID teamId, @PathVariable UUID memberId, UpdateMemberRequest request) {
+    public void updateTeamMember(@PathVariable UUID teamId, @PathVariable UUID memberId, @RequestBody UpdateMemberRequest request) {
         makerTeamService.updateMember(teamId, memberId, request);
     }
 

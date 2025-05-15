@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Plus, Trash2 } from "lucide-react";
-import TeamDetailModal from "@/components/dashboard/TeamDetailModal"; // ✅ 추가!
+import TeamDetailModal from "@/components/dashboard/TeamDetailModal";
 
 const DashboardTeams: React.FC = () => {
   const { user } = useAuth();
@@ -17,13 +17,13 @@ const DashboardTeams: React.FC = () => {
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
 
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null); // ✅ 현재 선택된 팀
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
   const fetchTeams = async () => {
     if (!user?.id) return;
     setIsLoading(true);
     try {
-      const data = await teamsService.getTeams(user.id);
+      const data = await teamsService.getMyTeams();
       setTeams(data.map(team => ({ ...team, members: team.members || [] })));
     } catch (error) {
       console.error("팀 목록 조회 실패:", error);
@@ -103,6 +103,9 @@ const DashboardTeams: React.FC = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>새 팀 만들기</DialogTitle>
+            <DialogDescription>
+              생성할 팀의 이름을 입력하세요.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Input
@@ -122,7 +125,7 @@ const DashboardTeams: React.FC = () => {
         <TeamDetailModal
           team={selectedTeam}
           onClose={() => setSelectedTeam(null)}
-          onUpdated={fetchTeams} // ✅ 수정 후 새로고침
+          onUpdated={fetchTeams}
         />
       )}
     </div>

@@ -110,13 +110,17 @@ instance.interceptors.response.use(
         }
 
         if (status === 403 && !originalRequest._csrfRetry) {
-            originalRequest._csrfRetry = true;
+            const errorCode = error.response?.data?.errorCode;
 
-            try {
-                await instance.get("/csrf/token");
-                return instance(originalRequest);
-            } catch (err) {
-                return Promise.reject(err);
+            if (errorCode === "INSUFFICIENT_AUTHENTICATION") {
+              originalRequest._csrfRetry = true;
+
+              try {
+                  await instance.get("/csrf/token");
+                  return instance(originalRequest);
+              } catch (err) {
+                  return Promise.reject(err);
+              }
             }
         }
 

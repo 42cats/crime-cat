@@ -5,6 +5,16 @@ const publicBaseURI = '/public/teams';
 const baseURI = '/teams';
 
 export const teamsService = {
+  getMyTeams: async () : Promise<Team[]> => {
+    try {
+      const response = await apiClient.get<Teams>(`${baseURI}/me`);
+      return response.teams;
+    } catch (error) {
+      console.error('내 팀 목록 조회 오류:', error);
+      throw error;
+    }
+  },
+
   getTeams: async (memberId : string): Promise<Team[]> => {
     try {
       const response = await apiClient.get<Teams>(`${publicBaseURI}?memberId=${memberId}`);
@@ -35,9 +45,22 @@ export const teamsService = {
     }
   },
 
+  modifyTeamMember: async (
+    id: string,
+    userId: string,
+    data: { name?: string; leader?: boolean }
+  ): Promise<void> => {
+    try {
+      await apiClient.put<void>(`${baseURI}/${id}/members/${userId}`, data);
+    } catch (error) {
+      console.error('팀 멤버 변경 실패:', error);
+      throw error;
+    }
+  },
+
   updateTeamMember: async (
     id: string,
-    data: Partial<TeamMember>
+    data: { members: { userId?: string; name?: string }[] }
   ): Promise<void> => {
     try {
       await apiClient.post<void>(`${baseURI}/${id}/members`, data);
@@ -48,13 +71,17 @@ export const teamsService = {
   },
 
   deleteTeamMember: async (
-    id: string,
+    teamId: string,
     data: { members: string[] }
-  ): Promise<void> => {
+  ): Promise<{ failed?: string[] }> => {
     try {
-      await apiClient.patch<void>(`${baseURI}/${id}/members`, data);
+      const res = await apiClient.patch<{ failed?: string[] }>(
+        `/teams/${teamId}/members`,
+        data
+      );
+      return res;
     } catch (error) {
-      console.error('팀 멤버 삭제 실패: ', error);
+      console.error("팀 멤버 삭제 실패:", error);
       throw error;
     }
   },

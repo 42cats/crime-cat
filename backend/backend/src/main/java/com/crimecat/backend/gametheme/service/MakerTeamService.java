@@ -135,7 +135,6 @@ public class MakerTeamService {
         for (MakerTeamMember member : members) {
             if (deletedMembers.contains(member.getId().toString()) && !member.isLeader()) {
                 teamMemberRepository.delete(member);
-                members.remove(member);
                 deletedMembers.remove(member.getId().toString());
             }
         }
@@ -173,7 +172,7 @@ public class MakerTeamService {
             member.setName(updateInfo.getName());
             return;
         }
-        if (memberId.equals(AuthenticationUtil.getCurrentWebUserId()) && !updateInfo.isLeader()) {
+        if (member.getWebUserId().equals(AuthenticationUtil.getCurrentWebUserId()) && !updateInfo.isLeader()) {
             long leaderCount = team.getMembers().stream().filter(MakerTeamMember::isLeader).count();
             if (leaderCount == 1) {
                 throw ErrorStatus.INVALID_INPUT.asServiceException();
