@@ -38,9 +38,11 @@ public class MakerTeamMember {
     private UUID webUserId;
 
     @Column(name = "NAME")
+    @Setter
     private String name;
 
     @Column(name = "IS_LEADER")
     @Builder.Default
+    @Setter
     private boolean isLeader = false;
 }
