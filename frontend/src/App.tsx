@@ -33,6 +33,7 @@ import NoticeList from "@/pages/notices/NoticeList";
 import NoticeDetail from "@/pages/notices/NoticeDetail";
 import CreateNotice from "@/pages/notices/CreateNotice";
 import EditNotice from "@/pages/notices/EditNotice";
+import NotificationListPage from "@/pages/notifications/NotificationListPage";
 
 // Dashboard Pages
 import Dashboard from "@/pages/dashboard/Dashboard";
@@ -88,6 +89,7 @@ const App = () => (
                 <Route path="/login" element={<Login />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/donate" element={<DonationPage />} />
+                <Route path="/notifications" element={<NotificationListPage />} />
               </Route>
 
                             {/* Dashboard Layout Routes */}
