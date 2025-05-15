@@ -65,7 +65,7 @@ public class NotificationService {
      */
     @Transactional(readOnly = true)
     public Page<NotificationDto> getUserNotifications(UUID userId, Pageable pageable) {
-        
+
         Page<Notification> notifications = notificationRepository
             .findByUserIdOrderByCreatedAtDesc(userId, pageable);
         
