@@ -92,7 +92,7 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
             guild,
             gameTheme
         );
-        
+        gameHistory.setOwnerMemo(dto.getOwnerMemo());
         gameHistoryRepository.save(gameHistory);
         
         // 요청자에게 승인 알림 발송
