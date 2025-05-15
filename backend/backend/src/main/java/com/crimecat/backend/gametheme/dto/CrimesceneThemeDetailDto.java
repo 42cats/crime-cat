@@ -9,7 +9,6 @@ import lombok.experimental.SuperBuilder;
 
 import java.time.ZoneOffset;
 import java.util.Map;
-import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
@@ -41,6 +40,8 @@ public class CrimesceneThemeDetailDto extends GameThemeDetailDto {
                 .publicStatus(theme.isPublicStatus())
                 .createdAt(theme.getCreatedAt().toInstant(ZoneOffset.UTC))
                 .updatedAt(theme.getUpdatedAt().toInstant(ZoneOffset.UTC))
+                .recommendationEnabled(theme.isRecommendationEnabled())
+                .commentEnabled(theme.isCommentEnabled())
                 .type(ThemeType.Values.CRIMESCENE)
                 .team(TeamDto.from(theme.getTeam()))
                 .guild(GuildDto.from(theme.getGuild()))

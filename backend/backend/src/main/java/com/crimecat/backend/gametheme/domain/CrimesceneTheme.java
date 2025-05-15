@@ -62,6 +62,8 @@ public class CrimesceneTheme extends GameTheme {
         .difficulty(request.getDifficulty())
         .publicStatus(request.isPublicStatus())
         .updatedAt(LocalDateTime.now())
+        .recommendationEnabled(request.isRecommendationEnabled())
+        .commentEnabled(request.isCommentEnabled())
         .teamId(request.getMakerTeamsId())
         .guildSnowflake(request.getGuildSnowflake())
         .extra(request.getExtra())

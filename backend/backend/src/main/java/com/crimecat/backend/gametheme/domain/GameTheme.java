@@ -1,6 +1,5 @@
 package com.crimecat.backend.gametheme.domain;
 
-import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.gametheme.dto.AddCrimesceneThemeRequest;
 import com.crimecat.backend.gametheme.dto.AddGameThemeRequest;
 import com.crimecat.backend.webUser.domain.WebUser;
@@ -115,6 +114,14 @@ public class GameTheme {
     @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
 
+    @Setter
+    @Column(name = "RECOMMENDATION_ENABLED")
+    private boolean recommendationEnabled;
+
+    @Setter
+    @Column(name = "COMMENT_ENABLED")
+    private boolean commentEnabled;
+
     public static GameTheme from(AddGameThemeRequest request) {
         if (request instanceof AddCrimesceneThemeRequest) {
             return CrimesceneTheme.from((AddCrimesceneThemeRequest) request);
@@ -132,6 +139,8 @@ public class GameTheme {
                 .difficulty(request.getDifficulty())
                 .publicStatus(request.isPublicStatus())
                 .updatedAt(LocalDateTime.now())
+                .recommendationEnabled(request.isRecommendationEnabled())
+                .commentEnabled(request.isCommentEnabled())
                 .build();
     }
 

@@ -5,7 +5,6 @@ import com.crimecat.backend.gametheme.enums.ThemeType;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.function.Consumer;
 import lombok.AllArgsConstructor;
@@ -38,6 +37,8 @@ public class UpdateGameThemeRequest {
     private Integer difficulty;
     private Boolean publicStatus;
     private String type;
+    private Boolean recommendationEnabled;
+    private Boolean commentEnabled;
 
     protected <T> void set(T object, Consumer<T> setter) {
         if (object != null) {
@@ -63,6 +64,8 @@ public class UpdateGameThemeRequest {
         set(price, gameTheme::setPrice);
         set(difficulty, gameTheme::setDifficulty);
         set(publicStatus, gameTheme::setPublicStatus);
+        set(recommendationEnabled, gameTheme::setRecommendationEnabled);
+        set(commentEnabled, gameTheme::setCommentEnabled);
         if (thumbnail == null) {
             gameTheme.setThumbnail(null);
         }

@@ -33,6 +33,7 @@ public class CrimesceneThemeDto extends GameThemeDto {
                 .price(theme.getPrice())
                 .difficulty(theme.getDifficulty())
                 .tags(theme.getTags())
+                .recommendationEnabled(theme.isRecommendationEnabled())
                 .teamName(teamName)
                 .type(ThemeType.Values.CRIMESCENE)
                 .build();

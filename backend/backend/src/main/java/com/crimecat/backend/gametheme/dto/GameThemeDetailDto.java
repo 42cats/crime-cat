@@ -36,6 +36,8 @@ public class GameThemeDetailDto {
     private boolean publicStatus;
     private Instant createdAt;
     private Instant updatedAt;
+    private boolean recommendationEnabled;
+    private boolean commentEnabled;
     private String type;
 
     public static GameThemeDetailDto of(GameTheme theme) {
@@ -62,6 +64,8 @@ public class GameThemeDetailDto {
                 .publicStatus(theme.isPublicStatus())
                 .createdAt(theme.getCreatedAt().toInstant(ZoneOffset.UTC))
                 .updatedAt(theme.getUpdatedAt().toInstant(ZoneOffset.UTC))
+                .recommendationEnabled(theme.isRecommendationEnabled())
+                .commentEnabled(theme.isCommentEnabled())
                 .build();
     }
 }
