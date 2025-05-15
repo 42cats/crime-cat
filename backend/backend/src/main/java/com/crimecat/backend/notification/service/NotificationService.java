@@ -94,7 +94,9 @@ public class NotificationService {
             .orElseThrow(ErrorStatus.NOTIFICATION_NOT_FOUND::asServiceException);
         
         // 권한 검증
-        AuthenticationUtil.validateCurrentUserMatches(notification.getReceiverId());
+        if(!AuthenticationUtil.getCurrentUser().getId().equals(notification.getReceiverId())){
+            throw ErrorStatus.NOTIFICATION_ACCESS_DENIED.asServiceException();
+        }
         
         if (notification.getStatus() == NotificationStatus.UNREAD) {
             notification.setStatus(NotificationStatus.READ);
