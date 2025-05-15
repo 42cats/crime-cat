@@ -84,9 +84,4 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
                             @Param("status") NotificationStatus status,
                             @Param("currentStatus") NotificationStatus currentStatus);
     
-    /**
-     * 특정 기간보다 오래된 알림 삭제
-     */
-    @Query("DELETE FROM Notification n WHERE n.createdAt < :cutoffDate")
-    int deleteOldNotifications(@Param("cutoffDate") LocalDateTime cutoffDate);
 }
