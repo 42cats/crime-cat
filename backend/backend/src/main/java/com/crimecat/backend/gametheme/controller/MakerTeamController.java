@@ -1,10 +1,6 @@
 package com.crimecat.backend.gametheme.controller;
 
-import com.crimecat.backend.gametheme.dto.AddMemberRequest;
-import com.crimecat.backend.gametheme.dto.CreateTeamRequest;
-import com.crimecat.backend.gametheme.dto.GetTeamResponse;
-import com.crimecat.backend.gametheme.dto.GetTeamsResponse;
-import com.crimecat.backend.gametheme.dto.ModifyMemberRequest;
+import com.crimecat.backend.gametheme.dto.*;
 import com.crimecat.backend.gametheme.service.MakerTeamService;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -40,8 +36,8 @@ public class MakerTeamController {
     }
 
     @PatchMapping("/{teamId}/members")
-    public void deleteTeamMembers(@PathVariable UUID teamId, @RequestBody ModifyMemberRequest request) {
-        makerTeamService.deleteMembers(teamId, request.getMembers());
+    public DeleteMembersResponse deleteTeamMembers(@PathVariable UUID teamId, @RequestBody DeleteMembersRequest request) {
+        return new DeleteMembersResponse(makerTeamService.deleteMembers(teamId, request.getMembers()));
     }
 
     @GetMapping("/me")
