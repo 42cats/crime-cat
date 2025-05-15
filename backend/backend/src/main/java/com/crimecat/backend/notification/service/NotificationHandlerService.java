@@ -2,6 +2,7 @@ package com.crimecat.backend.notification.service;
 
 import com.crimecat.backend.notification.domain.Notification;
 import com.crimecat.backend.notification.enums.NotificationStatus;
+import com.crimecat.backend.notification.enums.NotificationType;
 import com.crimecat.backend.notification.handler.NotificationHandler;
 import com.crimecat.backend.notification.repository.NotificationRepository;
 import com.crimecat.backend.exception.ErrorStatus;
