@@ -61,7 +61,12 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
     private void acceptGameRecord(UUID notificationId, Object requestBody) {
         GameRecordAcceptDto dto = convertRequestBody(requestBody, GameRecordAcceptDto.class);
         Notification notification = findNotification(notificationId);
-        
+
+        //이미 처리된 알림 인지 확인
+        if(notification.getStatus().equals(NotificationStatus.PROCESSED)){
+            throw ErrorStatus.NOTIFICATION_ALREADY_PROCESSED.asServiceException();
+        }
+
         // 사용자 조회
         User user = userRepository.findById(notification.getUserId())
             .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
@@ -109,7 +114,12 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
     private void declineGameRecord(UUID notificationId, Object requestBody) {
         GameRecordDeclineDto dto = convertRequestBody(requestBody, GameRecordDeclineDto.class);
         Notification notification = findNotification(notificationId);
-        
+
+        //이미 처리된 알림 인지 확인
+        if(notification.getStatus().equals(NotificationStatus.PROCESSED)){
+            throw ErrorStatus.NOTIFICATION_ALREADY_PROCESSED.asServiceException();
+        }
+
         // 요청자에게 거절 알림 발송
         UUID requesterId = extractRequesterId(notification.getDataJson());
         notificationService.createAndSendNotification(
