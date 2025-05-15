@@ -14,10 +14,12 @@ import com.crimecat.backend.gametheme.dto.UpdateGameThemeRequest;
 import com.crimecat.backend.gametheme.enums.ThemeType;
 import com.crimecat.backend.gametheme.repository.GameThemeRecommendationRepository;
 import com.crimecat.backend.gametheme.repository.GameThemeRepository;
+import com.crimecat.backend.gametheme.sort.GameThemeSortType;
 import com.crimecat.backend.gametheme.specification.GameThemeSpecification;
 import com.crimecat.backend.storage.StorageFileType;
 import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.utils.AuthenticationUtil;
+import com.crimecat.backend.utils.sort.SortUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.transaction.Transactional;
 import java.util.List;
@@ -117,7 +119,8 @@ public class GameThemeService {
     @Transactional
     public GetGameThemesResponse getGameThemes(String category, int pageSize, int pageNumber) {
         UUID webUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Order.desc("createdAt")));
+        Pageable pageable = PageRequest.of(pageNumber, pageSize,
+                SortUtil.combineSorts(List.of(GameThemeSortType.RECOMMENDATION_ENABLED, GameThemeSortType.LATEST)));
         // TODO: QueryDSL
         Specification<GameTheme> spec = Specification.where(GameThemeSpecification.defaultSpec(webUserId));
         if (ThemeType.contains(category)) {
