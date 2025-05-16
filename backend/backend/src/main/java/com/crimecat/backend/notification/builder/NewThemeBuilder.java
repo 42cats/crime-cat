@@ -2,37 +2,46 @@ package com.crimecat.backend.notification.builder;
 
 import com.crimecat.backend.notification.enums.NotificationType;
 import com.crimecat.backend.notification.service.NotificationService;
+import com.crimecat.backend.notification.template.TemplateService;
 
 import java.util.UUID;
 
 /**
  * 새 테마 알림을 위한 전용 빌더
+ * 제네릭을 사용하여 타입 안전성 확보
  */
-public class NewThemeBuilder extends NotificationBuilder {
+public class NewThemeBuilder extends NotificationBuilder<NewThemeBuilder> {
     
     private final UUID themeId;
     private final UUID authorId;
     
-    public NewThemeBuilder(NotificationService notificationService, UUID themeId, UUID authorId) {
-        super(notificationService, NotificationType.NEW_THEME);
+    public NewThemeBuilder(NotificationService notificationService, TemplateService templateService,
+                           UUID themeId, UUID authorId) {
+        super(notificationService, templateService, NotificationType.NEW_THEME);
         this.themeId = themeId;
         this.authorId = authorId;
     }
     
     /**
      * 테마 제목 설정 (체이닝)
+     * 이제 타입 안전성이 보장됨
      */
     public NewThemeBuilder withThemeTitle(String themeTitle) {
-        data("themeTitle", themeTitle);
-        return this;
+        return data("themeTitle", themeTitle);
     }
     
     /**
      * 테마 카테고리 설정 (체이닝)
      */
     public NewThemeBuilder withCategory(String category) {
-        data("category", category);
-        return this;
+        return data("category", category);
+    }
+    
+    /**
+     * 작성자 닉네임 설정 (체이닝)
+     */
+    public NewThemeBuilder withAuthorNickname(String authorNickname) {
+        return data("authorNickname", authorNickname);
     }
     
     /**
@@ -40,21 +49,6 @@ public class NewThemeBuilder extends NotificationBuilder {
      */
     @Override
     protected void prepareNotification() {
-        // 기본 제목 설정
-        if (title == null) {
-            title = "새로운 테마가 등록되었습니다";
-        }
-        
-        // 기본 메시지 설정
-        if (message == null) {
-            String themeTitle = (String) data.get("themeTitle");
-            if (themeTitle != null) {
-                message = String.format("새로운 테마 '%s'가 등록되었습니다.", themeTitle);
-            } else {
-                message = "새로운 테마가 등록되었습니다. 확인해보세요!";
-            }
-        }
-        
         // 필수 데이터 설정
         data("themeId", themeId);
         data("authorId", authorId);

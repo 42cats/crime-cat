@@ -3,13 +3,16 @@ package com.crimecat.backend.gameHistory.controller;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gameHistory.dto.CheckPlayResponseDto;
 import com.crimecat.backend.gameHistory.dto.GameHistoryUpdateRequestDto;
+import com.crimecat.backend.gameHistory.dto.RequestHistoryAdd;
 import com.crimecat.backend.gameHistory.dto.SaveUserGameHistoryRequestDto;
 import com.crimecat.backend.gameHistory.dto.SaveUserHistoryResponseDto;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryToOwnerDto;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryToUserDto;
+import com.crimecat.backend.gameHistory.dto.WebHistoryAddRequestDto;
 import com.crimecat.backend.gameHistory.service.WebGameHistoryService;
 import com.crimecat.backend.gameHistory.sort.GameHistorySortType;
 import com.crimecat.backend.guild.dto.bot.MessageDto;
+import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.utils.sort.SortUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
@@ -112,8 +115,10 @@ public class WebGameHistoryController {
         .body(webGameHistoryService.checkHasPlayed(gameThemeId, currentWebUser));
 		}
 
-//		@PostMapping("/record/crimescene/{game_theme_id}")
-//	public ResponseEntity<?> requestCrimeScene (@PathVariable("game_theme_id") UUID gameThemeId){
-//
-//		}
+		@PostMapping("/record/crimescene/{game_theme_id}")
+	public ResponseEntity<RequestHistoryAdd> requestCrimeScene (@PathVariable("game_theme_id") UUID gameThemeId, @RequestBody
+				WebHistoryAddRequestDto dto){
+			User currentUser = AuthenticationUtil.getCurrentUser();
+			return ResponseEntity.ok().body(webGameHistoryService.requestGameHistoryAdd(currentUser,gameThemeId, dto));
+		}
 }

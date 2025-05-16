@@ -2,38 +2,39 @@ package com.crimecat.backend.notification.builder;
 
 import com.crimecat.backend.notification.enums.NotificationType;
 import com.crimecat.backend.notification.service.NotificationService;
+import com.crimecat.backend.notification.template.TemplateService;
 
 /**
  * 시스템 알림을 위한 전용 빌더
+ * 제네릭을 사용하여 타입 안전성 확보
  */
-public class SystemNotificationBuilder extends NotificationBuilder {
+public class SystemNotificationBuilder extends NotificationBuilder<SystemNotificationBuilder> {
     
-    public SystemNotificationBuilder(NotificationService notificationService) {
-        super(notificationService, NotificationType.SYSTEM_NOTICE);
+    public SystemNotificationBuilder(NotificationService notificationService, TemplateService templateService) {
+        super(notificationService, templateService, NotificationType.SYSTEM_NOTICE);
     }
     
     /**
      * 긴급 알림 설정 (체이닝)
      */
     public SystemNotificationBuilder urgent() {
-        data("priority", "HIGH");
-        return this;
+        return data("priority", "HIGH")
+               .data("urgent", true);
     }
     
     /**
      * 일반 알림 설정 (체이닝)
      */
     public SystemNotificationBuilder normal() {
-        data("priority", "NORMAL");
-        return this;
+        return data("priority", "NORMAL")
+               .data("urgent", false);
     }
     
     /**
      * 알림 카테고리 설정 (체이닝)
      */
     public SystemNotificationBuilder category(String category) {
-        data("category", category);
-        return this;
+        return data("category", category);
     }
     
     /**
@@ -41,17 +42,7 @@ public class SystemNotificationBuilder extends NotificationBuilder {
      */
     @Override
     protected void prepareNotification() {
-        // 기본 제목 설정
-        if (title == null) {
-            title = "시스템 알림";
-        }
-        
-        // 기본 메시지 설정
-        if (message == null) {
-            message = "시스템에서 중요한 알림이 있습니다.";
-        }
-        
-        // 필수 데이터 설정
+        // 기본 데이터 설정
         data("notificationType", "SYSTEM_NOTICE");
         data("isSystemNotification", true);
         

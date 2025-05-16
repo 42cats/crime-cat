@@ -2,14 +2,12 @@ package com.crimecat.backend.notification.listener;
 
 import com.crimecat.backend.notification.builder.NotificationBuilders;
 import com.crimecat.backend.notification.event.*;
-import com.crimecat.backend.notification.enums.NotificationType;
+import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
  * 알림 이벤트를 수신하고 처리하는 리스너
@@ -31,10 +29,14 @@ public class NotificationEventListener {
         log.info("Processing GameRecordRequestEvent: {}", event.getEventId());
         
         try {
+            // 템플릿을 통해 데이터 설정 (체이닝 수정)
             builders.gameRecordRequest(event.getGameThemeId(), event.getRequesterId(), event.getReceiverId())
-                .withMessage(event.getRequestMessage())
-                .title(event.getTitle())
-                .message(event.getMessage())
+                .data("requesterNickname", event.getData().get("requesterNickname"))
+                .data("gameThemeTitle", event.getGameThemeTitle())
+                .data("requestMessage", event.getRequestMessage())
+                // 아래는 제거 - 템플릿에서 자동 생성됨
+                // .title(event.getTitle())
+                // .message(event.getMessage())
                 .expiresAt(event.getExpiresAt())
                 .send();
             
@@ -46,30 +48,7 @@ public class NotificationEventListener {
         
         return CompletableFuture.completedFuture(null);
     }
-    
-    /**
-     * 친구 요청 이벤트 처리
-     */
-    @EventListener
-    @Async
-    public CompletableFuture<Void> handleFriendRequest(FriendRequestEvent event) {
-        log.info("Processing FriendRequestEvent: {}", event.getEventId());
-        
-        try {
-            builders.friendRequest(event.getRequesterId(), event.getReceiverId())
-                .title(event.getTitle())
-                .message(event.getMessage())
-                .expiresAt(event.getExpiresAt())
-                .send();
-            
-            log.debug("Successfully processed FriendRequestEvent: {}", event.getEventId());
-        } catch (Exception e) {
-            log.error("Error processing FriendRequestEvent: {}", event.getEventId(), e);
-            throw e;
-        }
-        
-        return CompletableFuture.completedFuture(null);
-    }
+
     
     /**
      * 새 테마 발행 이벤트 처리

@@ -1,6 +1,7 @@
 package com.crimecat.backend.notification.builder;
 
 import com.crimecat.backend.notification.service.NotificationService;
+import com.crimecat.backend.notification.template.TemplateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -9,12 +10,14 @@ import java.util.UUID;
 /**
  * 다양한 알림 빌더를 생성하는 팩토리 클래스
  * 각 알림 타입별로 특화된 빌더를 제공
+ * 제네릭 빌더를 반환하여 타입 안전성 보장
  */
 @Component
 @RequiredArgsConstructor
 public class NotificationBuilders {
     
     private final NotificationService notificationService;
+    private final TemplateService templateService;
     
     /**
      * 게임 기록 요청 알림 빌더 생성
@@ -24,7 +27,7 @@ public class NotificationBuilders {
      * @return GameRecordRequestBuilder
      */
     public GameRecordRequestBuilder gameRecordRequest(UUID gameThemeId, UUID requesterId, UUID receiverId) {
-        return (GameRecordRequestBuilder) new GameRecordRequestBuilder(notificationService, gameThemeId, requesterId)
+        return new GameRecordRequestBuilder(notificationService, templateService, gameThemeId, requesterId)
                 .to(receiverId)
                 .from(requesterId);
     }
@@ -36,7 +39,7 @@ public class NotificationBuilders {
      * @return FriendRequestBuilder
      */
     public FriendRequestBuilder friendRequest(UUID requesterId, UUID receiverId) {
-        return (FriendRequestBuilder) new FriendRequestBuilder(notificationService)
+        return new FriendRequestBuilder(notificationService, templateService)
                 .to(receiverId)
                 .from(requesterId);
     }
@@ -48,7 +51,7 @@ public class NotificationBuilders {
      * @return NewThemeBuilder
      */
     public NewThemeBuilder newTheme(UUID themeId, UUID authorId) {
-        return (NewThemeBuilder) new NewThemeBuilder(notificationService, themeId, authorId)
+        return new NewThemeBuilder(notificationService, templateService, themeId, authorId)
                 .from(authorId);
     }
     
@@ -58,7 +61,7 @@ public class NotificationBuilders {
      * @return SystemNotificationBuilder
      */
     public SystemNotificationBuilder systemNotification(UUID receiverId) {
-        return (SystemNotificationBuilder) new SystemNotificationBuilder(notificationService)
+        return new SystemNotificationBuilder(notificationService, templateService)
                 .to(receiverId);
     }
     
@@ -70,7 +73,7 @@ public class NotificationBuilders {
      * @return GameRecordResponseBuilder
      */
     public GameRecordResponseBuilder gameRecordResponse(UUID originalRequestId, UUID receiverId, boolean approved) {
-        return (GameRecordResponseBuilder) new GameRecordResponseBuilder(notificationService, originalRequestId, approved)
+        return new GameRecordResponseBuilder(notificationService, templateService, originalRequestId, approved)
                 .to(receiverId);
     }
 }

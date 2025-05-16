@@ -2,28 +2,46 @@ package com.crimecat.backend.notification.builder;
 
 import com.crimecat.backend.notification.enums.NotificationType;
 import com.crimecat.backend.notification.service.NotificationService;
+import com.crimecat.backend.notification.template.TemplateService;
 
 import java.util.UUID;
 
 /**
  * 게임 기록 요청 알림을 위한 전용 빌더
+ * 제네릭을 사용하여 타입 안전성 확보
  */
-public class GameRecordRequestBuilder extends NotificationBuilder {
+public class GameRecordRequestBuilder extends NotificationBuilder<GameRecordRequestBuilder> {
     
     private final UUID gameThemeId;
     private final UUID requesterId;
     
-    public GameRecordRequestBuilder(NotificationService notificationService, UUID gameThemeId, UUID requesterId) {
-        super(notificationService, NotificationType.GAME_RECORD_REQUEST);
+    public GameRecordRequestBuilder(NotificationService notificationService, TemplateService templateService, 
+                                    UUID gameThemeId, UUID requesterId) {
+        super(notificationService, templateService, NotificationType.GAME_RECORD_REQUEST);
         this.gameThemeId = gameThemeId;
         this.requesterId = requesterId;
     }
     
     /**
      * 게임 기록 요청 메시지 설정 (체이닝)
+     * 타입 안전성을 위해 self()를 반환
      */
     public GameRecordRequestBuilder withMessage(String customMessage) {
-        return (GameRecordRequestBuilder) message(customMessage);
+        return message(customMessage);
+    }
+    
+    /**
+     * 요청자 닉네임 설정 (체이닝)
+     */
+    public GameRecordRequestBuilder withRequesterNickname(String nickname) {
+        return data("requesterNickname", nickname);
+    }
+    
+    /**
+     * 게임 테마 제목 설정 (체이닝)
+     */
+    public GameRecordRequestBuilder withGameThemeTitle(String themeTitle) {
+        return data("gameThemeTitle", themeTitle);
     }
     
     /**
@@ -31,25 +49,13 @@ public class GameRecordRequestBuilder extends NotificationBuilder {
      */
     @Override
     protected void prepareNotification() {
-        // 기본 제목 설정
-        if (title == null) {
-            title = "게임 기록 등록 요청";
-        }
-        
-        // 기본 메시지 설정
-        if (message == null) {
-            message = "새로운 게임 기록 등록 요청이 있습니다. 요청을 확인해주세요.";
-        }
-        
-        // 필수 데이터 설정
+        // 템플릿에서 사용할 컨텍스트 데이터 설정
         data("gameThemeId", gameThemeId);
         data("requesterId", requesterId);
-        data("notificationType", "GAME_RECORD_REQUEST");
+        data("requestMessage", message); // 원래 메시지를 컨텍스트로 포함
         
-        // 만료시간이 설정되지 않은 경우 기본값 설정 (7일)
-        if (expiresAt == null) {
-            expiresAt = java.time.LocalDateTime.now().plusDays(7);
-        }
+        // 기본 메타데이터 설정
+        data("notificationType", "GAME_RECORD_REQUEST");
     }
     
     /**

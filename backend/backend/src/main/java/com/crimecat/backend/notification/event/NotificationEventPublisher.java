@@ -34,20 +34,7 @@ public class NotificationEventPublisher {
         });
     }
     
-    /**
-     * 친구 요청 이벤트 발행
-     */
-    public CompletableFuture<Void> publishFriendRequest(Object source, UUID requesterId, 
-                                                       String requesterNickname, UUID receiverId, 
-                                                       String message) {
-        return CompletableFuture.runAsync(() -> {
-            FriendRequestEvent event = FriendRequestEvent.of(source, requesterId, requesterNickname, 
-                                                            receiverId, message);
-            eventPublisher.publishEvent(event);
-            log.debug("Published FriendRequestEvent: {}", event.getEventId());
-        });
-    }
-    
+
     /**
      * 새 테마 이벤트 발행 (단일 사용자)
      */

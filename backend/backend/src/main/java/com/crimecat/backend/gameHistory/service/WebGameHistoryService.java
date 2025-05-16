@@ -4,12 +4,15 @@ import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gameHistory.domain.GameHistory;
 import com.crimecat.backend.gameHistory.dto.CheckPlayResponseDto;
 import com.crimecat.backend.gameHistory.dto.GameHistoryUpdateRequestDto;
+import com.crimecat.backend.gameHistory.dto.RequestHistoryAdd;
 import com.crimecat.backend.gameHistory.dto.SaveUserGameHistoryRequestDto;
 import com.crimecat.backend.gameHistory.dto.SaveUserHistoryResponseDto;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryToOwnerDto;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryToUserDto;
+import com.crimecat.backend.gameHistory.dto.WebHistoryAddRequestDto;
 import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
+import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.repository.CrimesceneThemeRepository;
 import com.crimecat.backend.gametheme.repository.GameThemeRepository;
 import com.crimecat.backend.gametheme.service.GameThemeService;
@@ -17,11 +20,18 @@ import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.repository.GuildRepository;
 import com.crimecat.backend.guild.service.bot.GuildQueryService;
 import com.crimecat.backend.guild.service.bot.GuildService;
+import com.crimecat.backend.notification.domain.Notification;
+import com.crimecat.backend.notification.enums.NotificationStatus;
+import com.crimecat.backend.notification.enums.NotificationType;
+import com.crimecat.backend.notification.event.NotificationEventPublisher;
+import com.crimecat.backend.notification.repository.NotificationRepository;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.service.UserService;
 import com.crimecat.backend.webUser.domain.WebUser;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -29,6 +39,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WebGameHistoryService {
@@ -43,6 +54,8 @@ public class WebGameHistoryService {
 	private final GuildRepository guildRepository;
 	private final GameHistoryRepository gameHistoryRepository;
 	private final CrimesceneThemeRepository crimesceneThemeRepository;
+	private final NotificationRepository notificationRepository;
+	private final NotificationEventPublisher notificationEventPublisher;
 
 	@Transactional
 	public SaveUserHistoryResponseDto saveCrimeSceneUserGameHistory(
@@ -144,5 +157,34 @@ public class WebGameHistoryService {
 				gameThemeId, currentWebUser.getUser()
 						.getId());
 		return CheckPlayResponseDto.from(hasPlayed);
+	}
+
+  public RequestHistoryAdd requestGameHistoryAdd(User user, UUID gameThemeId, WebHistoryAddRequestDto dto) {
+		List<Notification> byUserAndTypeOrderByCreatedAtDesc = notificationRepository.findByUserAndTypeOrderByCreatedAtDesc(
+				user, NotificationType.GAME_RECORD_REQUEST).stream().filter(v-> v.getDataField("gmaeThemeId").equals(gameThemeId.toString()));
+		//데이터 필드에 게임테마 아이디가 있고
+		//status 가 NotificationStatus.PROCESSED 이면 이미 처리되었습니다.
+		//존재하기만 하면 처리중입니다.
+//		RequestHistoryAdd.from("메시지");
+//		에 메시지 적어서 반환
+//		없으면
+		GameTheme gameTheme = gameThemeRepository.findById(gameThemeId)
+				.orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+		notificationEventPublisher.publishGameRecordRequest(
+				this,
+				gameThemeId,
+				gameTheme.getTitle(),
+				user.getId(),
+				gameTheme.getAuthorId(),
+				dto.getMessage()
+		);
+
+		notificationEventPublisher.publishSystemNotification(
+				this,
+				user.getId(),
+				gameTheme.getTitle() + "기록 요청 성공",
+				"기록 요청이 해당 테마의 오너에게 발송되었습니다. 승인을 기다려 주세요."
+		)
+//		RequestHistoryAdd.from("요청이 발송되었습니다.");
 	}
 }
