@@ -9,7 +9,6 @@ START TRANSACTION;
 -- 1) notifications 테이블 생성 (없으면)
 CREATE TABLE IF NOT EXISTS `notifications` (
   `id`          BINARY(16)    NOT NULL COMMENT '알림 ID (UUID)',
-  `user_id`     BINARY(16)    NOT NULL COMMENT '기존 사용자 ID (DEPRECATED)',
   `type`        ENUM(
                    'FRIEND_REQUEST',
                    'GAME_NOTICE',
