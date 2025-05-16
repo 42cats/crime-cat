@@ -170,7 +170,9 @@ public class WebGameHistoryService {
         if (!existingNotifications.isEmpty()) {
             Notification latest = existingNotifications.getFirst();
             if (latest.getStatus() == NotificationStatus.PROCESSED) {
-                return WebHistoryResponseDto.from("이미 승인 처리 되었습니다.");
+							if(gameHistoryRepository.existsByGameTheme_IdAndUser_Id(gameThemeId,user.getId())){
+                	return WebHistoryResponseDto.from("이미 승인 처리 되었습니다.");
+							}
             } else {
                 return WebHistoryResponseDto.from("길드 오너가 처리중에 있습니다.");
             }

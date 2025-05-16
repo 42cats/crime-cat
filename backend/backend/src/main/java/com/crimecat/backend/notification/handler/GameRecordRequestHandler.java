@@ -87,7 +87,7 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
             dto.getIsWin(),
             dto.getGameDate(),
             dto.getCharacterName(),
-            user,
+            notification.getSender(),
             guild,
             gameTheme
         );
@@ -96,7 +96,7 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
         
         // 요청자에게 승인 알림 발송 (Event-Driven 방식)
         UUID requesterId = extractRequesterId(notification.getDataJson());
-        eventPublisher.publishGameRecordApproved(this, notificationId, gameThemeId, requesterId, notification.getReceiverId());
+        eventPublisher.publishGameRecordApproved(this, notificationId, gameThemeId, requesterId, notification.getReceiverId(),gameTheme.getTitle());
         notification.setStatus(NotificationStatus.PROCESSED);
     }
     
@@ -115,7 +115,9 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
         // 요청자에게 거절 알림 발송 (Event-Driven 방식)
         UUID requesterId = extractRequesterId(notification.getDataJson());
         UUID gameThemeId = extractGameThemeId(notification.getDataJson());
-        eventPublisher.publishGameRecordRejected(this, notificationId, gameThemeId, requesterId, notification.getReceiverId(), dto.getDeclineMessage());
+        GameTheme gameTheme = gameThemeRepository.findById(gameThemeId)
+            .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        eventPublisher.publishGameRecordRejected(this, notificationId, gameThemeId, requesterId, notification.getReceiverId(), dto.getDeclineMessage(), gameTheme.getTitle());
         notification.setStatus(NotificationStatus.PROCESSED);
     }
     
