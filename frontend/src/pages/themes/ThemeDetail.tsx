@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/hooks/useAuth";
 import { commentService } from "@/api/commentService";
+import { gameHistoryService } from "@/api/gameHistoryService";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -86,7 +87,7 @@ const ThemeDetail: React.FC = () => {
         const checkGamePlayed = async () => {
             if (user?.id && id) {
                 try {
-                    const played = await commentService.checkGamePlayed(id);
+                    const played = await gameHistoryService.checkPlayTheme(id);
                     setHasPlayedGame(played);
                 } catch (err) {
                     console.error("게임 플레이 여부 확인 중 오류 발생:", err);
@@ -98,36 +99,7 @@ const ThemeDetail: React.FC = () => {
         checkGamePlayed();
     }, [user?.id, id]);
 
-    // 목업 API 서비스
-    const mockApiService = {
-        // 기존 요청 확인
-        checkExistingRequest: async (gameThemeId: string) => {
-            const mockRequests = [
-                { gameThemeId: "theme1", status: "pending" },
-                { gameThemeId: "theme2", status: "completed" },
-            ];
-            await new Promise((resolve) => setTimeout(resolve, 500));
-            return (
-                mockRequests.find((req) => req.gameThemeId === gameThemeId) ||
-                null
-            );
-        },
-        // 기록 요청 전송
-        requestGameRecord: async (data: {
-            gameThemeId: string;
-            message: string;
-        }) => {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            if (Math.random() > 0.1) {
-                return {
-                    success: true,
-                    message: "요청이 성공적으로 전송되었습니다.",
-                };
-            } else {
-                throw new Error("요청 전송 중 오류가 발생했습니다.");
-            }
-        },
-    };
+
 
     const handleRequestGame = async () => {
         if (!requestMessage.trim()) {
@@ -141,7 +113,7 @@ const ThemeDetail: React.FC = () => {
 
         setIsSubmittingRequest(true);
         try {
-            await mockApiService.requestGameRecord({
+            await gameHistoryService.requestGameRecord({
                 gameThemeId: id!,
                 message: requestMessage,
             });
@@ -358,7 +330,7 @@ const ThemeDetail: React.FC = () => {
                                             setIsCheckingRequest(true);
                                             try {
                                                 const existingRequest =
-                                                    await mockApiService.checkExistingRequest(
+                                                    await gameHistoryService.checkExistingRequest(
                                                         id
                                                     );
 
