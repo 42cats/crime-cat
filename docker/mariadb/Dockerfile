@@ -12,7 +12,8 @@ RUN apk update && apk upgrade && \
         mariadb \
         mariadb-client \
         mariadb-server-utils \
-        gettext && \
+        gettext \
+        coreutils && \
     # 필요한 디렉토리 생성
     mkdir -p /var/lib/dbinit \
              /var/lib/dbinit/migrations \
@@ -20,13 +21,20 @@ RUN apk update && apk upgrade && \
              ${MYSQL_RUN_DIR} \
              ${MYSQL_LOG_DIR} \
              ${MYSQL_DATA_DIR} \
-             /script && \
+             /script \
+             /tmp/migration_temp \
+             /var/tmp && \
     # 권한 설정
     chown -R mysql:mysql ${MYSQL_RUN_DIR} \
                         ${MYSQL_LOG_DIR} \
-                        ${MYSQL_DATA_DIR} && \
+                        ${MYSQL_DATA_DIR} \
+                        /var/lib/dbinit \
+                        /tmp/migration_temp \
+                        /var/tmp && \
     chmod 755 ${MYSQL_LOG_DIR} \
-              ${MYSQL_DATA_DIR}
+              ${MYSQL_DATA_DIR} \
+              /tmp/migration_temp \
+              /var/tmp
 
 # 설정 파일과 스크립트를 한 번에 복사
 COPY docker/mariadb/db/init /var/lib/dbinit/
@@ -37,13 +45,13 @@ COPY docker/mariadb/script.sh /script/script.sh
 COPY docker/mariadb/db/migrations /var/lib/dbinit/migrations/
 COPY docker/mariadb/migration.sh /script/migration.sh
 
-# 스크립트 권한 설정
+# 스크립트 권한 설정 및 소유권 변경
 RUN chown -R mysql:mysql /var/lib/dbinit/ \
-						/etc/my.cnf.d
-	
-RUN chmod +x /var/lib/dbinit/*.*
-RUN chmod +x /script/script.sh
-RUN chmod +x /script/migration.sh
+                        /etc/my.cnf.d \
+                        /script/ && \
+    chmod +x /var/lib/dbinit/*.* 2>/dev/null || true && \
+    chmod +x /script/script.sh && \
+    chmod +x /script/migration.sh
 
 # 볼륨 설정
 VOLUME ["${MYSQL_DATA_DIR}", "${MYSQL_LOG_DIR}"]
@@ -55,8 +63,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # MariaDB 포트 노출
 EXPOSE 3306
 
-# 실행 사용자 설정
-USER root
+# 실행 사용자 설정 (mysql 사용자로 변경)
+USER mysql
 
 # 엔트리포인트 설정
 ENTRYPOINT ["/script/script.sh"]
