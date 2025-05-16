@@ -35,7 +35,9 @@ public class NotificationHandlerService {
         Notification notification = findNotification(notificationId);
         
         // 2. 권한 검증 (알림 소유자만 액션 수행 가능)
-        AuthenticationUtil.validateCurrentUserMatches(notification.getUserId());
+        if(!AuthenticationUtil.getCurrentUser().getId().equals(notification.getReceiverId())){
+            throw ErrorStatus.NOTIFICATION_ACCESS_DENIED.asServiceException();
+        }
         
         // 3. 이미 처리된 알림인지 확인
         if (notification.getStatus() == NotificationStatus.PROCESSED) {
