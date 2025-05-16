@@ -21,20 +21,19 @@ public class GameRecordRequestEvent extends NotificationEvent {
     private final UUID requesterId;
     
     public GameRecordRequestEvent(Object source, UUID gameThemeId, String gameThemeTitle,
-                                  UUID requesterId, UUID receiverId, String requestMessage) {
+                                  UUID requesterId, UUID receiverId, String requestMessage, String requesterNickname) {
         super(source, receiverId, requesterId);
         this.gameThemeId = gameThemeId;
         this.gameThemeTitle = gameThemeTitle;
         this.requesterId = requesterId;
         this.requestMessage = requestMessage;
         
-        // 기본 제목과 메시지 설정
-        this.withTitle("게임 기록 등록 요청")
-            .withMessage(requestMessage)
-            .withData("gameThemeId", gameThemeId)
+        // 기본 제목과 메시지 설정 제거 - 템플릿이 처리하도록 함
+        this.withData("gameThemeId", gameThemeId)
             .withData("gameThemeTitle", gameThemeTitle)
             .withData("requesterId", requesterId)
             .withData("requestMessage", requestMessage)
+            .withData("requesterNickname", requesterNickname)
             .withExpiresAt(LocalDateTime.now().plusDays(7)); // 7일 후 만료
     }
     
@@ -42,8 +41,8 @@ public class GameRecordRequestEvent extends NotificationEvent {
      * 팩토리 메서드
      */
     public static GameRecordRequestEvent of(Object source, UUID gameThemeId, String gameThemeTitle,
-                                            UUID requesterId, UUID receiverId, String requestMessage) {
+                                            UUID requesterId, UUID receiverId, String requestMessage, String requesterNickname) {
         return new GameRecordRequestEvent(source, gameThemeId, gameThemeTitle, 
-                                         requesterId, receiverId, requestMessage);
+                                         requesterId, receiverId, requestMessage, requesterNickname);
     }
 }

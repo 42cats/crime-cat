@@ -1,23 +1,21 @@
 package com.crimecat.backend.notification.template.impl;
 
 import com.crimecat.backend.notification.enums.NotificationType;
-import com.crimecat.backend.notification.template.AbstractNotificationTemplate;
-import com.crimecat.backend.notification.template.MessageRenderer;
+import com.crimecat.backend.notification.template.AbstractHandlebarsNotificationTemplate;
+import com.crimecat.backend.notification.template.HandlebarsMessageRenderer;
 import com.crimecat.backend.notification.template.TypedNotificationTemplate;
-import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.stereotype.Component;
 
 /**
- * 게임 기록 요청 알림 템플릿
+ * 게임 기록 요청 알림 템플릿 - Handlebars 버전
  */
 @Component
-public class GameRecordRequestTemplate extends AbstractNotificationTemplate implements TypedNotificationTemplate {
+public class GameRecordRequestTemplate extends AbstractHandlebarsNotificationTemplate implements TypedNotificationTemplate {
     
-    public GameRecordRequestTemplate(MessageRenderer messageRenderer) {
-        super(messageRenderer);
+    public GameRecordRequestTemplate(HandlebarsMessageRenderer handlebarsMessageRenderer) {
+        super(handlebarsMessageRenderer);
     }
     
     @Override
@@ -32,8 +30,9 @@ public class GameRecordRequestTemplate extends AbstractNotificationTemplate impl
     
     @Override
     protected String getMessageTemplate() {
-        return "${requesterNickname}님이 ${gameThemeTitle} 테마에 대한 게임 기록 등록을 요청했습니다." +
-               "{{? requestMessage : \n요청 메시지: ${requestMessage} : }}";
+        // Handlebars 문법으로 변경
+        return "{{requesterNickname}}님이 {{gameThemeTitle}} 테마에 대한 게임 기록 등록을 요청했습니다." +
+               "{{#if requestMessage}}\n요청 메시지: {{requestMessage}}{{/if}}";
     }
     
     @Override
@@ -67,5 +66,14 @@ public class GameRecordRequestTemplate extends AbstractNotificationTemplate impl
             "requesterNickname",
             "gameThemeTitle"
         );
+    }
+    
+    @Override
+    protected void validateRequiredKeys(Map<String, Object> context) {
+        for (String key : getRequiredContextKeys()) {
+            if (!context.containsKey(key) || context.get(key) == null) {
+                throw new IllegalArgumentException("Required context key missing: " + key);
+            }
+        }
     }
 }

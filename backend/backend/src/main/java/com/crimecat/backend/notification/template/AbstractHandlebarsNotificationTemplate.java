@@ -6,13 +6,13 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 
 /**
- * 템플릿 구현을 위한 추상 베이스 클래스
+ * Handlebars 템플릿 구현을 위한 추상 베이스 클래스
  * 공통 기능과 기본 구현을 제공
  */
 @RequiredArgsConstructor
-public abstract class AbstractNotificationTemplate implements NotificationTemplate {
+public abstract class AbstractHandlebarsNotificationTemplate implements NotificationTemplate {
     
-    protected final MessageRenderer messageRenderer;
+    protected final HandlebarsMessageRenderer handlebarsMessageRenderer;
     
     // 템플릿 정의
     protected abstract String getTitleTemplate();
@@ -21,13 +21,15 @@ public abstract class AbstractNotificationTemplate implements NotificationTempla
     @Override
     public String getTitle(Map<String, Object> context) {
         validate(context);
-        return messageRenderer.render(getTitleTemplate(), context);
+        Map<String, Object> enrichedContext = enrichContext(context);
+        return handlebarsMessageRenderer.render(getTitleTemplate(), enrichedContext);
     }
     
     @Override
     public String getMessage(Map<String, Object> context) {
         validate(context);
-        return messageRenderer.render(getMessageTemplate(), context);
+        Map<String, Object> enrichedContext = enrichContext(context);
+        return handlebarsMessageRenderer.render(getMessageTemplate(), enrichedContext);
     }
     
     @Override
@@ -60,5 +62,22 @@ public abstract class AbstractNotificationTemplate implements NotificationTempla
     @Override
     public LocalDateTime getDefaultExpiresAt() {
         return LocalDateTime.now().plusDays(getDefaultExpirationDays());
+    }
+    
+    /**
+     * 기본 검증 로직
+     */
+    public void validate(Map<String, Object> context) {
+        if (context == null) {
+            throw new IllegalArgumentException("Context cannot be null");
+        }
+        validateRequiredKeys(context);
+    }
+    
+    /**
+     * 필수 키 검증
+     */
+    protected void validateRequiredKeys(Map<String, Object> context) {
+        // 하위 클래스에서 오버라이드 가능
     }
 }
