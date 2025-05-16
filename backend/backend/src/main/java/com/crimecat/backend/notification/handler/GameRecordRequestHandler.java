@@ -8,16 +8,15 @@ import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.repository.CrimesceneThemeRepository;
 import com.crimecat.backend.gametheme.repository.GameThemeRepository;
 import com.crimecat.backend.guild.domain.Guild;
+import com.crimecat.backend.notification.builder.NotificationBuilders;
 import com.crimecat.backend.notification.domain.Notification;
 import com.crimecat.backend.notification.dto.request.GameRecordAcceptDto;
 import com.crimecat.backend.notification.dto.request.GameRecordDeclineDto;
 import com.crimecat.backend.notification.enums.NotificationStatus;
 import com.crimecat.backend.notification.enums.NotificationType;
-import com.crimecat.backend.notification.service.NotificationService;
 import com.crimecat.backend.notification.utils.JsonUtil;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.repository.UserRepository;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +30,7 @@ import org.springframework.stereotype.Component;
 public class GameRecordRequestHandler extends AbstractNotificationHandler {
     
     private final GameHistoryRepository gameHistoryRepository;
-    private final NotificationService notificationService;
+    private final NotificationBuilders notificationBuilders;
     private final JsonUtil jsonUtil;
     private final UserRepository userRepository;
     private final GameThemeRepository gameThemeRepository;
@@ -68,7 +67,7 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
         }
 
         // 사용자 조회
-        User user = userRepository.findById(notification.getUserId())
+        User user = userRepository.findById(notification.getReceiverId())
             .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
         
         // 게임 테마 조회 (알림 데이터에서 추출)
@@ -95,16 +94,15 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
         gameHistory.setOwnerMemo(dto.getOwnerMemo());
         gameHistoryRepository.save(gameHistory);
         
-        // 요청자에게 승인 알림 발송
+        // 요청자에게 승인 알림 발송 (Builder 패턴 사용)
         UUID requesterId = extractRequesterId(notification.getDataJson());
-        notificationService.createAndSendNotification(
-            NotificationType.SYSTEM_NOTICE,
-            requesterId,
-            notification.getUserId(),
-            "게임 기록 승인됨",
-            "회원님의 게임 기록 요청이 승인되었습니다.",
-            Map.of("originalNotificationId", notificationId.toString())
-        );
+        notificationBuilders.gameRecordResponse(notificationId, requesterId, true)
+            .from(notification.getSenderId())
+            .title("게임 기록 승인됨")
+            .message("회원님의 게임 기록 요청이 승인되었습니다.")
+            .data("originalNotificationId", notificationId.toString())
+            .data("gameThemeId", gameThemeId.toString())
+            .send();
         notification.setStatus(NotificationStatus.PROCESSED);
     }
     
@@ -120,16 +118,14 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
             throw ErrorStatus.NOTIFICATION_ALREADY_PROCESSED.asServiceException();
         }
 
-        // 요청자에게 거절 알림 발송
+        // 요청자에게 거절 알림 발송 (Builder 패턴 사용)
         UUID requesterId = extractRequesterId(notification.getDataJson());
-        notificationService.createAndSendNotification(
-            NotificationType.SYSTEM_NOTICE,
-            requesterId,
-            notification.getUserId(),
-            "게임 기록 거절됨",
-            dto.getDeclineMessage(),
-            Map.of("originalNotificationId", notificationId.toString())
-        );
+        notificationBuilders.gameRecordResponse(notificationId, requesterId, false)
+            .from(notification.getSenderId())
+            .title("게임 기록 거절됨")
+            .message(dto.getDeclineMessage())
+            .data("originalNotificationId", notificationId.toString())
+            .send();
         notification.setStatus(NotificationStatus.PROCESSED);
     }
     
@@ -137,13 +133,13 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
      * 알림 데이터에서 게임 테마 ID 추출
      */
     private UUID extractGameThemeId(String data) {
-        return UUID.fromString(jsonUtil.extractField(data, "gameThemeId"));
+        return UUID.fromString(JsonUtil.extractField(data, "gameThemeId"));
     }
     
     /**
      * 알림 데이터에서 요청자 ID 추출
      */
     private UUID extractRequesterId(String data) {
-        return UUID.fromString(jsonUtil.extractField(data, "requesterId"));
+        return UUID.fromString(JsonUtil.extractField(data, "requesterId"));
     }
 }
