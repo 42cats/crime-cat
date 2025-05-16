@@ -8,7 +8,7 @@ import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.repository.CrimesceneThemeRepository;
 import com.crimecat.backend.gametheme.repository.GameThemeRepository;
 import com.crimecat.backend.guild.domain.Guild;
-import com.crimecat.backend.notification.builder.NotificationBuilders;
+import com.crimecat.backend.notification.event.NotificationEventPublisher;
 import com.crimecat.backend.notification.domain.Notification;
 import com.crimecat.backend.notification.dto.request.GameRecordAcceptDto;
 import com.crimecat.backend.notification.dto.request.GameRecordDeclineDto;
@@ -30,7 +30,7 @@ import org.springframework.stereotype.Component;
 public class GameRecordRequestHandler extends AbstractNotificationHandler {
     
     private final GameHistoryRepository gameHistoryRepository;
-    private final NotificationBuilders notificationBuilders;
+    private final NotificationEventPublisher eventPublisher;
     private final JsonUtil jsonUtil;
     private final UserRepository userRepository;
     private final GameThemeRepository gameThemeRepository;
@@ -94,15 +94,9 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
         gameHistory.setOwnerMemo(dto.getOwnerMemo());
         gameHistoryRepository.save(gameHistory);
         
-        // 요청자에게 승인 알림 발송 (Builder 패턴 사용)
+        // 요청자에게 승인 알림 발송 (Event-Driven 방식)
         UUID requesterId = extractRequesterId(notification.getDataJson());
-        notificationBuilders.gameRecordResponse(notificationId, requesterId, true)
-            .from(notification.getSenderId())
-            .title("게임 기록 승인됨")
-            .message("회원님의 게임 기록 요청이 승인되었습니다.")
-            .data("originalNotificationId", notificationId.toString())
-            .data("gameThemeId", gameThemeId.toString())
-            .send();
+        eventPublisher.publishGameRecordApproved(this, notificationId, gameThemeId, requesterId, notification.getReceiverId());
         notification.setStatus(NotificationStatus.PROCESSED);
     }
     
@@ -118,14 +112,10 @@ public class GameRecordRequestHandler extends AbstractNotificationHandler {
             throw ErrorStatus.NOTIFICATION_ALREADY_PROCESSED.asServiceException();
         }
 
-        // 요청자에게 거절 알림 발송 (Builder 패턴 사용)
+        // 요청자에게 거절 알림 발송 (Event-Driven 방식)
         UUID requesterId = extractRequesterId(notification.getDataJson());
-        notificationBuilders.gameRecordResponse(notificationId, requesterId, false)
-            .from(notification.getSenderId())
-            .title("게임 기록 거절됨")
-            .message(dto.getDeclineMessage())
-            .data("originalNotificationId", notificationId.toString())
-            .send();
+        UUID gameThemeId = extractGameThemeId(notification.getDataJson());
+        eventPublisher.publishGameRecordRejected(this, notificationId, gameThemeId, requesterId, notification.getReceiverId(), dto.getDeclineMessage());
         notification.setStatus(NotificationStatus.PROCESSED);
     }
     
