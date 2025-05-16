@@ -113,14 +113,25 @@ const ThemeDetail: React.FC = () => {
 
         setIsSubmittingRequest(true);
         try {
-            await gameHistoryService.requestGameRecord({
+            const result = await gameHistoryService.requestGameRecord({
                 gameThemeId: id!,
                 message: requestMessage,
             });
-            toast({
-                title: "요청 전송 완료",
-                description: "기록 요청이 성공적으로 전송되었습니다.",
-            });
+            
+            // 백엔드 메시지에 따라 UI 처리
+            if (result.message === "이미 처리되었습니다." || result.message === "처리중입니다.") {
+                toast({
+                    title: "알림",
+                    description: result.message,
+                    variant: "default",
+                });
+            } else if (result.message === "요청이 발송되었습니다.") {
+                toast({
+                    title: "요청 전송 완료",
+                    description: "기록 요청이 성공적으로 전송되었습니다.",
+                });
+            }
+            
             setShowRequestModal(false);
             setRequestMessage("");
         } catch (error) {
@@ -322,53 +333,21 @@ const ThemeDetail: React.FC = () => {
                                 </Button>
                                 {user?.id && !hasPlayedGame && (
                                     <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={async () => {
-                                            if (!id) return;
-
-                                            setIsCheckingRequest(true);
-                                            try {
-                                                const existingRequest =
-                                                    await gameHistoryService.checkExistingRequest(
-                                                        id
-                                                    );
-
-                                                if (
-                                                    existingRequest &&
-                                                    existingRequest.status ===
-                                                        "pending"
-                                                ) {
-                                                    toast({
-                                                        title: "이미 요청을 하셨습니다",
-                                                        description:
-                                                            "이미 요청하신 내용을 처리중입니다.",
-                                                        variant: "default",
-                                                    });
-                                                } else {
-                                                    setShowRequestModal(true);
-                                                }
-                                            } catch (error) {
-                                                toast({
-                                                    title: "오류 발생",
-                                                    description:
-                                                        "요청 상태를 확인할 수 없습니다.",
-                                                    variant: "destructive",
-                                                });
-                                            } finally {
-                                                setIsCheckingRequest(false);
-                                            }
-                                        }}
-                                        disabled={isCheckingRequest}
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setShowRequestModal(true);
+                                    }}
+                                    disabled={isCheckingRequest}
                                     >
-                                        {isCheckingRequest ? (
-                                            <>확인 중...</>
-                                        ) : (
-                                            <>
-                                                <FileText className="h-4 w-4 mr-2" />
-                                                기록 요청
-                                            </>
-                                        )}
+                                    {isCheckingRequest ? (
+                                    <>확인 중...</>
+                                    ) : (
+                                    <>
+                                    <FileText className="h-4 w-4 mr-2" />
+                                    기록 요청
+                                    </>
+                                    )}
                                     </Button>
                                 )}
                                 <Button
