@@ -68,10 +68,10 @@ public class NotificationEventPublisher {
      */
     public CompletableFuture<Void> publishGameRecordApproved(Object source, UUID originalRequestId, 
                                                             UUID gameThemeId, UUID requesterId, 
-                                                            UUID responderId) {
+                                                            UUID responderId, String gameThemeTitle) {
         return CompletableFuture.runAsync(() -> {
             GameRecordResponseEvent event = GameRecordResponseEvent.approved(source, originalRequestId, 
-                                                                            gameThemeId, requesterId, responderId);
+                                                                            gameThemeId, requesterId, responderId, gameThemeTitle);
             eventPublisher.publishEvent(event);
             log.debug("Published GameRecordResponseEvent (approved): {}", event.getEventId());
         });
@@ -82,10 +82,10 @@ public class NotificationEventPublisher {
      */
     public CompletableFuture<Void> publishGameRecordRejected(Object source, UUID originalRequestId, 
                                                             UUID gameThemeId, UUID requesterId, 
-                                                            UUID responderId, String reason) {
+                                                            UUID responderId, String reason, String gameThemeTitle) {
         return CompletableFuture.runAsync(() -> {
             GameRecordResponseEvent event = GameRecordResponseEvent.rejected(source, originalRequestId, 
-                                                                            gameThemeId, requesterId, responderId, reason);
+                                                                            gameThemeId, requesterId, responderId, reason, gameThemeTitle);
             eventPublisher.publishEvent(event);
             log.debug("Published GameRecordResponseEvent (rejected): {}", event.getEventId());
         });
