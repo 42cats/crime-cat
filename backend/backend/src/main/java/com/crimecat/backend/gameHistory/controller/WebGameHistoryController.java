@@ -115,7 +115,7 @@ public class WebGameHistoryController {
         .body(webGameHistoryService.checkHasPlayed(gameThemeId, currentWebUser));
 		}
 
-	@PostMapping("/record/crimescene/{game_theme_id}")
+	@PostMapping("/record/crime_scene/{game_theme_id}")
 	public ResponseEntity<WebHistoryResponseDto> requestCrimeScene (@PathVariable("game_theme_id") UUID gameThemeId, @RequestBody
 	WebHistoryRequestDto dto){
 			User currentUser = AuthenticationUtil.getCurrentUser();
