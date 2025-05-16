@@ -1,4 +1,4 @@
--- V1.2.0_00_notifications_without_user_id.sql
+-- V1.2.0_001_notifications_without_user_id.sql
 -- Description: 알림 시스템 – user_id 컬럼 제거 버전
 -- Created: 2025-05-16 16:30:00
 
