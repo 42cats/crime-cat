@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "../ui/card";
-import { Users, Tag, Coins, Clock, Heart, Eye } from "lucide-react";
+import { Users, Tag, Coins, Clock, Heart, Eye, MessageSquare } from "lucide-react";
 import { Theme } from "@/lib/types";
 
 interface ThemeCardProps {
@@ -47,22 +47,20 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
                         className="w-full h-full object-cover"
                     />
 
-                    {/* 조회수 + 추천수 */}
-                    <div className="absolute bottom-2 right-2 flex gap-2">
-                        <div className="flex items-center bg-black/60 text-white rounded-full px-2 py-1 shadow-md">
-                            <Eye className="w-4 h-4 mr-1" />
-                            <span className="text-xs">
-                                {formatCount(theme.views)}
-                            </span>
-                        </div>
+                {/* 조회수 + 추천수 */}
+                <div className="absolute bottom-2 right-2 flex gap-2">
+                    <div className="flex items-center bg-black/60 text-white rounded-full px-2 py-1 shadow-md">
+                        <Eye className="w-4 h-4 mr-1" />
+                        <span className="text-xs">{formatCount(theme.views)}</span>
+                    </div>
+                    {theme.recommendationEnabled && (
                         <div className="flex items-center bg-black/60 text-white rounded-full px-2 py-1 shadow-md">
                             <Heart className="w-4 h-4 text-red-500 fill-current mr-1" />
-                            <span className="text-xs">
-                                {formatCount(theme.recommendations)}
-                            </span>
+                            <span className="text-xs">{formatCount(theme.recommendations)}</span>
                         </div>
+                    )}
                     </div>
-                </div>
+              </div>
 
                 {/* 내용 */}
                 <CardContent className="p-4 space-y-2">

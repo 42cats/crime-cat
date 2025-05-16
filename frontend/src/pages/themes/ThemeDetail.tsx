@@ -315,23 +315,21 @@ const ThemeDetail: React.FC = () => {
                         </div>
                         <div className="flex flex-col gap-2 items-end text-right w-full sm:w-auto">
                             <div className="flex justify-end gap-2 flex-wrap">
-                                <Button
+                                {theme.recommendationEnabled && (
+                                  <Button
                                     variant="outline"
                                     size="sm"
-                                    className={`group ${
-                                        liked ? "text-red-500" : ""
-                                    }`}
+                                    className={`group ${liked ? "text-red-500" : ""}`}
                                     onClick={handleToggleLike}
-                                >
+                                  >
                                     <Heart
-                                        className={`h-4 w-4 mr-2 ${
-                                            liked
-                                                ? "fill-red-500"
-                                                : "group-hover:fill-red-500/10"
-                                        }`}
+                                      className={`h-4 w-4 mr-2 ${
+                                        liked ? "fill-red-500" : "group-hover:fill-red-500/10"
+                                      }`}
                                     />
                                     추천 {theme.recommendations}
                                 </Button>
+                                )}
                                 {user?.id && !hasPlayedGame && (
                                     <Button
                                         variant="outline"
@@ -552,12 +550,12 @@ const ThemeDetail: React.FC = () => {
                     </section>
 
                     {/* 댓글 섹션 추가 */}
-                    {id && (
-                        <CommentList
-                            gameThemeId={id}
-                            currentUserId={user?.id}
-                            hasPlayedGame={hasPlayedGame}
-                        />
+                    {theme.commentEnabled && id && (
+                      <CommentList
+                        gameThemeId={id}
+                        currentUserId={user?.id}
+                        hasPlayedGame={hasPlayedGame}
+                      />
                     )}
                 </div>
 

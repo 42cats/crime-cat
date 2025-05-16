@@ -208,6 +208,8 @@ interface BaseTheme {
   isPublic: boolean;
   createdAt: string;
   updatedAt: string;
+  recommendationEnabled: boolean;
+  commentEnabled: boolean;
   type: 'CRIMESCENE' | 'ESCAPE_ROOM' | 'MURDER_MYSTERY' | 'REALWORLD';
 }
 
@@ -259,6 +261,8 @@ interface BaseThemeInput {
   tags: string[];
   content: string;
   isPublic: boolean;
+  recommendationEnabled: boolean;
+  commentEnabled: boolean;
 }
 
 export interface CrimeSceneInput extends BaseThemeInput {
