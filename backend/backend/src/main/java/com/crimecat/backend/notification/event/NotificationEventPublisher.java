@@ -25,10 +25,10 @@ public class NotificationEventPublisher {
      */
     public CompletableFuture<Void> publishGameRecordRequest(Object source, UUID gameThemeId, 
                                                            String gameThemeTitle, UUID requesterId, 
-                                                           UUID receiverId, String requestMessage) {
+                                                           UUID receiverId, String requestMessage, String requesterNickname) {
         return CompletableFuture.runAsync(() -> {
             GameRecordRequestEvent event = GameRecordRequestEvent.of(source, gameThemeId, gameThemeTitle, 
-                                                                     requesterId, receiverId, requestMessage);
+                                                                     requesterId, receiverId, requestMessage, requesterNickname);
             eventPublisher.publishEvent(event);
             log.debug("Published GameRecordRequestEvent: {}", event.getEventId());
         });

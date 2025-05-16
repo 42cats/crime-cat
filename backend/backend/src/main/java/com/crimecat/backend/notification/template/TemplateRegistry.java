@@ -24,21 +24,28 @@ public class TemplateRegistry {
      * 생성자에서 템플릿 등록
      */
     public TemplateRegistry(List<NotificationTemplate> templateList) {
+        log.info("Initializing TemplateRegistry with {} templates", templateList.size());
         registerTemplates(templateList);
+        log.info("TemplateRegistry initialized with {} registered templates", templates.size());
     }
     
     /**
      * 모든 템플릿을 등록
      */
     private void registerTemplates(List<NotificationTemplate> templateList) {
+        log.info("Starting to register {} templates", templateList.size());
         for (NotificationTemplate template : templateList) {
+            log.debug("Processing template: {}", template.getClass().getSimpleName());
             if (template instanceof TypedNotificationTemplate) {
                 TypedNotificationTemplate typedTemplate = (TypedNotificationTemplate) template;
                 NotificationType type = typedTemplate.getNotificationType();
                 templates.put(type, template);
-                log.info("Registered template for type: {}", type);
+                log.info("Registered template for type: {} (class: {})", type, template.getClass().getSimpleName());
+            } else {
+                log.warn("Template {} does not implement TypedNotificationTemplate", template.getClass().getSimpleName());
             }
         }
+        log.info("Total registered templates: {}", templates.size());
     }
     
     /**
@@ -52,7 +59,13 @@ public class TemplateRegistry {
      * 특정 타입의 템플릿 조회 (기본값 포함)
      */
     public NotificationTemplate getTemplateOrDefault(NotificationType type) {
-        return getTemplate(type).orElse(new DefaultNotificationTemplate());
+        Optional<NotificationTemplate> template = getTemplate(type);
+        if (template.isEmpty()) {
+            log.warn("No template found for type: {}, using default template", type);
+            return new DefaultNotificationTemplate();
+        }
+        log.debug("Using template for type: {}", type);
+        return template.get();
     }
     
     /**

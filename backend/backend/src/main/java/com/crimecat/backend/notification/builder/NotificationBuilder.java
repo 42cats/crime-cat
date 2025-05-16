@@ -7,6 +7,7 @@ import com.crimecat.backend.notification.template.TemplateService;
 import com.crimecat.backend.user.domain.User;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -19,6 +20,7 @@ import java.util.UUID;
  * @param <T> 실제 빌더 타입
  */
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
+@Slf4j
 public abstract class NotificationBuilder<T extends NotificationBuilder<T>> {
     protected final NotificationService notificationService;
     protected final TemplateService templateService;
@@ -151,16 +153,22 @@ public abstract class NotificationBuilder<T extends NotificationBuilder<T>> {
      * 각 구현체에서 고유한 로직 수행 후 실제 발송
      */
     public UUID send() {
-        // 1. 템플릿 적용
+        // 1. 템플릿 적용 전 로그
+        log.debug("Before applyTemplate: title={}, message={}, data={}", title, message, data);
+        
+        // 2. 템플릿 적용
         applyTemplate();
         
-        // 2. 하위 클래스에서 특화된 로직 수행
+        // 3. 템플릿 적용 후 로그
+        log.debug("After applyTemplate: title={}, message={}, data={}", title, message, data);
+        
+        // 4. 하위 클래스에서 특화된 로직 수행
         prepareNotification();
         
-        // 3. 공통 검증
+        // 5. 공통 검증
         validate();
         
-        // 4. 실제 알림 생성 및 발송
+        // 6. 실제 알림 생성 및 발송
         return notificationService.createAndSendNotification(
             type, receiverId, senderId, title, message, data
         );

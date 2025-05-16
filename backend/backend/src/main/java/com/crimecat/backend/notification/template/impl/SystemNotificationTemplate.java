@@ -1,8 +1,8 @@
 package com.crimecat.backend.notification.template.impl;
 
 import com.crimecat.backend.notification.enums.NotificationType;
-import com.crimecat.backend.notification.template.AbstractNotificationTemplate;
-import com.crimecat.backend.notification.template.MessageRenderer;
+import com.crimecat.backend.notification.template.AbstractHandlebarsNotificationTemplate;
+import com.crimecat.backend.notification.template.HandlebarsMessageRenderer;
 import com.crimecat.backend.notification.template.TypedNotificationTemplate;
 import org.springframework.stereotype.Component;
 
@@ -10,13 +10,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 시스템 알림 템플릿
+ * 시스템 알림 템플릿 - Handlebars 버전
  */
 @Component
-public class SystemNotificationTemplate extends AbstractNotificationTemplate implements TypedNotificationTemplate {
+public class SystemNotificationTemplate extends AbstractHandlebarsNotificationTemplate implements TypedNotificationTemplate {
     
-    public SystemNotificationTemplate(MessageRenderer messageRenderer) {
-        super(messageRenderer);
+    public SystemNotificationTemplate(HandlebarsMessageRenderer handlebarsMessageRenderer) {
+        super(handlebarsMessageRenderer);
     }
     
     @Override
@@ -26,14 +26,14 @@ public class SystemNotificationTemplate extends AbstractNotificationTemplate imp
     
     @Override
     protected String getTitleTemplate() {
-        return "{{? titlePrefix : ${titlePrefix} - }}${title}";
+        return "{{#if titlePrefix}}{{titlePrefix}} - {{/if}}{{title}}";
     }
     
     @Override
     protected String getMessageTemplate() {
-        return "${message}" +
-               "{{? urgent : \n\n⚠️ 긴급 알림입니다. : }}" +
-               "{{? actionUrl : \n\n자세한 내용: ${actionUrl} : }}";
+        return "{{message}}" +
+               "{{#if urgent}}\n\n⚠️ 긴급 알림입니다.{{/if}}" +
+               "{{#if actionUrl}}\n\n자세한 내용: {{actionUrl}}{{/if}}";
     }
     
     @Override

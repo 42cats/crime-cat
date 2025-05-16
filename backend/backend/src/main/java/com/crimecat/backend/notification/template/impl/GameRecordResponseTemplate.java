@@ -1,8 +1,8 @@
 package com.crimecat.backend.notification.template.impl;
 
 import com.crimecat.backend.notification.enums.NotificationType;
-import com.crimecat.backend.notification.template.AbstractNotificationTemplate;
-import com.crimecat.backend.notification.template.MessageRenderer;
+import com.crimecat.backend.notification.template.AbstractHandlebarsNotificationTemplate;
+import com.crimecat.backend.notification.template.HandlebarsMessageRenderer;
 import com.crimecat.backend.notification.template.TypedNotificationTemplate;
 import org.springframework.stereotype.Component;
 
@@ -10,14 +10,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 게임 기록 응답(승인/거절) 알림 템플릿
- * Builder 패턴의 GameRecordResponseBuilder를 대체하는 템플릿
+ * 게임 기록 응답(승인/거절) 알림 템플릿 - Handlebars 버전
  */
 @Component
-public class GameRecordResponseTemplate extends AbstractNotificationTemplate implements TypedNotificationTemplate {
+public class GameRecordResponseTemplate extends AbstractHandlebarsNotificationTemplate implements TypedNotificationTemplate {
     
-    public GameRecordResponseTemplate(MessageRenderer messageRenderer) {
-        super(messageRenderer);
+    public GameRecordResponseTemplate(HandlebarsMessageRenderer handlebarsMessageRenderer) {
+        super(handlebarsMessageRenderer);
     }
     
     @Override
@@ -28,17 +27,18 @@ public class GameRecordResponseTemplate extends AbstractNotificationTemplate imp
     
     @Override
     protected String getTitleTemplate() {
-        return "{{? approved : 게임 기록 승인됨 : 게임 기록 거절됨}}";
+        return "{{#if approved}}게임 기록 승인됨{{else}}게임 기록 거절됨{{/if}}";
     }
     
     @Override
     protected String getMessageTemplate() {
-        return "{{? approved : " +
-               "요청하신 ${gameThemeTitle} 게임 기록이 승인되었습니다." +
-               ":" +
-               "요청하신 ${gameThemeTitle} 게임 기록이 거절되었습니다." +
-               "{{? declineMessage : \n거절 사유: ${declineMessage} : }} }}" +
-               "\n\n원본 요청 ID: ${originalNotificationId}";
+        return "{{#if approved}}" +
+               "요청하신 {{gameThemeTitle}} 게임 기록이 승인되었습니다." +
+               "{{else}}" +
+               "요청하신 {{gameThemeTitle}} 게임 기록이 거절되었습니다." +
+               "{{#if declineMessage}}\n거절 사유: {{declineMessage}}{{/if}}" +
+               "{{/if}}" +
+               "\n\n원본 요청 ID: {{originalNotificationId}}";
     }
     
     @Override
