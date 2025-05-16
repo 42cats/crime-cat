@@ -1,19 +1,10 @@
 package com.crimecat.backend.gameHistory.dto;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 
-@Builder
 @Getter
-@Setter
+@AllArgsConstructor
 public class WebHistoryRequestDto {
   private String message;
-
-  static public WebHistoryRequestDto from(String message){
-    return WebHistoryRequestDto.builder()
-        .message(message)
-        .build();
-  }
-
 }

@@ -54,7 +54,9 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
      * 특정 사용자의 특정 타입 알림 조회 (User 객체 사용)
      */
     List<Notification> findByReceiverAndTypeOrderByCreatedAtDesc(User receiver, NotificationType type);
-    
+
+    List<Notification> findBySenderAndTypeOrderByCreatedAtDesc(User sender, NotificationType type);
+
     /**
      * 특정 사용자의 특정 타입 알림 조회 (UUID 사용 - 하위 호환성)
      */
