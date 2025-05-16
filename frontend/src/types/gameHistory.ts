@@ -11,13 +11,7 @@ export interface GameRecordRequest {
   message: string;
 }
 
+// Backend의 WebHistoryAddResponseDto와 매칭
 export interface GameRecordResponse {
-  success: boolean;
-  message: string;
-}
-
-// 기존 요청 상태 타입
-export interface ExistingRequest {
-  gameThemeId: string;
-  status: "pending" | "completed" | "cancelled";
+  message: string; // "이미 처리되었습니다." | "처리중입니다." | "요청이 발송되었습니다."
 }
