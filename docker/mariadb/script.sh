@@ -19,10 +19,29 @@ log() { printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"; }
 # 0. 디렉터리 준비 (소켓·데이터)
 ###############################################################################
 prepare_dirs() {
+  # 기존 디렉토리들 생성 및 권한 설정
   mkdir -p "$DATADIR" "$(dirname "$SOCKET")"
-  chown -R "$MYSQL_USER":"$MYSQL_USER" "$DATADIR" "$(dirname "$SOCKET")"
-  chmod 750 "$DATADIR"
-  chmod 755 "$(dirname "$SOCKET")"
+  # tmpfs가 마운트된 경우 권한 변경이 제한될 수 있으므로 try-catch 방식 사용
+  chown -R "$MYSQL_USER":"$MYSQL_USER" "$DATADIR" "$(dirname "$SOCKET")" 2>/dev/null || true
+  chmod 750 "$DATADIR" 2>/dev/null || true
+  chmod 755 "$(dirname "$SOCKET")" 2>/dev/null || true
+  
+  # 마이그레이션용 임시 디렉토리 준비
+  if [ ! -d "/tmp/migration_temp" ]; then
+    mkdir -p "/tmp/migration_temp" 2>/dev/null || true
+  fi
+  if [ ! -d "/var/tmp" ]; then
+    mkdir -p "/var/tmp" 2>/dev/null || true
+  fi
+  
+  # tmpfs의 경우 chmod가 실패할 수 있으므로 에러 무시
+  # Docker의 tmpfs 마운트가 uid/gid를 처리하므로 권한 변경 시도만 함
+  log "디렉토리 권한 설정 시도..."
+  if [ -w "/tmp/migration_temp" ]; then
+    log "  /tmp/migration_temp: 쓰기 권한 확인됨"
+  else
+    log "  /tmp/migration_temp: 권한 제한됨 (tmpfs 마운트됨)"
+  fi
 }
 
 ###############################################################################
@@ -67,9 +86,9 @@ start_temp_server_silent() {
 }
 
 wait_for_ready_silent() {
-  for i in $(seq 1 30); do
+  for i in $(seq 1 50); do
     mariadb-admin --socket="$SOCKET" --user=root ping --silent >/dev/null 2>&1 && return 0
-    sleep 1
+    sleep 0.5
   done
   return 1
 }
@@ -105,11 +124,11 @@ start_temp_server() {
 }
 
 wait_for_ready() {
-  for i in $(seq 1 30); do
+  for i in $(seq 1 60); do
     mariadb-admin --socket="$SOCKET" --user=root ping --silent && return 0
     sleep 1
   done
-  log "❌ mariadbd 준비 실패(30초 초과)"
+  log "❌ mariadbd 준비 실패(60초 초과)"
   exit 1
 }
 
@@ -166,14 +185,28 @@ run_create_databases_only() {
 ###############################################################################
 run_migrations() {
   log "▶ 마이그레이션 실행 시작"
-  # 마이그레이션 스크립트가 있는지 확인
-  if [ -d "$MIGRATIONDIR" ] && [ -f "/script/migration.sh" ]; then
-    chmod +x "/script/migration.sh"
+  
+  # 마이그레이션 스크립트 권한 확인 및 설정
+  if [ -f "/script/migration.sh" ]; then
+    chmod +x "/script/migration.sh" 2>/dev/null || true
+    
+    # 마이그레이션 실행
     log "   • 마이그레이션 스크립트 실행"
-    sh /script/migration.sh
+    
+    # 환경 변수들을 migration.sh에 전달
+    export DB_DISCORD DB_USER DB_PASS TEMP_DIR
+    
+    if sh /script/migration.sh; then
+      log "✔ 마이그레이션 성공"
+    else
+      log "❌ 마이그레이션 실패"
+      # 마이그레이션 실패해도 서비스는 계속 시작
+      log "마이그레이션 실패했지만 서비스를 계속 시작합니다"
+    fi
   else
-    log "   ⚠ 마이그레이션 디렉토리 또는 스크립트가 없음, 건너뜀"
+    log "   ⚠ 마이그레이션 스크립트가 없음: /script/migration.sh"
   fi
+  
   log "✔ 마이그레이션 실행 완료"
 }
 

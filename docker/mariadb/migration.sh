@@ -6,7 +6,7 @@ DB_NAME=${DB_DISCORD}
 DB_USER=${DB_USER}
 DB_PASS=${DB_PASS}
 MIGRATION_DIR="/var/lib/dbinit/migrations"
-TEMP_DIR="/tmp/migration_temp"
+TEMP_DIR="${TEMP_DIR:-/tmp/migration_temp}"
 SOCKET="/var/run/mysqld/mysqld.sock"
 
 # 로깅 함수
@@ -14,15 +14,70 @@ log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
-# 임시 디렉토리 생성
-mkdir -p "${TEMP_DIR}"
+# 임시 디렉토리 생성 (권한 문제 해결)
+create_temp_dir() {
+  log "임시 디렉토리 생성 시도: ${TEMP_DIR}"
+  
+  # 기존 디렉토리가 있으면 제거
+  rm -rf "${TEMP_DIR}" 2>/dev/null || true
+  
+  # 디렉토리 생성 (여러 경로 시도)
+  if ! mkdir -p "${TEMP_DIR}" 2>/dev/null; then
+    log "ERROR: 기본 임시 디렉토리 생성 실패. 대안 경로 시도..."
+    # 대안 디렉토리 경로 시도
+    TEMP_DIR="/tmp/migration_$(date +%s)_$$"
+    if ! mkdir -p "${TEMP_DIR}" 2>/dev/null; then
+      # 최종 대안: /var/tmp 사용
+      TEMP_DIR="/var/tmp/migration_temp"
+      rm -rf "${TEMP_DIR}" 2>/dev/null || true
+      if ! mkdir -p "${TEMP_DIR}" 2>/dev/null; then
+        log "ERROR: 임시 디렉토리 생성 완전 실패"
+        exit 1
+      fi
+    fi
+  fi
+  
+  # 권한 설정 (chmod 실패해도 계속 진행)
+  if [ -w "${TEMP_DIR}" ]; then
+    log "임시 디렉토리 쓰기 권한 확인됨"
+  else
+    log "WARNING: 임시 디렉토리 쓰기 권한 없음"
+  fi
+  
+  log "임시 디렉토리 생성 완료: ${TEMP_DIR}"
+  # 디렉토리 상태 확인
+  ls -la "${TEMP_DIR}" || log "WARNING: 디렉토리 상태 확인 실패"
+}
 
 # 환경 변수 대체 함수
 substitute_env() {
   local input_file=$1
   local output_file=$2
   log "환경변수 치환: $input_file -> $output_file"
-  envsubst < "$input_file" > "$output_file"
+  
+  # 출력 디렉토리 확인 및 생성
+  local output_dir=$(dirname "$output_file")
+  if [ ! -d "$output_dir" ]; then
+    if ! mkdir -p "$output_dir" 2>/dev/null; then
+      log "ERROR: 출력 디렉토리 생성 실패: $output_dir"
+      return 1
+    fi
+  fi
+  
+  # 환경변수 치환 수행
+  if ! envsubst < "$input_file" > "$output_file" 2>/dev/null; then
+    log "ERROR: 환경변수 치환 실패: $input_file"
+    return 1
+  fi
+  
+  # 파일 생성 확인
+  if [ ! -f "$output_file" ]; then
+    log "ERROR: 출력 파일 생성 확인 실패: $output_file"
+    return 1
+  fi
+  
+  log "환경변수 치환 완료: $(wc -l < "$output_file") lines"
+  return 0
 }
 
 # 소켓을 통한 MySQL 연결
@@ -52,13 +107,15 @@ create_version_table() {
     # 스키마 버전 파일을 환경 변수로 대체
     if [ -f "$MIGRATION_DIR/schema_version.sql" ]; then
       local temp_sql="${TEMP_DIR}/schema_version.sql"
-      substitute_env "$MIGRATION_DIR/schema_version.sql" "$temp_sql"
-      
-      # 실행
-      mysql_connect < "$temp_sql"
-      
-      # 임시 파일 삭제
-      rm -f "$temp_sql"
+      if substitute_env "$MIGRATION_DIR/schema_version.sql" "$temp_sql"; then
+        # 실행
+        mysql_connect < "$temp_sql"
+        # 임시 파일 삭제
+        rm -f "$temp_sql"
+      else
+        log "ERROR: schema_version.sql 환경변수 치환 실패"
+        exit 1
+      fi
     else
       # 파일이 없으면 직접 생성
       mysql_connect "$DB_NAME" << EOF
@@ -151,20 +208,33 @@ run_migration() {
         local description=$(echo $script_name | sed "s/V${version}_//" | sed "s/.sql//")
         
         # 환경변수 대체
-        substitute_env "$sql_file" "$temp_sql_file"
-        local checksum=$(md5sum $temp_sql_file | cut -d ' ' -f 1)
+        if ! substitute_env "$sql_file" "$temp_sql_file"; then
+          log "ERROR: 환경변수 치환 실패, 마이그레이션 중단: $script_name"
+          exit 1
+        fi
+        
+        # 체크섬 계산 (파일 존재 확인 후)
+        if [ -f "$temp_sql_file" ]; then
+          local checksum=$(md5sum "$temp_sql_file" | cut -d ' ' -f 1)
+        else
+          log "ERROR: 임시 파일 생성 실패: $temp_sql_file"
+          exit 1
+        fi
         
         log "적용 중: $script_name"
         local start_time=$(date +%s)
         
         # 환경변수가 대체된 임시 SQL 파일 실행
-        mysql_connect "$DB_NAME" < "$temp_sql_file"
-        local success=$?
+        if mysql_connect "$DB_NAME" < "$temp_sql_file"; then
+          local success=1
+        else
+          local success=0
+        fi
         
         local end_time=$(date +%s)
         local execution_time=$((end_time - start_time))
         
-        if [ $success -eq 0 ]; then
+        if [ $success -eq 1 ]; then
           log "성공: $script_name (${execution_time}초)"
         else
           log "실패: $script_name (${execution_time}초)"
@@ -192,7 +262,13 @@ EOF
 # 메인 함수
 main() {
   log "=== 데이터베이스 마이그레이션 시작 ==="
+  
+  # 임시 디렉토리 생성
+  create_temp_dir
+  
+  # 마이그레이션 실행
   run_migration
+  
   log "=== 데이터베이스 마이그레이션 완료 ==="
   
   # 임시 디렉토리 정리
