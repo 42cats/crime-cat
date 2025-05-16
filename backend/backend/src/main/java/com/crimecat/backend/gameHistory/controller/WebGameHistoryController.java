@@ -111,4 +111,9 @@ public class WebGameHistoryController {
     return ResponseEntity.ok()
         .body(webGameHistoryService.checkHasPlayed(gameThemeId, currentWebUser));
 		}
+
+//		@PostMapping("/record/crimescene/{game_theme_id}")
+//	public ResponseEntity<?> requestCrimeScene (@PathVariable("game_theme_id") UUID gameThemeId){
+//
+//		}
 }
