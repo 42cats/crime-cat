@@ -4,12 +4,12 @@ import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gameHistory.domain.GameHistory;
 import com.crimecat.backend.gameHistory.dto.CheckPlayResponseDto;
 import com.crimecat.backend.gameHistory.dto.GameHistoryUpdateRequestDto;
-import com.crimecat.backend.gameHistory.dto.RequestHistoryAdd;
 import com.crimecat.backend.gameHistory.dto.SaveUserGameHistoryRequestDto;
 import com.crimecat.backend.gameHistory.dto.SaveUserHistoryResponseDto;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryToOwnerDto;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryToUserDto;
-import com.crimecat.backend.gameHistory.dto.WebHistoryAddRequestDto;
+import com.crimecat.backend.gameHistory.dto.WebHistoryRequestDto;
+import com.crimecat.backend.gameHistory.dto.WebHistoryResponseDto;
 import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
 import com.crimecat.backend.gametheme.domain.GameTheme;
@@ -159,32 +159,37 @@ public class WebGameHistoryService {
 		return CheckPlayResponseDto.from(hasPlayed);
 	}
 
-  public RequestHistoryAdd requestGameHistoryAdd(User user, UUID gameThemeId, WebHistoryAddRequestDto dto) {
-		List<Notification> byUserAndTypeOrderByCreatedAtDesc = notificationRepository.findByUserAndTypeOrderByCreatedAtDesc(
-				user, NotificationType.GAME_RECORD_REQUEST).stream().filter(v-> v.getDataField("gmaeThemeId").equals(gameThemeId.toString()));
-		//데이터 필드에 게임테마 아이디가 있고
-		//status 가 NotificationStatus.PROCESSED 이면 이미 처리되었습니다.
-		//존재하기만 하면 처리중입니다.
-//		RequestHistoryAdd.from("메시지");
-//		에 메시지 적어서 반환
-//		없으면
-		GameTheme gameTheme = gameThemeRepository.findById(gameThemeId)
-				.orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-		notificationEventPublisher.publishGameRecordRequest(
-				this,
-				gameThemeId,
-				gameTheme.getTitle(),
-				user.getId(),
-				gameTheme.getAuthorId(),
-				dto.getMessage()
-		);
-
-		notificationEventPublisher.publishSystemNotification(
-				this,
-				user.getId(),
-				gameTheme.getTitle() + "기록 요청 성공",
-				"기록 요청이 해당 테마의 오너에게 발송되었습니다. 승인을 기다려 주세요."
-		)
-//		RequestHistoryAdd.from("요청이 발송되었습니다.");
-	}
+    public WebHistoryResponseDto WebHistoryAddRequest(User user, UUID gameThemeId, WebHistoryRequestDto dto) {
+        List<Notification> existingNotifications = notificationRepository
+            .findByUserAndTypeOrderByCreatedAtDesc(user, NotificationType.GAME_RECORD_REQUEST)
+            .stream()
+            .filter(n -> n.getDataField("gameThemeId").equals(gameThemeId.toString()))
+            .toList();
+        
+        // 기존 요청이 있는 경우 체크: 이미 처리되었거나 처리 중인지 확인
+        if (!existingNotifications.isEmpty()) {
+            Notification latest = existingNotifications.getFirst();
+            if (latest.getStatus() == NotificationStatus.PROCESSED) {
+                return WebHistoryResponseDto.from("이미 처리되었습니다.");
+            } else {
+                return WebHistoryResponseDto.from("처리중입니다.");
+            }
+        }
+        
+        // 새로운 요청 처리
+        GameTheme gameTheme = gameThemeRepository.findById(gameThemeId)
+            .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        
+        // 게임 기록 요청 이벤트만 발행 (사용자 확인 알림은 Event Listener에서 처리)
+        notificationEventPublisher.publishGameRecordRequest(
+            this,
+            gameThemeId,
+            gameTheme.getTitle(),
+            user.getId(),
+            gameTheme.getAuthorId(),
+            dto.getMessage()
+        );
+        
+        return WebHistoryResponseDto.from("요청이 발송되었습니다.");
+    }
 }
