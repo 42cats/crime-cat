@@ -161,7 +161,7 @@ public class WebGameHistoryService {
 
     public WebHistoryResponseDto WebHistoryAddRequest(User user, UUID gameThemeId, WebHistoryRequestDto dto) {
         List<Notification> existingNotifications = notificationRepository
-            .findByUserAndTypeOrderByCreatedAtDesc(user, NotificationType.GAME_RECORD_REQUEST)
+            .findByReceiverAndTypeOrderByCreatedAtDesc(user, NotificationType.GAME_RECORD_REQUEST)
             .stream()
             .filter(n -> n.getDataField("gameThemeId").equals(gameThemeId.toString()))
             .toList();
