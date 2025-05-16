@@ -1,6 +1,7 @@
 package com.crimecat.backend.notification.listener;
 
 import com.crimecat.backend.notification.builder.NotificationBuilders;
+import com.crimecat.backend.notification.event.NotificationEventPublisher;
 import com.crimecat.backend.notification.event.*;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
 public class NotificationEventListener {
     
     private final NotificationBuilders builders;
+    private final NotificationEventPublisher eventPublisher;
     
     /**
      * 게임 기록 요청 이벤트 처리
@@ -29,16 +31,21 @@ public class NotificationEventListener {
         log.info("Processing GameRecordRequestEvent: {}", event.getEventId());
         
         try {
-            // 템플릿을 통해 데이터 설정 (체이닝 수정)
+            // 1. 게임 기록 요청 알림 생성
             builders.gameRecordRequest(event.getGameThemeId(), event.getRequesterId(), event.getReceiverId())
                 .data("requesterNickname", event.getData().get("requesterNickname"))
-                .data("gameThemeTitle", event.getGameThemeTitle())
+                .data("gameThemeTitle", event.getGameThemeTitle()) 
                 .data("requestMessage", event.getRequestMessage())
-                // 아래는 제거 - 템플릿에서 자동 생성됨
-                // .title(event.getTitle())
-                // .message(event.getMessage())
                 .expiresAt(event.getExpiresAt())
                 .send();
+            
+            // 2. 요청자에게 확인 알림 발송 (NEW!)
+            eventPublisher.publishSystemNotification(
+                this,
+                event.getRequesterId(),  // 요청자에게 발송
+                event.getGameThemeTitle() + " 기록 요청 성공",
+                "기록 요청이 해당 테마의 오너에게 발송되었습니다. 승인을 기다려주세요."
+            );
             
             log.debug("Successfully processed GameRecordRequestEvent: {}", event.getEventId());
         } catch (Exception e) {
