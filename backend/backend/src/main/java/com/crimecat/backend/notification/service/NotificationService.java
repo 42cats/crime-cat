@@ -57,7 +57,7 @@ public class NotificationService {
         // 4. 실시간 발송 (추후 확장점)
         // publishNotificationEvents(savedNotifications);
         
-        return savedNotifications.get(0).getId();
+        return savedNotifications.getFirst().getId();
     }
     
     /**

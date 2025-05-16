@@ -40,12 +40,6 @@ public class Notification {
     @JoinColumn(name = "sender_id", referencedColumnName = "id", nullable = true)
     private User sender;
     
-    // 하위 호환성을 위한 deprecated 필드
-    @Deprecated
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, insertable = false, updatable = false)
-    private User user;
-    
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private NotificationType type;
