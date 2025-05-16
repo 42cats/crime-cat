@@ -2,20 +2,23 @@ package com.crimecat.backend.notification.builder;
 
 import com.crimecat.backend.notification.enums.NotificationType;
 import com.crimecat.backend.notification.service.NotificationService;
+import com.crimecat.backend.notification.template.TemplateService;
 
 import java.util.UUID;
 
 /**
  * 게임 기록 응답 알림을 위한 전용 빌더
  * 승인/거절 결과를 알리는 알림 생성
+ * 제네릭을 사용하여 타입 안전성 확보
  */
-public class GameRecordResponseBuilder extends NotificationBuilder {
+public class GameRecordResponseBuilder extends NotificationBuilder<GameRecordResponseBuilder> {
     
     private final UUID originalRequestId;
     private final boolean approved;
     
-    public GameRecordResponseBuilder(NotificationService notificationService, UUID originalRequestId, boolean approved) {
-        super(notificationService, NotificationType.SYSTEM_NOTICE);
+    public GameRecordResponseBuilder(NotificationService notificationService, TemplateService templateService,
+                                     UUID originalRequestId, boolean approved) {
+        super(notificationService, templateService, NotificationType.SYSTEM_NOTICE);
         this.originalRequestId = originalRequestId;
         this.approved = approved;
     }
@@ -24,8 +27,14 @@ public class GameRecordResponseBuilder extends NotificationBuilder {
      * 상세 메시지 설정 (체이닝)
      */
     public GameRecordResponseBuilder withDetails(String details) {
-        data("details", details);
-        return this;
+        return data("details", details);
+    }
+    
+    /**
+     * 게임 테마 제목 설정 (체이닝)
+     */
+    public GameRecordResponseBuilder withGameThemeTitle(String themeTitle) {
+        return data("gameThemeTitle", themeTitle);
     }
     
     /**
@@ -33,25 +42,6 @@ public class GameRecordResponseBuilder extends NotificationBuilder {
      */
     @Override
     protected void prepareNotification() {
-        // 승인/거절에 따른 제목 설정
-        if (title == null) {
-            title = approved ? "게임 기록 등록 승인" : "게임 기록 등록 거절";
-        }
-        
-        // 승인/거절에 따른 기본 메시지 설정
-        if (message == null) {
-            if (approved) {
-                message = "요청하신 게임 기록이 성공적으로 등록되었습니다.";
-            } else {
-                String details = (String) data.get("details");
-                if (details != null && !details.trim().isEmpty()) {
-                    message = String.format("게임 기록 등록 요청이 거절되었습니다. 사유: %s", details);
-                } else {
-                    message = "게임 기록 등록 요청이 거절되었습니다.";
-                }
-            }
-        }
-        
         // 필수 데이터 설정
         data("originalRequestId", originalRequestId);
         data("approved", approved);

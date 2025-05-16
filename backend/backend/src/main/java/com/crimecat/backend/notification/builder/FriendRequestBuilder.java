@@ -2,16 +2,23 @@ package com.crimecat.backend.notification.builder;
 
 import com.crimecat.backend.notification.enums.NotificationType;
 import com.crimecat.backend.notification.service.NotificationService;
-
-import java.util.UUID;
+import com.crimecat.backend.notification.template.TemplateService;
 
 /**
  * 친구 요청 알림을 위한 전용 빌더
+ * 제네릭을 사용하여 타입 안전성 확보
  */
-public class FriendRequestBuilder extends NotificationBuilder {
+public class FriendRequestBuilder extends NotificationBuilder<FriendRequestBuilder> {
     
-    public FriendRequestBuilder(NotificationService notificationService) {
-        super(notificationService, NotificationType.SYSTEM_NOTICE); // 현재는 시스템 알림으로 처리
+    public FriendRequestBuilder(NotificationService notificationService, TemplateService templateService) {
+        super(notificationService, templateService, NotificationType.SYSTEM_NOTICE); // 현재는 시스템 알림으로 처리
+    }
+    
+    /**
+     * 요청자 닉네임 설정 (체이닝)
+     */
+    public FriendRequestBuilder withRequesterNickname(String nickname) {
+        return data("requesterNickname", nickname);
     }
     
     /**
@@ -19,17 +26,7 @@ public class FriendRequestBuilder extends NotificationBuilder {
      */
     @Override
     protected void prepareNotification() {
-        // 기본 제목 설정
-        if (title == null) {
-            title = "친구 요청";
-        }
-        
-        // 기본 메시지 설정
-        if (message == null) {
-            message = "새로운 친구 요청이 있습니다.";
-        }
-        
-        // 필수 데이터 설정
+        // 기본 데이터 설정
         data("notificationType", "FRIEND_REQUEST");
         data("senderId", senderId);
         
