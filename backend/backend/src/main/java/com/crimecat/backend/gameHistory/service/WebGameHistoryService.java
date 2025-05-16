@@ -161,7 +161,7 @@ public class WebGameHistoryService {
 
     public WebHistoryResponseDto WebHistoryAddRequest(User user, UUID gameThemeId, WebHistoryRequestDto dto) {
         List<Notification> existingNotifications = notificationRepository
-            .findByReceiverAndTypeOrderByCreatedAtDesc(user, NotificationType.GAME_RECORD_REQUEST)
+            .findBySenderAndTypeOrderByCreatedAtDesc(user, NotificationType.GAME_RECORD_REQUEST)
             .stream()
             .filter(n -> n.getDataField("gameThemeId").equals(gameThemeId.toString()))
             .toList();
@@ -170,9 +170,9 @@ public class WebGameHistoryService {
         if (!existingNotifications.isEmpty()) {
             Notification latest = existingNotifications.getFirst();
             if (latest.getStatus() == NotificationStatus.PROCESSED) {
-                return WebHistoryResponseDto.from("이미 처리되었습니다.");
+                return WebHistoryResponseDto.from("이미 승인 처리 되었습니다.");
             } else {
-                return WebHistoryResponseDto.from("처리중입니다.");
+                return WebHistoryResponseDto.from("길드 오너가 처리중에 있습니다.");
             }
         }
         
@@ -186,8 +186,9 @@ public class WebGameHistoryService {
             gameThemeId,
             gameTheme.getTitle(),
             user.getId(),
-            gameTheme.getAuthorId(),
-            dto.getMessage()
+            gameTheme.getAuthor().getUser().getId(),
+            dto.getMessage(),
+						user.getName()
         );
         
         return WebHistoryResponseDto.from("요청이 발송되었습니다.");
