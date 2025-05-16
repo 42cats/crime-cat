@@ -75,6 +75,8 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
     content: initialData.content || "",
     thumbnail: initialData.thumbnail || "",
     publicStatus: initialData.publicStatus ?? true,
+    recommendationEnabled: initialData.recommendationEnabled ?? true,
+    commentEnabled: initialData.commentEnabled ?? true,
   });
 
   const initialExtraFields = React.useMemo(() => {
@@ -175,6 +177,8 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
       price: Number(data.price),
       difficulty: Number(data.difficulty),
       publicStatus: data.publicStatus,
+      recommendationEnabled: data.recommendationEnabled,
+      commentEnabled: data.commentEnabled,
       type: data.type,
     };
 
@@ -270,14 +274,38 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
           {errors.type && <p className="text-red-500 text-sm mt-1">{errors.type}</p>}
         </div>
   
-        {/* 공개 여부 토글 */}
-        <div className="flex items-center gap-4">
-          <Label className="font-bold mb-1">공개 여부 *</Label>
-          <Switch
-            checked={form.publicStatus}
-            onCheckedChange={(v) => setForm((prev) => ({ ...prev, publicStatus: v }))}
-          />
-          <span>{form.publicStatus ? "공개" : "비공개"}</span>
+        {/* 공개 / 추천 / 댓글 여부 설정 */}
+        <div className="flex items-center gap-8">
+          <div className="flex items-center gap-2">
+            <Label className="font-bold mb-1">공개</Label>
+            <Switch
+              checked={form.publicStatus}
+              onCheckedChange={(v) => setForm((prev) => ({ ...prev, publicStatus: v }))}
+            />
+            <span className="text-sm text-muted-foreground">{form.publicStatus ? "공개" : "비공개"}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label className="font-bold mb-1">추천 허용</Label>
+            <Switch
+              checked={form.recommendationEnabled}
+              onCheckedChange={(v) => setForm((prev) => ({ ...prev, recommendationEnabled: v }))}
+            />
+            <span className="text-sm text-muted-foreground">
+              {form.recommendationEnabled ? "허용" : "차단"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label className="font-bold mb-1">댓글 허용</Label>
+            <Switch
+              checked={form.commentEnabled}
+              onCheckedChange={(v) => setForm((prev) => ({ ...prev, commentEnabled: v }))}
+            />
+            <span className="text-sm text-muted-foreground">
+              {form.commentEnabled ? "허용" : "차단"}
+            </span>
+          </div>
         </div>
   
         {/* 제목 */}
