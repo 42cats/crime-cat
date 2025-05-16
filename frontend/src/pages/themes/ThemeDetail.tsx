@@ -3,13 +3,30 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageTransition from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
-import { Heart, ChevronLeft, Share2, Edit, Trash } from "lucide-react";
+import {
+    Heart,
+    ChevronLeft,
+    Share2,
+    Edit,
+    Trash,
+    FileText,
+    Send,
+} from "lucide-react";
 import { themesService } from "@/api/themesService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/hooks/useAuth";
 import { commentService } from "@/api/commentService";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -40,6 +57,10 @@ const ThemeDetail: React.FC = () => {
     const [showTeamModal, setShowTeamModal] = useState(false);
     const [showGuildModal, setShowGuildModal] = useState(false);
     const [hasPlayedGame, setHasPlayedGame] = useState(false);
+    const [showRequestModal, setShowRequestModal] = useState(false);
+    const [requestMessage, setRequestMessage] = useState("");
+    const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+    const [isCheckingRequest, setIsCheckingRequest] = useState(false);
 
     const {
         data: theme,
@@ -56,7 +77,8 @@ const ThemeDetail: React.FC = () => {
 
     const { data: liked = false } = useQuery({
         queryKey: ["theme-like", id],
-        queryFn: () => id ? themesService.getLikeStatus(id) : Promise.resolve(false),
+        queryFn: () =>
+            id ? themesService.getLikeStatus(id) : Promise.resolve(false),
         enabled: !!id && !!user?.id,
     });
 
@@ -75,6 +97,70 @@ const ThemeDetail: React.FC = () => {
 
         checkGamePlayed();
     }, [user?.id, id]);
+
+    // 목업 API 서비스
+    const mockApiService = {
+        // 기존 요청 확인
+        checkExistingRequest: async (gameThemeId: string) => {
+            const mockRequests = [
+                { gameThemeId: "theme1", status: "pending" },
+                { gameThemeId: "theme2", status: "completed" },
+            ];
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            return (
+                mockRequests.find((req) => req.gameThemeId === gameThemeId) ||
+                null
+            );
+        },
+        // 기록 요청 전송
+        requestGameRecord: async (data: {
+            gameThemeId: string;
+            message: string;
+        }) => {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            if (Math.random() > 0.1) {
+                return {
+                    success: true,
+                    message: "요청이 성공적으로 전송되었습니다.",
+                };
+            } else {
+                throw new Error("요청 전송 중 오류가 발생했습니다.");
+            }
+        },
+    };
+
+    const handleRequestGame = async () => {
+        if (!requestMessage.trim()) {
+            toast({
+                title: "메시지를 입력해주세요",
+                description: "기록 요청 메시지를 작성해주세요.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setIsSubmittingRequest(true);
+        try {
+            await mockApiService.requestGameRecord({
+                gameThemeId: id!,
+                message: requestMessage,
+            });
+            toast({
+                title: "요청 전송 완료",
+                description: "기록 요청이 성공적으로 전송되었습니다.",
+            });
+            setShowRequestModal(false);
+            setRequestMessage("");
+        } catch (error) {
+            toast({
+                title: "요청 전송 실패",
+                description: "문제가 발생했습니다. 다시 시도해주세요.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSubmittingRequest(false);
+        }
+    };
 
     const likeMutation = useMutation({
         mutationFn: () => (id ? themesService.setLike(id) : Promise.reject()),
@@ -262,6 +348,57 @@ const ThemeDetail: React.FC = () => {
                                     />
                                     추천 {theme.recommendations}
                                 </Button>
+                                {user?.id && !hasPlayedGame && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={async () => {
+                                            if (!id) return;
+
+                                            setIsCheckingRequest(true);
+                                            try {
+                                                const existingRequest =
+                                                    await mockApiService.checkExistingRequest(
+                                                        id
+                                                    );
+
+                                                if (
+                                                    existingRequest &&
+                                                    existingRequest.status ===
+                                                        "pending"
+                                                ) {
+                                                    toast({
+                                                        title: "이미 요청을 하셨습니다",
+                                                        description:
+                                                            "이미 요청하신 내용을 처리중입니다.",
+                                                        variant: "default",
+                                                    });
+                                                } else {
+                                                    setShowRequestModal(true);
+                                                }
+                                            } catch (error) {
+                                                toast({
+                                                    title: "오류 발생",
+                                                    description:
+                                                        "요청 상태를 확인할 수 없습니다.",
+                                                    variant: "destructive",
+                                                });
+                                            } finally {
+                                                setIsCheckingRequest(false);
+                                            }
+                                        }}
+                                        disabled={isCheckingRequest}
+                                    >
+                                        {isCheckingRequest ? (
+                                            <>확인 중...</>
+                                        ) : (
+                                            <>
+                                                <FileText className="h-4 w-4 mr-2" />
+                                                기록 요청
+                                            </>
+                                        )}
+                                    </Button>
+                                )}
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -524,6 +661,60 @@ const ThemeDetail: React.FC = () => {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+
+                <Dialog
+                    open={showRequestModal}
+                    onOpenChange={(open) => {
+                        setShowRequestModal(open);
+                        if (!open) setRequestMessage("");
+                    }}
+                >
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>기록 요청</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="request-message">
+                                    요청 메시지
+                                </Label>
+                                <Textarea
+                                    id="request-message"
+                                    placeholder="기록 요청 내용을 작성해주세요..."
+                                    value={requestMessage}
+                                    onChange={(e) =>
+                                        setRequestMessage(e.target.value)
+                                    }
+                                    className="min-h-[100px]"
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowRequestModal(false)}
+                            >
+                                취소
+                            </Button>
+                            <Button
+                                onClick={handleRequestGame}
+                                disabled={
+                                    isSubmittingRequest ||
+                                    !requestMessage.trim()
+                                }
+                            >
+                                {isSubmittingRequest ? (
+                                    <>전송 중...</>
+                                ) : (
+                                    <>
+                                        <Send className="h-4 w-4 mr-2" />
+                                        요청 전송
+                                    </>
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
             <ContactUserModal
                 open={showContactModal}
