@@ -102,7 +102,13 @@ const SidebarInner = () => {
                                 className="w-full h-full object-cover"
                             />
                         </div>
-                        <span className="text-xm font-semibold">미스터리 플레이스</span>
+                        <div className="relative w-20 h-15 overflow-hidden">
+                            <img
+                                src="/content/image/mystery_place.png"
+                                alt="미스터리 플레이스 latter"
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
                     </Link>
                     <div className="ml-auto">
                         <ThemeToggle />
