@@ -38,7 +38,7 @@ public class BoardPostController {
                 : List.of(BoardPostSortType.LATEST);
         Sort resolvedSort = SortUtil.combineSorts(sortTypes);
         Page<BoardPostResponse> boardPosts = boardPostService.getBoardPage(page, 10, kw, resolvedSort, boardType, postType);
-        return ResponseEntity.ok(boardPosts);
+        return ResponseEntity.ok().body(boardPosts);
     }
 
 }
