@@ -35,6 +35,14 @@ import CreateNotice from "@/pages/notices/CreateNotice";
 import EditNotice from "@/pages/notices/EditNotice";
 import NotificationListPage from "@/pages/notifications/NotificationListPage";
 
+// Community Pages
+import QuestionBoard from "@/pages/community/QuestionBoard";
+import FreeBoard from "@/pages/community/FreeBoard";
+import CreatorBoard from "@/pages/community/CreatorBoard";
+import QuestionPostDetail from "@/pages/community/QuestionPostDetail";
+import FreePostDetail from "@/pages/community/FreePostDetail";
+import CreatorPostDetail from "@/pages/community/CreatorPostDetail";
+
 // Dashboard Pages
 import Dashboard from "@/pages/dashboard/Dashboard";
 import Guilds from "@/pages/dashboard/Guilds";
@@ -84,6 +92,15 @@ const App = () => (
                 <Route path="/themes/:category/:id" element={<ThemeDetail />} />
                 <Route path="/themes/new" element={<CreateTheme />} />
                 <Route path="/themes/:category/edit/:id" element={<EditTheme />} />
+                
+                {/* 커뮤니티 게시판 라우트 */}
+                <Route path="/community/questions" element={<QuestionBoard />} />
+                <Route path="/community/questions/:id" element={<QuestionPostDetail />} />
+                <Route path="/community/free" element={<FreeBoard />} />
+                <Route path="/community/free/:id" element={<FreePostDetail />} />
+                <Route path="/community/creators" element={<CreatorBoard />} />
+                <Route path="/community/creators/:id" element={<CreatorPostDetail />} />
+                
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/login" element={<Login />} />
