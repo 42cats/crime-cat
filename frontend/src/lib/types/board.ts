@@ -1,69 +1,69 @@
 // 게시판 타입 정의
 export enum BoardType {
-  NONE = "NONE",
-  QUESTION = "QUESTION", // 질문게시판
-  FREE = "FREE",         // 자유게시판
-  CREATOR = "CREATOR"    // 제작자게시판
+    NONE = "NONE",
+    QUESTION = "QUESTION", // 질문게시판
+    CHAT = "CHAT", // 자유게시판
+    CREATOR = "CREATOR", // 제작자게시판
 }
 
 export enum PostType {
-  NONE = "NONE",
-  NORMAL = "NORMAL",     // 일반
-  NOTICE = "NOTICE",     // 공지사항
-  EVENT = "EVENT"        // 이벤트
+    NONE = "NONE",
+    NORMAL = "NORMAL", // 일반
+    NOTICE = "NOTICE", // 공지사항
+    EVENT = "EVENT", // 이벤트
 }
 
 export enum BoardPostSortType {
-  LATEST = "LATEST",     // 최신순
-  OLDEST = "OLDEST",     // 오래된순
-  VIEWS = "VIEWS",       // 조회수
-  LIKES = "LIKES"        // 좋아요
+    LATEST = "LATEST", // 최신순
+    OLDEST = "OLDEST", // 오래된순
+    VIEWS = "VIEWS", // 조회수
+    LIKES = "LIKES", // 좋아요
 }
 
 // 게시글 인터페이스
 export interface BoardPost {
-  id: string;
-  title: string;
-  content: string;
-  authorId: string;
-  authorName: string;
-  authorProfileImagePath?: string;
-  boardType: BoardType;
-  postType: PostType;
-  createdAt: string;
-  updatedAt: string;
-  viewCount: number;
-  likeCount: number;
-  commentCount: number;
-  hasImage: boolean;
+    id: string;
+    title: string;
+    content: string;
+    authorId: string;
+    authorName: string;
+    authorProfileImagePath?: string;
+    boardType: BoardType;
+    postType: PostType;
+    createdAt: string;
+    updatedAt: string;
+    viewCount: number;
+    likeCount: number;
+    commentCount: number;
+    hasImage: boolean;
 }
 
 // 게시판 응답 페이지 인터페이스
 export interface BoardPostPage {
-  content: BoardPost[];
-  pageable: {
-    pageNumber: number;
-    pageSize: number;
-    sort: {
-      sorted: boolean;
-      unsorted: boolean;
-      empty: boolean;
+    content: BoardPost[];
+    pageable: {
+        pageNumber: number;
+        pageSize: number;
+        sort: {
+            sorted: boolean;
+            unsorted: boolean;
+            empty: boolean;
+        };
+        offset: number;
+        paged: boolean;
+        unpaged: boolean;
     };
-    offset: number;
-    paged: boolean;
-    unpaged: boolean;
-  };
-  totalPages: number;
-  totalElements: number;
-  last: boolean;
-  size: number;
-  number: number;
-  sort: {
-    sorted: boolean;
-    unsorted: boolean;
+    totalPages: number;
+    totalElements: number;
+    last: boolean;
+    size: number;
+    number: number;
+    sort: {
+        sorted: boolean;
+        unsorted: boolean;
+        empty: boolean;
+    };
+    numberOfElements: number;
+    first: boolean;
     empty: boolean;
-  };
-  numberOfElements: number;
-  first: boolean;
-  empty: boolean;
 }
