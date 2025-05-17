@@ -38,14 +38,14 @@ export const notificationService = {
     },
 
     /**
-     * 최근 알림 목록 조회 (드롭다운용)
+     * 최근 알림 목록 조회 (드롭다운용 - 미읽음 알림만)
      */
     getRecentNotifications: async (
-        limit: number = 10
+        limit: number = 5
     ): Promise<Notification[]> => {
         try {
             const response = await apiClient.get<NotificationPage>(
-                `${baseURI}?page=0&size=${limit}`
+                `${baseURI}?page=0&size=${limit}&statuses=UNREAD`
             );
             return response.content;
         } catch (error) {
@@ -67,26 +67,28 @@ export const notificationService = {
     ): Promise<NotificationPage> => {
         try {
             const params = new URLSearchParams();
-            params.append('page', page.toString());
-            params.append('size', size.toString());
-            
+            params.append("page", page.toString());
+            params.append("size", size.toString());
+
             if (types && types.length > 0) {
-                types.forEach(type => params.append('types', type));
+                types.forEach((type) => params.append("types", type));
             }
-            
+
             if (statuses && statuses.length > 0) {
-                statuses.forEach(status => params.append('statuses', status));
+                statuses.forEach((status) => params.append("statuses", status));
             }
-            
+
             if (keyword && keyword.trim()) {
-                params.append('keyword', keyword.trim());
+                params.append("keyword", keyword.trim());
             }
-            
+
             if (sort && sort.length > 0) {
-                sort.forEach(s => params.append('sort', s));
+                sort.forEach((s) => params.append("sort", s));
             }
-            
-            return await apiClient.get<NotificationPage>(`${baseURI}?${params}`);
+
+            return await apiClient.get<NotificationPage>(
+                `${baseURI}?${params}`
+            );
         } catch (error) {
             console.error("알림 목록 조회 실패:", error);
             throw error;

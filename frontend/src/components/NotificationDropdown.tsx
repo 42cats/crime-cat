@@ -28,8 +28,15 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
     // 게임 기록 요청 액션 처리를 위한 mutation
     const processActionMutation = useMutation({
-        mutationFn: ({ id, action, data }: { id: string; action: string; data?: any }) =>
-            notificationService.processAction(id, action, data),
+        mutationFn: ({
+            id,
+            action,
+            data,
+        }: {
+            id: string;
+            action: string;
+            data?: any;
+        }) => notificationService.processAction(id, action, data),
         onMutate: async ({ id }) => {
             // mutate 함수 호출 즉시 표시 (서버 응답 전)
             markAsProcessed(id);
@@ -37,10 +44,12 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         onSuccess: (_, variables) => {
             // 서버 응답 성공 시 전역 상태에 처리됨 인디케이터 추가
             markAsProcessed(variables.id);
-            
+
             // React Query 캐시 무효화
             queryClient.invalidateQueries({ queryKey: ["notifications"] });
-            queryClient.invalidateQueries({ queryKey: ["notifications", "unreadCount"] });
+            queryClient.invalidateQueries({
+                queryKey: ["notifications", "unreadCount"],
+            });
             toast.success("처리되었습니다.");
             if (onClose) onClose(); // 드롭다운 닫기
         },
@@ -56,7 +65,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         if (notification.status === "UNREAD") {
             markAsRead(notification.id);
         }
-        
+
         // 드롭다운 닫고 페이지 이동
         handleNotificationRouting.navigateFromDropdown(
             notification,
@@ -77,7 +86,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     };
 
     // 알림 타입별 컴포넌트 렌더링
-    const renderNotificationItem = (notification: Notification, index: number) => {
+    const renderNotificationItem = (
+        notification: Notification,
+        index: number
+    ) => {
         const commonProps = {
             notification,
             onRead: markAsRead,
@@ -155,9 +167,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                     </div>
                 ) : (
                     <div className="p-8 text-center">
-                        <img 
-                            src="/content/image/emptyNotice.png" 
-                            alt="알림 없음" 
+                        <img
+                            src="/content/image/emptyNotice.png"
+                            alt="알림 없음"
                             className="w-24 h-24 mx-auto mb-4"
                         />
                         <p className="text-muted-foreground">
