@@ -62,8 +62,9 @@ public class BoardPost {
     @Column(name = "COMMENTS")
     private Integer comments = 0;
 
+    @Builder.Default
     @Column(name = "SECRET")
-    private Boolean secret;
+    private Boolean secret = false;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "POST_TYPE")
@@ -73,6 +74,7 @@ public class BoardPost {
     @Column(name = "BOARD_TYPE")
     private BoardType boardtype;
 
+    @Builder.Default
     @Column(name = "IS_PINNED")
-    private Boolean isPinned;
+    private Boolean isPinned = false;
 }
