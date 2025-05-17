@@ -34,12 +34,14 @@ const DashboardLayout: React.FC = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const location = useLocation();
     const isMobile = useIsMobile();
+    // 페이지 변경시 사이드바 상태를 초기화하기 위한 키 값
+    const locationKey = React.useMemo(() => location.pathname, [location.pathname]);
     if (!isAuthenticated) {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
     
     return (
-        <SidebarProvider>
+        <SidebarProvider key={locationKey}>
             <MobileSidebarToggle />
             <div className="flex min-h-screen w-full bg-muted/30 dark:bg-background">
                 {/* 사이드바 */}
@@ -84,59 +86,87 @@ const MobileSidebarToggle = () => {
     );
 };
 
-const SidebarInner = () => {
+// 이미지 프리로딩 훅
+const useImagePreload = (darkSrc: string, lightSrc: string) => {
+    React.useEffect(() => {
+        const darkImg = new Image();
+        darkImg.src = darkSrc;
+        const lightImg = new Image();
+        lightImg.src = lightSrc;
+    }, [darkSrc, lightSrc]);
+};
+
+const SidebarInner = React.memo(() => {
     const { state } = useSidebar();
     const { user, logout } = useAuth();
     const location = useLocation();
     const isCollapsed = state === "collapsed";
     const { theme } = useTheme(); // theme === "light" | "dark" | "system"
     
+    // 로고 이미지 프리로딩
+    useImagePreload(
+        "/content/image/logo_dark.png", 
+        "/content/image/logo_light.png"
+    );
+    useImagePreload(
+        "/content/image/mystery_place_dark.png", 
+        "/content/image/mystery_place_light.png"
+    );
+    
     return (
         <>
-            {!isCollapsed && (
-                <div className="flex h-14 justify-between items-center px-4 border-b">
-                    <Link to="/" className="flex items-center space-x-2">
-                        <div className="relative w-10 h-10 overflow-hidden">
-                            <img
-                                src={
-                                    theme === "dark"
-                                    ? "/content/image/logo_dark.png"
-                                    : "/content/image/logo_light.png"
-                                }
-                                alt="미스터리 플레이스 로고"
-                                className="w-full h-full object-cover"
-                                />
-                        </div>
-                        <div className="relative w-20 h-15 overflow-hidden">
-                            <img
-                                src={
-                                    theme === "dark"
-                                        ? "/content/image/mystery_place_dark.png"
-                                        : "/content/image/mystery_place_light.png"
-                                }
-                                alt="미스터리 플레이스 latter"
-                                className="w-full h-full object-cover"
+            <div 
+                className={`
+                    flex h-14 justify-between items-center px-4 border-b
+                    transition-all duration-300 ease-in-out
+                    ${isCollapsed ? 'opacity-0 max-h-0 overflow-hidden pointer-events-none' : 'opacity-100 max-h-14'}
+                `}
+            >
+                <Link to="/" className="flex items-center space-x-2">
+                    <div className="relative w-10 h-10 overflow-hidden">
+                        <img
+                            src={
+                                theme === "dark"
+                                ? "/content/image/logo_dark.png"
+                                : "/content/image/logo_light.png"
+                            }
+                            alt="미스터리 플레이스 로고"
+                            className="w-full h-full object-cover"
                             />
-                        </div>
-                    </Link>
-                    <div className="ml-auto">
-                        <ThemeToggle />
                     </div>
+                    <div className="relative w-20 h-15 overflow-hidden">
+                        <img
+                            src={
+                                theme === "dark"
+                                    ? "/content/image/mystery_place_dark.png"
+                                    : "/content/image/mystery_place_light.png"
+                            }
+                            alt="미스터리 플레이스 latter"
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                </Link>
+                <div className="ml-auto">
+                    <ThemeToggle />
                 </div>
-            )}
+            </div>
 
             <SidebarContent>
                 <ScrollArea className="h-[calc(100vh-8rem)]">
                     <div className="px-3 py-2">
-                        {!isCollapsed && (
-                            <>
-                                <div className="mb-6">
-                                    <div className="px-4 py-2">
-                                        <p className="text-xs font-medium text-muted-foreground">
-                                            주요 메뉴
-                                        </p>
-                                    </div>
-                                    <nav className="grid gap-1">
+                        <div 
+                            className={`
+                                transition-all duration-300 ease-in-out
+                                ${isCollapsed ? 'opacity-0 max-h-0 overflow-hidden pointer-events-none' : 'opacity-100'}
+                            `}
+                        >
+                            <div className="mb-6">
+                                <div className="px-4 py-2">
+                                    <p className="text-xs font-medium text-muted-foreground">
+                                        주요 메뉴
+                                    </p>
+                                </div>
+                                <nav className="grid gap-1">
                                         {[
                                             {
                                                 name: "대시보드",
@@ -244,67 +274,72 @@ const SidebarInner = () => {
                                                     </span>
                                                 </Link>
                                             ))}
-                                    </nav>
-                                </div>
+                                </nav>
+                            </div>
 
-                                <Separator className="my-4" />
+                            <Separator className="my-4" />
 
-                                <div className="px-4 py-2">
-                                    <p className="text-xs font-medium text-muted-foreground">
-                                        사용자
-                                    </p>
-                                </div>
+                            <div className="px-4 py-2">
+                                <p className="text-xs font-medium text-muted-foreground">
+                                    사용자
+                                </p>
+                            </div>
 
-                                <div className="px-3 py-2">
-                                    <div className="flex items-center gap-x-3">
-                                        <img
-                                            src={user?.profile_image_path}
-                                            alt={user?.nickname}
-                                            className="h-8 w-8 rounded-full"
-                                        />
-                                        <div className="flex flex-col">
-                                            <p className="text-sm font-medium">
-                                                {user?.nickname}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground capitalize">
-                                                {user?.role}
-                                            </p>
-                                        </div>
+                            <div className="px-3 py-2">
+                                <div className="flex items-center gap-x-3">
+                                    <img
+                                        src={user?.profile_image_path}
+                                        alt={user?.nickname}
+                                        className="h-8 w-8 rounded-full"
+                                    />
+                                    <div className="flex flex-col">
+                                        <p className="text-sm font-medium">
+                                            {user?.nickname}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground capitalize">
+                                            {user?.role}
+                                        </p>
                                     </div>
                                 </div>
+                            </div>
 
-                                <Button
-                                    onClick={logout}
-                                    variant="ghost"
-                                    className="w-full justify-start text-muted-foreground hover:text-destructive mt-1"
-                                >
-                                    <LogOut className="mr-2 h-4 w-4" />
-                                    로그아웃
-                                </Button>
-                            </>
-                        )}
+                            <Button
+                                onClick={logout}
+                                variant="ghost"
+                                className="w-full justify-start text-muted-foreground hover:text-destructive mt-1"
+                            >
+                                <LogOut className="mr-2 h-4 w-4" />
+                                로그아웃
+                            </Button>
+                        </div>
                     </div>
                 </ScrollArea>
             </SidebarContent>
 
             {/* 데스크탑용 사이드바 토글 버튼 */}
-            <div className="absolute top-1/2 -translate-y-1/2 right-[-1rem] z-20 hidden md:block">
+            <div className="absolute top-1/2 -translate-y-1/2 right-[-1rem] z-20 hidden md:block transition-all duration-300">
                 <SidebarTrigger>
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 p-0 border rounded-md bg-background shadow-md"
+                        className="h-8 w-8 p-0 border rounded-md bg-background shadow-md transition-all duration-300"
                     >
-                        {isCollapsed ? (
-                            <ChevronRight className="h-4 w-4" />
-                        ) : (
-                            <ChevronLeft className="h-4 w-4" />
-                        )}
+                        <div className="relative w-4 h-4 overflow-hidden transition-all duration-300">
+                            <div className={`absolute inset-0 transition-opacity duration-300 ${isCollapsed ? 'opacity-100' : 'opacity-0'}`}>
+                                <ChevronRight className="h-4 w-4" />
+                            </div>
+                            <div className={`absolute inset-0 transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+                                <ChevronLeft className="h-4 w-4" />
+                            </div>
+                        </div>
+                        <span className="sr-only">
+                            {isCollapsed ? '사이드바 펼치기' : '사이드바 접기'}
+                        </span>
                     </Button>
                 </SidebarTrigger>
             </div>
         </>
-    );
-};
+    )
+});
 
 export default DashboardLayout;
