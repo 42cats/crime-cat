@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
-import { Notification } from "@/types/notification";
+import { Notification, NotificationStatus } from "@/types/notification";
 import { GameRecordAcceptModal } from "./GameRecordAcceptModal";
 import { GameRecordDeclineModal } from "./GameRecordDeclineModal";
 import {
@@ -9,13 +9,13 @@ import {
     GameRecordDeclineDto,
 } from "@/api/notificationService";
 import { cn } from "@/lib/utils";
+import { useProcessedNotifications } from "@/hooks/useProcessedNotifications";
 import {
     Gamepad2,
     User,
-    Calendar,
+    Clock,
     CheckCircle,
     XCircle,
-    Clock,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,14 +36,21 @@ export const GameRecordNotificationItem: React.FC<
 > = ({ notification, onRead, onAction, isLoading }) => {
     const [showAcceptModal, setShowAcceptModal] = useState(false);
     const [showDeclineModal, setShowDeclineModal] = useState(false);
-
+    
+    // 이미 처리된 알림 상태 관리
+    const { isProcessed, markAsProcessed } = useProcessedNotifications();
+    
+    // 서버의 상태 확인
+    const isUnread = notification.status === NotificationStatus.UNREAD;
+    const isServerProcessed = notification.status === NotificationStatus.PROCESSED;
+    
+    // 로컬 상태 또는 서버 상태에 따라 처리 여부 결정
+    const isNotificationProcessed = isProcessed(notification.id) || isServerProcessed;
+    
     const timeAgo = formatDistanceToNow(new Date(notification.createdAt), {
         addSuffix: true,
         locale: ko,
     });
-
-    const isUnread = notification.status === "UNREAD";
-    const isProcessed = notification.status === "PROCESSED";
 
     // 알림 메타데이터에서 정보 추출 (백엔드에서 dataJson으로 제공)
     const requesterName = notification.senderName || "알 수 없는 사용자";
@@ -52,6 +59,11 @@ export const GameRecordNotificationItem: React.FC<
         if (!notification.read) {
             onRead(notification.id);
         }
+        
+        // 즉시 UI 업데이트를 위해 현재 알림을 처리됨으로 표시
+        markAsProcessed(notification.id);
+        
+        // 서버에 처리 요청
         onAction("accept", data);
         setShowAcceptModal(false);
     };
@@ -60,6 +72,11 @@ export const GameRecordNotificationItem: React.FC<
         if (!notification.read) {
             onRead(notification.id);
         }
+        
+        // 즉시 UI 업데이트를 위해 현재 알림을 처리됨으로 표시
+        markAsProcessed(notification.id);
+        
+        // 서버에 처리 요청
         onAction("decline", data);
         setShowDeclineModal(false);
     };
@@ -70,7 +87,7 @@ export const GameRecordNotificationItem: React.FC<
                 className={cn(
                     "transition-all duration-200",
                     isUnread ? "border-orange-200 bg-orange-50/30" : "bg-card",
-                    isProcessed && "bg-muted/50"
+                    isNotificationProcessed && "bg-muted/50" // 로컬 처리 상태도 반영
                 )}
             >
                 <CardContent className="p-4">
@@ -109,7 +126,8 @@ export const GameRecordNotificationItem: React.FC<
                                         >
                                             {notification.title}
                                         </h3>
-                                        {isProcessed && (
+                                        {/* 로컬 처리 상태도 반영 */}
+                                        {isNotificationProcessed && (
                                             <Badge
                                                 variant="secondary"
                                                 className="text-xs"
@@ -144,8 +162,8 @@ export const GameRecordNotificationItem: React.FC<
                                         </div>
                                     </div>
 
-                                    {/* 액션 버튼들 */}
-                                    {!isProcessed && (
+                                    {/* 액션 버튼들 - 로컬 처리 상태도 반영 */}
+                                    {!isNotificationProcessed && (
                                         <div className="flex gap-2">
                                             <Button
                                                 size="sm"

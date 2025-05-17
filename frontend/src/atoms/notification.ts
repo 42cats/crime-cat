@@ -33,3 +33,9 @@ export const notificationSystemInitializedState = atom<boolean>({
   key: 'notificationSystemInitializedState',
   default: false,
 });
+
+// 이미 처리된 알림 ID를 추적하는 상태
+export const processedNotificationIdsState = atom<Set<string>>({
+  key: 'processedNotificationIdsState',
+  default: new Set(),
+});

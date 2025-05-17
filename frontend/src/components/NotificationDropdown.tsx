@@ -4,6 +4,7 @@ import { NotificationItem } from "@/components/NotificationItem";
 import { SystemNotificationItem } from "@/components/notification/SystemNotificationItem";
 import { GameRecordNotificationItem } from "@/components/notification/GameRecordNotificationItem";
 import { useNotification } from "@/hooks/useNotification";
+import { useProcessedNotifications } from "@/hooks/useProcessedNotifications";
 import { handleNotificationRouting } from "@/utils/notificationRouting";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -21,6 +22,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     onClose,
 }) => {
     const { recentNotifications, markAsRead } = useNotification();
+    const { markAsProcessed } = useProcessedNotifications(); // 처리됨 상태 저장을 위한 훈 추가
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
@@ -28,7 +30,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     const processActionMutation = useMutation({
         mutationFn: ({ id, action, data }: { id: string; action: string; data?: any }) =>
             notificationService.processAction(id, action, data),
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
+            // 서버 응답 성공 시 전역 상태에 처리됨 인디케이터 추가
+            markAsProcessed(variables.id);
+            
+            // React Query 캐시 무효화
             queryClient.invalidateQueries({ queryKey: ["notifications"] });
             queryClient.invalidateQueries({ queryKey: ["notifications", "unreadCount"] });
             toast.success("처리되었습니다.");
