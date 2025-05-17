@@ -19,6 +19,7 @@ public class GameThemePublicController {
     public GetGameThemesResponse getGameThemes(@RequestParam(value = "category", required = false) String category,
                                                @RequestParam(value = "limit", defaultValue = "10") int limit,
                                                @RequestParam(value = "page", defaultValue = "0") int page) {
+        // FIXME: public api로 접근 시 Authentication Token이 없어서 작성자 특정 불가
         return gameThemeService.getGameThemes(category, limit, page);
     }
 
