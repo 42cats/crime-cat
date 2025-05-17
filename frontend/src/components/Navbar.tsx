@@ -11,14 +11,17 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { NotificationIcon } from "@/components/NotificationIcon";
+import { useTheme } from "@/hooks/useTheme";
 
 const Navbar: React.FC = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isThemeOpen, setIsThemeOpen] = useState(false);
-    const [showSubnav, setShowSubnav] = useState(false);
+    const [isCommunityOpen, setIsCommunityOpen] = useState(false);
+    const [activeSubnav, setActiveSubnav] = useState<string | null>(null);
     const location = useLocation();
+    const { theme } = useTheme(); // theme === "light" | "dark" | "system"
 
     useEffect(() => {
         const handleScroll = () => {
@@ -31,7 +34,8 @@ const Navbar: React.FC = () => {
     useEffect(() => {
         setIsMobileMenuOpen(false);
         setIsThemeOpen(false);
-        setShowSubnav(false);
+        setIsCommunityOpen(false);
+        setActiveSubnav(null);
     }, [location.pathname]);
 
     const navItems = [
@@ -39,6 +43,7 @@ const Navbar: React.FC = () => {
         { name: "공지사항", path: "/notices" },
         { name: "명령어", path: "/commands" },
         { name: "테마" }, // path 없음
+        { name: "커뮤니티" }, // path 없음
     ];
 
     const themeSubItems = [
@@ -48,11 +53,17 @@ const Navbar: React.FC = () => {
         { name: "리얼월드", path: "/themes/realworld" },
     ];
 
+    const communitySubItems = [
+        { name: "질문게시판", path: "/community/questions" },
+        { name: "자유게시판", path: "/community/free" },
+        { name: "제작자게시판", path: "/community/creators" },
+    ];
+
     const isActive = (path: string) => location.pathname === path;
 
     return (
         <div
-            onMouseLeave={() => setShowSubnav(false)}
+            onMouseLeave={() => setActiveSubnav(null)}
             className={`w-full z-50 transition-all duration-300 border-b ${
                 isScrolled ? "glass shadow-sm" : "bg-transparent"
             }`}
@@ -63,14 +74,22 @@ const Navbar: React.FC = () => {
                     <Link to="/" className="flex items-center space-x-2">
                         <div className="relative w-10 h-10 overflow-hidden">
                             <img
-                                src="/content/image/logo.png"
+                                src={
+                                    theme === "dark"
+                                        ? "/content/image/logo_dark.png"
+                                        : "/content/image/logo_light.png"
+                                }
                                 alt="미스터리 플레이스 로고"
                                 className="w-full h-full object-cover"
                             />
                         </div>
                         <div className="relative w-20 h-15 overflow-hidden">
                             <img
-                                src="/content/image/mystery_place.png"
+                                src={
+                                    theme === "dark"
+                                        ? "/content/image/mystery_place_dark.png"
+                                        : "/content/image/mystery_place_light.png"
+                                }
                                 alt="미스터리 플레이스 latter"
                                 className="w-full h-full object-cover"
                             />
@@ -82,9 +101,14 @@ const Navbar: React.FC = () => {
                         {navItems.map((item) => (
                             <div
                                 key={item.name}
-                                onMouseEnter={() =>
-                                    item.name === "테마" && setShowSubnav(true)
-                                }
+                                onMouseEnter={() => {
+                                    if (
+                                        item.name === "테마" ||
+                                        item.name === "커뮤니티"
+                                    ) {
+                                        setActiveSubnav(item.name);
+                                    }
+                                }}
                             >
                                 {item.path ? (
                                     <Link
@@ -172,18 +196,29 @@ const Navbar: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 데스크탑 테마 서브 메뉴 */}
-                {showSubnav && (
+                {/* 데스크탑 서브 메뉴 */}
+                {activeSubnav && (
                     <div className="mt-4 flex justify-center gap-8 animate-fade-slide-in">
-                        {themeSubItems.map((sub) => (
-                            <Link
-                                key={sub.name}
-                                to={sub.path}
-                                className="text-sm text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
-                            >
-                                {sub.name}
-                            </Link>
-                        ))}
+                        {activeSubnav === "테마" &&
+                            themeSubItems.map((sub) => (
+                                <Link
+                                    key={sub.name}
+                                    to={sub.path}
+                                    className="text-sm text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
+                                >
+                                    {sub.name}
+                                </Link>
+                            ))}
+                        {activeSubnav === "커뮤니티" &&
+                            communitySubItems.map((sub) => (
+                                <Link
+                                    key={sub.name}
+                                    to={sub.path}
+                                    className="text-sm text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
+                                >
+                                    {sub.name}
+                                </Link>
+                            ))}
                     </div>
                 )}
             </div>
@@ -210,14 +245,25 @@ const Navbar: React.FC = () => {
                                     </Link>
                                 ) : (
                                     <button
-                                        onClick={() =>
-                                            setIsThemeOpen(!isThemeOpen)
-                                        }
+                                        onClick={() => {
+                                            if (item.name === "테마") {
+                                                setIsThemeOpen(!isThemeOpen);
+                                                setIsCommunityOpen(false);
+                                            } else if (
+                                                item.name === "커뮤니티"
+                                            ) {
+                                                setIsCommunityOpen(
+                                                    !isCommunityOpen
+                                                );
+                                                setIsThemeOpen(false);
+                                            }
+                                        }}
                                         className="block py-2 text-sm font-medium text-foreground/80 w-full text-left"
                                     >
                                         {item.name}
                                     </button>
                                 )}
+                                {/* 테마 서브메뉴 */}
                                 {item.name === "테마" && isThemeOpen && (
                                     <div className="ml-4 pl-2 border-l border-border/30 space-y-2">
                                         {themeSubItems.map((sub) => (
@@ -234,6 +280,26 @@ const Navbar: React.FC = () => {
                                         ))}
                                     </div>
                                 )}
+                                {/* 커뮤니티 서브메뉴 */}
+                                {item.name === "커뮤니티" &&
+                                    isCommunityOpen && (
+                                        <div className="ml-4 pl-2 border-l border-border/30 space-y-2">
+                                            {communitySubItems.map((sub) => (
+                                                <Link
+                                                    key={sub.path}
+                                                    to={sub.path}
+                                                    className="block py-1 text-sm text-muted-foreground hover:text-primary"
+                                                    onClick={() =>
+                                                        setIsMobileMenuOpen(
+                                                            false
+                                                        )
+                                                    }
+                                                >
+                                                    {sub.name}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    )}
                             </div>
                         ))}
 

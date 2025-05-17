@@ -28,16 +28,16 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTheme } from "@/hooks/useTheme";
 
 const DashboardLayout: React.FC = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const location = useLocation();
     const isMobile = useIsMobile();
-
     if (!isAuthenticated) {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
-
+    
     return (
         <SidebarProvider>
             <MobileSidebarToggle />
@@ -47,7 +47,7 @@ const DashboardLayout: React.FC = () => {
                     <Sidebar
                         collapsible="icon"
                         className="min-h-screen border-r"
-                    >
+                        >
                         <SidebarInner />
                     </Sidebar>
                 </div>
@@ -66,9 +66,9 @@ const DashboardLayout: React.FC = () => {
 const MobileSidebarToggle = () => {
     const isMobile = useIsMobile();
     const { toggleSidebar } = useSidebar();
-
+    
     if (!isMobile) return null;
-
+    
     return (
         <div className="fixed top-4 left-4 z-50">
             <Button
@@ -76,7 +76,7 @@ const MobileSidebarToggle = () => {
                 size="icon"
                 onClick={toggleSidebar}
                 className="h-10 w-10 border rounded-md bg-background shadow-md"
-            >
+                >
                 <Menu className="w-6 h-6" />
                 <span className="sr-only">사이드바 열기</span>
             </Button>
@@ -89,7 +89,8 @@ const SidebarInner = () => {
     const { user, logout } = useAuth();
     const location = useLocation();
     const isCollapsed = state === "collapsed";
-
+    const { theme } = useTheme(); // theme === "light" | "dark" | "system"
+    
     return (
         <>
             {!isCollapsed && (
@@ -97,14 +98,22 @@ const SidebarInner = () => {
                     <Link to="/" className="flex items-center space-x-2">
                         <div className="relative w-10 h-10 overflow-hidden">
                             <img
-                                src="/content/image/logo.png"
-                                alt="미스터리플레이스 로고"
+                                src={
+                                    theme === "dark"
+                                    ? "/content/image/logo_dark.png"
+                                    : "/content/image/logo_light.png"
+                                }
+                                alt="미스터리 플레이스 로고"
                                 className="w-full h-full object-cover"
-                            />
+                                />
                         </div>
                         <div className="relative w-20 h-15 overflow-hidden">
                             <img
-                                src="/content/image/mystery_place.png"
+                                src={
+                                    theme === "dark"
+                                        ? "/content/image/mystery_place_dark.png"
+                                        : "/content/image/mystery_place_light.png"
+                                }
                                 alt="미스터리 플레이스 latter"
                                 className="w-full h-full object-cover"
                             />
