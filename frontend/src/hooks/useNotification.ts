@@ -81,11 +81,9 @@ export const useNotification = () => {
       const previousNotifications = queryClient.getQueryData<Notification[]>(NOTIFICATION_QUERY_KEYS.recent) || [];
       const previousCount = queryClient.getQueryData<number>(NOTIFICATION_QUERY_KEYS.unreadCount) || 0;
       
-      // 알림 목록 업데이트 (항상 실행)
-      const updatedNotifications = previousNotifications.map(notif => 
-        notif.id === notificationId 
-          ? { ...notif, status: 'READ', read: true }
-          : notif
+      // 알림 목록 업데이트 (해당 알림 제외)
+      const updatedNotifications = previousNotifications.filter(notif => 
+        notif.id !== notificationId
       );
       
       // React Query 캐시 업데이트
@@ -96,8 +94,9 @@ export const useNotification = () => {
         setRecentNotifications(updatedNotifications);
       }
       
-      // 알림 개수 업데이트 - 읽지 않은 상태였던 경우에만
-      const wasUnread = previousNotifications.some(n => n.id === notificationId && (n.status === 'UNREAD' || !n.read));
+      // 알림 개수 업데이트 - 쓰지 않음 상태였던 경우에만
+      // 이미 UNREAD 상태로 필터링됨 알림만 있으므로 미읽음 상태임
+      const wasUnread = true;
       
       if (wasUnread) {
         const newCount = Math.max(0, previousCount - 1);
