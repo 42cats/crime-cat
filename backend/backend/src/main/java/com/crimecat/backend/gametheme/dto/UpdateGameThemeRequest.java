@@ -26,7 +26,7 @@ import org.openapitools.jackson.nullable.JsonNullable;
 public class UpdateGameThemeRequest {
     private String title;
     private String summary;
-    private String thumbnail;
+    private JsonNullable<String> thumbnail = JsonNullable.undefined();
     private Set<String> tags;
     private String content;
     private Integer playerMin;
@@ -66,7 +66,7 @@ public class UpdateGameThemeRequest {
         set(publicStatus, gameTheme::setPublicStatus);
         set(recommendationEnabled, gameTheme::setRecommendationEnabled);
         set(commentEnabled, gameTheme::setCommentEnabled);
-        if (thumbnail == null) {
+        if (thumbnail.isPresent() && thumbnail.get() == null) {
             gameTheme.setThumbnail(null);
         }
         gameTheme.update();
