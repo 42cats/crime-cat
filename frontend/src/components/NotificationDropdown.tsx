@@ -73,7 +73,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         if (onClose) {
             onClose();
         }
-        navigate("/notifications");
+        navigate("/dashboard/notifications");
     };
 
     // 알림 타입별 컴포넌트 렌더링
@@ -155,7 +155,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                     </div>
                 ) : (
                     <div className="p-8 text-center">
-                        <div className="text-6xl mb-4">📭</div>
+                        <img 
+                            src="/content/image/emptyNotice.png" 
+                            alt="알림 없음" 
+                            className="w-24 h-24 mx-auto mb-4"
+                        />
                         <p className="text-muted-foreground">
                             새로운 알림이 없습니다
                         </p>

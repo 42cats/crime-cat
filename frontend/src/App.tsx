@@ -89,7 +89,6 @@ const App = () => (
                 <Route path="/login" element={<Login />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/donate" element={<DonationPage />} />
-                <Route path="/notifications" element={<NotificationListPage />} />
               </Route>
 
                             {/* Dashboard Layout Routes */}
@@ -114,6 +113,10 @@ const App = () => (
                                 <Route
                                     path="point-history"
                                     element={<PointHistoryPage />}
+                                />
+                                <Route
+                                    path="notifications"
+                                    element={<NotificationListPage />}
                                 />
                                 <Route path="profile" element={<Profile />} />
                                 <Route path="teams" element={<Teams />} />

@@ -13,6 +13,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Coins,
+    Bell,
     History,
     Menu,
 } from "lucide-react";
@@ -126,6 +127,16 @@ const SidebarInner = () => {
                                                 name: "대시보드",
                                                 path: "/dashboard",
                                                 icon: LayoutDashboard,
+                                                roles: [
+                                                    "ADMIN",
+                                                    "MANAGER",
+                                                    "USER",
+                                                ],
+                                            },
+                                            {
+                                                name: "알림",
+                                                path: "/dashboard/notifications",
+                                                icon: Bell,
                                                 roles: [
                                                     "ADMIN",
                                                     "MANAGER",

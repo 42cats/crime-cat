@@ -240,7 +240,11 @@ const NotificationListPage: React.FC = () => {
             notificationPage.content.map(renderNotificationItem)
           ) : (
             <div className="text-center py-12">
-              <div className="text-6xl mb-4">📭</div>
+              <img 
+                src="/content/image/emptyNotice.png" 
+                alt="알림 없음" 
+                className="w-32 h-32 mx-auto mb-4"
+              />
               <h3 className="text-lg font-semibold mb-2">알림이 없습니다</h3>
               <p className="text-muted-foreground">새로운 알림이 도착하면 여기에 표시됩니다.</p>
             </div>

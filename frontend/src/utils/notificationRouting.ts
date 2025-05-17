@@ -56,7 +56,7 @@ export const handleNotificationRouting = {
         
       default:
         // 기본적으로는 알림 리스트 페이지로 이동
-        navigate('/notifications');
+        navigate('/dashboard/notifications');
         break;
     }
   },
