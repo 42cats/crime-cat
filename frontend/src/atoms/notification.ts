@@ -39,3 +39,9 @@ export const processedNotificationIdsState = atom<Set<string>>({
   key: 'processedNotificationIdsState',
   default: new Set(),
 });
+
+// 읽음 처리된 알림 ID를 추적하는 상태
+export const readNotificationIdsState = atom<Set<string>>({
+  key: 'readNotificationIdsState',
+  default: new Set(),
+});

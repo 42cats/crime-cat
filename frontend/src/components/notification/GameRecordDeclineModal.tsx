@@ -81,9 +81,11 @@ export const GameRecordDeclineModal: React.FC<GameRecordDeclineModalProps> = ({
           onMouseDown={(e) => e.stopPropagation()}
         >
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-red-600" />
-              게임 기록 거절
+            <DialogTitle>
+              <div className="flex items-center gap-2">
+                <XCircle className="w-5 h-5 text-red-600" />
+                게임 기록 거절
+              </div>
             </DialogTitle>
           </DialogHeader>
           

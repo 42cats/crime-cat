@@ -18,54 +18,60 @@ export const NotificationIcon: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   
-  // 외부 클릭 시 드롭다운 닫기
+  // 외부 클릭 시 드롭다운 닫기 - 무한 루프 수정
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!isDropdownOpen) return;
-      
-      // Select가 열려있는지 확인
-      const selectContent = document.querySelector('[data-radix-select-content]');
-      if (selectContent) {
-        return;
-      }
-      
-      const target = event.target as Node;
-      
-      // 드롭다운이 존재하지 않는 경우 바로 닫기
-      if (!dropdownRef.current || !buttonRef.current) {
+    // 드롭다운이 열려있을 경우에만 이벤트 리스너 추가
+    if (isDropdownOpen) {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (!isDropdownOpen) return;
+        
+        // Select가 열려있는지 확인
+        const selectContent = document.querySelector('[data-radix-select-content]');
+        if (selectContent) {
+          return;
+        }
+        
+        const target = event.target as Node;
+        
+        // 드롭다운이 존재하지 않는 경우 바로 닫기
+        if (!dropdownRef.current || !buttonRef.current) {
+          closeDropdown();
+          return;
+        }
+        
+        // 타겟이 드롭다운 내부에 있는지 심화 검사
+        let currentElement = target as Element;
+        let isInsideDropdown = false;
+        
+        // DOM 트리를 거슬로 올라가며 확인
+        while (currentElement && currentElement !== document.body) {
+          if (currentElement === dropdownRef.current) {
+            isInsideDropdown = true;
+            break;
+          }
+          // 드롭다운 별마다 현재 사용하는 클래스명도 확인
+          if (currentElement.matches && currentElement.matches('.notification-dropdown')) {
+            isInsideDropdown = true;
+            break;
+          }
+          currentElement = currentElement.parentElement!;
+        }
+        
+        // 버튼 자체나 드롭다운 내부에 있으면 닫지 않기
+        if (currentElement === buttonRef.current || isInsideDropdown) {
+          return;
+        }
+        
         closeDropdown();
-        return;
-      }
+      };
       
-      // 타겟이 드롭다운 내부에 있는지 심화 검사
-      let currentElement = target as Element;
-      let isInsideDropdown = false;
-      
-      // DOM 트리를 거슬로 올라가며 확인
-      while (currentElement && currentElement !== document.body) {
-        if (currentElement === dropdownRef.current) {
-          isInsideDropdown = true;
-          break;
-        }
-        // 드롭다운 별마다 현재 사용하는 클래스명도 확인
-        if (currentElement.matches && currentElement.matches('.notification-dropdown')) {
-          isInsideDropdown = true;
-          break;
-        }
-        currentElement = currentElement.parentElement!;
-      }
-      
-      // 버튼 자체나 드롭다운 내부에 있으면 닫지 않기
-      if (currentElement === buttonRef.current || isInsideDropdown) {
-        return;
-      }
-      
-      closeDropdown();
-    };
+      // 지연 실행 (이벤트 전파 후에 실행)
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
     
-    // 지연 실행 (이벤트 전파 후에 실행)
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    // isDropdownOpen이 false일 경우 이벤트 리스너를 추가하지 않음
+    return undefined;
   }, [isDropdownOpen, closeDropdown]);
   
   // 로그인하지 않은 사용자에게는 보여주지 않음
