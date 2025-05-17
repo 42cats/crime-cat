@@ -30,9 +30,9 @@ public class GameRecordRequestTemplate extends AbstractHandlebarsNotificationTem
     
     @Override
     protected String getMessageTemplate() {
-        // Handlebars 문법으로 변경
-        return "{{requesterNickname}}님이 {{gameThemeTitle}} 테마에 대한 게임 기록 등록을 요청했습니다." +
-               "{{#if requestMessage}}\n요청 메시지: {{requestMessage}}{{/if}}";
+        // 실제 개행 문자 사용
+        return "{{requesterNickname}}님이 {{gameThemeTitle}} 테마에 대한 게임 기록 등록을 요청했습니다.\n\n"
+               + "{{#if requestMessage}}요청 메시지: {{requestMessage}}{{/if}}";
     }
     
     @Override
