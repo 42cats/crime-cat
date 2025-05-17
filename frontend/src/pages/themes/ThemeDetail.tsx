@@ -298,7 +298,10 @@ const ThemeDetail: React.FC = () => {
 
                     <div className="relative w-full aspect-video rounded-xl overflow-hidden">
                         <img
-                            src={`${theme.thumbnail}`}
+                            src={`${
+                                theme?.thumbnail ||
+                                "/content/image/default_image2.png"
+                            }`}
                             alt={theme.title}
                             className="w-full h-full object-cover"
                         />

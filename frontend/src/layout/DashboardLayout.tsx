@@ -95,14 +95,14 @@ const SidebarInner = () => {
             {!isCollapsed && (
                 <div className="flex h-14 justify-between items-center px-4 border-b">
                     <Link to="/" className="flex items-center space-x-2">
-                        <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                        <div className="relative w-10 h-10 overflow-hidden">
                             <img
-                                src="/content/image/icon.png"
-                                alt="짭냥이 로고"
+                                src="/content/image/logo.png"
+                                alt="미스터리플레이스 로고"
                                 className="w-full h-full object-cover"
                             />
                         </div>
-                        <span className="text-xl font-semibold">짭냥이</span>
+                        <span className="text-xm font-semibold">미스터리 플레이스</span>
                     </Link>
                     <div className="ml-auto">
                         <ThemeToggle />

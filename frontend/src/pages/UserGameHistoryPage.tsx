@@ -12,13 +12,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { UTCToKST } from "@/lib/dateFormat";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronRight } from "lucide-react";
 
 export interface UserGameHistoryDto {
     uuid: string;
@@ -81,6 +79,7 @@ const usePatchHistory = () =>
             );
         },
     });
+
 const UserGameHistoryPage: React.FC = () => {
     const { user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
@@ -157,9 +156,9 @@ const UserGameHistoryPage: React.FC = () => {
 
     const handleSearch = () => {
         const trimmed = searchText.trim();
-        setKeyword(trimmed); // 빈 문자열이면 전체 검색
+        setKeyword(trimmed);
         setPage(0);
-        inputRef.current?.focus(); // 검색 후 포커스 다시
+        inputRef.current?.focus();
     };
 
     return (
@@ -271,7 +270,31 @@ const UserGameHistoryPage: React.FC = () => {
                                                 {h.win ? "✅" : "❌"}
                                             </td>
                                             <td className="px-4 py-2">
-                                                {h.themeName ?? "(미등록)"}
+                                                {h.themeId ? (
+                                                    <span
+                                                        onClick={() =>
+                                                            navigate(
+                                                                `/themes/crimescene/${h.themeId}`
+                                                            )
+                                                        }
+                                                        className="
+                              inline-flex items-center gap-1
+                              bg-blue-50 text-blue-700
+                              hover:bg-blue-100 hover:text-blue-800
+                              px-2 py-1 text-sm font-medium
+                              rounded-lg cursor-pointer transition
+                            "
+                                                        role="button"
+                                                        aria-label={`${h.themeName} 테마 보기`}
+                                                    >
+                                                        {h.themeName}
+                                                        <ChevronRight className="w-4 h-4" />
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-muted-foreground">
+                                                        (미등록)
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-4 py-2">
                                                 {h.memo || "-"}
@@ -322,7 +345,31 @@ const UserGameHistoryPage: React.FC = () => {
                                         <span className="font-medium">
                                             테마:
                                         </span>{" "}
-                                        {h.themeName ?? "(미등록)"}
+                                        {h.themeId ? (
+                                            <span
+                                                onClick={() =>
+                                                    navigate(
+                                                        `/themes/crimescene/${h.themeId}`
+                                                    )
+                                                }
+                                                className="
+                          inline-flex items-center gap-1
+                          bg-blue-50 text-blue-700
+                          hover:bg-blue-100 hover:text-blue-800
+                          px-2 py-0.5 text-xs font-medium
+                          rounded-lg cursor-pointer transition
+                        "
+                                                role="button"
+                                                aria-label={`${h.themeName} 테마 보기`}
+                                            >
+                                                {h.themeName}
+                                                <ChevronRight className="w-3 h-3" />
+                                            </span>
+                                        ) : (
+                                            <span className="text-muted-foreground">
+                                                (미등록)
+                                            </span>
+                                        )}
                                     </div>
                                     <div>
                                         <span className="font-medium">
@@ -361,7 +408,6 @@ const UserGameHistoryPage: React.FC = () => {
                     >
                         이전
                     </Button>
-
                     {Array.from({ length: data.totalPages }, (_, i) => (
                         <Button
                             key={i}
@@ -373,7 +419,6 @@ const UserGameHistoryPage: React.FC = () => {
                             {i + 1}
                         </Button>
                     ))}
-
                     <Button
                         variant="outline"
                         size="sm"
@@ -423,9 +468,7 @@ const UserGameHistoryPage: React.FC = () => {
                                         }
                                     }}
                                     rows={4}
-                                    className="w-full border rounded-md p-2 text-sm
-                                                   text-foreground bg-background
-                                                   focus:outline-none focus:ring-2 focus:ring-primary"
+                                    className="w-full border rounded-md p-2 text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                                 />
                                 <div className="text-xs text-right text-muted-foreground">
                                     {memoText.length} / 300
