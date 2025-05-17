@@ -1,6 +1,5 @@
 package postComment.domain;
 
-import com.crimecat.backend.post.domain.Post;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
