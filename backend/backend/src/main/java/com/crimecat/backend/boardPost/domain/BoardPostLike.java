@@ -1,4 +1,4 @@
-package com.crimecat.backend.post.domain;
+package com.crimecat.backend.boardPost.domain;
 
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
@@ -15,12 +15,12 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "POST_LIKES")
+@Table(name = "BOARD_POST_LIKES")
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class PostLike {
+public class BoardPostLike {
     @Id
     @UuidGenerator
     @JdbcTypeCode(SqlTypes.BINARY)
@@ -41,7 +41,7 @@ public class PostLike {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "POST", referencedColumnName = "ID", updatable = false, insertable = false)
-    private Post post;
+    private BoardPost boardPost;
 
     @CreatedDate
     @Column(name = "CREATED_AT")
