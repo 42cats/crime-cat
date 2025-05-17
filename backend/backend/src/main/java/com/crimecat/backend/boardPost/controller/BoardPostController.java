@@ -25,6 +25,7 @@ public class BoardPostController {
     @GetMapping
     public ResponseEntity<Page<BoardPostResponse>> getBoardPosts(
             @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size,
             @RequestParam(value = "kw", defaultValue = "") String kw,
             @RequestParam(value = "boardType", defaultValue = "NONE") BoardType boardType,
             @RequestParam(value = "postType", defaultValue = "NONE") PostType postType,
@@ -37,7 +38,7 @@ public class BoardPostController {
                         .toList()
                 : List.of(BoardPostSortType.LATEST);
         Sort resolvedSort = SortUtil.combineSorts(sortTypes);
-        Page<BoardPostResponse> boardPosts = boardPostService.getBoardPage(page, 10, kw, resolvedSort, boardType, postType);
+        Page<BoardPostResponse> boardPosts = boardPostService.getBoardPage(page, size, kw, resolvedSort, boardType, postType);
         return ResponseEntity.ok().body(boardPosts);
     }
 
