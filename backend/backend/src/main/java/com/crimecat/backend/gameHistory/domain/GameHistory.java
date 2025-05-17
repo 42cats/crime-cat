@@ -48,7 +48,7 @@ public class GameHistory {
     @ManyToOne(fetch = FetchType.LAZY)
     private GameTheme gameTheme;
 
-    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false, updatable = false)
+    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = true, updatable = true)
     @ManyToOne(fetch = FetchType.LAZY)
     private Guild guild;
     
@@ -99,4 +99,9 @@ public class GameHistory {
         this.createdAt = dateTime;
     }
 
+    public void setGameTheme(GameTheme gameTheme) {
+        if(gameTheme == null)
+            return;
+        this.gameTheme = gameTheme;
+    }
 }
