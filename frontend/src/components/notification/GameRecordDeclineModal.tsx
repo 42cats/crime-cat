@@ -18,7 +18,7 @@ import { XCircle, AlertTriangle } from 'lucide-react';
 const DEFAULT_DECLINE_MESSAGE = "길드 오너가 기록을 거절하였습니다";
 
 const schema = z.object({
-  declineMessage: z.string().optional(),
+  declineMessage: z.string().max(100, '거절 사유는 100자를 초과할 수 없습니다').optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -42,9 +42,14 @@ export const GameRecordDeclineModal: React.FC<GameRecordDeclineModalProps> = ({
     register,
     handleSubmit,
     reset,
+    watch,
+    formState: { errors }
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+  
+  const declineMessage = watch('declineMessage', '');
+  const messageLength = declineMessage?.length || 0;
   
   const onSubmitForm = async (data: FormData) => {
     setIsLoading(true);
@@ -95,14 +100,25 @@ export const GameRecordDeclineModal: React.FC<GameRecordDeclineModalProps> = ({
             
             {/* 거절 사유 */}
             <div className="space-y-2">
-              <Label htmlFor="declineMessage">거절 사유</Label>
+              <div className="flex justify-between">
+                <Label htmlFor="declineMessage">거절 사유</Label>
+                <span className={`text-xs ${messageLength > 100 ? 'text-red-500 font-semibold' : 'text-muted-foreground'}`}>
+                  {messageLength}/100
+                </span>
+              </div>
               <Textarea
                 id="declineMessage"
                 {...register('declineMessage')}
                 placeholder={DEFAULT_DECLINE_MESSAGE}
                 rows={4}
-                className="resize-none"
+                className={`resize-none ${errors.declineMessage ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                maxLength={100}
               />
+              {errors.declineMessage && (
+                <p className="text-xs text-red-500 mt-1">
+                  {errors.declineMessage.message}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 입력하지 않으면 기본 메시지가 전송됩니다.
               </p>

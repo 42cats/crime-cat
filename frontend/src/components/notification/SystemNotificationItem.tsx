@@ -77,7 +77,16 @@ export const SystemNotificationItem: React.FC<SystemNotificationItemProps> = ({
                   {notification.title}
                 </h3>
                 
-                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                <p 
+                  className="text-sm text-muted-foreground mt-1" 
+                  style={{ 
+                    whiteSpace: 'pre-wrap', 
+                    wordBreak: 'break-word',
+                    overflow: 'hidden',
+                    maxHeight: 'none',
+                    textOverflow: 'clip'
+                  }}
+                >
                   {notification.message}
                 </p>
                 
