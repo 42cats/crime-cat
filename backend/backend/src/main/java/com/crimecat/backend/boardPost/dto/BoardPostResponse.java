@@ -17,11 +17,8 @@ import java.util.UUID;
 public class BoardPostResponse {
     private UUID id;
     private String subject;
-    private String content;
     private String authorName;
-    private UUID authorId;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
     private Integer views;
     private Integer likes;
     private Integer comments;
@@ -35,11 +32,8 @@ public class BoardPostResponse {
         return BoardPostResponse.builder()
                 .id(boardPost.getId())
                 .subject(boardPost.getSubject())
-                .content(boardPost.getContent())
                 .authorName(boardPost.getUser().getNickname())
-                .authorId(boardPost.getUserId())
                 .createdAt(boardPost.getCreatedAt())
-                .updatedAt(boardPost.getUpdatedAt())
                 .views(boardPost.getViews())
                 .likes(boardPost.getLikes())
                 .comments(boardPost.getComments())
