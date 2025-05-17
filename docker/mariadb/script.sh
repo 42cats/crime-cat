@@ -185,12 +185,9 @@ run_create_databases_only() {
 ###############################################################################
 run_migrations() {
   log "▶ 마이그레이션 실행 시작"
-  
-  # 마이그레이션 스크립트 권한 확인 및 설정
-  if [ -f "/script/migration.sh" ]; then
-    chmod +x "/script/migration.sh" 2>/dev/null || true
-    
-    # 마이그레이션 실행
+  # 마이그레이션 스크립트가 있는지 확인
+  if [ -d "$MIGRATIONDIR" ] && [ -f "/script/migration.sh" ]; then
+#    chmod +x "/script/migration.sh"
     log "   • 마이그레이션 스크립트 실행"
     
     # 환경 변수들을 migration.sh에 전달

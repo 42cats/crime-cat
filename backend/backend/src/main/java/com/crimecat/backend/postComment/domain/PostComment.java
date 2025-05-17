@@ -1,6 +1,6 @@
 package com.crimecat.backend.postComment.domain;
 
-import com.crimecat.backend.post.domain.Post;
+import com.crimecat.backend.boardPost.domain.BoardPost;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -42,7 +42,7 @@ public class PostComment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "POST", updatable = false, insertable = false)
-    private Post post;
+    private BoardPost boardPost;
 
     // 부모 댓글 (대댓글인 경우)
     @JdbcTypeCode(SqlTypes.BINARY)

@@ -1,7 +1,7 @@
-package com.crimecat.backend.post.domain;
+package com.crimecat.backend.boardPost.domain;
 
-import com.crimecat.backend.post.enums.BoardType;
-import com.crimecat.backend.post.enums.PostType;
+import com.crimecat.backend.boardPost.enums.BoardType;
+import com.crimecat.backend.boardPost.enums.PostType;
 import com.crimecat.backend.webUser.domain.WebUser;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
@@ -13,12 +13,12 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "POSTS")
+@Table(name = "BOARD_POSTS")
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Post {
+public class BoardPost {
     @Id
     @UuidGenerator
     @JdbcTypeCode(SqlTypes.BINARY)
@@ -53,6 +53,14 @@ public class Post {
     @Builder.Default
     @Column(name = "VIEWS")
     private Integer views = 0;
+
+    @Builder.Default
+    @Column(name = "LIKES")
+    private Integer likes = 0;
+
+    @Builder.Default
+    @Column(name = "COMMENTS")
+    private Integer comments = 0;
 
     @Column(name = "SECRET")
     private Boolean secret;

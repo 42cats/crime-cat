@@ -1,4 +1,4 @@
-package com.crimecat.backend.post.enums;
+package com.crimecat.backend.boardPost.enums;
 
 public enum PostType {
     CRIME, ESCAPE, NONE
