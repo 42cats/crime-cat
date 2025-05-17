@@ -59,10 +59,10 @@ const Navbar: React.FC = () => {
         <div className="flex justify-between items-center">
           {/* 로고 */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="relative w-10 h-10 rounded-full overflow-hidden">
-              <img src="/content/image/icon.png" alt="짭냥이 로고" className="w-full h-full object-cover" />
+            <div className="relative w-10 h-10 overflow-hidden">
+              <img src="/content/image/logo.png" alt="미스터리 플레이스 로고" className="w-full h-full object-cover" />
             </div>
-            <span className="text-xl font-semibold">짭냥이</span>
+            <span className="text-xl font-semibold">미스터리 플레이스</span>
           </Link>
 
           {/* 데스크탑 메뉴 */}
