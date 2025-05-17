@@ -16,7 +16,7 @@ const BOARD_INFO = {
     title: '질문게시판',
     description: '크라임 테마와 관련된 질문을 할 수 있는 공간입니다.',
   },
-  [BoardType.FREE]: {
+  [BoardType.CHAT]: {
     title: '자유게시판',
     description: '자유롭게 이야기를 나눌 수 있는 공간입니다.',
   },
