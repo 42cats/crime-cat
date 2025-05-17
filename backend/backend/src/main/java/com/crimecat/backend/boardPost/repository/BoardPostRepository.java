@@ -36,7 +36,7 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID> {
     Page<BoardPost> findAllByKeywordAndTypeAndIsDeletedFalse(
             @Param("kw") String kw,
             @Param("boardType") BoardType boardType,
-            @Param("boardType") PostType postType,
+            @Param("postType") PostType postType,
             Pageable pageable
     );
 }
