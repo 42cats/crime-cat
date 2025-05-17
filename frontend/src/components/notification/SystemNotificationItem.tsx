@@ -22,9 +22,8 @@ export const SystemNotificationItem: React.FC<SystemNotificationItemProps> = ({
   const navigate = useNavigate();
   
   const handleClick = () => {
-    if (notification.status === 'UNREAD') {
-      onRead(notification.id);
-    }
+    // 무조건 읽음 처리 - 상태와 상관없이 즉시 호출
+    onRead(notification.id);
     
     // onClick prop이 있으면 실행, 없으면 기본 라우팅
     if (onClick) {

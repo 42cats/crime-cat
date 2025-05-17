@@ -126,9 +126,11 @@ export const GameRecordAcceptModal: React.FC<GameRecordAcceptModalProps> = ({
           onMouseDown={(e) => e.stopPropagation()}
         >
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              게임 기록 승인
+            <DialogTitle>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                게임 기록 승인
+              </div>
             </DialogTitle>
           </DialogHeader>
           

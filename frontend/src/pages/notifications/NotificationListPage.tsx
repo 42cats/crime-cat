@@ -4,6 +4,7 @@ import { notificationService } from '@/api/notificationService';
 import { NotificationItem } from '@/components/NotificationItem';
 import { SystemNotificationItem } from '@/components/notification/SystemNotificationItem';
 import { GameRecordNotificationItem } from '@/components/notification/GameRecordNotificationItem';
+import { useProcessedNotifications } from '@/hooks/useProcessedNotifications';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -20,6 +21,9 @@ const NotificationListPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  
+  // 처리됨 상태 관리 훈 추가
+  const { markAsProcessed } = useProcessedNotifications();
   
   // 무한 루프 방지를 위한 ref
   const hasProcessedInitialRead = useRef(false);
@@ -83,6 +87,10 @@ const NotificationListPage: React.FC = () => {
   const processActionMutation = useMutation({
     mutationFn: ({ id, action, data }: { id: string; action: string; data?: any }) =>
       notificationService.processAction(id, action, data),
+    onMutate: async ({ id }) => {
+      // 즉시 전역 상태에 처리됨 표시
+      markAsProcessed(id);
+    },  
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notifications', 'unreadCount'] });

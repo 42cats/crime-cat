@@ -30,6 +30,10 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     const processActionMutation = useMutation({
         mutationFn: ({ id, action, data }: { id: string; action: string; data?: any }) =>
             notificationService.processAction(id, action, data),
+        onMutate: async ({ id }) => {
+            // mutate 함수 호출 즉시 표시 (서버 응답 전)
+            markAsProcessed(id);
+        },
         onSuccess: (_, variables) => {
             // 서버 응답 성공 시 전역 상태에 처리됨 인디케이터 추가
             markAsProcessed(variables.id);
@@ -48,6 +52,12 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
     // 알림 클릭 처리를 위한 함수 (시스템 알림, 일반 알림)
     const handleNotificationClick = (notification: Notification) => {
+        // 읽지 않은 알림이면 읽음 처리
+        if (notification.status === "UNREAD") {
+            markAsRead(notification.id);
+        }
+        
+        // 드롭다운 닫고 페이지 이동
         handleNotificationRouting.navigateFromDropdown(
             notification,
             navigate,
