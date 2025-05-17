@@ -36,7 +36,7 @@ public class BoardPostResponse {
                 .id(boardPost.getId())
                 .subject(boardPost.getSubject())
                 .content(boardPost.getContent())
-                .authorName(boardPost.getUser().getName())
+                .authorName(boardPost.getUser().getNickname())
                 .authorId(boardPost.getUserId())
                 .createdAt(boardPost.getCreatedAt())
                 .updatedAt(boardPost.getUpdatedAt())
