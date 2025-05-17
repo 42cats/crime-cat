@@ -134,4 +134,6 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	boolean existsByDiscordUserIdAndGameThemeId(@Param("webUserId") UUID webUserId, @Param("gameThemeId") UUID gameThemeId);
 
 	boolean existsByGameTheme_IdAndUser_Id(UUID gameThemeId, UUID userId);
+
+	List<GameHistory> findAllByGuild_Snowflake(String guildSnowflake);
 }

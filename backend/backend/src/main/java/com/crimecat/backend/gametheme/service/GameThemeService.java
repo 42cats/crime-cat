@@ -1,6 +1,8 @@
 package com.crimecat.backend.gametheme.service;
 
 import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.gameHistory.domain.GameHistory;
+import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
 import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.domain.GameThemeRecommendation;
@@ -29,7 +31,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -44,20 +45,53 @@ public class GameThemeService {
     private final MakerTeamService teamService;
     private final GameThemeRecommendationRepository themeRecommendationRepository;
     private final ViewCountService viewCountService;
+    private final GameHistoryRepository gameHistoryRepository;
 
     @Transactional
     public void addGameTheme(MultipartFile file, AddGameThemeRequest request) {
         GameTheme gameTheme = GameTheme.from(request);
         WebUser webUser = AuthenticationUtil.getCurrentWebUser();
         gameTheme.setAuthorId(webUser.getId());
+        
         if (gameTheme instanceof CrimesceneTheme) {
             checkTeam((CrimesceneTheme) gameTheme, webUser);
         }
+        
+        // 초기 저장하여 ID 생성
         gameTheme = themeRepository.save(gameTheme);
+        
+        // 파일 처리
         if (file != null && !file.isEmpty()) {
             String path = storageService.storeAt(StorageFileType.GAME_THEME, file, gameTheme.getId().toString());
             gameTheme.setThumbnail(path);
-            themeRepository.save(gameTheme);
+        }
+        
+        // CrimesceneTheme 경우 GameHistory 연결 처리
+        if (gameTheme instanceof CrimesceneTheme) {
+            updateGameHistoriesForCrimesceneTheme((CrimesceneTheme) gameTheme);
+        }
+        
+        // 최종 저장 (한 번만 저장)
+        themeRepository.save(gameTheme);
+    }
+    
+    /**
+     * CrimesceneTheme과 관련된 GameHistory 업데이트
+     * @param crimesceneTheme 업데이트할 테마
+     */
+    private void updateGameHistoriesForCrimesceneTheme(CrimesceneTheme crimesceneTheme) {
+        String guildSnowflake = crimesceneTheme.getGuildSnowflake();
+        if (guildSnowflake == null || guildSnowflake.isEmpty()) {
+            return; // snowflake가 없으면 처리하지 않음
+        }
+        
+        // N+1 문제 방지를 위해 배치 처리
+        List<GameHistory> histories = gameHistoryRepository.findAllByGuild_Snowflake(guildSnowflake);
+        if (!histories.isEmpty()) {
+            for (GameHistory history : histories) {
+                history.setGameTheme(crimesceneTheme);
+            }
+            gameHistoryRepository.saveAll(histories);
         }
     }
 
