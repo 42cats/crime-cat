@@ -31,7 +31,7 @@ public class BoardPostService {
             PostType postType
     ) {
         Pageable pageable = PageRequest.of(page, size, sortType);
-        Page<BoardPost> posts = boardPostRepository.findAllByKeywordAndBoardtypeAndPostType(kw, boardType, postType, pageable);
+        Page<BoardPost> posts = boardPostRepository.findAllByKeywordAndTypeAndIsDeletedFalse(kw, boardType, postType, pageable);
 
         return posts.map(BoardPostResponse::from);
     }

@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS `board_posts` (
     `secret`         BOOLEAN        NOT NULL DEFAULT FALSE,
     `post_type`      ENUM('CRIME', 'ESCAPE', 'NONE')   NOT NULL,
     `board_type`     ENUM('CHAT', 'QUESTION', 'NONE')  NOT NULL,
+    `is_pinned`      BOOLEAN        NOT NULL DEFAULT FALSE,
     CONSTRAINT `fk_board_posts_author`
     FOREIGN KEY (`user`)
     REFERENCES `web_users`(`id`)

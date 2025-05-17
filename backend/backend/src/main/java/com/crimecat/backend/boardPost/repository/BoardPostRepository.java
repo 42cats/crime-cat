@@ -30,8 +30,10 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID> {
             + "   or u2.nickname like %:kw% "
             + ") "
             + " and p.boardtype = :boardType "
-            + "and p.postType = :postType ")
-    Page<BoardPost> findAllByKeywordAndBoardtypeAndPostType(
+            + " and p.postType = :postType "
+            + " and p.isDeleted = false "
+            + " ORDER BY p.isPinned DESC ")
+    Page<BoardPost> findAllByKeywordAndTypeAndIsDeletedFalse(
             @Param("kw") String kw,
             @Param("boardType") BoardType boardType,
             @Param("boardType") PostType postType,

@@ -72,4 +72,7 @@ public class BoardPost {
     @Enumerated(EnumType.STRING)
     @Column(name = "BOARD_TYPE")
     private BoardType boardtype;
+
+    @Column(name = "IS_PINNED")
+    private Boolean isPinned;
 }

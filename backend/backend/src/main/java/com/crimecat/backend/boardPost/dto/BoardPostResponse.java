@@ -25,9 +25,9 @@ public class BoardPostResponse {
     private Integer views;
     private Integer likes;
     private Integer comments;
-    @JsonProperty("isDeleted")
-    private Boolean isDeleted;
     private Boolean secret;
+    @JsonProperty("isPinned")
+    private Boolean isPinned;
 
     public static BoardPostResponse from(
             BoardPost boardPost
@@ -39,12 +39,12 @@ public class BoardPostResponse {
                 .authorName(boardPost.getUser().getName())
                 .authorId(boardPost.getUserId())
                 .createdAt(boardPost.getCreatedAt())
-                .createdAt(boardPost.getUpdatedAt())
+                .updatedAt(boardPost.getUpdatedAt())
                 .views(boardPost.getViews())
                 .likes(boardPost.getLikes())
                 .comments(boardPost.getComments())
-                .isDeleted(boardPost.getIsDeleted())
                 .secret(boardPost.getSecret())
+                .isPinned(boardPost.getIsPinned())
                 .build();
     }
 }
