@@ -43,6 +43,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        // public api 중 인증 정보가 필요한 경우를 위해 로그인 토큰 처리
+        if (request.getRequestURI().startsWith("/api/v1/public/")) {
+            String accessToken = extractAccessToken(request);
+            if (accessToken == null || !jwtTokenProvider.validateToken(accessToken)
+            || jwtBlacklistService.isBlacklisted(accessToken) || jwtTokenProvider.isTokenExpired(accessToken)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+            String userId = jwtTokenProvider.getUserIdFromToken(accessToken);
+            Optional<WebUser> optUser = webUserRepository.findById(UUID.fromString(userId));
+            if (optUser.isPresent()) {
+                WebUser webUser = optUser.get();
+                authenticateUser(webUser, request);
+            }
+            filterChain.doFilter(request, response);
+            return;
+        }
+
 
         String accessToken = extractAccessToken(request);
 
@@ -81,8 +99,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             || uri.startsWith("/api/v1/auth/logout")
             || uri.startsWith("/actuator/health")
             || uri.startsWith("/actuator/info")
-            || uri.startsWith("/api/v1/csrf/token")
-            || uri.startsWith("/api/v1/public/");
+            || uri.startsWith("/api/v1/csrf/token");
     }
 
     private String extractAccessToken(HttpServletRequest request) {
