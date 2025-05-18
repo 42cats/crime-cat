@@ -10,8 +10,9 @@
   width: 100% !important;
   height: auto !important;
   min-height: 300px;
-  transition: all 0.2s ease;
+  /* transition 제거 */
   padding: 1rem !important;
+  margin: 0 !important;
   -webkit-appearance: none !important;
   -webkit-tap-highlight-color: transparent !important;
 }
@@ -44,6 +45,17 @@
   position: relative;
   outline: none;
   border: none;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 에디터 컨테이너 안정화 */
+.editor-container {
+  display: block;
+  position: relative;
+  box-sizing: border-box !important;
+  width: 100% !important;
 }
 
 .ProseMirror p {

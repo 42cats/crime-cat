@@ -684,6 +684,7 @@ const TiptapEditor = ({ onChange, formValues }: { onChange: (html: string) => vo
                             editor={editor}
                             className="prose prose-sm sm:prose dark:prose-invert max-w-none p-4 min-h-[400px] outline-none focus:outline-none focus:ring-0 border-none ProseMirror"
                             spellCheck="false"
+                            style={{ boxSizing: 'border-box', transition: 'none', display: 'block', width: '100%' }}
                         />
                     </div>
                 </TabsContent>
