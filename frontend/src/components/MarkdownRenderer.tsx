@@ -1,13 +1,47 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import rehypeRaw from 'rehype-raw';
+import { Copy, Check } from 'lucide-react';
 
 interface MarkdownRendererProps {
   content: string;
   className?: string;
 }
+
+const CodeBlock = ({ children }: { children: string }) => {
+  const [copied, setCopied] = useState(false);
+  
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(children);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="bg-gray-100 dark:bg-gray-800 rounded-md p-3 my-2 relative group">
+      <div 
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+        onClick={handleCopy}
+      >
+        <button
+          className="bg-gray-200 dark:bg-gray-700 p-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+          title="코드 복사"
+        >
+          {copied ? (
+            <Check className="h-4 w-4 text-green-500" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+      <code className="block whitespace-pre overflow-x-auto text-sm">
+        {children}
+      </code>
+    </div>
+  );
+};
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className }) => {
   return (
@@ -27,13 +61,9 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
               );
             }
             
-            // 코드 블록 - 디스코드 스타일
+            // 코드 블록 - 복사 버튼 추가
             return (
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-md p-3 my-2">
-                <code className="block whitespace-pre overflow-x-auto text-sm" {...props}>
-                  {String(children).replace(/\n$/, '')}
-                </code>
-              </div>
+              <CodeBlock>{String(children).replace(/\n$/, '')}</CodeBlock>
             );
           },
           // 굵기
