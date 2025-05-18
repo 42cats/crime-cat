@@ -3,9 +3,15 @@ package com.crimecat.backend.config;
 import com.crimecat.backend.auth.filter.DiscordBotTokenFilter;
 import com.crimecat.backend.auth.filter.JwtAuthenticationFilter;
 import com.crimecat.backend.auth.handler.CustomOAuth2SuccessHandler;
+import com.crimecat.backend.auth.handler.LoginSuccessHandler;
+import com.crimecat.backend.auth.handler.SignupSuccessHandler;
+import com.crimecat.backend.auth.service.DiscordLoginService;
 import com.crimecat.backend.auth.service.DiscordOAuth2UserService;
+import com.crimecat.backend.auth.service.DiscordSignupService;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -21,8 +27,15 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.NullSecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -36,11 +49,16 @@ import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-  private final DiscordOAuth2UserService discordOAuth2UserService; // ✅ 생성자 주입
+  private final DiscordOAuth2UserService discordOAuth2UserService; // 기존 서비스 (이전 버전 호환용)
+  private final DiscordLoginService discordLoginService;
+  private final DiscordSignupService discordSignupService;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final DiscordBotTokenFilter discordBotTokenFilter;
-  private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
+  private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler; // 기존 핸들러 (이전 버전 호환용)
+  private final LoginSuccessHandler loginSuccessHandler;
+  private final SignupSuccessHandler signupSuccessHandler;
   private final CsrfTokenConfig csrfTokenConfig;
+  private final ServiceUrlConfig serviceUrlConfig;
 
 
   @Bean
@@ -76,6 +94,7 @@ public class SecurityConfig {
                         "/bot/v1/**",
                         "/api/v1/auth/logout",
                         "/api/v1/auth/reissue",
+                        "/api/v1/auth/oauth2/error",
                         "/login/**",
                         "/api/v1/public/**",
                         "/api/v1/csrf/token")
@@ -123,20 +142,58 @@ public class SecurityConfig {
             oauth2 ->
                 oauth2
                     .loginPage("/login") // 로그인 경로 설정
-                    .successHandler(customOAuth2SuccessHandler)
-                    // .defaultSuccessUrl("/", true) // 트루 반환(성공)시에 리다이렉트 될 경로
-                    // .failureUrl("/")
-                    .userInfoEndpoint(
-                        userInfo ->
-                            userInfo.userService(
-                                discordOAuth2UserService) // 디스코드에서 반환하는 유저정보 처리 하는곳
-                        )
-            //                        .failureUrl("http://localhost:5173/failed")
+                    .authorizationEndpoint(endpoint -> 
+                        endpoint.baseUri("/oauth2/authorization"))
+                    .userInfoEndpoint(userInfo -> 
+                        userInfo.userService(new DelegatingOAuth2UserService()))
+                    .successHandler(new DelegatingAuthenticationSuccessHandler())
+                    .failureUrl("https://"+ serviceUrlConfig.getDomain() + "/login")
             )
         .addFilterBefore(discordBotTokenFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
+  }
+
+  // 클라이언트 ID에 따라 적절한 서비스로 위임하는 클래스
+  private class DelegatingOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
+    @Override
+    public OAuth2User loadUser(OAuth2UserRequest request) throws OAuth2AuthenticationException {
+      String clientRegistrationId = request.getClientRegistration().getRegistrationId();
+      
+      if ("discord-login".equals(clientRegistrationId)) {
+        return discordLoginService.loadUser(request);
+      } else if ("discord-signup".equals(clientRegistrationId)) {
+        return discordSignupService.loadUser(request);
+      } else if ("discord".equals(clientRegistrationId)) {
+        // 기존 호환성 유지
+        return discordOAuth2UserService.loadUser(request);
+      } else {
+        throw new OAuth2AuthenticationException(
+          new OAuth2Error("invalid_client"), "지원하지 않는 클라이언트입니다.");
+      }
+    }
+  }
+  
+  // 클라이언트 ID에 따라 적절한 핸들러로 위임하는 클래스
+  private class DelegatingAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request, 
+                                       HttpServletResponse response,
+                                       Authentication authentication) 
+        throws IOException, ServletException {
+      
+      String requestURI = request.getRequestURI();
+      
+      if (requestURI.contains("discord-login")) {
+        loginSuccessHandler.onAuthenticationSuccess(request, response, authentication);
+      } else if (requestURI.contains("discord-signup")) {
+        signupSuccessHandler.onAuthenticationSuccess(request, response, authentication);
+      } else {
+        // 기본값으로 기존 핸들러 사용 (이전 버전 호환용)
+        customOAuth2SuccessHandler.onAuthenticationSuccess(request, response, authentication);
+      }
+    }
   }
 
   final class SpaCsrfTokenRequestHandler implements CsrfTokenRequestHandler {

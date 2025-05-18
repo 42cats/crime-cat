@@ -36,6 +36,46 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final JwtBlacklistService jwtBlacklistService;
     private final WebUserRepository webUserRepository;
+    
+    // OAuth2 인증 에러 정보를 저장할 ThreadLocal 변수
+    private static final ThreadLocal<Map<String, Object>> oauthErrorInfo = new ThreadLocal<>();
+    
+    /**
+     * OAuth2 인증 실패 정보를 저장하는 정적 메소드
+     * 
+     * @param error 에러 코드
+     * @param message 에러 메시지
+     */
+    public static void setOAuthError(String error, String message) {
+        Map<String, Object> errorData = new HashMap<>();
+        errorData.put("error", error);
+        errorData.put("message", message);
+        oauthErrorInfo.set(errorData);
+    }
+    
+    /**
+     * 저장된 OAuth2 인증 에러 정보를 삭제하는 정적 메소드
+     */
+    public static void clearOAuthError() {
+        oauthErrorInfo.remove();
+    }
+    
+    /**
+     * 프론트엔드에서 호출할 OAuth2 인증 에러 확인 API
+     * 
+     * @return 저장된 에러 정보 또는 비어있는 응답
+     */
+    @GetMapping("/oauth2/error")
+    public ResponseEntity<?> getOAuthError() {
+        Map<String, Object> errorData = oauthErrorInfo.get();
+        
+        if (errorData != null) {
+            clearOAuthError();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorData);
+        }
+        
+        return ResponseEntity.ok().build();
+    }
 
     @GetMapping("/login-success")
     public ResponseEntity<?> redirectLoginSuccess(HttpServletResponse response, Principal principal) throws IOException {
