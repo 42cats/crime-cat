@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { BoardType } from '@/lib/types/board';
 import { boardPostService } from '@/api/boardPostService';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, MessageSquare, ThumbsUp, Eye, Share2 } from 'lucide-react';
+import { ArrowLeft, MessageSquare, ThumbsUp, Eye, Share2, Trash2, Edit, AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/useToast';
 
 interface BoardPostDetailProps {
   boardType: BoardType;
@@ -16,16 +18,117 @@ interface BoardPostDetailProps {
 const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
+  const [isSharing, setIsSharing] = useState(false);
   
+  // 게시글 조회 쿼리
   const { data: post, isLoading, isError } = useQuery({
     queryKey: ['boardPost', id],
     queryFn: () => boardPostService.getBoardPostById(id!),
     enabled: !!id,
   });
   
+  // 좋아요 상태 쿼리
+  const { data: likeStatus, isLoading: isLikeLoading } = useQuery({
+    queryKey: ['postLike', id],
+    queryFn: () => boardPostService.getLikeStatus(id!),
+    enabled: !!id && isAuthenticated,
+  });
+  
+  // 좋아요 토글 뮤테이션
+  const likeMutation = useMutation({
+    mutationFn: () => boardPostService.toggleLike(id!),
+    onSuccess: () => {
+      // 좋아요 상태와 게시글 데이터 모두 리프레시
+      queryClient.invalidateQueries({ queryKey: ['postLike', id] });
+      queryClient.invalidateQueries({ queryKey: ['boardPost', id] });
+      toast({
+        title: likeStatus?.status ? '좋아요 취소' : '좋아요',
+        description: likeStatus?.status ? '이 게시글의 좋아요를 취소했습니다.' : '이 게시글에 좋아요를 했습니다.',
+      });
+    },
+    onError: (error) => {
+      console.error('좋아요 오류:', error);
+      toast({
+        title: '오류',
+        description: '좋아요 처리 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // 게시글 삭제 뮤테이션
+  const deleteMutation = useMutation({
+    mutationFn: () => boardPostService.deleteBoardPost(id!),
+    onSuccess: () => {
+      toast({
+        title: '삭제 완료',
+        description: '게시글이 성공적으로 삭제되었습니다.',
+      });
+      navigate(`/community/${boardType.toLowerCase()}`);
+    },
+    onError: (error) => {
+      console.error('삭제 오류:', error);
+      toast({
+        title: '삭제 오류',
+        description: '게시글 삭제 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    },
+  });
+  
   const handleBack = () => {
     navigate(`/community/${boardType.toLowerCase()}`);
   };
+  
+  const handleLike = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: '로그인 필요',
+        description: '좋아요 기능을 사용하려면 로그인이 필요합니다.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    likeMutation.mutate();
+  };
+  
+  const handleShare = () => {
+    setIsSharing(true);
+    
+    // 현재 URL을 클립보드에 복사
+    try {
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: '링크 복사 완료',
+        description: '현재 게시글 주소가 클립보드에 복사되었습니다.',
+      });
+    } catch (error) {
+      console.error('공유 오류:', error);
+      toast({
+        title: '복사 오류',
+        description: '주소를 복사하는 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSharing(false);
+    }
+  };
+  
+  const handleDelete = () => {
+    if (window.confirm('정말 이 게시글을 삭제하시겠습니까?')) {
+      deleteMutation.mutate();
+    }
+  };
+  
+  const handleEdit = () => {
+    navigate(`/community/${boardType.toLowerCase()}/edit/${id}`);
+  };
+  
+  // 현재 사용자가 게시글 작성자인지 확인
+  const isAuthor = post && user && post.authorId === user.id;
   
   if (isLoading) {
     return (
@@ -118,17 +221,40 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
         
         <CardFooter className="flex justify-between border-t py-4">
           <div>
-            {/* 여기에 게시글 작성자인 경우 수정/삭제 버튼 추가 */}
+            {isAuthor && (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleEdit}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  수정
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleDelete}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  삭제
+                </Button>
+              </div>
+            )}
           </div>
           
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant={likeStatus?.status ? "default" : "outline"} 
+              size="sm"
+              onClick={handleLike}
+              disabled={likeMutation.isPending}
+            >
               <ThumbsUp className="mr-2 h-4 w-4" />
-              추천
+              {likeMutation.isPending ? '처리중...' : (
+                likeStatus?.status ? '좋아요 취소' : '좋아요'
+              )}
             </Button>
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleShare}
+              disabled={isSharing}
+            >
               <Share2 className="mr-2 h-4 w-4" />
-              공유
+              {isSharing ? '복사중...' : '공유'}
             </Button>
           </div>
         </CardFooter>
@@ -140,9 +266,21 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
           <CardTitle className="text-lg">댓글 {post.commentCount}개</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground text-center py-10">
-            댓글 기능은 현재 준비 중입니다.
-          </p>
+          {isAuthenticated ? (
+            <p className="text-muted-foreground text-center py-10">
+              댓글 기능은 현재 준비 중입니다.
+            </p>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
+              <AlertCircle className="h-10 w-10 text-muted-foreground" />
+              <p className="text-muted-foreground">
+                댓글을 작성하려면 로그인이 필요합니다.
+              </p>
+              <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
+                로그인하기
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

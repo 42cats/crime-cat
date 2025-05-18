@@ -8,6 +8,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { RecoilRoot } from "recoil";
 
+// Types
+import { BoardType } from "@/lib/types/board";
+
+// Community Write
+import BoardWrite from "@/pages/community/BoardWrite";
+
 // Layouts
 import MainLayout from "@/layout/MainLayout";
 import DashboardLayout from "@/layout/DashboardLayout";
@@ -94,13 +100,24 @@ const App = () => (
                 <Route path="/themes/new" element={<CreateTheme />} />
                 <Route path="/themes/:category/edit/:id" element={<EditTheme />} />
                 
-                {/* 커뮤니티 게시판 라우트 */}
-                <Route path="/community/questions" element={<QuestionBoard />} />
+                {/* 커뮤니티 게시판 라우트 - 순서가 중요합니다! 더 구체적인 경로가 먼저 와야 합니다 */}
+                {/* 질문게시판 */}
+                <Route path="/community/questions/new" element={<BoardWrite boardType={BoardType.QUESTION} />} />
                 <Route path="/community/questions/:id" element={<QuestionPostDetail />} />
-                <Route path="/community/free" element={<FreeBoard />} />
+                <Route path="/community/questions" element={<QuestionBoard />} />
+                
+                {/* 자유게시판 */}
+                <Route path="/community/free/new" element={<BoardWrite boardType={BoardType.CHAT} />} />
                 <Route path="/community/free/:id" element={<FreePostDetail />} />
-                <Route path="/community/creators" element={<CreatorBoard />} />
+                <Route path="/community/free" element={<FreeBoard />} />
+                
+                {/* 제작자게시판 */}
+                <Route path="/community/creators/new" element={<BoardWrite boardType={BoardType.CREATOR} />} />
                 <Route path="/community/creators/:id" element={<CreatorPostDetail />} />
+                <Route path="/community/creators" element={<CreatorBoard />} />
+                
+                {/* 동적 경로를 위한 추가 라우트 */}
+                <Route path="/community/:boardType/new" element={<BoardWrite />} />
                 
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
@@ -110,50 +127,50 @@ const App = () => (
                 <Route path="/donate" element={<DonationPage />} />
               </Route>
 
-                            {/* Dashboard Layout Routes */}
-                            <Route
-                                path="/dashboard"
-                                element={<DashboardLayout />}
-                            >
-                                <Route index element={<Dashboard />} />
-                                <Route path="guilds" element={<Guilds />} />
-                                <Route
-                                    path="guilds/message-format"
-                                    element={<MessageFormat />}
-                                />
-                                <Route
-                                    path="guilds/crime-scene-history"
-                                    element={<GameHistoryManager />}
-                                />
-                                <Route
-                                    path="users/my-history"
-                                    element={<UserGameHistoryPage />}
-                                />
-                                <Route
-                                    path="point-history"
-                                    element={<PointHistoryPage />}
-                                />
-                                <Route
-                                    path="notifications"
-                                    element={<NotificationListPage />}
-                                />
-                                <Route path="profile" element={<Profile />} />
-                                <Route path="teams" element={<Teams />} />
-                            </Route>
+              {/* Dashboard Layout Routes */}
+              <Route
+                  path="/dashboard"
+                  element={<DashboardLayout />}
+              >
+                  <Route index element={<Dashboard />} />
+                  <Route path="guilds" element={<Guilds />} />
+                  <Route
+                      path="guilds/message-format"
+                      element={<MessageFormat />}
+                  />
+                  <Route
+                      path="guilds/crime-scene-history"
+                      element={<GameHistoryManager />}
+                  />
+                  <Route
+                      path="users/my-history"
+                      element={<UserGameHistoryPage />}
+                  />
+                  <Route
+                      path="point-history"
+                      element={<PointHistoryPage />}
+                  />
+                  <Route
+                      path="notifications"
+                      element={<NotificationListPage />}
+                  />
+                  <Route path="profile" element={<Profile />} />
+                  <Route path="teams" element={<Teams />} />
+              </Route>
 
-                            {/* 404 Route */}
-                            <Route path="*" element={<NotFound />} />
+              {/* 404 Route */}
+              <Route path="*" element={<NotFound />} />
 
-                            <Route
-                                path="/unauthorized"
-                                element={<Unauthorized />}
-                            />
-                        </Routes>
-                    </AnimatePresence>
-                </BrowserRouter>
-            </TooltipProvider>
-        </QueryClientProvider>
-    </RecoilRoot>
+              <Route
+                  path="/unauthorized"
+                  element={<Unauthorized />}
+              />
+            </Routes>
+          </AnimatePresence>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </RecoilRoot>
 );
 
 export default App;
