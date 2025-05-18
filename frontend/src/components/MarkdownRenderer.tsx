@@ -91,13 +91,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                     <button
                                         onClick={handleCopy}
-                                        className="bg-gray-200 dark:bg-gray-700 p-1 rounded hover:bg-gray-600 dark:hover:bg-gray-600 transition-colors"
+                                        className="bg-gray-200 dark:bg-gray-700 p-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors shadow-md"
                                         title="코드 복사"
                                     >
                                         {copied ? (
                                             <Check className="h-4 w-4 text-green-500" />
                                         ) : (
-                                            <Copy className="h-4 w-4" />
+                                            <Copy className="h-4 w-4 text-gray-700 dark:text-gray-300" />
                                         )}
                                     </button>
                                 </div>
