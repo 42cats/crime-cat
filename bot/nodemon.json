@@ -1,8 +1,17 @@
 {
-    "watch": ["Commands", "Events", "Response","main.js", "deploy.js"],
+    "watch": ["Commands", "Events", "Response", "main.js", "deploy.js"],
     "ext": "js,json",
     "exec": "node main.js",
     "delay": 0.5,
     "legacyWatch": true,
-    "verbose": true
+    "verbose": true,
+    "exitcrash": true,
+    "ignore": [".git", "node_modules/**/node_modules", "logs", "*.log"],
+    "events": {
+        "restart": "echo \"봇이 변경사항으로 인해 재시작됩니다.\"",
+        "crash": "echo \"봇이 충돌했습니다. 자동으로 재시작합니다.\""
+    },
+    "env": {
+        "NODE_ENV": "development"
+    }
 }

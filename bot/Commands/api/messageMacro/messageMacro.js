@@ -131,7 +131,9 @@ async function getContents(buttonId) {
 		if (validContents.length === 0) {
 			console.warn(`⚠️ 버튼에 유효한 콘텐츠가 없음. 원본 응답:`, response);
 		}
+		validContents.sort((a, b) => (a.index || 0) - (b.index || 0));
 
+		console.log(validContents);
 		return validContents;
 	} catch (error) {
 		// 오류 로그 및 재전파

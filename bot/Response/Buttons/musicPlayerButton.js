@@ -71,7 +71,16 @@ module.exports = {
 					break;
 				case `exit`:
 					const isdel = await musicData.destroy();
-					if (this.interactionMsg.deletable && !this.interactionMsg.system) await interaction.message.delete();
+					if (this.interactionMsg) {
+						// 시스템 메시지 확인 추가
+						if (this.interactionMsg.deletable && !this.interactionMsg.system) {
+							this.interactionMsg.delete().catch(err => console.error('메시지 삭제 오류:', err));
+							return true;
+						} else {
+							console.log("시스템 메시지이거나 삭제할 수 없는 메시지입니다.");
+							return false;
+						}
+					}
 					await interaction.client.serverMusicData.delete(guildId);
 					return;
 			}
@@ -87,6 +96,16 @@ module.exports = {
 
 		musicData.interactionMsg = interaction.message;
 		const compData = await musicData.reply();
-		await interaction.update(compData);
+		try {
+			await interaction.update(compData);
+		} catch (e) {
+			if (e.code === 10062) {
+				// 토큰 만료된 경우, followUp 으로 대체
+				await interaction.followUp({ content: "버튼 업데이트 시간이 초과되었습니다.", ephemeral: true })
+					.catch(err => { if (err.code !== 10062) console.error("fallback followUp failed:", err); });
+			} else {
+				console.error("interaction.update failed:", e);
+			}
+		}
 	}
 };
