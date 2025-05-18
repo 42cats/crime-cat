@@ -75,8 +75,14 @@ export const boardPostService = {
         }
     },
 
-    // 게시글 생성 (추후 필요시 구현)
-    async createBoardPost(postData: any) {
+    // 게시글 생성
+    async createBoardPost(postData: {
+        subject: string;
+        content: string;
+        boardType: BoardType;
+        postType: string;
+        secret: boolean;
+    }) {
         try {
             return await apiClient.post("/posts", postData);
         } catch (error) {
@@ -97,6 +103,24 @@ export const boardPostService = {
     async deleteBoardPost(id: string) {
         try {
             return await apiClient.delete(`/posts/${id}`);
+        } catch (error) {
+            return handleApiError(error);
+        }
+    },
+
+    // 게시글 좋아요 토글
+    async toggleLike(id: string) {
+        try {
+            return await apiClient.post(`/posts/${id}/like`);
+        } catch (error) {
+            return handleApiError(error);
+        }
+    },
+
+    // 게시글 좋아요 상태 확인
+    async getLikeStatus(id: string) {
+        try {
+            return await apiClient.get(`/posts/${id}/like`);
         } catch (error) {
             return handleApiError(error);
         }

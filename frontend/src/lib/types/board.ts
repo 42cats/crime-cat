@@ -13,6 +13,19 @@ export enum PostType {
     EVENT = "EVENT", // 이벤트
 }
 
+export enum DetailedPostType {
+    GENERAL = "GENERAL", // 일반
+    QUESTION = "QUESTION", // 질문
+    PHOTO = "PHOTO", // 사진
+    SECRET = "SECRET", // 비밀
+    PROMOTION = "PROMOTION", // 홍보
+    RECRUIT = "RECRUIT", // 모집
+    CRIME_SCENE = "CRIME_SCENE", // 크라임씬
+    MURDER_MYSTERY = "MURDER_MYSTERY", // 머더미스터리
+    ESCAPE_ROOM = "ESCAPE_ROOM", // 방탈출
+    REAL_WORLD = "REAL_WORLD" // 리얼월드
+}
+
 export enum BoardPostSortType {
     LATEST = "LATEST", // 최신순
     OLDEST = "OLDEST", // 오래된순

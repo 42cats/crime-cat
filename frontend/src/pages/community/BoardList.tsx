@@ -10,6 +10,7 @@ import BoardHeader from '@/components/boards/BoardHeader';
 import BoardFilter from '@/components/boards/BoardFilter';
 import BoardPostItem from '@/components/boards/BoardPostItem';
 import BoardPagination from '@/components/boards/BoardPagination';
+import { useAuth } from '@/hooks/useAuth';
 
 const BOARD_INFO = {
   [BoardType.QUESTION]: {
@@ -33,6 +34,8 @@ interface BoardListProps {
 const BoardList: React.FC<BoardListProps> = ({ boardType }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { hasRole, isAuthenticated } = useAuth();
+
   
   // URL 쿼리 파라미터 파싱
   const queryParams = new URLSearchParams(location.search);
@@ -137,17 +140,32 @@ const BoardList: React.FC<BoardListProps> = ({ boardType }) => {
               
               <TabsContent value="posts" className="p-0 mt-0">
                 <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-2">
-                  <BoardFilter 
-                    sortType={sortType}
-                    onSortChange={handleSortChange}
-                    keyword={keyword}
-                    onKeywordChange={handleKeywordChange}
-                    onSearch={handleSearch}
-                  />
-                  
-                  <Button onClick={() => navigate(`/community/${boardType.toLowerCase()}/new`)}>
+                <BoardFilter 
+                sortType={sortType}
+                onSortChange={handleSortChange}
+                keyword={keyword}
+                onKeywordChange={handleKeywordChange}
+                onSearch={handleSearch}
+                />
+                
+                {isAuthenticated && hasRole(['USER', 'MANAGER', 'ADMIN']) ? (
+                <Button onClick={() => {
+                const boardPath = boardType === BoardType.CHAT ? 'free' : 
+                  boardType === BoardType.QUESTION ? 'questions' : 
+                                 boardType === BoardType.CREATOR ? 'creators' : '';
+                    navigate(`/community/${boardPath}/new`);
+                }}>
                     글쓰기
-                  </Button>
+                      </Button>
+                    ) : isAuthenticated ? (
+                      <Button disabled className="cursor-not-allowed">
+                        권한 부족
+                      </Button>
+                    ) : (
+                      <Button onClick={() => navigate('/login')}>
+                        로그인하기
+                      </Button>
+                    )}
                 </div>
                 
                 {/* 게시글 헤더 (테이블 헤더) */}
