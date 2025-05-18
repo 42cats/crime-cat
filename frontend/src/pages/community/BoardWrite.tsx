@@ -96,6 +96,37 @@ interface BoardWriteProps {
     boardType?: BoardType;
 }
 
+// 게시판 유형별 사용 가능한 게시글 유형 정의
+const BOARD_POST_TYPES: Record<BoardType, DetailedPostType[]> = {
+    [BoardType.NONE]: [DetailedPostType.GENERAL],
+    [BoardType.CHAT]: [
+        DetailedPostType.GENERAL,
+        DetailedPostType.PHOTO,
+        DetailedPostType.SECRET,
+        DetailedPostType.PROMOTION,
+        DetailedPostType.RECRUIT,
+        DetailedPostType.CRIME_SCENE,
+        DetailedPostType.MURDER_MYSTERY,
+        DetailedPostType.ESCAPE_ROOM,
+        DetailedPostType.REAL_WORLD,
+    ],
+    [BoardType.QUESTION]: [
+        DetailedPostType.QUESTION,
+        DetailedPostType.GENERAL,
+        DetailedPostType.SECRET,
+    ],
+    [BoardType.CREATOR]: [
+        DetailedPostType.GENERAL,
+        DetailedPostType.CRIME_SCENE,
+        DetailedPostType.QUESTION,
+        DetailedPostType.MURDER_MYSTERY,
+        DetailedPostType.ESCAPE_ROOM,
+        DetailedPostType.REAL_WORLD,
+        DetailedPostType.PROMOTION,
+        DetailedPostType.RECRUIT,
+    ],
+};
+
 const POST_TYPE_LABELS: Record<string, string> = {
     [DetailedPostType.GENERAL]: "일반",
     [DetailedPostType.QUESTION]: "질문",
@@ -448,7 +479,13 @@ const EditorToolbar = ({ editor }: { editor: TiptapEditor | null }) => {
     );
 };
 
-const TiptapEditor = ({ onChange, formValues }: { onChange: (html: string) => void; formValues: any }) => {
+const TiptapEditor = ({
+    onChange,
+    formValues,
+}: {
+    onChange: (html: string) => void;
+    formValues: any;
+}) => {
     const [isMarkdownView, setIsMarkdownView] = useState(false);
     const [markdownText, setMarkdownText] = useState("");
     const [previewContent, setPreviewContent] = useState("");
@@ -464,8 +501,8 @@ const TiptapEditor = ({ onChange, formValues }: { onChange: (html: string) => vo
     const editor = useEditor({
         editorProps: {
             attributes: {
-                class: 'outline-none focus:outline-none focus-visible:outline-none',
-                spellcheck: 'false'
+                class: "outline-none focus:outline-none focus-visible:outline-none",
+                spellcheck: "false",
             },
         },
         extensions: [
@@ -591,23 +628,23 @@ const TiptapEditor = ({ onChange, formValues }: { onChange: (html: string) => vo
             }
         },
     });
-    
+
     // 에디터 초기화 후 ResizeObserver 설정
     useEffect(() => {
         if (!editor || !editorContainerRef.current) return;
-        
+
         // 포커스 시 윤곽선 제거
         const editorView = editor.view;
         if (editorView && editorView.dom) {
-            editorView.dom.style.outline = 'none';
-            editorView.dom.style.boxShadow = 'none';
+            editorView.dom.style.outline = "none";
+            editorView.dom.style.boxShadow = "none";
         }
-        
+
         // 화면 크기 변경 시 처리
         const resizeObserver = new ResizeObserver(() => {
             if (editorView && editorView.dom) {
-                editorView.dom.style.outline = 'none';
-                editorView.dom.style.boxShadow = 'none';
+                editorView.dom.style.outline = "none";
+                editorView.dom.style.boxShadow = "none";
             }
         });
 
@@ -627,7 +664,7 @@ const TiptapEditor = ({ onChange, formValues }: { onChange: (html: string) => vo
             const html = md.render(mdText);
             onChange(html);
             setPreviewContent(html);
-            
+
             // 에디터 콘텐츠 업데이트 (시각적 편집기 전환 시 적용)
             if (editor) {
                 editor.commands.setContent(html, {
@@ -642,40 +679,46 @@ const TiptapEditor = ({ onChange, formValues }: { onChange: (html: string) => vo
     // 키 입력 이벤트 처리 함수 (마크다운 단축키 처리)
     const handleKeyDown = (event: React.KeyboardEvent) => {
         // 테스트용 기능 - 실제로는 Tiptap의 editorProps.handleDOMEvents 내에서 처리하는 것이 좋음
-        if (event.key === '#') {
-            const lineStart = event.currentTarget.selectionStart === 0 || 
-                             event.currentTarget.value.charAt(event.currentTarget.selectionStart - 1) === '\n';
+        if (event.key === "#") {
+            const lineStart =
+                event.currentTarget.selectionStart === 0 ||
+                event.currentTarget.value.charAt(
+                    event.currentTarget.selectionStart - 1
+                ) === "\n";
             if (lineStart) {
                 // # 입력 시 제목 형식으로 변환하기 위한 로직
-                console.log('마크다운 제목 처리');
+                console.log("마크다운 제목 처리");
             }
         }
     };
 
     return (
-        <div ref={editorContainerRef} className="editor-container border border-gray-200 dark:border-gray-800 rounded-md overflow-hidden shadow-sm">
+        <div
+            ref={editorContainerRef}
+            className="editor-container border border-gray-200 dark:border-gray-800 rounded-md overflow-hidden shadow-sm"
+        >
             <Tabs
-            defaultValue="visual"
-            onValueChange={(value) =>
-            setIsMarkdownView(value === "markdown")
-            }
+                defaultValue="visual"
+                onValueChange={(value) =>
+                    setIsMarkdownView(value === "markdown")
+                }
             >
-            <div className="flex items-center justify-between bg-muted/20 border-b border-gray-200 dark:border-gray-700">
-                <TabsList className="px-2 py-1">
-                    <TabsTrigger
-                        value="visual"
-                        className="px-3 py-1 text-sm"
-                    >
-                        편집기
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="preview"
-                        className="px-3 py-1 text-sm"
-                    >
-                        미리보기
-                    </TabsTrigger>
-                </TabsList>
-        </div>
+                <div className="flex items-center justify-between bg-muted/20 border-b border-gray-200 dark:border-gray-700">
+                    <TabsList className="px-2 py-1">
+                        <TabsTrigger
+                            value="visual"
+                            className="px-3 py-1 text-sm"
+                        >
+                            편집기
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="preview"
+                            className="px-3 py-1 text-sm"
+                        >
+                            미리보기
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
 
                 <TabsContent value="visual" className="p-0 m-0">
                     <EditorToolbar editor={editor} />
@@ -684,7 +727,12 @@ const TiptapEditor = ({ onChange, formValues }: { onChange: (html: string) => vo
                             editor={editor}
                             className="prose prose-sm sm:prose dark:prose-invert max-w-none p-4 min-h-[400px] outline-none focus:outline-none focus:ring-0 border-none ProseMirror"
                             spellCheck="false"
-                            style={{ boxSizing: 'border-box', transition: 'none', display: 'block', width: '100%' }}
+                            style={{
+                                boxSizing: "border-box",
+                                transition: "none",
+                                display: "block",
+                                width: "100%",
+                            }}
                         />
                     </div>
                 </TabsContent>
@@ -721,6 +769,17 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
         propsBoardType ||
         (urlBoardType ? (urlBoardType as BoardType) : BoardType.CHAT);
 
+    // 게시판 유형에 따른 기본 게시글 유형 선택
+    const getDefaultPostType = () => {
+        if (
+            !BOARD_POST_TYPES[boardType] ||
+            BOARD_POST_TYPES[boardType].length === 0
+        ) {
+            return DetailedPostType.GENERAL;
+        }
+        return BOARD_POST_TYPES[boardType][0];
+    };
+
     const {
         register,
         handleSubmit,
@@ -730,7 +789,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
         defaultValues: {
             subject: "",
             content: "",
-            postType: DetailedPostType.GENERAL,
+            postType: getDefaultPostType(),
             secret: false,
         },
     });
@@ -871,7 +930,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                                 게시글 유형
                             </Label>
                             <Select
-                                defaultValue={DetailedPostType.GENERAL}
+                                defaultValue={getDefaultPostType()}
                                 onValueChange={(value) =>
                                     setValue("postType", value)
                                 }
@@ -880,10 +939,13 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                                     <SelectValue placeholder="게시글 유형 선택" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {Object.entries(POST_TYPE_LABELS).map(
-                                        ([type, label]) => (
-                                            <SelectItem key={type} value={type}>
-                                                {label}
+                                    {BOARD_POST_TYPES[boardType].map(
+                                        (postType) => (
+                                            <SelectItem
+                                                key={postType}
+                                                value={postType}
+                                            >
+                                                {POST_TYPE_LABELS[postType]}
                                             </SelectItem>
                                         )
                                     )}
@@ -916,11 +978,14 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                             >
                                 내용
                             </Label>
-                            <TiptapEditor onChange={handleEditorChange} formValues={{
-                                subject: register("subject").value,
-                                postType: register("postType").value,
-                                secret: register("secret").value
-                            }} />
+                            <TiptapEditor
+                                onChange={handleEditorChange}
+                                formValues={{
+                                    subject: register("subject").value,
+                                    postType: register("postType").value,
+                                    secret: register("secret").value,
+                                }}
+                            />
                             {errors.content && (
                                 <p className="text-sm text-red-500 mt-1">
                                     {errors.content.message}
