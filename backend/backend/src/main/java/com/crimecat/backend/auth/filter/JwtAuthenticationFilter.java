@@ -94,7 +94,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private boolean isExcludedPath(String uri) {
         return uri.startsWith("/bot/v1/")
-            || uri.startsWith("/login/")
+            || uri.startsWith("/login")
             || uri.startsWith("/api/v1/auth/reissue")
             || uri.startsWith("/api/v1/auth/logout")
             || uri.startsWith("/actuator/health")

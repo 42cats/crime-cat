@@ -37,4 +37,6 @@ public interface WebUserRepository extends JpaRepository<WebUser, UUID> {
      * @return 페이징된 WebUser 목록
      */
     Page<WebUser> findByDiscordUserSnowflake(String discordSnowflake, Pageable pageable);
+
+    Optional<WebUser> findByDiscordUserSnowflake(String discordUserSnowflake);
 }
