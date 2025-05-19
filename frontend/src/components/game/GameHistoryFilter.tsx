@@ -146,26 +146,12 @@ const GameHistoryFilter: React.FC<GameHistoryFilterProps> = ({
         hasTheme !== null;
 
     return (
-        <div className="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center w-full mb-4">
-            {/* 검색 조건 선택
-      <div className="flex items-center mr-0 md:mr-2 w-full md:w-auto">
-        <Select 
-          value={searchField} 
-          onValueChange={onSearchFieldChange}
-        >
-          <SelectTrigger className="w-full md:w-[140px] h-9 text-xs">
-            <SelectValue placeholder="검색 조건" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="guildName">길드 이름</SelectItem>
-            <SelectItem value="characterName">캐릭터 이름</SelectItem>
-            <SelectItem value="themeName">테마 이름</SelectItem>
-          </SelectContent>
-        </Select>
-      </div> */}
+        <div className="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center md:justify-between w-full mb-4">
+            {/* 왼쪽 여백 - 데스크톱에서만 표시 */}
+            <div className="hidden md:block md:w-1/4"></div>
 
-            {/* 검색창 */}
-            <div className="relative flex-grow max-w-full md:max-w-sm">
+            {/* 검색창 - 중앙 정렬 */}
+            <div className="w-full md:w-2/4 mx-auto">
                 <div className="relative flex items-center w-full">
                     <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -188,8 +174,9 @@ const GameHistoryFilter: React.FC<GameHistoryFilterProps> = ({
                 </div>
             </div>
 
-            {/* 필터 드롭다운 */}
-            <div className="md:ml-2 flex items-center">
+            {/* 필터 및 정렬 영역 - 항상 가로 배치 */}
+            <div className="flex flex-row justify-end items-center space-x-2 w-full md:w-1/4 md:mr-4">
+                {/* 필터 버튼 */}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button
@@ -372,10 +359,8 @@ const GameHistoryFilter: React.FC<GameHistoryFilterProps> = ({
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-            </div>
 
-            {/* 정렬 드롭다운 */}
-            <div className="md:ml-2 flex items-center">
+                {/* 정렬 드롭다운 */}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button
