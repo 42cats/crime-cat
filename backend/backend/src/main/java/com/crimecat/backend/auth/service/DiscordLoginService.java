@@ -34,9 +34,9 @@ public class DiscordLoginService extends BaseDiscordOAuth2UserService {
         // 사용자가 존재하는지 확인
         Optional<WebUser> existingUser = webUserRepository.findByDiscordUserSnowflake(discordId);
         if (existingUser.isEmpty()) {
-            log.error("사용자를 찾을 수 없습니다. 회원가입이 필요합니다.");
-            throw new OAuth2AuthenticationException(new OAuth2Error("not_registered"), 
-                "해당 Discord 계정으로 가입된 사용자가 없습니다. 회원가입을 진행해주세요.");
+            log.error("❌ 사용자를 찾을 수 없습니다. 회원가입이 필요합니다.");
+            throw new OAuth2AuthenticationException(new OAuth2Error("account_not_found"), 
+                "해당 Discord 계정으로 가입된 사용자가 없습니다.");
         }
         
         // 로그인 처리 (마지막 로그인 시간 업데이트)

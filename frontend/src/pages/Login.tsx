@@ -73,18 +73,6 @@ const Login: React.FC = () => {
         loginWithDiscord("signup");
     };
 
-    // OAuth 인증 후 에러 응답 처리 함수
-    const handleOAuthError = (error) => {
-        setErrorMessage(error.message || "인증 중 오류가 발생했습니다.");
-        setErrorDialogOpen(true);
-        setIsLoggingIn(false);
-    };
-
-    // 에러 모달 닫기 핸들러
-    const closeErrorDialog = () => {
-        setErrorDialogOpen(false);
-    };
-
     const from = location.state?.from?.pathname || "/dashboard";
 
     useEffect(() => {
@@ -382,26 +370,6 @@ const Login: React.FC = () => {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
-
-                {/* 에러 모달 */}
-                <AlertDialog
-                    open={errorDialogOpen}
-                    onOpenChange={setErrorDialogOpen}
-                >
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>인증 오류</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                {errorMessage}
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogAction onClick={closeErrorDialog}>
-                                확인
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
             </div>
         </PageTransition>
     );

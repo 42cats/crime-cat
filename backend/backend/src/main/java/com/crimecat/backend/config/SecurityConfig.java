@@ -147,7 +147,21 @@ public class SecurityConfig {
                     .userInfoEndpoint(userInfo -> 
                         userInfo.userService(new DelegatingOAuth2UserService()))
                     .successHandler(new DelegatingAuthenticationSuccessHandler())
-                    .failureUrl("https://"+ serviceUrlConfig.getDomain() + "/login")
+                    .failureHandler((request, response, exception) -> {
+                        // OAuth2 인증 실패 처리
+                        String errorType = "unknown_error";
+                        if (exception instanceof OAuth2AuthenticationException) {
+                            OAuth2Error error = ((OAuth2AuthenticationException) exception).getError();
+                            errorType = error.getErrorCode();
+                        }
+                        
+                        // 특정 에러 타입에 따라 다른 페이지로 리다이렉션
+                        if ("account_not_found".equals(errorType)) {
+                            response.sendRedirect("https://" + serviceUrlConfig.getDomain() + "/login-error?type=account_not_found");
+                        } else {
+                            response.sendRedirect("https://" + serviceUrlConfig.getDomain() + "/login-error?type=" + errorType);
+                        }
+                    })
             )
         .addFilterBefore(discordBotTokenFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

@@ -23,6 +23,7 @@ import ThemeDetail from "@/pages/themes/ThemeDetail";
 import CreateTheme from "@/pages/themes/CreateTheme";
 import EditTheme from "@/pages/themes/EditTheme";
 import Login from "@/pages/Login";
+import LoginError from "@/pages/LoginError";
 import NotFound from "@/pages/NotFound";
 import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
@@ -104,6 +105,7 @@ const App = () => (
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/login-error" element={<LoginError />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/donate" element={<DonationPage />} />
               </Route>

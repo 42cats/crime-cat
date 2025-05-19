@@ -34,9 +34,10 @@ public class LoginSuccessHandler extends BaseOAuth2SuccessHandler {
         // 새로 가입한 사용자인지 확인 (createdAt과 lastLoginAt이 같으면 신규 사용자로 간주)
         if (webUser.getCreatedAt() != null && 
             webUser.getCreatedAt().equals(webUser.getLastLoginAt())) {
-            log.error("신규 사용자가 로그인을 시도했습니다. 회원가입이 필요합니다.");
-            AuthController.setOAuthError("not_registered", "해당 Discord 계정으로 가입된 사용자가 없습니다. 회원가입을 진행해주세요.");
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            log.error("❌ 신규 사용자가 로그인을 시도했습니다. 유저 어카운트 없음 페이지로 리다이렉션합니다.");
+            // 오류 페이지로 리다이렉션
+            String baseUrl = serviceUrlConfig.getDomain();
+            response.sendRedirect("https://" + baseUrl + "/login-error?type=account_not_found");
             return false;
         }
         
