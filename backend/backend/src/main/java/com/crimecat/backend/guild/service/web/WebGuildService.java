@@ -182,7 +182,10 @@ public class WebGuildService {
           if (apiGuildInfo == null) {
             throw ErrorStatus.INTERNAL_ERROR.asServiceException();
       }
-      
+      } catch (Exception e) {
+          log.error("Discord API 호출 실패: guildId={}, error={}", guildId, e.getMessage(), e);
+          throw ErrorStatus.INTERNAL_ERROR.asServiceException();
+      }
       // 4. 게임 히스토리 조회 (예외 처리 추가)
       long totalCount = 0;
       LocalDateTime latestPlayTime = null;
