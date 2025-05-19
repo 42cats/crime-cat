@@ -28,6 +28,7 @@ import com.crimecat.backend.notification.repository.NotificationRepository;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.service.UserService;
 import com.crimecat.backend.webUser.domain.WebUser;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -100,7 +101,33 @@ public class WebGameHistoryService {
 		if (user == null) {
 			throw  ErrorStatus.USER_NOT_FOUND.asServiceException();
 		}
-		return gameHistoryRepository.findByUserSnowflakeAndKeyword(discordSnowflake,keyword, pageable).map(UserGameHistoryToUserDto::from);
+		return gameHistoryRepository.findByUserSnowflakeAndKeyword(discordSnowflake, keyword, pageable).map(UserGameHistoryToUserDto::from);
+	}
+	
+	@Transactional(readOnly = true)
+	public Page<UserGameHistoryToUserDto> getUserCrimeSceneGameHistoryWithFilters(
+			String discordSnowflake, 
+			Pageable pageable, 
+			String keyword, 
+			Boolean winFilter, 
+			LocalDateTime startDate, 
+			LocalDateTime endDate, 
+			Boolean hasTheme) {
+			
+		User user = userService.findUserByDiscordSnowflake(discordSnowflake);
+		if (user == null) {
+			throw ErrorStatus.USER_NOT_FOUND.asServiceException();
+		}
+		
+		return gameHistoryRepository.findByUserSnowflakeWithFilters(
+				discordSnowflake, 
+				keyword, 
+				winFilter, 
+				startDate, 
+				endDate, 
+				hasTheme, 
+				pageable
+		).map(UserGameHistoryToUserDto::from);
 	}
 
 		@Transactional(readOnly = true)
@@ -117,6 +144,34 @@ public class WebGameHistoryService {
 		} else {
 			page = gameHistoryRepository.findByGuild_Snowflake(guildSnowflake, pageable);
 		}
+
+		return page.map(UserGameHistoryToOwnerDto::from);
+	}
+	
+	@Transactional(readOnly = true)
+	public Page<UserGameHistoryToOwnerDto> WebGetGuildOwnerHistoryWithFilters(
+			User owner, 
+			String guildSnowflake, 
+			Pageable pageable, 
+			String keyword,
+			Boolean winFilter, 
+			LocalDateTime startDate,
+			LocalDateTime endDate, 
+			Boolean hasTheme) {
+
+		Guild guild = guildRepository.findBySnowflake(guildSnowflake).orElseThrow(ErrorStatus.GUILD_NOT_FOUND::asServiceException);
+		if(!guild.getOwnerSnowflake().equals(owner.getDiscordSnowflake())){
+			throw ErrorStatus.NOT_GUILD_OWNER.asServiceException();
+		}
+
+		Page<GameHistory> page = gameHistoryRepository.findByGuildSnowflakeWithFilters(
+				guildSnowflake, 
+				keyword, 
+				winFilter, 
+				startDate, 
+				endDate, 
+				hasTheme, 
+				pageable);
 
 		return page.map(UserGameHistoryToOwnerDto::from);
 	}
