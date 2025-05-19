@@ -1,6 +1,7 @@
 package com.crimecat.backend.webUser.service;
 
 import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.permission.service.PermissionService;
 import com.crimecat.backend.point.service.PointHistoryService;
 import com.crimecat.backend.storage.StorageFileType;
@@ -17,6 +18,7 @@ import com.crimecat.backend.webUser.dto.NicknameCheckResponseDto;
 import com.crimecat.backend.webUser.dto.NotificationSettingsRequestDto;
 import com.crimecat.backend.webUser.dto.NotificationSettingsResponseDto;
 import com.crimecat.backend.webUser.dto.NotificationToggleRequest;
+import com.crimecat.backend.webUser.dto.ProfileDetailDto;
 import com.crimecat.backend.webUser.dto.UserProfileInfoResponseDto;
 import com.crimecat.backend.webUser.dto.UserSearchResponseDto;
 import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
@@ -27,11 +29,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -53,11 +53,10 @@ public class WebUserService {
     private final PermissionService permissionService;
     private final UserPermissionService userPermissionService;
     private final StorageService storageService;
+  private final GameHistoryRepository gameHistoryRepository;
 
 
-
-
-    public ResponseEntity<Map<String, Object>> isDailyCheck(String userId) {
+  public ResponseEntity<Map<String, Object>> isDailyCheck(String userId) {
         webUserRepository.findById(UUID.fromString(userId))
                 .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
         Optional<LocalDateTime> existing = userDailyCheckUtil.load(userId);
@@ -354,5 +353,18 @@ public class WebUserService {
     
     // 모든 문자가 숫자인지 확인
     return value.matches("^\\d+$");
+  }
+
+  public ProfileDetailDto getUserProfileDetail(UUID userId) {
+    boolean authenticated = AuthenticationUtil.isAuthenticated();
+    WebUser webUser = webUserRepository.findById(userId)
+        .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+    Integer playCount = gameHistoryRepository.countGameHistoriesByUser(webUser.getUser());
+    if(authenticated){
+      return ProfileDetailDto.from(webUser, playCount);
+    }
+    else {
+      return ProfileDetailDto.publicFrom(webUser, playCount);
+    }
   }
 }

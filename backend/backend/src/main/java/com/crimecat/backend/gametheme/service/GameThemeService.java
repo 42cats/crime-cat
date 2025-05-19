@@ -8,12 +8,15 @@ import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.domain.GameThemeRecommendation;
 import com.crimecat.backend.gametheme.domain.MakerTeamMember;
 import com.crimecat.backend.gametheme.dto.AddGameThemeRequest;
+import com.crimecat.backend.gametheme.dto.CrimesceneThemeSummeryDto;
+import com.crimecat.backend.gametheme.dto.CrimesceneThemeSummeryListDto;
 import com.crimecat.backend.gametheme.dto.GameThemeDetailDto;
 import com.crimecat.backend.gametheme.dto.GameThemeDto;
 import com.crimecat.backend.gametheme.dto.GetGameThemeResponse;
 import com.crimecat.backend.gametheme.dto.GetGameThemesResponse;
 import com.crimecat.backend.gametheme.dto.UpdateGameThemeRequest;
 import com.crimecat.backend.gametheme.enums.ThemeType;
+import com.crimecat.backend.gametheme.repository.CrimesceneThemeRepository;
 import com.crimecat.backend.gametheme.repository.GameThemeRecommendationRepository;
 import com.crimecat.backend.gametheme.repository.GameThemeRepository;
 import com.crimecat.backend.gametheme.sort.GameThemeSortType;
@@ -23,8 +26,10 @@ import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.transaction.Transactional;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -46,6 +51,7 @@ public class GameThemeService {
     private final GameThemeRecommendationRepository themeRecommendationRepository;
     private final ViewCountService viewCountService;
     private final GameHistoryRepository gameHistoryRepository;
+    private final CrimesceneThemeRepository crimesceneThemeRepository;
 
     @Transactional
     public void addGameTheme(MultipartFile file, AddGameThemeRequest request) {
@@ -201,4 +207,24 @@ public class GameThemeService {
         return themeRecommendationRepository.findByWebUserIdAndThemeId(webUserId, themeId).isPresent();
     }
 
+    public CrimesceneThemeSummeryListDto getGameThemeSummery(UUID userId) {
+        // 사용자가 속한 팀 ID 목록 가져오기
+        List<UUID> teamIds = teamService.getTargetTeams(userId);
+        
+        // 각 팀이 만든 크라임씬 테마를 중복 없이 Set으로 모으기
+        Set<CrimesceneTheme> themesSet = new HashSet<>();
+        for (UUID teamId : teamIds) {
+            List<CrimesceneTheme> themes = crimesceneThemeRepository.findByTeamId(teamId);
+            themesSet.addAll(themes);
+        }
+        
+        // 각 테마를 DTO로 변환하여 리스트로 만들기
+        List<CrimesceneThemeSummeryDto> themeDtos = themesSet.stream()
+            .filter(theme -> !theme.isDeleted()) // 삭제된 테마 필터링
+            .map(CrimesceneThemeSummeryDto::from)
+            .toList();
+        
+        // 리스트 DTO로 변환하여 반환
+        return CrimesceneThemeSummeryListDto.from(themeDtos);
+    }
 }

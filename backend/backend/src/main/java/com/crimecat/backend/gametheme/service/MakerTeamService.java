@@ -1,20 +1,18 @@
 package com.crimecat.backend.gametheme.service;
 
-import com.crimecat.backend.gametheme.dto.*;
 import com.crimecat.backend.exception.ErrorStatus;
-import com.crimecat.backend.exception.ServiceException;
 import com.crimecat.backend.gametheme.domain.MakerTeam;
 import com.crimecat.backend.gametheme.domain.MakerTeamMember;
+import com.crimecat.backend.gametheme.dto.*;
 import com.crimecat.backend.gametheme.repository.MakerTeamMemberRepository;
 import com.crimecat.backend.gametheme.repository.MakerTeamRepository;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.transaction.Transactional;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -162,7 +160,11 @@ public class MakerTeamService {
                         .toList()
         );
     }
-
+    public List<UUID> getTargetTeams(UUID userId) {
+        return teamMemberRepository.findByWebUserId(userId).stream()
+                .map(v-> v.getTeam().getId())
+                .toList();
+    }
     @Transactional
     public void updateMember(UUID teamId, UUID memberId, UpdateMemberRequest updateInfo) {
         MakerTeam team = teamRepository.findById(teamId).orElseThrow(ErrorStatus.TEAM_NOT_FOUND::asServiceException);

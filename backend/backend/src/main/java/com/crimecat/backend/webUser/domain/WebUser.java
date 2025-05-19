@@ -215,4 +215,11 @@ public class WebUser implements UserDetails, OAuth2User {
             this.bio = request.getBio();
         }
     }
+
+    public Map<String,String> getSocialLinks() {
+    if (socialLinks == null || socialLinks.isEmpty()){
+        return new HashMap<>();
+    }
+        return socialLinks;
+    }
 }
