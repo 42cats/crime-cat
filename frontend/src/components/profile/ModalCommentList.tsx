@@ -34,11 +34,13 @@ type CommentSortType = "LATEST" | "OLDEST" | "LIKES";
 const CommentForm = ({ 
     onSubmit, 
     gameThemeId, 
-    isAuthenticated 
+    isAuthenticated,
+    onLoginRequired
 }: { 
     onSubmit: (data: CommentRequest) => Promise<void>, 
     gameThemeId: string,
-    isAuthenticated: boolean 
+    isAuthenticated: boolean,
+    onLoginRequired: () => void
 }) => {
     const [content, setContent] = useState('');
     const [isSpoiler, setIsSpoiler] = useState(false);
@@ -626,6 +628,7 @@ export function ModalCommentList({
                 onSubmit={handleCreateComment}
                 gameThemeId={gameThemeId}
                 isAuthenticated={isAuthenticated}
+                onLoginRequired={onLoginRequired}
             />
             
             <div className="flex-1 overflow-y-auto mt-4">

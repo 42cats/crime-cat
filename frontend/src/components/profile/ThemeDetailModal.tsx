@@ -10,7 +10,9 @@ import {
   ThumbsUp,
   ChevronLeft,
   ChevronRight,
-  Info
+  Info,
+  FileText,
+  Send
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +23,9 @@ import { themesService } from "@/api/themesService";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { gameHistoryService } from "@/api/gameHistoryService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { UTCToKST } from '@/lib/dateFormat';
 
 interface ThemeDetailModalProps {
   theme: CrimesceneThemeSummeryDto;
@@ -39,13 +44,26 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
   userId,
   initialTab = 'info'
 }) => {
+  // 프로필 정보
   const [profile, setProfile] = useState<ProfileDetailDto | null>(null);
+  
+  // 테마 상세 정보
+  const [themeDetail, setThemeDetail] = useState<any>(null);
+  const [themeDetailLoading, setThemeDetailLoading] = useState(false);
+  
+  // UI 상태
   const [activeTab, setActiveTab] = useState<ModalTab>(initialTab);
   const [hasPlayedGame, setHasPlayedGame] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [isLikeLoading, setIsLikeLoading] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  
+  // 기록 요청 관련 상태
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestMessage, setRequestMessage] = useState("");
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+  
   const { user, isAuthenticated } = useAuth();
 
   // 프로필 정보 로드
@@ -56,6 +74,29 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
         .catch(err => console.error("프로필 상세 정보 로드 실패:", err));
     }
   }, [isOpen, userId]);
+  
+  // 테마 상세 정보 불러오기
+  useEffect(() => {
+    const fetchThemeDetail = async () => {
+      if (isOpen && theme.themeId) {
+        setThemeDetailLoading(true);
+        try {
+          const data = await themesService.getThemeById(theme.themeId);
+          setThemeDetail(data);
+          // 메타데이터 업데이트
+          if (data.recommendations !== undefined) {
+            setLikeCount(data.recommendations);
+          }
+        } catch (error) {
+          console.error("테마 상세 정보 불러오기 실패:", error);
+        } finally {
+          setThemeDetailLoading(false);
+        }
+      }
+    };
+
+    fetchThemeDetail();
+  }, [isOpen, theme.themeId]);
 
   // 테마 좋아요 상태 확인
   useEffect(() => {
@@ -86,6 +127,19 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
     checkLikeStatus();
     checkGamePlayed();
   }, [isOpen, theme.themeId, isAuthenticated]);
+
+  // 시간 형식 변환 함수
+  const formatPlayTime = (min: number, max: number): string => {
+    const toHourText = (m: number) => {
+      const h = Math.floor(m / 60);
+      const mm = m % 60;
+      return `${h > 0 ? `${h}시간` : ""}${mm > 0 ? ` ${mm}분` : ""}`.trim();
+    };
+    
+    return min === max
+        ? toHourText(min)
+        : `${toHourText(min)} ~ ${toHourText(max)}`;
+  };
 
   const handleShare = async () => {
     try {
@@ -118,6 +172,35 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
       toast.error("좋아요 처리 중 문제가 발생했습니다");
     } finally {
       setIsLikeLoading(false);
+    }
+  };
+  
+  const handleRequestGame = async () => {
+    if (!requestMessage.trim()) {
+      toast.error("메시지를 입력해주세요");
+      return;
+    }
+
+    setIsSubmittingRequest(true);
+    try {
+      const result = await gameHistoryService.requestGameRecord({
+        gameThemeId: theme.themeId,
+        message: requestMessage,
+      });
+
+      // 백엔드 메시지에 따라 UI 처리
+      if (result.message === "요청이 발송되었습니다.") {
+        toast.success("기록 요청이 성공적으로 전송되었습니다.");
+      } else {
+        toast(result.message);
+      }
+
+      setShowRequestModal(false);
+      setRequestMessage("");
+    } catch (error) {
+      toast.error("요청 전송 실패. 다시 시도해주세요.");
+    } finally {
+      setIsSubmittingRequest(false);
     }
   };
 
@@ -181,7 +264,7 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
               </div>
 
               {/* 탭 메뉴 */}
-              <Tabs defaultValue="info" className="w-full">
+              <Tabs defaultValue={initialTab} className="w-full">
                 <TabsList className="w-full grid grid-cols-2">
                   <TabsTrigger 
                     value="info" 
@@ -200,35 +283,117 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
                 </TabsList>
                 
                 <TabsContent value="info" className="p-4 flex-grow overflow-y-auto">
-                  <h3 className="text-xl font-bold mb-4">
-                    {theme.themeTitle}
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-500">가격</h4>
-                      <p>{theme.themePrice?.toLocaleString()}원</p>
+                  {themeDetailLoading ? (
+                    <div className="flex justify-center py-4">
+                      <svg className="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
                     </div>
-                    
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-500">인원</h4>
-                      <p>
-                        {theme.themeMinPlayer === theme.themeMaxPlayer 
-                          ? `${theme.themeMinPlayer}인` 
-                          : `${theme.themeMinPlayer}~${theme.themeMaxPlayer}인`}
-                      </p>
+                  ) : themeDetail ? (
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-bold mb-4">
+                        {themeDetail.title}
+                      </h3>
+                      
+                      {themeDetail.summary && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-500">설명</h4>
+                          <p className="text-sm whitespace-pre-line">{themeDetail.summary}</p>
+                        </div>
+                      )}
+                      
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-500">카테고리</h4>
+                        <Badge variant="secondary">{themeDetail.type}</Badge>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-500">가격</h4>
+                        <p>{themeDetail.price?.toLocaleString()}원</p>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-500">인원</h4>
+                        <p>
+                          {themeDetail.playersMin === themeDetail.playersMax 
+                            ? `${themeDetail.playersMin}인` 
+                            : `${themeDetail.playersMin}~${themeDetail.playersMax}인`}
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-500">플레이 시간</h4>
+                        <p>
+                          {formatPlayTime(themeDetail.playTimeMin, themeDetail.playTimeMax)}
+                        </p>
+                      </div>
+                      
+                      {themeDetail.tags?.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-500">태그</h4>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {themeDetail.tags.map((tag: string, idx: number) => (
+                              <Badge key={idx} variant="outline">#{tag}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex flex-col gap-2 mt-4">
+                        {user?.id && !hasPlayedGame && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowRequestModal(true)}
+                            className="text-sm"
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            기록 요청
+                          </Button>
+                        )}
+                        
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="text-sm"
+                          onClick={() => window.open(`/themes/crimescene/${theme.themeId}`, '_blank')}
+                        >
+                          테마 상세 페이지로 이동
+                        </Button>
+                      </div>
                     </div>
-                    
-                    <div className="pt-4 border-t">
-                      <Button
-                        variant="default"
-                        className="w-full"
-                        onClick={() => window.open(`/themes/crimescene/${theme.themeId}`, '_blank')}
-                      >
-                        테마 상세 페이지로 이동
-                      </Button>
+                  ) : (
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-bold mb-4">
+                        {theme.themeTitle}
+                      </h3>
+                      
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-500">가격</h4>
+                        <p>{theme.themePrice?.toLocaleString()}원</p>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-500">인원</h4>
+                        <p>
+                          {theme.themeMinPlayer === theme.themeMaxPlayer 
+                            ? `${theme.themeMinPlayer}인` 
+                            : `${theme.themeMinPlayer}~${theme.themeMaxPlayer}인`}
+                        </p>
+                      </div>
+                      
+                      <div className="pt-4 border-t">
+                        <Button
+                          variant="default"
+                          className="w-full"
+                          onClick={() => window.open(`/themes/crimescene/${theme.themeId}`, '_blank')}
+                        >
+                          테마 상세 페이지로 이동
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="comments" className="h-full overflow-hidden">
@@ -270,6 +435,52 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
                 </div>
               </div>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 기록 요청 모달 */}
+      <Dialog
+        open={showRequestModal}
+        onOpenChange={(open) => {
+          setShowRequestModal(open);
+          if (!open) setRequestMessage("");
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogTitle>기록 요청</DialogTitle>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="request-message">요청 메시지</Label>
+              <Textarea
+                id="request-message"
+                placeholder="기록 요청 내용을 작성해주세요..."
+                value={requestMessage}
+                onChange={(e) => setRequestMessage(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowRequestModal(false)}
+            >
+              취소
+            </Button>
+            <Button
+              onClick={handleRequestGame}
+              disabled={isSubmittingRequest || !requestMessage.trim()}
+            >
+              {isSubmittingRequest ? (
+                <>전송 중...</>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  요청 전송
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
