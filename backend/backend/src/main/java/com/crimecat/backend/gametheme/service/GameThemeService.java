@@ -143,6 +143,11 @@ public class GameThemeService {
         }
         AuthenticationUtil.validateCurrentUserMatches(gameTheme.getAuthorId());
         request.update(gameTheme);
+
+        if (gameTheme instanceof CrimesceneTheme) {
+            updateGameHistoriesForCrimesceneTheme((CrimesceneTheme) gameTheme);
+        }
+
         if (file != null && !file.isEmpty()) {
             String path = storageService.storeAt(StorageFileType.GAME_THEME, file, gameTheme.getId().toString());
             gameTheme.setThumbnail(path);
