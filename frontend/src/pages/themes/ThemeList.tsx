@@ -10,6 +10,13 @@ import { Button } from "@/components/ui/button";
 
 const PAGE_SIZE = 9;
 
+const CATEGORY_LABELS: Record<Theme["type"], string> = {
+  CRIMESCENE: "크라임씬 테마",
+  ESCAPE_ROOM: "방탈출 테마",
+  MURDER_MYSTERY: "머더미스터리 테마",
+  REALWORLD: "리얼월드 테마",
+};
+
 const ThemeList: React.FC = () => {
   const navigate = useNavigate();
   const { category } = useParams<{ category: string }>();
@@ -84,7 +91,7 @@ const ThemeList: React.FC = () => {
     return (
       <PageTransition>
         <div className="container mx-auto px-6 py-20">
-          <h1 className="text-3xl font-bold text-center mb-10">{validCategory} 테마</h1>
+          <h1 className="text-3xl font-bold text-center mb-10">{CATEGORY_LABELS[validCategory]}</h1>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: PAGE_SIZE }).map((_, i) => (
               <Skeleton key={i} className="h-80 rounded-xl" />
@@ -110,12 +117,12 @@ const ThemeList: React.FC = () => {
     <PageTransition>
       <div className="container mx-auto px-6 py-20">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">{validCategory} 테마</h1>
+          <h1 className="text-3xl font-bold">{CATEGORY_LABELS[validCategory]}</h1>
           <Button onClick={() => navigate("/themes/new", { state: { category, page } })}>
             글쓰기
           </Button>
         </div>
-  
+
         {data.themes.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             {data.themes.map((theme, i) => (
@@ -123,11 +130,26 @@ const ThemeList: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <p className="text-lg text-muted-foreground">등록된 테마가 없습니다.</p>
+          <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-12 w-12 text-muted-foreground/50 mb-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+              />
+            </svg>
+            <p className="text-lg font-semibold">아직 게시글이 없습니다.</p>
+            <p className="text-sm">가장 먼저 글을 작성해보세요.</p>
           </div>
         )}
-  
+
         {renderPagination()}
       </div>
     </PageTransition>

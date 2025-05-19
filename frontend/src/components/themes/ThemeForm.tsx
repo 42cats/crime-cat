@@ -24,6 +24,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { X } from "lucide-react";
 
 interface ThemeFormProps {
   mode: "create" | "edit";
@@ -112,8 +113,8 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
   }, [form.type]);
   const { errors, validateField, validateWithErrors } = useFormValidator((data: Record<string, any>) => {
     const newErrors: Record<string, string> = {};
-    if (!data.title) newErrors.title = "제목은 필수입니다.";
-    if (!data.summary) newErrors.summary = "설명은 필수입니다.";
+    if (!data.title || data.title.trim() == "") newErrors.title = "제목은 필수입니다.";
+    if (!data.summary || data.summary.trim() == "") newErrors.summary = "설명은 필수입니다.";
     if (!data.tags || data.tags.length === 0) newErrors.tags = "태그를 하나 이상 입력해주세요.";
     if (!data.playerMin || Number(data.playerMin) <= 0) newErrors.playerMin = "최소 인원은 1명 이상이어야 합니다.";
     if (!data.playerMax || Number(data.playerMax) < Number(data.playerMin)) newErrors.playerMax = "최대 인원은 최소 인원보다 같거나 커야 합니다.";
@@ -121,7 +122,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
     if (!data.playtimeMax || Number(data.playtimeMax) < Number(data.playtimeMin)) newErrors.playtimeMax = "최대 시간은 최소 시간보다 같거나 커야 합니다.";
     if (!data.price || Number(data.price) < 0) newErrors.price = "가격은 0 이상이어야 합니다.";
     if (!data.difficulty || Number(data.difficulty) < 1) newErrors.difficulty = "난이도를 선택해주세요.";
-    if (!data.content) newErrors.content = "본문 내용을 작성해주세요.";
+    if (!data.content || data.content.trim() == "") newErrors.content = "본문 내용을 작성해주세요.";
     if (
       data.type === "CRIMESCENE" &&
       extraFields.makerMode === "team" &&
@@ -166,10 +167,10 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
     }
 
     const jsonData: any = {
-      title: data.title,
-      summary: data.summary,
+      title: data.title.trim(),
+      summary: data.summary.trim(),
       tags: data.tags,
-      content: data.content,
+      content: data.content.trim(),
       playerMin: Number(data.playerMin),
       playerMax: Number(data.playerMax),
       playtimeMin: Number(data.playtimeMin),
@@ -324,18 +325,29 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
         <div>
           <Label className="font-bold mb-1 block">썸네일</Label>
           {form.thumbnail && (
-            <div className="mb-2 flex justify-center">
-              <div className="w-full max-w-sm h-48 rounded overflow-hidden border border-muted bg-muted/20">
-                <img src={form.thumbnail} alt="썸네일 미리보기" className="w-full h-full object-cover" />
-              </div>
+            <div className="mb-2 flex justify-center relative">
+      <div className="w-full max-w-sm h-48 rounded overflow-hidden border border-muted bg-muted/20 relative">
+        <img
+          src={form.thumbnail}
+          alt="썸네일 미리보기"
+          className="w-full h-full object-cover"
+        />
+        <button
+          type="button"
+          onClick={resetFileInput}
+          className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full p-1 shadow transition-colors"
+        >
+          <X className="w-4 h-4 text-gray-700" />
+        </button>
+      </div>
             </div>
           )}
           <Input
             type="file"
             accept="image/*"
             ref={fileInputRef}
-            onClick={resetFileInput}
-            onChange={handleImageChange}/>
+            onChange={handleImageChange}
+          />
         </div>
 
         {/* 설명 */}
