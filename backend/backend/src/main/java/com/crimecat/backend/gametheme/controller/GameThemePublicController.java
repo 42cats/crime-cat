@@ -29,7 +29,7 @@ public class GameThemePublicController {
         return gameThemeService.getGameTheme(themeId);
     }
 
-    @GetMapping("/creater/{user_id}")
+    @GetMapping("/creator/{user_id}")
     public ResponseEntity<CrimesceneThemeSummeryListDto> getSpecificUserTheme(@PathVariable("user_id") UUID userId){
         return ResponseEntity.ok(gameThemeService.getGameThemeSummery(userId));
     }
