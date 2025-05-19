@@ -211,12 +211,12 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-        <DialogContent className="max-w-5xl w-full bg-white rounded-lg overflow-hidden p-0">
+        <DialogContent className="max-w-5xl w-[95%] md:w-full bg-white rounded-lg overflow-hidden p-0 max-h-[90vh]">
           <DialogTitle className="sr-only">테마 상세 정보</DialogTitle>
           
           <div className="relative flex flex-col md:flex-row max-h-[90vh]">
             {/* 이미지 */}
-            <div className="md:w-3/5 bg-black flex items-center justify-center">
+            <div className="md:w-3/5 bg-black flex items-center justify-center h-[40vh] md:h-auto">
               <img
                 src={theme.thumbNail || "/content/image/default_image2.png"}
                 alt={theme.themeTitle}
@@ -225,7 +225,7 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
             </div>
 
             {/* 테마 정보 섹션 */}
-            <div className="md:w-2/5 flex flex-col max-h-[90vh] bg-white">
+            <div className="md:w-2/5 flex flex-col max-h-[90vh] bg-white h-full">
               <div className="absolute top-4 right-4 flex gap-2 z-10">
                 <button
                   onClick={handleShare}
@@ -264,25 +264,17 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
               </div>
 
               {/* 탭 메뉴 */}
-              <Tabs defaultValue={initialTab} className="w-full">
+              <Tabs defaultValue={initialTab} value={activeTab} onValueChange={(value) => setActiveTab(value as ModalTab)} className="w-full flex flex-col h-full">
                 <TabsList className="w-full grid grid-cols-2">
-                  <TabsTrigger 
-                    value="info" 
-                    onClick={() => setActiveTab('info')}
-                    className={activeTab === 'info' ? 'border-b-2 border-primary' : ''}
-                  >
+                  <TabsTrigger value="info">
                     정보
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="comments" 
-                    onClick={() => setActiveTab('comments')}
-                    className={activeTab === 'comments' ? 'border-b-2 border-primary' : ''}
-                  >
+                  <TabsTrigger value="comments">
                     댓글
                   </TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="info" className="p-4 flex-grow overflow-y-auto">
+                <TabsContent value="info" className="p-4 flex-grow overflow-y-auto max-h-[60vh] md:max-h-[65vh]">
                   {themeDetailLoading ? (
                     <div className="flex justify-center py-4">
                       <svg className="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -346,7 +338,7 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
                             variant="outline"
                             size="sm"
                             onClick={() => setShowRequestModal(true)}
-                            className="text-sm"
+                            className="text-sm w-full md:w-auto"
                           >
                             <FileText className="h-4 w-4 mr-2" />
                             기록 요청
@@ -356,7 +348,7 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
                         <Button
                           variant="default"
                           size="sm"
-                          className="text-sm"
+                          className="text-sm w-full md:w-auto"
                           onClick={() => window.open(`/themes/crimescene/${theme.themeId}`, '_blank')}
                         >
                           테마 상세 페이지로 이동
@@ -386,7 +378,7 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
                       <div className="pt-4 border-t">
                         <Button
                           variant="default"
-                          className="w-full"
+                          className="w-full text-sm"
                           onClick={() => window.open(`/themes/crimescene/${theme.themeId}`, '_blank')}
                         >
                           테마 상세 페이지로 이동
@@ -396,7 +388,7 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
                   )}
                 </TabsContent>
                 
-                <TabsContent value="comments" className="h-full overflow-hidden">
+                <TabsContent value="comments" className="flex-grow overflow-auto h-full max-h-[60vh] md:max-h-[65vh]">
                   <div className="h-full flex flex-col">
                     <ModalCommentList 
                       gameThemeId={theme.themeId}
@@ -409,9 +401,9 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
               </Tabs>
 
               {/* 액션 버튼 - 항상 표시 */}
-              <div className="border-t p-4">
+              <div className="border-t p-4 mt-auto">
                 <div className="flex justify-between mb-2">
-                  <div className="flex space-x-4">
+                  <div className="flex space-x-4 w-full justify-center md:justify-start">
                     <button 
                       className={`flex items-center gap-1 text-gray-800 ${liked ? 'text-red-500' : 'hover:text-red-500'} transition-colors`}
                       onClick={handleLike}
