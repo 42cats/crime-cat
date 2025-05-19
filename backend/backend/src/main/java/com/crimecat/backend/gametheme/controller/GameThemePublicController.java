@@ -18,8 +18,10 @@ public class GameThemePublicController {
     @GetMapping
     public GetGameThemesResponse getGameThemes(@RequestParam(value = "category", required = false) String category,
                                                @RequestParam(value = "limit", defaultValue = "10") int limit,
-                                               @RequestParam(value = "page", defaultValue = "0") int page) {
-        return gameThemeService.getGameThemes(category, limit, page);
+                                               @RequestParam(value = "page", defaultValue = "0") int page,
+                                               @RequestParam(value = "sort", defaultValue = "DEFAULT") String sort,
+                                               @RequestParam(value = "keyword", required = false) String keyword) {
+        return gameThemeService.getGameThemes(category, limit, page, sort, keyword);
     }
 
     @GetMapping("/{themeId}")

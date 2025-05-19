@@ -21,7 +21,6 @@ import com.crimecat.backend.gametheme.specification.GameThemeSpecification;
 import com.crimecat.backend.storage.StorageFileType;
 import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.utils.AuthenticationUtil;
-import com.crimecat.backend.utils.sort.SortUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.transaction.Transactional;
 import java.util.List;
@@ -31,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -156,14 +156,17 @@ public class GameThemeService {
     }
 
     @Transactional
-    public GetGameThemesResponse getGameThemes(String category, int pageSize, int pageNumber) {
+    public GetGameThemesResponse getGameThemes(String category, int pageSize, int pageNumber, String sortName, String keyword) {
         UUID webUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
-        Pageable pageable = PageRequest.of(pageNumber, pageSize,
-                SortUtil.combineSorts(List.of(GameThemeSortType.RECOMMENDATION_ENABLED, GameThemeSortType.LATEST)));
+        Sort sort = GameThemeSortType.valueOf(sortName).getSort();
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, sort);
         // TODO: QueryDSL
         Specification<GameTheme> spec = Specification.where(GameThemeSpecification.defaultSpec(webUserId));
         if (ThemeType.contains(category)) {
             spec.and(GameThemeSpecification.equalCategory(category));
+        }
+        if (keyword != null) {
+            spec.and(GameThemeSpecification.findKeyword(keyword, category));
         }
         Page<GameThemeDto> page = themeRepository.findAll(spec, pageable).map(GameThemeDto::from);
         return GetGameThemesResponse.from(page);
