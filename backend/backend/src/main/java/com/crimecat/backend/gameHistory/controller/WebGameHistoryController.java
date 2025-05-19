@@ -88,7 +88,8 @@ public class WebGameHistoryController {
 			@PathVariable("guild_id") String guidId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "10") int size,
-			@RequestParam(required = false) List<String> sort){
+			@RequestParam(required = false) List<String> sort,
+			@RequestParam(name = "query", required = false) String keyword){
 		List<GameHistorySortType> sortTypes = (sort != null && !sort.isEmpty()) ?
 				sort.stream()
 						.map(String::toUpperCase)
@@ -101,7 +102,7 @@ public class WebGameHistoryController {
 
 		WebUser webUser = AuthenticationUtil.getCurrentWebUser();
 		return ResponseEntity.ok().body(
-				webGameHistoryService.WebGetGuildOwnerHistory(webUser.getUser(), guidId, pageable));
+				webGameHistoryService.WebGetGuildOwnerHistory(webUser.getUser(), guidId, pageable, keyword));
 	}
 
   @GetMapping("/check-played/{game_theme_id}")

@@ -255,7 +255,6 @@ const GameHistoryManager: React.FC = () => {
                                             <SelectContent>
                                                 <SelectItem value="playerName">플레이어 이름</SelectItem>
                                                 <SelectItem value="characterName">캐릭터 이름</SelectItem>
-                                                <SelectItem value="themeName">테마 이름</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
