@@ -164,6 +164,8 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
 
     if (thumbnailFile instanceof File) {
       formData.append("thumbnail", thumbnailFile);
+    } else if (data.thumbnail == "") {
+      formData.append("thumbnail", null);
     }
 
     const jsonData: any = {
@@ -326,20 +328,20 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
           <Label className="font-bold mb-1 block">썸네일</Label>
           {form.thumbnail && (
             <div className="mb-2 flex justify-center relative">
-      <div className="w-full max-w-sm h-48 rounded overflow-hidden border border-muted bg-muted/20 relative">
-        <img
-          src={form.thumbnail}
-          alt="썸네일 미리보기"
-          className="w-full h-full object-cover"
-        />
-        <button
-          type="button"
-          onClick={resetFileInput}
-          className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full p-1 shadow transition-colors"
-        >
-          <X className="w-4 h-4 text-gray-700" />
-        </button>
-      </div>
+              <div className="w-full max-w-sm h-48 rounded overflow-hidden border border-muted bg-muted/20 relative">
+                <img
+                  src={form.thumbnail}
+                  alt="썸네일 미리보기"
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={resetFileInput}
+                  className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full p-1 shadow transition-colors"
+                >
+                  <X className="w-4 h-4 text-gray-700" />
+                </button>
+              </div>
             </div>
           )}
           <Input
