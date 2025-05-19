@@ -104,13 +104,19 @@ public class WebGameHistoryService {
 	}
 
 		@Transactional(readOnly = true)
-	public Page<UserGameHistoryToOwnerDto> WebGetGuildOwnerHistory(User owner,String guildSnowflake, Pageable pageable) {
+	public Page<UserGameHistoryToOwnerDto> WebGetGuildOwnerHistory(User owner, String guildSnowflake, Pageable pageable, String keyword) {
 
 		Guild guild = guildRepository.findBySnowflake(guildSnowflake).orElseThrow(ErrorStatus.GUILD_NOT_FOUND::asServiceException);
 		if(!guild.getOwnerSnowflake().equals(owner.getDiscordSnowflake())){
 			throw ErrorStatus.NOT_GUILD_OWNER.asServiceException();
 		}
-			Page<GameHistory> page = gameHistoryRepository.searchByGuild_Snowflake(guildSnowflake, pageable);
+
+		Page<GameHistory> page;
+		if (keyword != null && !keyword.trim().isEmpty()) {
+			page = gameHistoryRepository.findByGuildSnowflakeAndKeyword(guildSnowflake, keyword, pageable);
+		} else {
+			page = gameHistoryRepository.findByGuild_Snowflake(guildSnowflake, pageable);
+		}
 
 		return page.map(UserGameHistoryToOwnerDto::from);
 	}

@@ -115,11 +115,32 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
             LOWER(gt.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
         )
     """)
-		Page<GameHistory> findByUserSnowflakeAndKeyword(
-				@Param("discordUserSnowflake") String discordUserSnowflake,
-				@Param("keyword") String keyword,
-				Pageable pageable
-		);
+	Page<GameHistory> findByUserSnowflakeAndKeyword(
+			@Param("discordUserSnowflake") String discordUserSnowflake,
+			@Param("keyword") String keyword,
+			Pageable pageable
+	);
+	
+	/**
+	 * 특정 길드의 게임 기록을 플레이어 이름 또는 캐릭터 이름으로 검색
+	 */
+	@Query("""
+        SELECT gh
+        FROM GameHistory gh
+        JOIN gh.user u
+        LEFT JOIN gh.gameTheme gt
+        WHERE gh.guild.snowflake = :guildSnowflake
+        AND (
+            (:keyword IS NULL OR :keyword = '' OR
+            LOWER(u.webUser.nickname) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+            LOWER(gh.characterName) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        )
+    """)
+	Page<GameHistory> findByGuildSnowflakeAndKeyword(
+			@Param("guildSnowflake") String guildSnowflake,
+			@Param("keyword") String keyword,
+			Pageable pageable
+	);
 
 	List<GameHistory> findByGuild_Id(UUID guildId);
 	
