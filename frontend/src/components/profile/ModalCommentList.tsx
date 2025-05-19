@@ -631,7 +631,7 @@ export function ModalCommentList({
                 onLoginRequired={onLoginRequired}
             />
             
-            <div className="flex-1 overflow-y-auto mt-4">
+            <div className="flex-1 overflow-y-auto mt-4 pb-4">
                 {isLoading && comments.length === 0 ? (
                     <div className="flex justify-center py-8">
                         <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
