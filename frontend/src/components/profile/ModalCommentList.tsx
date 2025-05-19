@@ -76,7 +76,7 @@ const CommentForm = ({
     };
 
     return (
-        <form onSubmit={handleSubmit} className="mt-4 space-y-2">
+        <form onSubmit={handleSubmit} className="space-y-2 mt-3">
             <Textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -594,44 +594,46 @@ export function ModalCommentList({
     };
 
     return (
-        <div className="flex flex-col h-full overflow-hidden">
-            <div className="flex items-center justify-between mb-2 px-2">
-                <div className="flex items-center">
-                    <MessageSquare className="h-4 w-4 mr-1" />
-                    <h2 className="text-sm font-medium">
-                        댓글 {totalComments > 0 && `(${totalComments})`}
-                    </h2>
+        <div className="flex flex-col h-full" style={{ height: '100%', overflow: 'hidden', maxHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div className="px-4 py-3 border-b">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                        <MessageSquare className="h-4 w-4 mr-1" />
+                        <h2 className="text-sm font-medium">
+                            댓글 {totalComments > 0 && `(${totalComments})`}
+                        </h2>
+                    </div>
+                    <div className="flex space-x-1 text-xs">
+                        <button 
+                            className={`px-2 py-1 rounded ${sortType === 'LATEST' ? 'bg-blue-50 text-blue-600' : 'text-gray-500'}`}
+                            onClick={() => handleSortChange('LATEST')}
+                        >
+                            최신순
+                        </button>
+                        <button 
+                            className={`px-2 py-1 rounded ${sortType === 'OLDEST' ? 'bg-blue-50 text-blue-600' : 'text-gray-500'}`}
+                            onClick={() => handleSortChange('OLDEST')}
+                        >
+                            오래된순
+                        </button>
+                        <button 
+                            className={`px-2 py-1 rounded ${sortType === 'LIKES' ? 'bg-blue-50 text-blue-600' : 'text-gray-500'}`}
+                            onClick={() => handleSortChange('LIKES')}
+                        >
+                            인기순
+                        </button>
+                    </div>
                 </div>
-                <div className="flex space-x-1 text-xs">
-                    <button 
-                        className={`px-2 py-1 rounded ${sortType === 'LATEST' ? 'bg-blue-50 text-blue-600' : 'text-gray-500'}`}
-                        onClick={() => handleSortChange('LATEST')}
-                    >
-                        최신순
-                    </button>
-                    <button 
-                        className={`px-2 py-1 rounded ${sortType === 'OLDEST' ? 'bg-blue-50 text-blue-600' : 'text-gray-500'}`}
-                        onClick={() => handleSortChange('OLDEST')}
-                    >
-                        오래된순
-                    </button>
-                    <button 
-                        className={`px-2 py-1 rounded ${sortType === 'LIKES' ? 'bg-blue-50 text-blue-600' : 'text-gray-500'}`}
-                        onClick={() => handleSortChange('LIKES')}
-                    >
-                        인기순
-                    </button>
-                </div>
+            
+                <CommentForm 
+                    onSubmit={handleCreateComment}
+                    gameThemeId={gameThemeId}
+                    isAuthenticated={isAuthenticated}
+                    onLoginRequired={onLoginRequired}
+                />
             </div>
             
-            <CommentForm 
-                onSubmit={handleCreateComment}
-                gameThemeId={gameThemeId}
-                isAuthenticated={isAuthenticated}
-                onLoginRequired={onLoginRequired}
-            />
-            
-            <div className="flex-1 overflow-y-auto mt-4 pb-4">
+            <div className="overflow-y-auto px-4 pb-4 flex-grow" style={{ overflowY: 'auto' }}>
                 {isLoading && comments.length === 0 ? (
                     <div className="flex justify-center py-8">
                         <Loader2 className="h-6 w-6 animate-spin text-gray-400" />

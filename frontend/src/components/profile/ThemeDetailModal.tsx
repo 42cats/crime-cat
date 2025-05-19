@@ -211,21 +211,22 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-        <DialogContent className="max-w-5xl w-[95%] md:w-full bg-white rounded-lg overflow-hidden p-0 max-h-[90vh]">
+        <DialogContent className="max-w-5xl w-[95%] md:w-full bg-white rounded-lg overflow-hidden p-0">
           <DialogTitle className="sr-only">테마 상세 정보</DialogTitle>
           
-          <div className="relative flex flex-col md:flex-row max-h-[90vh]">
+          <div className="relative flex flex-col md:flex-row h-[85vh] md:h-[80vh]" style={{ maxHeight: '85vh' }}>
             {/* 이미지 */}
-            <div className="md:w-3/5 bg-black flex items-center justify-center h-[40vh] md:h-auto">
+            <div className="md:w-3/5 bg-black flex items-center justify-center" style={{ height: '100%', maxHeight: '85vh' }}>
               <img
                 src={theme.thumbNail || "/content/image/default_image2.png"}
                 alt={theme.themeTitle}
-                className="w-full h-auto max-h-[70vh] object-contain"
+                className="w-full h-auto object-contain"
+                style={{ maxHeight: '100%' }}
               />
             </div>
 
             {/* 테마 정보 섹션 */}
-            <div className="md:w-2/5 flex flex-col max-h-[90vh] bg-white h-full">
+            <div className="md:w-2/5 flex flex-col h-full bg-white" style={{ height: '100%' }}>
               <div className="absolute top-4 right-4 flex gap-2 z-10">
                 <button
                   onClick={handleShare}
@@ -264,7 +265,7 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
               </div>
 
               {/* 탭 메뉴 */}
-              <Tabs defaultValue={initialTab} value={activeTab} onValueChange={(value) => setActiveTab(value as ModalTab)} className="w-full flex flex-col h-full">
+              <Tabs defaultValue={initialTab} value={activeTab} onValueChange={(value) => setActiveTab(value as ModalTab)} className="flex flex-col flex-grow w-full overflow-hidden">
                 <TabsList className="w-full grid grid-cols-2">
                   <TabsTrigger value="info">
                     정보
@@ -274,7 +275,7 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
                   </TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="info" className="p-4 flex-grow overflow-y-auto max-h-[60vh] md:max-h-[65vh]">
+                <TabsContent value="info" className="p-4 overflow-y-auto flex-grow" style={{ overflowY: 'auto' }}>
                   {themeDetailLoading ? (
                     <div className="flex justify-center py-4">
                       <svg className="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -283,29 +284,38 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
                       </svg>
                     </div>
                   ) : themeDetail ? (
-                    <div className="space-y-4">
+                      <div className="space-y-4 pb-12">
                       <h3 className="text-xl font-bold mb-4">
                         {themeDetail.title}
                       </h3>
                       
                       {themeDetail.summary && (
-                        <div>
+                        <div className="mb-4">
                           <h4 className="text-sm font-semibold text-gray-500">설명</h4>
                           <p className="text-sm whitespace-pre-line">{themeDetail.summary}</p>
                         </div>
                       )}
                       
-                      <div>
+                      {themeDetail.content && (
+                        <div className="mb-4">
+                          <h4 className="text-sm font-semibold text-gray-500">콘텐츠</h4>
+                          <div className="text-sm whitespace-pre-line content-markdown overflow-y-auto max-h-[300px] border p-3 rounded-md" style={{ overflowY: 'scroll' }}>
+                            <pre className="whitespace-pre-wrap">{themeDetail.content}</pre>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="mb-4">
                         <h4 className="text-sm font-semibold text-gray-500">카테고리</h4>
                         <Badge variant="secondary">{themeDetail.type}</Badge>
                       </div>
                       
-                      <div>
+                      <div className="mb-4">
                         <h4 className="text-sm font-semibold text-gray-500">가격</h4>
                         <p>{themeDetail.price?.toLocaleString()}원</p>
                       </div>
                       
-                      <div>
+                      <div className="mb-4">
                         <h4 className="text-sm font-semibold text-gray-500">인원</h4>
                         <p>
                           {themeDetail.playersMin === themeDetail.playersMax 
@@ -314,7 +324,7 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
                         </p>
                       </div>
                       
-                      <div>
+                      <div className="mb-4">
                         <h4 className="text-sm font-semibold text-gray-500">플레이 시간</h4>
                         <p>
                           {formatPlayTime(themeDetail.playTimeMin, themeDetail.playTimeMax)}
@@ -322,7 +332,7 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
                       </div>
                       
                       {themeDetail.tags?.length > 0 && (
-                        <div>
+                        <div className="mb-4">
                           <h4 className="text-sm font-semibold text-gray-500">태그</h4>
                           <div className="flex flex-wrap gap-2 mt-1">
                             {themeDetail.tags.map((tag: string, idx: number) => (
@@ -331,42 +341,19 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
                           </div>
                         </div>
                       )}
-                      
-                      <div className="flex flex-col gap-2 mt-4">
-                        {user?.id && !hasPlayedGame && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowRequestModal(true)}
-                            className="text-sm w-full md:w-auto"
-                          >
-                            <FileText className="h-4 w-4 mr-2" />
-                            기록 요청
-                          </Button>
-                        )}
-                        
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="text-sm w-full md:w-auto"
-                          onClick={() => window.open(`/themes/crimescene/${theme.themeId}`, '_blank')}
-                        >
-                          테마 상세 페이지로 이동
-                        </Button>
-                      </div>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                      <div className="space-y-4 pb-12">
                       <h3 className="text-xl font-bold mb-4">
                         {theme.themeTitle}
                       </h3>
                       
-                      <div>
+                      <div className="mb-4">
                         <h4 className="text-sm font-semibold text-gray-500">가격</h4>
                         <p>{theme.themePrice?.toLocaleString()}원</p>
                       </div>
                       
-                      <div>
+                      <div className="mb-4">
                         <h4 className="text-sm font-semibold text-gray-500">인원</h4>
                         <p>
                           {theme.themeMinPlayer === theme.themeMaxPlayer 
@@ -374,22 +361,12 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
                             : `${theme.themeMinPlayer}~${theme.themeMaxPlayer}인`}
                         </p>
                       </div>
-                      
-                      <div className="pt-4 border-t">
-                        <Button
-                          variant="default"
-                          className="w-full text-sm"
-                          onClick={() => window.open(`/themes/crimescene/${theme.themeId}`, '_blank')}
-                        >
-                          테마 상세 페이지로 이동
-                        </Button>
-                      </div>
                     </div>
                   )}
                 </TabsContent>
                 
-                <TabsContent value="comments" className="flex-grow overflow-auto h-full max-h-[60vh] md:max-h-[65vh]">
-                  <div className="h-full flex flex-col">
+                <TabsContent value="comments" className="overflow-auto flex-grow">
+                  <div className="h-full flex flex-col overflow-hidden">
                     <ModalCommentList 
                       gameThemeId={theme.themeId}
                       currentUserId={user?.id}
@@ -401,8 +378,8 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
               </Tabs>
 
               {/* 액션 버튼 - 항상 표시 */}
-              <div className="border-t p-4 mt-auto">
-                <div className="flex justify-between mb-2">
+              <div className="border-t p-4 bg-white" style={{ marginTop: 'auto' }}>
+                <div className="flex justify-between mb-2 items-center">
                   <div className="flex space-x-4 w-full justify-center md:justify-start">
                     <button 
                       className={`flex items-center gap-1 text-gray-800 ${liked ? 'text-red-500' : 'hover:text-red-500'} transition-colors`}
@@ -423,6 +400,27 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
                     >
                       <Share2 size={24} />
                     </button>
+                  </div>
+                  <div className="flex gap-2">
+                    {user?.id && !hasPlayedGame && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowRequestModal(true)}
+                        className="text-xs px-2 py-1"
+                      >
+                        <FileText className="h-3 w-3 mr-1" />
+                        기록요청
+                      </Button>
+                    )}
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="text-xs px-2 py-1"
+                      onClick={() => window.open(`/themes/crimescene/${theme.themeId}`, '_blank')}
+                    >
+                      상세페이지
+                    </Button>
                   </div>
                 </div>
               </div>
