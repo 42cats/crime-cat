@@ -23,7 +23,7 @@ public class ProfileDetailDto {
         .avatarImage(user.getProfileImagePath())
         .bio(user.getBio())
         .userId(user.getId().toString())
-        .userNickname(user.getName())
+        .userNickname(user.getNickname())
         .point(user.getPoint())
         .playCount(playCount)
         .build();

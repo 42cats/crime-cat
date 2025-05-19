@@ -3,8 +3,10 @@ package com.crimecat.backend.gametheme.dto;
 import com.crimecat.backend.gametheme.domain.GameTheme;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 
 @Builder
+@Getter
 @AllArgsConstructor
 public class CrimesceneThemeSummeryDto {
   private String themeId;

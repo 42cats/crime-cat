@@ -5,6 +5,8 @@ export * from './nickname';
 export * from './badges';
 export * from './notifications';
 export * from './account';
+export * from './themes';
+export * from './detail';
 
 /**
  * 프로필 관련 API 모듈
@@ -14,10 +16,11 @@ export * from './account';
  * - 칭호(배지) 관리
  * - 알림 설정 관리
  * - 계정 관리 (탈퇴, 비밀번호 변경 등)
+ * - 사용자 제작 테마 관리
  * 
  * 사용 예시:
  * ```typescript
- * import { getUserProfile, updateUserProfile } from '@/api/profile';
+ * import { getUserProfile, updateUserProfile, getUserThemes } from '@/api/profile';
  * 
  * // 프로필 정보 불러오기
  * const profile = await getUserProfile(userId);
@@ -27,5 +30,8 @@ export * from './account';
  *   nickname: 'newNickname',
  *   bio: 'new bio',
  * });
+ * 
+ * // 사용자 제작 테마 불러오기
+ * const themes = await getUserThemes(userId);
  * ```
  */
