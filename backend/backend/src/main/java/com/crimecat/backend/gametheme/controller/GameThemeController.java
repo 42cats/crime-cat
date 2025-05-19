@@ -7,6 +7,7 @@ import com.crimecat.backend.gametheme.dto.GetLikeStatusResponse;
 import com.crimecat.backend.gametheme.dto.UpdateGameThemeRequest;
 import com.crimecat.backend.gametheme.service.GameThemeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,7 +21,7 @@ public class GameThemeController {
 
     @PostMapping
     public void addGameTheme(@RequestPart(name = "thumbnail", required = false) MultipartFile file,
-                                       @RequestPart("data") AddGameThemeRequest request) {
+                                       @Validated @RequestPart("data") AddGameThemeRequest request) {
         // TODO: 작성 제한
         gameThemeService.addGameTheme(file, request);
     }
@@ -28,7 +29,7 @@ public class GameThemeController {
     @PostMapping("/{themeId}")
     public void updateGameTheme(@PathVariable UUID themeId,
                                 @RequestPart(value = "thumbnail", required = false) MultipartFile file,
-                                @RequestPart("data") UpdateGameThemeRequest request) {
+                                @Validated @RequestPart("data") UpdateGameThemeRequest request) {
         gameThemeService.updateGameTheme(themeId, file, request);
     }
 
