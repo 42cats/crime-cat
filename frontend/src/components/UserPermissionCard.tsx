@@ -14,12 +14,7 @@ import {
     permissionService,
     PermissionWithStatus,
 } from "@/api/permissionService";
-import {
-    ShoppingCart,
-    Clock,
-    Crown,
-    Package,
-} from "lucide-react";
+import { ShoppingCart, Clock, Crown, Package } from "lucide-react";
 import { UTCToKSTMultiline } from "@/lib/UTCToKSTMultiline";
 import { MobilePermissionCard } from "./MobilePermissionCard";
 import { DesktopPermissionCard } from "./DesktopPermissionCard";
@@ -54,6 +49,7 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
 }) => {
     const [permissions, setPermissions] = useState<PermissionWithStatus[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [selectedPermission, setSelectedPermission] =
         useState<PermissionWithStatus | null>(null);
     const [dialogType, setDialogType] = useState<"purchase" | "extend" | null>(
@@ -63,20 +59,30 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
     const { toast } = useToast();
     const isMobile = useMediaQuery("(max-width: 768px)");
 
-    // 권한 목록 불러오기
     const fetchPermissions = async () => {
         try {
             setLoading(true);
             const response =
                 await permissionService.getAllPermissionsWithStatus(userId);
             setPermissions(response.permissions);
-        } catch (error) {
+            setError(null);
+        } catch (error: any) {
             console.error("권한 목록 조회 실패:", error);
-            toast({
-                title: "오류",
-                description: "권한 목록을 불러오는데 실패했습니다.",
-                variant: "destructive",
-            });
+            if (
+                error?.response?.status === 404 &&
+                error?.response?.data?.message ===
+                    "연결된 디스코드 사용자를 찾을 수 없습니다."
+            ) {
+                setPermissions([]);
+                setError("DISCORD_NOT_LINKED");
+            } else {
+                setError("GENERAL_ERROR");
+                toast({
+                    title: "오류",
+                    description: "권한 목록을 불러오는데 실패했습니다.",
+                    variant: "destructive",
+                });
+            }
         } finally {
             setLoading(false);
         }
@@ -86,7 +92,6 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
         fetchPermissions();
     }, [userId]);
 
-    // 권한 구매
     const handlePurchase = async () => {
         if (!selectedPermission) return;
 
@@ -98,15 +103,10 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
             );
 
             if (response.success) {
-                toast({
-                    title: "구매 완료 🎉",
-                    description: response.message,
-                });
-                // 포인트 변경 알림
+                toast({ title: "구매 완료 🎉", description: response.message });
                 if (onPointChange && response.data?.point !== undefined) {
                     onPointChange(response.data.point);
                 }
-                // 권한 목록 새로고침
                 await fetchPermissions();
             } else {
                 toast({
@@ -129,7 +129,6 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
         }
     };
 
-    // 권한 연장
     const handleExtend = async () => {
         if (!selectedPermission) return;
 
@@ -140,16 +139,9 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
                 selectedPermission.permissionId
             );
 
-            toast({
-                title: "연장 완료 ⏰",
-                description: response.message,
-            });
-            // 권한 목록 새로고침
+            toast({ title: "연장 완료 ⏰", description: response.message });
             await fetchPermissions();
-
-            // 연장 후 포인트를 수동으로 계산하여 업데이트
             if (onPointChange) {
-                // 특별한 값으로 새로고침 신호
                 onPointChange(-1);
             }
         } catch (error) {
@@ -166,11 +158,10 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
         }
     };
 
-    // 날짜 포맷터 - UTCToKST 컴포넌트 사용
     const formatDate = (dateString: string) => {
         try {
             return <UTCToKSTMultiline date={dateString} />;
-        } catch (error) {
+        } catch {
             return <span>{dateString}</span>;
         }
     };
@@ -181,6 +172,20 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
                 <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-primary mx-auto"></div>
                 <p className="mt-4 text-muted-foreground">
                     권한 목록을 불러오는 중...
+                </p>
+            </div>
+        );
+    }
+
+    if (error === "DISCORD_NOT_LINKED") {
+        return (
+            <div className="text-center text-muted-foreground py-12">
+                <Package className="mx-auto h-16 w-16 mb-4 opacity-30" />
+                <h3 className="text-lg font-medium mb-2">
+                    디스코드 계정이 연결되어 있지 않습니다
+                </h3>
+                <p className="text-sm">
+                    권한 관리를 사용하려면 먼저 디스코드 계정을 연결해 주세요.
                 </p>
             </div>
         );
@@ -213,10 +218,9 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
             </div>
 
             <motion.div
-                className={`
-                    grid gap-4
-                    ${isMobile ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}
-                `}
+                className={`grid gap-4 ${
+                    isMobile ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
+                }`}
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true }}
@@ -228,51 +232,47 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
                     },
                 }}
             >
-                {permissions.map((permission) => {
-                    return (
-                        <motion.div
-                            key={permission.permissionId}
-                            variants={{
-                                hidden: { opacity: 0, y: 30 },
-                                visible: {
-                                    opacity: 1,
-                                    y: 0,
-                                    transition: { duration: 0.5 },
-                                },
-                            }}
-                        >
-                            {isMobile ? (
-                                // 모바일 버전 - 세로형
-                                <MobilePermissionCard
-                                    permission={permission}
-                                    formatDate={formatDate}
-                                    onPurchase={() => {
-                                        setSelectedPermission(permission);
-                                        setDialogType("purchase");
-                                    }}
-                                    onExtend={() => {
-                                        setSelectedPermission(permission);
-                                        setDialogType("extend");
-                                    }}
-                                />
-                            ) : (
-                                // 데스크탑 버전 - 가로형
-                                <DesktopPermissionCard
-                                    permission={permission}
-                                    formatDate={formatDate}
-                                    onPurchase={() => {
-                                        setSelectedPermission(permission);
-                                        setDialogType("purchase");
-                                    }}
-                                    onExtend={() => {
-                                        setSelectedPermission(permission);
-                                        setDialogType("extend");
-                                    }}
-                                />
-                            )}
-                        </motion.div>
-                    );
-                })}
+                {permissions.map((permission) => (
+                    <motion.div
+                        key={permission.permissionId}
+                        variants={{
+                            hidden: { opacity: 0, y: 30 },
+                            visible: {
+                                opacity: 1,
+                                y: 0,
+                                transition: { duration: 0.5 },
+                            },
+                        }}
+                    >
+                        {isMobile ? (
+                            <MobilePermissionCard
+                                permission={permission}
+                                formatDate={formatDate}
+                                onPurchase={() => {
+                                    setSelectedPermission(permission);
+                                    setDialogType("purchase");
+                                }}
+                                onExtend={() => {
+                                    setSelectedPermission(permission);
+                                    setDialogType("extend");
+                                }}
+                            />
+                        ) : (
+                            <DesktopPermissionCard
+                                permission={permission}
+                                formatDate={formatDate}
+                                onPurchase={() => {
+                                    setSelectedPermission(permission);
+                                    setDialogType("purchase");
+                                }}
+                                onExtend={() => {
+                                    setSelectedPermission(permission);
+                                    setDialogType("extend");
+                                }}
+                            />
+                        )}
+                    </motion.div>
+                ))}
             </motion.div>
 
             {/* 구매/연장 확인 다이얼로그 */}
