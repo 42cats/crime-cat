@@ -1,6 +1,5 @@
 package com.crimecat.backend.auth.handler;
 
-import com.crimecat.backend.auth.controller.AuthController;
 import com.crimecat.backend.auth.jwt.JwtTokenProvider;
 import com.crimecat.backend.auth.service.RefreshTokenService;
 import com.crimecat.backend.config.ServiceUrlConfig;
@@ -55,10 +54,7 @@ public abstract class BaseOAuth2SuccessHandler implements AuthenticationSuccessH
         
         if (optionalUser.isEmpty()) {
             log.error("❌ [OAuth2 인증 성공했지만 WebUser 없음]");
-            AuthController.setOAuthError("user_not_found", "사용자를 찾을 수 없습니다.");
             throw ErrorStatus.USER_NOT_FOUND.asException();
-//            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-//            return;
         }
         
         WebUser user = optionalUser.get();
