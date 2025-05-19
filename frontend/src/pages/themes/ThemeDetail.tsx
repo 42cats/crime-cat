@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageTransition from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -48,9 +48,11 @@ import { CommentList } from "@/components/comments";
 const ThemeDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const { toast } = useToast();
     const { user, hasRole } = useAuth();
     const queryClient = useQueryClient();
+    const commentsRef = useRef<HTMLDivElement>(null);
 
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -97,7 +99,27 @@ const ThemeDetail: React.FC = () => {
         };
 
         checkGamePlayed();
-    }, [user?.id, id]);
+        
+        // URL 파라미터 처리
+        const params = new URLSearchParams(location.search);
+        
+        // 댓글 표시 파라미터 처리
+        if (params.get('showComments') === 'true' && commentsRef.current) {
+            setTimeout(() => {
+                commentsRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 500); // 컴포넌트가 완전히 렌더링된 후 스크롤하기 위해 약간의 지연 추가
+        }
+        
+        // 좋아요 액션 파라미터 처리
+        if (params.get('action') === 'like' && user?.id && !liked && theme?.recommendationEnabled) {
+            // 사용자가 로그인했고, 아직 좋아요 하지 않았고, 좋아요 기능이 활성화된 경우
+            setTimeout(() => {
+                likeMutation.mutate();
+                // 파라미터 제거하여 URL 깔끔하게 유지
+                navigate(`/themes/${theme.type.toLowerCase()}/${id}`, { replace: true });
+            }, 800);  // 데이터 로딩이 완료된 후 실행하기 위한 지연
+        }
+    }, [user?.id, id, location.search, liked, theme]);
 
     const handleRequestGame = async () => {
         if (!requestMessage.trim()) {
@@ -551,11 +573,13 @@ const ThemeDetail: React.FC = () => {
 
                     {/* 댓글 섹션 추가 */}
                     {theme.commentEnabled && id && (
-                      <CommentList
-                        gameThemeId={id}
-                        currentUserId={user?.id}
-                        hasPlayedGame={hasPlayedGame}
-                      />
+                      <div ref={commentsRef}>
+                        <CommentList
+                          gameThemeId={id}
+                          currentUserId={user?.id}
+                          hasPlayedGame={hasPlayedGame}
+                        />
+                      </div>
                     )}
                 </div>
 
