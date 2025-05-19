@@ -227,20 +227,8 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 
 
 	List<GameHistory> findByGuild_Id(UUID guildId);
-	
-	/**
-	 * 특정 사용자가 특정 게임 테마를 플레이했는지 확인
-	 * - 스포일러 기능(게임을 플레이한 사용자에게만 보이는 기능)을 위한 메서드
-	 */
-	@Query(value = """
-		SELECT COUNT(*) > 0
-		FROM game_histories gh
-		JOIN users u ON gh.user_id = u.id
-		JOIN web_users wu ON u.web_user_id = wu.id
-		WHERE wu.id = :webUserId 
-		AND gh.game_theme_id = :gameThemeId
-		""", nativeQuery = true)
-	boolean existsByDiscordUserIdAndGameThemeId(@Param("webUserId") UUID webUserId, @Param("gameThemeId") UUID gameThemeId);
+
+	boolean existsByUser_WebUser_IdAndGameTheme_Id(UUID userWebUserId, UUID gameThemeId);
 
 	boolean existsByGameTheme_IdAndUser_Id(UUID gameThemeId, UUID userId);
 

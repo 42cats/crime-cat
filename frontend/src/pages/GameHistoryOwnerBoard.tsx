@@ -257,25 +257,12 @@ const GameHistoryManager: React.FC = () => {
 
                             <TabsContent value="all" className="p-0 mt-0">
                                 {/* 검색 + 정렬 */}
-                                <div className="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center w-full mb-4">
-                                    {/* 검색 조건 선택 */}
-                                    {/* <div className="flex items-center mr-0 md:mr-2 w-full md:w-auto">
-                                        <Select 
-                                            value={searchField} 
-                                            onValueChange={setSearchField}
-                                        >
-                                            <SelectTrigger className="w-full md:w-[140px] h-9 text-xs">
-                                                <SelectValue placeholder="검색 조건" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="playerName">플레이어 이름</SelectItem>
-                                                <SelectItem value="characterName">캐릭터 이름</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div> */}
+                                <div className="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center md:justify-between w-full mb-4">
+                                    {/* 왼쪽 여백 - 데스크톱에서만 표시 */}
+                                    <div className="hidden md:block md:w-1/4"></div>
 
-                                    {/* 검색창 */}
-                                    <div className="relative flex-grow max-w-full md:max-w-sm">
+                                    {/* 검색창 - 중앙 정렬 */}
+                                    <div className="w-full md:w-2/4 mx-auto">
                                         <div className="relative flex items-center w-full">
                                             <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                             <Input
@@ -298,8 +285,8 @@ const GameHistoryManager: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {/* 정렬 드롭다운 */}
-                                    <div className="md:ml-auto flex items-center">
+                                    {/* 정렬 드롭다운 - 오른쪽 정렬 */}
+                                    <div className="flex flex-row justify-end items-center space-x-2 w-full md:w-1/4 md:mr-4">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button

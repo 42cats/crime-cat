@@ -214,7 +214,7 @@ public class WebGameHistoryService {
 	}
 
 	public CheckPlayResponseDto checkHasPlayed(UUID gameThemeId,WebUser currentWebUser) {
-		boolean hasPlayed = gameHistoryRepository.existsByDiscordUserIdAndGameThemeId(
+		boolean hasPlayed = gameHistoryRepository.existsByUser_WebUser_IdAndGameTheme_Id(
 				gameThemeId, currentWebUser.getUser()
 						.getId());
 		return CheckPlayResponseDto.from(hasPlayed);
