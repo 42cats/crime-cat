@@ -278,18 +278,20 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
         </div>
   
         {/* 공개 / 추천 / 댓글 여부 설정 */}
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-2">
-            <Label className="font-bold mb-1">공개</Label>
+        <div className="flex flex-wrap gap-4">
+          <div className="flex items-center gap-2 min-w-[120px]">
+            <Label className="font-bold">공개</Label>
             <Switch
               checked={form.publicStatus}
               onCheckedChange={(v) => setForm((prev) => ({ ...prev, publicStatus: v }))}
             />
-            <span className="text-sm text-muted-foreground">{form.publicStatus ? "공개" : "비공개"}</span>
+            <span className="text-sm text-muted-foreground">
+              {form.publicStatus ? "공개" : "비공개"}
+            </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Label className="font-bold mb-1">추천 허용</Label>
+          <div className="flex items-center gap-2 min-w-[150px]">
+            <Label className="font-bold">추천</Label>
             <Switch
               checked={form.recommendationEnabled}
               onCheckedChange={(v) => setForm((prev) => ({ ...prev, recommendationEnabled: v }))}
@@ -299,8 +301,8 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Label className="font-bold mb-1">댓글 허용</Label>
+          <div className="flex items-center gap-2 min-w-[150px]">
+            <Label className="font-bold">댓글</Label>
             <Switch
               checked={form.commentEnabled}
               onCheckedChange={(v) => setForm((prev) => ({ ...prev, commentEnabled: v }))}
@@ -403,6 +405,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
               value={form.playerMin}
               onChange={(e) => setForm({ ...form, playerMin: e.target.value })}
               onBlur={() => validateField("playerMin", form.playerMin)}
+              placeholder="예: 1"
             />
             {errors.playerMin && <p className="text-red-500 text-sm mt-1">{errors.playerMin}</p>}
           </div>
@@ -413,6 +416,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({ mode, title, initialData = {}, on
               value={form.playerMax}
               onChange={(e) => setForm({ ...form, playerMax: e.target.value })}
               onBlur={() => validateField("playerMax", form.playerMax)}
+              placeholder="예: 2"
             />
             {errors.playerMax && <p className="text-red-500 text-sm mt-1">{errors.playerMax}</p>}
           </div>
