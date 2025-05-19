@@ -46,10 +46,6 @@ const Login: React.FC = () => {
     const [termsChecked, setTermsChecked] = useState(false);
     const [privacyChecked, setPrivacyChecked] = useState(false);
 
-    // 에러 알림 모달 상태
-    const [errorDialogOpen, setErrorDialogOpen] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
-
     // 디스코드 OAuth 경로
     const loginWithDiscord = (mode) => {
         setIsLoggingIn(true);
@@ -81,30 +77,6 @@ const Login: React.FC = () => {
             navigate(from, { replace: true });
             return;
         }
-
-        // OAuth 에러 처리
-        const checkOAuthError = async () => {
-            try {
-                const response = await fetch("/api/v1/auth/oauth2/error", {
-                    method: "GET",
-                    headers: { "Content-Type": "application/json" },
-                });
-
-                if (response.status >= 400) {
-                    const errorData = await response.json();
-                    if (errorData.error) {
-                        handleOAuthError(errorData);
-                    }
-                }
-            } catch (error) {
-                // API 호출 자체가 실패한 경우는 무시 (OAuth 에러가 아닌 경우)
-                console.log("No OAuth error response");
-            } finally {
-                setIsLoggingIn(false);
-            }
-        };
-
-        checkOAuthError();
     }, [isAuthenticated, navigate, from]);
 
     return (
@@ -112,9 +84,9 @@ const Login: React.FC = () => {
             <div className="min-h-screen flex items-center justify-center px-6 py-20">
                 <Card className="w-full max-w-md">
                     <CardHeader className="space-y-1 flex flex-col items-center">
-                        <div className="w-32 h-32 mb-4 flex items-center justify-center">
+                        <div className="w-50 h-70 mb-4 flex items-center justify-center">
                             <img
-                                src="/content/image/logo_dark.png"
+                                src="/content/image/Login.png"
                                 alt="Crime Cat Logo"
                                 className="max-w-full max-h-full object-contain"
                             />
