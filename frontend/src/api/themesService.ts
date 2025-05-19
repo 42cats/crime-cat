@@ -20,10 +20,12 @@ export const themesService = {
   getThemes: async (
     category: 'CRIMESCENE' | 'ESCAPE_ROOM' | 'MURDER_MYSTERY' | 'REALWORLD',
     limit: number,
-    page: number
+    page: number,
+    sort: string,
+    keyword: string
   ): Promise<ThemePage> => {
     try {
-    const response = await apiClient.get<ThemePage>(`${publicBaseURI}?limit=${limit}&page=${page}&category=${category}`);
+    const response = await apiClient.get<ThemePage>(`${publicBaseURI}?limit=${limit}&page=${page}&category=${category}&sort=${sort}&keyword=${keyword}`);
     return response;
     } catch (error) {
     console.error('테마 불러오기 실패:', error);
