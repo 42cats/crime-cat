@@ -2,6 +2,7 @@ import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { teamsService } from "@/api/teamsService";
+import { Crown } from "lucide-react";
 
 interface TeamInfoModalProps {
   open: boolean;
@@ -22,15 +23,36 @@ const TeamInfoModal: React.FC<TeamInfoModalProps> = ({ open, onOpenChange, teamI
         <DialogHeader>
           <DialogTitle>팀 정보</DialogTitle>
         </DialogHeader>
+
         {isLoading ? (
-          <p>불러오는 중...</p>
+          <p className="text-muted-foreground">불러오는 중...</p>
         ) : team ? (
-          <div>
-            <p><strong>팀 이름:</strong> {team.name}</p>
-            {/* 필요시 멤버 목록 등 추가 */}
+          <div className="space-y-4">
+            <p className="font-semibold mb-2">팀 이름</p>
+              {team.name}
+            <div>
+              <p className="font-semibold mb-2">팀원 목록</p>
+              {team.members.length > 0 ? (
+                <ul className="space-y-1">
+                  {team.members.map((member) => (
+                    <li
+                      key={member.id}
+                      className="flex items-center gap-2 text-sm text-foreground"
+                    >
+                      {member.leader && (
+                        <Crown className="w-4 h-4 text-yellow-500" />
+                      )}
+                      {member.name}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">팀원이 없습니다.</p>
+              )}
+            </div>
           </div>
         ) : (
-          <p>팀 정보를 불러올 수 없습니다.</p>
+          <p className="text-destructive">팀 정보를 불러올 수 없습니다.</p>
         )}
       </DialogContent>
     </Dialog>

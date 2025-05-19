@@ -265,6 +265,9 @@ const ThemeDetail: React.FC = () => {
         if (!theme) return;
         try {
             await themesService.deleteTheme(theme.id);
+
+            queryClient.invalidateQueries({ queryKey: ["themes"] });
+
             toast({
                 title: "삭제 완료",
                 description: "테마가 삭제되었습니다.",

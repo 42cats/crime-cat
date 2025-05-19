@@ -24,6 +24,7 @@ const EditTheme: React.FC = () => {
     mutationFn: (formData: FormData) => themesService.updateTheme(id!, formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['themes'] });
+	  queryClient.invalidateQueries({ queryKey: ['theme', id] });
       if (data) {
         navigate(`/themes/${data.type}/${id}`);
       } else {
