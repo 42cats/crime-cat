@@ -71,16 +71,58 @@ const useUserHistories = (
     webUserId: string,
     page: number,
     keyword: string,
-    sortType: SortType
+    sortType: SortType,
+    winFilter?: boolean | null,
+    startDate?: string | null,
+    endDate?: string | null,
+    hasTheme?: boolean | null
 ) =>
     useQuery<Page<UserGameHistoryDto>>({
-        queryKey: ["my-histories", webUserId, page, keyword, sortType],
+        queryKey: [
+            "my-histories",
+            webUserId,
+            page,
+            keyword,
+            sortType,
+            winFilter,
+            startDate,
+            endDate,
+            hasTheme,
+        ],
         queryFn: async () => {
-            const q = keyword ? `&query=${encodeURIComponent(keyword)}` : "";
-            const sort = sortType ? `&sort=${sortType}` : "";
-            return apiClient.get<Page<UserGameHistoryDto>>(
-                `/histories/crime_scene/user/${webUserId}?page=${page}&size=${PAGE_SIZE}${sort}${q}`
-            );
+            // 모든 쿼리 파라미터 구성
+            const params = new URLSearchParams();
+
+            // 기본 파라미터
+            params.append("page", page.toString());
+            params.append("size", PAGE_SIZE.toString());
+            params.append("sort", sortType);
+
+            // 검색어
+            if (keyword) {
+                params.append("query", keyword);
+            }
+
+            // 추가 필터링 파라미터
+            if (winFilter !== null && winFilter !== undefined) {
+                params.append("win", winFilter.toString());
+            }
+
+            if (startDate) {
+                params.append("startDate", startDate);
+            }
+
+            if (endDate) {
+                params.append("endDate", endDate);
+            }
+
+            if (hasTheme !== null && hasTheme !== undefined) {
+                params.append("hasTheme", hasTheme.toString());
+            }
+
+            // URL 생성
+            const url = `/histories/crime_scene/user/${webUserId}/filter?${params.toString()}`;
+            return apiClient.get<Page<UserGameHistoryDto>>(url);
         },
         keepPreviousData: true,
         enabled: !!webUserId,

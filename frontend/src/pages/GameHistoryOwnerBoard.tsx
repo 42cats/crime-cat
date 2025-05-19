@@ -11,16 +11,28 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-    DropdownMenu, 
-    DropdownMenuContent, 
+import {
+    DropdownMenu,
+    DropdownMenuContent,
     DropdownMenuTrigger,
     DropdownMenuRadioGroup,
-    DropdownMenuRadioItem 
+    DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { useLocation, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -106,12 +118,12 @@ const GameHistoryManager: React.FC = () => {
     const { state } = useLocation();
     const params = useParams<{ guildId?: string }>();
     const location = useLocation();
-    
+
     // URL 쿼리 파라미터 파싱
     const queryParams = new URLSearchParams(location.search);
-    const pageParam = queryParams.get('page');
-    const keywordParam = queryParams.get('kw');
-    const sortParam = queryParams.get('sort');
+    const pageParam = queryParams.get("page");
+    const keywordParam = queryParams.get("kw");
+    const sortParam = queryParams.get("sort");
 
     const guildId = useMemo(
         () =>
@@ -154,7 +166,7 @@ const GameHistoryManager: React.FC = () => {
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [page]);
-    
+
     useEffect(() => {
         if (editing) {
             setMemoText(editing.ownerMemo || "");
@@ -191,16 +203,16 @@ const GameHistoryManager: React.FC = () => {
     const getSortTypeName = (sortType: SortType): string => {
         switch (sortType) {
             case "LATEST":
-                return '최신순';
+                return "최신순";
             case "OLDEST":
-                return '오래된순';
+                return "오래된순";
             default:
-                return '최신순';
+                return "최신순";
         }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
+        if (e.key === "Enter") {
             handleSearch();
         }
     };
@@ -226,10 +238,11 @@ const GameHistoryManager: React.FC = () => {
                     플레이어별 승패 및 캐릭터 기록을 관리합니다.
                 </p>
                 <p className="text-muted-foreground text-sm text-center">
-                    웹가입이 없는 유저는 개인정보 보호를 위해 * 으로 마스킹 처리됩니다.
+                    웹가입이 없는 유저는 개인정보 보호를 위해 * 으로 마스킹
+                    처리됩니다.
                 </p>
             </div>
-            
+
             <Card className="border-gray-200 dark:border-gray-800 shadow-sm">
                 <CardHeader className="p-4 pb-0">
                     <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
@@ -237,14 +250,16 @@ const GameHistoryManager: React.FC = () => {
                             <TabsList className="mb-4">
                                 <TabsTrigger value="all">전체 기록</TabsTrigger>
                                 <TabsTrigger value="win">승리 기록</TabsTrigger>
-                                <TabsTrigger value="lose">패배 기록</TabsTrigger>
+                                <TabsTrigger value="lose">
+                                    패배 기록
+                                </TabsTrigger>
                             </TabsList>
 
                             <TabsContent value="all" className="p-0 mt-0">
                                 {/* 검색 + 정렬 */}
                                 <div className="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center w-full mb-4">
                                     {/* 검색 조건 선택 */}
-                                    <div className="flex items-center mr-0 md:mr-2 w-full md:w-auto">
+                                    {/* <div className="flex items-center mr-0 md:mr-2 w-full md:w-auto">
                                         <Select 
                                             value={searchField} 
                                             onValueChange={setSearchField}
@@ -257,7 +272,7 @@ const GameHistoryManager: React.FC = () => {
                                                 <SelectItem value="characterName">캐릭터 이름</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                    </div>
+                                    </div> */}
 
                                     {/* 검색창 */}
                                     <div className="relative flex-grow max-w-full md:max-w-sm">
@@ -272,9 +287,9 @@ const GameHistoryManager: React.FC = () => {
                                                 onChange={handleKeywordChange}
                                                 onKeyDown={handleKeyDown}
                                             />
-                                            <Button 
-                                                type="button" 
-                                                size="sm" 
+                                            <Button
+                                                type="button"
+                                                size="sm"
                                                 onClick={handleSearch}
                                                 className="absolute right-0 h-9 text-xs px-3 rounded-l-none"
                                             >
@@ -287,18 +302,44 @@ const GameHistoryManager: React.FC = () => {
                                     <div className="md:ml-auto flex items-center">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="outline" size="sm" className="h-9 flex items-center gap-1 text-xs ml-0 md:ml-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-9 flex items-center gap-1 text-xs ml-0 md:ml-2"
+                                                >
                                                     <SortAsc className="h-3.5 w-3.5" />
-                                                    <span>{getSortTypeName(sortType)}</span>
+                                                    <span>
+                                                        {getSortTypeName(
+                                                            sortType
+                                                        )}
+                                                    </span>
                                                 </Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="w-[160px]">
-                                                <DropdownMenuRadioGroup value={sortType} onValueChange={(value) => {
-                                                    setSortType(value as SortType);
-                                                    setPage(0);
-                                                }}>
-                                                    <DropdownMenuRadioItem value="LATEST" className="text-xs">최신순</DropdownMenuRadioItem>
-                                                    <DropdownMenuRadioItem value="OLDEST" className="text-xs">오래된순</DropdownMenuRadioItem>
+                                            <DropdownMenuContent
+                                                align="end"
+                                                className="w-[160px]"
+                                            >
+                                                <DropdownMenuRadioGroup
+                                                    value={sortType}
+                                                    onValueChange={(value) => {
+                                                        setSortType(
+                                                            value as SortType
+                                                        );
+                                                        setPage(0);
+                                                    }}
+                                                >
+                                                    <DropdownMenuRadioItem
+                                                        value="LATEST"
+                                                        className="text-xs"
+                                                    >
+                                                        최신순
+                                                    </DropdownMenuRadioItem>
+                                                    <DropdownMenuRadioItem
+                                                        value="OLDEST"
+                                                        className="text-xs"
+                                                    >
+                                                        오래된순
+                                                    </DropdownMenuRadioItem>
                                                 </DropdownMenuRadioGroup>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -315,17 +356,28 @@ const GameHistoryManager: React.FC = () => {
                                 {/* 로딩/에러/리스트 */}
                                 {isFetching ? (
                                     <div className="py-20 text-center">
-                                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto">
-                                        </div>
-                                        <p className="mt-4 text-muted-foreground">게임 기록을 불러오는 중...</p>
+                                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                                        <p className="mt-4 text-muted-foreground">
+                                            게임 기록을 불러오는 중...
+                                        </p>
                                     </div>
                                 ) : isError ? (
                                     <div className="py-20 text-center">
-                                        <p className="text-destructive">데이터를 불러오는 중 오류가 발생했습니다.</p>
+                                        <p className="text-destructive">
+                                            데이터를 불러오는 중 오류가
+                                            발생했습니다.
+                                        </p>
                                         <Button
                                             variant="outline"
                                             className="mt-4"
-                                            onClick={() => qc.invalidateQueries({ queryKey: ["histories", guildId] })}
+                                            onClick={() =>
+                                                qc.invalidateQueries({
+                                                    queryKey: [
+                                                        "histories",
+                                                        guildId,
+                                                    ],
+                                                })
+                                            }
                                         >
                                             다시 시도
                                         </Button>
@@ -333,12 +385,27 @@ const GameHistoryManager: React.FC = () => {
                                 ) : data && data.content.length === 0 ? (
                                     <div className="py-12 text-center border-t border-b border-gray-200 dark:border-gray-700">
                                         <div className="mb-4">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-muted-foreground/50 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                className="h-12 w-12 text-muted-foreground/50 mx-auto"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={1.5}
+                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                />
                                             </svg>
                                         </div>
-                                        <p className="text-muted-foreground mb-2">아직 게임 기록이 없습니다.</p>
-                                        <p className="text-sm text-muted-foreground/70">게임을 플레이하면 기록이 쌓입니다.</p>
+                                        <p className="text-muted-foreground mb-2">
+                                            아직 게임 기록이 없습니다.
+                                        </p>
+                                        <p className="text-sm text-muted-foreground/70">
+                                            게임을 플레이하면 기록이 쌓입니다.
+                                        </p>
                                     </div>
                                 ) : (
                                     <>
@@ -346,46 +413,88 @@ const GameHistoryManager: React.FC = () => {
                                         <div className="hidden md:block border-t border-b border-gray-200 dark:border-gray-700">
                                             {/* 테이블 헤더 */}
                                             <div className="bg-muted/40 py-2 px-4 flex">
-                                                <div className="flex-shrink-0 w-32 text-xs font-medium text-muted-foreground">플레이어</div>
-                                                <div className="flex-shrink-0 w-28 text-xs font-medium text-muted-foreground">캐릭터</div>
-                                                <div className="flex-shrink-0 w-12 text-center text-xs font-medium text-muted-foreground">승패</div>
-                                                <div className="flex-shrink-0 w-32 text-xs font-medium text-muted-foreground">테마</div>
-                                                <div className="flex-grow text-xs font-medium text-muted-foreground">메모</div>
-                                                <div className="flex-shrink-0 w-36 text-xs font-medium text-muted-foreground">날짜</div>
+                                                <div className="flex-shrink-0 w-32 text-xs font-medium text-muted-foreground">
+                                                    플레이어
+                                                </div>
+                                                <div className="flex-shrink-0 w-28 text-xs font-medium text-muted-foreground">
+                                                    캐릭터
+                                                </div>
+                                                <div className="flex-shrink-0 w-12 text-center text-xs font-medium text-muted-foreground">
+                                                    승패
+                                                </div>
+                                                <div className="flex-shrink-0 w-32 text-xs font-medium text-muted-foreground">
+                                                    테마
+                                                </div>
+                                                <div className="flex-grow text-xs font-medium text-muted-foreground">
+                                                    메모
+                                                </div>
+                                                <div className="flex-shrink-0 w-36 text-xs font-medium text-muted-foreground">
+                                                    날짜
+                                                </div>
                                                 <div className="flex-shrink-0 w-16 text-xs font-medium text-muted-foreground"></div>
                                             </div>
-                                            
+
                                             {/* 테이블 내용 */}
                                             <div className="divide-y divide-gray-200 dark:divide-gray-700">
                                                 {data.content.map((h) => (
-                                                    <div key={h.uuid} className="flex items-center px-4 py-3 hover:bg-muted/20 transition-colors">
-                                                        <div className="flex-shrink-0 w-32 font-medium truncate" title={h.playerName}>
+                                                    <div
+                                                        key={h.uuid}
+                                                        className="flex items-center px-4 py-3 hover:bg-muted/20 transition-colors"
+                                                    >
+                                                        <div
+                                                            className="flex-shrink-0 w-32 font-medium truncate"
+                                                            title={h.playerName}
+                                                        >
                                                             {h.playerName}
                                                         </div>
-                                                        <div className="flex-shrink-0 w-28 truncate" title={h.characterName}>
+                                                        <div
+                                                            className="flex-shrink-0 w-28 truncate"
+                                                            title={
+                                                                h.characterName
+                                                            }
+                                                        >
                                                             {h.characterName}
                                                         </div>
                                                         <div className="flex-shrink-0 w-12 text-center">
                                                             {h.win ? (
-                                                                <span className="inline-flex items-center justify-center w-6 h-6 bg-green-100 text-green-800 rounded-full dark:bg-green-900/30 dark:text-green-400">✓</span>
+                                                                <span className="inline-flex items-center justify-center w-6 h-6 bg-green-100 text-green-800 rounded-full dark:bg-green-900/30 dark:text-green-400">
+                                                                    ✓
+                                                                </span>
                                                             ) : (
-                                                                <span className="inline-flex items-center justify-center w-6 h-6 bg-red-100 text-red-800 rounded-full dark:bg-red-900/30 dark:text-red-400">✗</span>
+                                                                <span className="inline-flex items-center justify-center w-6 h-6 bg-red-100 text-red-800 rounded-full dark:bg-red-900/30 dark:text-red-400">
+                                                                    ✗
+                                                                </span>
                                                             )}
                                                         </div>
                                                         <div className="flex-shrink-0 w-32 truncate">
-                                                            {h.themeName ?? "(미등록)"}
+                                                            {h.themeName ??
+                                                                "(미등록)"}
                                                         </div>
-                                                        <div className="flex-grow truncate px-2" title={h.ownerMemo || "-"}>
+                                                        <div
+                                                            className="flex-grow truncate px-2"
+                                                            title={
+                                                                h.ownerMemo ||
+                                                                "-"
+                                                            }
+                                                        >
                                                             {h.ownerMemo || "-"}
                                                         </div>
                                                         <div className="flex-shrink-0 w-36 text-muted-foreground text-sm">
-                                                            <UTCToKST date={h.createdAt} />
+                                                            <UTCToKST
+                                                                date={
+                                                                    h.createdAt
+                                                                }
+                                                            />
                                                         </div>
                                                         <div className="flex-shrink-0 w-16 text-right">
                                                             <Button
                                                                 size="sm"
                                                                 variant="outline"
-                                                                onClick={() => setEditing(h)}
+                                                                onClick={() =>
+                                                                    setEditing(
+                                                                        h
+                                                                    )
+                                                                }
                                                             >
                                                                 편집
                                                             </Button>
@@ -420,27 +529,59 @@ const GameHistoryManager: React.FC = () => {
                                                     </div>
                                                     <div className="text-sm space-y-2 mt-1 text-muted-foreground">
                                                         <div className="flex justify-between">
-                                                            <span className="font-medium text-foreground">캐릭터</span>
-                                                            <span>{h.characterName}</span>
+                                                            <span className="font-medium text-foreground">
+                                                                캐릭터
+                                                            </span>
+                                                            <span>
+                                                                {
+                                                                    h.characterName
+                                                                }
+                                                            </span>
                                                         </div>
                                                         <div className="flex justify-between">
-                                                            <span className="font-medium text-foreground">테마</span>
-                                                            <span>{h.themeName ?? "(미등록)"}</span>
+                                                            <span className="font-medium text-foreground">
+                                                                테마
+                                                            </span>
+                                                            <span>
+                                                                {h.themeName ??
+                                                                    "(미등록)"}
+                                                            </span>
                                                         </div>
                                                         <div className="flex justify-between">
-                                                            <span className="font-medium text-foreground">메모</span>
-                                                            <span className="text-right max-w-[65%] truncate" title={h.ownerMemo || "-"}>{h.ownerMemo || "-"}</span>
+                                                            <span className="font-medium text-foreground">
+                                                                메모
+                                                            </span>
+                                                            <span
+                                                                className="text-right max-w-[65%] truncate"
+                                                                title={
+                                                                    h.ownerMemo ||
+                                                                    "-"
+                                                                }
+                                                            >
+                                                                {h.ownerMemo ||
+                                                                    "-"}
+                                                            </span>
                                                         </div>
                                                         <div className="flex justify-between">
-                                                            <span className="font-medium text-foreground">날짜</span>
-                                                            <span><UTCToKST date={h.createdAt} /></span>
+                                                            <span className="font-medium text-foreground">
+                                                                날짜
+                                                            </span>
+                                                            <span>
+                                                                <UTCToKST
+                                                                    date={
+                                                                        h.createdAt
+                                                                    }
+                                                                />
+                                                            </span>
                                                         </div>
                                                     </div>
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
                                                         className="self-end mt-2"
-                                                        onClick={() => setEditing(h)}
+                                                        onClick={() =>
+                                                            setEditing(h)
+                                                        }
                                                     >
                                                         편집
                                                     </Button>
@@ -453,13 +594,17 @@ const GameHistoryManager: React.FC = () => {
 
                             <TabsContent value="win" className="p-0 mt-0">
                                 <div className="py-12 text-center border-t border-b border-gray-200 dark:border-gray-700">
-                                    <p className="text-muted-foreground">승리 기록 필터링 기능은 준비 중입니다.</p>
+                                    <p className="text-muted-foreground">
+                                        승리 기록 필터링 기능은 준비 중입니다.
+                                    </p>
                                 </div>
                             </TabsContent>
 
                             <TabsContent value="lose" className="p-0 mt-0">
                                 <div className="py-12 text-center border-t border-b border-gray-200 dark:border-gray-700">
-                                    <p className="text-muted-foreground">패배 기록 필터링 기능은 준비 중입니다.</p>
+                                    <p className="text-muted-foreground">
+                                        패배 기록 필터링 기능은 준비 중입니다.
+                                    </p>
                                 </div>
                             </TabsContent>
                         </Tabs>
@@ -475,30 +620,45 @@ const GameHistoryManager: React.FC = () => {
                                     variant="outline"
                                     size="sm"
                                     disabled={pageInfo.isFirst || isFetching}
-                                    onClick={() => setPage((p) => Math.max(p - 1, 0))}
+                                    onClick={() =>
+                                        setPage((p) => Math.max(p - 1, 0))
+                                    }
                                 >
                                     이전
                                 </Button>
-                                
-                                {Array.from({ length: Math.min(data.totalPages, 5) }, (_, i) => {
-                                    // 5개만 표시하고 중앙에 현재 페이지가 오도록 조정
-                                    let startPage = Math.max(0, Math.min(page - 2, data.totalPages - 5));
-                                    if (data.totalPages <= 5) startPage = 0;
-                                    const pageNum = startPage + i;
-                                    
-                                    return (
-                                        <Button
-                                            key={pageNum}
-                                            variant={page === pageNum ? "default" : "outline"}
-                                            size="sm"
-                                            disabled={isFetching}
-                                            onClick={() => setPage(pageNum)}
-                                            className="min-w-8"
-                                        >
-                                            {pageNum + 1}
-                                        </Button>
-                                    );
-                                })}
+
+                                {Array.from(
+                                    { length: Math.min(data.totalPages, 5) },
+                                    (_, i) => {
+                                        // 5개만 표시하고 중앙에 현재 페이지가 오도록 조정
+                                        let startPage = Math.max(
+                                            0,
+                                            Math.min(
+                                                page - 2,
+                                                data.totalPages - 5
+                                            )
+                                        );
+                                        if (data.totalPages <= 5) startPage = 0;
+                                        const pageNum = startPage + i;
+
+                                        return (
+                                            <Button
+                                                key={pageNum}
+                                                variant={
+                                                    page === pageNum
+                                                        ? "default"
+                                                        : "outline"
+                                                }
+                                                size="sm"
+                                                disabled={isFetching}
+                                                onClick={() => setPage(pageNum)}
+                                                className="min-w-8"
+                                            >
+                                                {pageNum + 1}
+                                            </Button>
+                                        );
+                                    }
+                                )}
                                 <Button
                                     variant="outline"
                                     size="sm"
