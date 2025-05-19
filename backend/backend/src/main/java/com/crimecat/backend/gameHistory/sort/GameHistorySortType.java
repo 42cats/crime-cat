@@ -5,8 +5,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 
 public enum GameHistorySortType implements SortType {
-  LATEST(Sort.by(Sort.Direction.DESC, "createdAt")),
-  OLDEST(Sort.by(Direction.ASC, "createdAt")),
+  LATEST(Sort.by(Sort.Direction.DESC, "created_at")),
+  OLDEST(Sort.by(Direction.ASC, "created_at")),
   GUILDNAME(Sort.by(Direction.ASC, "guild.name")),
   ;
 
