@@ -232,6 +232,6 @@ public class CommentService {
             return false;
         }
         // GameHistory를 통해 확인
-        return gameHistoryRepository.existsByDiscordUserIdAndGameThemeId(webUserId, gameThemeId);
+        return gameHistoryRepository.existsByGameTheme_IdAndUser_Id(webUserId, gameThemeId);
     }
 }
