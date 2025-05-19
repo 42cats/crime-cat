@@ -5,6 +5,7 @@ import com.crimecat.backend.auth.jwt.JwtTokenProvider;
 import com.crimecat.backend.auth.service.RefreshTokenService;
 import com.crimecat.backend.config.ServiceUrlConfig;
 import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.utils.ProfileChecker;
 import com.crimecat.backend.utils.TokenCookieUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
@@ -38,7 +39,7 @@ public abstract class BaseOAuth2SuccessHandler implements AuthenticationSuccessH
                                        Authentication authentication) throws IOException, ServletException {
         
         // 1. WebUser 객체 추출
-        WebUser webUser = (WebUser) authentication.getPrincipal();
+        WebUser webUser = AuthenticationUtil.getCurrentWebUser();
         String webUserId = webUser.getId().toString();
         
         // 2. 하위 클래스에서 구현한 메소드 호출 (로그인/회원가입 검증)

@@ -44,12 +44,15 @@ public class DiscordSignupService extends BaseDiscordOAuth2UserService {
         // 이미 가입된 사용자인지 확인
         Optional<WebUser> existingUser = webUserRepository.findByDiscordUserSnowflake(discordId);
         if (existingUser.isPresent()) {
-            log.error("이미 가입된 사용자입니다.");
-            throw new OAuth2AuthenticationException(new OAuth2Error("already_registered"), 
-                "이미 가입된 Discord 계정입니다. 로그인을 진행해주세요.");
+            log.info("🔄 이미 가입된 사용자({})를 발견했습니다. 명시적 회원가입 처리지만 기존 계정으로 로그인 진행합니다.", existingUser.get().getNickname());
+            
+            // 로그인 시간 업데이트
+            WebUser webUser = existingUser.get();
+            webUser.setLastLoginAt(LocalDateTime.now());
+            return webUserRepository.save(webUser);
         }
         
-        // 신규 사용자 생성
+        // 기존 사용자가 아니면 신규 사용자 생성
         String finalNickname = generateUniqueNickname(username);
         
         WebUser newUser = WebUser.builder()

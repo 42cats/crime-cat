@@ -34,13 +34,11 @@ public class SignupSuccessHandler extends BaseOAuth2SuccessHandler {
         // 기존 사용자인지 확인 (createdAt과 lastLoginAt이 다르면 기존 사용자로 간주)
         if (webUser.getCreatedAt() != null && 
             !webUser.getCreatedAt().equals(webUser.getLastLoginAt())) {
-            log.error("이미 가입된 사용자가 회원가입을 시도했습니다.");
-            AuthController.setOAuthError("already_registered", "이미 가입된 Discord 계정입니다. 로그인을 진행해주세요.");
-            response.setStatus(HttpServletResponse.SC_CONFLICT);
-            return false;
+            log.info("🔄 이미 가입된 사용자 ({}). 자동 로그인을 진행합니다.", webUser.getNickname());
+            // 기존 계정이지만 성공적으로 처리
         }
         
-        log.info("✅ [회원가입 성공] 사용자: {}", webUser.getNickname());
+        log.info("✅ [회원가입/로그인 성공] 사용자: {}", webUser.getNickname());
         return true;
     }
 }
