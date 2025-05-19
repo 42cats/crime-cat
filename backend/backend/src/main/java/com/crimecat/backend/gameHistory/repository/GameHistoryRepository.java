@@ -2,9 +2,10 @@ package com.crimecat.backend.gameHistory.repository;
 
 import com.crimecat.backend.gameHistory.domain.GameHistory;
 import com.crimecat.backend.gameHistory.dto.IGameHistoryRankingDto;
+import com.crimecat.backend.user.domain.User;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.time.LocalDateTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -195,4 +196,5 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 			@Param("hasTheme") Boolean hasTheme,
 			Pageable pageable
 	);
+	Integer countGameHistoriesByUser(User user);
 }

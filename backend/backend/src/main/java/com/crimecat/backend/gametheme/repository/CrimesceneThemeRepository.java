@@ -1,6 +1,7 @@
 package com.crimecat.backend.gametheme.repository;
 
 import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,4 +12,6 @@ public interface CrimesceneThemeRepository extends JpaRepository<CrimesceneTheme
 
   @Query("SELECT c FROM CrimesceneTheme c WHERE c.guildSnowflake = :guildSnowflake")
   Optional<CrimesceneTheme> findByGuildSnowflake(String guildSnowflake);
+
+  List<CrimesceneTheme> findByTeamId(UUID teamId);
 }

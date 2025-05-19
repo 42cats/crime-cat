@@ -1,13 +1,13 @@
 package com.crimecat.backend.gametheme.controller;
 
+import com.crimecat.backend.gametheme.dto.CrimesceneThemeSummeryListDto;
 import com.crimecat.backend.gametheme.dto.GetGameThemeResponse;
 import com.crimecat.backend.gametheme.dto.GetGameThemesResponse;
-import com.crimecat.backend.gametheme.dto.GetLikeStatusResponse;
 import com.crimecat.backend.gametheme.service.GameThemeService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,5 +25,10 @@ public class GameThemePublicController {
     @GetMapping("/{themeId}")
     public GetGameThemeResponse getGameTheme(@PathVariable UUID themeId) {
         return gameThemeService.getGameTheme(themeId);
+    }
+
+    @GetMapping("/creater/{user_id}")
+    public ResponseEntity<CrimesceneThemeSummeryListDto> getSpecificUserTheme(@PathVariable("user_id") UUID userId){
+        return ResponseEntity.ok(gameThemeService.getGameThemeSummery(userId));
     }
 }
