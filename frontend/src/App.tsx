@@ -41,6 +41,7 @@ import NoticeDetail from "@/pages/notices/NoticeDetail";
 import CreateNotice from "@/pages/notices/CreateNotice";
 import EditNotice from "@/pages/notices/EditNotice";
 import NotificationListPage from "@/pages/notifications/NotificationListPage";
+import ProfilePage from "@/pages/profile/ProfilePage";
 
 // Community Pages
 import QuestionBoard from "@/pages/community/QuestionBoard";
@@ -125,6 +126,7 @@ const App = () => (
                 <Route path="/login-error" element={<LoginError />} />
                 <Route path="/contact" element={<ContactPage />} />
                 <Route path="/donate" element={<DonationPage />} />
+                <Route path="/profile/:userId" element={<ProfilePage />} />
               </Route>
 
               {/* Dashboard Layout Routes */}
