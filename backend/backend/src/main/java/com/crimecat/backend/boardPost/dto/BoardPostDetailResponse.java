@@ -8,40 +8,54 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BoardPostResponse {
+public class BoardPostDetailResponse {
     private UUID id;
-    private Integer number;
     private String subject;
+    private String content;
     private String authorName;
+    private String authorProfileImage;
+    private UUID authorId;
+    @JsonProperty("isOwnPost")
+    private boolean isOwnPost;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private Integer views;
     private Integer likes;
+    @JsonProperty("isLikedByCurrentUser")
+    private boolean isLikedByCurrentUser;
     private Integer comments;
-    @JsonProperty("isSecret")
-    private Boolean isSecret;
     @JsonProperty("isPinned")
     private Boolean isPinned;
+//    private List<PostCommentResponse> comments;
 
-    public static BoardPostResponse from(
+
+    public static BoardPostDetailResponse from(
             BoardPost boardPost
     ) {
-        return BoardPostResponse.builder()
+        return BoardPostDetailResponse.builder()
                 .id(boardPost.getId())
-                .number(boardPost.getNumber())
                 .subject(boardPost.getSubject())
+                .content(boardPost.getContent())
                 .authorName(boardPost.getUser().getNickname())
+                .authorProfileImage(boardPost.getUser().getProfileImagePath())
+                .authorId(boardPost.getUserId())
+//                .isOwnPost()
                 .createdAt(boardPost.getCreatedAt())
+                .updatedAt(boardPost.getUpdatedAt())
                 .views(boardPost.getViews())
                 .likes(boardPost.getLikes())
+//                .isLikedByCurrentUser()
                 .comments(boardPost.getComments())
-                .isSecret(boardPost.getIsSecret())
                 .isPinned(boardPost.getIsPinned())
+//                .comments()
                 .build();
     }
 }
+
