@@ -28,8 +28,9 @@ public class PublicUserPostController {
         return ResponseEntity.ok(userPostService.getUserPostDetail(postId));
     }
 
-    @GetMapping("/gallery")
+    @GetMapping("/gallery/{userId}")
     public ResponseEntity<Page<UserPostGalleryPageDto>> getUserPostGalleryPage(
+            @PathVariable UUID userId,
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false)    List<String> sort   // ↙ 사용자가 다중 정렬 지정 가능
@@ -48,9 +49,9 @@ public class PublicUserPostController {
         // ③ PageRequest 생성
         Pageable pageable = PageRequest.of(page, size, resolvedSort);
 
-        // ④ 서비스 호출
+        // ④ 서비스 호출 - userId 전달
         Page<UserPostGalleryPageDto> pageResult =
-                userPostService.getUserPostGalleryPage(pageable);
+                userPostService.getUserPostGalleryPageByUserId(userId, pageable);
 
         return ResponseEntity.ok(pageResult);
     }

@@ -6,7 +6,6 @@ import {
     CardHeader,
     CardContent,
     CardFooter,
-    CardDescription,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -19,18 +18,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import PageTransition from "@/components/PageTransition";
-import { User, Bell, Trash2, Save, AlertCircle } from "lucide-react";
+import { User, Bell, Save, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// 유효성 검사 유틸리티
 import {
     validateInstagramUrl,
     validateTwitterUrl,
     validateDiscordUrl,
 } from "@/utils/validators";
 
-// 컴포넌트 가져오기
-import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import ProfileForm from "@/components/profile/ProfileForm";
 import SocialLinks from "@/components/profile/SocialLinks";
@@ -38,46 +34,40 @@ import NotificationSettings from "@/components/profile/NotificationSettings";
 import CropImageModal from "@/components/profile/CropImageModal";
 import BadgeSelectModal from "@/components/profile/BadgeSelectModal";
 
-// API 훅 임포트
 import { useProfileAPI } from "@/hooks/profile";
 import { ProfileUpdateParams } from "@/api/profile";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
 
-/**
- * 프로필 관리 페이지 컴포넌트
- */
+/** 프로필 관리 페이지 */
 const Profile: React.FC = () => {
-    // 테마 상태 관리 훅 - useTheme 훅 사용 대신 기본값 설정
-    // const { theme } = useTheme?.() || { theme: 'light' };
-    const isDark = document.documentElement.classList.contains("dark");
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
 
-    // 인증 및 라우팅 훅
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    // 프로필 API 훅
     const {
         loading,
         fetchProfile,
         updateProfile,
-        updateProfileImage,
         checkNickname,
         fetchUserBadges,
-        setActiveBadge,
         fetchNotificationSettings,
         updateEmailNotification,
         updateDiscordNotification,
         deleteUserAccount,
     } = useProfileAPI();
 
-    // 프로필 상태
+    /* ---------- 상태 ---------- */
     const [nickname, setNickname] = useState("");
     const [bio, setBio] = useState("");
     const [selectedBadge, setSelectedBadge] = useState<string | null>(null);
+    const [badgeList, setBadgeList] = useState<string[]>([]);
+
     const [isNicknameValid, setIsNicknameValid] = useState(true);
     const [nicknameChecked, setNicknameChecked] = useState(false);
 
-    // 프로필 이미지 상태
     const [avatar, setAvatar] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [croppedImageUrl, setCroppedImageUrl] = useState<string | null>(null);
@@ -85,177 +75,99 @@ const Profile: React.FC = () => {
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
-    // 모달 상태
     const [showCropModal, setShowCropModal] = useState(false);
     const [showBadgeModal, setShowBadgeModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletePassword, setDeletePassword] = useState("");
 
-    // 알림 설정
     const [notifyByEmail, setNotifyByEmail] = useState(true);
     const [notifyByDiscord, setNotifyByDiscord] = useState(true);
 
-    // 소셜 미디어 상태
     const [instagram, setInstagram] = useState("");
     const [twitter, setTwitter] = useState("");
     const [discord, setDiscord] = useState("");
-
-    // URL 유효성 검사 상태
     const [instagramValid, setInstagramValid] = useState<boolean | null>(null);
     const [twitterValid, setTwitterValid] = useState<boolean | null>(null);
     const [discordValid, setDiscordValid] = useState<boolean | null>(null);
 
-    // 칭호 목록
-    // const [badgeList, setBadgeList] = useState<Array<any>>([]);
-
-    // 원본 데이터 (변경 감지용)
     const [originalData, setOriginalData] = useState<any>({});
 
-    /**
-     * URL 유효성 검사 래퍼 함수
-     */
+    /* ---------- 유효성 ---------- */
     const validateInstagramUrlWrapper = (url: string) => {
-        if (!url) {
-            setInstagramValid(null);
-            return;
-        }
+        if (!url) return setInstagramValid(null);
         setInstagramValid(validateInstagramUrl(url));
     };
-
     const validateTwitterUrlWrapper = (url: string) => {
-        if (!url) {
-            setTwitterValid(null);
-            return;
-        }
+        if (!url) return setTwitterValid(null);
         setTwitterValid(validateTwitterUrl(url));
     };
-
     const validateDiscordUrlWrapper = (url: string) => {
-        if (!url) {
-            setDiscordValid(null);
-            return;
-        }
+        if (!url) return setDiscordValid(null);
         setDiscordValid(validateDiscordUrl(url));
     };
 
-    /**
-     * 초기 데이터 로드
-     */
+    /* ---------- 데이터 로드 ---------- */
     useEffect(() => {
-        const loadProfileData = async () => {
-            if (!user?.id) return;
-
-            const profileData = await fetchProfile();
-            if (profileData) {
-                setNickname(profileData.nickName || "");
-                setBio(profileData.bio || "");
-                setSelectedBadge(profileData.badge || null);
-                setCroppedImageUrl(
-                    profileData.avatar || "/default-profile.jpg"
-                );
-
-                // 소셜 링크 설정
-                if (profileData.socialLinks) {
-                    setInstagram(profileData.socialLinks.instagram || "");
-                    setTwitter(profileData.socialLinks.x || "");
-                    setDiscord(profileData.socialLinks.openkakao || "");
-
-                    // 초기 URL 유효성 검사
+        if (!user?.id) return;
+        (async () => {
+            const profile = await fetchProfile();
+            if (profile) {
+                setNickname(profile.nickName || "");
+                setBio(profile.bio || "");
+                setSelectedBadge(profile.badge || null);
+                setCroppedImageUrl(profile.avatar || "/default-profile.jpg");
+                if (profile.socialLinks) {
+                    setInstagram(profile.socialLinks.instagram || "");
+                    setTwitter(profile.socialLinks.x || "");
+                    setDiscord(profile.socialLinks.openkakao || "");
                     validateInstagramUrlWrapper(
-                        profileData.socialLinks.instagram || ""
+                        profile.socialLinks.instagram || ""
                     );
-                    validateTwitterUrlWrapper(profileData.socialLinks.x || "");
+                    validateTwitterUrlWrapper(profile.socialLinks.x || "");
                     validateDiscordUrlWrapper(
-                        profileData.socialLinks.openkakao || ""
+                        profile.socialLinks.openkakao || ""
                     );
                 }
-
-                setOriginalData(profileData);
+                setOriginalData(profile);
             }
-        };
-
-        const loadBadges = async () => {
-            if (!user?.id) return;
-
-            const userBadges = await fetchUserBadges();
-            if (userBadges.length > 0) {
-                setBadgeList(userBadges.map((badge) => badge.name));
-            } else {
-                // 기본 배지 목록 사용
-                setBadgeList([]);
+            // const badges = await fetchUserBadges();
+            // setBadgeList(badges.map((b) => b.name));
+            const setting = await fetchNotificationSettings();
+            if (setting) {
+                setNotifyByEmail(setting.email);
+                setNotifyByDiscord(setting.discord);
             }
-        };
+        })();
+    }, [user?.id]);
 
-        const loadNotificationSettings = async () => {
-            if (!user?.id) return;
-
-            const settings = await fetchNotificationSettings();
-            if (settings) {
-                setNotifyByEmail(settings.email);
-                setNotifyByDiscord(settings.discord);
-            }
-        };
-
-        loadProfileData();
-        // loadBadges();
-        loadNotificationSettings();
-    }, [fetchProfile, fetchUserBadges, fetchNotificationSettings, user?.id]);
-
-    /**
-     * 닉네임 중복 체크 핸들러
-     */
+    /* ---------- 닉네임 체크 ---------- */
     const handleCheckNickname = async () => {
         if (!nickname.trim()) {
             setIsNicknameValid(false);
             setNicknameChecked(true);
             return;
         }
-
-        // 원래 닉네임과 같으면 유효함
         if (nickname === originalData?.nickname) {
             setIsNicknameValid(true);
             setNicknameChecked(true);
             return;
         }
-
-        try {
-            const result = await checkNickname(nickname);
-            console.log("API 결과:", result);
-
-            // API 결과 { message: "사용 가능한 닉네임입니다.", available: true } 형식 확인
-            // available 속성 또는 result 자체가 true인 경우 유효함
-            const isAvailable = result?.available === true;
-
-            setIsNicknameValid(isAvailable);
-            setNicknameChecked(true);
-        } catch (error) {
-            console.error("닉네임 중복 확인 오류:", error);
-            setIsNicknameValid(false);
-            setNicknameChecked(true);
-        }
+        const res = await checkNickname(nickname);
+        setIsNicknameValid(res?.available === true);
+        setNicknameChecked(true);
     };
 
-    /**
-     * 이미지 변경 핸들러
-     */
+    /* ---------- 이미지 처리 ---------- */
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setAvatar(e.target.files[0]);
-            setPreviewUrl(URL.createObjectURL(e.target.files[0]));
-            setShowCropModal(true);
-        }
+        if (!e.target.files?.[0]) return;
+        setAvatar(e.target.files[0]);
+        setPreviewUrl(URL.createObjectURL(e.target.files[0]));
+        setShowCropModal(true);
     };
-
-    /**
-     * 이미지 크롭 관련 핸들러
-     */
-    const onCropComplete = useCallback((_croppedArea: any, pixels: any) => {
-        setCroppedAreaPixels(pixels);
-    }, []);
-
-    /**
-     * 크롭된 이미지 생성
-     */
+    const onCropComplete = useCallback(
+        (_area: any, pixels: any) => setCroppedAreaPixels(pixels),
+        []
+    );
     const getCroppedImage = async (): Promise<Blob | null> => {
         if (!previewUrl || !croppedAreaPixels) return null;
 
@@ -286,9 +198,6 @@ const Profile: React.FC = () => {
         });
     };
 
-    /**
-     * 크롭된 이미지 적용
-     */
     const applyCroppedImage = async () => {
         const blob = await getCroppedImage();
         if (blob) {
@@ -304,58 +213,17 @@ const Profile: React.FC = () => {
         }
     };
 
-    /**
-     * 이메일 알림 설정 변경 핸들러
-     */
-    const handleEmailNotificationChange = async (enabled: boolean) => {
-        setNotifyByEmail(enabled);
-        await updateEmailNotification(enabled);
+    /* ---------- 알림 설정 ---------- */
+    const handleEmailNotificationChange = async (v: boolean) => {
+        setNotifyByEmail(v);
+        await updateEmailNotification(v);
+    };
+    const handleDiscordNotificationChange = async (v: boolean) => {
+        setNotifyByDiscord(v);
+        await updateDiscordNotification(v);
     };
 
-    /**
-     * 디스코드 알림 설정 변경 핸들러
-     */
-    const handleDiscordNotificationChange = async (enabled: boolean) => {
-        setNotifyByDiscord(enabled);
-        await updateDiscordNotification(enabled);
-    };
-
-    /**
-     * 칭호 선택 핸들러
-     */
-    // const handleBadgeSelection = async (badgeId: string | null) => {
-    //     setSelectedBadge(badgeId);
-    //     if (user?.id) {
-    //         await setActiveBadge(badgeId);
-    //     }
-    // };
-
-    /**
-     * 계정 탈퇴 핸들러
-     */
-    const handleDeleteAccount = () => {
-        setShowDeleteModal(true);
-    };
-
-    /**
-     * 계정 탈퇴 확인 핸들러
-     */
-    const confirmDeleteAccount = async () => {
-        if (!deletePassword || !user?.id) return;
-
-        const success = await deleteUserAccount(deletePassword);
-        if (success) {
-            setShowDeleteModal(false);
-            // 로그인 페이지로 이동
-            setTimeout(() => {
-                navigate("/login");
-            }, 1500);
-        }
-    };
-
-    /**
-     * 프로필 폼 제출 핸들러
-     */
+    /* ---------- 제출 ---------- */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -416,10 +284,10 @@ const Profile: React.FC = () => {
         }
     };
 
+    /* ---------- 렌더 ---------- */
     return (
         <PageTransition>
             <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
-                {/* 헤더 */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -435,15 +303,13 @@ const Profile: React.FC = () => {
                     </p>
                 </motion.div>
 
-                {/* 로딩 상태 표시 */}
                 {loading && (
                     <div className="flex justify-center py-8">
                         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
                     </div>
                 )}
 
-                {/* 탭 내비게이션 */}
-                <Tabs defaultValue="profile" className="w-full">
+                <Tabs defaultValue="profile">
                     <TabsList className="mb-6 w-full sm:w-auto">
                         <TabsTrigger
                             value="profile"
@@ -462,32 +328,56 @@ const Profile: React.FC = () => {
                     </TabsList>
 
                     <form onSubmit={handleSubmit}>
-                        {/* 프로필 설정 탭 */}
                         <TabsContent value="profile" className="space-y-6">
                             <Card className="overflow-hidden">
-                                {/* 헤더 컴포넌트 */}
-                                <ProfileHeader
-                                    nickname={nickname}
-                                    selectedBadge={selectedBadge}
-                                    isDark={isDark}
-                                />
+                                {/* ----- 인라인 헤더 (기존 ProfileHeader JSX) ----- */}
+                                <div
+                                    className={cn(
+                                        "h-32 w-full bg-gradient-to-r relative",
+                                        isDark
+                                            ? "from-indigo-950 to-purple-900"
+                                            : "from-indigo-200 to-purple-300"
+                                    )}
+                                >
+                                    <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center pb-4">
+                                        <h2
+                                            className={cn(
+                                                "text-xl sm:text-2xl font-bold text-center",
+                                                isDark
+                                                    ? "text-white"
+                                                    : "text-gray-800"
+                                            )}
+                                        >
+                                            {nickname || "프로필 설정"}
+                                        </h2>
+                                        {selectedBadge && (
+                                            <span
+                                                className={cn(
+                                                    "text-sm py-1 px-3 font-medium mt-1 rounded",
+                                                    isDark
+                                                        ? "bg-indigo-900/70 text-white"
+                                                        : "bg-white/70 text-indigo-800"
+                                                )}
+                                            >
+                                                {selectedBadge}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
 
                                 <CardHeader className="relative pb-0">
                                     <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-                                        {/* 프로필 아바타 컴포넌트 */}
                                         <ProfileAvatar
                                             croppedImageUrl={croppedImageUrl}
                                             handleImageChange={
                                                 handleImageChange
                                             }
                                         />
-                                        <div className="mt-8 sm:ml-28 sm:mt-0 flex-1 text-center"></div>
                                     </div>
                                 </CardHeader>
 
                                 <CardContent className="pt-6 space-y-8">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {/* 프로필 폼 컴포넌트 */}
                                         <ProfileForm
                                             nickname={nickname}
                                             setNickname={setNickname}
@@ -502,8 +392,6 @@ const Profile: React.FC = () => {
                                             nicknameChecked={nicknameChecked}
                                             isDark={isDark}
                                         />
-
-                                        {/* 소셜 링크 컴포넌트 */}
                                         <SocialLinks
                                             instagram={instagram}
                                             twitter={twitter}
@@ -527,32 +415,19 @@ const Profile: React.FC = () => {
                                         />
                                     </div>
                                 </CardContent>
-
                                 <Separator />
-
                                 <CardFooter className="justify-end py-6">
-                                    {/* <Button
-                                        type="button"
-                                        variant="outline"
-                                        className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-red-800 dark:hover:bg-red-950 dark:hover:text-red-400 gap-2"
-                                        onClick={handleDeleteAccount}
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                        계정 탈퇴하기
-                                    </Button> */}
                                     <Button
                                         type="submit"
                                         className="gap-2"
                                         disabled={loading}
                                     >
-                                        <Save className="w-4 h-4" />
-                                        저장하기
+                                        <Save className="w-4 h-4" /> 저장하기
                                     </Button>
                                 </CardFooter>
                             </Card>
                         </TabsContent>
 
-                        {/* 알림 설정 탭 */}
                         <TabsContent
                             value="notifications"
                             className="space-y-6"
@@ -570,7 +445,7 @@ const Profile: React.FC = () => {
                     </form>
                 </Tabs>
 
-                {/* 크롭 이미지 모달 */}
+                {/* 모달들 */}
                 <CropImageModal
                     showModal={showCropModal}
                     setShowModal={setShowCropModal}
@@ -583,18 +458,14 @@ const Profile: React.FC = () => {
                     applyCroppedImage={applyCroppedImage}
                     isDark={isDark}
                 />
-
-                {/* 칭호 선택 모달 */}
                 {/* <BadgeSelectModal
                     showModal={showBadgeModal}
                     setShowModal={setShowBadgeModal}
                     badgeList={badgeList}
                     selectedBadge={selectedBadge}
-                    setSelectedBadge={handleBadgeSelection}
+                    setSelectedBadge={setSelectedBadge}
                     isDark={isDark}
                 /> */}
-
-                {/* 계정 탈퇴 확인 모달 */}
                 <Dialog
                     open={showDeleteModal}
                     onOpenChange={setShowDeleteModal}
@@ -609,27 +480,25 @@ const Profile: React.FC = () => {
                         <div className="py-4 space-y-2">
                             <p>
                                 계정을 삭제하면 모든 데이터가 영구적으로
-                                삭제됩니다. 이 작업은 되돌릴 수 없습니다.
+                                삭제됩니다.
                             </p>
                             <p className="text-sm text-muted-foreground">
                                 계속 진행하시겠습니까?
                             </p>
-
                             <div className="mt-4">
                                 <label
-                                    htmlFor="password"
+                                    htmlFor="pwd"
                                     className="block text-sm font-medium mb-1"
                                 >
                                     비밀번호 확인
                                 </label>
                                 <input
+                                    id="pwd"
                                     type="password"
-                                    id="password"
                                     value={deletePassword}
                                     onChange={(e) =>
                                         setDeletePassword(e.target.value)
                                     }
-                                    placeholder="계정 비밀번호를 입력하세요"
                                     className="w-full p-2 border rounded focus:ring-2 focus:ring-red-500 focus:border-transparent"
                                 />
                             </div>
@@ -645,8 +514,15 @@ const Profile: React.FC = () => {
                             <Button
                                 variant="destructive"
                                 className="sm:flex-1"
-                                onClick={confirmDeleteAccount}
                                 disabled={!deletePassword}
+                                onClick={async () => {
+                                    const ok = await deleteUserAccount(
+                                        deletePassword
+                                    );
+                                    if (ok) {
+                                        navigate("/login");
+                                    }
+                                }}
                             >
                                 계정 삭제 확인
                             </Button>
@@ -657,5 +533,4 @@ const Profile: React.FC = () => {
         </PageTransition>
     );
 };
-
 export default Profile;

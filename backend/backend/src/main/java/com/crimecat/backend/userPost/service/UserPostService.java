@@ -60,6 +60,14 @@ public interface UserPostService {
     Page<UserPostGalleryPageDto> getUserPostGalleryPage(Pageable pageable);
     
     /**
+     * 특정 사용자의 갤러리형 게시글 목록 조회 (썸네일 포함)
+     * @param userId 사용자 ID
+     * @param pageable 페이지 정보
+     * @return 특정 사용자의 게시글 갤러리 페이지
+     */
+    Page<UserPostGalleryPageDto> getUserPostGalleryPageByUserId(UUID userId, Pageable pageable);
+    
+    /**
      * 현재 로그인한 사용자의 갤러리형 게시글 목록 조회 (썸네일 포함)
      * @param user 현재 로그인한 사용자
      * @param pageable 페이지 정보
