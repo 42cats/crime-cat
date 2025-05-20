@@ -22,14 +22,48 @@ export const themesService = {
     limit: number,
     page: number,
     sort: string,
-    keyword: string
+    keyword: string,
+    filters?: Partial<{
+      priceMin: string;
+      priceMax: string;
+      playerMin: string;
+      playerMax: string;
+      timeMin: string;
+      timeMax: string;
+      difficultyMin: string;
+      difficultyMax: string;
+    }>
   ): Promise<ThemePage> => {
     try {
-    const response = await apiClient.get<ThemePage>(`${publicBaseURI}?limit=${limit}&page=${page}&category=${category}&sort=${sort}&keyword=${keyword}`);
-    return response;
+      const params = new URLSearchParams();
+
+      params.append("limit", String(limit));
+      params.append("page", String(page));
+      params.append("category", category);
+
+      if (sort.trim()) {
+        params.append("sort", sort.trim());
+      }
+
+      if (keyword.trim()) {
+        params.append("keyword", keyword.trim());
+      }
+
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value?.trim()) {
+            params.append(key, value.trim());
+          }
+        });
+      }
+
+      const response = await apiClient.get<ThemePage>(
+        `${publicBaseURI}?${params.toString()}`
+      );
+      return response;
     } catch (error) {
-    console.error('테마 불러오기 실패:', error);
-    throw error;
+      console.error("테마 불러오기 실패:", error);
+      throw error;
     }
   },
 

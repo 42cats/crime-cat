@@ -81,8 +81,8 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
                             {playerText}
                         </div>
                         <div className="flex items-center gap-1">
-                            <Coins className="w-4 h-4" />₩
-                            {theme.price.toLocaleString()}
+                            <Coins className="w-4 h-4" />
+                            {theme.price.toLocaleString()}원
                         </div>
                         <div className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />
