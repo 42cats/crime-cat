@@ -105,17 +105,6 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                     </DialogDescription>
                 </VisuallyHidden>
 
-                {/* 닫기 버튼 - 상단 우측 */}
-                <div className="absolute top-4 right-4 z-10">
-                    <button
-                        onClick={() => onOpenChange(false)}
-                        className="p-2 rounded-full bg-white/80 backdrop-blur-sm text-gray-600 hover:bg-gray-200 transition-colors"
-                        aria-label="닫기"
-                    >
-                        <X size={18} />
-                    </button>
-                </div>
-
                 {/* 프로필 정보와 프로필 링크 복사 버튼 */}
                 <div className="flex flex-col">
                     {profile && (
