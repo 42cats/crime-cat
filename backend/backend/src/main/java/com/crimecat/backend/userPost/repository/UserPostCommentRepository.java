@@ -19,8 +19,7 @@ public interface UserPostCommentRepository extends JpaRepository<UserPostComment
      * 특정 게시글의 최상위 댓글만 페이징 조회 (부모 댓글이 없는 댓글)
      */
     @Query("SELECT c FROM UserPostComment c " +
-            "WHERE c.post.id = :postId AND c.parent IS NULL " +
-            "ORDER BY c.createdAt ASC")
+            "WHERE c.post.id = :postId AND c.parent IS NULL")
     Page<UserPostComment> findParentCommentsByPostId(UUID postId, Pageable pageable);
 
     /**
@@ -28,8 +27,7 @@ public interface UserPostCommentRepository extends JpaRepository<UserPostComment
      */
     @Query("SELECT c FROM UserPostComment c " +
             "LEFT JOIN FETCH c.author " +
-            "WHERE c.post.id = :postId " +
-            "ORDER BY c.createdAt ASC")
+            "WHERE c.post.id = :postId")
     List<UserPostComment> findAllCommentsByPostId(UUID postId);
 
     /**
@@ -37,8 +35,7 @@ public interface UserPostCommentRepository extends JpaRepository<UserPostComment
      */
     @Query("SELECT c FROM UserPostComment c " +
             "LEFT JOIN FETCH c.author " +
-            "WHERE c.post.id = :postId AND c.parent IS NOT NULL " +
-            "ORDER BY c.createdAt ASC")
+            "WHERE c.post.id = :postId AND c.parent IS NOT NULL")
     List<UserPostComment> findAllRepliesByPostId(UUID postId);
 
     /**
@@ -46,8 +43,7 @@ public interface UserPostCommentRepository extends JpaRepository<UserPostComment
      */
     @Query("SELECT c FROM UserPostComment c " +
             "LEFT JOIN FETCH c.author " +
-            "WHERE c.parent.id = :commentId " +
-            "ORDER BY c.createdAt ASC")
+            "WHERE c.parent.id = :commentId")
     List<UserPostComment> findAllRepliesByCommentId(UUID commentId);
 
     /**
