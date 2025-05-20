@@ -4,6 +4,7 @@ export interface UserPostGalleryDto {
   postId: string;
   authorNickname: string;
   thumbnailUrl: string | null; // 0번째 이미지 또는 null
+  content: string;
   likeCount: number;
   liked: boolean;
 }
@@ -112,20 +113,39 @@ class UserPostService {
   // 포스트 생성
   async createPost(content: string, images?: File[]): Promise<void> {
     try {
+      console.log('포스트 생성 시작:', { content, imageCount: images?.length });
+      
       const formData = new FormData();
       formData.append('content', content);
       
       if (images && images.length > 0) {
-        images.forEach(image => {
-          formData.append('images', image);
+        // 이미지 파일 유효성 한번 더 검사
+        const validImages = images.filter(img => img.type.startsWith('image/'));
+        
+        console.log('올바른 이미지 파일:', validImages.length);
+        
+        validImages.forEach((image, index) => {
+          formData.append('images', image, `image_${index}.${image.name.split('.').pop()}`);
+          // 파일명에 확장자 추가하여 서버에서 이미지 형식 인식 확실하게
         });
       }
+      
+      // FormData 내용 로깅 (디버깅용)
+      const formDataEntries = [...formData.entries()];
+      console.log('FormData 내용:', formDataEntries.map(entry => {
+        if (entry[1] instanceof File) {
+          return { key: entry[0], type: 'File', name: entry[1].name, size: entry[1].size };
+        }
+        return { key: entry[0], value: entry[1] };
+      }));
       
       await apiClient.post('/user-posts', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
+      
+      console.log('포스트 생성 성공');
     } catch (error) {
       console.error('포스트 생성 실패:', error);
       throw error;
@@ -135,16 +155,24 @@ class UserPostService {
   // 포스트 업데이트
   async updatePost(postId: string, content: string, newImages?: File[], keepImageUrls?: string[]): Promise<void> {
     try {
+      console.log('포스트 업데이트 시작:', { postId, content, newImagesCount: newImages?.length, keepImageUrls });
+      
       const formData = new FormData();
       formData.append('content', content);
       
       if (newImages && newImages.length > 0) {
-        newImages.forEach(image => {
-          formData.append('newImages', image);
+        // 이미지 파일 유효성 한번 더 검사
+        const validImages = newImages.filter(img => img.type.startsWith('image/'));
+        
+        console.log('올바른 이미지 파일:', validImages.length);
+        
+        validImages.forEach((image, index) => {
+          formData.append('newImages', image, `image_${index}.${image.name.split('.').pop()}`);
+          // 파일명에 확장자 추가하여 서버에서 이미지 형식 인식 확실하게
         });
         
         // UUID 생성
-        newImages.forEach(() => {
+        validImages.forEach(() => {
           formData.append('newImageIds', crypto.randomUUID());
         });
       }
@@ -155,11 +183,22 @@ class UserPostService {
         });
       }
       
+      // FormData 내용 로깅 (디버깅용)
+      const formDataEntries = [...formData.entries()];
+      console.log('FormData 내용:', formDataEntries.map(entry => {
+        if (entry[1] instanceof File) {
+          return { key: entry[0], type: 'File', name: entry[1].name, size: entry[1].size };
+        }
+        return { key: entry[0], value: entry[1] };
+      }));
+      
       await apiClient.patch(`/user-posts/${postId}/partial`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
+      
+      console.log('포스트 업데이트 성공');
     } catch (error) {
       console.error('포스트 업데이트 실패:', error);
       throw error;

@@ -39,16 +39,26 @@ public class FileSystemStorageService implements StorageService {
 
     @Override
     public String storeAt(StorageFileType type, MultipartFile file, String filename) {
+        if (type == null) {
+            throw new RuntimeException("Storage file type cannot be null");
+        }
+        
+        if (type.getUploadDir() == null) {
+            throw new RuntimeException("Upload directory for " + type.name() + " is not configured");
+        }
+        
         Path savePath = this.rootLocation;
         savePath = savePath.resolve(type.getUploadDir());
         try {
             if (Files.notExists(savePath)) {
+                log.info("Creating directory: {}", savePath.toAbsolutePath());
                 Files.createDirectories(savePath);
             }
             savePath = savePath.resolve(filename + FileUtil.getExtension(file.getOriginalFilename()));
             if (file.isEmpty()) {
                 throw new RuntimeException("Failed to store empty file " + file.getOriginalFilename());
             }
+            log.info("Storing file at: {}", savePath.toAbsolutePath());
             Files.copy(file.getInputStream(), savePath, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new RuntimeException("Failed to store file " + file.getOriginalFilename(), e);
@@ -97,10 +107,24 @@ public class FileSystemStorageService implements StorageService {
 
     @Override
     public void init() {
-        log.debug("init storage:: {}", rootLocation.toAbsolutePath());
+        log.debug("Initializing storage:: {}", rootLocation.toAbsolutePath());
         try {
             if (!Files.exists(rootLocation)) {
-                Files.createDirectory(rootLocation);
+                log.info("Creating root directory: {}", rootLocation.toAbsolutePath());
+                Files.createDirectories(rootLocation);
+            }
+            
+            // 추가: 모든 파일 유형의 디렉토리 초기화
+            for (StorageFileType type : StorageFileType.values()) {
+                if (type.getUploadDir() != null) {
+                    Path typeDir = rootLocation.resolve(type.getUploadDir());
+                    if (!Files.exists(typeDir)) {
+                        log.info("Creating directory for {}: {}", type.name(), typeDir.toAbsolutePath());
+                        Files.createDirectories(typeDir);
+                    }
+                } else {
+                    log.warn("Upload directory for {} is not configured", type.name());
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException("Could not initialize storage", e);

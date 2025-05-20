@@ -101,7 +101,25 @@ const PostEditorPage: React.FC = () => {
     }
     
     const newImages = Array.from(e.target.files);
-    setImages(prev => [...prev, ...newImages]);
+    
+    // 이미지 파일 유효성 검사 추가
+    const validImages = newImages.filter(file => {
+      const isValidType = file.type.startsWith('image/');
+      if (!isValidType) {
+        toast({
+          title: '이미지 형식 오류',
+          description: '이미지 파일만 업로드할 수 있습니다.',
+          variant: 'destructive',
+        });
+      }
+      return isValidType;
+    });
+    
+    if (validImages.length > 0) {
+      setImages(prev => [...prev, ...validImages]);
+      console.log('이미지 추가됨:', validImages);
+    }
+    
     e.target.value = ''; // 입력 필드 초기화
   };
   
@@ -344,26 +362,29 @@ const PostEditorPage: React.FC = () => {
               )}
               
               <div className="mt-4">
-                <label htmlFor="image-upload">
-                  <Button 
-                    variant="outline" 
-                    type="button" 
-                    className="w-full"
-                    disabled={existingImageUrls.length + images.length >= MAX_IMAGES}
-                  >
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    이미지 추가하기
-                  </Button>
-                  <input 
-                    id="image-upload" 
-                    type="file" 
-                    accept="image/*" 
-                    multiple 
-                    className="hidden" 
-                    onChange={handleImageAdd} 
-                    disabled={existingImageUrls.length + images.length >= MAX_IMAGES}
-                  />
-                </label>
+                <Button 
+                  variant="outline" 
+                  type="button" 
+                  className="w-full"
+                  disabled={existingImageUrls.length + images.length >= MAX_IMAGES}
+                  onClick={() => {
+                    // 입력 요소 직접 클릭 트리거
+                    const fileInput = document.getElementById('image-upload') as HTMLInputElement;
+                    if (fileInput) fileInput.click();
+                  }}
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  이미지 추가하기
+                </Button>
+                <input 
+                  id="image-upload" 
+                  type="file" 
+                  accept="image/*" 
+                  multiple 
+                  className="hidden" 
+                  onChange={handleImageAdd} 
+                  disabled={existingImageUrls.length + images.length >= MAX_IMAGES}
+                />
               </div>
             </CardContent>
           </Card>

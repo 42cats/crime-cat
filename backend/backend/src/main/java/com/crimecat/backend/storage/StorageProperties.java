@@ -25,15 +25,19 @@ public class StorageProperties {
     private String avatarBaseUrl;
     private String gameThemeUploadDir;
     private String gameThemeBaseUrl;
+    private String userPostImageUploadDir;
+    private String userPostImageBaseUrl;
 
     private StorageFileType avatar = StorageFileType.AVATAR;
     private StorageFileType gameTheme = StorageFileType.GAME_THEME;
+    private StorageFileType userPostImage = StorageFileType.USER_POST_IMAGE;
 
     @PostConstruct
     public void initEnum(){
         // 직접 설정한 필드를 사용하여 enum 초기화
         StorageFileType.AVATAR.init(avatarUploadDir, avatarBaseUrl);
         StorageFileType.GAME_THEME.init(gameThemeUploadDir, gameThemeBaseUrl);
+        StorageFileType.USER_POST_IMAGE.init(userPostImageUploadDir, userPostImageBaseUrl);
     }
 
     // getter/setter for new fields
@@ -67,5 +71,21 @@ public class StorageProperties {
 
     public void setGameThemeBaseUrl(String gameThemeBaseUrl) {
         this.gameThemeBaseUrl = gameThemeBaseUrl;
+    }
+    
+    public String getUserPostImageUploadDir() {
+        return userPostImageUploadDir;
+    }
+    
+    public void setUserPostImageUploadDir(String userPostImageUploadDir) {
+        this.userPostImageUploadDir = userPostImageUploadDir;
+    }
+    
+    public String getUserPostImageBaseUrl() {
+        return userPostImageBaseUrl;
+    }
+    
+    public void setUserPostImageBaseUrl(String userPostImageBaseUrl) {
+        this.userPostImageBaseUrl = userPostImageBaseUrl;
     }
 }
