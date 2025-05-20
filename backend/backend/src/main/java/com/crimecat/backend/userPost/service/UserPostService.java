@@ -18,7 +18,6 @@ public interface UserPostService {
      * @param content 게시글 내용
      * @param imageIds 이미지uuid
      * @param imageUrls 업로드된 이미지 URL 리스트 (최대 5장)
-     * @return 생성된 게시글 ID
      */
     void createUserPost(WebUser user, String content, List<UUID> imageIds, List<String> imageUrls);
 
