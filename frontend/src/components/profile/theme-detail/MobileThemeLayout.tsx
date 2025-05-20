@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, MessageSquare, Share2, FileText } from 'lucide-react';
+import { Heart, MessageSquare, Share2, FileText, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ModalCommentList } from '../ModalCommentList';
@@ -7,6 +7,9 @@ import ThemeInfoContent from './ThemeInfoContent';
 import ThemeImageSection from './ThemeImageSection';
 import { ProfileDetailDto } from '@/api/profile/detail';
 import { CrimesceneThemeSummeryDto } from '@/api/profile/themes';
+
+// 탭 CSS 커스텀 스타일 - 정보/댓글 탭의 스타일을 반대로 적용
+import './tab-custom.css';
 
 interface MobileThemeLayoutProps {
   theme: CrimesceneThemeSummeryDto;
@@ -44,18 +47,20 @@ const MobileThemeLayout: React.FC<MobileThemeLayoutProps> = ({
   showRequestModal
 }) => {
   return (
-    <div className="h-full overflow-y-auto pb-20">
-      {/* 이미지 섹션 */}
-      <ThemeImageSection
-        thumbNail={theme.thumbNail}
-        title={theme.themeTitle}
-        isCollapsed={false}
-        onToggleCollapse={() => {}}
-        isDesktop={false}
-      />
+    <div className="flex flex-col h-full">
+      {/* 이미지 섹션 - 작은 고정 크기 사용 */}
+      <div className="flex-shrink-0">
+        <ThemeImageSection
+          thumbNail={theme.thumbNail}
+          title={theme.themeTitle}
+          isCollapsed={false}
+          onToggleCollapse={() => {}}
+          isDesktop={false}
+        />
+      </div>
 
       {/* 프로필 정보 */}
-      <div className="flex items-center p-4 border-b">
+      <div className="flex items-center p-4 border-b flex-shrink-0">
         <div className="w-8 h-8 rounded-full overflow-hidden mr-2 flex-shrink-0">
           <img
             src={
@@ -74,40 +79,38 @@ const MobileThemeLayout: React.FC<MobileThemeLayoutProps> = ({
         </span>
       </div>
 
-      {/* 탭 컨텐츠 */}
-      <Tabs 
-        defaultValue={activeTab} 
-        value={activeTab} 
-        onValueChange={(value) => setActiveTab(value as 'info' | 'comments')}
-        className="w-full"
-      >
-        <TabsList className="w-full grid grid-cols-2 sticky top-0 bg-white z-10">
-          <TabsTrigger value="info">정보</TabsTrigger>
-          <TabsTrigger value="comments">댓글</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="info" className="p-4 pb-20">
-          <div className="overflow-visible">
+      {/* 탭 컨텐츠 - 플렉스 그로우로 남은 공간 차지 */}
+      <div className="flex-grow overflow-hidden flex flex-col theme-tabs-custom">
+        <Tabs 
+          defaultValue={activeTab} 
+          value={activeTab} 
+          onValueChange={(value) => setActiveTab(value as 'info' | 'comments')}
+          className="w-full flex flex-col h-full"
+        >
+          <TabsList className="w-full grid grid-cols-2 sticky top-0 bg-white z-10 flex-shrink-0">
+            <TabsTrigger value="info">정보</TabsTrigger>
+            <TabsTrigger value="comments">댓글</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="info" className="flex-grow overflow-y-auto p-4 pb-24">
             <ThemeInfoContent
               themeDetail={themeDetail}
               themeDetailLoading={themeDetailLoading}
               fallbackTheme={theme}
               formatPlayTime={formatPlayTime}
             />
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="comments" className="pb-20">
-          <div className="overflow-visible">
+          </TabsContent>
+          
+          <TabsContent value="comments" className="flex-grow overflow-y-auto pb-24">
             <ModalCommentList 
               gameThemeId={theme.themeId}
               currentUserId={userId}
               hasPlayedGame={hasPlayedGame}
               onLoginRequired={handleLoginRequired}
             />
-          </div>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+      </div>
 
       {/* 하단 고정 액션 버튼 */}
       <div className="fixed bottom-0 left-0 w-full border-t p-4 bg-white z-20">
@@ -119,6 +122,12 @@ const MobileThemeLayout: React.FC<MobileThemeLayoutProps> = ({
               disabled={isLikeLoading}
             >
               <Heart size={24} className={liked ? 'fill-red-500' : ''} />
+            </button>
+            <button 
+              className={`text-gray-800 ${activeTab === 'info' ? 'text-blue-500' : 'hover:text-blue-500'} transition-colors`}
+              onClick={() => setActiveTab('info')}
+            >
+              <Info size={24} />
             </button>
             <button 
               className={`text-gray-800 ${activeTab === 'comments' ? 'text-blue-500' : 'hover:text-blue-500'} transition-colors`}

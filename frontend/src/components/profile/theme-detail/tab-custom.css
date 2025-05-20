@@ -1,0 +1,31 @@
+/* 탭 선택 스타일 커스텀 - 정보/댓글 탭 스타일 반전 */
+
+/* theme-tabs-custom 클래스가 적용된 컨테이너 내에서만 스타일 적용 */
+.theme-tabs-custom [data-state="active"][data-value="comments"] {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.theme-tabs-custom [data-state="active"][data-value="info"] {
+  background-color: transparent;
+  color: hsl(var(--muted-foreground));
+}
+
+.theme-tabs-custom [data-state="inactive"][data-value="comments"] {
+  background-color: transparent;
+}
+
+.theme-tabs-custom [data-state="inactive"][data-value="info"] {
+  background-color: transparent;
+}
+
+/* 호버 스타일도 반전 */
+.theme-tabs-custom [data-state="inactive"][data-value="comments"]:hover {
+  background-color: hsl(var(--muted) / 0.3);
+  color: hsl(var(--muted-foreground));
+}
+
+.theme-tabs-custom [data-state="inactive"][data-value="info"]:hover {
+  background-color: hsl(var(--muted) / 0.3);
+  color: hsl(var(--muted-foreground));
+}
