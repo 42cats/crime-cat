@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Heart, Share2, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { UserPostDto, userPostService } from "@/api/userPost/userPostService";
@@ -16,6 +14,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+// 포스트 상세 레이아웃 컴포넌트 임포트
+import { MobilePostLayout, DesktopPostLayout } from "./post-detail";
 
 interface PostDetailModalProps {
     post: UserPostDto;
@@ -23,6 +23,8 @@ interface PostDetailModalProps {
     onClose: () => void;
     userId: string;
 }
+
+type ModalTab = "info" | "comments";
 
 const PostDetailModal: React.FC<PostDetailModalProps> = ({
     post,
@@ -39,6 +41,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
     const [isLikeLoading, setIsLikeLoading] = useState(false);
     const [showLoginDialog, setShowLoginDialog] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [activeTab, setActiveTab] = useState<ModalTab>("info");
 
     const { user, isAuthenticated } = useAuth();
 
@@ -141,241 +144,41 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                     <div className="h-[85vh] md:h-[80vh] overflow-y-auto md:overflow-hidden">
                         {/* 모바일 레이아웃 (작은 화면) */}
                         <div className="block md:hidden">
-                            <div className="p-4 border-b flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <img
-                                        src={
-                                            post.authorAvatarUrl ||
-                                            "/assets/default-avatar.png"
-                                        }
-                                        alt={post.authorNickname}
-                                        className="w-10 h-10 rounded-full"
-                                    />
-                                    <div>
-                                        <h3 className="font-medium">
-                                            {post.authorNickname}
-                                        </h3>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* 이미지 슬라이더 (이미지가 있는 경우만) */}
-                            {post.imageUrls && post.imageUrls.length > 0 && (
-                                <div className="relative">
-                                    <div className="aspect-square">
-                                        <img
-                                            src={
-                                                post.imageUrls[
-                                                    currentImageIndex
-                                                ]
-                                            }
-                                            alt={`포스트 이미지 ${
-                                                currentImageIndex + 1
-                                            }`}
-                                            className="w-full h-full object-contain"
-                                        />
-                                    </div>
-
-                                    {/* 이미지가 2개 이상인 경우 네비게이션 버튼 표시 */}
-                                    {post.imageUrls.length > 1 && (
-                                        <>
-                                            <button
-                                                onClick={handlePrevImage}
-                                                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-1 rounded-full"
-                                            >
-                                                &lt;
-                                            </button>
-                                            <button
-                                                onClick={handleNextImage}
-                                                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-1 rounded-full"
-                                            >
-                                                &gt;
-                                            </button>
-
-                                            {/* 이미지 인디케이터 */}
-                                            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
-                                                {post.imageUrls.map(
-                                                    (_, index) => (
-                                                        <div
-                                                            key={index}
-                                                            className={`w-2 h-2 rounded-full ${
-                                                                index ===
-                                                                currentImageIndex
-                                                                    ? "bg-white"
-                                                                    : "bg-white/50"
-                                                            }`}
-                                                        />
-                                                    )
-                                                )}
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* 포스트 내용 */}
-                            <div className="p-4">
-                                <p className="whitespace-pre-line mb-4">
-                                    {post.content}
-                                </p>
-
-                                {/* 상호작용 버튼 */}
-                                <div className="flex justify-between items-center mt-2">
-                                    <div className="flex items-center space-x-4">
-                                        <button
-                                            onClick={handleLike}
-                                            disabled={isLikeLoading}
-                                            className="flex items-center space-x-1"
-                                        >
-                                            <Heart
-                                                size={20}
-                                                className={
-                                                    liked
-                                                        ? "text-red-500 fill-red-500"
-                                                        : "text-gray-500"
-                                                }
-                                            />
-                                            <span>{likeCount}</span>
-                                        </button>
-                                    </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={handleShare}
-                                    >
-                                        <Share2 size={18} className="mr-1" />
-                                        공유
-                                    </Button>
-                                </div>
-                            </div>
+                            <MobilePostLayout
+                                post={post}
+                                profile={profile}
+                                activeTab={activeTab}
+                                setActiveTab={setActiveTab}
+                                liked={liked}
+                                isLikeLoading={isLikeLoading}
+                                currentImageIndex={currentImageIndex}
+                                handlePrevImage={handlePrevImage}
+                                handleNextImage={handleNextImage}
+                                handleLike={handleLike}
+                                handleShare={handleShare}
+                                handleLoginRequired={() => setShowLoginDialog(true)}
+                                userId={user?.id}
+                            />
                         </div>
 
                         {/* 데스크탑 레이아웃 (큰 화면) */}
                         <div className="hidden md:flex h-full">
-                            <div className="w-3/5 h-full bg-black flex items-center justify-center">
-                                {post.imageUrls && post.imageUrls.length > 0 ? (
-                                    <div className="relative h-full w-full flex items-center justify-center">
-                                        <img
-                                            src={
-                                                post.imageUrls[
-                                                    currentImageIndex
-                                                ]
-                                            }
-                                            alt={`포스트 이미지 ${
-                                                currentImageIndex + 1
-                                            }`}
-                                            className="max-h-full max-w-full object-contain"
-                                        />
-
-                                        {/* 이미지가 2개 이상인 경우 네비게이션 버튼 표시 */}
-                                        {post.imageUrls.length > 1 && (
-                                            <>
-                                                <button
-                                                    onClick={handlePrevImage}
-                                                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full"
-                                                >
-                                                    &lt;
-                                                </button>
-                                                <button
-                                                    onClick={handleNextImage}
-                                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full"
-                                                >
-                                                    &gt;
-                                                </button>
-
-                                                {/* 이미지 인디케이터 */}
-                                                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                                                    {post.imageUrls.map(
-                                                        (_, index) => (
-                                                            <div
-                                                                key={index}
-                                                                className={`w-2 h-2 rounded-full ${
-                                                                    index ===
-                                                                    currentImageIndex
-                                                                        ? "bg-white"
-                                                                        : "bg-white/50"
-                                                                }`}
-                                                            />
-                                                        )
-                                                    )}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center text-white">
-                                        <p>이미지가 없는 포스트입니다.</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="w-2/5 h-full flex flex-col border-l">
-                                {/* 헤더 */}
-                                <div className="p-4 border-b flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <img
-                                            src={
-                                                post.authorAvatarUrl ||
-                                                "/assets/default-avatar.png"
-                                            }
-                                            alt={post.authorNickname}
-                                            className="w-10 h-10 rounded-full"
-                                        />
-                                        <div>
-                                            <h3 className="font-medium">
-                                                {post.authorNickname}
-                                            </h3>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={onClose}
-                                        className="text-gray-500 hover:text-gray-700"
-                                    >
-                                        <X size={20} />
-                                    </button>
-                                </div>
-
-                                {/* 포스트 내용 */}
-                                <div className="flex-1 overflow-y-auto p-4">
-                                    <p className="whitespace-pre-line">
-                                        {post.content}
-                                    </p>
-                                </div>
-
-                                {/* 하단 버튼 */}
-                                <div className="p-4 border-t">
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex items-center space-x-4">
-                                            <button
-                                                onClick={handleLike}
-                                                disabled={isLikeLoading}
-                                                className="flex items-center space-x-1"
-                                            >
-                                                <Heart
-                                                    size={20}
-                                                    className={
-                                                        liked
-                                                            ? "text-red-500 fill-red-500"
-                                                            : "text-gray-500"
-                                                    }
-                                                />
-                                                <span>{likeCount}</span>
-                                            </button>
-                                        </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={handleShare}
-                                        >
-                                            <Share2
-                                                size={18}
-                                                className="mr-1"
-                                            />
-                                            공유
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
+                            <DesktopPostLayout
+                                post={post}
+                                profile={profile}
+                                activeTab={activeTab}
+                                setActiveTab={setActiveTab}
+                                liked={liked}
+                                isLikeLoading={isLikeLoading}
+                                currentImageIndex={currentImageIndex}
+                                handlePrevImage={handlePrevImage}
+                                handleNextImage={handleNextImage}
+                                handleLike={handleLike}
+                                handleShare={handleShare}
+                                handleLoginRequired={() => setShowLoginDialog(true)}
+                                onClose={onClose}
+                                userId={user?.id}
+                            />
                         </div>
                     </div>
                 </DialogContent>
