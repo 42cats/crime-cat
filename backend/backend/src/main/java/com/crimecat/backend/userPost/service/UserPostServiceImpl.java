@@ -81,6 +81,9 @@ public class UserPostServiceImpl implements UserPostService {
                 .sorted(Comparator.comparingInt(UserPostImage::getSortOrder))
                 .map(UserPostImage::getImageUrl)
                 .collect(Collectors.toList());
+        
+        // 좋아요 수는 별도 조회
+        long likeCount = userPostLikeRepository.countByPostId(post.getId());
 
         return UserPostDto.builder()
                 .postId(post.getId())
@@ -88,7 +91,7 @@ public class UserPostServiceImpl implements UserPostService {
                 .authorAvatarUrl(post.getUser().getProfileImagePath())
                 .content(post.getContent())
                 .imageUrls(images)
-                .likeCount(post.getLikes().size())
+                .likeCount(Long.valueOf(likeCount).intValue())
                 .liked(false) // 로그인 여부 판단 불가
                 .build();
     }
@@ -128,12 +131,15 @@ public class UserPostServiceImpl implements UserPostService {
                     .map(UserPostImage::getImageUrl)
                     .orElse(null);
 
+            // 좋아요 수는 별도 조회
+            long likeCount = userPostLikeRepository.countByPostId(post.getId());
+
             return UserPostGalleryPageDto.builder()
                     .postId(post.getId())
                     .authorNickname(post.getUser().getNickname())
                     .content(post.getContent())
                     .thumbnailUrl(thumbnail)
-                    .likeCount(post.getLikes().size())
+                    .likeCount(Long.valueOf(likeCount).intValue())
                     .build();
         });
     }
@@ -209,6 +215,30 @@ public class UserPostServiceImpl implements UserPostService {
 
         // ── 본문 수정 ────────────────────────────────────
         post.setContent(content);
+    }
+
+    @Override
+    public Page<UserPostGalleryPageDto> getMyUserPostGalleryPage(WebUser user, Pageable pageable) {
+        Page<UserPost> posts = userPostRepository.findByUserWithImages(user, pageable);
+
+        return posts.map(post -> {
+            String thumbnail = post.getImages().stream()
+                    .sorted(Comparator.comparingInt(UserPostImage::getSortOrder))
+                    .findFirst()
+                    .map(UserPostImage::getImageUrl)
+                    .orElse(null);
+
+            // 좋아요 수는 별도 조회
+            long likeCount = userPostLikeRepository.countByPostId(post.getId());
+
+            return UserPostGalleryPageDto.builder()
+                    .postId(post.getId())
+                    .authorNickname(post.getUser().getNickname())
+                    .content(post.getContent())
+                    .thumbnailUrl(thumbnail)
+                    .likeCount(Long.valueOf(likeCount).intValue())
+                    .build();
+        });
     }
 
     public String extractFilenameFromUrl(String imageUrl) {

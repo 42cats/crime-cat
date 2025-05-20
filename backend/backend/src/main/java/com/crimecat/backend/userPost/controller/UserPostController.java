@@ -7,8 +7,15 @@ import com.crimecat.backend.storage.StorageFileType;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.utils.FileUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.userPost.dto.UserPostGalleryPageDto;
+import com.crimecat.backend.userPost.sort.UserPostSortType;
+import com.crimecat.backend.utils.sort.SortUtil;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -103,5 +110,34 @@ public class UserPostController {
         WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
         boolean nowLiked = userPostService.toggleLike(postId, currentWebUser);
         return ResponseEntity.ok(nowLiked);
+    }
+    
+    @GetMapping("/my")
+    public ResponseEntity<Page<UserPostGalleryPageDto>> getMyUserPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(required = false) List<String> sort
+    ) {
+        WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
+        
+        // sort 파라미터 처리
+        List<UserPostSortType> sortTypes = (sort != null && !sort.isEmpty())
+               ? sort.stream()
+               .map(String::toUpperCase)
+               .map(UserPostSortType::valueOf)
+               .toList()
+               : List.of(UserPostSortType.LATEST);
+
+        // Sort 결합
+        Sort resolvedSort = SortUtil.combineSorts(sortTypes);
+        
+        // PageRequest 생성
+        Pageable pageable = PageRequest.of(page, size, resolvedSort);
+        
+        // 서비스 호출
+        Page<UserPostGalleryPageDto> pageResult = 
+                userPostService.getMyUserPostGalleryPage(currentUser, pageable);
+                
+        return ResponseEntity.ok(pageResult);
     }
 }
