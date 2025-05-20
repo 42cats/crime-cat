@@ -2,8 +2,10 @@ package com.crimecat.backend.userPost.service;
 
 import com.crimecat.backend.userPost.dto.UserPostDto;
 import com.crimecat.backend.userPost.dto.UserPostGalleryPageDto;
+import com.crimecat.backend.webUser.domain.WebUser;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -12,17 +14,25 @@ public interface UserPostService {
 
     /**
      * 유저 게시글 생성
-     * @param currentUser 로그인된 사용자 (webUser)
+     * @param user 로그인된 사용자 (webUser)
      * @param content 게시글 내용
+     * @param imageIds 이미지uuid
      * @param imageUrls 업로드된 이미지 URL 리스트 (최대 5장)
      * @return 생성된 게시글 ID
      */
-    void createUserPost(Object currentUser, String content, List<String> imageUrls);
+    void createUserPost(WebUser user, String content, List<UUID> imageIds, List<String> imageUrls);
 
     /**
      * 유저 게시글 수정 (이미지는 교체 방식)
      */
-    void updateUserPost(UUID postId, Object currentUser, String content, List<String> imageUrls);
+    void updateUserPostPartially(
+            UUID postId,
+            WebUser user,
+            String content,
+            List<MultipartFile> newImages,
+            List<UUID> newImageIds,
+            List<String> keepImageUrls
+    );
 
     /**
      * 유저 게시글 삭제
@@ -49,4 +59,5 @@ public interface UserPostService {
      * 갤러리형 게시글 목록 조회 (썸네일 포함)
      */
     Page<UserPostGalleryPageDto> getUserPostGalleryPage(Pageable pageable);
+
 }
