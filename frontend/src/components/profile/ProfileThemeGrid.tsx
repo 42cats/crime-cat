@@ -47,7 +47,7 @@ const ProfileThemeGrid: React.FC<ProfileThemeGridProps> = ({ userId }) => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 min-h-[150px] md:min-h-[200px]">
         {[1, 2, 3, 4, 5, 6].map(i => (
           <div key={i} className="aspect-square bg-gray-100 animate-pulse rounded"></div>
         ))}
@@ -57,8 +57,8 @@ const ProfileThemeGrid: React.FC<ProfileThemeGridProps> = ({ userId }) => {
 
   if (!themes.length) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-gray-400 bg-gray-50 rounded-md">
-        <PackageIcon size={48} className="mb-4" />
+      <div className="flex flex-col items-center justify-center py-8 text-gray-400 bg-gray-50 rounded-md min-h-[150px] md:min-h-[200px]">
+        <PackageIcon size={40} className="mb-3" />
         <p className="text-sm">제작한 테마가 없습니다.</p>
       </div>
     );
@@ -96,7 +96,7 @@ const ProfileThemeGrid: React.FC<ProfileThemeGridProps> = ({ userId }) => {
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3 min-h-[150px] md:min-h-[200px]">
         {themes.map((theme) => (
           <div
             key={theme.themeId}

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(
-    value    = "/api/v1/public/web_user",
+    value    = "/api/v1/public/web_users",
     produces = MediaType.APPLICATION_JSON_VALUE   // ← 여기에 JSON만 생산하겠다고 선언
 )
 public class WebUserPublicController {

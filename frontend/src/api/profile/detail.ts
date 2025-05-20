@@ -18,12 +18,26 @@ export interface ProfileDetailDto {
  * @param userId 사용자 ID
  * @returns 프로필 상세 정보
  */
-export const getProfileDetail = async (userId: string): Promise<ProfileDetailDto> => {
-  try {
-    const response = await apiClient.get<ProfileDetailDto>(`/public/web_user/${userId}/profile/detail`);
-    return response;
-  } catch (error) {
-    console.error(`프로필 상세 정보 조회 실패:`, error);
-    throw error;
-  }
+export const getProfileDetail = async (
+    userId: string
+): Promise<ProfileDetailDto> => {
+    try {
+        // userId가 유효한지 간단히 검사
+        if (!userId || userId.trim() === "") {
+            throw new Error("Invalid user ID");
+        }
+
+        const response = await apiClient.get<ProfileDetailDto>(
+            `/public/web_users/${userId}/profile/detail`,
+            {
+                headers: {
+                    Accept: "application/json",
+                },
+            }
+        );
+        return response;
+    } catch (error) {
+        console.error(`프로필 상세 정보 조회 실패:`, error);
+        throw error;
+    }
 };

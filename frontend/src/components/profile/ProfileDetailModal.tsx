@@ -5,7 +5,7 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog";
-import { X, Copy } from "lucide-react";
+import { X, Copy, UserX, AlertCircle } from "lucide-react";
 import { getProfileDetail, ProfileDetailDto } from "@/api/profile/detail";
 import { Button } from "@/components/ui/button";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -13,12 +13,15 @@ import { toast } from "sonner";
 import ProfileHeader from "./ProfileHeader";
 import ProfileBio from "./ProfileBio";
 import ProfileThemeGrid from "./ProfileThemeGrid";
+import ProfilePostGrid from "./ProfilePostGrid";
 
 interface ProfileDetailModalProps {
     userId: string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }
+
+type TabType = "themes" | "posts";
 
 const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
     userId,
@@ -27,7 +30,8 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
 }) => {
     const [profile, setProfile] = useState<ProfileDetailDto | null>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<{ type: string; message: string } | null>(null);
+    const [activeTab, setActiveTab] = useState<TabType>("themes");
 
     useEffect(() => {
         if (!open) return;
@@ -38,10 +42,37 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
             .then((data) => {
                 console.log("프로필 데이터:", data);
                 setProfile(data);
+                setError(null);
             })
             .catch((err) => {
                 console.error("프로필 로드 실패:", err);
-                setError("프로필 로드 실패");
+                // 오류 유형 처리
+                if (err.response) {
+                    // 서버 응답이 왔지만 오류 상태코드인 경우
+                    if (err.response.status === 404) {
+                        setError({
+                            type: "not_found",
+                            message: "해당 사용자를 찾을 수 없습니다.",
+                        });
+                    } else {
+                        setError({
+                            type: "server_error",
+                            message: "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+                        });
+                    }
+                } else if (err.request) {
+                    // 요청은 보냈지만 응답을 받지 못한 경우
+                    setError({
+                        type: "network_error",
+                        message: "네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.",
+                    });
+                } else {
+                    // 기타 오류
+                    setError({
+                        type: "unknown_error",
+                        message: "알 수 없는 오류가 발생했습니다.",
+                    });
+                }
             })
             .finally(() => setLoading(false));
     }, [open, userId]);
@@ -62,7 +93,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
     if (loading) {
         return (
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="max-w-3xl w-full p-0 overflow-hidden">
+                <DialogContent className="max-w-3xl w-full p-0 overflow-hidden max-h-[85vh]">
                     <DialogTitle className="sr-only">사용자 프로필</DialogTitle>
                     <DialogDescription className="sr-only">
                         사용자의 프로필 정보와 제작한 테마를 보여줍니다.
@@ -95,9 +126,42 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
         );
     }
 
+    // 오류 상태
+    if (error) {
+        return (
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent className="max-w-3xl w-full p-0 overflow-hidden bg-white max-h-[85vh]">
+                    <DialogTitle className="sr-only">사용자 프로필</DialogTitle>
+                    <DialogDescription className="sr-only">
+                        사용자의 프로필 정보와 제작한 테마를 보여줍니다.
+                    </DialogDescription>
+                    
+                    <div className="p-8 flex flex-col items-center justify-center min-h-[300px] md:min-h-[400px] text-center">
+                        {error.type === "not_found" ? (
+                            <UserX size={64} className="text-gray-400 mb-4" />
+                        ) : (
+                            <AlertCircle size={64} className="text-gray-400 mb-4" />
+                        )}
+                        <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                            {error.type === "not_found" ? "사용자를 찾을 수 없음" : "오류가 발생했습니다"}
+                        </h3>
+                        <p className="text-gray-600 mb-6">{error.message}</p>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => onOpenChange(false)}
+                            className="min-w-[120px]"
+                        >
+                            닫기
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        );
+    }
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-3xl w-full p-0 overflow-hidden bg-white">
+            <DialogContent className="max-w-3xl w-full p-0 overflow-hidden bg-white transition-all duration-300 ease-in-out max-h-[85vh] flex flex-col">
                 <VisuallyHidden>
                     <DialogTitle>사용자 프로필</DialogTitle>
                     <DialogDescription>
@@ -106,7 +170,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                 </VisuallyHidden>
 
                 {/* 프로필 정보와 프로필 링크 복사 버튼 */}
-                <div className="flex flex-col">
+                <div className="flex flex-col flex-1 overflow-hidden">
                     {profile && (
                         <>
                             {/* 프로필 헤더 섹션 */}
@@ -114,23 +178,36 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                 <ProfileHeader profile={profile} />
                             </div>
 
-                            {/* 프로필 내용 섹션 */}
-                            <div className="p-4">
+                            {/* 프로필 내용 섹션 - 크기 고정 */}
+                            <div className="p-4 overflow-y-auto flex-1">
                                 {/* 자기소개 */}
                                 <ProfileBio bio={profile.bio} />
 
-                                {/* 제작 테마 섹션 */}
-                                <div className="mt-6">
-                                    <h2 className="text-lg font-semibold mb-3 text-gray-700 flex items-center border-b pb-2">
-                                        <span className="border-b-2 border-blue-500 pb-1">
+                                {/* 탭 컨테이너 */}
+                                <div className="mt-4 md:mt-6">
+                                    {/* 탭 헤더 */}
+                                    <div className="flex border-b border-gray-200 mb-2 md:mb-4">
+                                        <button
+                                            className={`pb-1 md:pb-2 px-3 md:px-4 text-center text-sm md:text-base ${activeTab === "themes" ? "border-b-2 border-blue-500 text-blue-600 font-medium" : "text-gray-500"}`}
+                                            onClick={() => setActiveTab("themes")}
+                                        >
                                             제작 테마
-                                        </span>
-                                    </h2>
+                                        </button>
+                                        <button
+                                            className={`pb-1 md:pb-2 px-3 md:px-4 text-center text-sm md:text-base ${activeTab === "posts" ? "border-b-2 border-blue-500 text-blue-600 font-medium" : "text-gray-500"}`}
+                                            onClick={() => setActiveTab("posts")}
+                                        >
+                                            포스트
+                                        </button>
+                                    </div>
 
-                                    <div className="mt-3">
-                                        <ProfileThemeGrid
-                                            userId={profile.userId}
-                                        />
+                                    {/* 탭 컨텐츠 - 고정 크기 컨테이너 적용 */}
+                                    <div className="mt-3 min-h-[200px] md:min-h-[300px] transition-all duration-300 ease-in-out overflow-y-auto">
+                                        {activeTab === "themes" ? (
+                                            <ProfileThemeGrid userId={profile.userId} />
+                                        ) : (
+                                            <ProfilePostGrid userId={profile.userId} />
+                                        )}
                                     </div>
                                 </div>
                             </div>
