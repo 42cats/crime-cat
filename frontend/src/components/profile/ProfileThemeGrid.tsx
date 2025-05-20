@@ -9,9 +9,10 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface ProfileThemeGridProps {
   userId: string;
+  onThemesLoaded?: (count: number) => void;
 }
 
-const ProfileThemeGrid: React.FC<ProfileThemeGridProps> = ({ userId }) => {
+const ProfileThemeGrid: React.FC<ProfileThemeGridProps> = ({ userId, onThemesLoaded }) => {
   const [themes, setThemes] = useState<CrimesceneThemeSummeryDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTheme, setSelectedTheme] = useState<CrimesceneThemeSummeryDto | null>(null);
@@ -30,11 +31,17 @@ const ProfileThemeGrid: React.FC<ProfileThemeGridProps> = ({ userId }) => {
     getUserThemes(userId)
       .then((data) => {
         console.log("테마 데이터:", data);
-        setThemes(data.themeList || []);
+        const themeList = data.themeList || [];
+        setThemes(themeList);
+        
+        // 테마 개수를 부모 컴포넌트에 전달
+        if (onThemesLoaded) {
+          onThemesLoaded(themeList.length);
+        }
         
         // 각 테마에 대한 좋아요 상태 초기화
         const likeStates: Record<string, boolean> = {};
-        (data.themeList || []).forEach(theme => {
+        themeList.forEach(theme => {
           likeStates[theme.themeId] = false;
         });
         setLikedThemes(likeStates);
