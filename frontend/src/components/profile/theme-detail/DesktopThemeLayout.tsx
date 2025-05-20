@@ -56,7 +56,7 @@ const DesktopThemeLayout: React.FC<DesktopThemeLayoutProps> = ({
   };
 
   return (
-    <div className="flex flex-row h-full overflow-hidden">
+    <div className="flex flex-row h-full overflow-hidden w-full">
       {/* 이미지 섹션 */}
       <ThemeImageSection
         thumbNail={theme.thumbNail}
@@ -100,19 +100,19 @@ const DesktopThemeLayout: React.FC<DesktopThemeLayoutProps> = ({
         </div>
 
         {/* 탭 메뉴 및 콘텐츠 - 탭 커스텀 스타일 적용 */}
-        <div className="flex flex-col flex-grow theme-tab-override">
+        <div className="flex flex-col flex-grow theme-tab-override h-full overflow-hidden">
           <Tabs 
             defaultValue={activeTab} 
             value={activeTab} 
             onValueChange={(value) => setActiveTab(value as 'info' | 'comments')}
-            className="flex flex-col flex-grow h-full theme-tab-radix"
+            className="flex flex-col flex-grow h-full theme-tab-radix overflow-hidden"
           >
             <TabsList className="w-full grid grid-cols-2 sticky top-0 bg-white z-10">
               <TabsTrigger value="info">정보</TabsTrigger>
               <TabsTrigger value="comments">댓글</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="info" className="h-full p-4 overflow-y-auto">
+            <TabsContent value="info" className="h-full p-4 overflow-y-auto flex-grow">
               <div className="pb-20">
                 <ThemeInfoContent
                   themeDetail={themeDetail}
@@ -123,7 +123,7 @@ const DesktopThemeLayout: React.FC<DesktopThemeLayoutProps> = ({
               </div>
             </TabsContent>
             
-            <TabsContent value="comments" className="h-full overflow-y-auto">
+            <TabsContent value="comments" className="h-full overflow-y-auto flex-grow">
               <div className="pb-20">
                 <ModalCommentList 
                   gameThemeId={theme.themeId}
