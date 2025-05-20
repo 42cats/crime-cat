@@ -160,27 +160,32 @@ class UserPostService {
       const formData = new FormData();
       formData.append('content', content);
       
+      // 유효한 이미지만 추가
+      let validImages: File[] = [];
       if (newImages && newImages.length > 0) {
-        // 이미지 파일 유효성 한번 더 검사
-        const validImages = newImages.filter(img => img.type.startsWith('image/'));
-        
+        validImages = newImages.filter(img => img.type.startsWith('image/'));
         console.log('올바른 이미지 파일:', validImages.length);
         
+        // 이미지 추가
         validImages.forEach((image, index) => {
-          formData.append('newImages', image, `image_${index}.${image.name.split('.').pop()}`);
           // 파일명에 확장자 추가하여 서버에서 이미지 형식 인식 확실하게
-        });
-        
-        // UUID 생성
-        validImages.forEach(() => {
-          formData.append('newImageIds', crypto.randomUUID());
+          const fileName = `image_${index}.${image.name.split('.').pop()}`;
+          formData.append('newImages', image, fileName);
         });
       }
       
+      // UUID 추가 - JSON 요소로 변환하여 추가
+      if (validImages.length > 0) {
+        const newImageIds = validImages.map(() => crypto.randomUUID());
+        formData.append('newImageIds', JSON.stringify(newImageIds));
+        console.log('newImageIds 추가:', newImageIds);
+      }
+      
+      // 유지할 이미지 URL 추가
       if (keepImageUrls && keepImageUrls.length > 0) {
-        keepImageUrls.forEach(url => {
-          formData.append('keepImageUrls', url);
-        });
+        // 배열로 JSON 직렬화하여 한번에 전송
+        formData.append('keepImageUrls', JSON.stringify(keepImageUrls));
+        console.log('keepImageUrls 추가:', keepImageUrls);
       }
       
       // FormData 내용 로깅 (디버깅용)
