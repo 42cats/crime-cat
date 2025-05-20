@@ -2,7 +2,8 @@ package com.crimecat.backend.storage;
 
 public enum StorageFileType {
   AVATAR("avatar"),
-  GAME_THEME("game-theme");
+  GAME_THEME("game-theme"),
+  USER_POST_IMAGE("user-post");
 
   private final String key;
   private String uploadDir;
