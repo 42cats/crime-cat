@@ -25,6 +25,10 @@ public class BoardPost {
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
+    @Column(name = "NUMBER")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer number;
+
     @Column(name = "SUBJECT", length = 200)
     private String subject;
 
@@ -63,8 +67,8 @@ public class BoardPost {
     private Integer comments = 0;
 
     @Builder.Default
-    @Column(name = "SECRET")
-    private Boolean secret = false;
+    @Column(name = "IS_SECRET")
+    private Boolean isSecret = false;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "POST_TYPE")

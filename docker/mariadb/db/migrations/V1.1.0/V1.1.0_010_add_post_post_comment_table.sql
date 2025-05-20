@@ -8,6 +8,7 @@ USE ${DB_DISCORD};
 -- 1) board_posts 테이블
 CREATE TABLE IF NOT EXISTS `board_posts` (
     `id`             BINARY(16)     PRIMARY KEY,
+    `number`         INT            NOT NULL AUTO_INCREMENT UNIQUE,
     `subject`        VARCHAR(200)   NOT NULL,
     `content`        TEXT           NOT NULL,
     `user`           BINARY(16)     NOT NULL,
@@ -17,8 +18,8 @@ CREATE TABLE IF NOT EXISTS `board_posts` (
     `views`          INT            NOT NULL DEFAULT 0,
     `likes`          INT            NOT NULL DEFAULT 0,
     `comments`       INT            NOT NULL DEFAULT 0,
-    `secret`         BOOLEAN        NOT NULL DEFAULT FALSE,
-    `post_type`      ENUM('CRIME', 'ESCAPE', 'NONE')   NOT NULL,
+    `is_secret`      BOOLEAN        NOT NULL DEFAULT FALSE,
+    `post_type`      ENUM('GENERAL', 'QUESTION', 'PHOTO', 'SECRET', 'PROMOTION', 'RECRUIT', 'CRIME_SCENE', 'MURDER_MYSTERY', 'ESCAPE_ROOM', 'REAL_WORLD')   NOT NULL,
     `board_type`     ENUM('CHAT', 'QUESTION', 'NONE')  NOT NULL,
     `is_pinned`      BOOLEAN        NOT NULL DEFAULT FALSE,
     CONSTRAINT `fk_board_posts_author`
@@ -67,8 +68,9 @@ CREATE TABLE IF NOT EXISTS `post_comments` (
     `parent`         BINARY(16)     DEFAULT NULL,
     `created_at`     DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`     DATETIME       NULL DEFAULT NULL,
+    `likes`          INT            NOT NULL DEFAULT 0,
     `is_deleted`     BOOLEAN        NOT NULL DEFAULT FALSE,
-    `secret`         BOOLEAN        NOT NULL DEFAULT FALSE,
+    `is_secret`      BOOLEAN        NOT NULL DEFAULT FALSE,
     CONSTRAINT `fk_post_comments_author`
     FOREIGN KEY (`user`)
     REFERENCES `web_users`(`id`),
