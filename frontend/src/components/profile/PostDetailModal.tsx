@@ -91,7 +91,9 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
         try {
             const nowLiked = await userPostService.togglePostLike(post.postId);
             setLiked(nowLiked);
-            setLikeCount((prev) => (nowLiked ? prev + 1 : Math.max(0, prev - 1)));
+            setLikeCount((prev) =>
+                nowLiked ? prev + 1 : Math.max(0, prev - 1)
+            );
         } catch (error) {
             console.error("좋아요 처리 중 오류 발생:", error);
             toast.error("좋아요 처리 중 문제가 발생했습니다");
@@ -102,13 +104,13 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
     // 이미지 네비게이션 핸들러
     const handlePrevImage = () => {
-        setCurrentImageIndex((prev) => 
+        setCurrentImageIndex((prev) =>
             prev === 0 ? post.imageUrls.length - 1 : prev - 1
         );
     };
 
     const handleNextImage = () => {
-        setCurrentImageIndex((prev) => 
+        setCurrentImageIndex((prev) =>
             prev === post.imageUrls.length - 1 ? 0 : prev + 1
         );
     };
@@ -116,15 +118,15 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
     const formatDate = (dateString: string) => {
         try {
             const date = new Date(dateString);
-            return new Intl.DateTimeFormat('ko-KR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+            return new Intl.DateTimeFormat("ko-KR", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
             }).format(date);
         } catch (error) {
-            return '날짜 정보 없음';
+            return "날짜 정보 없음";
         }
     };
 
@@ -142,7 +144,10 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                             <div className="p-4 border-b flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <img
-                                        src={post.authorAvatarUrl || "/assets/default-avatar.png"}
+                                        src={
+                                            post.authorAvatarUrl ||
+                                            "/assets/default-avatar.png"
+                                        }
                                         alt={post.authorNickname}
                                         className="w-10 h-10 rounded-full"
                                     />
@@ -152,12 +157,6 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                         </h3>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={onClose}
-                                    className="text-gray-500 hover:text-gray-700"
-                                >
-                                    <X size={20} />
-                                </button>
                             </div>
 
                             {/* 이미지 슬라이더 (이미지가 있는 경우만) */}
@@ -165,12 +164,18 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                 <div className="relative">
                                     <div className="aspect-square">
                                         <img
-                                            src={post.imageUrls[currentImageIndex]}
-                                            alt={`포스트 이미지 ${currentImageIndex + 1}`}
+                                            src={
+                                                post.imageUrls[
+                                                    currentImageIndex
+                                                ]
+                                            }
+                                            alt={`포스트 이미지 ${
+                                                currentImageIndex + 1
+                                            }`}
                                             className="w-full h-full object-contain"
                                         />
                                     </div>
-                                    
+
                                     {/* 이미지가 2개 이상인 경우 네비게이션 버튼 표시 */}
                                     {post.imageUrls.length > 1 && (
                                         <>
@@ -186,19 +191,22 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                             >
                                                 &gt;
                                             </button>
-                                            
+
                                             {/* 이미지 인디케이터 */}
                                             <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
-                                                {post.imageUrls.map((_, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className={`w-2 h-2 rounded-full ${
-                                                            index === currentImageIndex
-                                                                ? 'bg-white'
-                                                                : 'bg-white/50'
-                                                        }`}
-                                                    />
-                                                ))}
+                                                {post.imageUrls.map(
+                                                    (_, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className={`w-2 h-2 rounded-full ${
+                                                                index ===
+                                                                currentImageIndex
+                                                                    ? "bg-white"
+                                                                    : "bg-white/50"
+                                                            }`}
+                                                        />
+                                                    )
+                                                )}
                                             </div>
                                         </>
                                     )}
@@ -207,8 +215,10 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
                             {/* 포스트 내용 */}
                             <div className="p-4">
-                                <p className="whitespace-pre-line mb-4">{post.content}</p>
-                                
+                                <p className="whitespace-pre-line mb-4">
+                                    {post.content}
+                                </p>
+
                                 {/* 상호작용 버튼 */}
                                 <div className="flex justify-between items-center mt-2">
                                     <div className="flex items-center space-x-4">
@@ -219,7 +229,11 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                         >
                                             <Heart
                                                 size={20}
-                                                className={liked ? "text-red-500 fill-red-500" : "text-gray-500"}
+                                                className={
+                                                    liked
+                                                        ? "text-red-500 fill-red-500"
+                                                        : "text-gray-500"
+                                                }
                                             />
                                             <span>{likeCount}</span>
                                         </button>
@@ -242,11 +256,17 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                 {post.imageUrls && post.imageUrls.length > 0 ? (
                                     <div className="relative h-full w-full flex items-center justify-center">
                                         <img
-                                            src={post.imageUrls[currentImageIndex]}
-                                            alt={`포스트 이미지 ${currentImageIndex + 1}`}
+                                            src={
+                                                post.imageUrls[
+                                                    currentImageIndex
+                                                ]
+                                            }
+                                            alt={`포스트 이미지 ${
+                                                currentImageIndex + 1
+                                            }`}
                                             className="max-h-full max-w-full object-contain"
                                         />
-                                        
+
                                         {/* 이미지가 2개 이상인 경우 네비게이션 버튼 표시 */}
                                         {post.imageUrls.length > 1 && (
                                             <>
@@ -262,19 +282,22 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                                 >
                                                     &gt;
                                                 </button>
-                                                
+
                                                 {/* 이미지 인디케이터 */}
                                                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                                                    {post.imageUrls.map((_, index) => (
-                                                        <div
-                                                            key={index}
-                                                            className={`w-2 h-2 rounded-full ${
-                                                                index === currentImageIndex
-                                                                    ? 'bg-white'
-                                                                    : 'bg-white/50'
-                                                            }`}
-                                                        />
-                                                    ))}
+                                                    {post.imageUrls.map(
+                                                        (_, index) => (
+                                                            <div
+                                                                key={index}
+                                                                className={`w-2 h-2 rounded-full ${
+                                                                    index ===
+                                                                    currentImageIndex
+                                                                        ? "bg-white"
+                                                                        : "bg-white/50"
+                                                                }`}
+                                                            />
+                                                        )
+                                                    )}
                                                 </div>
                                             </>
                                         )}
@@ -291,7 +314,10 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                 <div className="p-4 border-b flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <img
-                                            src={post.authorAvatarUrl || "/assets/default-avatar.png"}
+                                            src={
+                                                post.authorAvatarUrl ||
+                                                "/assets/default-avatar.png"
+                                            }
                                             alt={post.authorNickname}
                                             className="w-10 h-10 rounded-full"
                                         />
@@ -311,7 +337,9 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
                                 {/* 포스트 내용 */}
                                 <div className="flex-1 overflow-y-auto p-4">
-                                    <p className="whitespace-pre-line">{post.content}</p>
+                                    <p className="whitespace-pre-line">
+                                        {post.content}
+                                    </p>
                                 </div>
 
                                 {/* 하단 버튼 */}
@@ -325,7 +353,11 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                             >
                                                 <Heart
                                                     size={20}
-                                                    className={liked ? "text-red-500 fill-red-500" : "text-gray-500"}
+                                                    className={
+                                                        liked
+                                                            ? "text-red-500 fill-red-500"
+                                                            : "text-gray-500"
+                                                    }
                                                 />
                                                 <span>{likeCount}</span>
                                             </button>
@@ -335,7 +367,10 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                             size="sm"
                                             onClick={handleShare}
                                         >
-                                            <Share2 size={18} className="mr-1" />
+                                            <Share2
+                                                size={18}
+                                                className="mr-1"
+                                            />
                                             공유
                                         </Button>
                                     </div>

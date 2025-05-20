@@ -31,6 +31,7 @@ public class UserPostServiceImpl implements UserPostService {
     private final UserPostImageRepository userPostImageRepository;
     private final UserPostLikeRepository userPostLikeRepository;
     private final StorageService storageService;
+    private final com.crimecat.backend.webUser.repository.WebUserRepository webUserRepository;
 
     @Override
     @Transactional
@@ -228,6 +229,35 @@ public class UserPostServiceImpl implements UserPostService {
 
         // ── 본문 수정 ────────────────────────────────────
         post.setContent(content);
+    }
+
+    @Override
+    public Page<UserPostGalleryPageDto> getUserPostGalleryPageByUserId(UUID userId, Pageable pageable) {
+        // 사용자 ID로 WebUser 객체 조회 - 존재하지 않을 경우 예외 발생
+        WebUser user = webUserRepository.findById(userId)
+                .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+        
+        // 기존 메소드 사용
+        Page<UserPost> posts = userPostRepository.findByUserWithImages(user, pageable);
+
+        return posts.map(post -> {
+            String thumbnail = post.getImages().stream()
+                    .sorted(Comparator.comparingInt(UserPostImage::getSortOrder))
+                    .findFirst()
+                    .map(UserPostImage::getImageUrl)
+                    .orElse(null);
+
+            // 좋아요 수는 별도 조회
+            long likeCount = userPostLikeRepository.countByPostId(post.getId());
+
+            return UserPostGalleryPageDto.builder()
+                    .postId(post.getId())
+                    .authorNickname(post.getUser().getNickname())
+                    .content(post.getContent())
+                    .thumbnailUrl(thumbnail)
+                    .likeCount(Long.valueOf(likeCount).intValue())
+                    .build();
+        });
     }
 
     @Override
