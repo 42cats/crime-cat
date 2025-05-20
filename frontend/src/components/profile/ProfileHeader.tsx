@@ -38,10 +38,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
     };
 
     return (
-        <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 p-6">
-            <div className="flex flex-col md:flex-row items-center gap-6">
+        <div className="relative bg-gradient-to-r from-blue-50 to-indigo-50 p-4 md:p-6">
+            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
                 {/* 프로필 이미지 */}
-                <div className="w-36 h-36 rounded-full border-2 border-blue-100 p-1 bg-white shadow-sm overflow-hidden">
+                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-2 border-blue-100 p-1 bg-white shadow-sm overflow-hidden">
                     {profile?.avatarImage ? (
                         <img
                             src={profile.avatarImage}
@@ -50,7 +50,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-full">
-                            <span className="text-3xl font-bold text-gray-400">
+                            <span className="text-2xl md:text-3xl font-bold text-gray-400">
                                 {profile?.userNickname?.[0]?.toUpperCase() ||
                                     "?"}
                             </span>
@@ -60,19 +60,19 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
 
                 {/* 사용자 정보 */}
                 <div className="flex-1 text-center md:text-left">
-                    <h1 className="text-2xl font-bold text-gray-800 mb-1">
+                    <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-1">
                         {profile.userNickname || "사용자"}
                     </h1>
 
-                    <div className="inline-block px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-500 font-medium mb-4">
+                    <div className="inline-block px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-500 font-medium mb-2 md:mb-4">
                         @user{profile.userId.slice(0, 6)}
                     </div>
 
                     {/* 사용자 통계 */}
-                    <div className="flex justify-center md:justify-start gap-6 mt-2">
+                    <div className="flex justify-center md:justify-start gap-3 md:gap-6 mt-1 md:mt-2">
                         <div className="flex items-center gap-1">
-                            <PackageIcon size={14} className="text-blue-500" />
-                            <span className="text-sm font-medium">
+                            <PackageIcon size={12} className="text-blue-500 hidden md:inline" />
+                            <span className="text-xs md:text-sm font-medium">
                                 제작{" "}
                                 <span className="font-bold">
                                     {profile.creationCount || 0}
@@ -80,8 +80,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
                             </span>
                         </div>
                         <div className="flex items-center gap-1">
-                            <GamepadIcon size={14} className="text-green-500" />
-                            <span className="text-sm font-medium">
+                            <GamepadIcon size={12} className="text-green-500 hidden md:inline" />
+                            <span className="text-xs md:text-sm font-medium">
                                 플레이{" "}
                                 <span className="font-bold">
                                     {profile.playCount || 0}
@@ -89,8 +89,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
                             </span>
                         </div>
                         <div className="flex items-center gap-1">
-                            <CoinsIcon size={14} className="text-yellow-500" />
-                            <span className="text-sm font-medium">
+                            <CoinsIcon size={12} className="text-yellow-500 hidden md:inline" />
+                            <span className="text-xs md:text-sm font-medium">
                                 포인트{" "}
                                 <span className="font-bold">
                                     {profile.point?.toLocaleString() || 0}
@@ -101,26 +101,27 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
                 </div>
 
                 {/* 오른쪽 액션 버튼들 */}
-                <div className="flex flex-col gap-2 mt-4 md:mt-0">
+                <div className="flex flex-col gap-2 mt-2 md:mt-0">
                     <Button
                         variant="outline"
                         size="sm"
-                        className="text-sm"
+                        className="text-xs md:text-sm"
                         onClick={copyProfileLink}
                     >
-                        <Copy size={14} className="mr-2" />
-                        프로필 링크 복사
+                        <Copy size={14} className="mr-1 md:mr-2" />
+                        <span className="hidden sm:inline">프로필 링크 복사</span>
+                        <span className="sm:hidden">링크 복사</span>
                     </Button>
                 </div>
             </div>
 
             {/* 소셜 미디어 링크 - 항상 표시 */}
-            <div className="mt-4 flex justify-center md:justify-start space-x-3">
+            <div className="mt-2 md:mt-4 flex justify-center md:justify-start space-x-2 md:space-x-3">
                 <button
                     onClick={() =>
                         openSocialLink(profile?.socialLinks?.instagram)
                     }
-                    className={`p-2 rounded-full ${
+                    className={`p-1.5 md:p-2 rounded-full ${
                         profile?.socialLinks?.instagram
                             ? "bg-gradient-to-br from-purple-600 to-pink-500 text-white"
                             : "bg-gray-200 text-gray-400"
@@ -141,7 +142,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
                     aria-label="X(트위터) 프로필 열기"
                     disabled={!profile?.socialLinks?.x}
                 >
-                    <Twitter size={16} />
+                    <Twitter size={14} />
                 </button>
 
                 <button
@@ -154,7 +155,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
                     aria-label="카카오톡 오픈프로필 열기"
                     disabled={!profile?.socialLinks?.kakao}
                 >
-                    <MessageCircle size={16} />
+                    <MessageCircle size={14} />
                 </button>
             </div>
         </div>

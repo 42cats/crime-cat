@@ -7,8 +7,8 @@ interface ProfileBioProps {
 
 const ProfileBio: React.FC<ProfileBioProps> = ({ bio }) => {
   return (
-    <div className="bg-white p-4 rounded-md">
-      <h2 className="text-lg font-semibold mb-3 text-gray-700">자기소개</h2>
+    <div className="bg-white p-3 md:p-4 rounded-md">
+      <h2 className="text-base md:text-lg font-semibold mb-2 md:mb-3 text-gray-700">자기소개</h2>
       <div className="text-gray-700 leading-relaxed">
         {bio ? (
           <MarkdownRenderer content={bio} />
