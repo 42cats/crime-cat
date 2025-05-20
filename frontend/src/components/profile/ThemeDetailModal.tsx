@@ -200,11 +200,11 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-        <DialogContent className="max-w-5xl w-[95%] md:w-full bg-white rounded-lg p-0 overflow-hidden flex flex-col">
+        <DialogContent className="max-w-5xl w-[95%] md:w-full bg-white rounded-lg p-0 overflow-hidden">
           <DialogTitle className="sr-only">테마 상세 정보</DialogTitle>
           
           {/* 모바일/데스크탑 레이아웃 컨테이너 */}
-          <div className="h-[85vh] md:h-[80vh] overflow-hidden flex flex-col">
+          <div className="h-[85vh] md:h-[80vh] overflow-y-auto md:overflow-hidden md:flex md:flex-col">
             {/* 상단 컨트롤 버튼 (닫기, 공유) */}
             <div className="absolute top-4 right-4 flex gap-2 z-20">
               <button
