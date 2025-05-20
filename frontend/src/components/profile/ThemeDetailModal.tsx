@@ -1,31 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { CrimesceneThemeSummeryDto } from '@/api/profile/themes';
-import { getProfileDetail, ProfileDetailDto } from '@/api/profile/detail';
-import {
-  Heart,
-  MessageSquare,
-  Share2,
-  X,
-  ThumbsUp,
-  ChevronLeft,
-  ChevronRight,
-  Info,
-  FileText,
-  Send
-} from 'lucide-react';
+import { Share2, X, Send, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ModalCommentList } from './ModalCommentList';
 import { useAuth } from "@/hooks/useAuth";
 import { themesService } from "@/api/themesService";
+import { getProfileDetail, ProfileDetailDto } from '@/api/profile/detail';
+import { CrimesceneThemeSummeryDto } from '@/api/profile/themes';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { gameHistoryService } from "@/api/gameHistoryService";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { UTCToKST } from '@/lib/dateFormat';
+
+// 분리된 컴포넌트들 임포트
+import { MobileThemeLayout, DesktopThemeLayout } from './theme-detail';
 
 interface ThemeDetailModalProps {
   theme: CrimesceneThemeSummeryDto;
@@ -53,6 +41,7 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
   
   // UI 상태
   const [activeTab, setActiveTab] = useState<ModalTab>(initialTab);
+  const [isImageCollapsed, setIsImageCollapsed] = useState(false);
   const [hasPlayedGame, setHasPlayedGame] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -214,216 +203,69 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
         <DialogContent className="max-w-5xl w-[95%] md:w-full bg-white rounded-lg overflow-hidden p-0">
           <DialogTitle className="sr-only">테마 상세 정보</DialogTitle>
           
-          <div className="relative flex flex-col md:flex-row h-[85vh] md:h-[80vh]" style={{ maxHeight: '85vh' }}>
-            {/* 이미지 */}
-            <div className="md:w-3/5 bg-black flex items-center justify-center" style={{ height: '100%', maxHeight: '85vh' }}>
-              <img
-                src={theme.thumbNail || "/content/image/default_image2.png"}
-                alt={theme.themeTitle}
-                className="w-full h-auto object-contain"
-                style={{ maxHeight: '100%' }}
+          {/* 모바일/데스크탑 레이아웃 컨테이너 */}
+          <div className="h-[85vh] md:h-[80vh] overflow-hidden">
+            {/* 상단 컨트롤 버튼 (닫기, 공유) */}
+            <div className="absolute top-4 right-4 flex gap-2 z-20">
+              <button
+                onClick={handleShare}
+                className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                title="공유하기"
+              >
+                <Share2 size={18} />
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                title="닫기"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* 반응형 레이아웃: 모바일과 데스크탑 */}
+            <div className="block md:hidden">
+              {/* 모바일 레이아웃 */}
+              <MobileThemeLayout
+                theme={theme}
+                themeDetail={themeDetail}
+                themeDetailLoading={themeDetailLoading}
+                profile={profile}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                liked={liked}
+                isLikeLoading={isLikeLoading}
+                hasPlayedGame={hasPlayedGame}
+                userId={user?.id}
+                formatPlayTime={formatPlayTime}
+                handleLike={handleLike}
+                handleShare={handleShare}
+                handleLoginRequired={handleLoginRequired}
+                showRequestModal={() => setShowRequestModal(true)}
               />
             </div>
 
-            {/* 테마 정보 섹션 */}
-            <div className="md:w-2/5 flex flex-col h-full bg-white" style={{ height: '100%' }}>
-              <div className="absolute top-4 right-4 flex gap-2 z-10">
-                <button
-                  onClick={handleShare}
-                  className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-                  title="공유하기"
-                >
-                  <Share2 size={18} />
-                </button>
-                <button
-                  onClick={onClose}
-                  className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-                  title="닫기"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-              
-              {/* 프로필 정보 */}
-              <div className="flex items-center p-4 border-b">
-                <div className="w-8 h-8 rounded-full overflow-hidden mr-2 flex-shrink-0">
-                  <img
-                    src={
-                      profile?.avatarImage ||
-                      "https://cdn.discordapp.com/embed/avatars/1.png"
-                    }
-                    alt={
-                      profile?.userNickname ||
-                      "프로필"
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <span className="font-semibold text-sm">
-                  {profile?.userNickname || "사용자"}
-                </span>
-              </div>
-
-              {/* 탭 메뉴 */}
-              <Tabs defaultValue={initialTab} value={activeTab} onValueChange={(value) => setActiveTab(value as ModalTab)} className="flex flex-col flex-grow w-full overflow-hidden">
-                <TabsList className="w-full grid grid-cols-2">
-                  <TabsTrigger value="info">
-                    정보
-                  </TabsTrigger>
-                  <TabsTrigger value="comments">
-                    댓글
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="info" className="p-4 overflow-y-auto flex-grow" style={{ overflowY: 'auto' }}>
-                  {themeDetailLoading ? (
-                    <div className="flex justify-center py-4">
-                      <svg className="animate-spin h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                    </div>
-                  ) : themeDetail ? (
-                      <div className="space-y-4 pb-12">
-                      <h3 className="text-xl font-bold mb-4">
-                        {themeDetail.title}
-                      </h3>
-                      
-                      {themeDetail.summary && (
-                        <div className="mb-4">
-                          <h4 className="text-sm font-semibold text-gray-500">설명</h4>
-                          <p className="text-sm whitespace-pre-line">{themeDetail.summary}</p>
-                        </div>
-                      )}
-                      
-                      {themeDetail.content && (
-                        <div className="mb-4">
-                          <h4 className="text-sm font-semibold text-gray-500">콘텐츠</h4>
-                          <div className="text-sm whitespace-pre-line content-markdown overflow-y-auto max-h-[300px] border p-3 rounded-md" style={{ overflowY: 'scroll' }}>
-                            <pre className="whitespace-pre-wrap">{themeDetail.content}</pre>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className="mb-4">
-                        <h4 className="text-sm font-semibold text-gray-500">카테고리</h4>
-                        <Badge variant="secondary">{themeDetail.type}</Badge>
-                      </div>
-                      
-                      <div className="mb-4">
-                        <h4 className="text-sm font-semibold text-gray-500">가격</h4>
-                        <p>{themeDetail.price?.toLocaleString()}원</p>
-                      </div>
-                      
-                      <div className="mb-4">
-                        <h4 className="text-sm font-semibold text-gray-500">인원</h4>
-                        <p>
-                          {themeDetail.playersMin === themeDetail.playersMax 
-                            ? `${themeDetail.playersMin}인` 
-                            : `${themeDetail.playersMin}~${themeDetail.playersMax}인`}
-                        </p>
-                      </div>
-                      
-                      <div className="mb-4">
-                        <h4 className="text-sm font-semibold text-gray-500">플레이 시간</h4>
-                        <p>
-                          {formatPlayTime(themeDetail.playTimeMin, themeDetail.playTimeMax)}
-                        </p>
-                      </div>
-                      
-                      {themeDetail.tags?.length > 0 && (
-                        <div className="mb-4">
-                          <h4 className="text-sm font-semibold text-gray-500">태그</h4>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {themeDetail.tags.map((tag: string, idx: number) => (
-                              <Badge key={idx} variant="outline">#{tag}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                      <div className="space-y-4 pb-12">
-                      <h3 className="text-xl font-bold mb-4">
-                        {theme.themeTitle}
-                      </h3>
-                      
-                      <div className="mb-4">
-                        <h4 className="text-sm font-semibold text-gray-500">가격</h4>
-                        <p>{theme.themePrice?.toLocaleString()}원</p>
-                      </div>
-                      
-                      <div className="mb-4">
-                        <h4 className="text-sm font-semibold text-gray-500">인원</h4>
-                        <p>
-                          {theme.themeMinPlayer === theme.themeMaxPlayer 
-                            ? `${theme.themeMinPlayer}인` 
-                            : `${theme.themeMinPlayer}~${theme.themeMaxPlayer}인`}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="comments" className="overflow-auto flex-grow">
-                  <div className="h-full flex flex-col overflow-hidden">
-                    <ModalCommentList 
-                      gameThemeId={theme.themeId}
-                      currentUserId={user?.id}
-                      hasPlayedGame={hasPlayedGame}
-                      onLoginRequired={handleLoginRequired}
-                    />
-                  </div>
-                </TabsContent>
-              </Tabs>
-
-              {/* 액션 버튼 - 항상 표시 */}
-              <div className="border-t p-4 bg-white" style={{ marginTop: 'auto' }}>
-                <div className="flex justify-between mb-2 items-center">
-                  <div className="flex space-x-4 w-full justify-center md:justify-start">
-                    <button 
-                      className={`flex items-center gap-1 text-gray-800 ${liked ? 'text-red-500' : 'hover:text-red-500'} transition-colors`}
-                      onClick={handleLike}
-                      disabled={isLikeLoading}
-                    >
-                      <Heart size={24} className={liked ? 'fill-red-500' : ''} />
-                    </button>
-                    <button 
-                      className={`text-gray-800 ${activeTab === 'comments' ? 'text-blue-500' : 'hover:text-blue-500'} transition-colors`}
-                      onClick={() => setActiveTab('comments')}
-                    >
-                      <MessageSquare size={24} />
-                    </button>
-                    <button 
-                      className="text-gray-800 hover:text-green-500 transition-colors"
-                      onClick={handleShare}
-                    >
-                      <Share2 size={24} />
-                    </button>
-                  </div>
-                  <div className="flex gap-2">
-                    {user?.id && !hasPlayedGame && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowRequestModal(true)}
-                        className="text-xs px-2 py-1"
-                      >
-                        <FileText className="h-3 w-3 mr-1" />
-                        기록요청
-                      </Button>
-                    )}
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="text-xs px-2 py-1"
-                      onClick={() => window.open(`/themes/crimescene/${theme.themeId}`, '_blank')}
-                    >
-                      상세페이지
-                    </Button>
-                  </div>
-                </div>
-              </div>
+            <div className="hidden md:block h-full">
+              {/* 데스크탑 레이아웃 */}
+              <DesktopThemeLayout
+                theme={theme}
+                themeDetail={themeDetail}
+                themeDetailLoading={themeDetailLoading}
+                profile={profile}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                isImageCollapsed={isImageCollapsed}
+                setIsImageCollapsed={setIsImageCollapsed}
+                liked={liked}
+                isLikeLoading={isLikeLoading}
+                hasPlayedGame={hasPlayedGame}
+                userId={user?.id}
+                formatPlayTime={formatPlayTime}
+                handleLike={handleLike}
+                handleShare={handleShare}
+                handleLoginRequired={handleLoginRequired}
+                showRequestModal={() => setShowRequestModal(true)}
+              />
             </div>
           </div>
         </DialogContent>

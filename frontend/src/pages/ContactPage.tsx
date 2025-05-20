@@ -8,7 +8,7 @@ const ContactPage: React.FC = () => {
             <button onClick={() => setShowProfile(true)}>프로필 보기</button>
 
             <ProfileDetailModal
-                userId="4742ca4d-07dd-4f6e-90dc-6c3a68d9481d"
+                userId="a2a8bea5-c131-40ec-b970-4c1683dddea2"
                 open={showProfile}
                 onOpenChange={setShowProfile}
             />
