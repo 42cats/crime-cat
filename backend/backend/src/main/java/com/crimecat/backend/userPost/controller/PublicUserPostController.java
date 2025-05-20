@@ -4,7 +4,9 @@ import com.crimecat.backend.userPost.dto.UserPostDto;
 import com.crimecat.backend.userPost.dto.UserPostGalleryPageDto;
 import com.crimecat.backend.userPost.service.UserPostService;
 import com.crimecat.backend.userPost.sort.UserPostSortType;
+import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.utils.sort.SortUtil;
+import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -56,11 +58,12 @@ public class PublicUserPostController {
     @GetMapping("/gallery/{userId}")
     public ResponseEntity<Page<UserPostGalleryPageDto>> getUserPostGalleryPage(
             @PathVariable UUID userId,
-            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
-            @RequestParam(required = false)    List<String> sort   // ↙ 사용자가 다중 정렬 지정 가능
+            @RequestParam(required = false) List<String> sort
     ) {
-        // ① sort 파라미터가 없으면 기본 LATEST
+        WebUser currentUser = AuthenticationUtil.getCurrentWebUserOptional().orElse(null);
+
         List<UserPostSortType> sortTypes = (sort != null && !sort.isEmpty())
                 ? sort.stream()
                 .map(String::toUpperCase)
@@ -68,15 +71,12 @@ public class PublicUserPostController {
                 .toList()
                 : List.of(UserPostSortType.LATEST);
 
-        // ② 다중 Sort 결합
         Sort resolvedSort = SortUtil.combineSorts(sortTypes);
-
-        // ③ PageRequest 생성
         Pageable pageable = PageRequest.of(page, size, resolvedSort);
 
-        // ④ 서비스 호출 - userId 전달, null을 전달하여 공개 게시글만 조회
+        // 접근 가능한 게시글만 조회 (비밀글, 팔로워 공개 필터링)
         Page<UserPostGalleryPageDto> pageResult =
-                userPostService.getUserPostGalleryPageByUserId(userId, null, pageable);
+                userPostService.getUserPostGalleryPageByUserId(userId, currentUser, pageable);
 
         return ResponseEntity.ok(pageResult);
     }

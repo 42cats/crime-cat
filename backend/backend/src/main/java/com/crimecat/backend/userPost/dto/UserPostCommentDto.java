@@ -1,6 +1,7 @@
 package com.crimecat.backend.userPost.dto;
 
 import com.crimecat.backend.userPost.domain.UserPostComment;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,14 +22,21 @@ public class UserPostCommentDto {
     private UUID authorId;
     private String authorNickname;
     private String authorAvatarUrl;
+    @JsonProperty("isPrivate")
     private boolean isPrivate;
+    @JsonProperty("isDeleted")
     private boolean isDeleted;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<UserPostCommentDto> replies;
     private boolean isVisible; // 비밀 댓글 표시 여부
+    private boolean isOwnComment; // 현재 사용자가 작성한 댓글인지 여부
     
     public static UserPostCommentDto from(UserPostComment comment, boolean isVisible) {
+        return from(comment, isVisible, null);
+    }
+    
+    public static UserPostCommentDto from(UserPostComment comment, boolean isVisible, UUID currentUserId) {
         if (comment == null) {
             return null;
         }
@@ -36,6 +44,9 @@ public class UserPostCommentDto {
         // 삭제된 댓글이거나 권한이 없는 비밀 댓글인 경우 내용을 가림
         String displayContent = isVisible ? comment.getContent() : 
                                 (comment.isDeleted() ? "삭제된 댓글입니다." : "비밀 댓글입니다.");
+        
+        // 현재 사용자가 작성한 댓글인지 확인
+        boolean isOwnComment = currentUserId != null && currentUserId.equals(comment.getAuthor().getId());
         
         return UserPostCommentDto.builder()
                 .id(comment.getId())
@@ -48,6 +59,7 @@ public class UserPostCommentDto {
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())
                 .isVisible(isVisible)
+                .isOwnComment(isOwnComment)
                 .build();
     }
     
@@ -58,13 +70,18 @@ public class UserPostCommentDto {
             UUID currentUserId, 
             UUID postAuthorId) {
             
-        UserPostCommentDto dto = from(comment, isCommentVisible(comment, currentUserId, postAuthorId, null));
+        boolean isVisible = isCommentVisible(comment, currentUserId, postAuthorId, null);
+        UserPostCommentDto dto = from(comment, isVisible, currentUserId);
         
         if (dto != null) {
+            // allReplies는 이미 정렬되어 있다고 가정 (호출 측에서 정렬 로직 처리)
             List<UserPostCommentDto> replyDtos = allReplies.stream()
                     .filter(reply -> reply.getParent() != null 
                             && reply.getParent().getId().equals(comment.getId()))
-                    .map(reply -> from(reply, isCommentVisible(reply, currentUserId, postAuthorId, comment.getAuthor().getId())))
+                    .map(reply -> {
+                        boolean replyVisible = isCommentVisible(reply, currentUserId, postAuthorId, comment.getAuthor().getId());
+                        return from(reply, replyVisible, currentUserId);
+                    })
                     .collect(Collectors.toList());
             
             dto.setReplies(replyDtos);

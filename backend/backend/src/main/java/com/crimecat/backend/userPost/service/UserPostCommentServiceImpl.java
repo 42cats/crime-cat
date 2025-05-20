@@ -12,6 +12,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -65,8 +66,8 @@ public class UserPostCommentServiceImpl implements UserPostCommentService {
         
         userPostCommentRepository.save(comment);
         
-        // 조회 권한 확인 (방금 작성한 댓글이므로 항상 볼 수 있음)
-        return UserPostCommentDto.from(comment, true);
+        // 방금 작성한 댓글이므로 항상 볼 수 있음
+        return UserPostCommentDto.from(comment, true, author.getId());
     }
 
     @Override
@@ -93,7 +94,7 @@ public class UserPostCommentServiceImpl implements UserPostCommentService {
         userPostCommentRepository.save(comment);
         
         // 방금 수정한 댓글이므로 항상 볼 수 있음
-        return UserPostCommentDto.from(comment, true);
+        return UserPostCommentDto.from(comment, true, author.getId());
     }
 
     @Override
@@ -141,15 +142,26 @@ public class UserPostCommentServiceImpl implements UserPostCommentService {
         // 게시글 작성자 ID
         UUID postAuthorId = post.getUser().getId();
         
-        // DTO 변환
-        return parentComments.map(comment -> 
-            UserPostCommentDto.fromWithReplies(
-                comment, 
-                allReplies, 
-                currentUser.getId(), 
-                postAuthorId
-            )
-        );
+            // DTO 변환 (각 댓글의 표시 여부 확인)
+            return parentComments.map(comment -> 
+                UserPostCommentDto.fromWithReplies(
+                    comment, 
+                    // 답글을 정렬 방식에 맞게 정렬 
+                    // LATEST(최신순)은 최신생성순 (내림차순), OLDEST(오래된순)는 초기생성순 (오름차순)
+                    allReplies.stream()
+                        .sorted((r1, r2) -> {
+                            // pageable의 정렬이 DESC(내림차순)이면 최신순
+                            if (pageable.getSort().stream().anyMatch(order -> order.getDirection() == Sort.Direction.DESC)) {
+                                return r2.getCreatedAt().compareTo(r1.getCreatedAt()); // 최신순 (내림차순)
+                            } else {
+                                return r1.getCreatedAt().compareTo(r2.getCreatedAt()); // 오래된순 (오름차순)
+                            }
+                        })
+                        .collect(Collectors.toList()),
+                    currentUser.getId(), 
+                    postAuthorId
+                )
+            );
     }
 
     @Override
@@ -164,11 +176,15 @@ public class UserPostCommentServiceImpl implements UserPostCommentService {
         // 대댓글 목록 조회
         List<UserPostComment> replies = userPostCommentRepository.findAllRepliesByCommentId(commentId);
         
+        // 기본적으로 최신순으로 정렬 (최신 생성순 - 내림차순)
+        replies.sort((r1, r2) -> r2.getCreatedAt().compareTo(r1.getCreatedAt()));
+        
         // DTO 변환 (각 댓글의 표시 여부 확인)
         return replies.stream()
                 .map(reply -> UserPostCommentDto.from(
                         reply, 
-                        isCommentVisible(reply, currentUser.getId(), postAuthorId, parentComment.getAuthor().getId())
+                        isCommentVisible(reply, currentUser.getId(), postAuthorId, parentComment.getAuthor().getId()),
+                        currentUser.getId()
                 ))
                 .collect(Collectors.toList());
     }
