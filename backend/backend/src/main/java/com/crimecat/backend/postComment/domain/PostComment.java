@@ -61,9 +61,13 @@ public class PostComment {
     private LocalDateTime updatedAt;
 
     @Builder.Default
+    @Column(name = "LIKES")
+    private Integer likes = 0;
+
+    @Builder.Default
     @Column(name = "IS_DELETED")
     private Boolean isDeleted = false;
 
-    @Column(name = "SECRET")
-    private Boolean secret;
+    @Column(name = "IS_SECRET")
+    private Boolean isSecret;
 }
