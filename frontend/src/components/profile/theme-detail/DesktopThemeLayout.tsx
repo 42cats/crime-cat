@@ -67,7 +67,7 @@ const DesktopThemeLayout: React.FC<DesktopThemeLayoutProps> = ({
       />
 
       {/* 정보 섹션 */}
-      <div className={`flex flex-col bg-white transition-all duration-300 ease-in-out overflow-hidden ${isImageCollapsed ? 'w-full' : 'w-2/5'}`}>
+      <div className={`flex flex-col bg-white transition-all duration-300 ease-in-out ${isImageCollapsed ? 'w-full' : 'w-2/5'} h-full overflow-hidden`}>
         {/* 이미지 펼치기 버튼 - 이미지가 접혔을 때만 표시 */}
         {isImageCollapsed && (
           <button
@@ -112,7 +112,7 @@ const DesktopThemeLayout: React.FC<DesktopThemeLayoutProps> = ({
               <TabsTrigger value="comments">댓글</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="info" className="h-full p-4 overflow-y-auto flex-grow">
+            <TabsContent value="info" className="h-full p-4 overflow-y-auto">
               <div className="pb-20">
                 <ThemeInfoContent
                   themeDetail={themeDetail}
@@ -123,7 +123,7 @@ const DesktopThemeLayout: React.FC<DesktopThemeLayoutProps> = ({
               </div>
             </TabsContent>
             
-            <TabsContent value="comments" className="h-full overflow-y-auto flex-grow">
+            <TabsContent value="comments" className="h-full overflow-y-auto">
               <div className="pb-20">
                 <ModalCommentList 
                   gameThemeId={theme.themeId}
