@@ -106,4 +106,28 @@ public class FileSystemStorageService implements StorageService {
             throw new RuntimeException("Could not initialize storage", e);
         }
     }
+
+    /**
+     * 저장된 이미지를 타입, 파일 id(이름) 기반으로 실제 파일을 삭제합니다.
+     */
+    @Override
+    public void delete(StorageFileType type, String filename) {
+        try {
+            Path filePath = rootLocation
+                    .resolve(type.getUploadDir())
+                    .resolve(filename);
+
+            if (Files.exists(filePath)) {
+                Files.delete(filePath);
+                log.info("Deleted file: {}", filePath.toAbsolutePath());
+            } else {
+                log.warn("File not found: {}", filePath.toAbsolutePath());
+            }
+
+        } catch (IOException e) {
+            log.error("Failed to delete file: {}", filename, e);
+        }
+    }
+
+
 }
