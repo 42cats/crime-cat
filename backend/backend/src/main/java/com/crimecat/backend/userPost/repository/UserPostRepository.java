@@ -44,6 +44,43 @@ public interface UserPostRepository extends JpaRepository<UserPost, UUID> {
             "WHERE p.user = :user",
             countQuery = "SELECT COUNT(p) FROM UserPost p WHERE p.user = :user")
     Page<UserPost> findByUserWithImages(com.crimecat.backend.webUser.domain.WebUser user, Pageable pageable);
+    
+    /**
+     * 공개 게시글 및 특정 사용자가 접근 가능한 게시글 목록 조회 (이미지 포함)
+     * 모든 공개 게시글 + 내가 쓴 비공개 게시글 + 팔로워 공개이고 내가 팔로워인 게시글
+     */
+    @Query(value = "SELECT DISTINCT p FROM UserPost p " +
+            "LEFT JOIN FETCH p.user " +
+            "LEFT JOIN FETCH p.images " +
+            "WHERE (p.isPrivate = false AND p.isFollowersOnly = false) " +  // 모든 공개 게시글
+            "   OR p.user.id = :userId " +  // 내가 쓴 게시글
+            "   OR (p.isFollowersOnly = true AND EXISTS " +  // 팔로워 공개이고 내가 팔로워인 게시글
+            "       (SELECT f FROM Follow f WHERE f.following.id = p.user.id AND f.follower.id = :userId))",
+            countQuery = "SELECT COUNT(p) FROM UserPost p " +
+                    "WHERE (p.isPrivate = false AND p.isFollowersOnly = false) " +
+                    "   OR p.user.id = :userId " +
+                    "   OR (p.isFollowersOnly = true AND EXISTS " +
+                    "       (SELECT f FROM Follow f WHERE f.following.id = p.user.id AND f.follower.id = :userId))")
+    Page<UserPost> findAccessiblePostsForUser(UUID userId, Pageable pageable);
+    
+    /**
+     * 특정 사용자가 쓴 게시글 중 다른 사용자가 접근 가능한 게시글만 조회
+     */
+    @Query(value = "SELECT DISTINCT p FROM UserPost p " +
+            "LEFT JOIN FETCH p.user " +
+            "LEFT JOIN FETCH p.images " +
+            "WHERE p.user.id = :authorId AND " +
+            "      ((p.isPrivate = false AND p.isFollowersOnly = false) " +  // 모든 공개 게시글
+            "       OR p.user.id = :viewerId " +  // 내가 쓴 게시글
+            "       OR (p.isFollowersOnly = true AND EXISTS " +  // 팔로워 공개이고 내가 팔로워인 게시글
+            "           (SELECT f FROM Follow f WHERE f.following.id = :authorId AND f.follower.id = :viewerId)))",
+            countQuery = "SELECT COUNT(p) FROM UserPost p " +
+                    "WHERE p.user.id = :authorId AND " +
+                    "      ((p.isPrivate = false AND p.isFollowersOnly = false) " +
+                    "       OR p.user.id = :viewerId " +
+                    "       OR (p.isFollowersOnly = true AND EXISTS " +
+                    "           (SELECT f FROM Follow f WHERE f.following.id = :authorId AND f.follower.id = :viewerId)))")
+    Page<UserPost> findAccessiblePostsByUserIdForViewer(UUID authorId, UUID viewerId, Pageable pageable);
 
 
 }

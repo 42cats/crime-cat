@@ -359,7 +359,7 @@ public class WebUserService {
     boolean authenticated = AuthenticationUtil.isAuthenticated();
     WebUser webUser = webUserRepository.findById(userId)
         .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
-    Integer playCount = gameHistoryRepository.countGameHistoriesByUser(webUser.getUser());
+    Integer playCount = gameHistoryRepository.countGameHistoriesByUser_Id(userId);
     if(authenticated){
       return ProfileDetailDto.from(webUser, playCount);
     }

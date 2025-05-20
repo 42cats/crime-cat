@@ -15,6 +15,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 @Entity
 @Table(name = "user_posts")
 @Getter
@@ -53,6 +55,19 @@ public class UserPost {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserPostLike> likes = new ArrayList<>();
 
+    @Column(name = "is_private")
+    @Builder.Default
+    @JsonProperty("isPrivate")
+    private boolean isPrivate = false;
+
+    @Column(name = "is_followers_only")
+    @Builder.Default
+    @JsonProperty("isFollowersOnly")
+    private boolean isFollowersOnly = false;
+    
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserPostComment> comments = new ArrayList<>();
+
     @PreUpdate
     public void updateTimestamp() {
         this.updatedAt = LocalDateTime.now();
@@ -65,12 +80,30 @@ public class UserPost {
     public void setContent(String content) {
         this.content = content;
     }
+    
+    public void setIsPrivate(boolean isPrivate) {
+        this.isPrivate = isPrivate;
+    }
+    
+    public void setIsFollowersOnly(boolean isFollowersOnly) {
+        this.isFollowersOnly = isFollowersOnly;
+    }
 
+    static public UserPost from(WebUser user, String content, boolean isPrivate, boolean isFollowersOnly) {
+        return UserPost.builder()
+                .user(user)
+                .content(content)
+                .isPrivate(isPrivate)
+                .isFollowersOnly(isFollowersOnly)
+                .build();
+    }
+    
     static public UserPost from(WebUser user, String content) {
         return UserPost.builder()
                 .user(user)
                 .content(content)
+                .isPrivate(false)
+                .isFollowersOnly(false)
                 .build();
-
     }
 }

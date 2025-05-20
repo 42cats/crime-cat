@@ -1,4 +1,4 @@
--- V1.2.1_001_user_post_feat_tables.sql
+-- V1.2.2_001_user_post_feat_tables.sql
 -- 트랜잭션 시작
 START TRANSACTION;
 

@@ -25,7 +25,32 @@ public class PublicUserPostController {
 
     @GetMapping("/{postId}")
     public ResponseEntity<UserPostDto> getUserPost(@PathVariable UUID postId) {
-        return ResponseEntity.ok(userPostService.getUserPostDetail(postId));
+        // 비인증 사용자는 공개 게시글만 볼 수 있음 (비밀글, 팔로워 공개 필터링)
+        return ResponseEntity.ok(userPostService.getUserPostDetail(postId, null));
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<UserPostGalleryPageDto>> getAllUserPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(required = false) List<String> sort
+    ) {
+        // 비인증 사용자는 공개 게시글만 볼 수 있음 (비밀글, 팔로워 공개 필터링)
+        List<UserPostSortType> sortTypes = (sort != null && !sort.isEmpty())
+               ? sort.stream()
+               .map(String::toUpperCase)
+               .map(UserPostSortType::valueOf)
+               .toList()
+               : List.of(UserPostSortType.LATEST);
+
+        Sort resolvedSort = SortUtil.combineSorts(sortTypes);
+        Pageable pageable = PageRequest.of(page, size, resolvedSort);
+        
+        // null을 전달하여 공개 게시글만 조회
+        Page<UserPostGalleryPageDto> pageResult = 
+                userPostService.getUserPostGalleryPage(null, pageable);
+                
+        return ResponseEntity.ok(pageResult);
     }
 
     @GetMapping("/gallery/{userId}")
@@ -49,11 +74,10 @@ public class PublicUserPostController {
         // ③ PageRequest 생성
         Pageable pageable = PageRequest.of(page, size, resolvedSort);
 
-        // ④ 서비스 호출 - userId 전달
+        // ④ 서비스 호출 - userId 전달, null을 전달하여 공개 게시글만 조회
         Page<UserPostGalleryPageDto> pageResult =
-                userPostService.getUserPostGalleryPageByUserId(userId, pageable);
+                userPostService.getUserPostGalleryPageByUserId(userId, null, pageable);
 
         return ResponseEntity.ok(pageResult);
     }
-
 }

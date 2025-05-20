@@ -37,9 +37,11 @@ public class UserPostController {
     @PostMapping
     public ResponseEntity<?> createUserPost(
             @RequestParam("content") String content,
-            @RequestParam(value = "images", required = false) List<MultipartFile> images) {
+            @RequestParam(value = "images", required = false) List<MultipartFile> images,
+            @RequestParam(value = "isPrivate", defaultValue = "false") boolean isPrivate,
+            @RequestParam(value = "isFollowersOnly", defaultValue = "false") boolean isFollowersOnly) {
 
-        // ── 이미지 ID·URL 생성 ───────────────────────────────
+        // ── 이미지 ID·URL 생성 ──────────────────────────────
         List<UUID>   imageIds  = new ArrayList<>();
         List<String> imageUrls = new ArrayList<>();
 
@@ -65,14 +67,18 @@ public class UserPostController {
             }
         }
 
-        // ── 게시글 저장 ─────────────────────────────────────
+        // ── 게시글 저장 ───────────────────────────────
         WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
-        userPostService.createUserPost(currentWebUser, content, imageIds, imageUrls);
+        userPostService.createUserPost(currentWebUser, content, imageIds, imageUrls, isPrivate, isFollowersOnly);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-
+    @GetMapping("/{postId}")
+    public ResponseEntity<?> getUserPost(@PathVariable UUID postId) {
+        WebUser currentWebUser = AuthenticationUtil.getCurrentWebUserOptional().orElse(null);
+        return ResponseEntity.ok(userPostService.getUserPostDetail(postId, currentWebUser));
+    }
 
     @PatchMapping(value = "/{postId}/partial", consumes = {"multipart/form-data"})
     public ResponseEntity<?> updateUserPostPartially(
@@ -80,7 +86,9 @@ public class UserPostController {
             @RequestParam("content") String content,
             @RequestPart(value = "newImages", required = false) List<MultipartFile> newImages,
             @RequestParam(value = "newImageIds", required = false) String newImageIdsJson,
-            @RequestParam(value = "keepImageUrls", required = false) String keepImageUrlsJson
+            @RequestParam(value = "keepImageUrls", required = false) String keepImageUrlsJson,
+            @RequestParam(value = "isPrivate", defaultValue = "false") boolean isPrivate,
+            @RequestParam(value = "isFollowersOnly", defaultValue = "false") boolean isFollowersOnly
     ) {
         System.out.println("======= 포스트 업데이트 요청 받음 =======");
         System.out.println("postId: " + postId);
@@ -88,6 +96,8 @@ public class UserPostController {
         System.out.println("newImages: " + (newImages != null ? newImages.size() : "null"));
         System.out.println("newImageIdsJson: " + newImageIdsJson);
         System.out.println("keepImageUrlsJson: " + keepImageUrlsJson);
+        System.out.println("isPrivate: " + isPrivate);
+        System.out.println("isFollowersOnly: " + isFollowersOnly);
         
         WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
         
@@ -119,12 +129,10 @@ public class UserPostController {
             throw new RuntimeException("Invalid JSON format: " + e.getMessage(), e);
         }
         
-        userPostService.updateUserPostPartially(postId, currentUser, content, newImages, newImageIds, keepImageUrls);
+        userPostService.updateUserPostPartially(postId, currentUser, content, newImages, newImageIds, keepImageUrls, isPrivate, isFollowersOnly);
         System.out.println("포스트 업데이트 완료: " + postId);
         return ResponseEntity.ok().build();
     }
-
-
 
     @DeleteMapping("/{postId}")
     public ResponseEntity<?> deleteUserPost(
@@ -178,6 +186,57 @@ public class UserPostController {
         // 서비스 호출
         Page<UserPostGalleryPageDto> pageResult = 
                 userPostService.getMyUserPostGalleryPage(currentUser, pageable);
+                
+        return ResponseEntity.ok(pageResult);
+    }
+    
+    @GetMapping
+    public ResponseEntity<Page<UserPostGalleryPageDto>> getAllUserPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(required = false) List<String> sort
+    ) {
+        WebUser currentUser = AuthenticationUtil.getCurrentWebUserOptional().orElse(null);
+        
+        List<UserPostSortType> sortTypes = (sort != null && !sort.isEmpty())
+               ? sort.stream()
+               .map(String::toUpperCase)
+               .map(UserPostSortType::valueOf)
+               .toList()
+               : List.of(UserPostSortType.LATEST);
+
+        Sort resolvedSort = SortUtil.combineSorts(sortTypes);
+        Pageable pageable = PageRequest.of(page, size, resolvedSort);
+        
+        // 접근 가능한 게시글만 조회 (비밀글, 팔로워 공개 필터링)
+        Page<UserPostGalleryPageDto> pageResult = 
+                userPostService.getUserPostGalleryPage(currentUser, pageable);
+                
+        return ResponseEntity.ok(pageResult);
+    }
+    
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<Page<UserPostGalleryPageDto>> getUserPostsByUserId(
+            @PathVariable UUID userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(required = false) List<String> sort
+    ) {
+        WebUser currentUser = AuthenticationUtil.getCurrentWebUserOptional().orElse(null);
+        
+        List<UserPostSortType> sortTypes = (sort != null && !sort.isEmpty())
+               ? sort.stream()
+               .map(String::toUpperCase)
+               .map(UserPostSortType::valueOf)
+               .toList()
+               : List.of(UserPostSortType.LATEST);
+
+        Sort resolvedSort = SortUtil.combineSorts(sortTypes);
+        Pageable pageable = PageRequest.of(page, size, resolvedSort);
+        
+        // 접근 가능한 게시글만 조회 (비밀글, 팔로워 공개 필터링)
+        Page<UserPostGalleryPageDto> pageResult = 
+                userPostService.getUserPostGalleryPageByUserId(userId, currentUser, pageable);
                 
         return ResponseEntity.ok(pageResult);
     }

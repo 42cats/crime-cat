@@ -4,14 +4,16 @@ import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.storage.StorageFileType;
 import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.userPost.domain.UserPost;
+import com.crimecat.backend.userPost.domain.UserPostComment;
 import com.crimecat.backend.userPost.domain.UserPostImage;
 import com.crimecat.backend.userPost.domain.UserPostLike;
+import com.crimecat.backend.userPost.dto.UserPostCommentDto;
 import com.crimecat.backend.userPost.dto.UserPostDto;
 import com.crimecat.backend.userPost.dto.UserPostGalleryPageDto;
+import com.crimecat.backend.userPost.repository.UserPostCommentRepository;
 import com.crimecat.backend.userPost.repository.UserPostImageRepository;
 import com.crimecat.backend.userPost.repository.UserPostLikeRepository;
 import com.crimecat.backend.userPost.repository.UserPostRepository;
-import com.crimecat.backend.utils.FileUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,15 +33,19 @@ public class UserPostServiceImpl implements UserPostService {
     private final UserPostRepository userPostRepository;
     private final UserPostImageRepository userPostImageRepository;
     private final UserPostLikeRepository userPostLikeRepository;
+    private final UserPostCommentRepository userPostCommentRepository;
     private final StorageService storageService;
     private final com.crimecat.backend.webUser.repository.WebUserRepository webUserRepository;
+    // Follow 관련 레포지토리 추가 필요 - 팔로워 기능은 나중에 구현
 
     @Override
     @Transactional
-    public void createUserPost(WebUser user, String content, List<UUID> imageIds, List<String> imageUrls) {
+    public void createUserPost(WebUser user, String content, List<UUID> imageIds, List<String> imageUrls, boolean isPrivate, boolean isFollowersOnly) {
         UserPost post = UserPost.builder()
                 .user(user)
                 .content(content)
+                .isPrivate(isPrivate)
+                .isFollowersOnly(isFollowersOnly)
                 .build();
         userPostRepository.save(post);
 
@@ -72,11 +79,15 @@ public class UserPostServiceImpl implements UserPostService {
         userPostRepository.delete(post);
     }
 
-
     @Override
-    public UserPostDto getUserPostDetail(UUID postId) {
+    public UserPostDto getUserPostDetail(UUID postId, WebUser currentUser) {
         UserPost post = userPostRepository.findByIdWithUserAndImages(postId)
                 .orElseThrow(ErrorStatus.USER_POST_NOT_FOUND::asServiceException);
+
+        // 접근 권한 확인
+        if (!canAccessPost(post, currentUser)) {
+            throw ErrorStatus.USER_POST_ACCESS_DENIED.asServiceException();
+        }
 
         List<String> images = post.getImages().stream()
                 .sorted(Comparator.comparingInt(UserPostImage::getSortOrder))
@@ -86,19 +97,71 @@ public class UserPostServiceImpl implements UserPostService {
         // 좋아요 수는 별도 조회
         long likeCount = userPostLikeRepository.countByPostId(post.getId());
 
-        return UserPostDto.builder()
+        // 댓글 불러오기
+        List<UserPostComment> comments = userPostCommentRepository.findAllCommentsByPostId(postId);
+        List<UserPostComment> parentComments = comments.stream()
+                .filter(c -> c.getParent() == null)
+                .collect(Collectors.toList());
+        
+        List<UserPostComment> childComments = comments.stream()
+                .filter(c -> c.getParent() != null)
+                .collect(Collectors.toList());
+        
+        // 댓글 DTO 변환 (계층 구조 생성)
+        List<UserPostCommentDto> commentDtos = new ArrayList<>();
+        if (currentUser != null) {
+            UUID postAuthorId = post.getUser().getId();
+            
+            for (UserPostComment parentComment : parentComments) {
+                commentDtos.add(UserPostCommentDto.fromWithReplies(
+                        parentComment, 
+                        childComments, 
+                        currentUser.getId(), 
+                        postAuthorId
+                ));
+            }
+        }
+
+        UserPostDto postDto = UserPostDto.builder()
                 .postId(post.getId())
+                .authorId(post.getUser().getId())
                 .authorNickname(post.getUser().getNickname())
                 .authorAvatarUrl(post.getUser().getProfileImagePath())
                 .content(post.getContent())
                 .imageUrls(images)
                 .likeCount(Long.valueOf(likeCount).intValue())
-                .liked(false) // 로그인 여부 판단 불가
+                .isPrivate(post.isPrivate())
+                .isFollowersOnly(post.isFollowersOnly())
+                .createdAt(post.getCreatedAt())
+                .updatedAt(post.getUpdatedAt())
+                .comments(commentDtos)
+                .liked(false) // 기본값, 아래에서 업데이트
                 .build();
+        
+        // 로그인한 사용자라면 좋아요 상태 확인
+        if (currentUser != null) {
+            return enrichUserPostWithStats(postDto, currentUser);
+        }
+        
+        return postDto;
+    }
+
+    @Override
+    public UserPostDto enrichUserPostWithStats(UserPostDto postDto, WebUser currentUser) {
+        if (currentUser != null) {
+            boolean liked = userPostLikeRepository.existsByPostIdAndUserId(
+                    postDto.getPostId(), currentUser.getId());
+            postDto.setLiked(liked);
+        }
+        return postDto;
     }
 
     @Override
     public boolean didILike(UUID postId, Object currentUser) {
+        if (currentUser == null) {
+            return false;
+        }
+        
         WebUser user = (WebUser) currentUser;
         return userPostLikeRepository.existsByPostIdAndUserId(postId, user.getId());
     }
@@ -108,13 +171,19 @@ public class UserPostServiceImpl implements UserPostService {
     public boolean toggleLike(UUID postId, Object currentUser) {
         WebUser user = (WebUser) currentUser;
 
+        // 게시글 존재 및 접근 권한 확인
+        UserPost post = userPostRepository.findById(postId)
+                .orElseThrow(ErrorStatus.USER_POST_NOT_FOUND::asServiceException);
+        
+        if (!canAccessPost(post, user)) {
+            throw ErrorStatus.USER_POST_ACCESS_DENIED.asServiceException();
+        }
+
         Optional<UserPostLike> likeOpt = userPostLikeRepository.findByPostIdAndUserId(postId, user.getId());
         if (likeOpt.isPresent()) {
             userPostLikeRepository.delete(likeOpt.get());
             return false;
         } else {
-            UserPost post = userPostRepository.findById(postId)
-                    .orElseThrow(ErrorStatus.USER_POST_NOT_FOUND::asServiceException);
             UserPostLike like = UserPostLike.from(user, post);
             userPostLikeRepository.save(like);
             return true;
@@ -122,8 +191,16 @@ public class UserPostServiceImpl implements UserPostService {
     }
 
     @Override
-    public Page<UserPostGalleryPageDto> getUserPostGalleryPage(Pageable pageable) {
-        Page<UserPost> posts = userPostRepository.findAllWithUserAndImages(pageable);
+    public Page<UserPostGalleryPageDto> getUserPostGalleryPage(WebUser currentUser, Pageable pageable) {
+        Page<UserPost> posts;
+        
+        if (currentUser == null) {
+            // 로그인하지 않은 사용자는 공개 게시글만 볼 수 있음
+            posts = userPostRepository.findAllWithUserAndImages(pageable); // 목록 쿼리 개선 필요
+        } else {
+            // 로그인한 사용자는 자신의 게시글, 팔로워 공개글, 공개 게시글 볼 수 있음
+            posts = userPostRepository.findAccessiblePostsForUser(currentUser.getId(), pageable);
+        }
 
         return posts.map(post -> {
             String thumbnail = post.getImages().stream()
@@ -137,13 +214,18 @@ public class UserPostServiceImpl implements UserPostService {
 
             return UserPostGalleryPageDto.builder()
                     .postId(post.getId())
+                    .authorId(post.getUser().getId())
                     .authorNickname(post.getUser().getNickname())
                     .content(post.getContent())
                     .thumbnailUrl(thumbnail)
                     .likeCount(Long.valueOf(likeCount).intValue())
+                    .isPrivate(post.isPrivate())
+                    .isFollowersOnly(post.isFollowersOnly())
+                    .createdAt(post.getCreatedAt())
                     .build();
         });
     }
+
     @Override
     @Transactional
     public void updateUserPostPartially(
@@ -152,7 +234,9 @@ public class UserPostServiceImpl implements UserPostService {
             String content,
             List<MultipartFile> newImages,
             List<UUID> newImageIds,
-            List<String> keepImageUrls) {
+            List<String> keepImageUrls,
+            boolean isPrivate,
+            boolean isFollowersOnly) {
 
         UserPost post = userPostRepository.findByIdWithImages(postId)
                 .orElseThrow(ErrorStatus.USER_POST_NOT_FOUND::asServiceException);
@@ -229,16 +313,31 @@ public class UserPostServiceImpl implements UserPostService {
 
         // ── 본문 수정 ────────────────────────────────────
         post.setContent(content);
+        
+        // ── 비밀글/팔로워 공개 설정 수정 ───────────────────
+        post.setIsPrivate(isPrivate);
+        post.setIsFollowersOnly(isFollowersOnly);
     }
 
     @Override
-    public Page<UserPostGalleryPageDto> getUserPostGalleryPageByUserId(UUID userId, Pageable pageable) {
+    public Page<UserPostGalleryPageDto> getUserPostGalleryPageByUserId(UUID userId, WebUser currentUser, Pageable pageable) {
         // 사용자 ID로 WebUser 객체 조회 - 존재하지 않을 경우 예외 발생
-        WebUser user = webUserRepository.findById(userId)
+        WebUser targetUser = webUserRepository.findById(userId)
                 .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
         
-        // 기존 메소드 사용
-        Page<UserPost> posts = userPostRepository.findByUserWithImages(user, pageable);
+        Page<UserPost> posts;
+        
+        if (currentUser == null) {
+            // 로그인하지 않은 사용자는 공개 게시글만 볼 수 있음
+            // TODO: 공개 게시글만 조회하는 쿼리로 변경 필요
+            posts = userPostRepository.findByUserWithImages(targetUser, pageable);
+        } else if (currentUser.getId().equals(userId)) {
+            // 자신의 게시글은 모두 볼 수 있음
+            posts = userPostRepository.findByUserWithImages(targetUser, pageable);
+        } else {
+            // 다른 사용자의 게시글은 접근 권한에 따라 필터링
+            posts = userPostRepository.findAccessiblePostsByUserIdForViewer(userId, currentUser.getId(), pageable);
+        }
 
         return posts.map(post -> {
             String thumbnail = post.getImages().stream()
@@ -252,10 +351,14 @@ public class UserPostServiceImpl implements UserPostService {
 
             return UserPostGalleryPageDto.builder()
                     .postId(post.getId())
+                    .authorId(post.getUser().getId())
                     .authorNickname(post.getUser().getNickname())
                     .content(post.getContent())
                     .thumbnailUrl(thumbnail)
                     .likeCount(Long.valueOf(likeCount).intValue())
+                    .isPrivate(post.isPrivate())
+                    .isFollowersOnly(post.isFollowersOnly())
+                    .createdAt(post.getCreatedAt())
                     .build();
         });
     }
@@ -276,12 +379,57 @@ public class UserPostServiceImpl implements UserPostService {
 
             return UserPostGalleryPageDto.builder()
                     .postId(post.getId())
+                    .authorId(post.getUser().getId())
                     .authorNickname(post.getUser().getNickname())
                     .content(post.getContent())
                     .thumbnailUrl(thumbnail)
                     .likeCount(Long.valueOf(likeCount).intValue())
+                    .isPrivate(post.isPrivate())
+                    .isFollowersOnly(post.isFollowersOnly())
+                    .createdAt(post.getCreatedAt())
                     .build();
         });
+    }
+    
+    @Override
+    public boolean isFollower(UUID userId, UUID followerId) {
+        // TODO: 팔로워 기능 구현 시 추가
+        // 현재는 팔로워 관계가 구현되지 않았으므로 임시로 false 반환
+        return false;
+    }
+    
+    @Override
+    public boolean canAccessPost(UUID postId, WebUser currentUser) {
+        UserPost post = userPostRepository.findByIdWithUserAndImages(postId)
+                .orElseThrow(ErrorStatus.USER_POST_NOT_FOUND::asServiceException);
+        
+        return canAccessPost(post, currentUser);
+    }
+    
+    /**
+     * 게시글 접근 권한 확인
+     * @param post 게시글
+     * @param currentUser 접근하려는 사용자
+     * @return 접근 가능 여부
+     */
+    private boolean canAccessPost(UserPost post, WebUser currentUser) {
+        // 작성자 본인은 항상 접근 가능
+        if (currentUser != null && post.getUser().getId().equals(currentUser.getId())) {
+            return true;
+        }
+        
+        // 비밀글은 작성자만 볼 수 있음
+        if (post.isPrivate()) {
+            return false;
+        }
+        
+        // 팔로워 공개글은 팔로워만 볼 수 있음
+        if (post.isFollowersOnly()) {
+            return currentUser != null && isFollower(post.getUser().getId(), currentUser.getId());
+        }
+        
+        // 그 외에는 모두 볼 수 있음
+        return true;
     }
 
     /**
