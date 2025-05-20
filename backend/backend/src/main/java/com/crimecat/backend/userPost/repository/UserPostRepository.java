@@ -31,4 +31,10 @@ public interface UserPostRepository extends JpaRepository<UserPost, UUID> {
             "LEFT JOIN FETCH p.likes",
             countQuery = "SELECT COUNT(p) FROM UserPost p")
     Page<UserPost> findAllWithUserAndImages(Pageable pageable);
+
+    @Query("SELECT p FROM UserPost p " +
+                "LEFT JOIN FETCH p.images " +
+                "WHERE p.id = :postId")
+    Optional<UserPost> findByIdWithImages(UUID postId);
+
 }

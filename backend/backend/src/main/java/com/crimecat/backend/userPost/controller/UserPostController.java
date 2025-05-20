@@ -1,9 +1,11 @@
 package com.crimecat.backend.userPost.controller;
 
+import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.userPost.service.UserPostService;
 import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.storage.StorageFileType;
 import com.crimecat.backend.utils.AuthenticationUtil;
+import com.crimecat.backend.utils.FileUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,33 +30,53 @@ public class UserPostController {
     @PostMapping
     public ResponseEntity<?> createUserPost(
             @RequestParam("content") String content,
-            @RequestParam(value = "images", required = false) List<MultipartFile> images
-    ) {
-        List<String> imageUrls = images != null ? images.stream()
-                .limit(5)
-                .map(file -> storageService.storeAt(StorageFileType.USER_POST_IMAGE, file, UUID.randomUUID().toString()))
-                .toList() : List.of();
+            @RequestParam(value = "images", required = false) List<MultipartFile> images) {
 
+        // ── 이미지 ID·URL 생성 ───────────────────────────────
+        List<UUID>   imageIds  = new ArrayList<>();
+        List<String> imageUrls = new ArrayList<>();
+
+        if (images != null) {
+            if (images.size() > 5) {
+                throw ErrorStatus.USER_POST_IMAGE_COUNT_EXCEEDED.asControllerException();
+            }
+
+            for (MultipartFile file : images) {
+                UUID imageId = UUID.randomUUID();
+                String ext   = FileUtil.getExtension(file.getOriginalFilename()); // .jpg 등
+                String url   = storageService.storeAt(
+                        StorageFileType.USER_POST_IMAGE,
+                        file,
+                        imageId + ext);                      // uuid + 확장자
+
+                imageIds.add(imageId);
+                imageUrls.add(url);
+            }
+        }
+
+        // ── 게시글 저장 ─────────────────────────────────────
         WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
-        userPostService.createUserPost(currentWebUser, content, imageUrls);
-        return ResponseEntity.ok(HttpStatus.CREATED);
+        userPostService.createUserPost(currentWebUser, content, imageIds, imageUrls);
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PutMapping("/{postId}")
-    public ResponseEntity<?> updateUserPost(
+
+
+    @PutMapping("/{postId}/partial")
+    public ResponseEntity<?> updateUserPostPartially(
             @PathVariable UUID postId,
-            @RequestParam("content") String content,
-            @RequestParam(value = "images", required = false) List<MultipartFile> images
+            @RequestPart("content") String content,
+            @RequestPart(value = "newImages", required = false) List<MultipartFile> newImages,
+            @RequestPart(value = "newImageIds", required = false) List<UUID> newImageIds,
+            @RequestPart(value = "keepImageUrls", required = false) List<String> keepImageUrls
     ) {
-        List<String> imageUrls = images != null ? images.stream()
-                .limit(5)
-                .map(file -> storageService.storeAt(StorageFileType.USER_POST_IMAGE, file, UUID.randomUUID().toString()))
-                .toList() : List.of();
-
-        WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
-        userPostService.updateUserPost(postId, currentWebUser, content, imageUrls);
-        return ResponseEntity.ok(HttpStatus.ACCEPTED);
+        WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
+        userPostService.updateUserPostPartially(postId, currentUser, content, newImages, newImageIds, keepImageUrls);
+        return ResponseEntity.ok().build();
     }
+
+
 
     @DeleteMapping("/{postId}")
     public ResponseEntity<?> deleteUserPost(
