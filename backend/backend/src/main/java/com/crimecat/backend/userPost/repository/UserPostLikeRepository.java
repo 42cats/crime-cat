@@ -13,4 +13,9 @@ public interface UserPostLikeRepository extends JpaRepository<UserPostLike, UUID
     boolean existsByPostIdAndUserId(UUID postId, UUID userId);
 
     Optional<UserPostLike> findByPostIdAndUserId(UUID postId, UUID userId);
+    
+    /**
+     * 특정 게시글의 좋아요 수 카운트
+     */
+    long countByPostId(UUID postId);
 }

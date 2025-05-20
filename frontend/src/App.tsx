@@ -67,119 +67,233 @@ import GameHistoryManager from "@/pages/GameHistoryOwnerBoard";
 import UserGameHistoryPage from "@/pages/UserGameHistoryPage";
 
 const App = () => (
-  <RecoilRoot>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-        <AuthInitializer />
-          <AnimatePresence mode="wait">
-            <Routes>
-              {/* Main Layout Routes */}
-              <Route element={<MainLayout />}>
-                <Route path="/" element={<Index />} />
-                <Route path="/commands" element={<Commands />} />
-                <Route path="/commands/:id" element={<CommandDetail />} />
-                <Route path="/commands/new"
-                       element={<PrivateRoute allowedRoles={['ADMIN', 'MANAGER']}>
-                                  <CreateCommand />
-                                </PrivateRoute>} />
-                <Route path="/commands/edit/:id"
-                       element={<PrivateRoute allowedRoles={['ADMIN', 'MANAGER']}>
-                                  <EditCommand />
-                                </PrivateRoute>} />
-                <Route path="/notices" element={<NoticeList />} />
-                <Route path="/notices/:id" element={<NoticeDetail />} />
-                <Route path="/notices/new" 
-                       element={<PrivateRoute allowedRoles={['ADMIN', 'MANAGER']}>
-                                  <CreateNotice />
-                                </PrivateRoute>} />
-                <Route path="/notices/edit/:id" 
-                       element={<PrivateRoute allowedRoles={['ADMIN', 'MANAGER']}>
-                                  <EditNotice />
-                                 </PrivateRoute>} />
-                <Route path="/themes/:category" element={<ThemeList />} />
-                <Route path="/themes/:category/:id" element={<ThemeDetail />} />
-                <Route path="/themes/new" element={<CreateTheme />} />
-                <Route path="/themes/:category/edit/:id" element={<EditTheme />} />
-                
-                {/* 커뮤니티 게시판 라우트 - 순서가 중요합니다! 더 구체적인 경로가 먼저 와야 합니다 */}
-                {/* 질문게시판 */}
-                <Route path="/community/questions/new" element={<BoardWrite boardType={BoardType.QUESTION} />} />
-                <Route path="/community/questions/:id" element={<QuestionPostDetail />} />
-                <Route path="/community/questions" element={<QuestionBoard />} />
-                
-                {/* 자유게시판 */}
-                <Route path="/community/free/new" element={<BoardWrite boardType={BoardType.CHAT} />} />
-                <Route path="/community/free/:id" element={<FreePostDetail />} />
-                <Route path="/community/free" element={<FreeBoard />} />
-                
-                {/* 제작자게시판 */}
-                <Route path="/community/creators/new" element={<BoardWrite boardType={BoardType.CREATOR} />} />
-                <Route path="/community/creators/:id" element={<CreatorPostDetail />} />
-                <Route path="/community/creators" element={<CreatorBoard />} />
-                
-                {/* 동적 경로를 위한 추가 라우트 */}
-                <Route path="/community/:boardType/new" element={<BoardWrite />} />
-                
-                <Route path="/terms" element={<TermsPage />} />
-                <Route path="/privacy" element={<PrivacyPage />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/login-error" element={<LoginError />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/donate" element={<DonationPage />} />
-                <Route path="/profile/:userId" element={<ProfilePage />} />
-              </Route>
+    <RecoilRoot>
+        <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                    <AuthInitializer />
+                    <AnimatePresence mode="wait">
+                        <Routes>
+                            {/* Main Layout Routes */}
+                            <Route element={<MainLayout />}>
+                                <Route path="/" element={<Index />} />
+                                <Route
+                                    path="/commands"
+                                    element={<Commands />}
+                                />
+                                <Route
+                                    path="/commands/:id"
+                                    element={<CommandDetail />}
+                                />
+                                <Route
+                                    path="/commands/new"
+                                    element={
+                                        <PrivateRoute
+                                            allowedRoles={["ADMIN", "MANAGER"]}
+                                        >
+                                            <CreateCommand />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/commands/edit/:id"
+                                    element={
+                                        <PrivateRoute
+                                            allowedRoles={["ADMIN", "MANAGER"]}
+                                        >
+                                            <EditCommand />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/notices"
+                                    element={<NoticeList />}
+                                />
+                                <Route
+                                    path="/notices/:id"
+                                    element={<NoticeDetail />}
+                                />
+                                <Route
+                                    path="/notices/new"
+                                    element={
+                                        <PrivateRoute
+                                            allowedRoles={["ADMIN", "MANAGER"]}
+                                        >
+                                            <CreateNotice />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/notices/edit/:id"
+                                    element={
+                                        <PrivateRoute
+                                            allowedRoles={["ADMIN", "MANAGER"]}
+                                        >
+                                            <EditNotice />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/themes/:category"
+                                    element={<ThemeList />}
+                                />
+                                <Route
+                                    path="/themes/:category/:id"
+                                    element={<ThemeDetail />}
+                                />
+                                <Route
+                                    path="/themes/new"
+                                    element={<CreateTheme />}
+                                />
+                                <Route
+                                    path="/themes/:category/edit/:id"
+                                    element={<EditTheme />}
+                                />
 
-              {/* Dashboard Layout Routes */}
-              <Route
-                  path="/dashboard"
-                  element={<DashboardLayout />}
-              >
-                  <Route index element={<Dashboard />} />
-                  <Route path="guilds" element={<Guilds />} />
-                  <Route
-                      path="guilds/message-format"
-                      element={<MessageFormat />}
-                  />
-                  <Route
-                      path="guilds/crime-scene-history"
-                      element={<GameHistoryManager />}
-                  />
-                  <Route
-                      path="users/my-history"
-                      element={<UserGameHistoryPage />}
-                  />
-                  <Route
-                      path="point-history"
-                      element={<PointHistoryPage />}
-                  />
-                  <Route
-                      path="notifications"
-                      element={<NotificationListPage />}
-                  />
-                  <Route path="posts" element={<PostsPage />} />
-                  <Route path="posts/:postId" element={<PostDetailPage />} />
-                  <Route path="posts/new" element={<PostEditorPage />} />
-                  <Route path="posts/edit/:postId" element={<PostEditorPage />} />
-                  <Route path="profile" element={<Profile />} />
-                  <Route path="teams" element={<Teams />} />
-              </Route>
+                                {/* 커뮤니티 게시판 라우트 - 순서가 중요합니다! 더 구체적인 경로가 먼저 와야 합니다 */}
+                                {/* 질문게시판 */}
+                                <Route
+                                    path="/community/questions/new"
+                                    element={
+                                        <BoardWrite
+                                            boardType={BoardType.QUESTION}
+                                        />
+                                    }
+                                />
+                                <Route
+                                    path="/community/questions/:id"
+                                    element={<QuestionPostDetail />}
+                                />
+                                <Route
+                                    path="/community/questions"
+                                    element={<QuestionBoard />}
+                                />
 
-              {/* 404 Route */}
-              <Route path="*" element={<NotFound />} />
+                                {/* 자유게시판 */}
+                                <Route
+                                    path="/community/free/new"
+                                    element={
+                                        <BoardWrite
+                                            boardType={BoardType.CHAT}
+                                        />
+                                    }
+                                />
+                                <Route
+                                    path="/community/free/:id"
+                                    element={<FreePostDetail />}
+                                />
+                                <Route
+                                    path="/community/free"
+                                    element={<FreeBoard />}
+                                />
 
-              <Route
-                  path="/unauthorized"
-                  element={<Unauthorized />}
-              />
-            </Routes>
-          </AnimatePresence>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </RecoilRoot>
+                                {/* 제작자게시판 */}
+                                <Route
+                                    path="/community/creators/new"
+                                    element={
+                                        <BoardWrite
+                                            boardType={BoardType.CREATOR}
+                                        />
+                                    }
+                                />
+                                <Route
+                                    path="/community/creators/:id"
+                                    element={<CreatorPostDetail />}
+                                />
+                                <Route
+                                    path="/community/creators"
+                                    element={<CreatorBoard />}
+                                />
+
+                                {/* 동적 경로를 위한 추가 라우트 */}
+                                <Route
+                                    path="/community/:boardType/new"
+                                    element={<BoardWrite />}
+                                />
+
+                                <Route path="/terms" element={<TermsPage />} />
+                                <Route
+                                    path="/privacy"
+                                    element={<PrivacyPage />}
+                                />
+                                <Route path="/login" element={<Login />} />
+                                <Route
+                                    path="/login-error"
+                                    element={<LoginError />}
+                                />
+                                <Route
+                                    path="/contact"
+                                    element={<ContactPage />}
+                                />
+                                <Route
+                                    path="/donate"
+                                    element={<DonationPage />}
+                                />
+                                <Route
+                                    path="/profile/:userId"
+                                    element={<ProfilePage />}
+                                />
+                            </Route>
+
+                            {/* Dashboard Layout Routes */}
+                            <Route
+                                path="/dashboard"
+                                element={<DashboardLayout />}
+                            >
+                                <Route index element={<Dashboard />} />
+                                <Route path="guilds" element={<Guilds />} />
+                                <Route
+                                    path="guilds/message-format"
+                                    element={<MessageFormat />}
+                                />
+                                <Route
+                                    path="guilds/crime-scene-history"
+                                    element={<GameHistoryManager />}
+                                />
+                                <Route
+                                    path="users/my-history"
+                                    element={<UserGameHistoryPage />}
+                                />
+                                <Route
+                                    path="point-history"
+                                    element={<PointHistoryPage />}
+                                />
+                                <Route
+                                    path="notifications"
+                                    element={<NotificationListPage />}
+                                />
+                                <Route path="posts" element={<PostsPage />} />
+                                <Route
+                                    path="posts/:postId"
+                                    element={<PostDetailPage />}
+                                />
+                                <Route
+                                    path="posts/new"
+                                    element={<PostEditorPage />}
+                                />
+                                <Route
+                                    path="posts/edit/:postId"
+                                    element={<PostEditorPage />}
+                                />
+                                <Route path="profile" element={<Profile />} />
+                                <Route path="teams" element={<Teams />} />
+                            </Route>
+
+                            {/* 404 Route */}
+                            <Route path="*" element={<NotFound />} />
+
+                            <Route
+                                path="/unauthorized"
+                                element={<Unauthorized />}
+                            />
+                        </Routes>
+                    </AnimatePresence>
+                </BrowserRouter>
+            </TooltipProvider>
+        </QueryClientProvider>
+    </RecoilRoot>
 );
 
 export default App;
