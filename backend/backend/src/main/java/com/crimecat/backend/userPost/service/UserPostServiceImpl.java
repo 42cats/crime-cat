@@ -182,10 +182,19 @@ public class UserPostServiceImpl implements UserPostService {
                 .toList();
 
         // ── 삭제 처리 ─────────────────────────────────────
+
+        List<UUID> idsToRemove = toRemove.stream()
+                .map(UserPostImage::getId)
+                .toList();
+
         for (UserPostImage img : toRemove) {
             String fileName =  extractFilenameFromUrl(img.getImageUrl());
             storageService.delete(StorageFileType.USER_POST_IMAGE, fileName);
-            userPostImageRepository.delete(img);
+            userPostImageRepository.deleteUserPostImagesById(img.getId());
+        }
+
+        if (!idsToRemove.isEmpty()) {
+            userPostImageRepository.deleteAllByIdInBatch(idsToRemove);
         }
 
         // ── 새 이미지 저장 ────────────────────────────────
@@ -195,11 +204,15 @@ public class UserPostServiceImpl implements UserPostService {
             for (int i = 0; i < newImages.size(); i++) {
                 MultipartFile file   = newImages.get(i);
                 UUID          imgId  = newImageIds.get(i);
-                String ext           = FileUtil.getExtension(file.getOriginalFilename());
-                String url           = storageService.storeAt(
+                
+                // UUID만 사용
+                String fileId = imgId.toString();
+                
+                // 이미지 저장 (StorageService에서 자동으로 확장자 추가함)
+                String url = storageService.storeAt(
                         StorageFileType.USER_POST_IMAGE,
                         file,
-                        imgId + ext);
+                        fileId);
 
                 newEntities.add(UserPostImage.from(imgId, post, url, startOrder + i));
             }
@@ -241,7 +254,23 @@ public class UserPostServiceImpl implements UserPostService {
         });
     }
 
+    /**
+     * 이미지 URL에서 파일명만 추출합니다.
+     * 
+     * @param imageUrl 이미지 URL
+     * @return 파일명
+     */
     public String extractFilenameFromUrl(String imageUrl) {
-        return imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+        if (imageUrl == null || imageUrl.isEmpty()) {
+            return "";
+        }
+        
+        // URL에서 마지막 / 이후의 문자열을 추출
+        int lastSlashIndex = imageUrl.lastIndexOf('/');
+        if (lastSlashIndex == -1 || lastSlashIndex == imageUrl.length() - 1) {
+            return imageUrl; // / 기호가 없거나 URL이 /로 끝나는 경우
+        }
+        
+        return imageUrl.substring(lastSlashIndex + 1);
     }
 }

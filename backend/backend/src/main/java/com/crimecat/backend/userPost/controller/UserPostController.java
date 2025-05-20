@@ -50,11 +50,15 @@ public class UserPostController {
 
             for (MultipartFile file : images) {
                 UUID imageId = UUID.randomUUID();
-                String ext   = FileUtil.getExtension(file.getOriginalFilename()); // .jpg 등
-                String url   = storageService.storeAt(
+                
+                // UUID만 사용
+                String fileId = imageId.toString();
+                
+                // 이미지 저장 (StorageService에서 자동으로 확장자 추가함)
+                String url = storageService.storeAt(
                         StorageFileType.USER_POST_IMAGE,
                         file,
-                        imageId + ext);                      // uuid + 확장자
+                        fileId);   // uuid만 전달
 
                 imageIds.add(imageId);
                 imageUrls.add(url);
@@ -70,16 +74,53 @@ public class UserPostController {
 
 
 
-    @PatchMapping("/{postId}/partial")
+    @PatchMapping(value = "/{postId}/partial", consumes = {"multipart/form-data"})
     public ResponseEntity<?> updateUserPostPartially(
             @PathVariable UUID postId,
-            @RequestPart("content") String content,
+            @RequestParam("content") String content,
             @RequestPart(value = "newImages", required = false) List<MultipartFile> newImages,
-            @RequestPart(value = "newImageIds", required = false) List<UUID> newImageIds,
-            @RequestPart(value = "keepImageUrls", required = false) List<String> keepImageUrls
+            @RequestParam(value = "newImageIds", required = false) String newImageIdsJson,
+            @RequestParam(value = "keepImageUrls", required = false) String keepImageUrlsJson
     ) {
+        System.out.println("======= 포스트 업데이트 요청 받음 =======");
+        System.out.println("postId: " + postId);
+        System.out.println("content: " + content);
+        System.out.println("newImages: " + (newImages != null ? newImages.size() : "null"));
+        System.out.println("newImageIdsJson: " + newImageIdsJson);
+        System.out.println("keepImageUrlsJson: " + keepImageUrlsJson);
+        
         WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
+        
+        // JSON 문자열을 파싱하여 List로 변환
+        List<UUID> newImageIds = null;
+        List<String> keepImageUrls = null;
+        
+        try {
+            // ObjectMapper를 사용하여 JSON 문자열 파싱
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            
+            if (newImageIdsJson != null && !newImageIdsJson.isEmpty()) {
+                // JSON 문자열을 UUID 배열로 변환
+                newImageIds = objectMapper.readValue(newImageIdsJson, 
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, UUID.class));
+                System.out.println("파싱된 newImageIds: " + newImageIds);
+            }
+            
+            if (keepImageUrlsJson != null && !keepImageUrlsJson.isEmpty()) {
+                // JSON 문자열을 문자열 배열로 변환
+                keepImageUrls = objectMapper.readValue(keepImageUrlsJson, 
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+                System.out.println("파싱된 keepImageUrls: " + keepImageUrls);
+            }
+        } catch (Exception e) {
+            // JSON 파싱 오류 처리
+            System.out.println("JSON 파싱 오류: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Invalid JSON format: " + e.getMessage(), e);
+        }
+        
         userPostService.updateUserPostPartially(postId, currentUser, content, newImages, newImageIds, keepImageUrls);
+        System.out.println("포스트 업데이트 완료: " + postId);
         return ResponseEntity.ok().build();
     }
 
