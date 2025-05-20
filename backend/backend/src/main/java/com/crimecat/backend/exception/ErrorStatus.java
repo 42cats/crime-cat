@@ -63,7 +63,14 @@ public enum ErrorStatus {
     NOTIFICATION_NOT_FOUND("알림을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     NOTIFICATION_ALREADY_PROCESSED("이미 처리된 알림입니다.", HttpStatus.CONFLICT),
     INVALID_NOTIFICATION_ACTION("잘못된 액션입니다.", HttpStatus.BAD_REQUEST),
-    NOTIFICATION_ACCESS_DENIED("알림에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN);
+    NOTIFICATION_ACCESS_DENIED("알림에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN),
+
+    USER_POST_NOT_FOUND("게시글을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    USER_POST_IMAGE_COUNT_EXCEEDED("이미지는 최대 5장까지만 등록 가능합니다.", HttpStatus.BAD_REQUEST),
+    USER_POST_ACCESS_DENIED("해당 게시글에 접근할 수 없습니다.", HttpStatus.FORBIDDEN),
+    USER_POST_INVALID_UPDATE("게시글을 수정할 수 없습니다.", HttpStatus.BAD_REQUEST),
+    USER_POST_LIKE_DUPLICATED("이미 좋아요를 누른 게시글입니다.", HttpStatus.CONFLICT),
+    USER_POST_LIKE_NOT_FOUND("좋아요한 기록이 존재하지 않습니다.", HttpStatus.NOT_FOUND);
 
     private final String message;
     private final HttpStatus status;
