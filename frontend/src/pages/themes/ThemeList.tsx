@@ -32,6 +32,8 @@ const SORT_OPTIONS = [
   { value: "PRICE_DESC", label: "가격 높은 순" },
   { value: "PLAYTIME", label: "시간 낮은 순" },
   { value: "PLAYTIME_DESC", label: "시간 높은 순" },
+  { value: "DIFFICULTY", label: "난이도 낮은 순"},
+  { value: "DIFFICULTY_DESC", label: "난이도 높은 순"}
 ];
 
 const CATEGORY_LABELS: Record<Theme["type"], string> = {
@@ -59,8 +61,8 @@ const ThemeList: React.FC = () => {
     priceMax: searchParams.get("priceMax") || "",
     playerMin: searchParams.get("playerMin") || "",
     playerMax: searchParams.get("playerMax") || "",
-    timeMin: searchParams.get("timeMin") || "",
-    timeMax: searchParams.get("timeMax") || "",
+    playtimeMin: searchParams.get("playtimeMin") || "",
+    playtimeMax: searchParams.get("playtimeMax") || "",
     difficultyMin: searchParams.get("difficultyMin") || "",
     difficultyMax: searchParams.get("difficultyMax") || "",
   });
@@ -73,7 +75,7 @@ const ThemeList: React.FC = () => {
     const pairs: [string, string][] = [
       ["priceMin", "priceMax"],
       ["playerMin", "playerMax"],
-      ["timeMin", "timeMax"],
+      ["playtimeMin", "playtimeMax"],
       ["difficultyMin", "difficultyMax"],
     ];
 
@@ -133,6 +135,18 @@ const ThemeList: React.FC = () => {
     });
   };
 
+  const handleSortChange = (val: string) => {
+    setSort(val);
+    setSearchParams((prev) => {
+      prev.set("keyword", keyword);
+      prev.set("sort", val);
+      prev.set("page", "0");
+      Object.entries(filters).forEach(([k, v]) => v && prev.set(k, v));
+      return prev;
+    });
+    setHasSearched(true);
+  };
+
   return (
     <PageTransition>
       <div className="container mx-auto px-4 py-10">
@@ -151,6 +165,11 @@ const ThemeList: React.FC = () => {
                   placeholder="검색어를 입력하세요"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSearch();
+                    }
+                  }}
                   className="h-9"
                 />
                 <Button onClick={handleSearch} className="h-9 px-4">검색</Button>
@@ -176,8 +195,8 @@ const ThemeList: React.FC = () => {
             <div>
               <Label>시간</Label>
               <div className="flex gap-2">
-                <Input type="number" placeholder="최소" className="h-9" value={filters.timeMin} onChange={(e) => handleFilterChange("timeMin", e.target.value)} />
-                <Input type="number" placeholder="최대" className="h-9" value={filters.timeMax} onChange={(e) => handleFilterChange("timeMax", e.target.value)} />
+                <Input type="number" placeholder="최소" className="h-9" value={filters.playtimeMin} onChange={(e) => handleFilterChange("playtimeMin", e.target.value)} />
+                <Input type="number" placeholder="최대" className="h-9" value={filters.playtimeMax} onChange={(e) => handleFilterChange("playtimeMax", e.target.value)} />
               </div>
             </div>
 
@@ -191,7 +210,7 @@ const ThemeList: React.FC = () => {
 
             <div className="col-span-2">
               <Label>정렬</Label>
-              <Select value={sort} onValueChange={(val) => setSort(val)}>
+              <Select value={sort} onValueChange={handleSortChange}>
                 <SelectTrigger className="h-9">
                   <SelectValue />
                 </SelectTrigger>
