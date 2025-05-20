@@ -89,6 +89,92 @@ class UserPostService {
       throw error;
     }
   }
+
+  // 내 포스트 리스트 가져오기
+  async getMyPosts(page: number = 0, size: number = 12): Promise<UserPostGalleryPageDto> {
+    try {
+      return await apiClient.get('/user-posts/my', {
+        params: {
+          page,
+          size,
+          sort: 'LATEST'
+        },
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+    } catch (error) {
+      console.error('내 포스트 목록 로드 실패:', error);
+      return { content: [], pageable: { pageNumber: 0, pageSize: 12 }, totalElements: 0, totalPages: 0 };
+    }
+  }
+
+  // 포스트 생성
+  async createPost(content: string, images?: File[]): Promise<void> {
+    try {
+      const formData = new FormData();
+      formData.append('content', content);
+      
+      if (images && images.length > 0) {
+        images.forEach(image => {
+          formData.append('images', image);
+        });
+      }
+      
+      await apiClient.post('/user-posts', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+    } catch (error) {
+      console.error('포스트 생성 실패:', error);
+      throw error;
+    }
+  }
+
+  // 포스트 업데이트
+  async updatePost(postId: string, content: string, newImages?: File[], keepImageUrls?: string[]): Promise<void> {
+    try {
+      const formData = new FormData();
+      formData.append('content', content);
+      
+      if (newImages && newImages.length > 0) {
+        newImages.forEach(image => {
+          formData.append('newImages', image);
+        });
+        
+        // UUID 생성
+        newImages.forEach(() => {
+          formData.append('newImageIds', crypto.randomUUID());
+        });
+      }
+      
+      if (keepImageUrls && keepImageUrls.length > 0) {
+        keepImageUrls.forEach(url => {
+          formData.append('keepImageUrls', url);
+        });
+      }
+      
+      await apiClient.patch(`/user-posts/${postId}/partial`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+    } catch (error) {
+      console.error('포스트 업데이트 실패:', error);
+      throw error;
+    }
+  }
+
+  // 포스트 삭제
+  async deletePost(postId: string): Promise<void> {
+    try {
+      await apiClient.delete(`/user-posts/${postId}`);
+    } catch (error) {
+      console.error('포스트 삭제 실패:', error);
+      throw error;
+    }
+  }
 }
 
 export const userPostService = new UserPostService();
