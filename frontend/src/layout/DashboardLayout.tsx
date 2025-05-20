@@ -16,6 +16,7 @@ import {
     Bell,
     History,
     Menu,
+    FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -168,6 +169,16 @@ const SidebarInner = React.memo(() => {
                                 </div>
                                 <nav className="grid gap-1">
                                         {[
+                                            {
+                                                name: "포스트",
+                                                path: "/dashboard/posts",
+                                                icon: FileText,
+                                                roles: [
+                                                    "ADMIN",
+                                                    "MANAGER",
+                                                    "USER",
+                                                ],
+                                            },
                                             {
                                                 name: "대시보드",
                                                 path: "/dashboard",

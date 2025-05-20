@@ -42,6 +42,9 @@ import CreateNotice from "@/pages/notices/CreateNotice";
 import EditNotice from "@/pages/notices/EditNotice";
 import NotificationListPage from "@/pages/notifications/NotificationListPage";
 import ProfilePage from "@/pages/profile/ProfilePage";
+import PostsPage from "@/pages/posts/PostsPage";
+import PostDetailPage from "@/pages/posts/PostDetailPage";
+import PostEditorPage from "@/pages/posts/PostEditorPage";
 
 // Community Pages
 import QuestionBoard from "@/pages/community/QuestionBoard";
@@ -156,6 +159,10 @@ const App = () => (
                       path="notifications"
                       element={<NotificationListPage />}
                   />
+                  <Route path="posts" element={<PostsPage />} />
+                  <Route path="posts/:postId" element={<PostDetailPage />} />
+                  <Route path="posts/new" element={<PostEditorPage />} />
+                  <Route path="posts/edit/:postId" element={<PostEditorPage />} />
                   <Route path="profile" element={<Profile />} />
                   <Route path="teams" element={<Teams />} />
               </Route>
