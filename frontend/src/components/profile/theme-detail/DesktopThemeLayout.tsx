@@ -56,7 +56,7 @@ const DesktopThemeLayout: React.FC<DesktopThemeLayoutProps> = ({
   };
 
   return (
-    <div className="flex flex-row h-full">
+    <div className="flex flex-row h-full overflow-hidden">
       {/* 이미지 섹션 */}
       <ThemeImageSection
         thumbNail={theme.thumbNail}
@@ -67,7 +67,7 @@ const DesktopThemeLayout: React.FC<DesktopThemeLayoutProps> = ({
       />
 
       {/* 정보 섹션 */}
-      <div className={`flex flex-col bg-white transition-all duration-300 ease-in-out ${isImageCollapsed ? 'w-full' : 'w-2/5'}`}>
+      <div className={`flex flex-col bg-white transition-all duration-300 ease-in-out overflow-hidden ${isImageCollapsed ? 'w-full' : 'w-2/5'}`}>
         {/* 이미지 펼치기 버튼 - 이미지가 접혔을 때만 표시 */}
         {isImageCollapsed && (
           <button
@@ -100,20 +100,20 @@ const DesktopThemeLayout: React.FC<DesktopThemeLayoutProps> = ({
         </div>
 
         {/* 탭 메뉴 및 콘텐츠 - 탭 커스텀 스타일 적용 */}
-        <div className="flex flex-col flex-grow theme-tabs-custom">
+        <div className="flex flex-col flex-grow theme-tab-override">
           <Tabs 
             defaultValue={activeTab} 
             value={activeTab} 
             onValueChange={(value) => setActiveTab(value as 'info' | 'comments')}
-            className="flex flex-col flex-grow h-full"
+            className="flex flex-col flex-grow h-full theme-tab-radix"
           >
             <TabsList className="w-full grid grid-cols-2 sticky top-0 bg-white z-10">
               <TabsTrigger value="info">정보</TabsTrigger>
               <TabsTrigger value="comments">댓글</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="info" className="p-4 overflow-y-auto flex-grow">
-              <div className="overflow-y-auto pb-20">
+            <TabsContent value="info" className="h-full p-4 overflow-y-auto">
+              <div className="pb-20">
                 <ThemeInfoContent
                   themeDetail={themeDetail}
                   themeDetailLoading={themeDetailLoading}
@@ -123,8 +123,8 @@ const DesktopThemeLayout: React.FC<DesktopThemeLayoutProps> = ({
               </div>
             </TabsContent>
             
-            <TabsContent value="comments" className="overflow-y-auto flex-grow">
-              <div className="overflow-y-auto pb-20">
+            <TabsContent value="comments" className="h-full overflow-y-auto">
+              <div className="pb-20">
                 <ModalCommentList 
                   gameThemeId={theme.themeId}
                   currentUserId={userId}
@@ -137,7 +137,7 @@ const DesktopThemeLayout: React.FC<DesktopThemeLayoutProps> = ({
         </div>
 
         {/* 액션 버튼 - 항상 하단에 고정 */}
-        <div className="border-t p-4 bg-white mt-auto flex-shrink-0">
+        <div className="border-t p-4 bg-white mt-auto flex-shrink-0 theme-action-bar">
           <div className="flex justify-between mb-2 items-center">
             <div className="flex space-x-4 w-full justify-start">
               <button 
@@ -151,13 +151,13 @@ const DesktopThemeLayout: React.FC<DesktopThemeLayoutProps> = ({
                 className={`text-gray-800 ${activeTab === 'info' ? 'text-blue-500' : 'hover:text-blue-500'} transition-colors`}
                 onClick={() => setActiveTab('info')}
               >
-                <Info size={24} />
+                <Info size={24} className={`info-tab-icon ${activeTab === 'info' ? 'active' : ''}`} />
               </button>
               <button 
                 className={`text-gray-800 ${activeTab === 'comments' ? 'text-blue-500' : 'hover:text-blue-500'} transition-colors`}
                 onClick={() => setActiveTab('comments')}
               >
-                <MessageSquare size={24} />
+                <MessageSquare size={24} className={`comment-tab-icon ${activeTab === 'comments' ? 'active' : ''}`} />
               </button>
               <button 
                 className="text-gray-800 hover:text-green-500 transition-colors"

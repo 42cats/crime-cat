@@ -47,7 +47,7 @@ const MobileThemeLayout: React.FC<MobileThemeLayoutProps> = ({
   showRequestModal
 }) => {
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* 이미지 섹션 - 작은 고정 크기 사용 */}
       <div className="flex-shrink-0">
         <ThemeImageSection
@@ -80,12 +80,12 @@ const MobileThemeLayout: React.FC<MobileThemeLayoutProps> = ({
       </div>
 
       {/* 탭 컨텐츠 - 플렉스 그로우로 남은 공간 차지 */}
-      <div className="flex-grow overflow-hidden flex flex-col theme-tabs-custom">
+      <div className="flex-grow overflow-hidden flex flex-col theme-tab-override">
         <Tabs 
           defaultValue={activeTab} 
           value={activeTab} 
           onValueChange={(value) => setActiveTab(value as 'info' | 'comments')}
-          className="w-full flex flex-col h-full"
+          className="w-full flex flex-col h-full theme-tab-radix"
         >
           <TabsList className="w-full grid grid-cols-2 sticky top-0 bg-white z-10 flex-shrink-0">
             <TabsTrigger value="info">정보</TabsTrigger>
@@ -113,7 +113,7 @@ const MobileThemeLayout: React.FC<MobileThemeLayoutProps> = ({
       </div>
 
       {/* 하단 고정 액션 버튼 */}
-      <div className="fixed bottom-0 left-0 w-full border-t p-4 bg-white z-20">
+      <div className="fixed bottom-0 left-0 w-full border-t p-4 bg-white z-20 theme-action-bar">
         <div className="flex justify-between mb-2 items-center">
           <div className="flex space-x-4 w-full justify-center">
             <button 
@@ -127,13 +127,13 @@ const MobileThemeLayout: React.FC<MobileThemeLayoutProps> = ({
               className={`text-gray-800 ${activeTab === 'info' ? 'text-blue-500' : 'hover:text-blue-500'} transition-colors`}
               onClick={() => setActiveTab('info')}
             >
-              <Info size={24} />
+              <Info size={24} className={`info-tab-icon ${activeTab === 'info' ? 'active' : ''}`} />
             </button>
             <button 
               className={`text-gray-800 ${activeTab === 'comments' ? 'text-blue-500' : 'hover:text-blue-500'} transition-colors`}
               onClick={() => setActiveTab('comments')}
             >
-              <MessageSquare size={24} />
+              <MessageSquare size={24} className={`comment-tab-icon ${activeTab === 'comments' ? 'active' : ''}`} />
             </button>
             <button 
               className="text-gray-800 hover:text-green-500 transition-colors"
