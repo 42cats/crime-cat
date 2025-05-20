@@ -32,6 +32,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<{ type: string; message: string } | null>(null);
     const [activeTab, setActiveTab] = useState<TabType>("themes");
+    const [themesCount, setThemesCount] = useState<number>(0);
 
     useEffect(() => {
         if (!open) return;
@@ -175,7 +176,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                         <>
                             {/* 프로필 헤더 섹션 */}
                             <div className="relative">
-                                <ProfileHeader profile={profile} />
+                                <ProfileHeader profile={{...profile, creationCount: themesCount}} />
                             </div>
 
                             {/* 프로필 내용 섹션 - 크기 고정 */}
@@ -204,7 +205,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                     {/* 탭 컨텐츠 - 고정 크기 컨테이너 적용 */}
                                     <div className="mt-3 min-h-[200px] md:min-h-[300px] transition-all duration-300 ease-in-out overflow-y-auto">
                                         {activeTab === "themes" ? (
-                                            <ProfileThemeGrid userId={profile.userId} />
+                                            <ProfileThemeGrid userId={profile.userId} onThemesLoaded={setThemesCount} />
                                         ) : (
                                             <ProfilePostGrid userId={profile.userId} />
                                         )}
