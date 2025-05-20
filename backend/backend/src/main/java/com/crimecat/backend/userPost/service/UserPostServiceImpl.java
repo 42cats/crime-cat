@@ -159,7 +159,7 @@ public class UserPostServiceImpl implements UserPostService {
         int newCnt  = newImages     == null ? 0 : newImages.size();
 
         if (newCnt != (newImageIds == null ? 0 : newImageIds.size())) {
-            throw ErrorStatus.INVALID_INPUT.asServiceException();
+            throw ErrorStatus.USER_POST_INVALID_UPDATE.asServiceException();
         }
         if (keepCnt + newCnt > 5) {
             throw ErrorStatus.USER_POST_IMAGE_COUNT_EXCEEDED.asServiceException();

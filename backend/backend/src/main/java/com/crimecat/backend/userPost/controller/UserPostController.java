@@ -63,7 +63,7 @@ public class UserPostController {
 
 
 
-    @PutMapping("/{postId}/partial")
+    @PatchMapping("/{postId}/partial")
     public ResponseEntity<?> updateUserPostPartially(
             @PathVariable UUID postId,
             @RequestPart("content") String content,
