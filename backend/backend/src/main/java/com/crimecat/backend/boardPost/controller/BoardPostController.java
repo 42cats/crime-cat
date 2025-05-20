@@ -1,19 +1,25 @@
 package com.crimecat.backend.boardPost.controller;
 
+import com.crimecat.backend.boardPost.dto.BoardPostDetailResponse;
 import com.crimecat.backend.boardPost.dto.BoardPostResponse;
 import com.crimecat.backend.boardPost.enums.BoardType;
 import com.crimecat.backend.boardPost.enums.PostType;
 import com.crimecat.backend.boardPost.service.BoardPostService;
 import com.crimecat.backend.boardPost.sort.BoardPostSortType;
+import com.crimecat.backend.comment.dto.CommentResponse;
 import com.crimecat.backend.gameHistory.sort.GameHistorySortType;
 import com.crimecat.backend.utils.sort.SortUtil;
+import com.crimecat.backend.webUser.domain.WebUser;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -42,4 +48,12 @@ public class BoardPostController {
         return ResponseEntity.ok().body(boardPosts);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<BoardPostDetailResponse> getPostDetail(
+            @PathVariable("id") UUID postId,
+            @AuthenticationPrincipal WebUser currentUser
+    ) {
+        BoardPostDetailResponse boardPostDetailResponse = boardPostService.getBoardPostDetail(postId, currentUser.getId());
+        return ResponseEntity.ok().body(boardPostDetailResponse);
+    }
 }

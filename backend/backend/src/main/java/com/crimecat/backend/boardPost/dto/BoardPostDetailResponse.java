@@ -1,6 +1,7 @@
 package com.crimecat.backend.boardPost.dto;
 
 import com.crimecat.backend.boardPost.domain.BoardPost;
+import com.crimecat.backend.postComment.dto.PostCommentResponse;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,14 +31,16 @@ public class BoardPostDetailResponse {
     private Integer likes;
     @JsonProperty("isLikedByCurrentUser")
     private boolean isLikedByCurrentUser;
-    private Integer comments;
     @JsonProperty("isPinned")
     private Boolean isPinned;
-//    private List<PostCommentResponse> comments;
+    @JsonProperty("isSecret")
+    private Boolean isSecret;
 
 
     public static BoardPostDetailResponse from(
-            BoardPost boardPost
+            BoardPost boardPost,
+            Boolean isOwnPost,
+            Boolean isLikedByCurrentUser
     ) {
         return BoardPostDetailResponse.builder()
                 .id(boardPost.getId())
@@ -46,15 +49,14 @@ public class BoardPostDetailResponse {
                 .authorName(boardPost.getUser().getNickname())
                 .authorProfileImage(boardPost.getUser().getProfileImagePath())
                 .authorId(boardPost.getUserId())
-//                .isOwnPost()
+                .isOwnPost(isOwnPost)
                 .createdAt(boardPost.getCreatedAt())
                 .updatedAt(boardPost.getUpdatedAt())
                 .views(boardPost.getViews())
                 .likes(boardPost.getLikes())
-//                .isLikedByCurrentUser()
-                .comments(boardPost.getComments())
+                .isLikedByCurrentUser(isLikedByCurrentUser)
                 .isPinned(boardPost.getIsPinned())
-//                .comments()
+                .isSecret(boardPost.getIsSecret())
                 .build();
     }
 }

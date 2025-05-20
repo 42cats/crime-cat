@@ -11,4 +11,6 @@ import java.util.UUID;
 public interface BoardPostLikeRepository extends JpaRepository<BoardPostLike, UUID> {
 
     List<BoardPostLike> findAllByPostId(UUID postId);
+
+    Boolean existsByUserIdAndPostId(UUID userId, UUID postId);
 }

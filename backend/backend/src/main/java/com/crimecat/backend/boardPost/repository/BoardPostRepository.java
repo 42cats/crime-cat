@@ -39,4 +39,6 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID> {
             @Param("postType") PostType postType,
             Pageable pageable
     );
+
+    BoardPost getBoardPostById(UUID id);
 }
