@@ -120,7 +120,7 @@ const PostsPage: React.FC = () => {
 
       <Separator />
 
-      <Tabs defaultValue="grid" className="w-full">
+      <Tabs defaultValue="list" className="w-full">
         <div className="flex items-center justify-between mb-4">
           <TabsList>
             <TabsTrigger value="grid">그리드</TabsTrigger>
@@ -191,7 +191,7 @@ const PostsPage: React.FC = () => {
                     </div>
                     <CardContent className="p-4 flex-1 flex flex-col justify-between">
                       <div className="line-clamp-2 font-medium mb-2">
-                        {post.thumbnailUrl ? '이미지 포스트' : '텍스트 포스트'}
+                        {post.content ? post.content.substring(0, 100) + (post.content.length > 100 ? '...' : '') : (post.thumbnailUrl ? '이미지 포스트' : '내용 없음')}
                       </div>
                       <div className="flex items-center text-sm text-muted-foreground">
                         <Heart 
@@ -256,8 +256,8 @@ const PostsPage: React.FC = () => {
                       )}
                     </div>
                     <div className="flex-1">
-                      <div className="font-medium">
-                        {post.thumbnailUrl ? '이미지 포스트' : '텍스트 포스트'}
+                      <div className="font-medium line-clamp-2">
+                        {post.content ? post.content.substring(0, 150) + (post.content.length > 150 ? '...' : '') : (post.thumbnailUrl ? '이미지 포스트' : '내용 없음')}
                       </div>
                       <div className="flex items-center text-sm text-muted-foreground mt-1">
                         <Heart 

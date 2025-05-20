@@ -87,9 +87,9 @@ public class UserPostController {
 
     @DeleteMapping("/{postId}")
     public ResponseEntity<?> deleteUserPost(
-            @PathVariable UUID postId,
-            @AuthenticationPrincipal(expression = "webUser") @NotNull Object currentUser
+            @PathVariable UUID postId
     ) {
+        WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
         userPostService.deleteUserPost(postId, currentUser);
         return ResponseEntity.noContent().build();
     }
