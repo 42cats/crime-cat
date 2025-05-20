@@ -1,6 +1,7 @@
 package com.crimecat.backend.userPost.service;
 
 import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.follow.repository.FollowRepository;
 import com.crimecat.backend.storage.StorageFileType;
 import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.userPost.domain.UserPost;
@@ -15,6 +16,7 @@ import com.crimecat.backend.userPost.repository.UserPostImageRepository;
 import com.crimecat.backend.userPost.repository.UserPostLikeRepository;
 import com.crimecat.backend.userPost.repository.UserPostRepository;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -35,7 +37,8 @@ public class UserPostServiceImpl implements UserPostService {
     private final UserPostLikeRepository userPostLikeRepository;
     private final UserPostCommentRepository userPostCommentRepository;
     private final StorageService storageService;
-    private final com.crimecat.backend.webUser.repository.WebUserRepository webUserRepository;
+    private final WebUserRepository webUserRepository;
+    private final FollowRepository followRepository; // 외부에서 설정 가능
     // Follow 관련 레포지토리 추가 필요 - 팔로워 기능은 나중에 구현
 
     @Override
@@ -391,13 +394,17 @@ public class UserPostServiceImpl implements UserPostService {
         });
     }
     
+    
     @Override
     public boolean isFollower(UUID userId, UUID followerId) {
-        // TODO: 팔로워 기능 구현 시 추가
-        // 현재는 팔로워 관계가 구현되지 않았으므로 임시로 false 반환
+        if (followRepository != null) {
+            return followRepository.existsByFollowerIdAndFollowingId(followerId, userId);
+        }
+        // 팔로우 기능이 구현되지 않은 경우 false 반환
         return false;
     }
     
+
     @Override
     public boolean canAccessPost(UUID postId, WebUser currentUser) {
         UserPost post = userPostRepository.findByIdWithUserAndImages(postId)

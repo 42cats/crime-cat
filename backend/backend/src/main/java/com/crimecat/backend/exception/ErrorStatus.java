@@ -77,7 +77,12 @@ public enum ErrorStatus {
     COMMENT_NOT_AUTHORIZED("댓글에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
     COMMENT_ALREADY_DELETED("이미 삭제된 댓글입니다.", HttpStatus.BAD_REQUEST),
     COMMENT_INVALID_PARENT("잘못된 부모 댓글입니다.", HttpStatus.BAD_REQUEST),
-    COMMENT_INVALID_NESTING("대댓글에는 댓글을 달 수 없습니다.", HttpStatus.BAD_REQUEST);
+    COMMENT_INVALID_NESTING("대댓글에는 댓글을 달 수 없습니다.", HttpStatus.BAD_REQUEST),
+    
+    // 팔로우 관련
+    FOLLOW_SELF_NOT_ALLOWED("자기 자신을 팔로우할 수 없습니다.", HttpStatus.BAD_REQUEST),
+    FOLLOW_ALREADY_EXISTS("이미 팔로우하고 있습니다.", HttpStatus.CONFLICT),
+    FOLLOW_NOT_FOUND("팔로우 관계를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
 
     private final String message;
     private final HttpStatus status;
