@@ -15,6 +15,8 @@ public enum GameThemeSortType implements SortType {
     PRICE_DESC(PRICE.getSort().reverse()),
     PLAYTIME(Sort.by("playTimeMax", "playTimeMin")),
     PLAYTIME_DESC(PLAYTIME.getSort().reverse()),
+    DIFFICULTY(Sort.by("difficulty")),
+    DIFFICULTY_DESC(DIFFICULTY.getSort().reverse()),
     DEFAULT(Sort.by(Sort.Direction.DESC, "recommendationEnabled")
             .and(Sort.by(Sort.Direction.DESC, "createdAt"))),
     ;
