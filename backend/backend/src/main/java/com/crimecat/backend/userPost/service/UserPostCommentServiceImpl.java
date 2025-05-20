@@ -1,0 +1,232 @@
+package com.crimecat.backend.userPost.service;
+
+import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.userPost.domain.UserPost;
+import com.crimecat.backend.userPost.domain.UserPostComment;
+import com.crimecat.backend.userPost.dto.UserPostCommentDto;
+import com.crimecat.backend.userPost.dto.UserPostCommentRequest;
+import com.crimecat.backend.userPost.repository.UserPostCommentRepository;
+import com.crimecat.backend.userPost.repository.UserPostRepository;
+import com.crimecat.backend.webUser.domain.WebUser;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class UserPostCommentServiceImpl implements UserPostCommentService {
+
+    private final UserPostRepository userPostRepository;
+    private final UserPostCommentRepository userPostCommentRepository;
+
+    @Override
+    @Transactional
+    public UserPostCommentDto createComment(UUID postId, WebUser author, UserPostCommentRequest request) {
+        // 게시글 존재 확인
+        UserPost post = userPostRepository.findById(postId)
+                .orElseThrow(ErrorStatus.USER_POST_NOT_FOUND::asServiceException);
+        
+        // 부모 댓글이 있는 경우 존재 확인
+        UserPostComment parentComment = null;
+        if (request.getParentId() != null) {
+            parentComment = userPostCommentRepository.findById(request.getParentId())
+                    .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
+            
+            // 부모 댓글이 다른 게시글의 댓글인지 확인
+            if (!parentComment.getPost().getId().equals(postId)) {
+                throw ErrorStatus.COMMENT_INVALID_PARENT.asServiceException();
+            }
+            
+            // 대댓글에 대한 대댓글은 허용하지 않음 (1단계만 허용)
+            if (parentComment.getParent() != null) {
+                throw ErrorStatus.COMMENT_INVALID_NESTING.asServiceException();
+            }
+        }
+        
+        // 댓글 생성
+        UserPostComment comment = UserPostComment.builder()
+                .content(request.getContent())
+                .post(post)
+                .author(author)
+                .isPrivate(request.isPrivate())
+                .build();
+        
+        // 부모 댓글 설정
+        if (parentComment != null) {
+            comment.setParent(parentComment);
+        }
+        
+        userPostCommentRepository.save(comment);
+        
+        // 조회 권한 확인 (방금 작성한 댓글이므로 항상 볼 수 있음)
+        return UserPostCommentDto.from(comment, true);
+    }
+
+    @Override
+    @Transactional
+    public UserPostCommentDto updateComment(UUID commentId, WebUser author, UserPostCommentRequest request) {
+        // 댓글 존재 확인
+        UserPostComment comment = userPostCommentRepository.findById(commentId)
+                .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
+        
+        // 작성자만 수정 가능
+        if (!comment.getAuthor().getId().equals(author.getId())) {
+            throw ErrorStatus.COMMENT_NOT_AUTHORIZED.asServiceException();
+        }
+        
+        // 삭제된 댓글은 수정 불가
+        if (comment.isDeleted()) {
+            throw ErrorStatus.COMMENT_ALREADY_DELETED.asServiceException();
+        }
+        
+        // 댓글 수정
+        comment.update(request.getContent(), request.isPrivate());
+        
+        // 저장
+        userPostCommentRepository.save(comment);
+        
+        // 방금 수정한 댓글이므로 항상 볼 수 있음
+        return UserPostCommentDto.from(comment, true);
+    }
+
+    @Override
+    @Transactional
+    public void deleteComment(UUID commentId, WebUser currentUser) {
+        // 댓글 존재 확인
+        UserPostComment comment = userPostCommentRepository.findByIdWithAuthorAndPost(commentId)
+                .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
+        
+        // 작성자 또는 게시글 작성자만 삭제 가능
+        if (!comment.getAuthor().getId().equals(currentUser.getId()) && 
+                !comment.getPost().getUser().getId().equals(currentUser.getId())) {
+            throw ErrorStatus.COMMENT_NOT_AUTHORIZED.asServiceException();
+        }
+        
+        // 이미 삭제된 댓글인지 확인
+        if (comment.isDeleted()) {
+            throw ErrorStatus.COMMENT_ALREADY_DELETED.asServiceException();
+        }
+        
+        // 소프트 딜리트
+        comment.delete();
+        userPostCommentRepository.save(comment);
+    }
+
+    @Override
+    public Page<UserPostCommentDto> getCommentsByPostId(UUID postId, WebUser currentUser, Pageable pageable) {
+        // 게시글 존재 확인 및 접근 권한 확인
+        UserPost post = userPostRepository.findByIdWithUserAndImages(postId)
+                .orElseThrow(ErrorStatus.USER_POST_NOT_FOUND::asServiceException);
+                
+        // 비밀글 또는 팔로워 공개 게시글인 경우 접근 권한 확인
+        if (post.isPrivate() && !post.getUser().getId().equals(currentUser.getId())) {
+            throw ErrorStatus.USER_POST_ACCESS_DENIED.asServiceException();
+        }
+        
+        // TODO: 팔로워 공개 게시글인 경우 팔로워 여부 확인 로직 추가 필요
+        
+        // 최상위 댓글(부모 댓글)만 페이징 조회
+        Page<UserPostComment> parentComments = userPostCommentRepository.findParentCommentsByPostId(postId, pageable);
+        
+        // 모든 답글(대댓글) 조회
+        List<UserPostComment> allReplies = userPostCommentRepository.findAllRepliesByPostId(postId);
+        
+        // 게시글 작성자 ID
+        UUID postAuthorId = post.getUser().getId();
+        
+        // DTO 변환
+        return parentComments.map(comment -> 
+            UserPostCommentDto.fromWithReplies(
+                comment, 
+                allReplies, 
+                currentUser.getId(), 
+                postAuthorId
+            )
+        );
+    }
+
+    @Override
+    public List<UserPostCommentDto> getRepliesByCommentId(UUID commentId, WebUser currentUser) {
+        // 댓글 존재 확인
+        UserPostComment parentComment = userPostCommentRepository.findByIdWithAuthorAndPost(commentId)
+                .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
+        
+        // 게시글 작성자 ID 
+        UUID postAuthorId = parentComment.getPost().getUser().getId();
+        
+        // 대댓글 목록 조회
+        List<UserPostComment> replies = userPostCommentRepository.findAllRepliesByCommentId(commentId);
+        
+        // DTO 변환 (각 댓글의 표시 여부 확인)
+        return replies.stream()
+                .map(reply -> UserPostCommentDto.from(
+                        reply, 
+                        isCommentVisible(reply, currentUser.getId(), postAuthorId, parentComment.getAuthor().getId())
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean canViewComment(UUID commentId, WebUser currentUser) {
+        // 댓글 존재 확인
+        UserPostComment comment = userPostCommentRepository.findByIdWithAuthorAndPost(commentId)
+                .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
+        
+        // 비밀 댓글이 아니면 누구나 볼 수 있음
+        if (!comment.isPrivate()) {
+            return true;
+        }
+        
+        UUID postAuthorId = comment.getPost().getUser().getId();
+        UUID parentAuthorId = comment.getParent() != null ? comment.getParent().getAuthor().getId() : null;
+        
+        return isCommentVisible(comment, currentUser.getId(), postAuthorId, parentAuthorId);
+    }
+    
+    /**
+     * 댓글 표시 권한 확인
+     */
+    private boolean isCommentVisible(
+            UserPostComment comment, 
+            UUID currentUserId, 
+            UUID postAuthorId,
+            UUID parentAuthorId) {
+        
+        // 삭제된 댓글은 내용이 보이지 않도록 처리
+        if (comment.isDeleted()) {
+            return false;
+        }
+        
+        // 비밀 댓글이 아니면 누구나 볼 수 있음
+        if (!comment.isPrivate()) {
+            return true;
+        }
+        
+        // 비밀 댓글인 경우 권한 검사
+        
+        // 1. 현재 사용자가 게시글 작성자인 경우
+        if (currentUserId.equals(postAuthorId)) {
+            return true;
+        }
+        
+        // 2. 현재 사용자가 댓글 작성자인 경우
+        if (currentUserId.equals(comment.getAuthor().getId())) {
+            return true;
+        }
+        
+        // 3. 대댓글이고 현재 사용자가 부모 댓글 작성자인 경우
+        if (parentAuthorId != null && currentUserId.equals(parentAuthorId)) {
+            return true;
+        }
+        
+        // 그 외에는 볼 수 없음
+        return false;
+    }
+}

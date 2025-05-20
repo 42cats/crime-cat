@@ -70,7 +70,14 @@ public enum ErrorStatus {
     USER_POST_ACCESS_DENIED("해당 게시글에 접근할 수 없습니다.", HttpStatus.FORBIDDEN),
     USER_POST_INVALID_UPDATE("게시글을 수정할 수 없습니다.", HttpStatus.BAD_REQUEST),
     USER_POST_LIKE_DUPLICATED("이미 좋아요를 누른 게시글입니다.", HttpStatus.CONFLICT),
-    USER_POST_LIKE_NOT_FOUND("좋아요한 기록이 존재하지 않습니다.", HttpStatus.NOT_FOUND);
+    USER_POST_LIKE_NOT_FOUND("좋아요한 기록이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
+    
+    // 댓글 관련
+    COMMENT_NOT_FOUND("댓글을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    COMMENT_NOT_AUTHORIZED("댓글에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    COMMENT_ALREADY_DELETED("이미 삭제된 댓글입니다.", HttpStatus.BAD_REQUEST),
+    COMMENT_INVALID_PARENT("잘못된 부모 댓글입니다.", HttpStatus.BAD_REQUEST),
+    COMMENT_INVALID_NESTING("대댓글에는 댓글을 달 수 없습니다.", HttpStatus.BAD_REQUEST);
 
     private final String message;
     private final HttpStatus status;

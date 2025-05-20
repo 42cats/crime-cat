@@ -7,4 +7,7 @@ import lombok.Data;
 public class UpdateUserPostRequest {
     @NotBlank
     private String content;
+    
+    private boolean isPrivate = false;
+    private boolean isFollowersOnly = false;
 }

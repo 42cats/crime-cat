@@ -196,5 +196,5 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 			@Param("hasTheme") Boolean hasTheme,
 			Pageable pageable
 	);
-	Integer countGameHistoriesByUser(User user);
+	Integer countGameHistoriesByUser_Id(UUID userId);
 }
