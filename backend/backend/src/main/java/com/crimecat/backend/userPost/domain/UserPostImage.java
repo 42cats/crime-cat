@@ -19,9 +19,6 @@ import java.util.UUID;
 public class UserPostImage {
 
     @Id
-    @UuidGenerator
-    @GeneratedValue
-    @Getter
     @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
@@ -48,8 +45,9 @@ public class UserPostImage {
         this.sortOrder = sortOrder;
     }
 
-    static public UserPostImage from (UserPost post, String imageUrl, int sortOrder) {
+    public static UserPostImage from(UUID id, UserPost post, String imageUrl, int sortOrder) {
         return UserPostImage.builder()
+                .id(id)
                 .post(post)
                 .imageUrl(imageUrl)
                 .sortOrder(sortOrder)
