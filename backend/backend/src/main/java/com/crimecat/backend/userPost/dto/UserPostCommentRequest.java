@@ -1,5 +1,6 @@
 package com.crimecat.backend.userPost.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -20,6 +21,7 @@ public class UserPostCommentRequest {
     private String content;
     
     private UUID parentId;
-    
+
+    @JsonProperty("isPrivate")
     private boolean isPrivate;
 }
