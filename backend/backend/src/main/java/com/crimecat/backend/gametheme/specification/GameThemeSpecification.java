@@ -42,7 +42,7 @@ public class GameThemeSpecification {
                     criteriaBuilder.like(root.get("title"), pattern),
                     criteriaBuilder.like(root.get("content"), pattern),
                     criteriaBuilder.like(root.get("summary"), pattern),
-                    criteriaBuilder.like(root.get("tags"), pattern),
+//                    criteriaBuilder.like(root.get("tags"), pattern),
                     criteriaBuilder.like(root.get("author").get("nickname"), pattern)
 //                    criteriaBuilder.like(authorJoin.get("nickname"), pattern)
             ));

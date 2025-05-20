@@ -163,10 +163,10 @@ public class GameThemeService {
         // TODO: QueryDSL
         Specification<GameTheme> spec = Specification.where(GameThemeSpecification.defaultSpec(webUserId));
         if (ThemeType.contains(category)) {
-            spec.and(GameThemeSpecification.equalCategory(category));
+            spec = spec.and(GameThemeSpecification.equalCategory(category));
         }
         if (keyword != null) {
-            spec.and(GameThemeSpecification.findKeyword(keyword, category));
+            spec = spec.and(GameThemeSpecification.findKeyword(keyword, category));
         }
         Page<GameThemeDto> page = themeRepository.findAll(spec, pageable).map(GameThemeDto::from);
         return GetGameThemesResponse.from(page);
