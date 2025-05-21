@@ -13,14 +13,16 @@ import java.util.UUID;
 public class AuthorDto {
     private UUID id;
     private String nickname;
+    private String avatarUrl;
 
     public static AuthorDto from(WebUser user) {
         if (user == null) {
             return null;
         }
-        return AuthorDto.builder()
-                .id(user.getId())
-                .nickname(user.getNickname())
-                .build();
+    return AuthorDto.builder()
+        .id(user.getId())
+        .nickname(user.getNickname())
+        .avatarUrl(user.getProfileImagePath())
+        .build();
     }
 }
