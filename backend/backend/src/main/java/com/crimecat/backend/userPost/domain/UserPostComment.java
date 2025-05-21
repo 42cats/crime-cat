@@ -1,9 +1,12 @@
 package com.crimecat.backend.userPost.domain;
 
-import com.crimecat.backend.userPost.dto.UserPostCommentRequest;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
@@ -11,11 +14,6 @@ import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Table(name = "user_post_comments")
@@ -84,24 +82,6 @@ public class UserPostComment {
     public void delete() {
         this.isDeleted = true;
         this.updatedAt = LocalDateTime.now();
-    }
-
-    // 팩토리 메서드
-    public static UserPostComment from(UserPost post, WebUser author, UserPostCommentRequest request) {
-        UserPostComment comment = UserPostComment.builder()
-                .content(request.getContent())
-                .post(post)
-                .author(author)
-                .isPrivate(request.isPrivate())
-                .updatedAt(LocalDateTime.now())
-                .build();
-        
-        if (request.getParentId() != null) {
-            // 부모 댓글 ID만 설정 (실제 객체는 repository에서 로드 후 설정)
-            comment.setParent(null);
-        }
-        
-        return comment;
     }
 
     // 부모 댓글 설정 메서드
