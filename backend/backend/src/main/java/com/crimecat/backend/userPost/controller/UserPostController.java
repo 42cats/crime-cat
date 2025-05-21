@@ -1,16 +1,17 @@
 package com.crimecat.backend.userPost.controller;
 
 import com.crimecat.backend.exception.ErrorStatus;
-import com.crimecat.backend.userPost.service.UserPostService;
-import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.storage.StorageFileType;
-import com.crimecat.backend.utils.AuthenticationUtil;
-import com.crimecat.backend.utils.FileUtil;
-import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.userPost.dto.UserPostGalleryPageDto;
+import com.crimecat.backend.userPost.service.UserPostService;
 import com.crimecat.backend.userPost.sort.UserPostSortType;
+import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.utils.sort.SortUtil;
-import jakarta.validation.constraints.NotNull;
+import com.crimecat.backend.webUser.domain.WebUser;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,13 +19,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -90,15 +86,6 @@ public class UserPostController {
             @RequestParam(value = "isPrivate", defaultValue = "false") boolean isPrivate,
             @RequestParam(value = "isFollowersOnly", defaultValue = "false") boolean isFollowersOnly
     ) {
-        System.out.println("======= 포스트 업데이트 요청 받음 =======");
-        System.out.println("postId: " + postId);
-        System.out.println("content: " + content);
-        System.out.println("newImages: " + (newImages != null ? newImages.size() : "null"));
-        System.out.println("newImageIdsJson: " + newImageIdsJson);
-        System.out.println("keepImageUrlsJson: " + keepImageUrlsJson);
-        System.out.println("isPrivate: " + isPrivate);
-        System.out.println("isFollowersOnly: " + isFollowersOnly);
-        
         WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
         
         // JSON 문자열을 파싱하여 List로 변환
@@ -113,24 +100,20 @@ public class UserPostController {
                 // JSON 문자열을 UUID 배열로 변환
                 newImageIds = objectMapper.readValue(newImageIdsJson, 
                     objectMapper.getTypeFactory().constructCollectionType(List.class, UUID.class));
-                System.out.println("파싱된 newImageIds: " + newImageIds);
             }
             
             if (keepImageUrlsJson != null && !keepImageUrlsJson.isEmpty()) {
                 // JSON 문자열을 문자열 배열로 변환
                 keepImageUrls = objectMapper.readValue(keepImageUrlsJson, 
                     objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
-                System.out.println("파싱된 keepImageUrls: " + keepImageUrls);
             }
         } catch (Exception e) {
             // JSON 파싱 오류 처리
-            System.out.println("JSON 파싱 오류: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Invalid JSON format: " + e.getMessage(), e);
         }
         
         userPostService.updateUserPostPartially(postId, currentUser, content, newImages, newImageIds, keepImageUrls, isPrivate, isFollowersOnly);
-        System.out.println("포스트 업데이트 완료: " + postId);
         return ResponseEntity.ok().build();
     }
 
