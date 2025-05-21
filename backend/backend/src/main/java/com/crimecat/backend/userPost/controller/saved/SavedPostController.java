@@ -6,8 +6,6 @@ import com.crimecat.backend.userPost.dto.SavedPostRequestDto;
 import com.crimecat.backend.userPost.dto.UserPostGalleryPageDto;
 import com.crimecat.backend.userPost.service.UserPostService;
 import com.crimecat.backend.webUser.domain.WebUser;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,13 +20,11 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/posts/saved")
 @RequiredArgsConstructor
-@Tag(name = "저장된 게시물 API", description = "저장된 게시물 관련 API")
 public class SavedPostController {
 
     private final UserPostService userPostService;
 
     @PostMapping("/{postId}")
-    @Operation(summary = "게시물 저장/취소", description = "게시물을 저장하거나 저장을 취소합니다.")
     public ResponseEntity<MessageResponseDto> toggleSavePost(
             @PathVariable UUID postId,
             @RequestBody(required = false) SavedPostRequestDto requestDto,
@@ -42,7 +38,6 @@ public class SavedPostController {
     }
 
     @GetMapping("/status/{postId}")
-    @Operation(summary = "게시물 저장 상태 확인", description = "게시물의 저장 상태를 확인합니다.")
     public ResponseEntity<Boolean> isPostSaved(
             @PathVariable UUID postId,
             @AuthenticationPrincipal WebUser currentUser) {
@@ -52,7 +47,6 @@ public class SavedPostController {
     }
 
     @GetMapping
-    @Operation(summary = "저장된 게시물 목록 조회", description = "로그인한 사용자의 저장된 게시물 목록을 조회합니다.")
     public ResponseEntity<PageResponseDto<UserPostGalleryPageDto>> getSavedPosts(
             @AuthenticationPrincipal WebUser currentUser,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -62,7 +56,6 @@ public class SavedPostController {
     }
 
     @GetMapping("/collections")
-    @Operation(summary = "저장 컬렉션 목록 조회", description = "로그인한 사용자의 저장 컬렉션 목록을 조회합니다.")
     public ResponseEntity<List<String>> getUserCollections(
             @AuthenticationPrincipal WebUser currentUser) {
         
@@ -71,7 +64,6 @@ public class SavedPostController {
     }
 
     @GetMapping("/collections/{collectionName}")
-    @Operation(summary = "특정 컬렉션의 저장된 게시물 목록 조회", description = "특정 컬렉션에 저장된 게시물 목록을 조회합니다.")
     public ResponseEntity<PageResponseDto<UserPostGalleryPageDto>> getSavedPostsByCollection(
             @PathVariable String collectionName,
             @AuthenticationPrincipal WebUser currentUser,
