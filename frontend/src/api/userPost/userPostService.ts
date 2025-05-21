@@ -18,6 +18,7 @@ export interface UserPostDto {
     imageUrls: string[];
     likeCount: number;
     liked: boolean;
+    createdAt: string;
 }
 
 export interface UserPostGalleryPageDto {

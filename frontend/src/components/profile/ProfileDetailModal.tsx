@@ -17,12 +17,22 @@ import ProfilePostGrid from "./ProfilePostGrid";
 import ProfileFollowerList from "./ProfileFollowerList";
 import ProfileFollowingList from "./ProfileFollowingList";
 import { useAuth } from "@/hooks/useAuth";
-import { followUser, unfollowUser, isFollowing } from "@/api/follow";
+import {
+    followUser,
+    unfollowUser,
+    isFollowing,
+    getFollowerCount,
+    getFollowingCount,
+} from "@/api/follow";
 
 interface ProfileDetailModalProps {
     userId: string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    onSwitchProfile?: (newUserId: string) => void; // 프로필 전환 핸들러 추가
+    followerCount?: number;
+    followingCount?: number;
+    onFollowChange?: () => void;
 }
 
 type TabType = "themes" | "posts" | "followers" | "following";
@@ -31,6 +41,10 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
     userId,
     open,
     onOpenChange,
+    onSwitchProfile,
+    followerCount: propFollowerCount,
+    followingCount: propFollowingCount,
+    onFollowChange,
 }) => {
     const { user, isAuthenticated } = useAuth();
     const [profile, setProfile] = useState<ProfileDetailDto | null>(null);
@@ -43,36 +57,119 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
     const [themesCount, setThemesCount] = useState<number>(0);
     const [isFollowingUser, setIsFollowingUser] = useState(false);
     const [isLoadingFollow, setIsLoadingFollow] = useState(false);
+    const [followerCount, setFollowerCount] = useState(0);
+    const [followingCount, setFollowingCount] = useState(0);
+    const [refreshFollowers, setRefreshFollowers] = useState(false);
+    const [refreshFollowings, setRefreshFollowings] = useState(false);
+    const [profileModalId, setProfileModalId] = useState<string>(userId);
+
+    // 프로필 ID가 변경되면 모달 ID 업데이트
+    useEffect(() => {
+        setProfileModalId(userId);
+    }, [userId]);
+
+    // 프로필이 로드되면 팔로워/팔로잉 수 가져오기
+    useEffect(() => {
+        if (!profileModalId || !open) return;
+
+        // 팔로워 수 가져오기
+        const fetchFollowerCount = async () => {
+            try {
+                const count = await getFollowerCount(profileModalId);
+                setFollowerCount(count);
+            } catch (error) {
+                console.error("팔로워 수 가져오기 실패:", error);
+                // props에서 값이 전달된 경우 사용, 아니면 API로 조회한 값 사용
+                if (propFollowerCount !== undefined) {
+                    setFollowerCount(propFollowerCount);
+                } else if (profile) {
+                    setFollowerCount(profile.followerCount || 0);
+                }
+            }
+        };
+
+        // 팔로잉 수 가져오기
+        const fetchFollowingCount = async () => {
+            try {
+                const count = await getFollowingCount(profileModalId);
+                setFollowingCount(count);
+            } catch (error) {
+                console.error("팔로잉 수 가져오기 실패:", error);
+                // props에서 값이 전달된 경우 사용, 아니면 API로 조회한 값 사용
+                if (propFollowingCount !== undefined) {
+                    setFollowingCount(propFollowingCount);
+                } else if (profile) {
+                    setFollowingCount(profile.followingCount || 0);
+                }
+            }
+        };
+
+        fetchFollowerCount();
+        fetchFollowingCount();
+    }, [profileModalId, open, profile, propFollowerCount, propFollowingCount]);
 
     // 다른 사용자의 프로필을 클릭했을 때 해당 사용자의 프로필로 전환
     const handleProfileClick = (newUserId: string) => {
-        if (newUserId === userId) return; // 같은 사용자면 아무것도 하지 않음
-        onOpenChange(false); // 현재 모달 닫기
+        // 현재 모달 데이터 초기화 및 로딩 상태로 변경
+        setLoading(true);
 
-        // 약간의 지연 후 새 모달 열기 (애니메이션 완료를 위해)
-        setTimeout(() => {
-            // 여기서 다른 모달들을 닫는 로직을 추가할 수 있습니다
-            // 예: closeAllModals() 함수 호출
+        if (onSwitchProfile) {
+            // 상위 컴포넌트에서 제공한 전환 함수 사용
+            onSwitchProfile(newUserId);
+        } else {
+            // 현재 모달을 닫지 않고 데이터만 바꿈
+            setProfile(null); // 기존 프로필 데이터 제거
 
-            // 새 사용자의 프로필 모달 열기
-            // 이 부분은 프로젝트의 모달 관리 방식에 따라 달라질 수 있습니다
-            // URL을 변경하거나 상태를 업데이트하는 방식으로 구현
+            // URL 업데이트 (필요시)
             window.history.pushState({}, "", `/profile/${newUserId}`);
-            window.dispatchEvent(
-                new CustomEvent("open-profile", {
-                    detail: { userId: newUserId },
+
+            // 새 사용자 ID로 상태 업데이트
+            setProfileModalId(newUserId);
+
+            // 다시 프로필 정보 로드
+            getProfileDetail(newUserId)
+                .then((data) => {
+                    setProfile(data);
+                    // 팔로우 카운트 로드
+                    getFollowerCount(newUserId)
+                        .then(setFollowerCount)
+                        .catch(console.error);
+                    getFollowingCount(newUserId)
+                        .then(setFollowingCount)
+                        .catch(console.error);
+                    // 현재 사용자가 새 프로필 사용자를 팔로우하는지 확인
+                    if (isAuthenticated && user?.id !== newUserId) {
+                        isFollowing(newUserId)
+                            .then(setIsFollowingUser)
+                            .catch(console.error);
+                    } else {
+                        setIsFollowingUser(false);
+                    }
                 })
-            );
-        }, 300);
+                .catch((err) => {
+                    console.error("프로필 로드 실패:", err);
+                    setError({
+                        type: "load_error",
+                        message: "프로필을 불러오는 중 오류가 발생했습니다.",
+                    });
+                })
+                .finally(() => {
+                    setLoading(false);
+                });
+
+            // 탭 초기화
+            setActiveTab("themes");
+        }
     };
 
     // 현재 사용자가 프로필 사용자를 팔로우하고 있는지 확인
     useEffect(() => {
-        if (!isAuthenticated || !open || !user || user.id === userId) return;
+        if (!isAuthenticated || !open || !user || user.id === profileModalId)
+            return;
 
         const checkFollowing = async () => {
             try {
-                const following = await isFollowing(userId);
+                const following = await isFollowing(profileModalId);
                 setIsFollowingUser(following);
             } catch (error) {
                 console.error("팔로우 상태 확인 실패:", error);
@@ -80,7 +177,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
         };
 
         checkFollowing();
-    }, [isAuthenticated, user, userId, open]);
+    }, [isAuthenticated, user, profileModalId, open]);
 
     // 팔로우/언팔로우 처리
     const handleFollowToggle = async () => {
@@ -93,7 +190,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
 
         try {
             if (isFollowingUser) {
-                await unfollowUser(userId);
+                await unfollowUser(profileModalId);
                 setIsFollowingUser(false);
                 toast.success(
                     `${
@@ -101,26 +198,50 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                     }님 팔로우를 취소했습니다`
                 );
 
-                // 프로필 데이터 업데이트 (팔로워 수 감소)
-                if (profile) {
-                    setProfile({
-                        ...profile,
-                        followerCount: Math.max(0, profile.followerCount - 1),
-                    });
+                // 팔로워 수 가져오기
+                try {
+                    const count = await getFollowerCount(profileModalId);
+                    setFollowerCount(count);
+                } catch (error) {
+                    console.error("팔로워 수 가져오기 실패:", error);
+                    // 현재 값에서 1 감소 (폴백)
+                    setFollowerCount((prev) => Math.max(0, prev - 1));
+
+                    // 상위 컴포넌트에 팔로우 변경 알림
+                    if (onFollowChange) onFollowChange();
+                }
+
+                // 현재 탭이 팔로워나 팔로잉이면 데이터 리프레시
+                if (activeTab === "followers") {
+                    setRefreshFollowers((prev) => !prev);
+                } else if (activeTab === "following") {
+                    setRefreshFollowings((prev) => !prev);
                 }
             } else {
-                await followUser(userId);
+                await followUser(profileModalId);
                 setIsFollowingUser(true);
                 toast.success(
                     `${profile?.userNickname || "사용자"}님을 팔로우했습니다`
                 );
 
-                // 프로필 데이터 업데이트 (팔로워 수 증가)
-                if (profile) {
-                    setProfile({
-                        ...profile,
-                        followerCount: profile.followerCount + 1,
-                    });
+                // 팔로워 수 가져오기
+                try {
+                    const count = await getFollowerCount(profileModalId);
+                    setFollowerCount(count);
+                } catch (error) {
+                    console.error("팔로워 수 가져오기 실패:", error);
+                    // 현재 값에서 1 증가 (폴백)
+                    setFollowerCount((prev) => prev + 1);
+
+                    // 상위 컴포넌트에 팔로우 변경 알림
+                    if (onFollowChange) onFollowChange();
+                }
+
+                // 현재 탭이 팔로워나 팔로잉이면 데이터 리프레시
+                if (activeTab === "followers") {
+                    setRefreshFollowers((prev) => !prev);
+                } else if (activeTab === "following") {
+                    setRefreshFollowings((prev) => !prev);
                 }
             }
         } catch (error) {
@@ -133,7 +254,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
 
     // 프로필 링크 복사 함수
     const copyProfileLink = () => {
-        const profileUrl = `${window.location.origin}/profile/${userId}`;
+        const profileUrl = `${window.location.origin}/profile/${profileModalId}`;
         navigator.clipboard
             .writeText(profileUrl)
             .then(() => {
@@ -148,8 +269,8 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
         if (!open) return;
         setLoading(true);
 
-        // 프로필 정보 로드
-        getProfileDetail(userId)
+        // 프로필 정보 로드 - 프로필모달ID 사용(사용자 전환 지원)
+        getProfileDetail(profileModalId)
             .then((data) => {
                 console.log("프로필 데이터:", data);
                 setProfile(data);
@@ -188,7 +309,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                 }
             })
             .finally(() => setLoading(false));
-    }, [open, userId]);
+    }, [open, profileModalId]); // userId 대신 profileModalId 사용
 
     // 프로필 로딩 중 스켈레톤
     if (loading) {
@@ -286,9 +407,17 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                         ...profile,
                                         creationCount: themesCount,
                                     }}
+                                    followerCount={followerCount}
+                                    followingCount={followingCount}
+                                    onFollowChange={() => {
+                                        // 내부적으로 팔로우 카운트 다시 가져오기
+                                        getFollowerCount(profileModalId)
+                                            .then(setFollowerCount)
+                                            .catch(console.error);
+                                        // 상위 컴포넌트에도 변경 알림
+                                        if (onFollowChange) onFollowChange();
+                                    }}
                                 />
-
-                                {/* 액션 버튼들 */}
                             </div>
 
                             {/* 프로필 내용 섹션 - 크기 고정 */}
@@ -334,8 +463,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                                 setActiveTab("followers")
                                             }
                                         >
-                                            팔로워 ({profile.followerCount || 0}
-                                            )
+                                            팔로워 ({followerCount})
                                         </button>
                                         <button
                                             className={`pb-1 md:pb-2 px-3 md:px-4 text-center text-sm md:text-base whitespace-nowrap ${
@@ -347,8 +475,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                                 setActiveTab("following")
                                             }
                                         >
-                                            팔로잉 (
-                                            {profile.followingCount || 0})
+                                            팔로잉 ({followingCount})
                                         </button>
                                     </div>
 
@@ -369,6 +496,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                                 onProfileClick={
                                                     handleProfileClick
                                                 }
+                                                refresh={refreshFollowers}
                                             />
                                         ) : (
                                             <ProfileFollowingList
@@ -376,6 +504,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                                 onProfileClick={
                                                     handleProfileClick
                                                 }
+                                                refresh={refreshFollowings}
                                             />
                                         )}
                                     </div>

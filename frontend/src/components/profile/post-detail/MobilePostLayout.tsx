@@ -47,7 +47,8 @@ const MobilePostLayout: React.FC<MobilePostLayoutProps> = ({
                 <div className="flex items-center gap-3">
                     <img
                         src={
-                            post.authorAvatarUrl || "/assets/default-avatar.png"
+                            post.authorAvatarUrl ||
+                            "https://cdn.discordapp.com/embed/avatars/1.png"
                         }
                         alt={post.authorNickname}
                         className="w-10 h-10 rounded-full object-cover"
