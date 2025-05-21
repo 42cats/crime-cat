@@ -63,6 +63,13 @@ import MessageFormat from "@/pages/MessageButtonEditor";
 import Teams from "@/pages/dashboard/Teams";
 import PointHistoryPage from "@/pages/PointHistory/PointHistoryPage";
 
+// SNS Pages
+import SNSFeedPage from "@/pages/sns/SNSFeedPage";
+import SNSExplorePage from "@/pages/sns/SNSExplorePage";
+import SNSCreatePage from "@/pages/sns/SNSCreatePage";
+import SNSSavedPage from "@/pages/sns/SNSSavedPage";
+import SNSPostDetailPage from "@/pages/sns/SNSPostDetailPage";
+
 import { queryClient } from "@/lib/reactQuery";
 import GameHistoryManager from "@/pages/GameHistoryOwnerBoard";
 import UserGameHistoryPage from "@/pages/UserGameHistoryPage";
@@ -151,6 +158,32 @@ const App = () => (
                                 <Route
                                     path="/themes/:category/edit/:id"
                                     element={<EditTheme />}
+                                />
+
+                                {/* SNS 라우트 */}
+                                <Route
+                                    path="/sns/feed"
+                                    element={<SNSFeedPage />}
+                                />
+                                <Route
+                                    path="/sns/explore"
+                                    element={<SNSExplorePage />}
+                                />
+                                <Route
+                                    path="/sns/create"
+                                    element={<SNSCreatePage />}
+                                />
+                                <Route
+                                    path="/sns/saved"
+                                    element={<SNSSavedPage />}
+                                />
+                                <Route
+                                    path="/sns/post/:postId"
+                                    element={<SNSPostDetailPage />}
+                                />
+                                <Route
+                                    path="/sns/hashtag/:tagName"
+                                    element={<SNSExplorePage />}
                                 />
 
                                 {/* 커뮤니티 게시판 라우트 - 순서가 중요합니다! 더 구체적인 경로가 먼저 와야 합니다 */}
@@ -280,7 +313,10 @@ const App = () => (
                                 />
                                 <Route path="profile" element={<Profile />} />
                                 <Route path="teams" element={<Teams />} />
-                                <Route path="follows" element={<FollowsPage />} />
+                                <Route
+                                    path="follows"
+                                    element={<FollowsPage />}
+                                />
                             </Route>
 
                             {/* 404 Route */}

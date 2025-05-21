@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, LogOut } from "lucide-react";
+import { Menu, X, User, LogOut, Home, Search, PlusSquare, Heart, BookmarkIcon, Camera } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -19,6 +19,7 @@ const Navbar: React.FC = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isThemeOpen, setIsThemeOpen] = useState(false);
     const [isCommunityOpen, setIsCommunityOpen] = useState(false);
+    const [isSnsOpen, setIsSnsOpen] = useState(false);
     const [activeSubnav, setActiveSubnav] = useState<string | null>(null);
     const location = useLocation();
     const { theme } = useTheme(); // theme === "light" | "dark" | "system"
@@ -35,6 +36,7 @@ const Navbar: React.FC = () => {
         setIsMobileMenuOpen(false);
         setIsThemeOpen(false);
         setIsCommunityOpen(false);
+        setIsSnsOpen(false);
         setActiveSubnav(null);
     }, [location.pathname]);
 
@@ -44,6 +46,7 @@ const Navbar: React.FC = () => {
         { name: "명령어", path: "/commands" },
         { name: "테마" }, // path 없음
         { name: "커뮤니티" }, // path 없음
+        { name: "SNS" }, // path 없음
     ];
 
     const themeSubItems = [
@@ -57,6 +60,13 @@ const Navbar: React.FC = () => {
         { name: "질문게시판", path: "/community/questions" },
         { name: "자유게시판", path: "/community/free" },
         { name: "제작자게시판", path: "/community/creators" },
+    ];
+
+    const snsSubItems = [
+        { name: "SNS 피드", path: "/sns/feed", icon: <Home className="w-4 h-4 mr-1" /> },
+        { name: "탐색", path: "/sns/explore", icon: <Search className="w-4 h-4 mr-1" /> },
+        { name: "포스트 작성", path: "/sns/create", icon: <PlusSquare className="w-4 h-4 mr-1" /> },
+        { name: "저장된 포스트", path: "/sns/saved", icon: <BookmarkIcon className="w-4 h-4 mr-1" /> },
     ];
 
     const isActive = (path: string) => location.pathname === path;
@@ -104,7 +114,8 @@ const Navbar: React.FC = () => {
                                 onMouseEnter={() => {
                                     if (
                                         item.name === "테마" ||
-                                        item.name === "커뮤니티"
+                                        item.name === "커뮤니티" ||
+                                        item.name === "SNS"
                                     ) {
                                         setActiveSubnav(item.name);
                                     }
@@ -219,6 +230,17 @@ const Navbar: React.FC = () => {
                                     {sub.name}
                                 </Link>
                             ))}
+                        {activeSubnav === "SNS" &&
+                            snsSubItems.map((sub) => (
+                                <Link
+                                    key={sub.name}
+                                    to={sub.path}
+                                    className="text-sm text-muted-foreground hover:text-primary transition-colors whitespace-nowrap flex items-center"
+                                >
+                                    {sub.icon}
+                                    {sub.name}
+                                </Link>
+                            ))}
                     </div>
                 )}
             </div>
@@ -249,6 +271,7 @@ const Navbar: React.FC = () => {
                                             if (item.name === "테마") {
                                                 setIsThemeOpen(!isThemeOpen);
                                                 setIsCommunityOpen(false);
+                                                setIsSnsOpen(false);
                                             } else if (
                                                 item.name === "커뮤니티"
                                             ) {
@@ -256,6 +279,13 @@ const Navbar: React.FC = () => {
                                                     !isCommunityOpen
                                                 );
                                                 setIsThemeOpen(false);
+                                                setIsSnsOpen(false);
+                                            } else if (
+                                                item.name === "SNS"
+                                            ) {
+                                                setIsSnsOpen(!isSnsOpen);
+                                                setIsThemeOpen(false);
+                                                setIsCommunityOpen(false);
                                             }
                                         }}
                                         className="block py-2 text-sm font-medium text-foreground/80 w-full text-left"
@@ -300,6 +330,24 @@ const Navbar: React.FC = () => {
                                             ))}
                                         </div>
                                     )}
+                                {/* SNS 서브메뉴 */}
+                                {item.name === "SNS" && isSnsOpen && (
+                                    <div className="ml-4 pl-2 border-l border-border/30 space-y-2">
+                                        {snsSubItems.map((sub) => (
+                                            <Link
+                                                key={sub.path}
+                                                to={sub.path}
+                                                className="block py-1 text-sm text-muted-foreground hover:text-primary flex items-center"
+                                                onClick={() =>
+                                                    setIsMobileMenuOpen(false)
+                                                }
+                                            >
+                                                {sub.icon}
+                                                {sub.name}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         ))}
 
@@ -334,6 +382,34 @@ const Navbar: React.FC = () => {
                                 </Link>
                             )}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 모바일 SNS 네비게이션 */}
+            {location.pathname.startsWith('/sns') && (
+                <div className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
+                    <div className="flex justify-around items-center py-2">
+                        <Link to="/sns/feed" className={`flex flex-col items-center p-2 ${location.pathname === '/sns/feed' ? 'text-primary' : 'text-muted-foreground'}`}>
+                            <Home className="w-6 h-6" />
+                            <span className="text-xs mt-1">피드</span>
+                        </Link>
+                        <Link to="/sns/explore" className={`flex flex-col items-center p-2 ${location.pathname === '/sns/explore' ? 'text-primary' : 'text-muted-foreground'}`}>
+                            <Search className="w-6 h-6" />
+                            <span className="text-xs mt-1">탐색</span>
+                        </Link>
+                        <Link to="/sns/create" className={`flex flex-col items-center p-2 ${location.pathname === '/sns/create' ? 'text-primary' : 'text-muted-foreground'}`}>
+                            <PlusSquare className="w-6 h-6" />
+                            <span className="text-xs mt-1">작성</span>
+                        </Link>
+                        <Link to="/sns/saved" className={`flex flex-col items-center p-2 ${location.pathname === '/sns/saved' ? 'text-primary' : 'text-muted-foreground'}`}>
+                            <BookmarkIcon className="w-6 h-6" />
+                            <span className="text-xs mt-1">저장됨</span>
+                        </Link>
+                        <Link to="/dashboard" className={`flex flex-col items-center p-2 ${location.pathname === '/dashboard' ? 'text-primary' : 'text-muted-foreground'}`}>
+                            <User className="w-6 h-6" />
+                            <span className="text-xs mt-1">프로필</span>
+                        </Link>
                     </div>
                 </div>
             )}

@@ -7,6 +7,8 @@ export interface UserPostGalleryDto {
     content: string;
     likeCount: number;
     liked: boolean;
+    hashTags?: string[]; // 해시태그 추가
+    locationName?: string; // 위치 정보 추가
 }
 
 export interface UserPostDto {
@@ -19,6 +21,11 @@ export interface UserPostDto {
     likeCount: number;
     liked: boolean;
     createdAt: string;
+    hashTags?: string[]; // 해시태그 추가
+    locationName?: string; // 위치 정보 추가
+    locationId?: string; // 위치 ID 추가
+    latitude?: number; // 위도 추가
+    longitude?: number; // 경도 추가
 }
 
 export interface UserPostGalleryPageDto {
@@ -29,6 +36,14 @@ export interface UserPostGalleryPageDto {
     };
     totalElements: number;
     totalPages: number;
+}
+
+// 위치 인터페이스
+export interface Location {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
 }
 
 class UserPostService {
@@ -133,17 +148,23 @@ class UserPostService {
         }
     }
 
-    // 포스트 생성
-    async createPost(content: string, images?: File[]): Promise<void> {
+    // 포스트 생성 (해시태그, 위치 정보 포함)
+    async createPost(
+        content: string, 
+        images?: File[],
+        location?: Location | null
+    ): Promise<void> {
         try {
             console.log("포스트 생성 시작:", {
                 content,
                 imageCount: images?.length,
+                location
             });
 
             const formData = new FormData();
             formData.append("content", content);
 
+            // 이미지 추가
             if (images && images.length > 0) {
                 // 이미지 파일 유효성 한번 더 검사
                 const validImages = images.filter((img) =>
@@ -160,6 +181,14 @@ class UserPostService {
                     );
                     // 파일명에 확장자 추가하여 서버에서 이미지 형식 인식 확실하게
                 });
+            }
+
+            // 위치 정보 추가 (선택적)
+            if (location) {
+                formData.append("locationName", location.name);
+                formData.append("locationId", location.id);
+                formData.append("latitude", location.latitude.toString());
+                formData.append("longitude", location.longitude.toString());
             }
 
             // FormData 내용 로깅 (디버깅용)
@@ -192,12 +221,13 @@ class UserPostService {
         }
     }
 
-    // 포스트 업데이트
+    // 포스트 업데이트 (해시태그, 위치 정보 포함)
     async updatePost(
         postId: string,
         content: string,
         newImages?: File[],
-        keepImageUrls?: string[]
+        keepImageUrls?: string[],
+        location?: Location | null
     ): Promise<void> {
         try {
             console.log("포스트 업데이트 시작:", {
@@ -205,6 +235,7 @@ class UserPostService {
                 content,
                 newImagesCount: newImages?.length,
                 keepImageUrls,
+                location
             });
 
             const formData = new FormData();
@@ -240,6 +271,17 @@ class UserPostService {
                 // 배열로 JSON 직렬화하여 한번에 전송
                 formData.append("keepImageUrls", JSON.stringify(keepImageUrls));
                 console.log("keepImageUrls 추가:", keepImageUrls);
+            }
+
+            // 위치 정보 업데이트 (선택적)
+            if (location) {
+                formData.append("locationName", location.name);
+                formData.append("locationId", location.id);
+                formData.append("latitude", location.latitude.toString());
+                formData.append("longitude", location.longitude.toString());
+            } else {
+                // 위치 정보 제거 플래그
+                formData.append("removeLocation", "true");
             }
 
             // FormData 내용 로깅 (디버깅용)
