@@ -60,11 +60,11 @@ const PostCommentForm: React.FC<PostCommentFormProps> = ({
     }
   };
 
-  const handleFocus = () => {
-    if (!isAuthenticated) {
-      onLoginRequired();
-    }
-  };
+  // 포기하지 않고 로그인 여부 확인하는 함수는 필요 없으니 삭제
+  // const handleFocus = () => {
+  //   // 포커스 이벤트에서는 로그인 확인하지 않음
+  //   // 실제 댓글 작성 시도(submit)할 때만 확인하도록 수정
+  // };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 mt-2">
@@ -72,7 +72,7 @@ const PostCommentForm: React.FC<PostCommentFormProps> = ({
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder={placeholder}
-        onFocus={handleFocus}
+        // onFocus 이벤트 핸들러 제거 - 자동 로그인 처리 방지
         className={`min-h-[70px] ${isReply ? 'text-sm' : ''}`}
         disabled={isSubmitting || !isAuthenticated}
       />

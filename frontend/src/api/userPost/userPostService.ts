@@ -10,6 +10,7 @@ export interface UserPostGalleryDto {
 }
 
 export interface UserPostDto {
+    authorId: string;
     postId: string;
     content: string;
     authorNickname: string;
