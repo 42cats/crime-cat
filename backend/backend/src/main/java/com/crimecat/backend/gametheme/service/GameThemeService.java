@@ -15,6 +15,8 @@ import com.crimecat.backend.gametheme.dto.GameThemeDto;
 import com.crimecat.backend.gametheme.dto.GetGameThemeResponse;
 import com.crimecat.backend.gametheme.dto.GetGameThemesResponse;
 import com.crimecat.backend.gametheme.dto.UpdateGameThemeRequest;
+import com.crimecat.backend.gametheme.dto.filter.GetGameThemesFilter;
+import com.crimecat.backend.gametheme.dto.filter.RangeFilter;
 import com.crimecat.backend.gametheme.enums.ThemeType;
 import com.crimecat.backend.gametheme.repository.CrimesceneThemeRepository;
 import com.crimecat.backend.gametheme.repository.GameThemeRecommendationRepository;
@@ -162,17 +164,20 @@ public class GameThemeService {
     }
 
     @Transactional
-    public GetGameThemesResponse getGameThemes(String category, int pageSize, int pageNumber, String sortName, String keyword) {
+    public GetGameThemesResponse getGameThemes(GetGameThemesFilter filter) {
         UUID webUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
-        Sort sort = GameThemeSortType.valueOf(sortName).getSort();
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, sort);
+        Sort sort = GameThemeSortType.valueOf(filter.getSort()).getSort();
+        Pageable pageable = PageRequest.of(filter.getPage(), filter.getLimit(), sort);
         // TODO: QueryDSL
         Specification<GameTheme> spec = Specification.where(GameThemeSpecification.defaultSpec(webUserId));
-        if (ThemeType.contains(category)) {
-            spec = spec.and(GameThemeSpecification.equalCategory(category));
+        if (ThemeType.contains(filter.getCategory())) {
+            spec = spec.and(GameThemeSpecification.equalCategory(filter.getCategory()));
         }
-        if (keyword != null) {
-            spec = spec.and(GameThemeSpecification.findKeyword(keyword, category));
+        if (filter.getKeyword() != null) {
+            spec = spec.and(GameThemeSpecification.findKeyword(filter.getKeyword(), filter.getCategory()));
+        }
+        for (RangeFilter range : filter.getRanges()) {
+            spec = spec.and(GameThemeSpecification.findIntRange(range));
         }
         Page<GameThemeDto> page = themeRepository.findAll(spec, pageable).map(GameThemeDto::from);
         return GetGameThemesResponse.from(page);
