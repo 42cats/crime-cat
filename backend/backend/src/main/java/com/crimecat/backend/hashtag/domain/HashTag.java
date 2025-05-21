@@ -30,7 +30,8 @@ public class HashTag {
     
     @Column(name = "name", unique = true, nullable = false)
     private String name;
-    
+
+    @Builder.Default
     @OneToMany(mappedBy = "hashTag", cascade = CascadeType.ALL)
     private List<PostHashTag> posts = new ArrayList<>();
     
