@@ -29,13 +29,7 @@ public class CommentPublicController {
         // null을 userId로 전달하여 비로그인 사용자임을 표시
         WebUser webUser = AuthenticationUtil.getCurrentWebUserOptional()
             .orElse(null);
-        UUID currentWebUserId;
-        if(webUser != null){
-            currentWebUserId = webUser.getId();
-        }
-        else {
-            currentWebUserId = null;
-        }
+        UUID currentWebUserId = (webUser != null) ? webUser.getId() : null;
         Page<CommentResponse> comments = null;
         if(currentWebUserId == null){
             comments = commentService.getPublicComments(gameThemeId, page, size, sortType);
