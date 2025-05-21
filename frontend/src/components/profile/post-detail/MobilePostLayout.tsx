@@ -14,6 +14,7 @@ interface MobilePostLayoutProps {
     setActiveTab: (tab: "info" | "comments") => void;
     liked: boolean;
     isLikeLoading: boolean;
+    likeCount: number; // 다이나믹 좋아요 카운트
     currentImageIndex: number;
     handlePrevImage: () => void;
     handleNextImage: () => void;
@@ -30,6 +31,7 @@ const MobilePostLayout: React.FC<MobilePostLayoutProps> = ({
     setActiveTab,
     liked,
     isLikeLoading,
+    likeCount,
     currentImageIndex,
     handlePrevImage,
     handleNextImage,
@@ -117,7 +119,7 @@ const MobilePostLayout: React.FC<MobilePostLayoutProps> = ({
                                     : "text-gray-500"
                             }
                         />
-                        <span>{post.likeCount}</span>
+                        <span>{likeCount}</span>
                     </button>
                     <button
                         onClick={() => setActiveTab("comments")}

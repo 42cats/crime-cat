@@ -15,6 +15,7 @@ interface DesktopPostLayoutProps {
   setActiveTab: (tab: 'info' | 'comments') => void;
   liked: boolean;
   isLikeLoading: boolean;
+  likeCount: number; // 다이나믹 좋아요 카운트
   currentImageIndex: number;
   handlePrevImage: () => void;
   handleNextImage: () => void;
@@ -32,6 +33,7 @@ const DesktopPostLayout: React.FC<DesktopPostLayoutProps> = ({
   setActiveTab,
   liked,
   isLikeLoading,
+  likeCount,
   currentImageIndex,
   handlePrevImage,
   handleNextImage,
@@ -116,7 +118,7 @@ const DesktopPostLayout: React.FC<DesktopPostLayoutProps> = ({
                   size={24}
                   className={liked ? "text-red-500 fill-red-500" : "text-gray-500"}
                 />
-                <span>{post.likeCount}</span>
+                <span>{likeCount}</span>
               </button>
               <button
                 onClick={() => setActiveTab('info')}
