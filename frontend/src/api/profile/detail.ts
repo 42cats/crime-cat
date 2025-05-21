@@ -8,8 +8,9 @@ export interface ProfileDetailDto {
     userNickname: string;
     avatarImage: string | null;
     bio: string | null;
-    point: number;
     playCount: number;
+    followerCount: number;
+    followingCount: number;
     socialLinks?: Record<string, string>;
 }
 

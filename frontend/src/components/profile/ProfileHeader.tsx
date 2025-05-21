@@ -1,23 +1,74 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { ProfileDetailDto } from "@/api/profile/detail";
 import {
     PackageIcon,
     GamepadIcon,
-    CoinsIcon,
+    UserIcon,
+    UsersIcon,
     Instagram,
     Twitter,
     MessageCircle,
     Link as LinkIcon,
     Copy,
+    UserPlus,
+    UserMinus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { followUser, unfollowUser, isFollowing } from "@/api/follow";
 
 interface ProfileHeaderProps {
     profile: ProfileDetailDto;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
+    const { user, isAuthenticated } = useAuth();
+    const [isFollowingUser, setIsFollowingUser] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // 현재 사용자가 프로필 사용자를 팔로우하고 있는지 확인
+    useEffect(() => {
+        if (!isAuthenticated || user?.id === profile.userId) return;
+
+        const checkFollowing = async () => {
+            try {
+                const following = await isFollowing(profile.userId);
+                setIsFollowingUser(following);
+            } catch (error) {
+                console.error("팔로우 상태 확인 실패:", error);
+            }
+        };
+
+        checkFollowing();
+    }, [isAuthenticated, user, profile.userId]);
+
+    // 팔로우/언팔로우 처리
+    const handleFollowToggle = async () => {
+        if (!isAuthenticated) {
+            toast.error("로그인이 필요합니다");
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            if (isFollowingUser) {
+                await unfollowUser(profile.userId);
+                setIsFollowingUser(false);
+                toast.success(`${profile.userNickname}님 팔로우를 취소했습니다`);
+            } else {
+                await followUser(profile.userId);
+                setIsFollowingUser(true);
+                toast.success(`${profile.userNickname}님을 팔로우했습니다`);
+            }
+        } catch (error) {
+            console.error("팔로우 상태 변경 실패:", error);
+            toast.error("팔로우 상태 변경에 실패했습니다");
+        } finally {
+            setIsLoading(false);
+        }
+    };
     const copyProfileLink = () => {
         const profileUrl = `${window.location.origin}/profile/${profile.userId}`;
         navigator.clipboard
@@ -95,14 +146,26 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
                             </span>
                         </div>
                         <div className="flex items-center gap-1">
-                            <CoinsIcon
+                            <UsersIcon
                                 size={12}
-                                className="text-yellow-500 hidden md:inline"
+                                className="text-purple-500 hidden md:inline"
                             />
                             <span className="text-xs md:text-sm font-medium">
-                                포인트{" "}
+                                팔로워{" "}
                                 <span className="font-bold">
-                                    {profile.point?.toLocaleString() || 0}
+                                    {profile.followerCount?.toLocaleString() || 0}
+                                </span>
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <UserIcon
+                                size={12}
+                                className="text-indigo-500 hidden md:inline"
+                            />
+                            <span className="text-xs md:text-sm font-medium">
+                                팔로잉{" "}
+                                <span className="font-bold">
+                                    {profile.followingCount?.toLocaleString() || 0}
                                 </span>
                             </span>
                         </div>
@@ -123,6 +186,30 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
                         </span>
                         <span className="sm:hidden">링크 복사</span>
                     </Button>
+
+                    {isAuthenticated && user?.id !== profile.userId && (
+                        <Button
+                            variant={isFollowingUser ? "destructive" : "default"}
+                            size="sm"
+                            className="text-xs md:text-sm"
+                            onClick={handleFollowToggle}
+                            disabled={isLoading}
+                        >
+                            {isFollowingUser ? (
+                                <>
+                                    <UserMinus size={14} className="mr-1 md:mr-2" />
+                                    <span className="hidden sm:inline">언팔로우</span>
+                                    <span className="sm:hidden">언팔로우</span>
+                                </>
+                            ) : (
+                                <>
+                                    <UserPlus size={14} className="mr-1 md:mr-2" />
+                                    <span className="hidden sm:inline">팔로우</span>
+                                    <span className="sm:hidden">팔로우</span>
+                                </>
+                            )}
+                        </Button>
+                    )}
                 </div>
             </div>
 
