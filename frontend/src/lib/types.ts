@@ -169,11 +169,11 @@ export interface NoticePage {
 }
 
 export interface NoticeInput {
-  title: string;
-  content: string;
-  summary: string;
-  noticeType: NoticeType;
-  isPinned: boolean;
+    title: string;
+    content: string;
+    summary: string;
+    noticeType: NoticeType;
+    isPinned: boolean;
 }
 
 export interface AdditionalUserInfo {
@@ -184,169 +184,178 @@ export interface AdditionalUserInfo {
 }
 
 interface AuthorInfo {
-  id: string;
-  nickname: string;
+    id: string;
+    nickname: string;
+    avatarUrl;
 }
 
 interface BaseTheme {
-  id: string;
-  title: string;
-  thumbnail: string;
-  summary: string;
-  recommendations: number;
-  views: number;
-  playCount: number;
-  author: AuthorInfo;
-  playersMin: number;
-  playersMax: number;
-  playTimeMin: number;
-  playTimeMax: number;
-  price: number;
-  difficulty: number;
-  tags: string[];
-  content: string;
-  isPublic: boolean;
-  createdAt: string;
-  updatedAt: string;
-  recommendationEnabled: boolean;
-  commentEnabled: boolean;
-  type: 'CRIMESCENE' | 'ESCAPE_ROOM' | 'MURDER_MYSTERY' | 'REALWORLD';
+    id: string;
+    title: string;
+    thumbnail: string;
+    summary: string;
+    recommendations: number;
+    views: number;
+    playCount: number;
+    author: AuthorInfo;
+    playersMin: number;
+    playersMax: number;
+    playTimeMin: number;
+    playTimeMax: number;
+    price: number;
+    difficulty: number;
+    tags: string[];
+    content: string;
+    isPublic: boolean;
+    createdAt: string;
+    updatedAt: string;
+    recommendationEnabled: boolean;
+    commentEnabled: boolean;
+    type: "CRIMESCENE" | "ESCAPE_ROOM" | "MURDER_MYSTERY" | "REALWORLD";
 }
 
 interface CrimeSceneExtra {
-  characters: string[];
+    characters: string[];
 }
 
 interface GuildInfo {
-  snowflake: string;
-  name: string;
-  onwerSnowflake: string;
-  createAt: string;
+    snowflake: string;
+    name: string;
+    onwerSnowflake: string;
+    createAt: string;
 }
 
 interface TeamInfo {
-  id: string;
-  name: string;
+    id: string;
+    name: string;
 }
 
 export interface CrimeSceneTheme extends BaseTheme {
-  type: 'CRIMESCENE';
-  team: TeamInfo;
-  guild: GuildInfo;
-  extra: CrimeSceneExtra;
+    type: "CRIMESCENE";
+    team: TeamInfo;
+    guild: GuildInfo;
+    extra: CrimeSceneExtra;
 }
 
 export interface EscapeRoomTheme extends BaseTheme {
-  type: 'ESCAPE_ROOM';
+    type: "ESCAPE_ROOM";
 }
 
 export interface MurderMysteryTheme extends BaseTheme {
-  type: 'MURDER_MYSTERY';
+    type: "MURDER_MYSTERY";
 }
 
 export interface RealWorldTheme extends BaseTheme {
-  type: 'REALWORLD';
+    type: "REALWORLD";
 }
 
 interface BaseThemeInput {
-  title: string;
-  thumbnail: File;
-  summary: string;
-  playerMin: number;
-  playerMax: number;
-  playtimeMix: number;
-  playtimeMax: number;
-  price: number;
-  difficulty: number;
-  tags: string[];
-  content: string;
-  isPublic: boolean;
-  recommendationEnabled: boolean;
-  commentEnabled: boolean;
+    title: string;
+    thumbnail: File;
+    summary: string;
+    playerMin: number;
+    playerMax: number;
+    playtimeMix: number;
+    playtimeMax: number;
+    price: number;
+    difficulty: number;
+    tags: string[];
+    content: string;
+    isPublic: boolean;
+    recommendationEnabled: boolean;
+    commentEnabled: boolean;
 }
 
 export interface CrimeSceneInput extends BaseThemeInput {
-  type: 'CRIMESCENE';
-  makerTeamsId: string;
-  guildSnowflake: string;
-  extra: {
-    characters: string[];
-  };
+    type: "CRIMESCENE";
+    makerTeamsId: string;
+    guildSnowflake: string;
+    extra: {
+        characters: string[];
+    };
 }
 
 export interface EscapeRoomInput extends BaseThemeInput {
-  type: 'ESCAPE_ROOM';
+    type: "ESCAPE_ROOM";
 }
 
 export interface MurderMysteryInput extends BaseThemeInput {
-  type: 'MURDER_MYSTERY';
+    type: "MURDER_MYSTERY";
 }
 
 export interface RealWorldInput extends BaseThemeInput {
-  type: 'REALWORLD';
+    type: "REALWORLD";
 }
 
-export type Theme = CrimeSceneTheme | EscapeRoomTheme | MurderMysteryTheme | RealWorldTheme;
+export type Theme =
+    | CrimeSceneTheme
+    | EscapeRoomTheme
+    | MurderMysteryTheme
+    | RealWorldTheme;
 export type ThemeType = {
-  theme: Theme,
+    theme: Theme;
 };
 export type ThemePage = {
-  themes: Theme[],
-  page: number,
-  size: number,
-  totalPages: number,
-  totalElements: number,
-  hasNext: boolean,
-  hasPrevious: boolean,
+    themes: Theme[];
+    page: number;
+    size: number;
+    totalPages: number;
+    totalElements: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
 };
-export type ThemeInput = CrimeSceneInput | EscapeRoomInput | MurderMysteryInput | RealWorldInput;
+export type ThemeInput =
+    | CrimeSceneInput
+    | EscapeRoomInput
+    | MurderMysteryInput
+    | RealWorldInput;
 
 export type Like = {
-  status: boolean,
+    status: boolean;
 };
 
 export interface TeamMember {
-  id: string;
-  userId?: string;
-  name?: string;
-  leader?: boolean;
-  avatarUrl?: string;
+    id: string;
+    userId?: string;
+    name?: string;
+    leader?: boolean;
+    avatarUrl?: string;
 }
 
 export interface Team {
-  id: string;
-  name: string;
-  members?: TeamMember[];
+    id: string;
+    name: string;
+    members?: TeamMember[];
 }
 
 export interface Teams {
-  teams: Team[];
+    teams: Team[];
 }
 
 export interface GuildDetail {
-  guildId: string;
-  guildName: string;
-  guildOwnerName: string;
-  guildIcon: string;
-  guildOnlineMemeberCount: number;
-  guildMemberCount: number;
-  totalHistoryUserCount: number;
-  guildCreatedAt: string;
-  lastPlayTime: string;
+    guildId: string;
+    guildName: string;
+    guildOwnerName: string;
+    guildIcon: string;
+    guildOnlineMemeberCount: number;
+    guildMemberCount: number;
+    totalHistoryUserCount: number;
+    guildCreatedAt: string;
+    lastPlayTime: string;
 }
 
 export interface SearchUser {
-  id: string;
-  nickname: string;
+    id: string;
+    nickname: string;
 }
 
 export interface SearchUsers {
-  content: SearchUser[];
-  page: number;
-  size: number;
-  totalPages: number;
-  totalElements: number;
-  hasNext: boolean;
-  hasPrevious: boolean;
-  searchType: string;
+    content: SearchUser[];
+    page: number;
+    size: number;
+    totalPages: number;
+    totalElements: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+    searchType: string;
 }
