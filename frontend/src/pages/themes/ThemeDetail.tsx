@@ -14,6 +14,7 @@ import {
   ThemeActions,
   ThemeInfoGrid,
   ThemeTeamInfo,
+  ThemeGuildInfo,
   ThemeContent,
   ThemeComments,
   ThemeModals
@@ -32,7 +33,7 @@ const ThemeDetail: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
-  const [showGuildModal, setShowGuildModal] = useState(false);
+  // 기존 showGuildModal 제거 (페이지에 직접 표시)
   const [showRequestModal, setShowRequestModal] = useState(false);
   
   // 팀 정보 관련 상태
@@ -324,15 +325,18 @@ const ThemeDetail: React.FC = () => {
             formatPlayTime={formatPlayTime} 
           />
           
-          {/* 팀/길드 정보 */}
+          {/* 팀 정보 */}
           <ThemeTeamInfo 
             theme={theme}
             teamData={teamData}
             isLoadingTeam={isLoadingTeam}
             teamError={teamError}
             onProfileClick={openProfileDetailModal}
-            onGuildClick={() => setShowGuildModal(true)}
+            onGuildClick={() => {}} // 기능 제거
           />
+          
+          {/* 길드 정보 */}
+          <ThemeGuildInfo theme={theme} />
           
           {/* 테마 내용 */}
           <ThemeContent theme={theme} />
@@ -358,8 +362,6 @@ const ThemeDetail: React.FC = () => {
             setShowLoginDialog={setShowLoginDialog}
             showContactModal={showContactModal}
             setShowContactModal={setShowContactModal}
-            showGuildModal={showGuildModal}
-            setShowGuildModal={setShowGuildModal}
             showRequestModal={showRequestModal}
             setShowRequestModal={setShowRequestModal}
             requestMessage={requestMessage}

@@ -7,8 +7,7 @@ export const commentService = {
         gameThemeId: string,
         page = 0,
         size = 10,
-        sortType = "LATEST", // LATEST, OLDEST, LIKES 등 백엔드에서 지원하는 정렬 옵션
-        isAuthenticated = false // 로그인 상태를 매개변수로 받음
+        sortType = "LATEST" // LATEST, OLDEST, LIKES 등 백엔드에서 지원하는 정렬 옵션
     ): Promise<CommentPage> => {
         const basePath = `/public/gamethemes/${gameThemeId}/comments`;
 

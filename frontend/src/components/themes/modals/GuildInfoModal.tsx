@@ -60,7 +60,7 @@ const GuildInfoModal: React.FC<GuildInfoModalProps> = ({
             <div className="text-sm mt-4">
               <p>전체 회원 수: {guild.guildMemberCount.toLocaleString()}명</p>
               <p>현재 온라인: {guild.guildOnlineMemeberCount.toLocaleString()}명</p>
-              <p>누적 참여자 수: {guild.totalHistoryUserCount.toLocaleString()}명</p>
+              <p>기록된 플레이수: {guild.totalHistoryUserCount.toLocaleString()}명</p>
             </div>
           </div>
         ) : (

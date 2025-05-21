@@ -31,7 +31,7 @@ type CommentSortType = "LATEST" | "OLDEST" | "LIKES";
 const sortTypeLabels: Record<CommentSortType, string> = {
     LATEST: "최신순",
     OLDEST: "오래된순",
-    LIKES: "인기순"
+    LIKES: "인기순",
 };
 
 export function CommentList({
@@ -41,7 +41,7 @@ export function CommentList({
 }: CommentListProps) {
     const { toast } = useToast();
     const navigate = useNavigate();
-    const { isAuthenticated } = useAuth();
+    // const { isAuthenticated } = useAuth();
     const [comments, setComments] = useState<Comment[]>([]);
     const [sortType, setSortType] = useState<CommentSortType>("LATEST");
     const [isLoading, setIsLoading] = useState(false);
@@ -56,8 +56,8 @@ export function CommentList({
     useEffect(() => {
         const options = {
             root: null,
-            rootMargin: '20px',
-            threshold: 1.0
+            rootMargin: "20px",
+            threshold: 1.0,
         };
 
         const observer = new IntersectionObserver((entries) => {
@@ -79,12 +79,21 @@ export function CommentList({
     }, [hasMore, isLoading, currentPage]);
 
     // 초기 댓글 로드
-    const fetchComments = async (page = 0, sort: CommentSortType = "LATEST", size = pageSize) => {
+    const fetchComments = async (
+        page = 0,
+        sort: CommentSortType = "LATEST",
+        size = pageSize
+    ) => {
         if (!gameThemeId) return;
-        
+
         setIsLoading(true);
         try {
-            const result = await commentService.getComments(gameThemeId, page, size, sort, isAuthenticated);
+            const result = await commentService.getComments(
+                gameThemeId,
+                page,
+                size,
+                sort
+            );
             setComments(result.content);
             setHasMore(!result.last);
             setTotalComments(result.totalElements);
@@ -104,18 +113,26 @@ export function CommentList({
     // 추가 댓글 로드 (무한 스크롤)
     const fetchMoreComments = async () => {
         if (!gameThemeId || isLoading || !hasMore) return;
-        
+
         setIsLoading(true);
         try {
             const nextPage = currentPage + 1;
-            const result = await commentService.getComments(gameThemeId, nextPage, pageSize, sortType, isAuthenticated);
-            
+            const result = await commentService.getComments(
+                gameThemeId,
+                nextPage,
+                pageSize,
+                sortType
+            );
+
             // 기존 댓글에 새로운 댓글 추가
-            setComments(prevComments => [...prevComments, ...result.content]);
+            setComments((prevComments) => [...prevComments, ...result.content]);
             setHasMore(!result.last);
             setCurrentPage(nextPage);
         } catch (error) {
-            console.error("추가 댓글을 불러오는 중 오류가 발생했습니다:", error);
+            console.error(
+                "추가 댓글을 불러오는 중 오류가 발생했습니다:",
+                error
+            );
         } finally {
             setIsLoading(false);
         }
@@ -247,30 +264,32 @@ export function CommentList({
 
             // 재귀적 함수를 사용하여 모든 깊이의 댓글 처리
             const updateCommentsLike = (comments: Comment[]): Comment[] => {
-                return comments.map(comment => {
+                return comments.map((comment) => {
                     // 현재 댓글이 대상인 경우
                     if (comment.id === commentId) {
                         return {
                             ...comment,
-                            likes: isLiked ? comment.likes - 1 : comment.likes + 1,
+                            likes: isLiked
+                                ? comment.likes - 1
+                                : comment.likes + 1,
                             isLikedByCurrentUser: !isLiked,
                         };
                     }
-                    
+
                     // 댓글에 답글이 있는 경우 재귀적으로 처리
                     if (comment.replies && comment.replies.length > 0) {
                         return {
                             ...comment,
-                            replies: updateCommentsLike(comment.replies)
+                            replies: updateCommentsLike(comment.replies),
                         };
                     }
-                    
+
                     return comment;
                 });
             };
 
             // 현재 목록에 있는 모든 댓글에 대해 처리
-            setComments(prevComments => updateCommentsLike(prevComments));
+            setComments((prevComments) => updateCommentsLike(prevComments));
         } catch (error) {
             console.error("좋아요 처리 중 오류가 발생했습니다:", error);
             toast({
@@ -285,7 +304,8 @@ export function CommentList({
         <div className="mt-10">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
                 <h2 className="text-lg font-semibold text-foreground">
-                    댓글 {totalComments > 0 && (
+                    댓글{" "}
+                    {totalComments > 0 && (
                         <span className="text-sm px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">
                             {totalComments}
                         </span>
@@ -296,8 +316,14 @@ export function CommentList({
                     {Object.entries(sortTypeLabels).map(([type, label]) => (
                         <button
                             key={type}
-                            className={`px-2 py-1 text-xs rounded-md transition-colors ${sortType === type ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                            onClick={() => handleSortChange(type as CommentSortType)}
+                            className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                                sortType === type
+                                    ? "bg-primary/10 text-primary"
+                                    : "text-muted-foreground hover:text-foreground"
+                            }`}
+                            onClick={() =>
+                                handleSortChange(type as CommentSortType)
+                            }
                         >
                             {label}
                         </button>
@@ -312,7 +338,9 @@ export function CommentList({
 
             {comments.length === 0 && !isLoading ? (
                 <div className="py-8 text-center text-muted-foreground">
-                    <p className="text-sm">아직 댓글이 없습니다. 첫 댓글을 작성해보세요!</p>
+                    <p className="text-sm">
+                        아직 댓글이 없습니다. 첫 댓글을 작성해보세요!
+                    </p>
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -336,7 +364,9 @@ export function CommentList({
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                         )}
                         {!isLoading && !hasMore && comments.length > 0 && (
-                            <p className="text-sm text-muted-foreground">모든 댓글을 불러왔습니다.</p>
+                            <p className="text-sm text-muted-foreground">
+                                모든 댓글을 불러왔습니다.
+                            </p>
                         )}
                     </div>
                 </div>
