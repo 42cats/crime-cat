@@ -20,6 +20,7 @@ interface PostCommentItemProps {
   currentUserId?: string;
   onLoginRequired: () => void;
   isAuthenticated: boolean;
+  isReply?: boolean; // 답글 여부 표시
 }
 
 const PostCommentItem: React.FC<PostCommentItemProps> = ({
@@ -31,7 +32,8 @@ const PostCommentItem: React.FC<PostCommentItemProps> = ({
   onUpdate,
   currentUserId,
   onLoginRequired,
-  isAuthenticated
+  isAuthenticated,
+  isReply = false // 기본값은 false
 }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -149,13 +151,16 @@ const PostCommentItem: React.FC<PostCommentItemProps> = ({
           {/* 댓글 액션 버튼 */}
           {!isEditing && (
             <div className="flex items-center mt-2 pl-9 space-x-4 text-xs text-gray-500">
-              <button 
-                onClick={() => setIsReplying(!isReplying)}
-                className="flex items-center hover:text-blue-500 transition-colors"
-              >
-                <MessageSquare className="h-3 w-3 mr-1" />
-                답글
-              </button>
+              {/* 부모 댓글이고 답글이 아닌 경우에만 답글 버튼 표시 */}
+              {!comment.parentId && !isReply && (
+                <button 
+                  onClick={() => setIsReplying(!isReplying)}
+                  className="flex items-center hover:text-blue-500 transition-colors"
+                >
+                  <MessageSquare className="h-3 w-3 mr-1" />
+                  답글
+                </button>
+              )}
               
               {(comment.isOwnComment || currentUserId === comment.authorId) && (
                 <>
@@ -233,6 +238,7 @@ const PostCommentItem: React.FC<PostCommentItemProps> = ({
                   currentUserId={currentUserId}
                   onLoginRequired={onLoginRequired}
                   isAuthenticated={isAuthenticated}
+                  isReply={true} /* 이 컴포넌트가 답글임을 표시 */
                 />
               ))}
             </div>
