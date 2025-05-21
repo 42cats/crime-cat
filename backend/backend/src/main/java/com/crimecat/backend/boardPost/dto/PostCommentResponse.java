@@ -24,8 +24,6 @@ public class PostCommentResponse {
     private UUID authorId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    @JsonProperty("isSpoiler")
-    private boolean isSpoiler;
     private int likes;
     @JsonProperty("isLikedByCurrentUser")
     private boolean isLikedByCurrentUser;
