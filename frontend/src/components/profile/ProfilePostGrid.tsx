@@ -126,6 +126,24 @@ const ProfilePostGrid: React.FC<ProfilePostGridProps> = ({ userId }) => {
         );
     }
 
+    // 좋아요 상태 변경 처리 함수
+    const handleLikeStatusChange = (postId: string, liked: boolean, likeCount: number) => {
+        // posts 배열에서 해당 postId를 가진 포스트 찾기
+        setPosts(prevPosts => {
+            return prevPosts.map(post => {
+                // 리스트에서 해당 포스트를 찾아 상태 업데이트
+                if (post.postId === postId) {
+                    return {
+                        ...post,
+                        liked: liked,
+                        likeCount: likeCount
+                    };
+                }
+                return post;
+            });
+        });
+    };
+
     const handleOpenPostModal = (postId: string) => {
         setSelectedPostId(postId);
     };
@@ -240,6 +258,7 @@ const ProfilePostGrid: React.FC<ProfilePostGridProps> = ({ userId }) => {
                         setSelectedPostId(null);
                     }}
                     userId={userId}
+                    onLikeStatusChange={handleLikeStatusChange}
                 />
             )}
         </>

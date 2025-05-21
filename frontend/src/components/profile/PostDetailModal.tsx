@@ -22,6 +22,7 @@ interface PostDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
     userId: string;
+    onLikeStatusChange?: (postId: string, liked: boolean, likeCount: number) => void;
 }
 
 type ModalTab = "info" | "comments";
@@ -31,6 +32,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
     isOpen,
     onClose,
     userId,
+    onLikeStatusChange,
 }) => {
     // 프로필 정보
     const [profile, setProfile] = useState<ProfileDetailDto | null>(null);
@@ -98,10 +100,15 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
         setIsLikeLoading(true);
         try {
             const nowLiked = await userPostService.togglePostLike(post.postId);
+            const newLikeCount = nowLiked ? likeCount + 1 : Math.max(0, likeCount - 1);
+            
             setLiked(nowLiked);
-            setLikeCount((prev) =>
-                nowLiked ? prev + 1 : Math.max(0, prev - 1)
-            );
+            setLikeCount(newLikeCount);
+            
+            // 부모 컴포넌트에 좋아요 상태 변경 알림
+            if (onLikeStatusChange) {
+                onLikeStatusChange(post.postId, nowLiked, newLikeCount);
+            }
         } catch (error) {
             console.error("좋아요 처리 중 오류 발생:", error);
             toast.error("좋아요 처리 중 문제가 발생했습니다");
@@ -140,7 +147,15 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
     return (
         <>
-            <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <Dialog open={isOpen} onOpenChange={(open) => {
+                if (!open) {
+                    // 모달이 닫힐 때 변경된 좋아요 상태 전달
+                    if (onLikeStatusChange && (liked !== post.liked || likeCount !== post.likeCount)) {
+                        onLikeStatusChange(post.postId, liked, likeCount);
+                    }
+                    onClose();
+                }
+            }}>
                 <DialogContent className="max-w-4xl w-[95%] md:w-full bg-white rounded-lg p-0 overflow-hidden">
                     <DialogTitle className="sr-only">
                         포스트 상세 정보
@@ -156,6 +171,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                             setActiveTab={handleTabChange}
                             liked={liked}
                             isLikeLoading={isLikeLoading}
+                            likeCount={likeCount}
                             currentImageIndex={currentImageIndex}
                             handlePrevImage={handlePrevImage}
                             handleNextImage={handleNextImage}
@@ -175,6 +191,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                 setActiveTab={handleTabChange}
                                 liked={liked}
                                 isLikeLoading={isLikeLoading}
+                                likeCount={likeCount}
                                 currentImageIndex={currentImageIndex}
                                 handlePrevImage={handlePrevImage}
                                 handleNextImage={handleNextImage}
