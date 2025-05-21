@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
 import PostGrid from '@/components/sns/post/PostGrid';
@@ -11,14 +12,16 @@ import { Search, X } from 'lucide-react';
 
 const SNSExplorePage: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
   const [activeTab, setActiveTab] = useState('popular');
   const [posts, setPosts] = useState<Array<any>>([]);
   const [popularHashtags, setPopularHashtags] = useState<Array<any>>([]);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+  const [isSearching, setIsSearching] = useState(!!searchQuery);
   const observer = useRef<IntersectionObserver | null>(null);
   
   // 게시물 로드
@@ -31,9 +34,9 @@ const SNSExplorePage: React.FC = () => {
     try {
       let postsData;
       
-      if (isSearching && searchQuery.startsWith('#')) {
+      if (isSearching && localSearchQuery.startsWith('#')) {
         // 해시태그 검색
-        const tagName = searchQuery.substring(1);
+        const tagName = localSearchQuery.substring(1);
         postsData = await hashtagService.getPostsByHashTag(tagName, currentPage);
       } else if (activeTab === 'popular') {
         // 인기 게시물
@@ -50,7 +53,7 @@ const SNSExplorePage: React.FC = () => {
       }
       
       // 더 불러올 데이터가 있는지 확인
-      setHasMore(!postsData.pageable || postsData.pageable.pageNumber < postsData.totalPages - 1);
+      setHasMore(!postsData.last && postsData.content.length > 0);
       
       if (resetPage) {
         setPage(1);
@@ -62,7 +65,7 @@ const SNSExplorePage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [activeTab, page, isLoading, hasMore, isSearching, searchQuery]);
+  }, [activeTab, page, isLoading, hasMore, isSearching, localSearchQuery]);
   
   // 인기 해시태그 로드
   const loadPopularHashtags = useCallback(async () => {
@@ -74,11 +77,25 @@ const SNSExplorePage: React.FC = () => {
     }
   }, []);
   
+  // URL 파라미터 변경 감지
+  useEffect(() => {
+    const urlSearchQuery = searchParams.get('search') || '';
+    if (urlSearchQuery !== localSearchQuery) {
+      setLocalSearchQuery(urlSearchQuery);
+      setIsSearching(!!urlSearchQuery);
+      setPosts([]);
+      setPage(0);
+      setHasMore(true);
+    }
+  }, [searchParams]);
+
   // 첫 로드
   useEffect(() => {
     loadPosts(true);
-    loadPopularHashtags();
-  }, [activeTab]);
+    if (!isSearching) {
+      loadPopularHashtags();
+    }
+  }, [activeTab, isSearching, localSearchQuery]);
   
   // 탭 변경 시 데이터 초기화
   const handleTabChange = (tab: string) => {
@@ -94,11 +111,11 @@ const SNSExplorePage: React.FC = () => {
   
   // 무한 스크롤 설정
   const lastPostElementRef = useCallback((node: HTMLElement | null) => {
-    if (isLoading) return;
+    if (isLoading || !hasMore) return;
     if (observer.current) observer.current.disconnect();
     
     observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
+      if (entries[0].isIntersecting && hasMore && !isLoading) {
         loadPosts();
       }
     });
@@ -109,33 +126,22 @@ const SNSExplorePage: React.FC = () => {
   // 검색 처리
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      setIsSearching(true);
-      setPosts([]);
-      setPage(0);
-      setHasMore(true);
-      loadPosts(true);
+    if (localSearchQuery.trim()) {
+      setSearchParams({ search: localSearchQuery.trim() });
     }
   };
   
   // 검색 취소
   const handleClearSearch = () => {
-    setSearchQuery('');
-    setIsSearching(false);
-    setPosts([]);
-    setPage(0);
-    setHasMore(true);
-    loadPosts(true);
+    setLocalSearchQuery('');
+    setSearchParams({});
   };
   
   // 해시태그 클릭
   const handleHashtagClick = (tag: string) => {
-    setSearchQuery(`#${tag}`);
-    setIsSearching(true);
-    setPosts([]);
-    setPage(0);
-    setHasMore(true);
-    loadPosts(true);
+    const hashtagQuery = `#${tag}`;
+    setLocalSearchQuery(hashtagQuery);
+    setSearchParams({ search: hashtagQuery });
   };
   
   return (
@@ -148,11 +154,11 @@ const SNSExplorePage: React.FC = () => {
           <Input
             type="text"
             placeholder="검색 또는 #해시태그 검색..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={localSearchQuery}
+            onChange={(e) => setLocalSearchQuery(e.target.value)}
             className="pr-10"
           />
-          {searchQuery ? (
+          {localSearchQuery ? (
             <button
               type="button"
               className="absolute right-10 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
@@ -196,7 +202,7 @@ const SNSExplorePage: React.FC = () => {
       {isSearching && (
         <div className="mb-6 flex items-center justify-between">
           <p className="text-sm">
-            <span className="font-medium">{searchQuery}</span> 검색 결과
+            <span className="font-medium">{localSearchQuery}</span> 검색 결과
           </p>
           <Button variant="ghost" size="sm" onClick={handleClearSearch}>
             <X className="h-4 w-4 mr-1" />
@@ -219,7 +225,7 @@ const SNSExplorePage: React.FC = () => {
       <PostGrid posts={posts} lastPostRef={lastPostElementRef} />
       
       {/* 로딩 표시 */}
-      {isLoading && (
+      {isLoading && posts.length > 0 && (
         <div className="flex justify-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>

@@ -21,6 +21,7 @@ interface PostCommentItemProps {
   onLoginRequired: () => void;
   isAuthenticated: boolean;
   isReply?: boolean; // 답글 여부 표시
+  onProfileClick?: (userId: string) => void; // 프로필 클릭 콜백 추가
 }
 
 const PostCommentItem: React.FC<PostCommentItemProps> = ({
@@ -33,7 +34,8 @@ const PostCommentItem: React.FC<PostCommentItemProps> = ({
   currentUserId,
   onLoginRequired,
   isAuthenticated,
-  isReply = false // 기본값은 false
+  isReply = false, // 기본값은 false
+  onProfileClick // 프로필 클릭 콜백 추가
 }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -91,6 +93,7 @@ const PostCommentItem: React.FC<PostCommentItemProps> = ({
                 currentUserId={currentUserId}
                 onLoginRequired={onLoginRequired}
                 isAuthenticated={isAuthenticated}
+                onProfileClick={onProfileClick} /* 프로필 클릭 콜백 전달 */
               />
             ))}
           </div>
@@ -112,14 +115,24 @@ const PostCommentItem: React.FC<PostCommentItemProps> = ({
         <div>
           {/* 댓글 헤더 */}
           <div className="flex items-start">
-            <Avatar className="h-7 w-7 mr-2">
-              <AvatarImage src={comment.authorAvatarUrl || undefined} alt={comment.authorNickname} />
-              <AvatarFallback>{comment.authorNickname ? comment.authorNickname[0] : '?'}</AvatarFallback>
-            </Avatar>
+            <button 
+              className="flex-shrink-0 mr-2"
+              onClick={() => onProfileClick && onProfileClick(comment.authorId)}
+            >
+              <Avatar className="h-7 w-7">
+                <AvatarImage src={comment.authorAvatarUrl || undefined} alt={comment.authorNickname} />
+                <AvatarFallback>{comment.authorNickname ? comment.authorNickname[0] : '?'}</AvatarFallback>
+              </Avatar>
+            </button>
             
             <div className="flex-1">
               <div className="flex items-center">
-                <span className="font-medium text-sm">{comment.authorNickname}</span>
+                <button 
+                  className="font-medium text-sm hover:underline"
+                  onClick={() => onProfileClick && onProfileClick(comment.authorId)}
+                >
+                  {comment.authorNickname}
+                </button>
                 {comment.isPrivate && (
                   <span className="ml-2 text-xs text-gray-500 flex items-center">
                     <Lock className="h-3 w-3 mr-1" />
@@ -239,6 +252,7 @@ const PostCommentItem: React.FC<PostCommentItemProps> = ({
                   onLoginRequired={onLoginRequired}
                   isAuthenticated={isAuthenticated}
                   isReply={true} /* 이 컴포넌트가 답글임을 표시 */
+                  onProfileClick={onProfileClick} /* 프로필 클릭 콜백 전달 */
                 />
               ))}
             </div>
