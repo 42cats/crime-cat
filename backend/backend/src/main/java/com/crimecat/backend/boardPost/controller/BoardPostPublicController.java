@@ -30,7 +30,7 @@ public class BoardPostPublicController {
             @RequestParam(value = "size", defaultValue = "10") Integer size,
             @RequestParam(value = "kw", defaultValue = "") String kw,
             @RequestParam(value = "boardType", defaultValue = "NONE") BoardType boardType,
-            @RequestParam(value = "postType", defaultValue = "NONE") PostType postType,
+            @RequestParam(value = "postType", defaultValue = "GENERAL") PostType postType,
             @RequestParam(defaultValue = "LATEST") List<String> sort
     ) {
         List<BoardPostSortType> sortTypes = (sort != null && !sort.isEmpty()) ?

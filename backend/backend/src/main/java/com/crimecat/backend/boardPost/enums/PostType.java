@@ -11,5 +11,4 @@ public enum PostType {
     MURDER_MYSTERY,
     ESCAPE_ROOM,
     REAL_WORLD,
-    NONE
 }

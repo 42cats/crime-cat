@@ -7,10 +7,6 @@ import com.crimecat.backend.boardPost.enums.BoardType;
 import com.crimecat.backend.boardPost.enums.PostType;
 import com.crimecat.backend.boardPost.repository.BoardPostLikeRepository;
 import com.crimecat.backend.boardPost.repository.BoardPostRepository;
-import com.crimecat.backend.postComment.domain.PostComment;
-import com.crimecat.backend.postComment.dto.PostCommentResponse;
-import com.crimecat.backend.postComment.repository.PostCommentLikeRepository;
-import com.crimecat.backend.postComment.repository.PostCommentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,10 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor

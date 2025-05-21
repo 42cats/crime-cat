@@ -25,8 +25,7 @@ public class BoardPost {
     @Column(name = "ID", columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @Column(name = "NUMBER")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "NUMBER", insertable = false, updatable = false)
     private Integer number;
 
     @Column(name = "SUBJECT", length = 200)
@@ -36,11 +35,11 @@ public class BoardPost {
     private String content;
 
     @JdbcTypeCode(SqlTypes.BINARY)
-    @Column(name = "USER")
+    @Column(name = "USER_ID")
     private UUID userId;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "USER", updatable = false, insertable = false)
+    @JoinColumn(name = "USER_ID", updatable = false, insertable = false)
     private WebUser user;
 
     @Builder.Default

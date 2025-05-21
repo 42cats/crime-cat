@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS `board_posts` (
     `number`         INT            NOT NULL AUTO_INCREMENT UNIQUE,
     `subject`        VARCHAR(200)   NOT NULL,
     `content`        TEXT           NOT NULL,
-    `user`           BINARY(16)     NOT NULL,
+    `user_id`        BINARY(16)     NOT NULL,
     `created_at`     DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`     DATETIME       NULL DEFAULT NULL,
     `is_deleted`     BOOLEAN        NOT NULL DEFAULT FALSE,
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `board_posts` (
     `board_type`     ENUM('CHAT', 'QUESTION', 'NONE')  NOT NULL,
     `is_pinned`      BOOLEAN        NOT NULL DEFAULT FALSE,
     CONSTRAINT `fk_board_posts_author`
-    FOREIGN KEY (`user`)
+    FOREIGN KEY (`user_id`)
     REFERENCES `web_users`(`id`)
     ON DELETE RESTRICT
     ) ENGINE=InnoDB
@@ -32,53 +32,53 @@ CREATE TABLE IF NOT EXISTS `board_posts` (
 
 -- 2) board_posts 인덱스
 ALTER TABLE `board_posts`
-    ADD INDEX IF NOT EXISTS `idx_board_posts_user`        (`user`),
+    ADD INDEX IF NOT EXISTS `idx_board_posts_user`        (`user_id`),
     ADD INDEX IF NOT EXISTS `idx_board_posts_created_at` (`created_at` DESC);
 
 -- 3) post_likes 테이블
 CREATE TABLE IF NOT EXISTS `board_post_likes` (
     `id`          BINARY(16) PRIMARY KEY,
-    `user`        BINARY(16) NOT NULL,
-    `post`        BINARY(16) NOT NULL,
+    `user_id`     BINARY(16) NOT NULL,
+    `post_id`     BINARY(16) NOT NULL,
     `created_at`  DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT `fk_board_post_likes_user`
-    FOREIGN KEY (`user`)
+    FOREIGN KEY (`user_id`)
     REFERENCES `web_users`(`id`)
     ON DELETE RESTRICT,
     CONSTRAINT `fk_board_post_likes_post`
-    FOREIGN KEY (`post`)
+    FOREIGN KEY (`post_id`)
     REFERENCES `board_posts`(`id`)
     ON DELETE CASCADE,
-    UNIQUE KEY `uk_board_post_likes_user_post` (`user`, `post`)
+    UNIQUE KEY `uk_board_post_likes_user_post` (`user_id`, `post_id`)
     ) ENGINE=InnoDB
     DEFAULT CHARSET=utf8mb4
     COLLATE=utf8mb4_unicode_ci;
 
 -- 4) post_likes 인덱스
 ALTER TABLE `board_post_likes`
-    ADD INDEX IF NOT EXISTS `idx_board_post_likes_user`     (`user`),
-    ADD INDEX IF NOT EXISTS `idx_board_post_likes_post`     (`post`);
+    ADD INDEX IF NOT EXISTS `idx_board_post_likes_user`     (`user_id`),
+    ADD INDEX IF NOT EXISTS `idx_board_post_likes_post`     (`post_id`);
 
 -- 5) post_comments 테이블
 CREATE TABLE IF NOT EXISTS `post_comments` (
     `id`             BINARY(16)     PRIMARY KEY,
     `content`        TEXT           NOT NULL,
-    `user`           BINARY(16)     NOT NULL,
-    `post`           BINARY(16)     NOT NULL,
-    `parent`         BINARY(16)     DEFAULT NULL,
+    `user_id`        BINARY(16)     NOT NULL,
+    `post_id`        BINARY(16)     NOT NULL,
+    `parent_id`      BINARY(16)     DEFAULT NULL,
     `created_at`     DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`     DATETIME       NULL DEFAULT NULL,
     `likes`          INT            NOT NULL DEFAULT 0,
     `is_deleted`     BOOLEAN        NOT NULL DEFAULT FALSE,
     `is_secret`      BOOLEAN        NOT NULL DEFAULT FALSE,
     CONSTRAINT `fk_post_comments_author`
-    FOREIGN KEY (`user`)
+    FOREIGN KEY (`user_id`)
     REFERENCES `web_users`(`id`),
     CONSTRAINT `fk_post_comments_post`
-    FOREIGN KEY (`post`)
+    FOREIGN KEY (`post_id`)
     REFERENCES `board_posts`(`id`),
     CONSTRAINT `fk_post_comments_parent`
-    FOREIGN KEY (`parent`)
+    FOREIGN KEY (`parent_id`)
     REFERENCES `post_comments`(`id`)
     ON DELETE RESTRICT
     ) ENGINE=InnoDB
@@ -87,30 +87,30 @@ CREATE TABLE IF NOT EXISTS `post_comments` (
 
 -- 2) post_comments 인덱스
 ALTER TABLE `post_comments`
-    ADD INDEX IF NOT EXISTS `idx_post_comments_user`    (`user`),
-    ADD INDEX IF NOT EXISTS `idx_post_comments_post`    (`post`),
-    ADD INDEX IF NOT EXISTS `idx_post_comments_parent`  (`parent`),
+    ADD INDEX IF NOT EXISTS `idx_post_comments_user`    (`user_id`),
+    ADD INDEX IF NOT EXISTS `idx_post_comments_post`    (`post_id`),
+    ADD INDEX IF NOT EXISTS `idx_post_comments_parent`  (`parent_id`),
     ADD INDEX IF NOT EXISTS `idx_post_comments_created_at` (`created_at` DESC);
 
 -- 3) post_comment_likes 테이블
 CREATE TABLE IF NOT EXISTS `post_comment_likes` (
     `id`          BINARY(16) PRIMARY KEY,
-    `user`        BINARY(16) NOT NULL,
-    `comment`     BINARY(16) NOT NULL,
+    `user_id`     BINARY(16) NOT NULL,
+    `comment_id`  BINARY(16) NOT NULL,
     `created_at`  DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT `fk_post_comment_likes_user`
-    FOREIGN KEY (`user`)
+    FOREIGN KEY (`user_id`)
     REFERENCES `web_users`(`id`) ON DELETE RESTRICT,
     CONSTRAINT `fk_post_comment_likes_post`
-    FOREIGN KEY (`comment`)
+    FOREIGN KEY (`comment_id`)
     REFERENCES `post_comments`(`id`) ON DELETE CASCADE,
-    UNIQUE KEY `uk_post_comment_likes_user_comment` (`user`, `comment`)
+    UNIQUE KEY `uk_post_comment_likes_user_comment` (`user_id`, `comment_id`)
     ) ENGINE=InnoDB
     DEFAULT CHARSET=utf8mb4
     COLLATE=utf8mb4_unicode_ci;
 
 -- 4) post_likes 인덱스
 ALTER TABLE `post_comment_likes`
-    ADD INDEX IF NOT EXISTS `idx_post_comment_likes_user`     (`user`),
-    ADD INDEX IF NOT EXISTS `idx_post_comment_likes_comment`  (`comment`);
+    ADD INDEX IF NOT EXISTS `idx_post_comment_likes_user`     (`user_id`),
+    ADD INDEX IF NOT EXISTS `idx_post_comment_likes_comment`  (`comment_id`);
 
