@@ -17,6 +17,7 @@ import {
     History,
     Menu,
     FileText,
+    UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -173,6 +174,16 @@ const SidebarInner = React.memo(() => {
                                                 name: "포스트",
                                                 path: "/dashboard/posts",
                                                 icon: FileText,
+                                                roles: [
+                                                    "ADMIN",
+                                                    "MANAGER",
+                                                    "USER",
+                                                ],
+                                            },
+                                            {
+                                                name: "팔로우",
+                                                path: "/dashboard/follows",
+                                                icon: UserPlus,
                                                 roles: [
                                                     "ADMIN",
                                                     "MANAGER",
