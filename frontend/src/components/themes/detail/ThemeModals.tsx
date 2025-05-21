@@ -22,7 +22,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import ContactUserModal from "@/components/themes/modals/ContactUserModal";
-import GuildInfoModal from "@/components/themes/modals/GuildInfoModal";
 import PostDetailModal from "@/components/profile/PostDetailModal";
 import ProfileDetailModal from "@/components/profile/ProfileDetailModal";
 import { ThemeDetailType } from "@/lib/types";
@@ -37,8 +36,6 @@ interface ThemeModalsProps {
   setShowLoginDialog: (open: boolean) => void;
   showContactModal: boolean;
   setShowContactModal: (open: boolean) => void;
-  showGuildModal: boolean;
-  setShowGuildModal: (open: boolean) => void;
   showRequestModal: boolean;
   setShowRequestModal: (open: boolean) => void;
   requestMessage: string;
@@ -64,8 +61,6 @@ const ThemeModals: React.FC<ThemeModalsProps> = ({
   setShowLoginDialog,
   showContactModal,
   setShowContactModal,
-  showGuildModal,
-  setShowGuildModal,
   showRequestModal,
   setShowRequestModal,
   requestMessage,
@@ -180,14 +175,6 @@ const ThemeModals: React.FC<ThemeModalsProps> = ({
         userId={theme.author.id}
         onOpenChange={setShowContactModal}
       />
-
-      {theme.type === "CRIMESCENE" && theme.guild && (
-        <GuildInfoModal
-          open={showGuildModal}
-          guildSnowflake={theme.guild.snowflake}
-          onOpenChange={setShowGuildModal}
-        />
-      )}
 
       {/* 프로필 상세 모달 */}
       {selectedPost && (

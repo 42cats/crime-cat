@@ -4,6 +4,7 @@ import com.crimecat.backend.comment.dto.CommentResponse;
 import com.crimecat.backend.comment.service.CommentService;
 import com.crimecat.backend.comment.sort.CommentSortType;
 import com.crimecat.backend.utils.AuthenticationUtil;
+import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +27,15 @@ public class CommentPublicController {
             @RequestParam(defaultValue = "LATEST") CommentSortType sortType) {
         
         // null을 userId로 전달하여 비로그인 사용자임을 표시
-        UUID currentWebUserId = AuthenticationUtil.getCurrentWebUserId();
+        WebUser webUser = AuthenticationUtil.getCurrentWebUserOptional()
+            .orElse(null);
+        UUID currentWebUserId;
+        if(webUser != null){
+            currentWebUserId = webUser.getId();
+        }
+        else {
+            currentWebUserId = null;
+        }
         Page<CommentResponse> comments = null;
         if(currentWebUserId == null){
             comments = commentService.getPublicComments(gameThemeId, page, size, sortType);

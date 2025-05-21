@@ -4,8 +4,10 @@ import com.crimecat.backend.guild.domain.Guild;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import java.time.LocalDateTime;
 import lombok.Builder;
+import lombok.Data;
 
 @Builder
+@Data
 public class GuildInfoResponseDto {
   private String guildId;
   private String guildName;

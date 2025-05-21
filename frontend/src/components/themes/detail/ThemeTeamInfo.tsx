@@ -19,20 +19,20 @@ const ThemeTeamInfo: React.FC<ThemeTeamInfoProps> = ({
   onProfileClick,
   onGuildClick,
 }) => {
-  // 크라임씬 테마가 아니거나 팀/길드 정보가 없으면 렌더링하지 않음
+  // 크라임씬 테마가 아니거나 팀 정보가 없으면 렌더링하지 않음
   if (
     theme.type !== "CRIMESCENE" ||
-    !(theme.team || theme.guild)
+    !theme.team
   ) {
     return null;
   }
 
   return (
     <div className="bg-muted/40 rounded-lg p-6 mb-6">
-      <h2 className="text-lg font-bold mb-4">크라임씬 정보</h2>
+      <h2 className="text-lg font-bold mb-4">팀 정보</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* 팀 및 길드 정보 */}
+        {/* 팀 정보 */}
         <div className="space-y-4">
           {theme.team && (
             <div>
@@ -172,18 +172,6 @@ const ThemeTeamInfo: React.FC<ThemeTeamInfoProps> = ({
                   </div>
                 </div>
               ) : null}
-            </div>
-          )}
-
-          {theme.guild && (
-            <div className="mt-4">
-              <h3 className="text-sm font-semibold text-muted-foreground mb-2">길드 정보</h3>
-              <button
-                className="bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 dark:text-purple-400 px-3 py-1 rounded-full text-sm font-medium transition-colors"
-                onClick={onGuildClick}
-              >
-                {theme.guild.name}
-              </button>
             </div>
           )}
         </div>
