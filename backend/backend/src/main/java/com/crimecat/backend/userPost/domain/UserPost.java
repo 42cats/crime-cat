@@ -1,11 +1,11 @@
 package com.crimecat.backend.userPost.domain;
 
+import com.crimecat.backend.hashtag.domain.PostHashTag;
+import com.crimecat.backend.userPost.domain.saved.SavedPost;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
@@ -68,6 +68,36 @@ public class UserPost {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserPostComment> comments = new ArrayList<>();
 
+    // 해시태그 관계 추가
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<PostHashTag> hashtags = new ArrayList<>();
+
+    // 저장된 게시물 관계 추가
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<SavedPost> savedBy = new ArrayList<>();
+
+    // 조회수 필드 추가
+    @Column(name = "view_count")
+    @Builder.Default
+    private int viewCount = 0;
+
+    // 피드에서의 인기도 점수 (알고리즘 기반)
+    @Column(name = "popularity_score")
+    @Builder.Default
+    private double popularityScore = 0.0;
+
+    // 위치 정보 (선택 사항)
+    @Column(name = "location_name")
+    private String locationName;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
     @PreUpdate
     public void updateTimestamp() {
         this.updatedAt = LocalDateTime.now();
@@ -88,6 +118,29 @@ public class UserPost {
     public void setIsFollowersOnly(boolean isFollowersOnly) {
         this.isFollowersOnly = isFollowersOnly;
     }
+    
+    public void incrementViewCount() {
+        this.viewCount++;
+    }
+    
+    public void updatePopularityScore() {
+        // 인기도 점수 계산 로직
+        // 예: 좋아요 수 * 0.5 + 댓글 수 * 0.3 + 저장 수 * 0.2
+        double likeWeight = 0.5;
+        double commentWeight = 0.3;
+        double saveWeight = 0.2;
+        
+        this.popularityScore = 
+            this.likes.size() * likeWeight + 
+            this.comments.size() * commentWeight + 
+            this.savedBy.size() * saveWeight;
+    }
+    
+    public void setLocationInfo(String locationName, Double latitude, Double longitude) {
+        this.locationName = locationName;
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
 
     static public UserPost from(WebUser user, String content, boolean isPrivate, boolean isFollowersOnly) {
         return UserPost.builder()
@@ -105,5 +158,17 @@ public class UserPost {
                 .isPrivate(false)
                 .isFollowersOnly(false)
                 .build();
+    }
+    
+    static public UserPost from(WebUser user, String content, String locationName, Double latitude, Double longitude) {
+        UserPost post = UserPost.builder()
+                .user(user)
+                .content(content)
+                .isPrivate(false)
+                .isFollowersOnly(false)
+                .build();
+        
+        post.setLocationInfo(locationName, latitude, longitude);
+        return post;
     }
 }

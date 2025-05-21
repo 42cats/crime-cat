@@ -20,4 +20,5 @@ public class UserPostGalleryPageDto {
     private boolean isPrivate;
     private boolean isFollowersOnly;
     private LocalDateTime createdAt;
+    private String collectionName; // 저장된 컬렉션 이름 (저장된 게시물 목록에서 사용)
 }
