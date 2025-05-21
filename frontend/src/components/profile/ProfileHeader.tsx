@@ -20,9 +20,17 @@ import { followUser, unfollowUser, isFollowing } from "@/api/follow";
 
 interface ProfileHeaderProps {
     profile: ProfileDetailDto;
+    followerCount?: number;
+    followingCount?: number;
+    onFollowChange?: () => void; // 팔로우 상태 변경 시 호출될 콜백
 }
 
-const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
+const ProfileHeader: React.FC<ProfileHeaderProps> = ({
+    profile,
+    followerCount,
+    followingCount,
+    onFollowChange,
+}) => {
     const { user, isAuthenticated } = useAuth();
     const [isFollowingUser, setIsFollowingUser] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -56,11 +64,17 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
             if (isFollowingUser) {
                 await unfollowUser(profile.userId);
                 setIsFollowingUser(false);
-                toast.success(`${profile.userNickname}님 팔로우를 취소했습니다`);
+                toast.success(
+                    `${profile.userNickname}님 팔로우를 취소했습니다`
+                );
+                // 상위 컴포넌트에 팔로우 상태 변경 알림
+                if (onFollowChange) onFollowChange();
             } else {
                 await followUser(profile.userId);
                 setIsFollowingUser(true);
                 toast.success(`${profile.userNickname}님을 팔로우했습니다`);
+                // 상위 컴포넌트에 팔로우 상태 변경 알림
+                if (onFollowChange) onFollowChange();
             }
         } catch (error) {
             console.error("팔로우 상태 변경 실패:", error);
@@ -153,7 +167,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
                             <span className="text-xs md:text-sm font-medium">
                                 팔로워{" "}
                                 <span className="font-bold">
-                                    {profile.followerCount?.toLocaleString() || 0}
+                                    {followerCount !== undefined
+                                        ? followerCount.toLocaleString()
+                                        : profile.followerCount?.toLocaleString() ||
+                                          0}
                                 </span>
                             </span>
                         </div>
@@ -165,7 +182,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
                             <span className="text-xs md:text-sm font-medium">
                                 팔로잉{" "}
                                 <span className="font-bold">
-                                    {profile.followingCount?.toLocaleString() || 0}
+                                    {followingCount !== undefined
+                                        ? followingCount.toLocaleString()
+                                        : profile.followingCount?.toLocaleString() ||
+                                          0}
                                 </span>
                             </span>
                         </div>
@@ -189,7 +209,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
 
                     {isAuthenticated && user?.id !== profile.userId && (
                         <Button
-                            variant={isFollowingUser ? "destructive" : "default"}
+                            variant={
+                                isFollowingUser ? "destructive" : "default"
+                            }
                             size="sm"
                             className="text-xs md:text-sm"
                             onClick={handleFollowToggle}
@@ -197,14 +219,24 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ profile }) => {
                         >
                             {isFollowingUser ? (
                                 <>
-                                    <UserMinus size={14} className="mr-1 md:mr-2" />
-                                    <span className="hidden sm:inline">언팔로우</span>
+                                    <UserMinus
+                                        size={14}
+                                        className="mr-1 md:mr-2"
+                                    />
+                                    <span className="hidden sm:inline">
+                                        언팔로우
+                                    </span>
                                     <span className="sm:hidden">언팔로우</span>
                                 </>
                             ) : (
                                 <>
-                                    <UserPlus size={14} className="mr-1 md:mr-2" />
-                                    <span className="hidden sm:inline">팔로우</span>
+                                    <UserPlus
+                                        size={14}
+                                        className="mr-1 md:mr-2"
+                                    />
+                                    <span className="hidden sm:inline">
+                                        팔로우
+                                    </span>
                                     <span className="sm:hidden">팔로우</span>
                                 </>
                             )}

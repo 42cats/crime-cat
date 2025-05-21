@@ -6,11 +6,13 @@ import { Loader2 } from "lucide-react";
 interface ProfileFollowerListProps {
   userId: string;
   onProfileClick: (userId: string) => void;
+  refresh?: boolean; // 데이터 리프레시 트리거
 }
 
 const ProfileFollowerList: React.FC<ProfileFollowerListProps> = ({
   userId,
   onProfileClick,
+  refresh,
 }) => {
   const [followers, setFollowers] = useState<FollowDto[]>([]);
   const [loading, setLoading] = useState(false);
@@ -60,13 +62,13 @@ const ProfileFollowerList: React.FC<ProfileFollowerListProps> = ({
     fetchFollowers();
   }, [fetchFollowers]);
 
-  // 사용자 ID가 변경되면 목록 초기화
+  // 사용자 ID가 변경되거나 refresh 플래그가 변경되면 목록 초기화
   useEffect(() => {
     setFollowers([]);
     setPage(0);
     setHasMore(true);
     setError(null);
-  }, [userId]);
+  }, [userId, refresh]);
 
   if (error) {
     return (

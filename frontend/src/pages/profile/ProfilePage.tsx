@@ -1,115 +1,251 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { getProfileDetail, ProfileDetailDto } from '@/api/profile/detail';
-import ProfileHeader from '@/components/profile/ProfileHeader';
-import ProfileBio from '@/components/profile/ProfileBio';
-import ProfileThemeGrid from '@/components/profile/ProfileThemeGrid';
-import ProfileDetailModal from '@/components/profile/ProfileDetailModal';
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { getProfileDetail, ProfileDetailDto } from "@/api/profile/detail";
+import {
+    getFollowerCount,
+    getFollowingCount,
+    isFollowing,
+    followUser,
+    unfollowUser,
+} from "@/api/follow";
+import ProfileHeader from "@/components/profile/ProfileHeader";
+import ProfileBio from "@/components/profile/ProfileBio";
+import ProfileThemeGrid from "@/components/profile/ProfileThemeGrid";
+import ProfilePostGrid from "@/components/profile/ProfilePostGrid";
+import ProfileFollowerList from "@/components/profile/ProfileFollowerList";
+import ProfileFollowingList from "@/components/profile/ProfileFollowingList";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { UserX, AlertCircle } from "lucide-react";
 
 const ProfilePage: React.FC = () => {
-  const { userId } = useParams<{ userId: string }>();
-  const [profile, setProfile] = useState<ProfileDetailDto | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [profileModalId, setProfileModalId] = useState<string | null>(null);
+    const { userId: paramId } = useParams<{ userId: string }>();
+    const navigate = useNavigate();
+    const [profileId, setProfileId] = useState<string>(paramId || "");
+    const [profile, setProfile] = useState<ProfileDetailDto | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<{
+        type: string;
+        message: string;
+    } | null>(null);
+    const [activeTab, setActiveTab] = useState<
+        "themes" | "posts" | "followers" | "following"
+    >("themes");
+    const [followerCount, setFollowerCount] = useState(0);
+    const [followingCount, setFollowingCount] = useState(0);
+    const [isFollowingUser, setIsFollowingUser] = useState(false);
+    const [isLoadingFollow, setIsLoadingFollow] = useState(false);
+    const [refreshFollowers, setRefreshFollowers] = useState(false);
+    const [refreshFollowings, setRefreshFollowings] = useState(false);
+    const { user, isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    if (!userId) return;
-    
-    setLoading(true);
-    getProfileDetail(userId)
-      .then((data) => {
-        console.log("프로필 데이터:", data);
-        setProfile(data);
-      })
-      .catch((err) => {
-        console.error("프로필 로드 실패:", err);
-        setError("프로필을 불러오는 중 오류가 발생했습니다.");
-      })
-      .finally(() => setLoading(false));
-  }, [userId]);
+    // 프로필 로드
+    const loadProfile = useCallback(async (id: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await getProfileDetail(id);
+            setProfile(data);
+        } catch (err: any) {
+            if (err.response?.status === 404) {
+                setError({
+                    type: "not_found",
+                    message: "사용자를 찾을 수 없습니다.",
+                });
+            } else if (err.request) {
+                setError({
+                    type: "network_error",
+                    message: "네트워크 오류입니다.",
+                });
+            } else {
+                setError({
+                    type: "unknown_error",
+                    message: "알 수 없는 오류입니다.",
+                });
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-  // 프로필 모달 열기 이벤트 리스너
-  useEffect(() => {
-    const handleOpenProfile = (event: Event) => {
-      const customEvent = event as CustomEvent<{ userId: string }>;
-      if (customEvent.detail && customEvent.detail.userId) {
-        setProfileModalId(customEvent.detail.userId);
-        setIsModalOpen(true);
-      }
+    // 팔로우 카운트 로드 (profile state를 deps에서 제거)
+    const loadFollowCounts = useCallback(
+        async (id: string) => {
+            try {
+                const [fCount, fgCount] = await Promise.all([
+                    getFollowerCount(id),
+                    getFollowingCount(id),
+                ]);
+                setFollowerCount(fCount);
+                setFollowingCount(fgCount);
+            } catch {
+                // 실패 시 기존 프로필 값 사용
+                setFollowerCount(profile?.followerCount || 0);
+                setFollowingCount(profile?.followingCount || 0);
+            }
+        },
+        [
+            /* no deps */
+        ]
+    );
+
+    // 팔로우 상태 확인
+    const checkFollowingStatus = useCallback(
+        async (id: string) => {
+            if (isAuthenticated && user && user.id !== id) {
+                const status = await isFollowing(id);
+                setIsFollowingUser(status);
+            } else {
+                setIsFollowingUser(false);
+            }
+        },
+        [isAuthenticated, user]
+    );
+
+    // 초기 및 프로필 아이디 변경 시 로드
+    useEffect(() => {
+        if (!profileId) return;
+        loadProfile(profileId);
+        loadFollowCounts(profileId);
+        checkFollowingStatus(profileId);
+        setActiveTab("themes");
+    }, [profileId, loadProfile, loadFollowCounts, checkFollowingStatus]);
+
+    // 팔로우 토글
+    const handleFollowToggle = async () => {
+        if (!isAuthenticated) {
+            toast.error("로그인이 필요합니다");
+            return;
+        }
+        setIsLoadingFollow(true);
+        try {
+            if (isFollowingUser) {
+                await unfollowUser(profileId);
+                setIsFollowingUser(false);
+                setFollowerCount((c) => Math.max(0, c - 1));
+                toast.success("언팔로우 했습니다");
+            } else {
+                await followUser(profileId);
+                setIsFollowingUser(true);
+                setFollowerCount((c) => c + 1);
+                toast.success("팔로우 했습니다");
+            }
+            if (activeTab === "followers") setRefreshFollowers((p) => !p);
+            if (activeTab === "following") setRefreshFollowings((p) => !p);
+        } catch {
+            toast.error("요청 처리 중 오류");
+        } finally {
+            setIsLoadingFollow(false);
+        }
     };
 
-    window.addEventListener('open-profile', handleOpenProfile as EventListener);
-    
-    // 현재 URL이 /profile/:userId 형태면 모달 자동 열기
-    if (userId) {
-      setProfileModalId(userId);
-      setIsModalOpen(true);
+    // 프로필 클릭 전환
+    const handleProfileClick = (newId: string) => {
+        navigate(`/profile/${newId}`);
+        setProfileId(newId);
+        window.history.pushState({}, "", `/profile/${newId}`);
+    };
+
+    if (loading) return <div className="p-8 text-center">로딩 중...</div>;
+    if (error) {
+        return (
+            <div className="container mx-auto p-8 text-center">
+                {error.type === "not_found" ? (
+                    <UserX size={48} className="mx-auto mb-4 text-gray-400" />
+                ) : (
+                    <AlertCircle
+                        size={48}
+                        className="mx-auto mb-4 text-gray-400"
+                    />
+                )}
+            </div>
+        );
     }
 
-    return () => {
-      window.removeEventListener('open-profile', handleOpenProfile as EventListener);
-    };
-  }, [userId]);
-
-  if (loading) {
-    return <div className="container mx-auto p-8">
-      <div className="animate-pulse space-y-8">
-        <div className="flex flex-col md:flex-row items-center gap-8">
-          <div className="w-32 h-32 rounded-full bg-gray-200"></div>
-          <div className="space-y-4 flex-1">
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-          </div>
-        </div>
-        <div className="h-32 bg-gray-200 rounded"></div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="aspect-square bg-gray-200 rounded"></div>
-          ))}
-        </div>
-      </div>
-    </div>;
-  }
-
-  if (error || !profile) {
-    return <div className="container mx-auto p-8 text-center">
-      <h1 className="text-2xl font-bold text-red-500 mb-4">오류 발생</h1>
-      <p className="text-gray-600">{error || "알 수 없는 오류가 발생했습니다."}</p>
-    </div>;
-  }
-
-  return (
-    <>
-      <div className="container mx-auto p-4 md:p-8">
-        <div className="max-w-5xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
-          <ProfileHeader profile={profile} />
-          
-          <div className="p-6">
-            <ProfileBio bio={profile.bio} />
-            
-            <div className="mt-8">
-              <h2 className="text-xl font-bold mb-4 flex items-center">
-                <span className="border-b-2 border-blue-500 pb-1">제작 테마</span>
-              </h2>
-              <ProfileThemeGrid userId={profile.userId} />
+    return (
+        <div className="container mx-auto p-4 md:p-8">
+            <div className="max-w-3xl mx-auto bg-white rounded-lg shadow overflow-hidden flex flex-col">
+                <ProfileHeader
+                    profile={profile!}
+                    followerCount={followerCount}
+                    followingCount={followingCount}
+                    onFollowChange={() => loadFollowCounts(profileId)}
+                />
+                <div className="p-4 overflow-y-auto flex-1">
+                    <ProfileBio bio={profile!.bio} />
+                    <div className="mt-4 flex items-center space-x-2">
+                        <Button
+                            onClick={handleFollowToggle}
+                            loading={isLoadingFollow}
+                        >
+                            {isFollowingUser ? "언팔로우" : "팔로우"}
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                navigator.clipboard.writeText(
+                                    window.location.href
+                                );
+                                toast.success("링크 복사됨");
+                            }}
+                        >
+                            링크 복사
+                        </Button>
+                    </div>
+                    <div className="mt-6 flex space-x-4 border-b">
+                        {(
+                            [
+                                "themes",
+                                "posts",
+                                "followers",
+                                "following",
+                            ] as const
+                        ).map((tab) => (
+                            <button
+                                key={tab}
+                                className={`pb-2 ${
+                                    activeTab === tab
+                                        ? "border-b-2 border-blue-500 text-blue-600"
+                                        : "text-gray-500"
+                                }`}
+                                onClick={() => setActiveTab(tab)}
+                            >
+                                {tab === "themes"
+                                    ? "제작 테마"
+                                    : tab === "posts"
+                                    ? "포스트"
+                                    : tab === "followers"
+                                    ? `팔로워 (${followerCount})`
+                                    : `팔로잉 (${followingCount})`}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="mt-4">
+                        {activeTab === "themes" && (
+                            <ProfileThemeGrid userId={profileId} />
+                        )}
+                        {activeTab === "posts" && (
+                            <ProfilePostGrid userId={profileId} />
+                        )}
+                        {activeTab === "followers" && (
+                            <ProfileFollowerList
+                                userId={profileId}
+                                onProfileClick={handleProfileClick}
+                                refresh={refreshFollowers}
+                            />
+                        )}
+                        {activeTab === "following" && (
+                            <ProfileFollowingList
+                                userId={profileId}
+                                onProfileClick={handleProfileClick}
+                                refresh={refreshFollowings}
+                            />
+                        )}
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
-
-      {/* 프로필 상세 모달 */}
-      {profileModalId && (
-        <ProfileDetailModal
-          userId={profileModalId}
-          open={isModalOpen}
-          onOpenChange={setIsModalOpen}
-        />
-      )}
-    </>
-  );
+    );
 };
 
 export default ProfilePage;
