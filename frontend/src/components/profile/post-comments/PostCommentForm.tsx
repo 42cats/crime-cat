@@ -10,6 +10,7 @@ interface PostCommentFormProps {
   onSubmit: (data: UserPostCommentRequest) => Promise<void>;
   isReply?: boolean;
   initialContent?: string;
+  initialPrivate?: boolean; // 비밀글 여부 초기값
   isAuthenticated: boolean;
   onLoginRequired: () => void;
   onCancel?: () => void;
@@ -21,6 +22,7 @@ const PostCommentForm: React.FC<PostCommentFormProps> = ({
   onSubmit,
   isReply = false,
   initialContent = '',
+  initialPrivate = false, // 초기값 설정
   isAuthenticated,
   onLoginRequired,
   onCancel,
@@ -28,7 +30,7 @@ const PostCommentForm: React.FC<PostCommentFormProps> = ({
   placeholder = '댓글을 작성해주세요...',
 }) => {
   const [content, setContent] = useState(initialContent);
-  const [isPrivate, setIsPrivate] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(initialPrivate); // 초기값 사용
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
