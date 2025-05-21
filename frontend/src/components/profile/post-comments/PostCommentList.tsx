@@ -156,6 +156,20 @@ const PostCommentList: React.FC<PostCommentListProps> = ({
       return;
     }
 
+    // 대댓글인지 확인 - 해당 댓글이 이미 부모를 가지고 있는지 확인
+    const parentComment = comments.find(c => c.id === parentId) || 
+                        comments.flatMap(c => c.replies || []).find(r => r.id === parentId);
+    
+    // 대댓글인 경우 (이미 답글인 댓글에 답글을 달으려는 경우)
+    if (parentComment && parentComment.parentId) {
+      toast({
+        title: "안내",
+        description: "대댓글에는 답글을 달 수 없습니다.",
+        variant: "default",
+      });
+      return;
+    }
+
     try {
       await userPostCommentService.createComment(postId, {
         ...data,
@@ -287,6 +301,7 @@ const PostCommentList: React.FC<PostCommentListProps> = ({
                 currentUserId={currentUserId}
                 onLoginRequired={onLoginRequired}
                 isAuthenticated={isAuthenticated}
+                isReply={false} /* 최상위 댓글임을 명시 */
               />
             ))}
             
