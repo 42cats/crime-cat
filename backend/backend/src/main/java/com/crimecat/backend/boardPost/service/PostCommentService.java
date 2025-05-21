@@ -1,16 +1,15 @@
-package com.crimecat.backend.postComment.service;
+package com.crimecat.backend.boardPost.service;
 
-import com.crimecat.backend.postComment.domain.PostComment;
-import com.crimecat.backend.postComment.dto.PostCommentResponse;
-import com.crimecat.backend.postComment.repository.PostCommentLikeRepository;
-import com.crimecat.backend.postComment.repository.PostCommentRepository;
+import com.crimecat.backend.boardPost.domain.PostComment;
+import com.crimecat.backend.boardPost.dto.PostCommentResponse;
+import com.crimecat.backend.boardPost.repository.PostCommentLikeRepository;
+import com.crimecat.backend.boardPost.repository.PostCommentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,30 +19,35 @@ public class PostCommentService {
     private final PostCommentRepository postCommentRepository;
     private final PostCommentLikeRepository postCommentLikeRepository;
 
+    @Transactional(readOnly = true)
     public List<PostCommentResponse> getCommentResponses(
             UUID postId,
             UUID userId
     ) {
         Sort sort = Sort.by(Sort.Direction.ASC, "createdAt");
 
-        List<PostComment> comments = postCommentRepository.findAllByPostIdAndParentIdIsNull(
-                postId, sort);
+        List<PostComment> comments = postCommentRepository.findAllByPostIdAndParentIdIsNull(postId, sort);
 
-        boolean isOwnPost = comments.getFirst().getBoardPost().getUserId().equals(userId);
+        if (!comments.isEmpty()) {
+            boolean isOwnPost = comments.getFirst().getBoardPost().getUserId().equals(userId);
 
-        return comments.stream()
-                .map(comment -> {
-                    boolean isLikedComment = postCommentLikeRepository.existsByCommentIdAndUserId(comment.getId(), userId);
-                    boolean isOwnComment = comment.getUserId().equals(userId);
-                    boolean canViewSecret = (isOwnComment || isOwnPost);
-                    List<PostCommentResponse> replies = getCommentReplies(comment.getId(), userId, sort, isOwnComment);
+            return comments.stream()
+                    .map(comment -> {
+                        boolean isLikedComment = postCommentLikeRepository.existsByCommentIdAndUserId(comment.getId(), userId);
+                        boolean isOwnComment = comment.getUserId().equals(userId);
+                        boolean canViewSecret = (isOwnComment || isOwnPost);
+                        List<PostCommentResponse> replies = getCommentReplies(comment.getId(), userId, sort, isOwnComment);
 
-                    return PostCommentResponse.from(comment, isLikedComment, isOwnComment, canViewSecret, replies);
-        }).collect(Collectors.toList());
+                        return PostCommentResponse.from(comment, isLikedComment, isOwnComment, canViewSecret, replies);
+            }).collect(Collectors.toList());
+        } else {
+            return new ArrayList<>();
+        }
+
     }
 
     private List<PostCommentResponse> getCommentReplies(UUID commentId, UUID userId, Sort sort, boolean isOwnParent) {
-        List<PostComment> replies = postCommentRepository.findByParentId(commentId, sort);
+        List<PostComment> replies = postCommentRepository.findAllByParentId(commentId, sort);
         List<PostCommentResponse> replyResponses = new ArrayList<>();
 
         for (PostComment reply : replies) {

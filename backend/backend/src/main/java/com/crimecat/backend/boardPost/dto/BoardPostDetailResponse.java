@@ -1,7 +1,6 @@
 package com.crimecat.backend.boardPost.dto;
 
 import com.crimecat.backend.boardPost.domain.BoardPost;
-import com.crimecat.backend.postComment.dto.PostCommentResponse;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -18,6 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class BoardPostDetailResponse {
     private UUID id;
+    private Integer number;
     private String subject;
     private String content;
     private String authorName;
@@ -29,6 +28,7 @@ public class BoardPostDetailResponse {
     private LocalDateTime updatedAt;
     private Integer views;
     private Integer likes;
+    private Integer comments;
     @JsonProperty("isLikedByCurrentUser")
     private boolean isLikedByCurrentUser;
     @JsonProperty("isPinned")
@@ -44,6 +44,7 @@ public class BoardPostDetailResponse {
     ) {
         return BoardPostDetailResponse.builder()
                 .id(boardPost.getId())
+                .number(boardPost.getNumber())
                 .subject(boardPost.getSubject())
                 .content(boardPost.getContent())
                 .authorName(boardPost.getUser().getNickname())
@@ -54,6 +55,7 @@ public class BoardPostDetailResponse {
                 .updatedAt(boardPost.getUpdatedAt())
                 .views(boardPost.getViews())
                 .likes(boardPost.getLikes())
+                .comments(boardPost.getComments())
                 .isLikedByCurrentUser(isLikedByCurrentUser)
                 .isPinned(boardPost.getIsPinned())
                 .isSecret(boardPost.getIsSecret())

@@ -1,6 +1,6 @@
-package com.crimecat.backend.postComment.dto;
+package com.crimecat.backend.boardPost.dto;
 
-import com.crimecat.backend.postComment.domain.PostComment;
+import com.crimecat.backend.boardPost.domain.PostComment;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

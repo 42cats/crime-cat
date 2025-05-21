@@ -1,4 +1,4 @@
-package com.crimecat.backend.postComment.domain;
+package com.crimecat.backend.boardPost.domain;
 
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
@@ -28,19 +28,19 @@ public class PostCommentLike {
     private UUID id;
 
     @JdbcTypeCode(SqlTypes.BINARY)
-    @Column(name = "USER")
+    @Column(name = "USER_ID")
     private UUID userId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "USER", referencedColumnName = "ID", updatable = false, insertable = false)
+    @JoinColumn(name = "USER_ID", referencedColumnName = "ID", updatable = false, insertable = false)
     private WebUser user;
 
     @JdbcTypeCode(SqlTypes.BINARY)
-    @Column(name = "COMMENT")
+    @Column(name = "COMMENT_ID")
     private UUID commentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "COMMENT", referencedColumnName = "ID", updatable = false, insertable = false)
+    @JoinColumn(name = "COMMENT_ID", referencedColumnName = "ID", updatable = false, insertable = false)
     private PostComment postComment;
 
     @CreatedDate

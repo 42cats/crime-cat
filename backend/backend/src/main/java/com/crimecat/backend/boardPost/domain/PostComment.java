@@ -1,6 +1,5 @@
-package com.crimecat.backend.postComment.domain;
+package com.crimecat.backend.boardPost.domain;
 
-import com.crimecat.backend.boardPost.domain.BoardPost;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -30,27 +29,29 @@ public class PostComment {
     @Column(name = "CONTENT", columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "USER")
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(name = "USER_ID")
     private UUID userId;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "USER", updatable = false, insertable = false)
+    @JoinColumn(name = "USER_ID", referencedColumnName = "ID", updatable = false, insertable = false)
     private WebUser user;
 
-    @Column(name = "POST")
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(name = "POST_ID")
     private UUID postId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "POST", updatable = false, insertable = false)
+    @JoinColumn(name = "POST_ID", referencedColumnName = "ID", updatable = false, insertable = false)
     private BoardPost boardPost;
 
     // 부모 댓글 (대댓글인 경우)
     @JdbcTypeCode(SqlTypes.BINARY)
-    @Column(name = "PARENT")
+    @Column(name = "PARENT_ID")
     private UUID parentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "PARENT", updatable = false, insertable = false)
+    @JoinColumn(name = "PARENT_ID", referencedColumnName = "ID", updatable = false, insertable = false)
     private PostComment parent;
 
     @Builder.Default

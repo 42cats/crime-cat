@@ -28,19 +28,19 @@ public class BoardPostLike {
     private UUID id;
 
     @JdbcTypeCode(SqlTypes.BINARY)
-    @Column(name = "USER")
+    @Column(name = "USER_ID")
     private UUID userId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "USER", referencedColumnName = "ID", updatable = false, insertable = false)
+    @JoinColumn(name = "USER_ID", referencedColumnName = "ID", updatable = false, insertable = false)
     private WebUser user;
 
     @JdbcTypeCode(SqlTypes.BINARY)
-    @Column(name = "POST")
+    @Column(name = "POST_ID")
     private UUID postId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "POST", referencedColumnName = "ID", updatable = false, insertable = false)
+    @JoinColumn(name = "POST_ID", referencedColumnName = "ID", updatable = false, insertable = false)
     private BoardPost boardPost;
 
     @CreatedDate
