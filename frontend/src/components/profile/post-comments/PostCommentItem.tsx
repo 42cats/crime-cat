@@ -133,6 +133,7 @@ const PostCommentItem: React.FC<PostCommentItemProps> = ({
                 <PostCommentForm
                   onSubmit={handleUpdateSubmit}
                   initialContent={comment.content}
+                  initialPrivate={comment.isPrivate} /* 비밀글 여부 초기값 전달 */
                   isAuthenticated={isAuthenticated}
                   onLoginRequired={onLoginRequired}
                   onCancel={() => setIsEditing(false)}
@@ -184,6 +185,7 @@ const PostCommentItem: React.FC<PostCommentItemProps> = ({
               <PostCommentForm
                 onSubmit={handleReplySubmit}
                 isReply={true}
+                initialPrivate={comment.isPrivate} /* 원본 댓글이 비밀글이었다면 답글도 비밀글로 초기화 */
                 isAuthenticated={isAuthenticated}
                 onLoginRequired={onLoginRequired}
                 onCancel={() => setIsReplying(false)}
