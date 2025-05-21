@@ -74,16 +74,17 @@ const PostCommentForm: React.FC<PostCommentFormProps> = ({
         placeholder={placeholder}
         // onFocus 이벤트 핸들러 제거 - 자동 로그인 처리 방지
         className={`min-h-[70px] ${isReply ? 'text-sm' : ''}`}
-        disabled={isSubmitting || !isAuthenticated}
+        // 비로그인 상태에서도 입력 필드 활성화
+        disabled={isSubmitting}
       />
       
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Switch
-            id="secret-comment"
-            checked={isPrivate}
-            onCheckedChange={setIsPrivate}
-            disabled={isSubmitting || !isAuthenticated}
+          id="secret-comment"
+          checked={isPrivate}
+          onCheckedChange={setIsPrivate}
+          disabled={isSubmitting}
           />
           <Label 
             htmlFor="secret-comment" 
@@ -110,7 +111,7 @@ const PostCommentForm: React.FC<PostCommentFormProps> = ({
           <Button
             type="submit"
             size="sm"
-            disabled={!content.trim() || isSubmitting || !isAuthenticated}
+            disabled={!content.trim() || isSubmitting}
             className="text-xs px-3 py-1"
           >
             {isSubmitting ? '전송 중...' : isReply ? '답글작성' : '댓글작성'}
