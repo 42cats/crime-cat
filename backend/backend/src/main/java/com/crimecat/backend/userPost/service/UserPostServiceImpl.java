@@ -62,10 +62,10 @@ public class UserPostServiceImpl implements UserPostService {
                 .isFollowersOnly(isFollowersOnly)
                 .build();
         
-        // 위치 정보 설정 (있는 경우)
-        if (locationName != null || latitude != null || longitude != null) {
-            post.setLocationInfo(locationName, latitude, longitude);
-        }
+//        // 위치 정보 설정 (있는 경우)
+//        if (locationName != null || latitude != null || longitude != null) {
+//            post.setLocationInfo(locationName, latitude, longitude);
+//        }
         
         userPostRepository.save(post);
         

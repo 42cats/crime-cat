@@ -68,7 +68,7 @@ public class HashTagService {
         Set<String> hashTagTexts = extractHashTags(content);
         for (String tagText : hashTagTexts) {
             HashTag hashTag = getOrCreateHashTag(tagText);
-            PostHashTag.create(post, hashTag);
+            PostHashTag postHashTag = PostHashTag.create(post, hashTag);
         }
     }
     
