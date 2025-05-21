@@ -21,8 +21,9 @@ public class MakerTeamController {
 
     @GetMapping("/{teamId}")
     public GetTeamResponse getTeam(@PathVariable UUID teamId) {
-        return makerTeamService.get(teamId);
+    return makerTeamService.get(teamId);
     }
+  
 
     @DeleteMapping("/{teamId}")
     public void deleteTeam(@PathVariable UUID teamId) {

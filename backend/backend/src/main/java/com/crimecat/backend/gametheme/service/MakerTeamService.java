@@ -55,6 +55,17 @@ public class MakerTeamService {
                         .toList())
                 .build();
     }
+    
+    public GetTeamResponse getWithAvatars(UUID teamId) {
+        MakerTeam team = teamRepository.findById(teamId).orElseThrow(ErrorStatus.TEAM_NOT_FOUND::asServiceException);
+        return GetTeamResponse.builder()
+                .id(teamId)
+                .name(team.getName())
+                .members(team.getMembers().stream()
+                        .map(member -> MemberDto.fromWithAvatar(member, webUserRepository))
+                        .toList())
+                .build();
+    }
 
     public List<MakerTeamMember> getIndividualTeams(UUID leaderId) {
         List<MakerTeamMember> teams = teamMemberRepository.findByWebUserIdAndIsLeader(leaderId, true);
