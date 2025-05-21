@@ -5,14 +5,12 @@ import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.domain.MakerTeam;
 import com.crimecat.backend.gametheme.domain.MakerTeamMember;
 import com.crimecat.backend.gametheme.enums.ThemeType;
-import com.crimecat.backend.webUser.domain.WebUser;
 import io.micrometer.common.util.StringUtils;
 import jakarta.persistence.criteria.*;
-import org.springframework.data.jpa.domain.Specification;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.jpa.domain.Specification;
 
 public class GameThemeSpecification {
     public static Specification<GameTheme> equalCategory(String type) {
@@ -36,15 +34,25 @@ public class GameThemeSpecification {
                 return criteriaBuilder.conjunction();
             }
             List<Predicate> predicates = new ArrayList<>();
-//            Join<GameTheme, WebUser> authorJoin = root.join("author", JoinType.LEFT);
             String pattern = String.format("%%%s%%", keyword);
+            
+            // 기본 텍스트 필드 검색
             predicates.add(criteriaBuilder.or(
                     criteriaBuilder.like(root.get("title"), pattern),
                     criteriaBuilder.like(root.get("content"), pattern),
                     criteriaBuilder.like(root.get("summary"), pattern),
-//                    criteriaBuilder.like(root.get("tags"), pattern),
                     criteriaBuilder.like(root.get("author").get("nickname"), pattern)
-//                    criteriaBuilder.like(authorJoin.get("nickname"), pattern)
+            ));
+            
+            // JSON 태그 필드 검색 - MySQL JSON_SEARCH 함수 사용
+            predicates.add(criteriaBuilder.isNotNull(
+                criteriaBuilder.function(
+                    "JSON_SEARCH", 
+                    String.class,
+                    root.get("tags"), 
+                    criteriaBuilder.literal("one"), 
+                    criteriaBuilder.literal(pattern)
+                )
             ));
             if (ThemeType.Values.CRIMESCENE.equals(category)) {
                 Root<CrimesceneTheme> crimesceneThemeRoot = criteriaBuilder.treat(root, CrimesceneTheme.class);
