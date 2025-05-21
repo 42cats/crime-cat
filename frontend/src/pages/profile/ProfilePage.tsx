@@ -4,12 +4,15 @@ import { getProfileDetail, ProfileDetailDto } from '@/api/profile/detail';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileBio from '@/components/profile/ProfileBio';
 import ProfileThemeGrid from '@/components/profile/ProfileThemeGrid';
+import ProfileDetailModal from '@/components/profile/ProfileDetailModal';
 
 const ProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const [profile, setProfile] = useState<ProfileDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [profileModalId, setProfileModalId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -25,6 +28,29 @@ const ProfilePage: React.FC = () => {
         setError("프로필을 불러오는 중 오류가 발생했습니다.");
       })
       .finally(() => setLoading(false));
+  }, [userId]);
+
+  // 프로필 모달 열기 이벤트 리스너
+  useEffect(() => {
+    const handleOpenProfile = (event: Event) => {
+      const customEvent = event as CustomEvent<{ userId: string }>;
+      if (customEvent.detail && customEvent.detail.userId) {
+        setProfileModalId(customEvent.detail.userId);
+        setIsModalOpen(true);
+      }
+    };
+
+    window.addEventListener('open-profile', handleOpenProfile as EventListener);
+    
+    // 현재 URL이 /profile/:userId 형태면 모달 자동 열기
+    if (userId) {
+      setProfileModalId(userId);
+      setIsModalOpen(true);
+    }
+
+    return () => {
+      window.removeEventListener('open-profile', handleOpenProfile as EventListener);
+    };
   }, [userId]);
 
   if (loading) {
@@ -56,22 +82,33 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <div className="max-w-5xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
-        <ProfileHeader profile={profile} />
-        
-        <div className="p-6">
-          <ProfileBio bio={profile.bio} />
+    <>
+      <div className="container mx-auto p-4 md:p-8">
+        <div className="max-w-5xl mx-auto bg-white rounded-lg shadow-sm overflow-hidden">
+          <ProfileHeader profile={profile} />
           
-          <div className="mt-8">
-            <h2 className="text-xl font-bold mb-4 flex items-center">
-              <span className="border-b-2 border-blue-500 pb-1">제작 테마</span>
-            </h2>
-            <ProfileThemeGrid userId={profile.userId} />
+          <div className="p-6">
+            <ProfileBio bio={profile.bio} />
+            
+            <div className="mt-8">
+              <h2 className="text-xl font-bold mb-4 flex items-center">
+                <span className="border-b-2 border-blue-500 pb-1">제작 테마</span>
+              </h2>
+              <ProfileThemeGrid userId={profile.userId} />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* 프로필 상세 모달 */}
+      {profileModalId && (
+        <ProfileDetailModal
+          userId={profileModalId}
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+        />
+      )}
+    </>
   );
 };
 
