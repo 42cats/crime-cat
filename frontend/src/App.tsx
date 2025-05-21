@@ -45,6 +45,7 @@ import ProfilePage from "@/pages/profile/ProfilePage";
 import PostsPage from "@/pages/posts/PostsPage";
 import PostDetailPage from "@/pages/posts/PostDetailPage";
 import PostEditorPage from "@/pages/posts/PostEditorPage";
+import FollowsPage from "@/pages/follows/FollowsPage";
 
 // Community Pages
 import QuestionBoard from "@/pages/community/QuestionBoard";
@@ -279,6 +280,7 @@ const App = () => (
                                 />
                                 <Route path="profile" element={<Profile />} />
                                 <Route path="teams" element={<Teams />} />
+                                <Route path="follows" element={<FollowsPage />} />
                             </Route>
 
                             {/* 404 Route */}
