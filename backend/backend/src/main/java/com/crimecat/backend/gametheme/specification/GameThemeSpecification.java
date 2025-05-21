@@ -4,6 +4,8 @@ import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
 import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.domain.MakerTeam;
 import com.crimecat.backend.gametheme.domain.MakerTeamMember;
+import com.crimecat.backend.gametheme.dto.filter.RangeFilter;
+import com.crimecat.backend.gametheme.enums.RangeType;
 import com.crimecat.backend.gametheme.enums.ThemeType;
 import io.micrometer.common.util.StringUtils;
 import jakarta.persistence.criteria.*;
@@ -65,6 +67,19 @@ public class GameThemeSpecification {
                 ));
             }
             return criteriaBuilder.or(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    public static Specification<GameTheme> findIntRange(RangeFilter range) {
+        return (root, query, criteriaBuilder) -> {
+            RangeType type = range.getType();
+            if (type.seperated) {
+                return criteriaBuilder.and(
+                        criteriaBuilder.ge(root.get(type.min), range.getMin()),
+                        criteriaBuilder.le(root.get(type.max), range.getMax())
+                );
+            }
+            return criteriaBuilder.between(root.get(type.min), range.getMin(), range.getMax());
         };
     }
 }
