@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import ProfileDetailModal from "@/components/profile/ProfileDetailModal";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -69,6 +70,7 @@ export function CommentItem({
     const [isEditing, setIsEditing] = useState(false);
     const [showReplies, setShowReplies] = useState(true);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     const isDeleted = comment.isDeleted;
     const isSpoiler = comment.isSpoiler;
@@ -119,7 +121,10 @@ export function CommentItem({
         return (
             <div className="py-3 border-b border-border/50 last:border-0 transition-colors duration-200">
                 <div className="flex gap-3">
-                    <Avatar className="h-8 w-8 rounded-full border bg-muted/20 shrink-0">
+                    <Avatar 
+                        className="h-8 w-8 rounded-full border bg-muted/20 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                        onClick={() => setIsProfileModalOpen(true)}
+                    >
                         <AvatarImage
                             src={comment.authorProfileImage}
                             alt={comment.authorName}
@@ -133,9 +138,12 @@ export function CommentItem({
                         <div className="flex items-start justify-between">
                             <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                    <span className="font-medium text-foreground text-sm">
-                                        {comment.authorName}
-                                    </span>
+                                    <span 
+                                    className="font-medium text-foreground text-sm cursor-pointer hover:text-primary transition-colors"
+                                        onClick={() => setIsProfileModalOpen(true)}
+                                >
+                                    {comment.authorName}
+                                </span>
                                     <span className="text-xs text-muted-foreground">
                                         <UTCToKST date={comment.createdAt} />
                                     </span>
@@ -192,7 +200,10 @@ export function CommentItem({
         <div className="py-3 border-b border-border/50 last:border-0 transition-colors duration-200">
             {/* 댓글 내용 */}
             <div className="flex gap-3">
-                <Avatar className="h-8 w-8 rounded-full border bg-muted/20 shrink-0">
+                <Avatar 
+                    className="h-8 w-8 rounded-full border bg-muted/20 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" 
+                    onClick={() => setIsProfileModalOpen(true)}
+                >
                     <AvatarImage
                         src={comment.authorProfileImage}
                         alt={comment.authorName}
@@ -206,7 +217,10 @@ export function CommentItem({
                     <div className="flex items-start justify-between">
                         <div className="flex-1">
                             <div className="flex items-center gap-2">
-                                <span className="font-medium text-foreground text-sm">
+                                <span 
+                                    className="font-medium text-foreground text-sm cursor-pointer hover:text-primary transition-colors"
+                                    onClick={() => setIsProfileModalOpen(true)}
+                                >
                                     {comment.authorName}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
@@ -404,6 +418,13 @@ export function CommentItem({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* 프로필 상세 모달 */}
+            <ProfileDetailModal
+                userId={comment.authorId}
+                open={isProfileModalOpen}
+                onOpenChange={setIsProfileModalOpen}
+            />
         </div>
     );
 }
