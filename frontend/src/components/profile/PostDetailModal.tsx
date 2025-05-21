@@ -42,6 +42,11 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
     const [showLoginDialog, setShowLoginDialog] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [activeTab, setActiveTab] = useState<ModalTab>("info");
+    
+    // 탭 변경 핸들러 - 로그인 없이도 탭 이동 가능하게 수정
+    const handleTabChange = (tab: ModalTab) => {
+        setActiveTab(tab);
+    };
 
     const { user, isAuthenticated } = useAuth();
 
@@ -145,19 +150,19 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                         {/* 모바일 레이아웃 (작은 화면) */}
                         <div className="block md:hidden">
                             <MobilePostLayout
-                                post={post}
-                                profile={profile}
-                                activeTab={activeTab}
-                                setActiveTab={setActiveTab}
-                                liked={liked}
-                                isLikeLoading={isLikeLoading}
-                                currentImageIndex={currentImageIndex}
-                                handlePrevImage={handlePrevImage}
-                                handleNextImage={handleNextImage}
-                                handleLike={handleLike}
-                                handleShare={handleShare}
-                                handleLoginRequired={() => setShowLoginDialog(true)}
-                                userId={user?.id}
+                            post={post}
+                            profile={profile}
+                            activeTab={activeTab}
+                            setActiveTab={handleTabChange}
+                            liked={liked}
+                            isLikeLoading={isLikeLoading}
+                            currentImageIndex={currentImageIndex}
+                            handlePrevImage={handlePrevImage}
+                            handleNextImage={handleNextImage}
+                            handleLike={handleLike}
+                            handleShare={handleShare}
+                            handleLoginRequired={() => setShowLoginDialog(true)}
+                            userId={user?.id}
                             />
                         </div>
 
@@ -167,7 +172,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                 post={post}
                                 profile={profile}
                                 activeTab={activeTab}
-                                setActiveTab={setActiveTab}
+                                setActiveTab={handleTabChange}
                                 liked={liked}
                                 isLikeLoading={isLikeLoading}
                                 currentImageIndex={currentImageIndex}

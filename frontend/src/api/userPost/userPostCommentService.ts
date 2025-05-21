@@ -44,7 +44,7 @@ class UserPostCommentService {
     ): Promise<UserPostCommentPage> {
         try {
             return await apiClient.get<UserPostCommentPage>(
-                `/user-posts/${postId}/comments`,
+                `/public/user-posts/${postId}/comments`,
                 {
                     params: { page, size, sort: sortType }
                 }

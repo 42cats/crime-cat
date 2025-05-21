@@ -156,7 +156,7 @@ const PostCommentItem: React.FC<PostCommentItemProps> = ({
                 답글
               </button>
               
-              {comment.isOwnComment && (
+              {(comment.isOwnComment || currentUserId === comment.authorId) && (
                 <>
                   <button 
                     onClick={() => setIsEditing(true)}

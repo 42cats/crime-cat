@@ -9,16 +9,13 @@ import com.crimecat.backend.userPost.repository.UserPostCommentRepository;
 import com.crimecat.backend.userPost.repository.UserPostRepository;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -141,24 +138,20 @@ public class UserPostCommentServiceImpl implements UserPostCommentService {
         
         // 게시글 작성자 ID
         UUID postAuthorId = post.getUser().getId();
-        
-            // DTO 변환 (각 댓글의 표시 여부 확인)
+        UUID currentUserId;
+        if(currentUser!=null){
+            currentUserId = currentUser.getId();
+        } else {
+          currentUserId = null;
+        }
+      // DTO 변환 (각 댓글의 표시 여부 확인)
             return parentComments.map(comment -> 
                 UserPostCommentDto.fromWithReplies(
                     comment, 
                     // 답글을 정렬 방식에 맞게 정렬 
                     // LATEST(최신순)은 최신생성순 (내림차순), OLDEST(오래된순)는 초기생성순 (오름차순)
-                    allReplies.stream()
-                        .sorted((r1, r2) -> {
-                            // pageable의 정렬이 DESC(내림차순)이면 최신순
-                            if (pageable.getSort().stream().anyMatch(order -> order.getDirection() == Sort.Direction.DESC)) {
-                                return r2.getCreatedAt().compareTo(r1.getCreatedAt()); // 최신순 (내림차순)
-                            } else {
-                                return r1.getCreatedAt().compareTo(r2.getCreatedAt()); // 오래된순 (오름차순)
-                            }
-                        })
-                        .collect(Collectors.toList()),
-                    currentUser.getId(), 
+                    allReplies,
+                    currentUserId,
                     postAuthorId
                 )
             );

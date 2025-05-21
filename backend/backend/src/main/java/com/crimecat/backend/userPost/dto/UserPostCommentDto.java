@@ -101,14 +101,19 @@ public class UserPostCommentDto {
         if (comment.isDeleted()) {
             return false;
         }
-        
+
+
         // 비밀 댓글이 아니면 누구나 볼 수 있음
         if (!comment.isPrivate()) {
             return true;
         }
-        
+
         // 비밀 댓글인 경우 권한 검사
-        
+
+        if (currentUserId == null){
+            return false;
+        }
+
         // 1. 현재 사용자가 게시글 작성자인 경우
         if (currentUserId.equals(postAuthorId)) {
             return true;
