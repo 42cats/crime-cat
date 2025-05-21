@@ -2,12 +2,16 @@ package com.crimecat.backend.userPost.service;
 
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.follow.repository.FollowRepository;
+import com.crimecat.backend.hashtag.domain.HashTag;
+import com.crimecat.backend.hashtag.domain.PostHashTag;
+import com.crimecat.backend.hashtag.service.HashTagService;
 import com.crimecat.backend.storage.StorageFileType;
 import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.userPost.domain.UserPost;
 import com.crimecat.backend.userPost.domain.UserPostComment;
 import com.crimecat.backend.userPost.domain.UserPostImage;
 import com.crimecat.backend.userPost.domain.UserPostLike;
+import com.crimecat.backend.userPost.domain.saved.SavedPost;
 import com.crimecat.backend.userPost.dto.UserPostCommentDto;
 import com.crimecat.backend.userPost.dto.UserPostDto;
 import com.crimecat.backend.userPost.dto.UserPostGalleryPageDto;
@@ -15,6 +19,8 @@ import com.crimecat.backend.userPost.repository.UserPostCommentRepository;
 import com.crimecat.backend.userPost.repository.UserPostImageRepository;
 import com.crimecat.backend.userPost.repository.UserPostLikeRepository;
 import com.crimecat.backend.userPost.repository.UserPostRepository;
+import com.crimecat.backend.userPost.repository.saved.SavedPostRepository;
+import com.crimecat.backend.userPost.service.saved.SavedPostService;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.transaction.Transactional;
@@ -36,27 +42,42 @@ public class UserPostServiceImpl implements UserPostService {
     private final UserPostImageRepository userPostImageRepository;
     private final UserPostLikeRepository userPostLikeRepository;
     private final UserPostCommentRepository userPostCommentRepository;
+    private final SavedPostRepository savedPostRepository;
     private final StorageService storageService;
     private final WebUserRepository webUserRepository;
     private final FollowRepository followRepository; // 외부에서 설정 가능
+    private final HashTagService hashTagService;
+    private final SavedPostService savedPostService;
     // Follow 관련 레포지토리 추가 필요 - 팔로워 기능은 나중에 구현
 
     @Override
     @Transactional
-    public void createUserPost(WebUser user, String content, List<UUID> imageIds, List<String> imageUrls, boolean isPrivate, boolean isFollowersOnly) {
+    public void createUserPost(WebUser user, String content, List<UUID> imageIds, List<String> imageUrls, 
+                              boolean isPrivate, boolean isFollowersOnly, String locationName, Double latitude, Double longitude) {
+        // 게시물 생성
         UserPost post = UserPost.builder()
                 .user(user)
                 .content(content)
                 .isPrivate(isPrivate)
                 .isFollowersOnly(isFollowersOnly)
                 .build();
+        
+        // 위치 정보 설정 (있는 경우)
+        if (locationName != null || latitude != null || longitude != null) {
+            post.setLocationInfo(locationName, latitude, longitude);
+        }
+        
         userPostRepository.save(post);
-
+        
+        // 이미지 연결
         List<UserPostImage> images = new ArrayList<>();
         for (int i = 0; i < imageUrls.size(); i++) {
             images.add(UserPostImage.from(imageIds.get(i), post, imageUrls.get(i), i));
         }
         userPostImageRepository.saveAll(images);
+        
+        // 해시태그 처리
+        hashTagService.processPostHashTags(post, content);
     }
 
     @Override
@@ -239,7 +260,10 @@ public class UserPostServiceImpl implements UserPostService {
             List<UUID> newImageIds,
             List<String> keepImageUrls,
             boolean isPrivate,
-            boolean isFollowersOnly) {
+            boolean isFollowersOnly,
+            String locationName,
+            Double latitude,
+            Double longitude) {
 
         UserPost post = userPostRepository.findByIdWithImages(postId)
                 .orElseThrow(ErrorStatus.USER_POST_NOT_FOUND::asServiceException);
@@ -292,10 +316,10 @@ public class UserPostServiceImpl implements UserPostService {
             for (int i = 0; i < newImages.size(); i++) {
                 MultipartFile file   = newImages.get(i);
                 UUID          imgId  = newImageIds.get(i);
-                
+
                 // UUID만 사용
                 String fileId = imgId.toString();
-                
+
                 // 이미지 저장 (StorageService에서 자동으로 확장자 추가함)
                 String url = storageService.storeAt(
                         StorageFileType.USER_POST_IMAGE,
@@ -316,10 +340,16 @@ public class UserPostServiceImpl implements UserPostService {
 
         // ── 본문 수정 ────────────────────────────────────
         post.setContent(content);
-        
+
         // ── 비밀글/팔로워 공개 설정 수정 ───────────────────
         post.setIsPrivate(isPrivate);
         post.setIsFollowersOnly(isFollowersOnly);
+
+        // ── 위치 정보 수정 ────────────────────────────────
+        post.setLocationInfo(locationName, latitude, longitude);
+
+        // ── 해시태그 처리 ────────────────────────────────
+        hashTagService.processPostHashTags(post, content);
     }
 
     @Override
@@ -457,5 +487,221 @@ public class UserPostServiceImpl implements UserPostService {
         }
         
         return imageUrl.substring(lastSlashIndex + 1);
+    }
+
+    @Override
+    @Transactional
+    public boolean toggleSavePost(UUID postId, Object currentUser, String collectionName) {
+        WebUser user = (WebUser) currentUser;
+
+        // 게시글 존재 및 접근 권한 확인
+        UserPost post = userPostRepository.findById(postId)
+                .orElseThrow(ErrorStatus.USER_POST_NOT_FOUND::asServiceException);
+
+        if (!canAccessPost(post, user)) {
+            throw ErrorStatus.USER_POST_ACCESS_DENIED.asServiceException();
+        }
+
+        // 저장 서비스를 통해 토글 수행
+        boolean result = savedPostService.toggleSavePost(user.getId(), postId, collectionName);
+
+        // 게시물 인기도 점수 업데이트
+        post.updatePopularityScore();
+        userPostRepository.save(post);
+
+        return result;
+    }
+
+    @Override
+    public boolean isPostSaved(UUID postId, Object currentUser) {
+        if (currentUser == null) {
+            return false;
+        }
+
+        WebUser user = (WebUser) currentUser;
+        return savedPostRepository.existsByUserIdAndPostId(user.getId(), postId);
+    }
+
+    @Override
+    public Page<UserPostGalleryPageDto> getPostsByHashTag(String tagName, WebUser currentUser, Pageable pageable) {
+        // 해시태그 조회
+        HashTag hashTag = hashTagService.getOrCreateHashTag(tagName);
+
+        // 해시태그가 있는 게시물 ID 목록 조회
+        List<PostHashTag> postHashTags = hashTagService.getPostHashTagsByHashTag(hashTag.getId());
+        List<UUID> postIds = postHashTags.stream()
+                .map(pht -> pht.getPost().getId())
+                .collect(Collectors.toList());
+
+        // 게시물 ID 목록으로 게시물 조회 (접근 권한 확인)
+        Page<UserPost> posts;
+        if (currentUser == null) {
+            // 로그인하지 않은 사용자는 공개 게시글만 조회
+            posts = userPostRepository.findPublicPostsByIds(postIds, pageable);
+        } else {
+            // 로그인한 사용자는 권한에 따라 조회
+            posts = userPostRepository.findAccessiblePostsByIds(postIds, currentUser.getId(), pageable);
+        }
+
+        return convertToGalleryDtos(posts);
+    }
+
+    @Override
+    public Page<UserPostGalleryPageDto> getPostsByAllHashTags(List<String> tagNames, WebUser currentUser, Pageable pageable) {
+        if (tagNames == null || tagNames.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        // 모든 해시태그를 포함하는 게시물 ID 목록 조회
+        List<UUID> postIds = hashTagService.findPostsWithAllHashTags(tagNames);
+
+        if (postIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        // 게시물 ID 목록으로 게시물 조회 (접근 권한 확인)
+        Page<UserPost> posts;
+        if (currentUser == null) {
+            posts = userPostRepository.findPublicPostsByIds(postIds, pageable);
+        } else {
+            posts = userPostRepository.findAccessiblePostsByIds(postIds, currentUser.getId(), pageable);
+        }
+
+        return convertToGalleryDtos(posts);
+    }
+
+    @Override
+    public Page<UserPostGalleryPageDto> getPopularPosts(WebUser currentUser, Pageable pageable) {
+        // 인기도 점수 기준으로 정렬된 게시물 조회
+        Page<UserPost> posts;
+        if (currentUser == null) {
+            posts = userPostRepository.findPublicPostsByPopularityScore(pageable);
+        } else {
+            posts = userPostRepository.findAccessiblePostsByPopularityScore(currentUser.getId(), pageable);
+        }
+
+        return convertToGalleryDtos(posts);
+    }
+
+    @Override
+    public Page<UserPostGalleryPageDto> getRandomPosts(WebUser currentUser, Pageable pageable) {
+        // 무작위 게시물 조회
+        Page<UserPost> posts;
+        if (currentUser == null) {
+            posts = userPostRepository.findRandomPublicPosts(pageable);
+        } else {
+            posts = userPostRepository.findRandomAccessiblePosts(currentUser.getId(), pageable);
+        }
+
+        return convertToGalleryDtos(posts);
+    }
+
+    @Override
+    public Page<UserPostGalleryPageDto> getSavedPosts(WebUser currentUser, Pageable pageable) {
+        if (currentUser == null) {
+            return Page.empty(pageable);
+        }
+
+        // 저장된 게시물 조회
+        Page<SavedPost> savedPosts = savedPostRepository.findAllByUserId(currentUser.getId(), pageable);
+
+        // UserPostGalleryPageDto로 변환
+        return savedPosts.map(savedPost -> {
+            UserPost post = savedPost.getPost();
+
+            String thumbnail = post.getImages().stream()
+                    .sorted(Comparator.comparingInt(UserPostImage::getSortOrder))
+                    .findFirst()
+                    .map(UserPostImage::getImageUrl)
+                    .orElse(null);
+
+            long likeCount = userPostLikeRepository.countByPostId(post.getId());
+
+            return UserPostGalleryPageDto.builder()
+                    .postId(post.getId())
+                    .authorId(post.getUser().getId())
+                    .authorNickname(post.getUser().getNickname())
+                    .content(post.getContent())
+                    .thumbnailUrl(thumbnail)
+                    .likeCount(Long.valueOf(likeCount).intValue())
+                    .isPrivate(post.isPrivate())
+                    .isFollowersOnly(post.isFollowersOnly())
+                    .createdAt(post.getCreatedAt())
+                    .collectionName(savedPost.getCollectionName())
+                    .build();
+        });
+    }
+
+    @Override
+    public Page<UserPostGalleryPageDto> getSavedPostsByCollection(WebUser currentUser, String collectionName, Pageable pageable) {
+        if (currentUser == null || collectionName == null) {
+            return Page.empty(pageable);
+        }
+
+        // 특정 컬렉션의 저장된 게시물 조회
+        Page<SavedPost> savedPosts = savedPostRepository.findAllByUserIdAndCollectionName(
+                currentUser.getId(), collectionName, pageable);
+
+        // UserPostGalleryPageDto로 변환
+        return savedPosts.map(savedPost -> {
+            UserPost post = savedPost.getPost();
+
+            String thumbnail = post.getImages().stream()
+                    .sorted(Comparator.comparingInt(UserPostImage::getSortOrder))
+                    .findFirst()
+                    .map(UserPostImage::getImageUrl)
+                    .orElse(null);
+
+            long likeCount = userPostLikeRepository.countByPostId(post.getId());
+
+            return UserPostGalleryPageDto.builder()
+                    .postId(post.getId())
+                    .authorId(post.getUser().getId())
+                    .authorNickname(post.getUser().getNickname())
+                    .content(post.getContent())
+                    .thumbnailUrl(thumbnail)
+                    .likeCount(Long.valueOf(likeCount).intValue())
+                    .isPrivate(post.isPrivate())
+                    .isFollowersOnly(post.isFollowersOnly())
+                    .createdAt(post.getCreatedAt())
+                    .collectionName(savedPost.getCollectionName())
+                    .build();
+        });
+    }
+
+    @Override
+    public List<String> getUserCollections(WebUser currentUser) {
+        if (currentUser == null) {
+            return Collections.emptyList();
+        }
+
+        return savedPostRepository.findAllCollectionNamesByUserId(currentUser.getId());
+    }
+
+    /**
+     * UserPost 목록을 UserPostGalleryPageDto 목록으로 변환
+     */
+    private Page<UserPostGalleryPageDto> convertToGalleryDtos(Page<UserPost> posts) {
+        return posts.map(post -> {
+            String thumbnail = post.getImages().stream()
+                    .sorted(Comparator.comparingInt(UserPostImage::getSortOrder))
+                    .findFirst()
+                    .map(UserPostImage::getImageUrl)
+                    .orElse(null);
+
+            long likeCount = userPostLikeRepository.countByPostId(post.getId());
+
+            return UserPostGalleryPageDto.builder()
+                    .postId(post.getId())
+                    .authorId(post.getUser().getId())
+                    .authorNickname(post.getUser().getNickname())
+                    .content(post.getContent())
+                    .thumbnailUrl(thumbnail)
+                    .likeCount(Long.valueOf(likeCount).intValue())
+                    .isPrivate(post.isPrivate())
+                    .isFollowersOnly(post.isFollowersOnly())
+                    .createdAt(post.getCreatedAt())
+                    .build();
+        });
     }
 }

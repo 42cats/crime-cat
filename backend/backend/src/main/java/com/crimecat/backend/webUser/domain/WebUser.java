@@ -1,6 +1,7 @@
 package com.crimecat.backend.webUser.domain;
 
 import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.userPost.domain.saved.SavedPost;
 import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
 import com.crimecat.backend.webUser.enums.LoginMethod;
 import com.crimecat.backend.webUser.enums.UserRole;
@@ -14,6 +15,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.OneToMany;
+import java.util.ArrayList;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashMap;
@@ -68,6 +71,11 @@ public class WebUser implements UserDetails, OAuth2User {
 
     @OneToOne(mappedBy = "webUser", fetch = FetchType.LAZY)
     private User user;
+    
+    // 저장한 게시물 관계
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<SavedPost> savedPosts = new ArrayList<>();
 
     @Builder.Default
     @Column(name = "email_verified", nullable = false)

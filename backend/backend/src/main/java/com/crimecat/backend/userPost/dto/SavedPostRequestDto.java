@@ -1,0 +1,14 @@
+package com.crimecat.backend.userPost.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class SavedPostRequestDto {
+    private String collectionName;
+}

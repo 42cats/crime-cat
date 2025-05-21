@@ -4,8 +4,10 @@ import com.crimecat.backend.userPost.domain.UserPost;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -82,5 +84,52 @@ public interface UserPostRepository extends JpaRepository<UserPost, UUID> {
                     "           (SELECT f FROM Follow f WHERE f.following.id = :authorId AND f.follower.id = :viewerId)))")
     Page<UserPost> findAccessiblePostsByUserIdForViewer(UUID authorId, UUID viewerId, Pageable pageable);
 
+    /**
+     * 공개 게시물 중에서 특정 ID 목록에 해당하는 게시물만 조회
+     */
+    @Query("SELECT p FROM UserPost p WHERE p.id IN :postIds AND p.isPrivate = false AND p.isFollowersOnly = false")
+    Page<UserPost> findPublicPostsByIds(@Param("postIds") List<UUID> postIds, Pageable pageable);
 
+    /**
+     * 접근 가능한 게시물 중에서 특정 ID 목록에 해당하는 게시물만 조회
+     */
+    @Query("SELECT p FROM UserPost p WHERE p.id IN :postIds AND " +
+            "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
+            "p.user.id = :userId OR " +
+            "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id)))")
+    Page<UserPost> findAccessiblePostsByIds(@Param("postIds") List<UUID> postIds, @Param("userId") UUID userId, Pageable pageable);
+
+    /**
+     * 인기도 점수 기준으로 정렬된 공개 게시물 조회
+     */
+    @Query("SELECT p FROM UserPost p WHERE p.isPrivate = false AND p.isFollowersOnly = false ORDER BY p.popularityScore DESC")
+    Page<UserPost> findPublicPostsByPopularityScore(Pageable pageable);
+
+    /**
+     * 인기도 점수 기준으로 정렬된 접근 가능한 게시물 조회
+     */
+    @Query("SELECT p FROM UserPost p WHERE " +
+            "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
+            "p.user.id = :userId OR " +
+            "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id))) " +
+            "ORDER BY p.popularityScore DESC")
+    Page<UserPost> findAccessiblePostsByPopularityScore(@Param("userId") UUID userId, Pageable pageable);
+
+    /**
+     * 무작위로 공개 게시물 조회
+     */
+    @Query(value = "SELECT * FROM user_posts p WHERE p.is_private = false AND p.is_followers_only = false ORDER BY RAND()",
+            nativeQuery = true)
+    Page<UserPost> findRandomPublicPosts(Pageable pageable);
+
+    /**
+     * 무작위로 접근 가능한 게시물 조회
+     */
+    @Query(value = "SELECT * FROM user_posts p WHERE " +
+            "(p.is_private = false AND p.is_followers_only = false OR " +
+            "p.user_id = :userId OR " +
+            "(p.is_followers_only = true AND EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = :userId AND f.following_id = p.user_id))) " +
+            "ORDER BY RAND()",
+            nativeQuery = true)
+    Page<UserPost> findRandomAccessiblePosts(@Param("userId") UUID userId, Pageable pageable);
 }
