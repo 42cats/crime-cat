@@ -15,6 +15,7 @@ interface PostCommentListProps {
   postAuthorId: string; // 포스트 작성자 ID (비밀댓글 확인용)
   currentUserId?: string;
   onLoginRequired: () => void;
+  onProfileClick?: (userId: string) => void; // 프로필 클릭 콜백 추가
 }
 
 // 백엔드에서 제공하는 정렬 옵션
@@ -24,7 +25,8 @@ const PostCommentList: React.FC<PostCommentListProps> = ({
   postId,
   postAuthorId,
   currentUserId,
-  onLoginRequired
+  onLoginRequired,
+  onProfileClick // 프로필 클릭 콜백
 }) => {
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
@@ -302,6 +304,7 @@ const PostCommentList: React.FC<PostCommentListProps> = ({
                 onLoginRequired={onLoginRequired}
                 isAuthenticated={isAuthenticated}
                 isReply={false} /* 최상위 댓글임을 명시 */
+                onProfileClick={onProfileClick} // 프로필 클릭 콜백 전달
               />
             ))}
             

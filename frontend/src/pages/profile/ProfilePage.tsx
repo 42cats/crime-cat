@@ -181,16 +181,6 @@ const ProfilePage: React.FC = () => {
                         >
                             {isFollowingUser ? "언팔로우" : "팔로우"}
                         </Button>
-                        <Button
-                            onClick={() => {
-                                navigator.clipboard.writeText(
-                                    window.location.href
-                                );
-                                toast.success("링크 복사됨");
-                            }}
-                        >
-                            링크 복사
-                        </Button>
                     </div>
                     <div className="mt-6 flex space-x-4 border-b">
                         {(

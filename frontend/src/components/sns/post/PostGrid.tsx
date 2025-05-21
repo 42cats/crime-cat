@@ -34,12 +34,25 @@ const PostGrid: React.FC<PostGridProps> = ({ posts, lastPostRef }) => {
             className="relative aspect-square group"
           >
             <Link to={`/sns/post/${post.postId}`}>
-              <LazyImage 
-                src={post.thumbnailUrl || '/content/image/placeholder.png'} 
-                alt={`${post.authorNickname}의 게시물`}
-                aspectRatio="square"
-                className="rounded-sm"
-              />
+              {post.thumbnailUrl ? (
+                // 이미지가 있는 경우
+                <LazyImage 
+                  src={post.thumbnailUrl} 
+                  alt={`${post.authorNickname}의 게시물`}
+                  aspectRatio="square"
+                  className="rounded-sm"
+                />
+              ) : (
+                // 이미지가 없는 경우 텍스트 표시
+                <div className="w-full h-full bg-gray-100 rounded-sm p-3 flex flex-col justify-between">
+                  <div className="text-sm text-gray-800 line-clamp-4 leading-relaxed">
+                    {post.content}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2">
+                    by {post.authorNickname}
+                  </div>
+                </div>
+              )}
               
               {/* 오버레이 (호버 시 표시) */}
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center text-white">

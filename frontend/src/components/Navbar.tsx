@@ -3,7 +3,18 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, LogOut, Home, Search, PlusSquare, Heart, BookmarkIcon, Camera } from "lucide-react";
+import {
+    Menu,
+    X,
+    User,
+    LogOut,
+    Home,
+    Search,
+    PlusSquare,
+    Heart,
+    BookmarkIcon,
+    Camera,
+} from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -63,10 +74,26 @@ const Navbar: React.FC = () => {
     ];
 
     const snsSubItems = [
-        { name: "SNS 피드", path: "/sns/feed", icon: <Home className="w-4 h-4 mr-1" /> },
-        { name: "탐색", path: "/sns/explore", icon: <Search className="w-4 h-4 mr-1" /> },
-        { name: "포스트 작성", path: "/sns/create", icon: <PlusSquare className="w-4 h-4 mr-1" /> },
-        { name: "저장된 포스트", path: "/sns/saved", icon: <BookmarkIcon className="w-4 h-4 mr-1" /> },
+        {
+            name: "SNS 피드",
+            path: "/sns/feed",
+            icon: <Home className="w-4 h-4 mr-1" />,
+        },
+        {
+            name: "탐색",
+            path: "/sns/explore",
+            icon: <Search className="w-4 h-4 mr-1" />,
+        },
+        {
+            name: "포스트 작성",
+            path: "/sns/create",
+            icon: <PlusSquare className="w-4 h-4 mr-1" />,
+        },
+        {
+            name: "저장된 포스트",
+            path: "/sns/saved",
+            icon: <BookmarkIcon className="w-4 h-4 mr-1" />,
+        },
     ];
 
     const isActive = (path: string) => location.pathname === path;
@@ -280,9 +307,7 @@ const Navbar: React.FC = () => {
                                                 );
                                                 setIsThemeOpen(false);
                                                 setIsSnsOpen(false);
-                                            } else if (
-                                                item.name === "SNS"
-                                            ) {
+                                            } else if (item.name === "SNS") {
                                                 setIsSnsOpen(!isSnsOpen);
                                                 setIsThemeOpen(false);
                                                 setIsCommunityOpen(false);
@@ -387,26 +412,61 @@ const Navbar: React.FC = () => {
             )}
 
             {/* 모바일 SNS 네비게이션 */}
-            {location.pathname.startsWith('/sns') && (
+            {location.pathname.startsWith("/sns") && (
                 <div className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
                     <div className="flex justify-around items-center py-2">
-                        <Link to="/sns/feed" className={`flex flex-col items-center p-2 ${location.pathname === '/sns/feed' ? 'text-primary' : 'text-muted-foreground'}`}>
+                        <Link
+                            to="/sns/feed"
+                            className={`flex flex-col items-center p-2 ${
+                                location.pathname === "/sns/feed"
+                                    ? "text-primary"
+                                    : "text-muted-foreground"
+                            }`}
+                        >
                             <Home className="w-6 h-6" />
                             <span className="text-xs mt-1">피드</span>
                         </Link>
-                        <Link to="/sns/explore" className={`flex flex-col items-center p-2 ${location.pathname === '/sns/explore' ? 'text-primary' : 'text-muted-foreground'}`}>
+                        <Link
+                            to="/sns/explore"
+                            className={`flex flex-col items-center p-2 ${
+                                location.pathname === "/sns/explore"
+                                    ? "text-primary"
+                                    : "text-muted-foreground"
+                            }`}
+                        >
                             <Search className="w-6 h-6" />
                             <span className="text-xs mt-1">탐색</span>
                         </Link>
-                        <Link to="/sns/create" className={`flex flex-col items-center p-2 ${location.pathname === '/sns/create' ? 'text-primary' : 'text-muted-foreground'}`}>
+                        <Link
+                            to="/sns/create"
+                            className={`flex flex-col items-center p-2 ${
+                                location.pathname === "/sns/create"
+                                    ? "text-primary"
+                                    : "text-muted-foreground"
+                            }`}
+                        >
                             <PlusSquare className="w-6 h-6" />
                             <span className="text-xs mt-1">작성</span>
                         </Link>
-                        <Link to="/sns/saved" className={`flex flex-col items-center p-2 ${location.pathname === '/sns/saved' ? 'text-primary' : 'text-muted-foreground'}`}>
+                        <Link
+                            to="/sns/saved"
+                            className={`flex flex-col items-center p-2 ${
+                                location.pathname === "/sns/saved"
+                                    ? "text-primary"
+                                    : "text-muted-foreground"
+                            }`}
+                        >
                             <BookmarkIcon className="w-6 h-6" />
                             <span className="text-xs mt-1">저장됨</span>
                         </Link>
-                        <Link to="/dashboard" className={`flex flex-col items-center p-2 ${location.pathname === '/dashboard' ? 'text-primary' : 'text-muted-foreground'}`}>
+                        <Link
+                            to="/profile"
+                            className={`flex flex-col items-center p-2 ${
+                                location.pathname === "/dashboard"
+                                    ? "text-primary"
+                                    : "text-muted-foreground"
+                            }`}
+                        >
                             <User className="w-6 h-6" />
                             <span className="text-xs mt-1">프로필</span>
                         </Link>
