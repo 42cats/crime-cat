@@ -3,21 +3,15 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { themesService } from "@/api/themesService";
 import { Theme, ThemePage } from "@/lib/types";
-import ThemeCard from "@/components/themes/ThemeCard";
 import PageTransition from "@/components/PageTransition";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/useToast";
+import { Edit, Filter } from "lucide-react";
+import { FilterValues } from "@/components/themes/filters/types";
+import ThemeFilters from "@/components/themes/filters/ThemeFilters";
+import ThemeGrid from "@/components/themes/ThemeGrid";
+import Pagination from "@/components/themes/Pagination";
 
 const PAGE_SIZE = 9;
 
@@ -32,8 +26,8 @@ const SORT_OPTIONS = [
   { value: "PRICE_DESC", label: "가격 높은 순" },
   { value: "PLAYTIME", label: "시간 낮은 순" },
   { value: "PLAYTIME_DESC", label: "시간 높은 순" },
-  { value: "DIFFICULTY", label: "난이도 낮은 순"},
-  { value: "DIFFICULTY_DESC", label: "난이도 높은 순"}
+  { value: "DIFFICULTY", label: "난이도 낮은 순" },
+  { value: "DIFFICULTY_DESC", label: "난이도 높은 순" },
 ];
 
 const CATEGORY_LABELS: Record<Theme["type"], string> = {
@@ -41,6 +35,13 @@ const CATEGORY_LABELS: Record<Theme["type"], string> = {
   ESCAPE_ROOM: "방탈출 테마",
   MURDER_MYSTERY: "머더미스터리 테마",
   REALWORLD: "리얼월드 테마",
+};
+
+const CATEGORY_DESCRIPTIONS: Record<Theme["type"], string> = {
+  CRIMESCENE: "범죄현장을 재구성하여 증거를 찾고 사건을 해결하는 체험형 테마입니다.",
+  ESCAPE_ROOM: "주어진 시간 내에 단서를 찾아 문제를 해결하고 탈출하는 테마입니다.",
+  MURDER_MYSTERY: "살인사건의 범인을 찾아내는 추리 게임 테마입니다.",
+  REALWORLD: "현실 세계의 장소와 상황을 기반으로 한 몰입형 체험 테마입니다.",
 };
 
 const ThemeList: React.FC = () => {
@@ -56,7 +57,7 @@ const ThemeList: React.FC = () => {
   const [sort, setSort] = useState(searchParams.get("sort") || "LATEST");
   const [hasSearched, setHasSearched] = useState(false);
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<FilterValues>({
     priceMin: searchParams.get("priceMin") || "",
     priceMax: searchParams.get("priceMax") || "",
     playerMin: searchParams.get("playerMin") || "",
@@ -67,12 +68,12 @@ const ThemeList: React.FC = () => {
     difficultyMax: searchParams.get("difficultyMax") || "",
   });
 
-  const handleFilterChange = (key: keyof typeof filters, value: string) => {
+  const handleFilterChange = (key: keyof FilterValues, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const validateFilters = () => {
-    const pairs: [string, string][] = [
+    const pairs: [keyof FilterValues, keyof FilterValues][] = [
       ["priceMin", "priceMax"],
       ["playerMin", "playerMax"],
       ["playtimeMin", "playtimeMax"],
@@ -84,17 +85,29 @@ const ThemeList: React.FC = () => {
       const max = Number(filters[maxKey]);
 
       if (filters[minKey] && min < 1) {
-        toast({ description: "최소 값은 1보다 커야 합니다.", variant: "destructive" });
+        toast({
+          description: "최소 값은 1보다 커야 합니다.",
+          variant: "destructive",
+        });
         return false;
       }
 
       if (filters[maxKey] && max < min) {
-        toast({ description: "최대 값은 최소 값보다 크거나 같아야 합니다.", variant: "destructive" });
+        toast({
+          description: "최대 값은 최소 값보다 크거나 같아야 합니다.",
+          variant: "destructive",
+        });
         return false;
       }
 
-      if ((minKey.includes("difficulty") && min > 5) || (maxKey.includes("difficulty") && max > 5)) {
-        toast({ description: "난이도는 1에서 5 사이여야 합니다.", variant: "destructive" });
+      if (
+        (minKey.includes("difficulty") && min > 5) ||
+        (maxKey.includes("difficulty") && max > 5)
+      ) {
+        toast({
+          description: "난이도는 1에서 5 사이여야 합니다.",
+          variant: "destructive",
+        });
         return false;
       }
     }
@@ -106,7 +119,15 @@ const ThemeList: React.FC = () => {
 
   const { data, isLoading } = useQuery<ThemePage>({
     queryKey: ["themes", validCategory, page, sort, keyword, filters],
-    queryFn: () => themesService.getThemes(validCategory, PAGE_SIZE, page, sort, keyword, filters),
+    queryFn: () =>
+      themesService.getThemes(
+        validCategory,
+        PAGE_SIZE,
+        page,
+        sort,
+        keyword,
+        filters
+      ),
     enabled: shouldFetch,
     placeholderData: (prev) => prev,
   });
@@ -121,10 +142,36 @@ const ThemeList: React.FC = () => {
       prev.set("keyword", searchInput);
       prev.set("sort", sort);
       prev.set("page", "0");
-      Object.entries(filters).forEach(([k, v]) => v && prev.set(k, v));
+      Object.entries(filters).forEach(([k, v]) => {
+        if (v) {
+          prev.set(k, v);
+        } else {
+          prev.delete(k);
+        }
+      });
       return prev;
     });
     setKeyword(searchInput);
+    setHasSearched(true);
+  };
+
+  const handleResetFilters = () => {
+    setSearchInput("");
+    setFilters({
+      priceMin: "",
+      priceMax: "",
+      playerMin: "",
+      playerMax: "",
+      playtimeMin: "",
+      playtimeMax: "",
+      difficultyMin: "",
+      difficultyMax: "",
+    });
+    setSort("LATEST");
+    
+    // 모든 쿼리 파라미터 지우고 페이지만 유지
+    setSearchParams({ page: "0" });
+    setKeyword("");
     setHasSearched(true);
   };
 
@@ -138,125 +185,72 @@ const ThemeList: React.FC = () => {
   const handleSortChange = (val: string) => {
     setSort(val);
     setSearchParams((prev) => {
-      prev.set("keyword", keyword);
       prev.set("sort", val);
       prev.set("page", "0");
-      Object.entries(filters).forEach(([k, v]) => v && prev.set(k, v));
       return prev;
     });
-    setHasSearched(true);
   };
 
   return (
     <PageTransition>
-      <div className="container mx-auto px-4 py-10">
-        <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold mb-2">{CATEGORY_LABELS[validCategory]}</h1>
-          <p className="text-muted-foreground text-base">다양한 테마를 확인할 수 있습니다.</p>
+      <div className="container max-w-screen-xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold mb-2">
+            {validCategory ? CATEGORY_LABELS[validCategory] : "모든 테마"}
+          </h1>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            {validCategory
+              ? CATEGORY_DESCRIPTIONS[validCategory]
+              : "다양한 테마를 찾아보세요."}
+          </p>
         </div>
 
-        <Card className="p-4 mb-6 max-w-screen-md mx-auto">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div className="col-span-2">
-              <Label htmlFor="keyword">검색어</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="keyword"
-                  placeholder="검색어를 입력하세요"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleSearch();
-                    }
-                  }}
-                  className="h-9"
-                />
-                <Button onClick={handleSearch} className="h-9 px-4">검색</Button>
-              </div>
-            </div>
+        <ThemeFilters
+          filters={filters}
+          searchInput={searchInput}
+          sort={sort}
+          sortOptions={SORT_OPTIONS}
+          onSearchInputChange={setSearchInput}
+          onFilterChange={handleFilterChange}
+          onSortChange={handleSortChange}
+          onSearch={handleSearch}
+          onReset={handleResetFilters}
+        />
 
-            <div>
-              <Label>인원</Label>
-              <div className="flex gap-2">
-                <Input type="number" placeholder="최소" className="h-9" value={filters.playerMin} onChange={(e) => handleFilterChange("playerMin", e.target.value)} />
-                <Input type="number" placeholder="최대" className="h-9" value={filters.playerMax} onChange={(e) => handleFilterChange("playerMax", e.target.value)} />
-              </div>
-            </div>
-
-            <div>
-              <Label>가격</Label>
-              <div className="flex gap-2">
-                <Input type="number" placeholder="최소" className="h-9" value={filters.priceMin} onChange={(e) => handleFilterChange("priceMin", e.target.value)} />
-                <Input type="number" placeholder="최대" className="h-9" value={filters.priceMax} onChange={(e) => handleFilterChange("priceMax", e.target.value)} />
-              </div>
-            </div>
-
-            <div>
-              <Label>시간</Label>
-              <div className="flex gap-2">
-                <Input type="number" placeholder="최소" className="h-9" value={filters.playtimeMin} onChange={(e) => handleFilterChange("playtimeMin", e.target.value)} />
-                <Input type="number" placeholder="최대" className="h-9" value={filters.playtimeMax} onChange={(e) => handleFilterChange("playtimeMax", e.target.value)} />
-              </div>
-            </div>
-
-            <div>
-              <Label>난이도</Label>
-              <div className="flex gap-2">
-                <Input type="number" placeholder="최소" className="h-9" value={filters.difficultyMin} onChange={(e) => handleFilterChange("difficultyMin", e.target.value)} />
-                <Input type="number" placeholder="최대" className="h-9" value={filters.difficultyMax} onChange={(e) => handleFilterChange("difficultyMax", e.target.value)} />
-              </div>
-            </div>
-
-            <div className="col-span-2">
-              <Label>정렬</Label>
-              <Select value={sort} onValueChange={handleSortChange}>
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SORT_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </Card>
-
-        <div className="flex justify-end mx-auto mb-4">
-          <Button onClick={() => navigate(`/themes/new`, { state: { category, page } })}>글쓰기</Button>
-        </div>
-
-        <Card>
-          <CardContent>
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                  <Skeleton key={i} className="h-80 rounded-xl" />
-                ))}
-              </div>
-            ) : data?.themes.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                  {data.themes.map((theme, i) => (
-                    <ThemeCard key={theme.id} theme={theme} index={i} />
-                  ))}
-                </div>
-
-                <div className="flex justify-center items-center gap-2 mt-8">
-                  <Button variant="outline" size="sm" disabled={!data.hasPrevious} onClick={() => handlePageChange(Math.max(page - 1, 0))}>이전</Button>
-                  {Array.from({ length: data.totalPages }, (_, i) => (
-                    <Button key={i} variant={i === page ? "default" : "outline"} size="sm" onClick={() => handlePageChange(i)}>{i + 1}</Button>
-                  ))}
-                  <Button variant="outline" size="sm" disabled={!data.hasNext} onClick={() => handlePageChange(page + 1)}>다음</Button>
-                </div>
-              </>
+        <div className="flex justify-between items-center mb-4">
+          <p className="text-sm text-muted-foreground">
+            {data?.totalElements ? (
+              <>총 <strong>{data.totalElements}</strong>개의 테마</>
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
-                <p className="text-muted-foreground mb-2">아직 게시글이 없습니다.</p>
-                <p className="text-sm text-muted-foreground/70">가장 먼저 글을 작성해보세요.</p>
-              </div>
+              ""
+            )}
+          </p>
+          <Button 
+            onClick={() => navigate(`/themes/new`, { state: { category, page } })}
+            className="gap-2"
+          >
+            <Edit className="h-4 w-4" />
+            <span className="hidden sm:inline">테마 작성하기</span>
+            <span className="sm:hidden">작성</span>
+          </Button>
+        </div>
+
+        <Card className="border-0 shadow-sm overflow-hidden">
+          <CardContent className="p-4 sm:p-6">
+            <ThemeGrid
+              themes={data?.themes || []}
+              isLoading={isLoading}
+              pageSize={PAGE_SIZE}
+            />
+
+            {data && data.totalPages > 1 && (
+              <Pagination
+                currentPage={page}
+                totalPages={data.totalPages}
+                hasPrevious={data.hasPrevious}
+                hasNext={data.hasNext}
+                onPageChange={handlePageChange}
+              />
             )}
           </CardContent>
         </Card>
