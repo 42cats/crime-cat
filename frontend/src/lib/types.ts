@@ -310,6 +310,7 @@ export interface TeamMember {
   userId?: string;
   name?: string;
   leader?: boolean;
+  avatarUrl?: string;
 }
 
 export interface Team {

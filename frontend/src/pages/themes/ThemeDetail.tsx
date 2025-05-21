@@ -11,6 +11,10 @@ import {
     Trash,
     FileText,
     Send,
+    Clock,
+    Users,
+    Tag,
+    CreditCard,
 } from "lucide-react";
 import { themesService } from "@/api/themesService";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,9 +45,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { UTCToKST } from "@/lib/dateFormat";
 import ContactUserModal from "@/components/themes/modals/ContactUserModal";
-import TeamInfoModal from "@/components/themes/modals/TeamInfoModal";
+// import TeamInfoModal from "@/components/themes/modals/TeamInfoModal";
 import GuildInfoModal from "@/components/themes/modals/GuildInfoModal";
 import { CommentList } from "@/components/comments";
+import PostDetailModal from "@/components/profile/PostDetailModal";
+import ProfileDetailModal from "@/components/profile/ProfileDetailModal";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { teamsService } from "@/api/teamsService";
+import { Team, TeamMember } from "@/lib/types";
+import { UserPostDto } from "@/api/userPost/userPostService";
 
 const ThemeDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -57,13 +67,50 @@ const ThemeDetail: React.FC = () => {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [showLoginDialog, setShowLoginDialog] = useState(false);
     const [showContactModal, setShowContactModal] = useState(false);
-    const [showTeamModal, setShowTeamModal] = useState(false);
+    // 팀 정보 관련 상태
+    const [teamData, setTeamData] = useState<Team | null>(null);
+    const [isLoadingTeam, setIsLoadingTeam] = useState(false);
+    const [teamError, setTeamError] = useState<boolean>(false);
     const [showGuildModal, setShowGuildModal] = useState(false);
     const [hasPlayedGame, setHasPlayedGame] = useState(false);
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [requestMessage, setRequestMessage] = useState("");
     const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
     const [isCheckingRequest, setIsCheckingRequest] = useState(false);
+    
+    // PostDetailModal 관련 상태
+    const [showProfileModal, setShowProfileModal] = useState(false);
+    const [selectedUserId, setSelectedUserId] = useState<string>("");
+    const [selectedPost, setSelectedPost] = useState<UserPostDto | null>(null);
+    
+    // ProfileDetailModal 관련 상태
+    const [showProfileDetailModal, setShowProfileDetailModal] = useState(false);
+    const [profileDetailUserId, setProfileDetailUserId] = useState<string>("");
+
+    // 프로필 모달 열기 함수
+    const openProfileModal = (userId: string) => {
+        setSelectedUserId(userId);
+        // 더미 포스트 데이터 생성 (실제로는 API 호출로 데이터를 가져와야 함)
+        const dummyPost: UserPostDto = {
+            authorId: userId,
+            postId: "dummy-post-id",
+            content: "",
+            authorNickname: "",
+            authorAvatarUrl: "",
+            imageUrls: [],
+            likeCount: 0,
+            liked: false,
+            createdAt: new Date().toISOString(),
+        };
+        setSelectedPost(dummyPost);
+        setShowProfileModal(true);
+    };
+    
+    // 프로필 상세 모달 열기 함수
+    const openProfileDetailModal = (userId: string) => {
+        setProfileDetailUserId(userId);
+        setShowProfileDetailModal(true);
+    };
 
     const {
         data: theme,
@@ -99,6 +146,25 @@ const ThemeDetail: React.FC = () => {
         };
 
         checkGamePlayed();
+        
+        // 테마에 팀 정보가 있는 경우 팀 정보 가져오기
+        const fetchTeamData = async () => {
+            if (theme?.team?.id) {
+                setIsLoadingTeam(true);
+                try {
+                    const teamData = await teamsService.getTeamWithAvatars(theme.team.id);
+                    setTeamData(teamData);
+                    setTeamError(false);
+                } catch (error) {
+                    console.error('팀 정보를 불러오는 중 오류 발생:', error);
+                    setTeamError(true);
+                } finally {
+                    setIsLoadingTeam(false);
+                }
+            }
+        };
+        
+        fetchTeamData();
         
         // URL 파라미터 처리
         const params = new URLSearchParams(location.search);
@@ -310,279 +376,315 @@ const ThemeDetail: React.FC = () => {
     return (
         <PageTransition>
             <div className="container mx-auto px-6 py-20">
-                <div className="max-w-4xl mx-auto space-y-8">
-                    <button
-                        onClick={() =>
-                            navigate(`/themes/${theme.type.toLowerCase()}`)
-                        }
-                        className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors"
-                    >
-                        <ChevronLeft className="h-4 w-4 mr-1" /> 테마 목록으로
-                        돌아가기
-                    </button>
-
-                    <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-                        <img
-                            src={`${
-                                theme?.thumbnail ||
-                                "/content/image/default_image2.png"
-                            }`}
-                            alt={theme.title}
-                            className="w-full h-full object-cover"
-                        />
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                            <h1 className="text-3xl font-bold break-words">
-                                {theme.title}
-                            </h1>
-                        </div>
-                        <div className="flex flex-col gap-2 items-end text-right w-full sm:w-auto">
-                            <div className="flex justify-end gap-2 flex-wrap">
-                                {theme.recommendationEnabled && (
-                                  <Button
+                <div className="max-w-4xl mx-auto">
+                    {/* 상단 내비게이션 */}
+                    <div className="flex justify-between items-center mb-6">
+                        <button
+                            onClick={() => navigate(`/themes/${theme.type.toLowerCase()}`)}
+                            className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors"
+                        >
+                            <ChevronLeft className="h-4 w-4 mr-1" /> 테마 목록으로 돌아가기
+                        </button>
+                        
+                        {/* 액션 버튼 그룹 */}
+                        <div className="flex gap-2">
+                            {theme.recommendationEnabled && (
+                                <Button
                                     variant="outline"
                                     size="sm"
                                     className={`group ${liked ? "text-red-500" : ""}`}
                                     onClick={handleToggleLike}
-                                  >
+                                >
                                     <Heart
-                                      className={`h-4 w-4 mr-2 ${
-                                        liked ? "fill-red-500" : "group-hover:fill-red-500/10"
-                                      }`}
+                                        className={`h-4 w-4 mr-1 ${liked ? "fill-red-500" : "group-hover:fill-red-500/10"}`}
                                     />
-                                    추천 {theme.recommendations}
+                                    {theme.recommendations}
                                 </Button>
-                                )}
-                                {user?.id && !hasPlayedGame && (
+                            )}
+                            <Button variant="outline" size="sm" onClick={handleShare}>
+                                <Share2 className="h-4 w-4" />
+                            </Button>
+                            {(user?.id === theme.author.id || hasRole(["ADMIN", "MANAGER"])) && (
+                                <div className="flex gap-2">
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => {
-                                            setShowRequestModal(true);
-                                        }}
-                                        disabled={isCheckingRequest}
+                                        onClick={() => navigate(`/themes/${theme.type.toLowerCase()}/edit/${theme.id}`)}
                                     >
-                                        {isCheckingRequest ? (
-                                            <>확인 중...</>
-                                        ) : (
-                                            <>
-                                                <FileText className="h-4 w-4 mr-2" />
-                                                기록 요청
-                                            </>
-                                        )}
+                                        <Edit className="h-4 w-4" />
                                     </Button>
-                                )}
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleShare}
-                                >
-                                    <Share2 className="h-4 w-4 mr-2" /> 공유
-                                </Button>
-                                {(user?.id === theme.author.id ||
-                                    hasRole(["ADMIN", "MANAGER"])) && (
-                                    <>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                                navigate(
-                                                    `/themes/${theme.type.toLowerCase()}/edit/${
-                                                        theme.id
-                                                    }`
-                                                )
-                                            }
-                                        >
-                                            <Edit className="h-4 w-4 mr-2" />{" "}
-                                            수정
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="text-destructive hover:bg-destructive/10"
-                                            onClick={() =>
-                                                setIsDeleteDialogOpen(true)
-                                            }
-                                        >
-                                            <Trash className="h-4 w-4 mr-2" />{" "}
-                                            삭제
-                                        </Button>
-                                    </>
-                                )}
-                            </div>
-                            <div className="text-sm text-muted-foreground space-y-1">
-                                <div>
-                                    <strong>작성자</strong>{" "}
-                                    <button
-                                        className="hover:text-primary transition-colors"
-                                        onClick={() =>
-                                            setShowContactModal(true)
-                                        }
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-destructive hover:bg-destructive/10"
+                                        onClick={() => setIsDeleteDialogOpen(true)}
                                     >
-                                        {theme.author.nickname}
-                                    </button>
+                                        <Trash className="h-4 w-4" />
+                                    </Button>
                                 </div>
+                            )}
+                        </div>
+                    </div>
+                    
+                    {/* 헤더 섹션: 이미지 */}
+                    <div className="mb-8">
+                        <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-6">
+                            <img
+                                src={`${theme?.thumbnail || "/content/image/default_image2.png"}`}
+                                alt={theme.title}
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                        
+                        <div className="mb-6">
+                            <h1 className="text-4xl font-bold break-words mb-3">{theme.title}</h1>
+                            
+                            <div className="flex items-center text-muted-foreground text-sm gap-3">
+                                <button
+                                    className="hover:text-primary transition-colors font-medium flex items-center gap-1"
+                                    onClick={() => openProfileDetailModal(theme.author.id)}
+                                >
+                                    {theme.author.nickname}
+                                </button>
+                                <span>·</span>
+                                <span><UTCToKST date={theme.createdAt} /></span>
+                                <span>·</span>
+                                <Badge variant="secondary">{theme.type}</Badge>
+                            </div>
+                        </div>
+                        
+                        {/* 태그, 시간, 인원, 가격 정보 - 더 가시적으로 표시 */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            {/* 인원 정보 */}
+                            <div className="flex items-center p-4 bg-muted/40 rounded-lg">
+                                <Users className="h-5 w-5 mr-3 text-primary" />
                                 <div>
-                                    <strong>생성일</strong>{" "}
-                                    <UTCToKST date={theme.createdAt} />
+                                    <div className="text-sm text-muted-foreground">인원</div>
+                                    <div className="font-medium">
+                                        {theme.playersMin === theme.playersMax
+                                            ? `${theme.playersMin}인`
+                                            : `${theme.playersMin}~${theme.playersMax}인`}
+                                    </div>
                                 </div>
+                            </div>
+                            
+                            {/* 플레이 시간 */}
+                            <div className="flex items-center p-4 bg-muted/40 rounded-lg">
+                                <Clock className="h-5 w-5 mr-3 text-primary" />
                                 <div>
-                                    <strong>수정일</strong>{" "}
-                                    <UTCToKST date={theme.updatedAt} />
+                                    <div className="text-sm text-muted-foreground">플레이 시간</div>
+                                    <div className="font-medium">
+                                        {formatPlayTime(theme.playTimeMin, theme.playTimeMax)}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* 가격 */}
+                            <div className="flex items-center p-4 bg-muted/40 rounded-lg">
+                                <CreditCard className="h-5 w-5 mr-3 text-primary" />
+                                <div>
+                                    <div className="text-sm text-muted-foreground">가격</div>
+                                    <div className="font-medium">
+                                        {typeof theme.price === "number"
+                                            ? `${theme.price.toLocaleString()}원`
+                                            : "정보 없음"}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* 태그 */}
+                            <div className="flex items-center p-4 bg-muted/40 rounded-lg">
+                                <Tag className="h-5 w-5 mr-3 text-primary" />
+                                <div>
+                                    <div className="text-sm text-muted-foreground">태그</div>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                        {theme.tags && theme.tags.length > 0 ? (
+                                            theme.tags.map((tag, idx) => (
+                                                <Badge key={idx} variant="secondary" className="bg-primary/10 text-primary text-xs">
+                                                    #{tag}
+                                                </Badge>
+                                            ))
+                                        ) : (
+                                            <span className="text-muted-foreground text-sm">태그 없음</span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    {theme.summary && (
-                        <section>
-                            <h2 className="text-sm font-semibold text-muted-foreground mb-1">
-                                설명
-                            </h2>
-                            <p className="text-base text-foreground break-words whitespace-pre-line">
-                                {theme.summary}
-                            </p>
-                        </section>
-                    )}
-
-                    <section className="mt-6">
-                        <h2 className="text-sm font-semibold text-muted-foreground mb-1">
-                            카테고리
-                        </h2>
-                        <Badge variant="secondary">{theme.type}</Badge>
-                    </section>
-
-                    <section className="mt-6">
-                        <h2 className="text-sm font-semibold text-muted-foreground mb-1">
-                            인원
-                        </h2>
-                        <p className="text-base text-foreground">
-                            {theme.playersMin === theme.playersMax
-                                ? `${theme.playersMin}인`
-                                : `${theme.playersMin}~${theme.playersMax}인`}
-                        </p>
-                    </section>
-
-                    <section className="mt-6">
-                        <h2 className="text-sm font-semibold text-muted-foreground mb-1">
-                            플레이 시간
-                        </h2>
-                        <p className="text-base text-foreground">
-                            {formatPlayTime(
-                                theme.playTimeMin,
-                                theme.playTimeMax
-                            )}
-                        </p>
-                    </section>
-
-                    <section className="mt-6">
-                        <h2 className="text-sm font-semibold text-muted-foreground mb-1">
-                            가격
-                        </h2>
-                        <p className="text-base text-foreground">
-                            {typeof theme.price === "number"
-                                ? `${theme.price.toLocaleString()}원`
-                                : "정보 없음"}
-                        </p>
-                    </section>
-
-                    {theme.tags?.length > 0 && (
-                        <section className="mt-6">
-                            <h2 className="text-sm font-semibold text-muted-foreground mb-1">
-                                태그
-                            </h2>
-                            <div className="flex flex-wrap gap-2">
-                                {theme.tags.map((tag, idx) => (
-                                    <Badge key={idx} variant="outline">
-                                        #{tag}
-                                    </Badge>
-                                ))}
-                            </div>
-                        </section>
-                    )}
-
-                    {theme.type === "CRIMESCENE" &&
-                        (theme.extra?.characters?.length ||
-                            theme.team ||
-                            theme.guild) && (
-                            <>
-                                {(theme.team || theme.guild) && (
-                                    <section className="mt-6">
+                        
+                        {/* 크라임씬 전용 정보 */}
+                        {theme.type === "CRIMESCENE" && (theme.team || theme.guild || (theme.extra?.characters?.length > 0)) && (
+                            <div className="bg-muted/40 rounded-lg p-6 mb-6">
+                                <h2 className="text-lg font-bold mb-4">크라임씬 정보</h2>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    {/* 팀 및 길드 정보 */}
+                                    <div className="space-y-4">
                                         {theme.team && (
                                             <div>
-                                                <h3 className="text-sm font-semibold text-muted-foreground mb-1">
-                                                    팀 이름
-                                                </h3>
-                                                <button
-                                                    className="hover:text-primary transition-colors"
-                                                    onClick={() =>
-                                                        setShowTeamModal(true)
-                                                    }
-                                                >
+                                                <h3 className="text-sm font-semibold text-muted-foreground mb-2">팀 정보</h3>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
                                                     {theme.team.name}
-                                                </button>
+                                                    </span>
+                                                </div>
+                                                
+                                                {/* 팀원 정보 나열 - 아바타 포함 */}
+                                                {isLoadingTeam ? (
+                                                    <div className="mt-3">
+                                                        <span className="text-sm text-muted-foreground">팀원 로딩 중...</span>
+                                                    </div>
+                                                ) : teamError ? (
+                                                    <div className="mt-3">
+                                                        <span className="text-sm text-muted-foreground">팀원 정보를 불러올 수 없습니다.</span>
+                                                    </div>
+                                                ) : teamData?.members && teamData.members.length > 0 ? (
+                                                    <div className="mt-3">
+                                                        <span className="text-sm text-muted-foreground">팀원:</span>
+                                                        <div className="flex flex-wrap gap-4 mt-3">
+                                                            {teamData.members.map((member) => (
+                                                                <div key={member.id} className="flex flex-col items-center">
+                                                                    <button
+                                                                        className="relative"
+                                                                        onClick={() => member.userId ? openProfileDetailModal(member.userId) : null}
+                                                                        disabled={!member.userId}
+                                                                    >
+                                                                        <Avatar className="h-12 w-12 border border-border hover:border-primary transition-colors">
+                                                                            <AvatarImage src={member.avatarUrl || ''} alt={member.name || ''} />
+                                                                            <AvatarFallback className="bg-muted text-primary font-medium">
+                                                                                {member.name ? member.name.charAt(0).toUpperCase() : '?'}
+                                                                            </AvatarFallback>
+                                                                        </Avatar>
+                                                                        {member.leader && (
+                                                                            <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 bg-yellow-500 text-white rounded-full text-xs">
+                                                                                ★
+                                                                            </span>
+                                                                        )}
+                                                                    </button>
+                                                                    <button 
+                                                                        className="mt-1 text-xs font-medium hover:text-primary transition-colors"
+                                                                        onClick={() => member.userId ? openProfileDetailModal(member.userId) : null}
+                                                                        disabled={!member.userId}
+                                                                    >
+                                                                        {member.name}
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ) : theme.team.members && theme.team.members.length > 0 ? (
+                                                    <div className="mt-3">
+                                                        <span className="text-sm text-muted-foreground">팀원:</span>
+                                                        <div className="flex flex-wrap gap-2 mt-1">
+                                                            {theme.team.members.map((member) => (
+                                                                <button
+                                                                    key={member.id}
+                                                                    className="inline-flex items-center gap-1 text-sm px-2 py-1 border border-border rounded-md hover:bg-muted transition-colors"
+                                                                    onClick={() => member.userId ? openProfileDetailModal(member.userId) : null}
+                                                                    disabled={!member.userId}
+                                                                >
+                                                                    {member.leader && (
+                                                                        <span className="text-yellow-500 text-xs">★</span>
+                                                                    )}
+                                                                    {member.name}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ) : null}
                                             </div>
                                         )}
+                                        
                                         {theme.guild && (
-                                            <div className="mt-2">
-                                                <h3 className="text-sm font-semibold text-muted-foreground mb-1">
-                                                    길드 이름
-                                                </h3>
+                                            <div className="mt-4">
+                                                <h3 className="text-sm font-semibold text-muted-foreground mb-2">길드 정보</h3>
                                                 <button
-                                                    className="hover:text-primary transition-colors"
-                                                    onClick={() =>
-                                                        setShowGuildModal(true)
-                                                    }
+                                                    className="bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 dark:text-purple-400 px-3 py-1 rounded-full text-sm font-medium transition-colors"
+                                                    onClick={() => setShowGuildModal(true)}
                                                 >
                                                     {theme.guild.name}
                                                 </button>
                                             </div>
                                         )}
-                                    </section>
-                                )}
-
-                                {theme.extra?.characters?.length > 0 && (
-                                    <section className="mt-6">
-                                        <h2 className="text-sm font-semibold text-muted-foreground mb-1">
-                                            등장 캐릭터
-                                        </h2>
-                                        <div className="flex flex-wrap gap-2">
-                                            {theme.extra.characters.map(
-                                                (char, idx) => (
-                                                    <Badge
-                                                        key={idx}
-                                                        variant="secondary"
+                                    </div>
+                                    
+                                    {/* 등장 캐릭터 */}
+                                    {theme.extra?.characters?.length > 0 && (
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-muted-foreground mb-2">등장 캐릭터</h3>
+                                            <div className="flex flex-wrap gap-2">
+                                                {theme.extra.characters.map((char, idx) => (
+                                                    <Badge 
+                                                        key={idx} 
+                                                        variant="secondary" 
+                                                        className="bg-muted/70"
                                                     >
                                                         {char}
                                                     </Badge>
-                                                )
-                                            )}
+                                                ))}
+                                            </div>
                                         </div>
-                                    </section>
-                                )}
-                            </>
+                                    )}
+                                </div>
+                            </div>
                         )}
-
-                    <section className="mt-6">
-                        <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-                            내용
-                        </h2>
-                        <div className="prose max-w-none dark:prose-invert mt-2">
+                        
+                        {/* 기록 요청 버튼 - 사용 가능할 때만 표시 */}
+                        {user?.id && !hasPlayedGame && (
+                            <div className="mb-6">
+                                <Button
+                                    variant="default"
+                                    size="lg"
+                                    onClick={() => setShowRequestModal(true)}
+                                    disabled={isCheckingRequest}
+                                    className="w-full py-6 bg-primary/90 hover:bg-primary"
+                                >
+                                    {isCheckingRequest ? (
+                                        <>확인 중...</>
+                                    ) : (
+                                        <>
+                                            <FileText className="h-5 w-5 mr-2" />
+                                            이 테마 플레이 기록 요청하기
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* 설명 섹션 - 간략화 */}
+                    {theme.summary && (
+                        <div className="bg-card rounded-lg border-l-4 border-l-primary border p-6 mb-8">
+                            <span className="text-xs uppercase tracking-wider text-primary font-semibold mb-2 block">개요</span>
+                            <p className="text-lg text-foreground break-words whitespace-pre-line leading-relaxed">
+                                {theme.summary}
+                            </p>
+                        </div>
+                    )}
+                    
+                    {/* 내용 섹션 */}
+                    <div className="bg-card rounded-lg border p-6 mb-8">
+                        <h2 className="text-xl font-bold mb-4">상세 내용</h2>
+                        <div className="prose max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-foreground/90">
                             <MarkdownRenderer content={theme.content} />
                         </div>
-                    </section>
-
-                    {/* 댓글 섹션 추가 */}
+                    </div>
+                    
+                    {/* 댓글 섹션 */}
                     {theme.commentEnabled && id && (
-                      <div ref={commentsRef}>
-                        <CommentList
-                          gameThemeId={id}
-                          currentUserId={user?.id}
-                          hasPlayedGame={hasPlayedGame}
-                        />
-                      </div>
+                        <div className="bg-card rounded-lg border p-6" ref={commentsRef}>
+                            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                                댓글
+                                <Badge variant="outline" className="ml-2">
+                                    {theme.comments?.length || 0}
+                                </Badge>
+                            </h2>
+                            <CommentList
+                                gameThemeId={id}
+                                currentUserId={user?.id}
+                                hasPlayedGame={hasPlayedGame}
+                            />
+                        </div>
                     )}
                 </div>
 
@@ -698,18 +800,31 @@ const ThemeDetail: React.FC = () => {
                 userId={theme.author.id}
                 onOpenChange={setShowContactModal}
             />
-            {theme.type === "CRIMESCENE" && theme.team && (
-                <TeamInfoModal
-                    open={showTeamModal}
-                    teamId={theme.team.id}
-                    onOpenChange={setShowTeamModal}
-                />
-            )}
+            {/* TeamInfoModal은 더 이상 사용하지 않음 */}
             {theme.type === "CRIMESCENE" && theme.guild && (
                 <GuildInfoModal
                     open={showGuildModal}
                     guildSnowflake={theme.guild.snowflake}
                     onOpenChange={setShowGuildModal}
+                />
+            )}
+            
+            {/* 프로필 상세 모달 */}
+            {selectedPost && (
+                <PostDetailModal
+                    post={selectedPost}
+                    isOpen={showProfileModal}
+                    onClose={() => setShowProfileModal(false)}
+                    userId={selectedUserId}
+                />
+            )}
+
+            {/* 프로필 디테일 모달 */}
+            {profileDetailUserId && (
+                <ProfileDetailModal
+                    userId={profileDetailUserId} 
+                    open={showProfileDetailModal} 
+                    onOpenChange={setShowProfileDetailModal} 
                 />
             )}
         </PageTransition>
