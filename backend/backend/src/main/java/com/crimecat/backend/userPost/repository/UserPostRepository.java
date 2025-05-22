@@ -132,4 +132,41 @@ public interface UserPostRepository extends JpaRepository<UserPost, UUID> {
             "ORDER BY RAND()",
             nativeQuery = true)
     Page<UserPost> findRandomAccessiblePosts(@Param("userId") UUID userId, Pageable pageable);
+
+    /**
+     * 키워드로 공개 게시물 검색
+     */
+    @Query("SELECT p FROM UserPost p WHERE p.isPrivate = false AND p.isFollowersOnly = false AND LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY p.createdAt DESC")
+    Page<UserPost> findPublicPostsByKeyword(@Param("keyword") String keyword, Pageable pageable);
+
+    /**
+     * 키워드로 접근 가능한 게시물 검색
+     */
+    @Query("SELECT p FROM UserPost p WHERE " +
+            "LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) AND " +
+            "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
+            "p.user.id = :userId OR " +
+            "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id))) " +
+            "ORDER BY p.createdAt DESC")
+    Page<UserPost> findAccessiblePostsByKeyword(@Param("keyword") String keyword, @Param("userId") UUID userId, Pageable pageable);
+
+    /**
+     * 키워드와 해시태그 ID 목록으로 공개 게시물 검색
+     */
+    @Query("SELECT DISTINCT p FROM UserPost p WHERE p.id IN :postIds AND " +
+            "LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) AND " +
+            "p.isPrivate = false AND p.isFollowersOnly = false " +
+            "ORDER BY p.createdAt DESC")
+    Page<UserPost> findPublicPostsByKeywordAndIds(@Param("keyword") String keyword, @Param("postIds") List<UUID> postIds, Pageable pageable);
+
+    /**
+     * 키워드와 해시태그 ID 목록으로 접근 가능한 게시물 검색
+     */
+    @Query("SELECT DISTINCT p FROM UserPost p WHERE p.id IN :postIds AND " +
+            "LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) AND " +
+            "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
+            "p.user.id = :userId OR " +
+            "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id))) " +
+            "ORDER BY p.createdAt DESC")
+    Page<UserPost> findAccessiblePostsByKeywordAndIds(@Param("keyword") String keyword, @Param("postIds") List<UUID> postIds, @Param("userId") UUID userId, Pageable pageable);
 }

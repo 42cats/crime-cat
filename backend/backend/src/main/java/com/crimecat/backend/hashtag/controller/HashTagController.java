@@ -26,7 +26,7 @@ public class HashTagController {
     private final HashTagService hashTagService;
     private final UserPostService userPostService;
 
-    @GetMapping
+    @GetMapping("/popular")
     public ResponseEntity<PageResponseDto<HashTagDto>> getPopularHashTags(
             @PageableDefault(size = 20) Pageable pageable) {
         
