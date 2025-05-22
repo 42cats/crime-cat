@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -9,6 +9,7 @@ import { X, Upload, MapPin, Loader2 } from "lucide-react";
 import { UserPostDto, Location } from "@/api/posts/postService";
 import { parsePostContent } from "@/utils/postUtils";
 import HashtagBadges from "@/components/sns/common/HashtagBadges";
+import HashtagEditor from "@/components/sns/common/HashtagEditor";
 import { useToast } from "@/hooks/useToast";
 
 interface PostEditFormProps {
@@ -20,6 +21,7 @@ interface PostEditFormProps {
 
 export interface PostEditData {
     content: string;
+    hashtags: string[];
     newImages: File[];
     keepImageUrls: string[];
     location?: Location | null;
@@ -45,6 +47,9 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
 
     // 폼 상태
     const [content, setContent] = useState(initialPost.content);
+    const [manualHashtags, setManualHashtags] = useState<string[]>(
+        initialPost.hashtags || []
+    );
     const [isPrivate, setIsPrivate] = useState(initialPost.private);
     const [isFollowersOnly, setIsFollowersOnly] = useState(
         initialPost.followersOnly
@@ -69,8 +74,24 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
         }))
     );
 
-    // 해시태그 미리보기
-    const { hashtags: previewHashtags } = parsePostContent(content);
+    // 해시태그 미리보기 (내용에서 자동 추출 + 수동 추가)
+    const { hashtags: autoHashtags } = parsePostContent(content);
+    const allHashtags = [...new Set([...autoHashtags, ...manualHashtags])];
+
+    // Switch 컴포너트 상태 변경 오류 예방 (flushSync 문제 해결)
+    const handlePrivateChange = useCallback((checked: boolean) => {
+        // 비동기로 상태 변경
+        setTimeout(() => {
+            setIsPrivate(checked);
+        }, 0);
+    }, []);
+
+    const handleFollowersOnlyChange = useCallback((checked: boolean) => {
+        // 비동기로 상태 변경
+        setTimeout(() => {
+            setIsFollowersOnly(checked);
+        }, 0);
+    }, []);
 
     // 이미지 추가
     const handleImageAdd = (files: FileList | null) => {
@@ -141,6 +162,7 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
 
         const editData: PostEditData = {
             content: content.trim(),
+            hashtags: allHashtags,
             newImages,
             keepImageUrls,
             location,
@@ -185,17 +207,25 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
             </div>
 
             {/* 해시태그 미리보기 */}
-            {previewHashtags.length > 0 && (
+            {allHashtags.length > 0 && (
                 <div className="space-y-2">
-                    <Label>해시태그 미리보기</Label>
+                    <Label>모든 해시태그 미리보기</Label>
                     <HashtagBadges
-                        hashtags={previewHashtags}
-                        maxDisplay={10}
+                        hashtags={allHashtags}
+                        maxDisplay={15}
                         size="sm"
                         variant="light"
                     />
                 </div>
             )}
+
+            {/* 해시태그 편집기 */}
+            <HashtagEditor
+                hashtags={manualHashtags}
+                onChange={setManualHashtags}
+                maxTags={20}
+                disabled={isLoading}
+            />
 
             {/* 이미지 관리 */}
             <div className="space-y-3">
@@ -213,12 +243,12 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
                     </Button>
                 </div>
 
-                {/* 이미지 그리드 */}
+                {/* 이미지 그리드 - 작은 크기로 수정 */}
                 {images.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
                         {images.map((image) => (
                             <div key={image.id} className="relative group">
-                                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                                <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden">
                                     <img
                                         src={image.url}
                                         alt="업로드된 이미지"
@@ -228,13 +258,13 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
                                 <button
                                     type="button"
                                     onClick={() => handleImageRemove(image.id)}
-                                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
                                     disabled={isLoading}
                                 >
                                     <X className="w-3 h-3" />
                                 </button>
                                 {image.isNew && (
-                                    <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-blue-500 text-white text-xs rounded">
+                                    <div className="absolute bottom-0 left-0 px-1 py-0.5 bg-blue-500 text-white text-xs rounded-tr-md">
                                         새로운
                                     </div>
                                 )}
@@ -291,7 +321,7 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
                     </div>
                     <Switch
                         checked={isPrivate}
-                        onCheckedChange={setIsPrivate}
+                        onCheckedChange={handlePrivateChange}
                         disabled={isLoading}
                     />
                 </div>
@@ -305,7 +335,7 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
                     </div>
                     <Switch
                         checked={isFollowersOnly}
-                        onCheckedChange={setIsFollowersOnly}
+                        onCheckedChange={handleFollowersOnlyChange}
                         disabled={isLoading || isPrivate} // 비공개일 때는 비활성화
                     />
                 </div>
