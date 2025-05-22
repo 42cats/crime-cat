@@ -7,20 +7,24 @@ interface PostContentPreviewProps {
   hashtags?: string[];
   maxTextLength?: number;
   maxHashtags?: number;
+  maxLines?: number;
   showHashtags?: boolean;
   variant?: "light" | "dark";
   size?: "sm" | "md";
+  compactHashtags?: boolean; // 그리드용 소형 해시태그
   className?: string;
 }
 
 const PostContentPreview: React.FC<PostContentPreviewProps> = ({
   content,
   hashtags,
-  maxTextLength = 80,
-  maxHashtags = 3,
+  maxTextLength = 100,
+  maxHashtags = 2,
+  maxLines = 4,
   showHashtags = true,
   variant = "dark",
   size = "sm",
+  compactHashtags = false,
   className = "",
 }) => {
   const { plainText, hashtags: parsedHashtags } = parsePostContent(content, hashtags);
@@ -36,6 +40,8 @@ const PostContentPreview: React.FC<PostContentPreviewProps> = ({
     sm: "text-xs leading-relaxed",
     md: "text-sm leading-relaxed",
   };
+  
+  const lineClampClass = `line-clamp-${maxLines}`;
 
   const variantTextClasses = {
     light: "text-gray-800",
@@ -43,10 +49,10 @@ const PostContentPreview: React.FC<PostContentPreviewProps> = ({
   };
 
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={`space-y-1.5 ${className}`}>
       {/* 일반 텍스트 */}
       {displayText && (
-        <p className={`${textClasses[size]} ${variantTextClasses[variant]} line-clamp-3 font-medium`}>
+        <p className={`${textClasses[size]} ${variantTextClasses[variant]} ${lineClampClass} font-medium`}>
           {displayText}
         </p>
       )}
@@ -56,8 +62,10 @@ const PostContentPreview: React.FC<PostContentPreviewProps> = ({
         <HashtagBadges
           hashtags={displayHashtags}
           maxDisplay={maxHashtags}
-          size={size}
+          size={compactHashtags ? "xs" : size}
           variant={variant}
+          singleLine={compactHashtags}
+          maxWidth={compactHashtags ? "100%" : undefined}
         />
       )}
     </div>
