@@ -2,14 +2,17 @@ import React, { useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { UserPostGalleryDto } from '@/api/userPost/userPostService';
 import LazyImage from '../common/LazyImage';
+import PostPrivacyBadge from '../common/PostPrivacyBadge';
+import PostAuthorInfo from '../common/PostAuthorInfo';
 import { Heart, MessageCircle, Image } from 'lucide-react';
 
 interface PostGridProps {
   posts: UserPostGalleryDto[];
   lastPostRef?: (node: HTMLElement | null) => void; // 무한 스크롤을 위한 IntersectionObserver ref
+  onAuthorClick?: (authorId: string) => void; // 작성자 클릭 핸들러
 }
 
-const PostGrid: React.FC<PostGridProps> = ({ posts, lastPostRef }) => {
+const PostGrid: React.FC<PostGridProps> = ({ posts, lastPostRef, onAuthorClick }) => {
   // 빈 그리드 렌더링 (데이터 없는 경우)
   if (!posts || posts.length === 0) {
     return (
@@ -36,20 +39,60 @@ const PostGrid: React.FC<PostGridProps> = ({ posts, lastPostRef }) => {
             <Link to={`/sns/post/${post.postId}`}>
               {post.thumbnailUrl ? (
                 // 이미지가 있는 경우
-                <LazyImage 
-                  src={post.thumbnailUrl} 
-                  alt={`${post.authorNickname}의 게시물`}
-                  aspectRatio="square"
-                  className="rounded-sm"
-                />
+                <div className="relative">
+                  <LazyImage 
+                    src={post.thumbnailUrl} 
+                    alt={`${post.authorNickname}의 게시물`}
+                    aspectRatio="square"
+                    className="rounded-sm"
+                  />
+                  {/* 비밀글 배지 */}
+                  <div className="absolute top-2 left-2">
+                    <PostPrivacyBadge
+                      isPrivate={post.private}
+                      isFollowersOnly={post.followersOnly}
+                      size="sm"
+                    />
+                  </div>
+                  {/* 작성자 및 시간 정보 */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3">
+                    <PostAuthorInfo
+                      authorNickname={post.authorNickname}
+                      authorId={post.authorId}
+                      createdAt={post.createdAt}
+                      locationName={post.locationName}
+                      onAuthorClick={onAuthorClick}
+                      showAvatar={false}
+                      size="sm"
+                      className="text-white [&_.text-muted-foreground]:text-gray-300"
+                    />
+                  </div>
+                </div>
               ) : (
                 // 이미지가 없는 경우 텍스트 표시
-                <div className="w-full h-full bg-gray-100 rounded-sm p-3 flex flex-col justify-between">
-                  <div className="text-sm text-gray-800 line-clamp-4 leading-relaxed">
+                <div className="w-full h-full bg-gray-100 rounded-sm p-3 flex flex-col justify-between relative">
+                  {/* 비밀글 배지 */}
+                  <div className="absolute top-2 left-2 z-10">
+                    <PostPrivacyBadge
+                      isPrivate={post.private}
+                      isFollowersOnly={post.followersOnly}
+                      size="sm"
+                    />
+                  </div>
+                  <div className="text-sm text-gray-800 line-clamp-4 leading-relaxed mt-6">
                     {post.content}
                   </div>
-                  <div className="text-xs text-gray-500 mt-2">
-                    by {post.authorNickname}
+                  <div className="mt-2">
+                    <PostAuthorInfo
+                      authorNickname={post.authorNickname}
+                      authorId={post.authorId}
+                      createdAt={post.createdAt}
+                      locationName={post.locationName}
+                      onAuthorClick={onAuthorClick}
+                      showAvatar={false}
+                      size="sm"
+                      className="text-gray-600"
+                    />
                   </div>
                 </div>
               )}
