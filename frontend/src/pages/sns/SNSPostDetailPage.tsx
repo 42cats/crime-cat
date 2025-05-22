@@ -8,6 +8,8 @@ import ImageCarousel from '@/components/sns/post/ImageCarousel';
 
 import { PostCommentList } from '@/components/profile/post-comments';
 import ProfileDetailModal from '@/components/profile/ProfileDetailModal';
+import PostPrivacyBadge from '@/components/sns/common/PostPrivacyBadge';
+import PostAuthorInfo from '@/components/sns/common/PostAuthorInfo';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { userPostService, UserPostDto } from '@/api/userPost/userPostService';
@@ -198,21 +200,23 @@ const SNSPostDetailPage: React.FC = () => {
       <div className="bg-card border border-border rounded-md overflow-hidden mb-6">
         {/* 작성자 정보 */}
         <div className="p-4 border-b border-border flex items-center justify-between">
-          <button 
-            onClick={() => handleProfileClick(post.authorId)}
-            className="flex items-center gap-2 hover:opacity-80"
-          >
-            <Avatar className="w-8 h-8">
-              <AvatarImage src={post.authorAvatarUrl} alt={post.authorNickname} />
-              <AvatarFallback>{post.authorNickname.substring(0, 2)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-sm font-medium">{post.authorNickname}</p>
-              {post.locationName && (
-                <p className="text-xs text-muted-foreground">{post.locationName}</p>
-              )}
-            </div>
-          </button>
+          <div className="flex-1">
+            <PostAuthorInfo
+              authorNickname={post.authorNickname}
+              authorId={post.authorId}
+              authorAvatarUrl={post.authorAvatarUrl}
+              createdAt={post.createdAt}
+              locationName={post.locationName}
+              onAuthorClick={handleProfileClick}
+              size="md"
+            />
+            <PostPrivacyBadge
+              isPrivate={post.private}
+              isFollowersOnly={post.followersOnly}
+              size="sm"
+              className="mt-2"
+            />
+          </div>
           
           <Button variant="ghost" size="icon" className="h-8 w-8">
             <MoreHorizontal className="h-5 w-5" />

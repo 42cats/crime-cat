@@ -28,7 +28,8 @@ public class PublicUserPostController {
     @GetMapping("/{postId}")
     public ResponseEntity<UserPostDto> getUserPost(@PathVariable UUID postId) {
         // 비인증 사용자는 공개 게시글만 볼 수 있음 (비밀글, 팔로워 공개 필터링)
-        return ResponseEntity.ok(userPostService.getUserPostDetail(postId, null));
+        WebUser currentUser = AuthenticationUtil.getCurrentWebUserOptional().orElse(null);
+        return ResponseEntity.ok(userPostService.getUserPostDetail(postId, currentUser));
     }
 
     @GetMapping
@@ -37,7 +38,7 @@ public class PublicUserPostController {
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) List<String> sort
     ) {
-        // 비인증 사용자는 공개 게시글만 볼 수 있음 (비밀글, 팔로워 공개 필터링)
+        WebUser currentUser = AuthenticationUtil.getCurrentWebUserOptional().orElse(null);
         List<UserPostSortType> sortTypes = (sort != null && !sort.isEmpty())
                ? sort.stream()
                .map(String::toUpperCase)
@@ -50,7 +51,7 @@ public class PublicUserPostController {
         
         // null을 전달하여 공개 게시글만 조회
         Page<UserPostGalleryPageDto> pageResult = 
-                userPostService.getUserPostGalleryPage(null, pageable);
+                userPostService.getUserPostGalleryPage(currentUser, pageable);
                 
         return ResponseEntity.ok(pageResult);
     }
