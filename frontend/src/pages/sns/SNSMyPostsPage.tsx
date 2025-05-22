@@ -1,71 +1,75 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { AuthGuard } from '@/components/auth';
-import { userPostService, UserPostGalleryDto } from '@/api/userPost/userPostService';
-import PostGrid from '@/components/sns/post/PostGrid';
-import ProfileDetailModal from '@/components/profile/ProfileDetailModal';
-import SnsBottomNavigation from '@/components/sns/SnsBottomNavigation';
-import { Search, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { AuthGuard } from "@/components/auth";
+import { userPostService, UserPostGalleryDto } from "@/api/sns/post";
+import PostGrid from "@/components/sns/post/PostGrid";
+import ProfileDetailModal from "@/components/profile/ProfileDetailModal";
+import SnsBottomNavigation from "@/components/sns/SnsBottomNavigation";
+import { Search, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const SNSMyPostsPageContent: React.FC = () => {
     const { user } = useAuth();
     const observer = useRef<IntersectionObserver | null>(null);
-    
+
     const [posts, setPosts] = useState<UserPostGalleryDto[]>([]);
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [inputValue, setInputValue] = useState('');
+    const [searchQuery, setSearchQuery] = useState("");
+    const [inputValue, setInputValue] = useState("");
     const [isSearching, setIsSearching] = useState(false);
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     // 포스트 로딩
-    const loadPosts = useCallback(async (resetPage = false, searchTerm = '') => {
-        if (isLoading) return;
-        if (!resetPage && !hasMore) return;
+    const loadPosts = useCallback(
+        async (resetPage = false, searchTerm = "") => {
+            if (isLoading) return;
+            if (!resetPage && !hasMore) return;
 
-        const currentPage = resetPage ? 0 : page;
-        
-        setIsLoading(true);
-        try {
-            console.log('내 포스트 로딩:', { 
-                currentPage, 
-                resetPage, 
-                searchTerm: searchTerm || searchQuery 
-            });
+            const currentPage = resetPage ? 0 : page;
 
-            const postsData = await userPostService.getMyPosts(
-                currentPage, 
-                12, 
-                searchTerm || searchQuery || undefined
-            );
+            setIsLoading(true);
+            try {
+                console.log("내 포스트 로딩:", {
+                    currentPage,
+                    resetPage,
+                    searchTerm: searchTerm || searchQuery,
+                });
 
-            console.log('내 포스트 데이터:', postsData);
+                const postsData = await userPostService.getMyPosts(
+                    currentPage,
+                    12,
+                    searchTerm || searchQuery || undefined
+                );
 
-            if (resetPage || currentPage === 0) {
-                setPosts(postsData.content || []);
-                setPage(1);
-            } else {
-                setPosts(prev => [...prev, ...(postsData.content || [])]);
-                setPage(prev => prev + 1);
+                console.log("내 포스트 데이터:", postsData);
+
+                if (resetPage || currentPage === 0) {
+                    setPosts(postsData.content || []);
+                    setPage(1);
+                } else {
+                    setPosts((prev) => [...prev, ...(postsData.content || [])]);
+                    setPage((prev) => prev + 1);
+                }
+
+                setHasMore(
+                    !postsData.last && (postsData.content?.length || 0) > 0
+                );
+            } catch (error) {
+                console.error("내 포스트 로드 실패:", error);
+                if (resetPage) {
+                    setPosts([]);
+                    setHasMore(false);
+                }
+            } finally {
+                setIsLoading(false);
             }
-
-            setHasMore(!postsData.last && (postsData.content?.length || 0) > 0);
-
-        } catch (error) {
-            console.error('내 포스트 로드 실패:', error);
-            if (resetPage) {
-                setPosts([]);
-                setHasMore(false);
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    }, [page, hasMore, isLoading, searchQuery]);
+        },
+        [page, hasMore, isLoading, searchQuery]
+    );
 
     // 초기 로드
     useEffect(() => {
@@ -76,35 +80,35 @@ const SNSMyPostsPageContent: React.FC = () => {
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         const query = inputValue.trim();
-        
-        console.log('검색 실행:', { query });
-        
+
+        console.log("검색 실행:", { query });
+
         setSearchQuery(query);
         setIsSearching(!!query);
-        
+
         // 상태 초기화
         setPosts([]);
         setPage(0);
         setHasMore(true);
-        
+
         // 검색 실행
         loadPosts(true, query);
     };
 
     // 검색 취소
     const handleClearSearch = () => {
-        console.log('검색 취소');
-        setInputValue('');
-        setSearchQuery('');
+        console.log("검색 취소");
+        setInputValue("");
+        setSearchQuery("");
         setIsSearching(false);
-        
+
         // 상태 초기화
         setPosts([]);
         setPage(0);
         setHasMore(true);
-        
+
         // 전체 포스트 다시 로드
-        loadPosts(true, '');
+        loadPosts(true, "");
     };
 
     // 무한 스크롤
@@ -115,7 +119,7 @@ const SNSMyPostsPageContent: React.FC = () => {
 
             observer.current = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting && hasMore && !isLoading) {
-                    console.log('더 많은 포스트 로딩...');
+                    console.log("더 많은 포스트 로딩...");
                     loadPosts(false);
                 }
             });
@@ -154,7 +158,7 @@ const SNSMyPostsPageContent: React.FC = () => {
                         {inputValue && (
                             <button
                                 type="button"
-                                onClick={() => setInputValue('')}
+                                onClick={() => setInputValue("")}
                                 className="absolute right-12 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                             >
                                 <X className="h-4 w-4" />
@@ -191,9 +195,9 @@ const SNSMyPostsPageContent: React.FC = () => {
                 )}
 
                 {/* 게시물 그리드 */}
-                <PostGrid 
-                    posts={posts} 
-                    lastPostRef={lastPostElementRef} 
+                <PostGrid
+                    posts={posts}
+                    lastPostRef={lastPostElementRef}
                     onAuthorClick={handleAuthorClick}
                 />
 
@@ -210,13 +214,21 @@ const SNSMyPostsPageContent: React.FC = () => {
                         <div className="text-muted-foreground">
                             {isSearching ? (
                                 <>
-                                    <p className="text-lg font-medium mb-2">검색 결과가 없습니다</p>
-                                    <p className="text-sm">다른 검색어로 시도해보세요</p>
+                                    <p className="text-lg font-medium mb-2">
+                                        검색 결과가 없습니다
+                                    </p>
+                                    <p className="text-sm">
+                                        다른 검색어로 시도해보세요
+                                    </p>
                                 </>
                             ) : (
                                 <>
-                                    <p className="text-lg font-medium mb-2">아직 작성한 게시물이 없습니다</p>
-                                    <p className="text-sm">첫 번째 게시물을 작성해보세요!</p>
+                                    <p className="text-lg font-medium mb-2">
+                                        아직 작성한 게시물이 없습니다
+                                    </p>
+                                    <p className="text-sm">
+                                        첫 번째 게시물을 작성해보세요!
+                                    </p>
                                 </>
                             )}
                         </div>
@@ -229,7 +241,7 @@ const SNSMyPostsPageContent: React.FC = () => {
                         <p className="text-sm">모든 게시물을 확인했습니다</p>
                     </div>
                 )}
-                
+
                 {/* 프로필 모달 */}
                 {selectedUserId && (
                     <ProfileDetailModal
