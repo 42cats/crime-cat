@@ -4,7 +4,9 @@ import com.crimecat.backend.common.dto.MessageResponseDto;
 import com.crimecat.backend.common.dto.PageResponseDto;
 import com.crimecat.backend.userPost.dto.SavedPostRequestDto;
 import com.crimecat.backend.userPost.dto.UserPostGalleryPageDto;
+import com.crimecat.backend.userPost.dto.collection.CollectionDto;
 import com.crimecat.backend.userPost.service.UserPostService;
+import com.crimecat.backend.userPost.service.collection.CollectionService;
 import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +25,7 @@ import java.util.UUID;
 public class SavedPostController {
 
     private final UserPostService userPostService;
+    private final CollectionService collectionService;
 
     @PostMapping("/{postId}")
     public ResponseEntity<MessageResponseDto> toggleSavePost(
@@ -56,10 +59,10 @@ public class SavedPostController {
     }
 
     @GetMapping("/collections")
-    public ResponseEntity<List<String>> getUserCollections(
+    public ResponseEntity<List<CollectionDto>> getUserCollections(
             @AuthenticationPrincipal WebUser currentUser) {
         
-        List<String> collections = userPostService.getUserCollections(currentUser);
+        List<CollectionDto> collections = collectionService.getUserCollections(currentUser.getId());
         return ResponseEntity.ok(collections);
     }
 

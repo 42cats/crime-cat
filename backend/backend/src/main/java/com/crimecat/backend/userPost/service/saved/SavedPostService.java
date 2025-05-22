@@ -4,6 +4,7 @@ import com.crimecat.backend.userPost.domain.UserPost;
 import com.crimecat.backend.userPost.domain.saved.SavedPost;
 import com.crimecat.backend.userPost.repository.UserPostRepository;
 import com.crimecat.backend.userPost.repository.saved.SavedPostRepository;
+import com.crimecat.backend.userPost.service.collection.CollectionService;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -24,6 +25,7 @@ public class SavedPostService {
     private final SavedPostRepository savedPostRepository;
     private final UserPostRepository userPostRepository;
     private final WebUserRepository webUserRepository;
+    private final CollectionService collectionService;
     
     /**
      * 게시물 저장/저장 취소 토글
@@ -47,8 +49,14 @@ public class SavedPostService {
             return false;
         } else {
             // 저장되지 않은 경우 - 새로 저장
+            
+            // 컬렉션 이름이 지정된 경우 컬렉션 자동 생성 또는 확인
+            if (collectionName != null && !collectionName.isBlank()) {
+                collectionService.getOrCreateCollection(user, collectionName.trim());
+            }
+            
             SavedPost savedPost = collectionName != null && !collectionName.isBlank()
-                    ? SavedPost.from(user, post, collectionName)
+                    ? SavedPost.from(user, post, collectionName.trim())
                     : SavedPost.from(user, post);
             
             savedPostRepository.save(savedPost);
