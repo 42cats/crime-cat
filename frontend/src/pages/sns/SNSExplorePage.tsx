@@ -190,7 +190,7 @@ const SNSExplorePage: React.FC = () => {
                         placeholder="검색 또는 #해시태그 검색..."
                         key={searchQuery} // key로 리렌더링 강제하여 defaultValue 업데이트
                         defaultValue={searchQuery}
-                        className="w-full px-3 py-2 border border-input rounded-md pr-20"
+                        className="w-full px-3 py-2 border border-input rounded-md pr-24"
                     />
                     {searchQuery && (
                         <button
@@ -203,9 +203,9 @@ const SNSExplorePage: React.FC = () => {
                     )}
                     <button
                         type="submit"
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 px-2 py-1 text-muted-foreground hover:text-foreground"
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
                     >
-                        🔍
+                        검색
                     </button>
                 </div>
             </form>

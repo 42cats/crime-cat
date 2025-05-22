@@ -148,7 +148,8 @@ public class UserPostController {
     public ResponseEntity<Page<UserPostGalleryPageDto>> getMyUserPosts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
-            @RequestParam(required = false) List<String> sort
+            @RequestParam(required = false) List<String> sort,
+            @RequestParam(required = false) String search
     ) {
         WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
         
@@ -166,9 +167,13 @@ public class UserPostController {
         // PageRequest 생성
         Pageable pageable = PageRequest.of(page, size, resolvedSort);
         
-        // 서비스 호출
-        Page<UserPostGalleryPageDto> pageResult = 
-                userPostService.getMyUserPostGalleryPage(currentUser, pageable);
+        // 서비스 호출 - 검색어가 있으면 검색, 없으면 전체 조회
+        Page<UserPostGalleryPageDto> pageResult;
+        if (search != null && !search.trim().isEmpty()) {
+            pageResult = userPostService.searchMyUserPosts(currentUser, search.trim(), pageable);
+        } else {
+            pageResult = userPostService.getMyUserPostGalleryPage(currentUser, pageable);
+        }
                 
         return ResponseEntity.ok(pageResult);
     }

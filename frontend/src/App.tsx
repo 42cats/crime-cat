@@ -67,7 +67,8 @@ import PointHistoryPage from "@/pages/PointHistory/PointHistoryPage";
 import SNSFeedPage from "@/pages/sns/SNSFeedPage";
 import SNSExplorePage from "@/pages/sns/SNSExplorePage";
 import SNSCreatePage from "@/pages/sns/SNSCreatePage";
-import SNSPostDetailPage from "@/pages/sns/SNSPostDetailPage";
+import SNSPostDetailPage from "@/pages/sns/post/SNSPostDetailPage";
+import SNSMyPostsPage from "@/pages/sns/SNSMyPostsPage";
 
 import { queryClient } from "@/lib/reactQuery";
 import GameHistoryManager from "@/pages/GameHistoryOwnerBoard";
@@ -171,6 +172,14 @@ const App = () => (
                                 <Route
                                     path="/sns/create"
                                     element={<SNSCreatePage />}
+                                />
+                                <Route
+                                    path="/sns/post/:postId"
+                                    element={<SNSPostDetailPage />}
+                                />
+                                <Route
+                                    path="/sns/my-posts"
+                                    element={<SNSMyPostsPage />}
                                 />
                                 <Route
                                     path="/sns/hashtag/:tagName"

@@ -10,6 +10,7 @@ import ContentTextArea from "@/components/sns/input/ContentTextArea";
 import LocationPicker from "@/components/sns/location/LocationPicker";
 import { Location } from "@/api/sns/locationService";
 import { userPostService } from "@/api/sns/post";
+import PrivacySettingsComponent, { PrivacySettings } from "@/components/sns/privacy/PrivacySettings";
 import { toast } from "sonner";
 import SnsBottomNavigation from '@/components/sns/SnsBottomNavigation';
 
@@ -22,6 +23,10 @@ const SNSCreatePageContent: React.FC = () => {
     const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [location, setLocation] = useState<Location | null>(null);
+    const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
+        isPrivate: false,
+        isFollowersOnly: false
+    });
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // 이미지 선택 처리
@@ -94,7 +99,13 @@ const SNSCreatePageContent: React.FC = () => {
                 ? `${content} ${tags.map(tag => `#${tag}`).join(' ')}`.trim()
                 : content;
             
-            await userPostService.createPost(contentWithTags, images, location);
+            await userPostService.createPost(
+                contentWithTags, 
+                images, 
+                location,
+                privacySettings.isPrivate,
+                privacySettings.isFollowersOnly
+            );
             toast.success("게시물이 작성되었습니다.");
             navigate("/sns/feed");
         } catch (error) {
@@ -199,6 +210,12 @@ const SNSCreatePageContent: React.FC = () => {
             onChange={setLocation}
           />
         </div> */}
+
+                {/* 공개 설정 */}
+                <PrivacySettingsComponent
+                    value={privacySettings}
+                    onChange={setPrivacySettings}
+                />
 
                 {/* 제출 버튼 */}
                 <div className="flex justify-end">
