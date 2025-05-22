@@ -4,7 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Loader2, Image, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import HashTagInput from "@/components/sns/hashtag/HashTagInput";
+import TagInputField from "@/components/sns/input/TagInputField";
+import ContentTextArea from "@/components/sns/input/ContentTextArea";
 import LocationPicker from "@/components/sns/location/LocationPicker";
 import { Location } from "@/api/sns/locationService";
 import { userPostService } from "@/api/userPost/userPostService";
@@ -15,6 +16,7 @@ const SNSCreatePage: React.FC = () => {
     const { user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const [content, setContent] = useState("");
+    const [tags, setTags] = useState<string[]>([]);
     const [images, setImages] = useState<File[]>([]);
     const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -97,7 +99,12 @@ const SNSCreatePage: React.FC = () => {
         setIsLoading(true);
 
         try {
-            await userPostService.createPost(content, images, location);
+            // 태그를 해시태그 형태로 변환하여 내용에 추가
+            const contentWithTags = tags.length > 0 
+                ? `${content} ${tags.map(tag => `#${tag}`).join(' ')}`.trim()
+                : content;
+            
+            await userPostService.createPost(contentWithTags, images, location);
             toast.success("게시물이 작성되었습니다.");
             navigate("/sns/feed");
         } catch (error) {
@@ -178,11 +185,21 @@ const SNSCreatePage: React.FC = () => {
                     />
                 </div>
 
-                {/* 해시태그 입력 */}
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">내용</label>
-                    <HashTagInput value={content} onChange={setContent} />
-                </div>
+                {/* 태그 입력 */}
+                <TagInputField
+                    tags={tags}
+                    onTagsChange={setTags}
+                    placeholder="태그를 입력하세요... (예: 일상, 맛집, 여행)"
+                    maxTags={10}
+                />
+
+                {/* 내용 입력 */}
+                <ContentTextArea
+                    value={content}
+                    onChange={setContent}
+                    placeholder="무슨 일이 일어나고 있나요?"
+                    maxLength={500}
+                />
 
                 {/* 위치 선택 */}
                 {/* <div className="space-y-2">
