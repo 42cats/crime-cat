@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Folder, Grid, Plus, X } from 'lucide-react';
+import { Loader2, Folder, Grid, Plus, X, Settings, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PostGrid from '@/components/sns/post/PostGrid';
 import { savePostService, CollectionResponse } from '@/api/sns/savePostService';
@@ -16,6 +16,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 
 const SNSSavedPage: React.FC = () => {
@@ -29,6 +30,9 @@ const SNSSavedPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showNewCollection, setShowNewCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
+  const [newCollectionDescription, setNewCollectionDescription] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const observer = useRef<IntersectionObserver | null>(null);
   
   // 로그인 상태 확인
@@ -123,24 +127,54 @@ const SNSSavedPage: React.FC = () => {
   
   // 새 컬렉션 생성 처리
   const handleCreateCollection = async () => {
-    if (!newCollectionName.trim()) return;
+    if (!newCollectionName.trim()) {
+      toast.error('컬렉션 이름을 입력해주세요.');
+      return;
+    }
+    
+    if (collections.some(col => col.name === newCollectionName.trim())) {
+      toast.error('이미 존재하는 컬렉션 이름입니다.');
+      return;
+    }
+    
+    setIsCreatingCollection(true);
     
     try {
-      // 더미 포스트 ID (실제로는 첫 번째로 저장하는 포스트 ID 필요)
-      // 여기서는 컬렉션만 생성하고 실제 저장은 하지 않음
-      const dummyPostId = 'temp-id';
-      await savePostService.toggleSavePost(dummyPostId, newCollectionName.trim());
+      const newCollection = await savePostService.createCollection({
+        name: newCollectionName.trim(),
+        description: newCollectionDescription.trim() || undefined,
+        isPrivate: isPrivate
+      });
       
-      toast.success(`'${newCollectionName}' 컬렉션이 생성되었습니다.`);
+      toast.success(`'${newCollection.name}' 컬렉션이 생성되었습니다.`);
+      
+      // 상태 초기화
       setNewCollectionName('');
+      setNewCollectionDescription('');
+      setIsPrivate(false);
       setShowNewCollection(false);
       
       // 컬렉션 목록 새로고침
       loadCollections();
-    } catch (error) {
+    } catch (error: any) {
       console.error('컬렉션 생성 실패:', error);
-      toast.error('컬렉션 생성에 실패했습니다.');
+      
+      if (error.response?.status === 409 || error.message?.includes('중복')) {
+        toast.error('이미 존재하는 컬렉션 이름입니다.');
+      } else {
+        toast.error('컬렉션 생성에 실패했습니다.');
+      }
+    } finally {
+      setIsCreatingCollection(false);
     }
+  };
+  
+  // 컬렉션 생성 다이얼로그 닫기
+  const handleCloseNewCollectionDialog = () => {
+    setShowNewCollection(false);
+    setNewCollectionName('');
+    setNewCollectionDescription('');
+    setIsPrivate(false);
   };
   
   return (
@@ -173,12 +207,15 @@ const SNSSavedPage: React.FC = () => {
           
           {collections.map(collection => (
             <TabsTrigger 
-              key={collection.name} 
+              key={collection.id} 
               value={collection.name}
-              className="flex items-center"
+              className="flex items-center relative group"
             >
               <Folder className="h-4 w-4 mr-1" />
               {collection.name}
+              {collection.isPrivate && (
+                <span className="ml-1 text-xs opacity-60">🔒</span>
+              )}
               <span className="ml-1 text-xs text-muted-foreground">
                 ({collection.postCount})
               </span>
@@ -220,35 +257,71 @@ const SNSSavedPage: React.FC = () => {
       </Tabs>
       
       {/* 새 컬렉션 생성 다이얼로그 */}
-      <Dialog open={showNewCollection} onOpenChange={setShowNewCollection}>
+      <Dialog open={showNewCollection} onOpenChange={handleCloseNewCollectionDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>새 컬렉션 만들기</DialogTitle>
             <DialogDescription>
-              새 컬렉션의 이름을 입력하세요. 첫 번째로 저장하는 게시물에 이 컬렉션이 적용됩니다.
+              새로운 컬렉션을 만들어 게시물을 체계적으로 정리해보세요.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="py-4">
-            <Input
-              placeholder="컬렉션 이름"
-              value={newCollectionName}
-              onChange={(e) => setNewCollectionName(e.target.value)}
-            />
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">컬렉션 이름 *</label>
+              <Input
+                placeholder="컬렉션 이름"
+                value={newCollectionName}
+                onChange={(e) => setNewCollectionName(e.target.value)}
+                maxLength={50}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">설명 (선택사항)</label>
+              <Textarea
+                placeholder="이 컬렉션에 대한 간단한 설명을 작성해주세요."
+                value={newCollectionDescription}
+                onChange={(e) => setNewCollectionDescription(e.target.value)}
+                maxLength={200}
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isPrivate"
+                checked={isPrivate}
+                onChange={(e) => setIsPrivate(e.target.checked)}
+                className="rounded"
+              />
+              <label htmlFor="isPrivate" className="text-sm font-medium cursor-pointer">
+                비공개 컬렉션 🔒
+              </label>
+            </div>
           </div>
           
           <DialogFooter>
             <Button 
               variant="outline" 
-              onClick={() => setShowNewCollection(false)}
+              onClick={handleCloseNewCollectionDialog}
+              disabled={isCreatingCollection}
             >
               취소
             </Button>
             <Button 
               onClick={handleCreateCollection}
-              disabled={!newCollectionName.trim()}
+              disabled={!newCollectionName.trim() || isCreatingCollection}
             >
-              생성
+              {isCreatingCollection ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  생성 중...
+                </>
+              ) : (
+                '생성'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

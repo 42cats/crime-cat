@@ -19,9 +19,20 @@ export interface SavedPostsResponse {
 }
 
 export interface CollectionResponse {
+  id: string;
   name: string;
+  description?: string;
+  isPrivate: boolean;
   postCount: number;
   thumbnailUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCollectionRequest {
+  name: string;
+  description?: string;
+  isPrivate?: boolean;
 }
 
 class SavePostService {
@@ -94,6 +105,46 @@ class SavePostService {
         totalElements: 0,
         totalPages: 0
       };
+    }
+  }
+
+  // 컬렉션 생성
+  async createCollection(request: CreateCollectionRequest): Promise<CollectionResponse> {
+    try {
+      return await apiClient.post<CollectionResponse>('/collections', request);
+    } catch (error) {
+      console.error('컬렉션 생성 실패:', error);
+      throw error;
+    }
+  }
+
+  // 특정 컬렉션 조회
+  async getCollection(collectionId: string): Promise<CollectionResponse> {
+    try {
+      return await apiClient.get<CollectionResponse>(`/collections/${collectionId}`);
+    } catch (error) {
+      console.error('컬렉션 조회 실패:', error);
+      throw error;
+    }
+  }
+
+  // 컬렉션 수정
+  async updateCollection(collectionId: string, request: Partial<CreateCollectionRequest>): Promise<CollectionResponse> {
+    try {
+      return await apiClient.put<CollectionResponse>(`/collections/${collectionId}`, request);
+    } catch (error) {
+      console.error('컬렉션 수정 실패:', error);
+      throw error;
+    }
+  }
+
+  // 컬렉션 삭제
+  async deleteCollection(collectionId: string): Promise<void> {
+    try {
+      await apiClient.delete(`/collections/${collectionId}`);
+    } catch (error) {
+      console.error('컬렉션 삭제 실패:', error);
+      throw error;
     }
   }
 
