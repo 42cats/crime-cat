@@ -26,6 +26,7 @@ const SNSExplorePage: React.FC = () => {
     const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
     const [isSearching, setIsSearching] = useState(!!searchQuery);
     const observer = useRef<IntersectionObserver | null>(null);
+    const prevSearchQueryRef = useRef<string>("");
 
     // 게시물 로드 함수 - 의존성 문제 해결
     const loadPosts = useCallback(
@@ -131,22 +132,38 @@ const SNSExplorePage: React.FC = () => {
     // URL 파라미터 변경 감지 및 상태 동기화
     useEffect(() => {
         const urlSearchQuery = searchParams.get("search") || "";
-        console.log('URL params changed:', { urlSearchQuery, currentLocal: localSearchQuery });
+        console.log('URL params changed:', { urlSearchQuery, currentLocal: localSearchQuery, currentIsSearching: isSearching });
         
-        if (urlSearchQuery !== localSearchQuery) {
-            console.log('Syncing state with URL params');
+        // URL에 검색어가 있지만 현재 검색 상태가 아닌 경우
+        if (urlSearchQuery && !isSearching) {
+            console.log('URL has search query but not in searching state - updating');
             setLocalSearchQuery(urlSearchQuery);
-            const newIsSearching = !!urlSearchQuery;
-            setIsSearching(newIsSearching);
-            
-            // 상태 초기화
+            setIsSearching(true);
             setPosts([]);
             setPage(0);
             setHasMore(true);
-            
-            console.log('State updated:', { urlSearchQuery, newIsSearching });
         }
-    }, [searchParams, localSearchQuery]);
+        // URL에 검색어가 없지만 현재 검색 상태인 경우  
+        else if (!urlSearchQuery && isSearching) {
+            console.log('URL has no search query but in searching state - clearing');
+            setLocalSearchQuery("");
+            setIsSearching(false);
+            setPosts([]);
+            setPage(0);
+            setHasMore(true);
+        }
+        // URL 검색어와 로컬 검색어가 다른 경우
+        else if (urlSearchQuery !== localSearchQuery) {
+            console.log('URL search query differs from local - syncing');
+            setLocalSearchQuery(urlSearchQuery);
+            const newIsSearching = !!urlSearchQuery;
+            setIsSearching(newIsSearching);
+            setPosts([]);
+            setPage(0);
+            setHasMore(true);
+            console.log('State synced:', { urlSearchQuery, newIsSearching });
+        }
+    }, [searchParams, isSearching]); // isSearching 추가
 
     // 첫 로드 및 탭/검색 상태 변경 시 데이터 로드
     useEffect(() => {
@@ -231,7 +248,14 @@ const SNSExplorePage: React.FC = () => {
         const hashtagQuery = `#${tag}`;
         console.log('Hashtag clicked:', { tag, hashtagQuery });
         
+        // 상태 즉시 업데이트
         setLocalSearchQuery(hashtagQuery);
+        setIsSearching(true);
+        setPosts([]);
+        setPage(0);
+        setHasMore(true);
+        
+        // URL 파라미터 업데이트
         setSearchParams({ search: hashtagQuery });
     };
 
