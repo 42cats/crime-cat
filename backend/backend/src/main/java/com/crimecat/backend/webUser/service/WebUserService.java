@@ -23,6 +23,7 @@ import com.crimecat.backend.webUser.dto.UserPostNotificationSettingsDto;
 import com.crimecat.backend.webUser.dto.UserProfileInfoResponseDto;
 import com.crimecat.backend.webUser.dto.UserSearchResponseDto;
 import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
+import com.crimecat.backend.webUser.enums.AlarmType;
 import com.crimecat.backend.webUser.enums.UserRole;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import java.time.LocalDateTime;
@@ -250,34 +251,11 @@ public class WebUserService {
     }
 
     @Transactional
-    public NotificationSettingsResponseDto setEmailAlarm(String userId, NotificationToggleRequest body) {
-        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
-            .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
-        webUser.setEmailAlarm(body.getEnabled());
-        return NotificationSettingsResponseDto.from(webUser);
-    }
-    @Transactional
-    public NotificationSettingsResponseDto setDiscordAlarm(String userId, NotificationToggleRequest body) {
-        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
-            .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
-        if(webUser.getUser().getDiscordUser() != null){
-            DiscordUser discordUser = webUser.getUser()
-                .getDiscordUser();
-            discordUser.setDiscordAlarm(body.getEnabled());
-        }
-        return NotificationSettingsResponseDto.from(webUser);
-    }
+    public NotificationSettingsResponseDto setAllNotificationSetting(String userId, NotificationSettingsRequestDto body, AlarmType alarmType) {
 
-    @Transactional
-    public NotificationSettingsResponseDto setAllNotificationSetting(String userId, NotificationSettingsRequestDto body) {
         WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
             .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
-        if(webUser.getUser().getDiscordUser() != null){
-            DiscordUser discordUser = webUser.getUser()
-                .getDiscordUser();
-            discordUser.setDiscordAlarm(body.getDiscord());
-        }
-        webUser.setEmailAlarm(body.getEmail());
+        alarmType.apply(webUser,body);
         return NotificationSettingsResponseDto.from(webUser);
         }
 
@@ -369,37 +347,25 @@ public class WebUserService {
     }
   }
   
-  /**
-   * 유저 포스트 알림 설정 조회
-   */
-  @Transactional(readOnly = true)
-  public UserPostNotificationSettingsDto getUserPostNotificationSettings(String userId) {
-    WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
-        .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
-    return UserPostNotificationSettingsDto.from(webUser.getNotificationSettings());
-  }
-  
-  /**
-   * 유저 포스트 알림 설정 업데이트
-   */
-  @Transactional
-  public UserPostNotificationSettingsDto updateUserPostNotificationSettings(
-      String userId, UserPostNotificationSettingsDto request) {
-    WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
-        .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
-    
-    // 각 알림 설정 업데이트
-    if (request.getUserPostNew() != null) {
-      webUser.updateNotificationSetting("userPostNew", request.getUserPostNew());
-    }
-    if (request.getUserPostComment() != null) {
-      webUser.updateNotificationSetting("userPostComment", request.getUserPostComment());
-    }
-    if (request.getUserPostCommentReply() != null) {
-      webUser.updateNotificationSetting("userPostCommentReply", request.getUserPostCommentReply());
-    }
-    
-    webUserRepository.save(webUser);
-    return UserPostNotificationSettingsDto.from(webUser.getNotificationSettings());
+  public void AlamSetting(WebUser webUser, AlarmType alarmType, Boolean enabled) {
+      if(alarmType == AlarmType.EMAIL){
+          webUser.setEmailAlarm(enabled);
+      }
+      else if(alarmType == AlarmType.DISCORD){
+          if(webUser.getUser().getDiscordUser() != null){
+              DiscordUser discordUser = webUser.getUser()
+                      .getDiscordUser();
+              discordUser.setDiscordAlarm(enabled);
+          }
+      }
+      else if (alarmType == AlarmType.POST){
+          webUser.setPostAlarm(enabled);
+      }
+      else if (alarmType == AlarmType.COMMENT){
+          webUser.setPostComment(enabled);
+      }
+      else if (alarmType == AlarmType.COMMENT_COMMENT){
+          webUser.setCommentComment(enabled);
+      }
   }
 }

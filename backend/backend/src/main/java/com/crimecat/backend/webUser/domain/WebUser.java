@@ -68,6 +68,18 @@ public class WebUser implements UserDetails, OAuth2User {
     @Column(name = "email_alarm" , nullable = false)
     private Boolean emailAlarm = false;
 
+    @Builder.Default
+    @Column(name = "post_alarm", nullable = false)
+    private Boolean postAlarm = false;
+
+    @Builder.Default
+    @Column(name = "post_comment", nullable = false)
+    private Boolean postComment = false;
+
+    @Builder.Default
+    @Column(name = "comment_comment", nullable = false)
+    private Boolean commentComment = false;
+
     @OneToOne(mappedBy = "webUser", fetch = FetchType.LAZY)
     private User user;
     
