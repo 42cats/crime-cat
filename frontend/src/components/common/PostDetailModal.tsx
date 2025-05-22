@@ -22,6 +22,7 @@ import { ChevronLeft, Loader2 } from "lucide-react";
 import {
     MobilePostLayout,
     DesktopPostLayout,
+    VerticalPostLayout,
 } from "@/components/profile/post-detail";
 import ProfileDetailModal from "@/components/profile/ProfileDetailModal";
 
@@ -315,25 +316,19 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                         <h1 className="text-xl font-bold ml-2">게시물 상세</h1>
                     </div>
 
-                    {/* 모바일 레이아웃으로 표시 */}
-                    <div className="bg-card border border-border rounded-md overflow-hidden mb-6">
-                        <MobilePostLayout
-                            post={post}
-                            profile={profile}
-                            activeTab={activeTab}
-                            setActiveTab={handleTabChange}
-                            liked={liked}
-                            isLikeLoading={isLikeLoading}
-                            likeCount={likeCount}
-                            currentImageIndex={currentImageIndex}
-                            handlePrevImage={handlePrevImage}
-                            handleNextImage={handleNextImage}
-                            handleLike={handleLike}
-                            handleShare={handleShare}
-                            handleLoginRequired={handleLoginRequired}
-                            userId={user?.id}
-                        />
-                    </div>
+                    {/* 세로형 레이아웃으로 표시 */}
+                    <VerticalPostLayout
+                        post={post}
+                        profile={profile}
+                        liked={liked}
+                        isLikeLoading={isLikeLoading}
+                        likeCount={likeCount}
+                        handleLike={handleLike}
+                        handleShare={handleShare}
+                        handleLoginRequired={handleLoginRequired}
+                        userId={user?.id}
+                        onProfileClick={handleProfileClick}
+                    />
                 </div>
 
                 {/* 프로필 모달 */}
@@ -360,47 +355,20 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                         포스트 상세 정보
                     </DialogTitle>
 
-                    <div className="h-[85vh] md:h-[80vh] overflow-y-auto md:overflow-hidden">
-                        {/* 모바일 레이아웃 (작은 화면) */}
-                        <div className="block md:hidden">
-                            <MobilePostLayout
-                                post={post}
-                                profile={profile}
-                                activeTab={activeTab}
-                                setActiveTab={handleTabChange}
-                                liked={liked}
-                                isLikeLoading={isLikeLoading}
-                                likeCount={likeCount}
-                                currentImageIndex={currentImageIndex}
-                                handlePrevImage={handlePrevImage}
-                                handleNextImage={handleNextImage}
-                                handleLike={handleLike}
-                                handleShare={handleShare}
-                                handleLoginRequired={handleLoginRequired}
-                                userId={user?.id}
-                            />
-                        </div>
-
-                        {/* 데스크탑 레이아웃 (큰 화면) */}
-                        <div className="hidden md:flex h-full">
-                            <DesktopPostLayout
-                                post={post}
-                                profile={profile}
-                                activeTab={activeTab}
-                                setActiveTab={handleTabChange}
-                                liked={liked}
-                                isLikeLoading={isLikeLoading}
-                                likeCount={likeCount}
-                                currentImageIndex={currentImageIndex}
-                                handlePrevImage={handlePrevImage}
-                                handleNextImage={handleNextImage}
-                                handleLike={handleLike}
-                                handleShare={handleShare}
-                                handleLoginRequired={handleLoginRequired}
-                                onClose={handleClose}
-                                userId={user?.id}
-                            />
-                        </div>
+                    <div className="h-[85vh] md:h-[80vh] overflow-y-auto">
+                        {/* 세로형 레이아웃 사용 */}
+                        <VerticalPostLayout
+                            post={post}
+                            profile={profile}
+                            liked={liked}
+                            isLikeLoading={isLikeLoading}
+                            likeCount={likeCount}
+                            handleLike={handleLike}
+                            handleShare={handleShare}
+                            handleLoginRequired={handleLoginRequired}
+                            userId={user?.id}
+                            onProfileClick={handleProfileClick}
+                        />
                     </div>
                 </DialogContent>
             </Dialog>
