@@ -1,15 +1,9 @@
-import React, { useState, useRef, useCallback } from "react";
-import { Link } from "react-router-dom";
+import React from "react";
 import { UserPostGalleryDto } from "@/api/sns/post";
-import LazyImage from "@/components/sns/common/LazyImage";
-import PostPrivacyBadge from "@/components/sns/common/PostPrivacyBadge";
-import PostAuthorInfo from "@/components/sns/common/PostAuthorInfo";
+import PostGridItem from "@/components/sns/common/PostGridItem";
 import {
-    Heart,
-    MessageCircle,
     Image,
     FileTextIcon,
-    Share2,
 } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
 
@@ -116,185 +110,20 @@ const PostGrid: React.FC<PostGridProps> = ({
                 // 마지막 항목에 대한 ref 설정 (무한 스크롤)
                 const isLastItem = index === posts.length - 1;
 
-                const PostWrapper = mode === "page" ? Link : "div";
-                const wrapperProps =
-                    mode === "page"
-                        ? { to: `/sns/post/${post.postId}` }
-                        : {
-                              onClick: (e: React.MouseEvent) =>
-                                  handlePostClick(post.postId, e),
-                              style: { cursor: "pointer" },
-                          };
-
                 return (
                     <div
                         key={post.postId}
                         ref={isLastItem && lastPostRef ? lastPostRef : null}
                         className="relative group"
                     >
-                        <PostWrapper {...wrapperProps}>
-                            <div className="relative bg-gray-100 overflow-hidden group cursor-pointer rounded-md shadow-sm hover:shadow-md transition-shadow">
-                                {post.thumbnailUrl ? (
-                                    // 이미지가 있는 경우
-                                    <div className="aspect-square overflow-hidden relative">
-                                        <LazyImage
-                                            src={post.thumbnailUrl}
-                                            alt={`${post.authorNickname}의 게시물`}
-                                            aspectRatio="square"
-                                            className="rounded-sm w-full h-full object-cover"
-                                        />
-
-                                        {/* 프라이버시 배지 */}
-                                        <div className="absolute top-2 left-2">
-                                            <PostPrivacyBadge
-                                                isPrivate={post.private}
-                                                isFollowersOnly={
-                                                    post.followersOnly
-                                                }
-                                                size="sm"
-                                            />
-                                        </div>
-
-                                        {/* 하단 정보 오버레이 */}
-                                        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent text-white">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center space-x-2">
-                                                    <Heart
-                                                        size={16}
-                                                        className={
-                                                            post.liked
-                                                                ? "text-red-500 fill-red-500"
-                                                                : "text-gray-300"
-                                                        }
-                                                    />
-                                                    <span className="text-xs">
-                                                        {post.likeCount}
-                                                    </span>
-                                                </div>
-                                                <button
-                                                    onClick={(e) =>
-                                                        handleShare(
-                                                            post.postId,
-                                                            e
-                                                        )
-                                                    }
-                                                    className="text-gray-300 hover:text-white transition-colors"
-                                                >
-                                                    <Share2 size={16} />
-                                                </button>
-                                            </div>
-
-                                            {/* 작성자 정보 (SNS 모드에서만) */}
-                                            {!userId && (
-                                                <div className="mt-1">
-                                                    <PostAuthorInfo
-                                                        authorNickname={
-                                                            post.authorNickname
-                                                        }
-                                                        authorId={post.authorId}
-                                                        createdAt={
-                                                            post.createdAt
-                                                        }
-                                                        locationName={
-                                                            post.locationName
-                                                        }
-                                                        onAuthorClick={
-                                                            onAuthorClick
-                                                        }
-                                                        showAvatar={false}
-                                                        size="sm"
-                                                        className="text-white [&_.text-muted-foreground]:text-gray-300"
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    // 이미지가 없는 경우 텍스트 형태로 표시
-                                    <div className="aspect-square p-3 flex flex-col justify-between relative">
-                                        {/* 프라이버시 배지 */}
-                                        <div className="absolute top-2 left-2 z-10">
-                                            <PostPrivacyBadge
-                                                isPrivate={post.private}
-                                                isFollowersOnly={
-                                                    post.followersOnly
-                                                }
-                                                size="sm"
-                                            />
-                                        </div>
-
-                                        <div className="line-clamp-4 text-sm font-medium mt-6 leading-relaxed">
-                                            <span className="text-gray-800">
-                                                {post.content.slice(0, 100)}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex items-center justify-between mt-2">
-                                            <div className="flex items-center space-x-2">
-                                                <Heart
-                                                    size={16}
-                                                    className={
-                                                        post.liked
-                                                            ? "text-red-500 fill-red-500"
-                                                            : "text-gray-500"
-                                                    }
-                                                />
-                                                <span className="text-xs">
-                                                    {post.likeCount}
-                                                </span>
-                                            </div>
-                                            <button
-                                                onClick={(e) =>
-                                                    handleShare(post.postId, e)
-                                                }
-                                                className="text-gray-500 hover:text-blue-500 transition-colors"
-                                            >
-                                                <Share2 size={16} />
-                                            </button>
-                                        </div>
-
-                                        {/* 작성자 정보 (SNS 모드에서만) */}
-                                        {!userId && (
-                                            <div className="mt-2">
-                                                <PostAuthorInfo
-                                                    authorNickname={
-                                                        post.authorNickname
-                                                    }
-                                                    authorId={post.authorId}
-                                                    createdAt={post.createdAt}
-                                                    locationName={
-                                                        post.locationName
-                                                    }
-                                                    onAuthorClick={
-                                                        onAuthorClick
-                                                    }
-                                                    showAvatar={false}
-                                                    size="sm"
-                                                    className="text-gray-600"
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* 호버 오버레이 (SNS 모드에서만) */}
-                                {!userId && (
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center text-white">
-                                        <div className="flex items-center gap-4">
-                                            <div className="flex items-center">
-                                                <Heart className="w-5 h-5 mr-2" />
-                                                <span>{post.likeCount}</span>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <MessageCircle className="w-5 h-5 mr-2" />
-                                                <span>0</span>{" "}
-                                                {/* 댓글 수가 없으므로 임시로 0 */}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </PostWrapper>
+                        <PostGridItem
+                            post={post}
+                            mode={mode}
+                            userId={userId}
+                            onAuthorClick={onAuthorClick}
+                            onPostClick={onPostClick}
+                            onShare={handleShare}
+                        />
                     </div>
                 );
             })}
