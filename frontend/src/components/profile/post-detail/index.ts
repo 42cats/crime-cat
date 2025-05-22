@@ -3,3 +3,4 @@ export { default as PostInfoContent } from './PostInfoContent';
 export { default as PostImageSection } from './PostImageSection';
 export { default as MobilePostLayout } from './MobilePostLayout';
 export { default as DesktopPostLayout } from './DesktopPostLayout';
+export { default as VerticalPostLayout } from './VerticalPostLayout';

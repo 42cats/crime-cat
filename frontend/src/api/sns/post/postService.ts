@@ -6,6 +6,8 @@ export interface UserPostGalleryDto {
     thumbnailUrl: string | null; // 0번째 이미지 또는 null
     content: string;
     likeCount: number;
+    private: boolean;
+    followersOnly: boolean;
     liked: boolean;
     hashTags?: string[]; // 해시태그 추가
     locationName?: string; // 위치 정보 추가
@@ -19,6 +21,8 @@ export interface UserPostDto {
     authorAvatarUrl: string;
     imageUrls: string[];
     likeCount: number;
+    private: boolean;
+    followersOnly: boolean;
     liked: boolean;
     createdAt: string;
     hashTags?: string[]; // 해시태그 추가
