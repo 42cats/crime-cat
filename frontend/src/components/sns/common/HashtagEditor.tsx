@@ -23,6 +23,7 @@ const HashtagEditor: React.FC<HashtagEditorProps> = ({
 }) => {
     const [inputValue, setInputValue] = useState("");
     const [error, setError] = useState<string | null>(null);
+    const [isComposing, setIsComposing] = useState(false); // 한글 조합 상태
     const inputRef = useRef<HTMLInputElement>(null);
 
     // 해시태그 형식 검증 (개선된 정규식)
@@ -81,11 +82,14 @@ const HashtagEditor: React.FC<HashtagEditorProps> = ({
         }
     };
 
-    // 엔터키 처리
+    // 엔터키 처리 (한글 조합 중일 때는 무시)
     const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter") {
             e.preventDefault();
-            handleAddHashtag();
+            // 한글 조합 중이 아닐 때만 처리
+            if (!isComposing) {
+                handleAddHashtag();
+            }
         } else if (e.key === "Backspace" && inputValue === "" && hashtags.length > 0) {
             // 빈 입력창에서 백스페이스 시 마지막 해시태그 삭제
             onChange(hashtags.slice(0, -1));
@@ -111,6 +115,16 @@ const HashtagEditor: React.FC<HashtagEditorProps> = ({
         if (error) {
             setError(null);
         }
+    };
+
+    // 한글 조합 시작
+    const handleCompositionStart = () => {
+        setIsComposing(true);
+    };
+
+    // 한글 조합 끝
+    const handleCompositionEnd = () => {
+        setIsComposing(false);
     };
 
     return (
@@ -153,6 +167,8 @@ const HashtagEditor: React.FC<HashtagEditorProps> = ({
                                 value={inputValue}
                                 onChange={handleInputChange}
                                 onKeyDown={handleKeyDown}
+                                onCompositionStart={handleCompositionStart}
+                                onCompositionEnd={handleCompositionEnd}
                                 placeholder={placeholder}
                                 className={`pr-8 ${error ? 'border-red-500 focus:border-red-500' : ''}`}
                                 maxLength={20}
