@@ -82,25 +82,24 @@ public class UserPostServiceImpl implements UserPostService {
             try {
                 // 비공개 포스트이거나 팔로워 전용이 아닌 경우에만 알림 발송
                 if (!isPrivate) {
-                    List<UUID> followerIds = followRepository.findFollowersByUserId(user.getId())
+                    List<UUID> followerUserIds = followRepository.findFollowersByUserId(user.getId())
                         .stream()
-                        .map(follower -> follower.getId())
-                        .filter(followerId -> {
+                        .filter(follower -> follower.getUser() != null) // User가 존재하는지 확인
+                        .filter(follower -> {
                             // 팔로워의 알림 설정 확인
-                            return webUserRepository.findById(followerId)
-                                .map(follower -> follower.isNotificationEnabled("userPostNew"))
-                                .orElse(false);
+                            return follower.getPostAlarm(); // 새 게시글 알림 설정 확인
                         })
+                        .map(follower -> follower.getUser().getId()) // WebUser가 아닌 User ID 사용
                         .collect(Collectors.toList());
                     
-                    if (!followerIds.isEmpty()) {
+                    if (!followerUserIds.isEmpty()) {
                         UserPostCreatedEvent event = UserPostCreatedEvent.of(
                             this,
                             post.getId(),
                             content,
-                            user.getId(),
+                            user.getUser().getId(), // WebUser가 아닌 User ID 사용
                             user.getNickname(),
-                            followerIds
+                            followerUserIds
                         );
                         notificationEventPublisher.publishEvent(event);
                     }
