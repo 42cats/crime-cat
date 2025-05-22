@@ -76,10 +76,12 @@ const PostGridItem: React.FC<PostGridItemProps> = ({
               <PostContentPreview
                 content={post.content}
                 hashtags={post.hashTags}
-                maxTextLength={60}
+                maxTextLength={90}
                 maxHashtags={2}
+                maxLines={3}
                 variant="dark"
                 size="sm"
+                compactHashtags={true}
                 className="mb-2"
               />
 
@@ -140,10 +142,12 @@ const PostGridItem: React.FC<PostGridItemProps> = ({
               <PostContentPreview
                 content={post.content}
                 hashtags={post.hashTags}
-                maxTextLength={100}
+                maxTextLength={130}
                 maxHashtags={3}
+                maxLines={4}
                 variant="light"
                 size="sm"
+                compactHashtags={false}
               />
             </div>
 

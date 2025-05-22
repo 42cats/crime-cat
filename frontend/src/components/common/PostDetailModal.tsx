@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import PostActions from "@/components/sns/common/PostActions";
 import DeleteConfirmDialog from "@/components/sns/common/DeleteConfirmDialog";
+import PostEditModal from "@/components/sns/common/PostEditModal";
 
 // 포스트 상세 레이아웃 컴포넌트 임포트
 import {
@@ -74,6 +75,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
     // 수정/삭제 상태
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
 
     const { user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
@@ -242,8 +244,23 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
     // 수정 핸들러
     const handleEdit = () => {
-        // TODO: 포스트 수정 모달이나 페이지로 이동
-        toast.success("수정 기능은 곧 추가될 예정입니다.");
+        setShowEditModal(true);
+    };
+    
+    // 수정 성공 핸들러
+    const handleEditSuccess = () => {
+        // 포스트 데이터 다시 로드
+        if (postId) {
+            userPostService.getUserPostDetail(postId)
+                .then((updatedPost) => {
+                    setPost(updatedPost);
+                    setLiked(updatedPost.liked);
+                    setLikeCount(updatedPost.likeCount);
+                })
+                .catch((error) => {
+                    console.error("업데이트된 포스트 로드 실패:", error);
+                });
+        }
     };
     
     // 삭제 핸들러
@@ -470,6 +487,16 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 onConfirm={handleDelete}
                 isLoading={isDeleting}
             />
+            
+            {/* 수정 모달 */}
+            {post && (
+                <PostEditModal
+                    post={post}
+                    isOpen={showEditModal}
+                    onClose={() => setShowEditModal(false)}
+                    onSuccess={handleEditSuccess}
+                />
+            )}
             
             {/* 프로필 모달 */}
             {selectedUserId && (
