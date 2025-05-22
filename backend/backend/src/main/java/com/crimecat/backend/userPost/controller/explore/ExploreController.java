@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/posts/explore")
+@RequestMapping("/api/v1/public/posts/explore")
 @RequiredArgsConstructor
 public class ExploreController {
 
