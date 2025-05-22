@@ -8,7 +8,6 @@ export * from './search';
 
 // 기타 SNS 서비스
 export * from './hashtagService';
-export * from './savePostService';
 export * from './locationService';
 export * from './exploreService';
 
