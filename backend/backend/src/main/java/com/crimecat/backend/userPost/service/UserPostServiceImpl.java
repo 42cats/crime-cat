@@ -20,7 +20,6 @@ import com.crimecat.backend.userPost.repository.UserPostImageRepository;
 import com.crimecat.backend.userPost.repository.UserPostLikeRepository;
 import com.crimecat.backend.userPost.repository.UserPostRepository;
 import com.crimecat.backend.userPost.repository.saved.SavedPostRepository;
-import com.crimecat.backend.userPost.service.saved.SavedPostService;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.transaction.Transactional;
@@ -47,7 +46,6 @@ public class UserPostServiceImpl implements UserPostService {
     private final WebUserRepository webUserRepository;
     private final FollowRepository followRepository; // 외부에서 설정 가능
     private final HashTagService hashTagService;
-    private final SavedPostService savedPostService;
     // Follow 관련 레포지토리 추가 필요 - 팔로워 기능은 나중에 구현
 
     @Override
@@ -490,39 +488,6 @@ public class UserPostServiceImpl implements UserPostService {
     }
 
     @Override
-    @Transactional
-    public boolean toggleSavePost(UUID postId, Object currentUser, String collectionName) {
-        WebUser user = (WebUser) currentUser;
-
-        // 게시글 존재 및 접근 권한 확인
-        UserPost post = userPostRepository.findById(postId)
-                .orElseThrow(ErrorStatus.USER_POST_NOT_FOUND::asServiceException);
-
-        if (!canAccessPost(post, user)) {
-            throw ErrorStatus.USER_POST_ACCESS_DENIED.asServiceException();
-        }
-
-        // 저장 서비스를 통해 토글 수행
-        boolean result = savedPostService.toggleSavePost(user.getId(), postId, collectionName);
-
-        // 게시물 인기도 점수 업데이트
-        post.updatePopularityScore();
-        userPostRepository.save(post);
-
-        return result;
-    }
-
-    @Override
-    public boolean isPostSaved(UUID postId, Object currentUser) {
-        if (currentUser == null) {
-            return false;
-        }
-
-        WebUser user = (WebUser) currentUser;
-        return savedPostRepository.existsByUserIdAndPostId(user.getId(), postId);
-    }
-
-    @Override
     public Page<UserPostGalleryPageDto> getPostsByHashTag(String tagName, WebUser currentUser, Pageable pageable) {
         // 해시태그 조회
         HashTag hashTag = hashTagService.getOrCreateHashTag(tagName);
@@ -594,88 +559,6 @@ public class UserPostServiceImpl implements UserPostService {
         }
 
         return convertToGalleryDtos(posts);
-    }
-
-    @Override
-    public Page<UserPostGalleryPageDto> getSavedPosts(WebUser currentUser, Pageable pageable) {
-        if (currentUser == null) {
-            return Page.empty(pageable);
-        }
-
-        // 저장된 게시물 조회
-        Page<SavedPost> savedPosts = savedPostRepository.findAllByUserId(currentUser.getId(), pageable);
-
-        // UserPostGalleryPageDto로 변환
-        return savedPosts.map(savedPost -> {
-            UserPost post = savedPost.getPost();
-
-            String thumbnail = post.getImages().stream()
-                    .sorted(Comparator.comparingInt(UserPostImage::getSortOrder))
-                    .findFirst()
-                    .map(UserPostImage::getImageUrl)
-                    .orElse(null);
-
-            long likeCount = userPostLikeRepository.countByPostId(post.getId());
-
-            return UserPostGalleryPageDto.builder()
-                    .postId(post.getId())
-                    .authorId(post.getUser().getId())
-                    .authorNickname(post.getUser().getNickname())
-                    .content(post.getContent())
-                    .thumbnailUrl(thumbnail)
-                    .likeCount(Long.valueOf(likeCount).intValue())
-                    .isPrivate(post.isPrivate())
-                    .isFollowersOnly(post.isFollowersOnly())
-                    .createdAt(post.getCreatedAt())
-                    .collectionName(savedPost.getCollectionName())
-                    .build();
-        });
-    }
-
-    @Override
-    public Page<UserPostGalleryPageDto> getSavedPostsByCollection(WebUser currentUser, String collectionName, Pageable pageable) {
-        if (currentUser == null || collectionName == null) {
-            return Page.empty(pageable);
-        }
-
-        // 특정 컬렉션의 저장된 게시물 조회
-        Page<SavedPost> savedPosts = savedPostRepository.findAllByUserIdAndCollectionName(
-                currentUser.getId(), collectionName, pageable);
-
-        // UserPostGalleryPageDto로 변환
-        return savedPosts.map(savedPost -> {
-            UserPost post = savedPost.getPost();
-
-            String thumbnail = post.getImages().stream()
-                    .sorted(Comparator.comparingInt(UserPostImage::getSortOrder))
-                    .findFirst()
-                    .map(UserPostImage::getImageUrl)
-                    .orElse(null);
-
-            long likeCount = userPostLikeRepository.countByPostId(post.getId());
-
-            return UserPostGalleryPageDto.builder()
-                    .postId(post.getId())
-                    .authorId(post.getUser().getId())
-                    .authorNickname(post.getUser().getNickname())
-                    .content(post.getContent())
-                    .thumbnailUrl(thumbnail)
-                    .likeCount(Long.valueOf(likeCount).intValue())
-                    .isPrivate(post.isPrivate())
-                    .isFollowersOnly(post.isFollowersOnly())
-                    .createdAt(post.getCreatedAt())
-                    .collectionName(savedPost.getCollectionName())
-                    .build();
-        });
-    }
-
-    @Override
-    public List<String> getUserCollections(WebUser currentUser) {
-        if (currentUser == null) {
-            return Collections.emptyList();
-        }
-
-        return savedPostRepository.findAllCollectionNamesByUserId(currentUser.getId());
     }
 
     @Override

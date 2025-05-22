@@ -23,41 +23,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class HashTagController {
 
-    private final HashTagService hashTagService;
     private final UserPostService userPostService;
-
-    @GetMapping("/popular")
-    public ResponseEntity<PageResponseDto<HashTagDto>> getPopularHashTags(
-            @PageableDefault(size = 20) Pageable pageable) {
-        
-        Page<HashTag> hashTags = hashTagService.getPopularHashTags(pageable);
-        
-        Page<HashTagDto> dtoPage = hashTags.map(hashTag -> HashTagDto.builder()
-                .id(hashTag.getId())
-                .name(hashTag.getName())
-                .useCount(hashTag.getUseCount())
-                .lastUsedAt(hashTag.getLastUsedAt())
-                .build());
-        
-        return ResponseEntity.ok(new PageResponseDto<>(dtoPage));
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<PageResponseDto<HashTagDto>> searchHashTags(
-            @RequestParam String query,
-            @PageableDefault(size = 10) Pageable pageable) {
-        
-        Page<HashTag> hashTags = hashTagService.searchHashTagsByName(query, pageable);
-        
-        Page<HashTagDto> dtoPage = hashTags.map(hashTag -> HashTagDto.builder()
-                .id(hashTag.getId())
-                .name(hashTag.getName())
-                .useCount(hashTag.getUseCount())
-                .lastUsedAt(hashTag.getLastUsedAt())
-                .build());
-        
-        return ResponseEntity.ok(new PageResponseDto<>(dtoPage));
-    }
 
     @GetMapping("/{tagName}/posts")
     public ResponseEntity<PageResponseDto<UserPostGalleryPageDto>> getPostsByHashTag(

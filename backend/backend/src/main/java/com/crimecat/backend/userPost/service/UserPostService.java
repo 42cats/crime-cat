@@ -180,27 +180,7 @@ public interface UserPostService {
      */
     boolean canAccessPost(UUID postId, WebUser currentUser);
     
-    /**
-     * 게시물 저장/저장 취소 토글
-     * @param postId 게시물 ID
-     * @param currentUser 현재 사용자
-     * @param collectionName 컬렉션 이름 (선택사항)
-     * @return true: 저장됨, false: 저장 취소됨
-     */
-    boolean toggleSavePost(UUID postId, Object currentUser, String collectionName);
-    
-    /**
-     * 간단한 게시물 저장 토글 (컬렉션 없이)
-     */
-    default boolean toggleSavePost(UUID postId, Object currentUser) {
-        return toggleSavePost(postId, currentUser, null);
-    }
-    
-    /**
-     * 게시물이 현재 사용자에 의해 저장되었는지 확인
-     */
-    boolean isPostSaved(UUID postId, Object currentUser);
-    
+
     /**
      * 해시태그로 게시물 검색
      * @param tagName 해시태그 이름 (# 제외)
@@ -234,30 +214,6 @@ public interface UserPostService {
      * @return 무작위 게시물 목록
      */
     Page<UserPostGalleryPageDto> getRandomPosts(WebUser currentUser, Pageable pageable);
-    
-    /**
-     * 저장된 게시물 목록 조회
-     * @param currentUser 현재 사용자
-     * @param pageable 페이징 정보
-     * @return 저장된 게시물 목록
-     */
-    Page<UserPostGalleryPageDto> getSavedPosts(WebUser currentUser, Pageable pageable);
-    
-    /**
-     * 저장 컬렉션별 게시물 목록 조회
-     * @param currentUser 현재 사용자
-     * @param collectionName 컬렉션 이름
-     * @param pageable 페이징 정보
-     * @return 특정 컬렉션에 저장된 게시물 목록
-     */
-    Page<UserPostGalleryPageDto> getSavedPostsByCollection(WebUser currentUser, String collectionName, Pageable pageable);
-    
-    /**
-     * 사용자의 컬렉션 목록 조회
-     * @param currentUser 현재 사용자
-     * @return 사용자가 생성한 컬렉션 이름 목록
-     */
-    List<String> getUserCollections(WebUser currentUser);
     
     /**
      * 키워드로 게시물 검색
