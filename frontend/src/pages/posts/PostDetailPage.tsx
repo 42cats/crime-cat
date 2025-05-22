@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { userPostService, UserPostDto } from "@/api/posts/postService";
+import { authService } from "@/api/authService";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import VerticalPostLayout from "@/components/profile/post-detail/VerticalPostLayout";
@@ -16,7 +17,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/useToast";
-import { getUser } from "@/lib/auth";
 
 const PostDetailPage: React.FC = () => {
     const { postId } = useParams<{ postId: string }>();
@@ -28,9 +28,48 @@ const PostDetailPage: React.FC = () => {
     const [likeLoading, setLikeLoading] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [isAuthor, setIsAuthor] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
     const navigate = useNavigate();
     const { toast } = useToast();
+
+    // 포스트 삭제
+    const handleDelete = async () => {
+        if (!post) return;
+
+        try {
+            await userPostService.deletePost(post.postId);
+            toast({
+                title: "삭제 완료",
+                description: "포스트가 성공적으로 삭제되었습니다.",
+            });
+            navigate("/dashboard/posts");
+        } catch (error) {
+            console.error("포스트 삭제 실패:", error);
+            toast({
+                title: "삭제 실패",
+                description: "포스트를 삭제하는데 실패했습니다.",
+                variant: "destructive",
+            });
+        } finally {
+            setDeleteDialogOpen(false);
+        }
+    };
+
+    // 포스트 수정
+    const handleEdit = () => {
+        if (!post) return;
+        navigate(`/dashboard/posts/edit/${post.postId}`);
+    };
+
+    const handleLoginRequired = () => {
+        toast({
+            title: "로그인 필요",
+            description: "이 기능을 사용하려면 로그인이 필요합니다.",
+            variant: "destructive",
+        });
+        navigate("/login");
+    };
 
     // 포스트 정보 로드
     useEffect(() => {
@@ -45,52 +84,21 @@ const PostDetailPage: React.FC = () => {
                 setLikeCount(data.likeCount);
 
                 // 작성자 권한 확인
-                const currentUser = getUser();
-                setIsAuthor(currentUser?.id === data.authorId);
+                try {
+                    const currentUser = await authService.getCurrentUser();
+                    setCurrentUserId(currentUser?.id || null);
+                    setIsAuthor(currentUser?.id === data.authorId);
+                } catch (authError) {
+                    console.log("사용자 인증 정보 없음:", authError);
+                    setCurrentUserId(null);
+                    setIsAuthor(false);
+                }
             } catch (error) {
                 console.error("포스트 로드 실패:", error);
                 setError("포스트를 불러오는데 실패했습니다.");
             } finally {
                 setLoading(false);
             }
-        };
-
-        // 포스트 삭제
-        const handleDelete = async () => {
-            if (!post) return;
-
-            try {
-                await userPostService.deletePost(post.postId);
-                toast({
-                    title: "삭제 완료",
-                    description: "포스트가 성공적으로 삭제되었습니다.",
-                });
-                navigate("/dashboard/posts");
-            } catch (error) {
-                console.error("포스트 삭제 실패:", error);
-                toast({
-                    title: "삭제 실패",
-                    description: "포스트를 삭제하는데 실패했습니다.",
-                    variant: "destructive",
-                });
-            } finally {
-                setDeleteDialogOpen(false);
-            }
-        };
-
-        const handleLoginRequired = () => {
-            toast({
-                title: "로그인 필요",
-                description: "이 기능을 사용하려면 로그인이 필요합니다.",
-                variant: "destructive",
-            });
-            navigate("/login");
-        };
-
-        // 포스트 수정
-        const handleEdit = () => {
-            if (!post) return;
-            navigate(`/dashboard/posts/edit/${post.postId}`);
         };
 
         loadPost();
@@ -208,7 +216,7 @@ const PostDetailPage: React.FC = () => {
                     handleLike={handleLikeToggle}
                     handleShare={handleShare}
                     handleLoginRequired={handleLoginRequired}
-                    userId={getUser()?.id}
+                    userId={currentUserId || undefined}
                     onEdit={handleEdit}
                     onDelete={() => setDeleteDialogOpen(true)}
                     isAuthor={isAuthor}

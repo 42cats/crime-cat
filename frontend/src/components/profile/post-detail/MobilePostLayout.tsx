@@ -1,6 +1,12 @@
 import React from "react";
-import { Heart, MessageSquare, Share2 } from "lucide-react";
+import { Heart, MessageSquare, Share2, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostCommentList } from "../post-comments";
 import { UserPostDto } from "@/api/posts/postService";
@@ -22,6 +28,9 @@ interface MobilePostLayoutProps {
     handleShare: () => void;
     handleLoginRequired: () => void;
     userId?: string;
+    onEdit?: () => void;
+    onDelete?: () => void;
+    isAuthor?: boolean;
 }
 
 const MobilePostLayout: React.FC<MobilePostLayoutProps> = ({
@@ -39,22 +48,80 @@ const MobilePostLayout: React.FC<MobilePostLayoutProps> = ({
     handleShare,
     handleLoginRequired,
     userId,
+    onEdit,
+    onDelete,
+    isAuthor = false,
 }) => {
     return (
         <div className="flex flex-col min-h-0">
             {/* 프로필 정보 */}
-            <div className="p-4 border-b flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <img
-                        src={
-                            post.authorAvatarUrl ||
-                            "https://cdn.discordapp.com/embed/avatars/1.png"
-                        }
-                        alt={post.authorNickname}
-                        className="w-10 h-10 rounded-full object-cover"
-                    />
-                    <div>
-                        <h3 className="font-medium">{post.authorNickname}</h3>
+            <div className="p-4 border-b">
+                <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-3">
+                        {/* 프로필 이미지 */}
+                        <div className="flex-shrink-0">
+                            <img
+                                src={
+                                    post.authorAvatarUrl ||
+                                    "https://cdn.discordapp.com/embed/avatars/1.png"
+                                }
+                                alt={post.authorNickname}
+                                className="w-10 h-10 rounded-full object-cover"
+                            />
+                        </div>
+                        
+                        {/* 작성자 정보 및 더보기 버튼 */}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                    <span className="font-semibold text-sm">
+                                        {post.authorNickname}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        •
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        {post.createdAt && new Date(post.createdAt).toLocaleDateString('ko-KR', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </span>
+                                </div>
+                                
+                                {/* 작성자 권한이 있을 때만 드롭다운 메뉴 표시 */}
+                                {isAuthor && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 ml-2">
+                                                <MoreHorizontal className="h-5 w-5" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={onEdit}>
+                                                <Edit className="h-4 w-4 mr-2" />
+                                                수정
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem 
+                                                onClick={onDelete}
+                                                className="text-destructive focus:text-destructive"
+                                            >
+                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                삭제
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
+                            </div>
+                            
+                            {/* 위치 정보 */}
+                            {post.locationName && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                    📍 {post.locationName}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

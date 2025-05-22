@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 // 포스트 상세 레이아웃 컴포넌트 임포트
 import { MobilePostLayout, DesktopPostLayout } from "./post-detail";
+import { useNavigate } from "react-router-dom";
 
 interface PostDetailModalProps {
     post: UserPostDto;
@@ -46,8 +47,10 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
     const [likeCount, setLikeCount] = useState(post.likeCount);
     const [isLikeLoading, setIsLikeLoading] = useState(false);
     const [showLoginDialog, setShowLoginDialog] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [activeTab, setActiveTab] = useState<ModalTab>("info");
+    const [isAuthor, setIsAuthor] = useState(false);
 
     // 탭 변경 핸들러 - 로그인 없이도 탭 이동 가능하게 수정
     const handleTabChange = (tab: ModalTab) => {
@@ -55,6 +58,16 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
     };
 
     const { user, isAuthenticated } = useAuth();
+    const navigate = useNavigate();
+
+    // 작성자 권한 확인
+    useEffect(() => {
+        if (user && post.authorId) {
+            setIsAuthor(user.id === post.authorId);
+        } else {
+            setIsAuthor(false);
+        }
+    }, [user, post.authorId]);
 
     // 프로필 정보 로드
     useEffect(() => {
@@ -120,6 +133,29 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
             toast.error("좋아요 처리 중 문제가 발생했습니다");
         } finally {
             setIsLikeLoading(false);
+        }
+    };
+
+    // 포스트 수정
+    const handleEdit = () => {
+        onClose();
+        navigate(`/dashboard/posts/edit/${post.postId}`);
+    };
+
+    // 포스트 삭제
+    const handleDelete = async () => {
+        try {
+            await userPostService.deletePost(post.postId);
+            toast.success("포스트가 성공적으로 삭제되었습니다");
+            setShowDeleteDialog(false);
+            onClose();
+            // 페이지 새로고침 또는 목록 업데이트
+            window.location.reload();
+        } catch (error) {
+            console.error("포스트 삭제 실패:", error);
+            toast.error("포스트 삭제에 실패했습니다");
+        } finally {
+            setShowDeleteDialog(false);
         }
     };
 
@@ -194,6 +230,9 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                     setShowLoginDialog(true)
                                 }
                                 userId={user?.id}
+                                onEdit={handleEdit}
+                                onDelete={() => setShowDeleteDialog(true)}
+                                isAuthor={isAuthor}
                             />
                         </div>
 
@@ -245,6 +284,27 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                             }}
                         >
                             로그인 하러 가기
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* 삭제 확인 대화상자 */}
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>포스트 삭제</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            이 포스트를 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>취소</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            className="bg-red-500 hover:bg-red-600"
+                        >
+                            삭제
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

@@ -49,48 +49,111 @@ const VerticalPostLayout: React.FC<VerticalPostLayoutProps> = ({
     return (
         <div className="bg-card border border-border rounded-md overflow-hidden">
             {/* 작성자 정보 */}
-            <div className="p-4 border-b border-border flex items-center justify-between">
-                <div className="flex-1">
-                    <PostAuthorInfo
-                        authorNickname={post.authorNickname}
-                        authorId={post.authorId}
-                        authorAvatarUrl={post.authorAvatarUrl}
-                        createdAt={post.createdAt}
-                        locationName={post.locationName}
-                        onAuthorClick={onProfileClick}
-                        size="md"
-                    />
-                    <PostPrivacyBadge
-                        isPrivate={post.private}
-                        isFollowersOnly={post.followersOnly}
-                        size="sm"
-                        className="mt-2"
-                    />
-                </div>
+            <div className="p-4 border-b border-border">
+                <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-3">
+                        {/* 프로필 이미지 */}
+                        <div className="flex-shrink-0">
+                            {post.authorAvatarUrl ? (
+                                <img
+                                    src={post.authorAvatarUrl}
+                                    alt={post.authorNickname}
+                                    className="w-10 h-10 rounded-full cursor-pointer"
+                                    onClick={() =>
+                                        onProfileClick?.(post.authorId)
+                                    }
+                                />
+                            ) : (
+                                <div
+                                    className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center cursor-pointer"
+                                    onClick={() =>
+                                        onProfileClick?.(post.authorId)
+                                    }
+                                >
+                                    <span className="text-primary font-medium">
+                                        {post.authorNickname
+                                            .charAt(0)
+                                            .toUpperCase()}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
 
-                {/* 작성자 권한이 있을 때만 드롭다운 메뉴 표시 */}
-                {isAuthor && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-5 w-5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={onEdit}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                수정
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                                onClick={onDelete}
-                                className="text-destructive focus:text-destructive"
-                            >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                삭제
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
+                        {/* 작성자 정보 및 더보기 버튼 */}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                    <span
+                                        className="font-semibold text-sm cursor-pointer hover:underline"
+                                        onClick={() =>
+                                            onProfileClick?.(post.authorId)
+                                        }
+                                    >
+                                        {post.authorNickname}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        •
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        {post.createdAt &&
+                                            new Date(
+                                                post.createdAt
+                                            ).toLocaleDateString("ko-KR", {
+                                                month: "short",
+                                                day: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                            })}
+                                    </span>
+                                </div>
+
+                                {/* 작성자 권한이 있을 때만 드롭다운 메뉴 표시 */}
+                                {isAuthor && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 ml-2"
+                                            >
+                                                <MoreHorizontal className="h-5 w-5" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={onEdit}>
+                                                <Edit className="h-4 w-4 mr-2" />
+                                                수정
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={onDelete}
+                                                className="text-destructive focus:text-destructive"
+                                            >
+                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                삭제
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
+                            </div>
+
+                            {/* 위치 정보 */}
+                            {post.locationName && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                    📍 {post.locationName}
+                                </div>
+                            )}
+
+                            {/* 프라이버시 배지 */}
+                            <div className="mt-2">
+                                <PostPrivacyBadge
+                                    isPrivate={post.private}
+                                    isFollowersOnly={post.followersOnly}
+                                    size="sm"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* 이미지 영역 */}
