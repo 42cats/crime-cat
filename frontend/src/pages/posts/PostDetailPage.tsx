@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { userPostService, UserPostDto } from "@/api/sns/post";
+import { userPostService, UserPostDto } from "@/api/posts/postService";
 import { Button } from "@/components/ui/button";
 import {
     ArrowLeft,

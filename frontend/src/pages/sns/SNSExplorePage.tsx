@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import PostGrid from "@/components/sns/post/PostGrid";
 import ProfileDetailModal from '@/components/profile/ProfileDetailModal';
-import { exploreService } from "@/api/sns/exploreService";
-import { searchService } from "@/api/sns/search";
+import { exploreService } from "@/api/explore/exploreService";
+import { searchService } from "@/api/search/searchService";
 import SnsBottomNavigation from '@/components/sns/SnsBottomNavigation';
 import {
   SearchForm,

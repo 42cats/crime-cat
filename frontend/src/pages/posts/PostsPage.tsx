@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { userPostService, UserPostGalleryDto } from "@/api/sns/post";
+import { userPostService, UserPostGalleryDto } from "@/api/posts/postService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {

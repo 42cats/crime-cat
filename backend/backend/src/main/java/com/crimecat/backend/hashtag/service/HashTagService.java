@@ -55,7 +55,7 @@ public class HashTagService {
     }
     
     /**
-     * 게시물에 해시태그 연결
+     * 게시물에 해시태그 연결 (콘텐츠에서 자동 추출)
      */
     @Transactional
     public void processPostHashTags(UserPost post, String content) {
@@ -73,10 +73,48 @@ public class HashTagService {
     }
     
     /**
+     * 게시물에 해시태그 연결 (명시적 태그 목록 사용)
+     */
+    @Transactional
+    public void processPostHashTagsExplicit(UserPost post, List<String> hashtags) {
+        // 기존 해시태그 연결 모두 삭제
+        List<PostHashTag> existingTags = postHashTagRepository.findAllByPostId(post.getId());
+        existingTags.forEach(PostHashTag::removeAssociations);
+        postHashTagRepository.deleteAllByPostId(post.getId());
+        
+        // 명시적 해시태그 연결
+        if (hashtags != null && !hashtags.isEmpty()) {
+            for (String tagText : hashtags) {
+                if (tagText != null && !tagText.trim().isEmpty()) {
+                    String cleanTag = tagText.trim().toLowerCase();
+                    // # 제거 (혹시 포함되어 있을 경우)
+                    if (cleanTag.startsWith("#")) {
+                        cleanTag = cleanTag.substring(1);
+                    }
+                    if (!cleanTag.isEmpty()) {
+                        HashTag hashTag = getOrCreateHashTag(cleanTag);
+                        PostHashTag postHashTag = PostHashTag.create(post, hashTag);
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
      * 게시물에 연결된 해시태그 목록 조회
      */
     public List<HashTag> getPostHashTags(UUID postId) {
         return hashTagRepository.findAllByPostId(postId);
+    }
+    
+    /**
+     * 게시물에 연결된 해시태그 이름 목록 조회
+     */
+    public List<String> getPostHashTagNames(UUID postId) {
+        return hashTagRepository.findAllByPostId(postId)
+                .stream()
+                .map(HashTag::getName)
+                .collect(Collectors.toList());
     }
     
     /**

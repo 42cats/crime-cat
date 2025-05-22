@@ -2,7 +2,7 @@ import React from "react";
 import { Heart, Share2, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PostCommentList } from "../post-comments";
-import { UserPostDto } from "@/api/sns/post";
+import { UserPostDto } from "@/api/posts/postService";
 import { ProfileDetailDto } from "@/api/profile/detail";
 import PostInfoContent from "./PostInfoContent";
 import PostAuthorInfo from "@/components/sns/common/PostAuthorInfo";
@@ -55,58 +55,62 @@ const VerticalPostLayout: React.FC<VerticalPostLayoutProps> = ({
                         className="mt-2"
                     />
                 </div>
-                
+
                 <Button variant="ghost" size="icon" className="h-8 w-8">
                     <MoreHorizontal className="h-5 w-5" />
                 </Button>
             </div>
-            
+
             {/* 이미지 영역 */}
             {post.imageUrls && post.imageUrls.length > 0 && (
                 <div className="bg-black">
                     <ImageCarousel images={post.imageUrls} />
                 </div>
             )}
-            
+
             {/* 액션 버튼 */}
             <div className="p-4 border-b border-border">
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-4">
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-9 w-9" 
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9"
                             onClick={handleLike}
                             disabled={isLikeLoading}
                         >
-                            <Heart 
-                                className={`h-6 w-6 ${liked ? 'fill-red-500 text-red-500' : ''}`} 
+                            <Heart
+                                className={`h-6 w-6 ${
+                                    liked ? "fill-red-500 text-red-500" : ""
+                                }`}
                             />
                         </Button>
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-9 w-9" 
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9"
                             onClick={handleShare}
                         >
                             <Share2 className="h-6 w-6" />
                         </Button>
                     </div>
                 </div>
-                
+
                 {likeCount > 0 && (
-                    <p className="text-sm font-medium mb-2">좋아요 {likeCount}개</p>
+                    <p className="text-sm font-medium mb-2">
+                        좋아요 {likeCount}개
+                    </p>
                 )}
-                
+
                 {/* 내용 */}
                 <div className="text-sm">
                     <PostInfoContent post={post} showStats={false} />
                 </div>
             </div>
-            
+
             {/* 댓글 영역 */}
             <div className="overflow-hidden">
-                <PostCommentList 
+                <PostCommentList
                     postId={post.postId}
                     postAuthorId={post.authorId}
                     currentUserId={userId}

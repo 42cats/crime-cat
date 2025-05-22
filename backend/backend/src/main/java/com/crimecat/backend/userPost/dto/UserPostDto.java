@@ -25,4 +25,8 @@ public class UserPostDto {
     private LocalDateTime updatedAt;
     private UUID authorId;
     private List<UserPostCommentDto> comments;
+    private List<String> hashtags; // 해시태그 목록 추가
+    private String locationName; // 위치 이름
+    private Double latitude; // 위도
+    private Double longitude; // 경도
 }

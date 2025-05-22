@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { themesService } from "@/api/themesService";
 import { gameHistoryService } from "@/api/gameHistoryService";
 import { teamsService } from "@/api/teamsService";
-import { UserPostDto } from "@/api/sns/post";
+import { UserPostDto } from "@/api/posts/postService";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     ThemeHeader,

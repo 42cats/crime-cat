@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import TagInputField from "@/components/sns/input/TagInputField";
 import ContentTextArea from "@/components/sns/input/ContentTextArea";
 import LocationPicker from "@/components/sns/location/LocationPicker";
-import { Location } from "@/api/sns/locationService";
-import { userPostService } from "@/api/sns/post";
+import { Location } from "@/api/posts/postService";
+import { userPostService } from "@/api/posts";
 import PrivacySettingsComponent, {
     PrivacySettings,
 } from "@/components/sns/privacy/PrivacySettings";
@@ -96,16 +96,10 @@ const SNSCreatePageContent: React.FC = () => {
         setIsLoading(true);
 
         try {
-            // 태그를 해시태그 형태로 변환하여 내용에 추가
-            const contentWithTags =
-                tags.length > 0
-                    ? `${content} ${tags
-                          .map((tag) => `#${tag}`)
-                          .join(" ")}`.trim()
-                    : content;
-
+            // 태그와 콘텐츠를 분리하여 전송
             await userPostService.createPost(
-                contentWithTags,
+                content, // 콘텐츠만 전송 (태그 제외)
+                tags, // 태그는 별도 전송
                 privacySettings.isPrivate,
                 privacySettings.isFollowersOnly,
                 images,

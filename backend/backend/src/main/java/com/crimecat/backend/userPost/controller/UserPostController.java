@@ -33,9 +33,13 @@ public class UserPostController {
     @PostMapping
     public ResponseEntity<?> createUserPost(
             @RequestParam("content") String content,
+            @RequestParam(value = "hashtags", required = false) List<String> hashtags,
             @RequestParam(value = "images", required = false) List<MultipartFile> images,
             @RequestParam(value = "isPrivate", defaultValue = "false") boolean isPrivate,
-            @RequestParam(value = "isFollowersOnly", defaultValue = "false") boolean isFollowersOnly) {
+            @RequestParam(value = "isFollowersOnly", defaultValue = "false") boolean isFollowersOnly,
+            @RequestParam(value = "locationName", required = false) String locationName,
+            @RequestParam(value = "latitude", required = false) Double latitude,
+            @RequestParam(value = "longitude", required = false) Double longitude) {
 
         // ── 이미지 ID·URL 생성 ──────────────────────────────
         List<UUID>   imageIds  = new ArrayList<>();
@@ -65,7 +69,7 @@ public class UserPostController {
 
         // ── 게시글 저장 ───────────────────────────────
         WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
-        userPostService.createUserPost(currentWebUser, content, imageIds, imageUrls, isPrivate, isFollowersOnly);
+        userPostService.createUserPost(currentWebUser, content, hashtags, imageIds, imageUrls, isPrivate, isFollowersOnly, locationName, latitude, longitude);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -80,11 +84,15 @@ public class UserPostController {
     public ResponseEntity<?> updateUserPostPartially(
             @PathVariable UUID postId,
             @RequestParam("content") String content,
+            @RequestParam(value = "hashtags", required = false) List<String> hashtags,
             @RequestPart(value = "newImages", required = false) List<MultipartFile> newImages,
             @RequestParam(value = "newImageIds", required = false) String newImageIdsJson,
             @RequestParam(value = "keepImageUrls", required = false) String keepImageUrlsJson,
             @RequestParam(value = "isPrivate", defaultValue = "false") boolean isPrivate,
-            @RequestParam(value = "isFollowersOnly", defaultValue = "false") boolean isFollowersOnly
+            @RequestParam(value = "isFollowersOnly", defaultValue = "false") boolean isFollowersOnly,
+            @RequestParam(value = "locationName", required = false) String locationName,
+            @RequestParam(value = "latitude", required = false) Double latitude,
+            @RequestParam(value = "longitude", required = false) Double longitude
     ) {
         WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
         
@@ -113,7 +121,7 @@ public class UserPostController {
             throw new RuntimeException("Invalid JSON format: " + e.getMessage(), e);
         }
         
-        userPostService.updateUserPostPartially(postId, currentUser, content, newImages, newImageIds, keepImageUrls, isPrivate, isFollowersOnly);
+        userPostService.updateUserPostPartially(postId, currentUser, content, hashtags, newImages, newImageIds, keepImageUrls, isPrivate, isFollowersOnly, locationName, latitude, longitude);
         return ResponseEntity.ok().build();
     }
 
