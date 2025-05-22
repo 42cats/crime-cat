@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { AuthGuard } from '@/components/auth';
 import { userPostService, UserPostGalleryDto } from '@/api/userPost/userPostService';
 import PostGrid from '@/components/sns/post/PostGrid';
+import ProfileDetailModal from '@/components/profile/ProfileDetailModal';
 import SnsBottomNavigation from '@/components/sns/SnsBottomNavigation';
 import { Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,8 @@ const SNSMyPostsPageContent: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [inputValue, setInputValue] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     // 포스트 로딩
     const loadPosts = useCallback(async (resetPage = false, searchTerm = '') => {
@@ -122,6 +125,12 @@ const SNSMyPostsPageContent: React.FC = () => {
         [isLoading, hasMore, loadPosts]
     );
 
+    // 프로필 모달 열기
+    const handleAuthorClick = (authorId: string) => {
+        setSelectedUserId(authorId);
+        setIsProfileModalOpen(true);
+    };
+
     return (
         <>
             <div className="container mx-auto px-4 py-6 mb-16 md:mb-0">
@@ -182,7 +191,11 @@ const SNSMyPostsPageContent: React.FC = () => {
                 )}
 
                 {/* 게시물 그리드 */}
-                <PostGrid posts={posts} lastPostRef={lastPostElementRef} />
+                <PostGrid 
+                    posts={posts} 
+                    lastPostRef={lastPostElementRef} 
+                    onAuthorClick={handleAuthorClick}
+                />
 
                 {/* 로딩 상태 */}
                 {isLoading && (
@@ -215,6 +228,15 @@ const SNSMyPostsPageContent: React.FC = () => {
                     <div className="text-center py-8 text-muted-foreground">
                         <p className="text-sm">모든 게시물을 확인했습니다</p>
                     </div>
+                )}
+                
+                {/* 프로필 모달 */}
+                {selectedUserId && (
+                    <ProfileDetailModal
+                        userId={selectedUserId}
+                        open={isProfileModalOpen}
+                        onOpenChange={setIsProfileModalOpen}
+                    />
                 )}
             </div>
             <SnsBottomNavigation />

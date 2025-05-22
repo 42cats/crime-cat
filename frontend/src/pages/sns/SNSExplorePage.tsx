@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import PostGrid from "@/components/sns/post/PostGrid";
+import ProfileDetailModal from '@/components/profile/ProfileDetailModal';
 import { exploreService } from "@/api/sns/exploreService";
 import { searchService } from "@/api/sns/search";
 import SnsBottomNavigation from '@/components/sns/SnsBottomNavigation';
@@ -27,6 +28,8 @@ const SNSExplorePage: React.FC = () => {
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     
     // 이전 검색 키를 추적하여 데이터 초기화 시점 결정
     const prevKey = useRef<string>("");
@@ -176,6 +179,12 @@ const SNSExplorePage: React.FC = () => {
         setSearchParams({ tab });
     };
 
+    // 프로필 모달 열기
+    const handleAuthorClick = (authorId: string) => {
+        setSelectedUserId(authorId);
+        setIsProfileModalOpen(true);
+    };
+
     return (
         <>
         <div className="container mx-auto px-4 py-6 mb-16 md:mb-0">
@@ -232,7 +241,11 @@ const SNSExplorePage: React.FC = () => {
             />
 
             {/* 게시물 그리드 */}
-            <PostGrid posts={posts} lastPostRef={lastPostElementRef} />
+            <PostGrid 
+                posts={posts} 
+                lastPostRef={lastPostElementRef} 
+                onAuthorClick={handleAuthorClick}
+            />
 
             {/* 로딩 및 빈 상태 */}
             <LoadingAndEmptyStates
@@ -241,6 +254,15 @@ const SNSExplorePage: React.FC = () => {
                 posts={posts}
                 isSearching={isSearching}
             />
+            
+            {/* 프로필 모달 */}
+            {selectedUserId && (
+                <ProfileDetailModal
+                    userId={selectedUserId}
+                    open={isProfileModalOpen}
+                    onOpenChange={setIsProfileModalOpen}
+                />
+            )}
         </div>
         <SnsBottomNavigation />
         </>

@@ -47,10 +47,10 @@ export interface UserPostGalleryPageDto {
 
 // 위치 인터페이스
 export interface Location {
-    id: string;
-    name: string;
-    latitude: number;
-    longitude: number;
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
 }
 
 class UserPostService {
@@ -140,11 +140,11 @@ class UserPostService {
                 size,
                 sort: "LATEST",
             };
-
+            
             if (search && search.trim()) {
                 params.search = search.trim();
             }
-
+            
             return await apiClient.get("/user-posts/my", {
                 params,
                 headers: {
@@ -164,7 +164,7 @@ class UserPostService {
 
     // 포스트 생성 (해시태그, 위치 정보, 비밀글 설정 포함)
     async createPost(
-        content: string,
+        content: string, 
         images?: File[],
         location?: Location | null,
         isPrivate?: boolean,
@@ -176,18 +176,15 @@ class UserPostService {
                 imageCount: images?.length,
                 location,
                 isPrivate,
-                isFollowersOnly,
+                isFollowersOnly
             });
 
             const formData = new FormData();
             formData.append("content", content);
-
+            
             // 비밀글 설정
             formData.append("isPrivate", String(isPrivate || false));
-            formData.append(
-                "isFollowersOnly",
-                String(isFollowersOnly || false)
-            );
+            formData.append("isFollowersOnly", String(isFollowersOnly || false));
 
             // 이미지 추가
             if (images && images.length > 0) {
@@ -264,18 +261,15 @@ class UserPostService {
                 keepImageUrls,
                 location,
                 isPrivate,
-                isFollowersOnly,
+                isFollowersOnly
             });
 
             const formData = new FormData();
             formData.append("content", content);
-
+            
             // 비밀글 설정
             formData.append("isPrivate", String(isPrivate || false));
-            formData.append(
-                "isFollowersOnly",
-                String(isFollowersOnly || false)
-            );
+            formData.append("isFollowersOnly", String(isFollowersOnly || false));
 
             // 유효한 이미지만 추가
             let validImages: File[] = [];
