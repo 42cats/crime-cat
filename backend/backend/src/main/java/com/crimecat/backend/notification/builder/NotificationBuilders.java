@@ -76,4 +76,37 @@ public class NotificationBuilders {
         return new GameRecordResponseBuilder(notificationService, templateService, originalRequestId, approved)
                 .to(receiverId);
     }
+    
+    /**
+     * 새 유저 포스트 알림 빌더 생성
+     * @param postId 포스트 ID
+     * @param authorId 작성자 ID
+     * @return UserPostNewBuilder
+     */
+    public UserPostNewBuilder userPostNew(UUID postId, UUID authorId) {
+        return new UserPostNewBuilder(notificationService, templateService, postId, authorId)
+                .from(authorId);
+    }
+    
+    /**
+     * 유저 포스트 댓글 알림 빌더 생성
+     * @param postId 포스트 ID
+     * @param commenterId 댓글 작성자 ID
+     * @return UserPostCommentBuilder
+     */
+    public UserPostCommentBuilder userPostComment(UUID postId, UUID commenterId) {
+        return new UserPostCommentBuilder(notificationService, templateService, postId, commenterId)
+                .from(commenterId);
+    }
+    
+    /**
+     * 유저 포스트 댓글 답글 알림 빌더 생성
+     * @param parentCommentId 부모 댓글 ID
+     * @param replierId 답글 작성자 ID
+     * @return UserPostCommentReplyBuilder
+     */
+    public UserPostCommentReplyBuilder userPostCommentReply(UUID parentCommentId, UUID replierId) {
+        return new UserPostCommentReplyBuilder(notificationService, templateService, parentCommentId, replierId)
+                .from(replierId);
+    }
 }

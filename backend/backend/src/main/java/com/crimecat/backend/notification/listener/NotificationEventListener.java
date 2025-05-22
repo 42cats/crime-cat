@@ -152,6 +152,101 @@ public class NotificationEventListener {
     }
     
     /**
+     * 유저 포스트 생성 이벤트 처리
+     * 팔로워들에게 알림 발송
+     */
+    @EventListener
+    @Async
+    public CompletableFuture<Void> handleUserPostCreated(UserPostCreatedEvent event) {
+        log.info("Processing UserPostCreatedEvent: {} for {} followers", 
+                 event.getEventId(), event.getFollowerIds().size());
+        
+        try {
+            // 각 팔로워에게 알림 발송
+            event.getFollowerIds().parallelStream().forEach(followerId -> {
+                try {
+                    builders.userPostNew(event.getPostId(), event.getAuthorId())
+                        .to(followerId)
+                        .title(event.getTitle())
+                        .message(event.getMessage())
+                        .data("postId", event.getPostId())
+                        .data("authorNickname", event.getAuthorNickname())
+                        .data("linkUrl", event.getData().get("linkUrl"))
+                        .send();
+                } catch (Exception e) {
+                    log.error("Error sending user post notification to follower {}: {}", followerId, e.getMessage());
+                }
+            });
+            
+            log.debug("Successfully processed UserPostCreatedEvent: {}", event.getEventId());
+        } catch (Exception e) {
+            log.error("Error processing UserPostCreatedEvent: {}", event.getEventId(), e);
+            throw e;
+        }
+        
+        return CompletableFuture.completedFuture(null);
+    }
+    
+    /**
+     * 유저 포스트 댓글 이벤트 처리
+     * 포스트 작성자에게 알림 발송
+     */
+    @EventListener
+    @Async
+    public CompletableFuture<Void> handleUserPostCommented(UserPostCommentedEvent event) {
+        log.info("Processing UserPostCommentedEvent: {}", event.getEventId());
+        
+        try {
+            builders.userPostComment(event.getPostId(), event.getCommenterId())
+                .to(event.getReceiverId())
+                .title(event.getTitle())
+                .message(event.getMessage())
+                .data("commentId", event.getCommentId())
+                .data("postId", event.getPostId())
+                .data("commenterNickname", event.getCommenterNickname())
+                .data("linkUrl", event.getData().get("linkUrl"))
+                .send();
+            
+            log.debug("Successfully processed UserPostCommentedEvent: {}", event.getEventId());
+        } catch (Exception e) {
+            log.error("Error processing UserPostCommentedEvent: {}", event.getEventId(), e);
+            throw e;
+        }
+        
+        return CompletableFuture.completedFuture(null);
+    }
+    
+    /**
+     * 유저 포스트 댓글 답글 이벤트 처리
+     * 부모 댓글 작성자에게 알림 발송
+     */
+    @EventListener
+    @Async
+    public CompletableFuture<Void> handleUserPostCommentReplied(UserPostCommentRepliedEvent event) {
+        log.info("Processing UserPostCommentRepliedEvent: {}", event.getEventId());
+        
+        try {
+            builders.userPostCommentReply(event.getParentCommentId(), event.getReplierId())
+                .to(event.getReceiverId())
+                .title(event.getTitle())
+                .message(event.getMessage())
+                .data("replyId", event.getReplyId())
+                .data("parentCommentId", event.getParentCommentId())
+                .data("postId", event.getPostId())
+                .data("replierNickname", event.getReplierNickname())
+                .data("linkUrl", event.getData().get("linkUrl"))
+                .send();
+            
+            log.debug("Successfully processed UserPostCommentRepliedEvent: {}", event.getEventId());
+        } catch (Exception e) {
+            log.error("Error processing UserPostCommentRepliedEvent: {}", event.getEventId(), e);
+            throw e;
+        }
+        
+        return CompletableFuture.completedFuture(null);
+    }
+    
+    /**
      * 모든 알림 이벤트에 대한 공통 처리
      * 로깅, 메트릭 수집 등의 작업 수행
      */

@@ -5,6 +5,8 @@ import com.crimecat.backend.follow.repository.FollowRepository;
 import com.crimecat.backend.hashtag.domain.HashTag;
 import com.crimecat.backend.hashtag.domain.PostHashTag;
 import com.crimecat.backend.hashtag.service.HashTagService;
+import com.crimecat.backend.notification.event.NotificationEventPublisher;
+import com.crimecat.backend.notification.event.UserPostCreatedEvent;
 import com.crimecat.backend.storage.StorageFileType;
 import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.userPost.domain.UserPost;
@@ -29,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,9 +44,9 @@ public class UserPostServiceImpl implements UserPostService {
     private final UserPostCommentRepository userPostCommentRepository;
     private final StorageService storageService;
     private final WebUserRepository webUserRepository;
-    private final FollowRepository followRepository; // 외부에서 설정 가능
+    private final FollowRepository followRepository;
     private final HashTagService hashTagService;
-    // Follow 관련 레포지토리 추가 필요 - 팔로워 기능은 나중에 구현
+    private final NotificationEventPublisher notificationEventPublisher;
 
     @Override
     @Transactional
@@ -73,6 +76,40 @@ public class UserPostServiceImpl implements UserPostService {
         
         // 해시태그 처리 - 명시적 태그 목록 사용
         hashTagService.processPostHashTagsExplicit(post, hashtags);
+        
+        // 팔로워들에게 알림 발송 (비동기)
+        CompletableFuture.runAsync(() -> {
+            try {
+                // 비공개 포스트이거나 팔로워 전용이 아닌 경우에만 알림 발송
+                if (!isPrivate) {
+                    List<UUID> followerIds = followRepository.findFollowersByUserId(user.getId())
+                        .stream()
+                        .map(follower -> follower.getId())
+                        .filter(followerId -> {
+                            // 팔로워의 알림 설정 확인
+                            return webUserRepository.findById(followerId)
+                                .map(follower -> follower.isNotificationEnabled("userPostNew"))
+                                .orElse(false);
+                        })
+                        .collect(Collectors.toList());
+                    
+                    if (!followerIds.isEmpty()) {
+                        UserPostCreatedEvent event = UserPostCreatedEvent.of(
+                            this,
+                            post.getId(),
+                            content,
+                            user.getId(),
+                            user.getNickname(),
+                            followerIds
+                        );
+                        notificationEventPublisher.publishEvent(event);
+                    }
+                }
+            } catch (Exception e) {
+                // 알림 발송 실패가 포스트 생성에 영향주지 않도록 로깅만 처리
+                System.err.println("Failed to send post creation notification: " + e.getMessage());
+            }
+        });
     }
 
     @Override

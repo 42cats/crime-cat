@@ -14,6 +14,7 @@ import com.crimecat.backend.webUser.dto.NicknameCheckResponseDto;
 import com.crimecat.backend.webUser.dto.NotificationSettingsRequestDto;
 import com.crimecat.backend.webUser.dto.NotificationSettingsResponseDto;
 import com.crimecat.backend.webUser.dto.NotificationToggleRequest;
+import com.crimecat.backend.webUser.dto.UserPostNotificationSettingsDto;
 import com.crimecat.backend.webUser.dto.UserProfileInfoResponseDto;
 import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
 import com.crimecat.backend.webUser.enums.UserRole;
@@ -139,6 +140,29 @@ public class WebUserController {
     NotificationSettingsResponseDto notificationSettingsResponseDto = webUserService.setAllNotificationSetting(
         userId, body);
     return ResponseEntity.ok().body(notificationSettingsResponseDto);
+  }
+  
+  /**
+   * 유저 포스트 알림 설정 조회
+   */
+  @GetMapping("/{user_id}/notifications/userpost")
+  public ResponseEntity<UserPostNotificationSettingsDto> getUserPostNotificationSettings(
+      @PathVariable("user_id") String userId) {
+    AuthenticationUtil.validateCurrentUserMatches(UUID.fromString(userId));
+    UserPostNotificationSettingsDto settings = webUserService.getUserPostNotificationSettings(userId);
+    return ResponseEntity.ok().body(settings);
+  }
+  
+  /**
+   * 유저 포스트 알림 설정 업데이트
+   */
+  @PutMapping("/{user_id}/notifications/userpost")
+  public ResponseEntity<UserPostNotificationSettingsDto> updateUserPostNotificationSettings(
+      @PathVariable("user_id") String userId,
+      @RequestBody UserPostNotificationSettingsDto body) {
+    AuthenticationUtil.validateCurrentUserMatches(UUID.fromString(userId));
+    UserPostNotificationSettingsDto settings = webUserService.updateUserPostNotificationSettings(userId, body);
+    return ResponseEntity.ok().body(settings);
   }
 
   /**
