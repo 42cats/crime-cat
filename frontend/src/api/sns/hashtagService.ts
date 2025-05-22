@@ -41,6 +41,7 @@ class HashTagService {
         page: number = 0,
         size: number = 20
     ): Promise<HashTagResponse | null> {
+        console.trace('getPopularHashTags called from:'); // 호출 스택 추적
         try {
             return await apiClient.get<HashTagResponse>(`/hashtags/popular`, {
                 params: {
