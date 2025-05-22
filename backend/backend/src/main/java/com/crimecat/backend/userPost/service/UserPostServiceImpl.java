@@ -11,7 +11,6 @@ import com.crimecat.backend.userPost.domain.UserPost;
 import com.crimecat.backend.userPost.domain.UserPostComment;
 import com.crimecat.backend.userPost.domain.UserPostImage;
 import com.crimecat.backend.userPost.domain.UserPostLike;
-import com.crimecat.backend.userPost.domain.saved.SavedPost;
 import com.crimecat.backend.userPost.dto.UserPostCommentDto;
 import com.crimecat.backend.userPost.dto.UserPostDto;
 import com.crimecat.backend.userPost.dto.UserPostGalleryPageDto;
@@ -19,7 +18,6 @@ import com.crimecat.backend.userPost.repository.UserPostCommentRepository;
 import com.crimecat.backend.userPost.repository.UserPostImageRepository;
 import com.crimecat.backend.userPost.repository.UserPostLikeRepository;
 import com.crimecat.backend.userPost.repository.UserPostRepository;
-import com.crimecat.backend.userPost.repository.saved.SavedPostRepository;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.transaction.Transactional;
@@ -41,7 +39,6 @@ public class UserPostServiceImpl implements UserPostService {
     private final UserPostImageRepository userPostImageRepository;
     private final UserPostLikeRepository userPostLikeRepository;
     private final UserPostCommentRepository userPostCommentRepository;
-    private final SavedPostRepository savedPostRepository;
     private final StorageService storageService;
     private final WebUserRepository webUserRepository;
     private final FollowRepository followRepository; // 외부에서 설정 가능
