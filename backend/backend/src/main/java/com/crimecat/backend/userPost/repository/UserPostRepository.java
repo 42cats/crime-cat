@@ -169,4 +169,29 @@ public interface UserPostRepository extends JpaRepository<UserPost, UUID> {
             "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id))) " +
             "ORDER BY p.createdAt DESC")
     Page<UserPost> findAccessiblePostsByKeywordAndIds(@Param("keyword") String keyword, @Param("postIds") List<UUID> postIds, @Param("userId") UUID userId, Pageable pageable);
+    
+    /**
+     * 특정 사용자의 게시물 중 컨텐츠에 키워드가 포함된 게시물 검색
+     */
+    @Query("SELECT p FROM UserPost p WHERE p.user = :user AND LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY p.createdAt DESC")
+    Page<UserPost> findByUserAndContentContaining(@Param("user") com.crimecat.backend.webUser.domain.WebUser user, @Param("keyword") String keyword, Pageable pageable);
+    
+    /**
+     * 키워드 또는 작성자 이름으로 공개 게시물 검색 (통합 검색)
+     */
+    @Query("SELECT p FROM UserPost p WHERE p.isPrivate = false AND p.isFollowersOnly = false AND " +
+            "(LOWER(p.content) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.user.nickname) LIKE LOWER(CONCAT('%', :query, '%'))) " +
+            "ORDER BY p.createdAt DESC")
+    Page<UserPost> findPublicPostsByKeywordOrAuthor(@Param("query") String query, Pageable pageable);
+    
+    /**
+     * 키워드 또는 작성자 이름으로 접근 가능한 게시물 검색 (통합 검색)
+     */
+    @Query("SELECT p FROM UserPost p WHERE " +
+            "(LOWER(p.content) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.user.nickname) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
+            "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
+            "p.user.id = :userId OR " +
+            "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id))) " +
+            "ORDER BY p.createdAt DESC")
+    Page<UserPost> findAccessiblePostsByKeywordOrAuthor(@Param("query") String query, @Param("userId") UUID userId, Pageable pageable);
 }

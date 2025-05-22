@@ -10,7 +10,7 @@ import { PostCommentList } from '@/components/profile/post-comments';
 import ProfileDetailModal from '@/components/profile/ProfileDetailModal';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { userPostService, UserPostDto } from '@/api/sns/post';
+import { userPostService, UserPostDto } from '@/api/userPost/userPostService';
 import { toast } from 'sonner';
 import SnsBottomNavigation from '@/components/sns/SnsBottomNavigation';
 

@@ -40,10 +40,10 @@ export interface UserPostGalleryPageDto {
 
 // 위치 인터페이스
 export interface Location {
-  id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
+    id: string;
+    name: string;
+    latitude: number;
+    longitude: number;
 }
 
 class PostService {
@@ -150,7 +150,9 @@ class PostService {
 
     // 포스트 생성 (해시태그, 위치 정보 포함)
     async createPost(
-        content: string, 
+        content: string,
+        isPrivate: boolean,
+        isFollowersOnly: boolean,
         images?: File[],
         location?: Location | null
     ): Promise<void> {
@@ -158,11 +160,13 @@ class PostService {
             console.log("포스트 생성 시작:", {
                 content,
                 imageCount: images?.length,
-                location
+                location,
             });
 
             const formData = new FormData();
             formData.append("content", content);
+            formData.append("isPrivate", isPrivate.toString());
+            formData.append("isFollowersOnly", isFollowersOnly.toString());
 
             // 이미지 추가
             if (images && images.length > 0) {
@@ -235,7 +239,7 @@ class PostService {
                 content,
                 newImagesCount: newImages?.length,
                 keepImageUrls,
-                location
+                location,
             });
 
             const formData = new FormData();

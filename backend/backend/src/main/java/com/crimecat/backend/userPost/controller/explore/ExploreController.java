@@ -3,6 +3,7 @@ package com.crimecat.backend.userPost.controller.explore;
 import com.crimecat.backend.common.dto.PageResponseDto;
 import com.crimecat.backend.userPost.dto.UserPostGalleryPageDto;
 import com.crimecat.backend.userPost.service.UserPostService;
+import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,18 +25,18 @@ public class ExploreController {
 
     @GetMapping("/popular")
     public ResponseEntity<PageResponseDto<UserPostGalleryPageDto>> getPopularPosts(
-            @AuthenticationPrincipal WebUser currentUser,
             @PageableDefault(size = 20) Pageable pageable) {
-        
+
+        WebUser currentUser = AuthenticationUtil.getCurrentWebUserOptional().orElse(null);
         Page<UserPostGalleryPageDto> posts = userPostService.getPopularPosts(currentUser, pageable);
         return ResponseEntity.ok(new PageResponseDto<>(posts));
     }
 
     @GetMapping("/random")
     public ResponseEntity<PageResponseDto<UserPostGalleryPageDto>> getRandomPosts(
-            @AuthenticationPrincipal WebUser currentUser,
             @PageableDefault(size = 20) Pageable pageable) {
-        
+
+        WebUser currentUser = AuthenticationUtil.getCurrentWebUserOptional().orElse(null);
         Page<UserPostGalleryPageDto> posts = userPostService.getRandomPosts(currentUser, pageable);
         return ResponseEntity.ok(new PageResponseDto<>(posts));
     }
@@ -43,10 +44,10 @@ public class ExploreController {
     @GetMapping("/search")
     public ResponseEntity<PageResponseDto<UserPostGalleryPageDto>> searchPosts(
             @RequestParam String query,
-            @AuthenticationPrincipal WebUser currentUser,
             @PageableDefault(size = 20) Pageable pageable) {
         
         // 통합 검색: 제목 + 태그 + 작성자 이름으로 검색
+        WebUser currentUser = AuthenticationUtil.getCurrentWebUserOptional().orElse(null);
         Page<UserPostGalleryPageDto> posts = userPostService.searchPostsWithAuthor(query, currentUser, pageable);
         return ResponseEntity.ok(new PageResponseDto<>(posts));
     }
