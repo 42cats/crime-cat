@@ -177,7 +177,7 @@ const ProfilePage: React.FC = () => {
                     <div className="mt-4 flex items-center space-x-2">
                         <Button
                             onClick={handleFollowToggle}
-                            loading={isLoadingFollow}
+                            disabled={isLoadingFollow}
                         >
                             {isFollowingUser ? "언팔로우" : "팔로우"}
                         </Button>

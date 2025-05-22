@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import PostCard from "@/components/sns/post/PostCard";
 import { exploreService } from "@/api/explore/exploreService";
-import { UserPostDto } from "@/api/posts/postService";
+import { UserPostDto } from "@/api/posts";
 import SnsBottomNavigation from "@/components/sns/SnsBottomNavigation";
 
 const SNSFeedPage: React.FC = () => {
@@ -23,16 +23,22 @@ const SNSFeedPage: React.FC = () => {
             const feedData = await exploreService.getFeedPosts(page);
             const newPosts = feedData.content.map((post) => ({
                 postId: post.postId.toString(),
-                authorId: "", // 백엔드에서 제공되지 않는 정보
+                authorId: post.authorId || "", // authorId 추가
                 authorNickname: post.authorNickname,
                 authorAvatarUrl: "", // 백엔드에서 제공되지 않는 정보
                 content: post.content,
                 imageUrls: post.thumbnailUrl ? [post.thumbnailUrl] : [],
                 likeCount: post.likeCount,
                 liked: post.liked,
-                createdAt: new Date().toISOString(), // 백엔드에서 제공되지 않는 정보
-                hashTags: [], // 백엔드에서 제공되지 않는 정보
-                locationName: "", // 백엔드에서 제공되지 않는 정보
+                createdAt: post.createdAt || new Date().toISOString(),
+                updatedAt: post.updatedAt, // updatedAt 추가
+                private: post.private || false, // private 속성 추가
+                followersOnly: post.followersOnly || false, // followersOnly 속성 추가
+                hashtags: post.hashtags || [], // hashtags 추가
+                locationName: post.locationName || "", // locationName 추가
+                latitude: post.latitude, // latitude 추가
+                longitude: post.longitude, // longitude 추가
+                comments: [], // comments 배열 초기화
             }));
 
             if (page === 0) {
@@ -66,16 +72,22 @@ const SNSFeedPage: React.FC = () => {
                     const popularData = await exploreService.getPopularPosts(0);
                     const popularPosts = popularData.content.map((post) => ({
                         postId: post.postId.toString(),
-                        authorId: "", // 백엔드에서 제공되지 않는 정보
+                        authorId: post.authorId || "", // authorId 추가
                         authorNickname: post.authorNickname,
                         authorAvatarUrl: "", // 백엔드에서 제공되지 않는 정보
                         content: post.content,
                         imageUrls: post.thumbnailUrl ? [post.thumbnailUrl] : [],
                         likeCount: post.likeCount,
                         liked: post.liked,
-                        createdAt: new Date().toISOString(), // 백엔드에서 제공되지 않는 정보
-                        hashTags: [], // 백엔드에서 제공되지 않는 정보
-                        locationName: "", // 백엔드에서 제공되지 않는 정보
+                        createdAt: post.createdAt || new Date().toISOString(),
+                        updatedAt: post.updatedAt, // updatedAt 추가
+                        private: post.private || false, // private 속성 추가
+                        followersOnly: post.followersOnly || false, // followersOnly 속성 추가
+                        hashtags: post.hashtags || [], // hashtags 추가
+                        locationName: post.locationName || "", // locationName 추가
+                        latitude: post.latitude, // latitude 추가
+                        longitude: post.longitude, // longitude 추가
+                        comments: [], // comments 배열 초기화
                     }));
 
                     setPosts(popularPosts);

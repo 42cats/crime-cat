@@ -20,6 +20,7 @@ import { followUser, unfollowUser, isFollowing } from "@/api/follow";
 
 interface ProfileHeaderProps {
     profile: ProfileDetailDto;
+    creationCount?: number; // 제작 테마 수 (별도 prop)
     followerCount?: number;
     followingCount?: number;
     onFollowChange?: () => void; // 팔로우 상태 변경 시 호출될 콜백
@@ -27,6 +28,7 @@ interface ProfileHeaderProps {
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     profile,
+    creationCount,
     followerCount,
     followingCount,
     onFollowChange,
@@ -143,7 +145,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                             <span className="text-xs md:text-sm font-medium">
                                 제작{" "}
                                 <span className="font-bold">
-                                    {profile.creationCount || 0}
+                                    {creationCount ?? profile.creationCount ?? 0}
                                 </span>
                             </span>
                         </div>
