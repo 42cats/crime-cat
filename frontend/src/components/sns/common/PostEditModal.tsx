@@ -30,6 +30,7 @@ const PostEditModal: React.FC<PostEditModalProps> = ({
             await userPostService.updatePost(
                 post.postId,
                 editData.content,
+                editData.hashtags, // 해시태그 추가
                 editData.newImages,
                 editData.keepImageUrls,
                 editData.location
