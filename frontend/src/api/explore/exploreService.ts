@@ -4,14 +4,19 @@ export interface ExplorePostsResponse {
   content: {
     postId: string;
     authorNickname: string;
+    authorId?: string;
     thumbnailUrl: string | null;
     content: string;
     likeCount: number;
     liked: boolean;
-    authorId?: string;
-    isPrivate?: boolean;
-    isFollowersOnly?: boolean;
+    private?: boolean; // isPrivate → private로 수정
+    followersOnly?: boolean; // isFollowersOnly → followersOnly로 수정
     createdAt?: string;
+    updatedAt?: string; // updatedAt 추가
+    hashtags?: string[]; // hashtags 추가
+    locationName?: string; // locationName 추가
+    latitude?: number; // latitude 추가
+    longitude?: number; // longitude 추가
   }[];
   pageable: {
     pageNumber: number;

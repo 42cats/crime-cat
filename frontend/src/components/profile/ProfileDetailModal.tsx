@@ -403,10 +403,8 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                             {/* 프로필 헤더 섹션 */}
                             <div className="relative">
                                 <ProfileHeader
-                                    profile={{
-                                        ...profile,
-                                        creationCount: themesCount,
-                                    }}
+                                    profile={profile}
+                                    creationCount={themesCount}
                                     followerCount={followerCount}
                                     followingCount={followingCount}
                                     onFollowChange={() => {

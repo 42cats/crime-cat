@@ -9,6 +9,7 @@ export interface ProfileDetailDto {
     avatarImage: string | null;
     bio: string | null;
     playCount: number;
+    creationCount?: number; // 제작한 테마 수 (옵셔널)
     followerCount: number;
     followingCount: number;
     socialLinks?: Record<string, string>;
