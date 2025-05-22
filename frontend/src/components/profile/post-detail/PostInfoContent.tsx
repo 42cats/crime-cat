@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { UserPostDto } from "@/api/posts/postService";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
+import TagBadge from "@/components/sns/common/TagBadge";
 
 interface PostInfoContentProps {
     post: UserPostDto;
@@ -98,6 +99,13 @@ const PostInfoContent: React.FC<PostInfoContentProps> = ({
                 <p className="text-xs text-gray-500">
                     {post.createdAt && formatDate(post.createdAt)}
                 </p>
+                
+                {/* 태그 배지 */}
+                {post.hashtags && post.hashtags.length > 0 && (
+                    <div className="mt-3">
+                        <TagBadge tags={post.hashtags} variant="outline" />
+                    </div>
+                )}
             </div>
 
             {/* 포스트 통계 정보 */}

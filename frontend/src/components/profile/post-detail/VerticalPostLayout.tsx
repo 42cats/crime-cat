@@ -1,6 +1,12 @@
 import React from "react";
-import { Heart, Share2, MoreHorizontal } from "lucide-react";
+import { Heart, Share2, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PostCommentList } from "../post-comments";
 import { UserPostDto } from "@/api/posts/postService";
 import { ProfileDetailDto } from "@/api/profile/detail";
@@ -20,6 +26,9 @@ interface VerticalPostLayoutProps {
     handleLoginRequired: () => void;
     userId?: string;
     onProfileClick?: (userId: string) => void;
+    onEdit?: () => void;
+    onDelete?: () => void;
+    isAuthor?: boolean;
 }
 
 const VerticalPostLayout: React.FC<VerticalPostLayoutProps> = ({
@@ -33,6 +42,9 @@ const VerticalPostLayout: React.FC<VerticalPostLayoutProps> = ({
     handleLoginRequired,
     userId,
     onProfileClick,
+    onEdit,
+    onDelete,
+    isAuthor = false,
 }) => {
     return (
         <div className="bg-card border border-border rounded-md overflow-hidden">
@@ -56,9 +68,29 @@ const VerticalPostLayout: React.FC<VerticalPostLayoutProps> = ({
                     />
                 </div>
 
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="h-5 w-5" />
-                </Button>
+                {/* 작성자 권한이 있을 때만 드롭다운 메뉴 표시 */}
+                {isAuthor && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-5 w-5" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={onEdit}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                수정
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                                onClick={onDelete}
+                                className="text-destructive focus:text-destructive"
+                            >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                삭제
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
             </div>
 
             {/* 이미지 영역 */}

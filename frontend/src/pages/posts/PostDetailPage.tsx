@@ -2,18 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { userPostService, UserPostDto } from "@/api/posts/postService";
 import { Button } from "@/components/ui/button";
-import {
-    ArrowLeft,
-    Heart,
-    Edit,
-    Trash2,
-    Image,
-    Share2,
-    ChevronLeft,
-    ChevronRight,
-    Loader2,
-} from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import VerticalPostLayout from "@/components/profile/post-detail/VerticalPostLayout";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -26,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/useToast";
+import { getUser } from "@/lib/auth";
 
 const PostDetailPage: React.FC = () => {
     const { postId } = useParams<{ postId: string }>();
@@ -36,7 +27,7 @@ const PostDetailPage: React.FC = () => {
     const [likeCount, setLikeCount] = useState(0);
     const [likeLoading, setLikeLoading] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [isAuthor, setIsAuthor] = useState(false);
 
     const navigate = useNavigate();
     const { toast } = useToast();
@@ -52,12 +43,54 @@ const PostDetailPage: React.FC = () => {
                 setPost(data);
                 setLiked(data.liked);
                 setLikeCount(data.likeCount);
+
+                // 작성자 권한 확인
+                const currentUser = getUser();
+                setIsAuthor(currentUser?.id === data.authorId);
             } catch (error) {
                 console.error("포스트 로드 실패:", error);
                 setError("포스트를 불러오는데 실패했습니다.");
             } finally {
                 setLoading(false);
             }
+        };
+
+        // 포스트 삭제
+        const handleDelete = async () => {
+            if (!post) return;
+
+            try {
+                await userPostService.deletePost(post.postId);
+                toast({
+                    title: "삭제 완료",
+                    description: "포스트가 성공적으로 삭제되었습니다.",
+                });
+                navigate("/dashboard/posts");
+            } catch (error) {
+                console.error("포스트 삭제 실패:", error);
+                toast({
+                    title: "삭제 실패",
+                    description: "포스트를 삭제하는데 실패했습니다.",
+                    variant: "destructive",
+                });
+            } finally {
+                setDeleteDialogOpen(false);
+            }
+        };
+
+        const handleLoginRequired = () => {
+            toast({
+                title: "로그인 필요",
+                description: "이 기능을 사용하려면 로그인이 필요합니다.",
+                variant: "destructive",
+            });
+            navigate("/login");
+        };
+
+        // 포스트 수정
+        const handleEdit = () => {
+            if (!post) return;
+            navigate(`/dashboard/posts/edit/${post.postId}`);
         };
 
         loadPost();
@@ -90,29 +123,6 @@ const PostDetailPage: React.FC = () => {
         }
     };
 
-    // 포스트 삭제
-    const handleDelete = async () => {
-        if (!post) return;
-
-        try {
-            await userPostService.deletePost(post.postId);
-            toast({
-                title: "삭제 완료",
-                description: "포스트가 성공적으로 삭제되었습니다.",
-            });
-            navigate("/dashboard/posts");
-        } catch (error) {
-            console.error("포스트 삭제 실패:", error);
-            toast({
-                title: "삭제 실패",
-                description: "포스트를 삭제하는데 실패했습니다.",
-                variant: "destructive",
-            });
-        } finally {
-            setDeleteDialogOpen(false);
-        }
-    };
-
     // 포스트 공유
     const handleShare = async () => {
         if (!post) return;
@@ -133,21 +143,6 @@ const PostDetailPage: React.FC = () => {
         }
     };
 
-    // 이미지 변경
-    const handlePrevImage = () => {
-        if (!post || !post.imageUrls.length) return;
-        setCurrentImageIndex((prev) =>
-            prev === 0 ? post.imageUrls.length - 1 : prev - 1
-        );
-    };
-
-    const handleNextImage = () => {
-        if (!post || !post.imageUrls.length) return;
-        setCurrentImageIndex((prev) =>
-            prev === post.imageUrls.length - 1 ? 0 : prev + 1
-        );
-    };
-
     // 로딩 상태 표시
     if (loading) {
         return (
@@ -163,7 +158,7 @@ const PostDetailPage: React.FC = () => {
         return (
             <div className="flex flex-col items-center justify-center h-96">
                 <div className="text-center max-w-md">
-                    <Image className="h-16 w-16 text-muted-foreground opacity-30 mx-auto mb-4" />
+                    <div className="h-16 w-16 text-muted-foreground opacity-30 mx-auto mb-4" />
                     <h2 className="text-xl font-semibold mb-2">
                         포스트를 찾을 수 없습니다
                     </h2>
@@ -198,136 +193,27 @@ const PostDetailPage: React.FC = () => {
                         포스트 상세
                     </h1>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={handleShare}>
-                        <Share2 className="h-4 w-4 mr-2" />
-                        공유
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() =>
-                            navigate(`/dashboard/posts/edit/${post.postId}`)
-                        }
-                    >
-                        <Edit className="h-4 w-4 mr-2" />
-                        수정
-                    </Button>
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => setDeleteDialogOpen(true)}
-                    >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        삭제
-                    </Button>
-                </div>
             </div>
 
             <Separator />
 
-            {/* 포스트 내용 */}
-            <Card className="max-w-4xl mx-auto overflow-hidden">
-                {/* 이미지 섹션 */}
-                {post.imageUrls && post.imageUrls.length > 0 ? (
-                    <div className="relative">
-                        <div className="aspect-video md:aspect-[16/9] bg-muted overflow-hidden">
-                            <img
-                                src={post.imageUrls[currentImageIndex]}
-                                alt={`포스트 이미지 ${currentImageIndex + 1}`}
-                                className="w-full h-full object-contain"
-                            />
-                        </div>
-
-                        {/* 이미지 네비게이션 */}
-                        {post.imageUrls.length > 1 && (
-                            <>
-                                <Button
-                                    variant="secondary"
-                                    size="icon"
-                                    className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full opacity-70 hover:opacity-100"
-                                    onClick={handlePrevImage}
-                                >
-                                    <ChevronLeft className="h-6 w-6" />
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    size="icon"
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full opacity-70 hover:opacity-100"
-                                    onClick={handleNextImage}
-                                >
-                                    <ChevronRight className="h-6 w-6" />
-                                </Button>
-
-                                {/* 이미지 인디케이터 */}
-                                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-1">
-                                    {post.imageUrls.map((_, index) => (
-                                        <div
-                                            key={index}
-                                            className={`w-2 h-2 rounded-full ${
-                                                index === currentImageIndex
-                                                    ? "bg-primary"
-                                                    : "bg-primary/30"
-                                            }`}
-                                        />
-                                    ))}
-                                </div>
-                            </>
-                        )}
-                    </div>
-                ) : (
-                    <div className="h-48 flex items-center justify-center bg-muted">
-                        <Image className="h-20 w-20 text-muted-foreground opacity-20" />
-                    </div>
-                )}
-
-                {/* 포스트 콘텐츠 */}
-                <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center">
-                            {post.authorAvatarUrl ? (
-                                <img
-                                    src={post.authorAvatarUrl}
-                                    alt={post.authorNickname}
-                                    className="w-10 h-10 rounded-full mr-3"
-                                />
-                            ) : (
-                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-3">
-                                    <span className="text-primary font-medium">
-                                        {post.authorNickname
-                                            .charAt(0)
-                                            .toUpperCase()}
-                                    </span>
-                                </div>
-                            )}
-                            <div>
-                                <div className="font-medium">
-                                    {post.authorNickname}
-                                </div>
-                            </div>
-                        </div>
-
-                        <Button
-                            variant={liked ? "default" : "outline"}
-                            size="sm"
-                            onClick={handleLikeToggle}
-                            disabled={likeLoading}
-                            className={
-                                liked ? "bg-red-500 hover:bg-red-600" : ""
-                            }
-                        >
-                            <Heart
-                                className={`h-4 w-4 mr-2 ${
-                                    liked ? "fill-white" : ""
-                                }`}
-                            />
-                            {likeCount}
-                        </Button>
-                    </div>
-
-                    <div className="whitespace-pre-line">{post.content}</div>
-                </CardContent>
-            </Card>
+            {/* VerticalPostLayout 사용 */}
+            <div className="max-w-2xl mx-auto">
+                <VerticalPostLayout
+                    post={post}
+                    profile={null}
+                    liked={liked}
+                    isLikeLoading={likeLoading}
+                    likeCount={likeCount}
+                    handleLike={handleLikeToggle}
+                    handleShare={handleShare}
+                    handleLoginRequired={handleLoginRequired}
+                    userId={getUser()?.id}
+                    onEdit={handleEdit}
+                    onDelete={() => setDeleteDialogOpen(true)}
+                    isAuthor={isAuthor}
+                />
+            </div>
 
             {/* 삭제 확인 대화상자 */}
             <AlertDialog
