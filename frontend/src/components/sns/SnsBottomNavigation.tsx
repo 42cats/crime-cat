@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Home, Search, PlusSquare, BookmarkIcon, User } from 'lucide-react';
 import {
@@ -15,6 +15,7 @@ import {
 
 const SnsBottomNavigation: React.FC = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
     const [showLoginDialog, setShowLoginDialog] = useState(false);
 
@@ -23,7 +24,7 @@ const SnsBottomNavigation: React.FC = () => {
             setShowLoginDialog(true);
             return;
         }
-        window.location.href = path;
+        navigate(path);
     };
 
     const getProfilePath = () => {
@@ -39,7 +40,12 @@ const SnsBottomNavigation: React.FC = () => {
             setShowLoginDialog(true);
             return;
         }
-        window.location.href = getProfilePath();
+        navigate(getProfilePath());
+    };
+
+    const handleLoginRedirect = () => {
+        setShowLoginDialog(false);
+        navigate('/login');
     };
 
     return (
@@ -120,10 +126,7 @@ const SnsBottomNavigation: React.FC = () => {
                     <AlertDialogFooter>
                         <AlertDialogCancel>취소</AlertDialogCancel>
                         <AlertDialogAction
-                            onClick={() => {
-                                setShowLoginDialog(false);
-                                window.location.href = "/login";
-                            }}
+                            onClick={handleLoginRedirect}
                         >
                             로그인 하러 가기
                         </AlertDialogAction>

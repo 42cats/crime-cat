@@ -50,7 +50,7 @@ public interface CollectionRepository extends JpaRepository<Collection, UUID> {
     @Query("SELECT sp.post.images " +
            "FROM SavedPost sp " +
            "WHERE sp.collectionName = :collectionName AND sp.user.id = :userId " +
-           "AND sp.post.images IS NOT NULL AND sp.post.images != '' " +
+           "AND sp.post.images[0] IS NOT NULL AND sp.post.images != '' " +
            "ORDER BY sp.createdAt DESC " +
            "LIMIT 1")
     Optional<String> findThumbnailByCollectionNameAndUserId(@Param("collectionName") String collectionName, 

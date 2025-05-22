@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { AuthGuard } from "@/components/auth";
 import { Loader2, Image, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,12 +9,12 @@ import TagInputField from "@/components/sns/input/TagInputField";
 import ContentTextArea from "@/components/sns/input/ContentTextArea";
 import LocationPicker from "@/components/sns/location/LocationPicker";
 import { Location } from "@/api/sns/locationService";
-import { userPostService } from "@/api/userPost/userPostService";
+import { userPostService } from "@/api/sns/post";
 import { toast } from "sonner";
 import SnsBottomNavigation from '@/components/sns/SnsBottomNavigation';
 
-const SNSCreatePage: React.FC = () => {
-    const { user, isAuthenticated } = useAuth();
+const SNSCreatePageContent: React.FC = () => {
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [content, setContent] = useState("");
     const [tags, setTags] = useState<string[]>([]);
@@ -22,17 +23,6 @@ const SNSCreatePage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [location, setLocation] = useState<Location | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // 로그인 상태 확인
-    useEffect(() => {
-        if (!isAuthenticated) {
-            navigate("/login", { replace: true });
-        }
-    }, [isAuthenticated, navigate]);
-
-    if (!isAuthenticated) {
-        return null;
-    }
 
     // 이미지 선택 처리
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -242,6 +232,14 @@ const SNSCreatePage: React.FC = () => {
         </div>
         <SnsBottomNavigation />
         </>
+    );
+};
+
+const SNSCreatePage: React.FC = () => {
+    return (
+        <AuthGuard>
+            <SNSCreatePageContent />
+        </AuthGuard>
     );
 };
 

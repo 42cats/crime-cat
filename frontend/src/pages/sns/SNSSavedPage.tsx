@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { AuthGuard } from '@/components/auth';
 import { Loader2, Folder, Grid, Plus, X, Settings, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PostGrid from '@/components/sns/post/PostGrid';
@@ -19,9 +19,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 
-const SNSSavedPage: React.FC = () => {
+const SNSSavedPageContent: React.FC = () => {
   const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
   const [posts, setPosts] = useState<Array<any>>([]);
   const [collections, setCollections] = useState<CollectionResponse[]>([]);
@@ -34,13 +33,6 @@ const SNSSavedPage: React.FC = () => {
   const [isPrivate, setIsPrivate] = useState(false);
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const observer = useRef<IntersectionObserver | null>(null);
-  
-  // 로그인 상태 확인
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login', { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
   
   // 컬렉션 목록 로드
   const loadCollections = useCallback(async () => {
@@ -329,6 +321,14 @@ const SNSSavedPage: React.FC = () => {
     </div>
     <SnsBottomNavigation />
     </>
+  );
+};
+
+const SNSSavedPage: React.FC = () => {
+  return (
+    <AuthGuard>
+      <SNSSavedPageContent />
+    </AuthGuard>
   );
 };
 
