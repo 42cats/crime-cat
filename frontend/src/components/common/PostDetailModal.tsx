@@ -419,22 +419,23 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 onOpenChange={(open) => !open && handleClose()}
             >
                 <DialogContent className="max-w-4xl w-[95%] md:w-full bg-white rounded-lg p-0 overflow-hidden">
-                    <DialogTitle className="sr-only">
-                        포스트 상세 정보
-                    </DialogTitle>
-
-                    <div className="h-[85vh] md:h-[80vh] overflow-y-auto relative">
-                        {/* 작성자 권한이 있을 때 수정/삭제 버튼 (모달 내부) */}
+                    {/* 모달 헤더 */}
+                    <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                        <DialogTitle className="text-lg font-semibold text-gray-900">
+                            포스트 상세
+                        </DialogTitle>
+                        
+                        {/* 작성자 권한이 있을 때 수정/삭제 버튼 */}
                         {isAuthor && (
-                            <div className="absolute top-4 right-4 z-10">
-                                <PostActions
-                                    postId={post.postId}
-                                    onEdit={handleEdit}
-                                    onDelete={() => setShowDeleteDialog(true)}
-                                    className="bg-white/80 backdrop-blur-sm hover:bg-white/90"
-                                />
-                            </div>
+                            <PostActions
+                                postId={post.postId}
+                                onEdit={handleEdit}
+                                onDelete={() => setShowDeleteDialog(true)}
+                            />
                         )}
+                    </div>
+
+                    <div className="h-[85vh] md:h-[80vh] overflow-y-auto">
                         
                         {/* 세로형 레이아웃 사용 */}
                         <VerticalPostLayout
