@@ -241,14 +241,16 @@ class PostService {
         }
     }
 
-    // 포스트 업데이트 (해시태그, 위치 정보 포함)
+    // 포스트 업데이트 (해시태그, 위치 정보, 프라이버시 설정 포함)
     async updatePost(
         postId: string,
         content: string,
         hashtags: string[],
         newImages?: File[],
         keepImageUrls?: string[],
-        location?: Location | null
+        location?: Location | null,
+        isPrivate?: boolean,
+        isFollowersOnly?: boolean
     ): Promise<void> {
         try {
             console.log("포스트 업데이트 시작:", {
@@ -258,6 +260,8 @@ class PostService {
                 newImagesCount: newImages?.length,
                 keepImageUrls,
                 location,
+                isPrivate,
+                isFollowersOnly,
             });
 
             const formData = new FormData();
@@ -268,6 +272,14 @@ class PostService {
                 hashtags.forEach(tag => {
                     formData.append("hashtags", tag);
                 });
+            }
+
+            // 프라이버시 설정 추가
+            if (isPrivate !== undefined) {
+                formData.append("isPrivate", isPrivate.toString());
+            }
+            if (isFollowersOnly !== undefined) {
+                formData.append("isFollowersOnly", isFollowersOnly.toString());
             }
 
             // 유효한 이미지만 추가

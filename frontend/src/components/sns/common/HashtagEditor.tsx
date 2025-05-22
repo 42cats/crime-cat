@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus } from "lucide-react";
+import { X, Plus, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface HashtagEditorProps {
     hashtags: string[];
@@ -21,26 +22,62 @@ const HashtagEditor: React.FC<HashtagEditorProps> = ({
     disabled = false,
 }) => {
     const [inputValue, setInputValue] = useState("");
+    const [error, setError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // 해시태그 형식 검증
+    // 해시태그 형식 검증 (개선된 정규식)
     const isValidHashtag = (tag: string): boolean => {
         const trimmed = tag.trim();
-        return (
-            trimmed.length > 0 &&
-            trimmed.length <= 20 &&
-            /^[가-힣a-zA-Z0-9_]+$/.test(trimmed) &&
-            !hashtags.includes(trimmed)
-        );
+        
+        // 빈 값 체크
+        if (!trimmed) {
+            setError("해시태그를 입력해주세요.");
+            return false;
+        }
+        
+        // 길이 체크 (1-20자)
+        if (trimmed.length > 20) {
+            setError("해시태그는 20자 이내로 입력해주세요.");
+            return false;
+        }
+        
+        // 한글(완성형+자음모음), 영문, 숫자, 언더스코어만 허용
+        if (!/^[\u3131-\u3163\uac00-\ud7a3a-zA-Z0-9_]+$/.test(trimmed)) {
+            setError("한글, 영문, 숫자, 언더스코어(_)만 사용 가능합니다.");
+            return false;
+        }
+        
+        // 중복 체크
+        if (hashtags.includes(trimmed)) {
+            setError("이미 추가된 해시태그입니다.");
+            return false;
+        }
+        
+        // 최대 개수 체크
+        if (hashtags.length >= maxTags) {
+            setError(`최대 ${maxTags}개까지만 추가할 수 있습니다.`);
+            return false;
+        }
+        
+        return true;
     };
 
     // 해시태그 추가
     const handleAddHashtag = () => {
-        const newTag = inputValue.replace("#", "").trim();
+        // 에러 초기화
+        setError(null);
         
-        if (isValidHashtag(newTag) && hashtags.length < maxTags) {
+        // # 제거하고 트림
+        const newTag = inputValue.replace(/^#+/, "").trim();
+        
+        if (isValidHashtag(newTag)) {
             onChange([...hashtags, newTag]);
-            setInputValue("");
+            setInputValue(""); // 입력창 비우기
+            
+            // 포커스 유지
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 0);
         }
     };
 
@@ -52,12 +89,28 @@ const HashtagEditor: React.FC<HashtagEditorProps> = ({
         } else if (e.key === "Backspace" && inputValue === "" && hashtags.length > 0) {
             // 빈 입력창에서 백스페이스 시 마지막 해시태그 삭제
             onChange(hashtags.slice(0, -1));
+            setError(null);
+        } else {
+            // 입력 중에는 에러 메시지 제거
+            if (error) {
+                setError(null);
+            }
         }
     };
 
     // 해시태그 제거
     const handleRemoveHashtag = (tagToRemove: string) => {
         onChange(hashtags.filter(tag => tag !== tagToRemove));
+        setError(null);
+    };
+
+    // 입력값 변경 핸들러
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setInputValue(e.target.value);
+        // 에러가 있으면 제거
+        if (error) {
+            setError(null);
+        }
     };
 
     return (
@@ -73,7 +126,7 @@ const HashtagEditor: React.FC<HashtagEditorProps> = ({
                         <Badge
                             key={`${tag}-${index}`}
                             variant="secondary"
-                            className="flex items-center gap-1 px-2 py-1"
+                            className="flex items-center gap-1 px-2 py-1 text-sm"
                         >
                             #{tag}
                             {!disabled && (
@@ -92,31 +145,42 @@ const HashtagEditor: React.FC<HashtagEditorProps> = ({
 
             {/* 해시태그 입력 */}
             {!disabled && hashtags.length < maxTags && (
-                <div className="flex gap-2">
-                    <div className="flex-1 relative">
-                        <Input
-                            ref={inputRef}
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder={placeholder}
-                            className="pr-8"
-                        />
-                        {inputValue.length > 0 && (
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                                {inputValue.length}/20
-                            </span>
-                        )}
+                <div className="space-y-2">
+                    <div className="flex gap-2">
+                        <div className="flex-1 relative">
+                            <Input
+                                ref={inputRef}
+                                value={inputValue}
+                                onChange={handleInputChange}
+                                onKeyDown={handleKeyDown}
+                                placeholder={placeholder}
+                                className={`pr-8 ${error ? 'border-red-500 focus:border-red-500' : ''}`}
+                                maxLength={20}
+                            />
+                            {inputValue.length > 0 && (
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                                    {inputValue.length}/20
+                                </span>
+                            )}
+                        </div>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={handleAddHashtag}
+                            disabled={inputValue.trim().length === 0}
+                        >
+                            <Plus className="w-4 h-4" />
+                        </Button>
                     </div>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={handleAddHashtag}
-                        disabled={!isValidHashtag(inputValue.replace("#", "").trim())}
-                    >
-                        <Plus className="w-4 h-4" />
-                    </Button>
+                    
+                    {/* 에러 메시지 */}
+                    {error && (
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
                 </div>
             )}
 

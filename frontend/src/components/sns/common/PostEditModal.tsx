@@ -25,6 +25,7 @@ const PostEditModal: React.FC<PostEditModalProps> = ({
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSave = async (editData: PostEditData) => {
+        console.log('포스트 수정 데이터:', editData); // 디버깅
         setIsLoading(true);
         try {
             await userPostService.updatePost(
@@ -33,7 +34,9 @@ const PostEditModal: React.FC<PostEditModalProps> = ({
                 editData.hashtags, // 해시태그 추가
                 editData.newImages,
                 editData.keepImageUrls,
-                editData.location
+                editData.location,
+                editData.isPrivate, // 프라이버시 설정 추가
+                editData.isFollowersOnly // 팡로워 전용 설정 추가
             );
 
             toast.success("포스트가 성공적으로 수정되었습니다.");
