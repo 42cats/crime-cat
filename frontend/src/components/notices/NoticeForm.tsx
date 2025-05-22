@@ -24,6 +24,38 @@ interface NoticeFormProps {
   isLoading?: boolean;
 }
 
+// 동영상 아이콘 컴포넌트
+const VideoIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M8 5v14l11-7z"/>
+  </svg>
+);
+
+// URL에서 동영상 ID 추출 함수
+const extractVideoId = (url: string) => {
+  // YouTube URL 패턴
+  const youtubeMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+  if (youtubeMatch) {
+    return {
+      platform: 'youtube',
+      id: youtubeMatch[1],
+      embedUrl: `https://www.youtube.com/embed/${youtubeMatch[1]}`
+    };
+  }
+  
+  // Vimeo URL 패턴
+  const vimeoMatch = url.match(/(?:vimeo\.com\/)([0-9]+)/);
+  if (vimeoMatch) {
+    return {
+      platform: 'vimeo',
+      id: vimeoMatch[1],
+      embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}`
+    };
+  }
+  
+  return null;
+};
+
 const WritePreviewToggle = () => {
   const { preview, dispatch } = useContext(EditorContext);
   const base = 'md-editor-toolbar-button h-[29px] px-2 text-sm font-bold rounded hover:bg-gray-100';
@@ -72,6 +104,33 @@ const NoticeForm: React.FC<NoticeFormProps> = ({
     if (!data.noticeType) errs.noticeType = '공지 유형을 선택해주세요.';
     return errs;
   });
+
+  // 동영상 삽입 명령어
+  const videoCommand = {
+    name: 'video',
+    keyCommand: 'video',
+    buttonProps: { 'aria-label': 'Insert video', title: '동영상 삽입' },
+    icon: <VideoIcon />,
+    execute: (state: any, api: any) => {
+      const url = prompt('YouTube 또는 Vimeo URL을 입력하세요:');
+      if (url) {
+        const videoInfo = extractVideoId(url.trim());
+        if (videoInfo) {
+          const iframe = `<iframe 
+  width="560" 
+  height="315" 
+  src="${videoInfo.embedUrl}" 
+  frameborder="0" 
+  allowfullscreen
+  sandbox="allow-scripts allow-same-origin allow-presentation">
+</iframe>`;
+          api.replaceSelection(iframe);
+        } else {
+          alert('올바른 YouTube 또는 Vimeo URL을 입력해주세요.');
+        }
+      }
+    },
+  };
 
   const handleSubmit = () => {
     const currentErrors = validateWithErrors(form);
@@ -173,9 +232,11 @@ const NoticeForm: React.FC<NoticeFormProps> = ({
                     keyCommand: 'toggle-preview',
                     icon: <WritePreviewToggle />,
                   },
+                  videoCommand,
                   ...commands.getCommands(),
                 ]}
                 extraCommands={[]}
+                visibleDragBar={false}
               />
             </div>
           </div>
