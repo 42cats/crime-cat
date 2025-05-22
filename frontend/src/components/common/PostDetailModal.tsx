@@ -421,9 +421,6 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 <DialogContent className="max-w-4xl w-[95%] md:w-full bg-white rounded-lg p-0 overflow-hidden">
                     {/* 모달 헤더 */}
                     <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                        <DialogTitle className="text-lg font-semibold text-gray-900">
-                            포스트 상세
-                        </DialogTitle>
                         
                         {/* 작성자 권한이 있을 때 수정/삭제 버튼 */}
                         {isAuthor && (
