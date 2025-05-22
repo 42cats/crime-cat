@@ -224,4 +224,47 @@ public class WebUser implements UserDetails, OAuth2User {
     }
         return socialLinks;
     }
+    
+    /**
+     * 알림 설정 가져오기
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getNotificationSettings() {
+        if (settings == null) {
+            settings = new HashMap<>();
+        }
+        
+        Map<String, Object> notifications = (Map<String, Object>) settings.get("notifications");
+        if (notifications == null) {
+            notifications = new HashMap<>();
+            // 기본값 설정
+            notifications.put("userPostNew", true);
+            notifications.put("userPostComment", true);
+            notifications.put("userPostCommentReply", true);
+            settings.put("notifications", notifications);
+        }
+        
+        return notifications;
+    }
+    
+    /**
+     * 특정 알림 타입 설정 확인
+     */
+    public boolean isNotificationEnabled(String notificationType) {
+        Map<String, Object> notifications = getNotificationSettings();
+        Object setting = notifications.get(notificationType);
+        return setting == null || (Boolean) setting; // 기본값은 true
+    }
+    
+    /**
+     * 알림 설정 업데이트
+     */
+    public void updateNotificationSetting(String notificationType, boolean enabled) {
+        Map<String, Object> notifications = getNotificationSettings();
+        notifications.put(notificationType, enabled);
+        if (settings == null) {
+            settings = new HashMap<>();
+        }
+        settings.put("notifications", notifications);
+    }
 }

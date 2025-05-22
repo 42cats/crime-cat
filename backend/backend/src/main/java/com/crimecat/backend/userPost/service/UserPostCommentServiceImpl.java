@@ -1,6 +1,9 @@
 package com.crimecat.backend.userPost.service;
 
 import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.notification.event.NotificationEventPublisher;
+import com.crimecat.backend.notification.event.UserPostCommentedEvent;
+import com.crimecat.backend.notification.event.UserPostCommentRepliedEvent;
 import com.crimecat.backend.userPost.domain.UserPost;
 import com.crimecat.backend.userPost.domain.UserPostComment;
 import com.crimecat.backend.userPost.dto.UserPostCommentDto;
@@ -11,6 +14,7 @@ import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +27,7 @@ public class UserPostCommentServiceImpl implements UserPostCommentService {
 
     private final UserPostRepository userPostRepository;
     private final UserPostCommentRepository userPostCommentRepository;
+    private final NotificationEventPublisher notificationEventPublisher;
 
     @Override
     @Transactional
@@ -62,6 +67,51 @@ public class UserPostCommentServiceImpl implements UserPostCommentService {
         }
         
         userPostCommentRepository.save(comment);
+        
+        // 알림 발송 (비동기)
+        CompletableFuture.runAsync(() -> {
+            try {
+                if (parentComment != null) {
+                    // 대댓글인 경우 - 부모 댓글 작성자에게 알림
+                    WebUser parentCommentAuthor = parentComment.getAuthor();
+                    if (!parentCommentAuthor.getId().equals(author.getId()) && // 자기 자신에게는 알림 안보냄
+                        parentCommentAuthor.isNotificationEnabled("userPostCommentReply")) {
+                        
+                        UserPostCommentRepliedEvent event = UserPostCommentRepliedEvent.of(
+                            this,
+                            parentCommentAuthor.getId(),
+                            comment.getId(),
+                            comment.getContent(),
+                            parentComment.getId(),
+                            post.getId(),
+                            author.getId(),
+                            author.getNickname()
+                        );
+                        notificationEventPublisher.publishEvent(event);
+                    }
+                } else {
+                    // 일반 댓글인 경우 - 포스트 작성자에게 알림
+                    WebUser postAuthor = post.getUser();
+                    if (!postAuthor.getId().equals(author.getId()) && // 자기 자신에게는 알림 안보냄
+                        postAuthor.isNotificationEnabled("userPostComment")) {
+                        
+                        UserPostCommentedEvent event = UserPostCommentedEvent.of(
+                            this,
+                            postAuthor.getId(),
+                            comment.getId(),
+                            comment.getContent(),
+                            post.getId(),
+                            author.getId(),
+                            author.getNickname()
+                        );
+                        notificationEventPublisher.publishEvent(event);
+                    }
+                }
+            } catch (Exception e) {
+                // 알림 발송 실패가 댓글 생성에 영향주지 않도록 로깅만 처리
+                System.err.println("Failed to send comment notification: " + e.getMessage());
+            }
+        });
         
         // 방금 작성한 댓글이므로 항상 볼 수 있음
         return UserPostCommentDto.from(comment, true, author.getId());

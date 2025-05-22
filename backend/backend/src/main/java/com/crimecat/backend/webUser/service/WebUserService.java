@@ -19,6 +19,7 @@ import com.crimecat.backend.webUser.dto.NotificationSettingsRequestDto;
 import com.crimecat.backend.webUser.dto.NotificationSettingsResponseDto;
 import com.crimecat.backend.webUser.dto.NotificationToggleRequest;
 import com.crimecat.backend.webUser.dto.ProfileDetailDto;
+import com.crimecat.backend.webUser.dto.UserPostNotificationSettingsDto;
 import com.crimecat.backend.webUser.dto.UserProfileInfoResponseDto;
 import com.crimecat.backend.webUser.dto.UserSearchResponseDto;
 import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
@@ -366,5 +367,39 @@ public class WebUserService {
     else {
       return ProfileDetailDto.publicFrom(webUser, playCount);
     }
+  }
+  
+  /**
+   * 유저 포스트 알림 설정 조회
+   */
+  @Transactional(readOnly = true)
+  public UserPostNotificationSettingsDto getUserPostNotificationSettings(String userId) {
+    WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
+        .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+    return UserPostNotificationSettingsDto.from(webUser.getNotificationSettings());
+  }
+  
+  /**
+   * 유저 포스트 알림 설정 업데이트
+   */
+  @Transactional
+  public UserPostNotificationSettingsDto updateUserPostNotificationSettings(
+      String userId, UserPostNotificationSettingsDto request) {
+    WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
+        .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+    
+    // 각 알림 설정 업데이트
+    if (request.getUserPostNew() != null) {
+      webUser.updateNotificationSetting("userPostNew", request.getUserPostNew());
+    }
+    if (request.getUserPostComment() != null) {
+      webUser.updateNotificationSetting("userPostComment", request.getUserPostComment());
+    }
+    if (request.getUserPostCommentReply() != null) {
+      webUser.updateNotificationSetting("userPostCommentReply", request.getUserPostCommentReply());
+    }
+    
+    webUserRepository.save(webUser);
+    return UserPostNotificationSettingsDto.from(webUser.getNotificationSettings());
   }
 }
