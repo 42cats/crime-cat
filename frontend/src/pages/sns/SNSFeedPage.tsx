@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import PostCard from '@/components/sns/post/PostCard';
 import { exploreService } from '@/api/sns/exploreService';
 import { UserPostDto } from '@/api/userPost/userPostService';
+import SnsBottomNavigation from '@/components/sns/SnsBottomNavigation';
 
 const SNSFeedPage: React.FC = () => {
   const { isAuthenticated } = useAuth();
@@ -113,7 +114,8 @@ const SNSFeedPage: React.FC = () => {
   };
   
   return (
-    <div className="container mx-auto px-4 py-6 max-w-lg">
+    <>
+    <div className="container mx-auto px-4 py-6 max-w-lg mb-16 md:mb-0">
       <h1 className="text-2xl font-bold mb-6">SNS 피드</h1>
       
       {!isAuthenticated && (
@@ -158,6 +160,8 @@ const SNSFeedPage: React.FC = () => {
         )}
       </div>
     </div>
+    <SnsBottomNavigation />
+    </>
   );
 };
 

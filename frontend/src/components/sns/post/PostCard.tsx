@@ -9,6 +9,18 @@ import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import ImageCarousel from './ImageCarousel';
 import { userPostService } from '@/api/userPost/userPostService';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+} from '@/components/ui/alert-dialog';
 
 interface PostCardProps {
   post: UserPostDto;
@@ -16,12 +28,19 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange }) => {
+  const { isAuthenticated } = useAuth();
   const [liked, setLiked] = useState(post.liked);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
   
   // 좋아요 토글 처리
   const handleLikeToggle = async () => {
+    if (!isAuthenticated) {
+      setShowLoginDialog(true);
+      return;
+    }
+    
     try {
       // 낙관적 UI 업데이트
       const newLiked = !liked;
@@ -46,6 +65,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange }) => {
       console.error('좋아요 토글 실패:', error);
       setLiked(post.liked);
       setLikeCount(post.likeCount);
+      toast.error('좋아요 처리 중 오류가 발생했습니다.');
     }
   };
   
@@ -161,7 +181,19 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange }) => {
           </Button>
         </div>
         
-        <Button variant="ghost" size="icon" className="h-9 w-9">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-9 w-9"
+          onClick={() => {
+            if (!isAuthenticated) {
+              setShowLoginDialog(true);
+              return;
+            }
+            // TODO: 저장 기능 구현
+            toast.success('저장 기능이 곧 구현됩니다.');
+          }}
+        >
           <Bookmark className="h-6 w-6" />
         </Button>
       </div>
@@ -185,6 +217,33 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange }) => {
         {/* 작성 시간 */}
         <p className="text-xs text-muted-foreground mt-2">{timeAgo}</p>
       </div>
+      
+      {/* 로그인 필요 다이얼로그 */}
+      <AlertDialog
+        open={showLoginDialog}
+        onOpenChange={setShowLoginDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
+            <AlertDialogDescription>
+              이 기능을 사용하려면 로그인이 필요합니다. 로그인
+              페이지로 이동하시겠습니까?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowLoginDialog(false);
+                window.location.href = "/login";
+              }}
+            >
+              로그인 하러 가기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

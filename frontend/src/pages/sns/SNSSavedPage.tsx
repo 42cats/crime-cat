@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PostGrid from '@/components/sns/post/PostGrid';
 import { savePostService, CollectionResponse } from '@/api/sns/savePostService';
 import { Button } from '@/components/ui/button';
+import SnsBottomNavigation from '@/components/sns/SnsBottomNavigation';
 import {
   Dialog,
   DialogContent,
@@ -139,7 +140,8 @@ const SNSSavedPage: React.FC = () => {
   };
   
   return (
-    <div className="container mx-auto px-4 py-6">
+    <>
+    <div className="container mx-auto px-4 py-6 mb-16 md:mb-0">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">저장된 게시물</h1>
         <Button 
@@ -244,6 +246,8 @@ const SNSSavedPage: React.FC = () => {
         </DialogContent>
       </Dialog>
     </div>
+    <SnsBottomNavigation />
+    </>
   );
 };
 
