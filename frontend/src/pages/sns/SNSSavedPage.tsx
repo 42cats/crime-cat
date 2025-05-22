@@ -72,8 +72,9 @@ const SNSSavedPage: React.FC = () => {
         setPosts(prevPosts => [...prevPosts, ...postsData.content]);
       }
       
-      // 더 불러올 데이터가 있는지 확인
-      setHasMore(!postsData.pageable || postsData.pageable.pageNumber < postsData.totalPages - 1);
+      // 더 불러올 데이터가 있는지 정확하게 확인
+      const isLastPage = postsData.last || postsData.content.length === 0;
+      setHasMore(!isLastPage);
       
       if (resetPage) {
         setPage(1);
@@ -82,6 +83,7 @@ const SNSSavedPage: React.FC = () => {
       }
     } catch (error) {
       console.error('저장된 게시물 로드 실패:', error);
+      setHasMore(false); // 에러 발생시 무한스크롤 중단
     } finally {
       setIsLoading(false);
     }
@@ -101,9 +103,11 @@ const SNSSavedPage: React.FC = () => {
     if (observer.current) observer.current.disconnect();
     
     observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
+      if (entries[0].isIntersecting && hasMore && !isLoading) {
         loadSavedPosts();
       }
+    }, {
+      rootMargin: '100px' // 100px 며리에서 미리 로드
     });
     
     if (node) observer.current.observe(node);
@@ -195,8 +199,12 @@ const SNSSavedPage: React.FC = () => {
           
           {/* 더 이상 결과가 없음 */}
           {!isLoading && !hasMore && posts.length > 0 && (
-            <div className="text-center py-6 text-muted-foreground">
-              더 이상 표시할 게시물이 없습니다.
+            <div className="text-center py-8 text-muted-foreground border-t border-border mt-6">
+              <div className="flex flex-col items-center space-y-2">
+                <div className="w-16 h-0.5 bg-muted rounded"></div>
+                <p className="text-sm font-medium">마지막 게시물입니다</p>
+                <p className="text-xs">모든 저장된 게시물을 확인하셨습니다.</p>
+              </div>
             </div>
           )}
           
