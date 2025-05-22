@@ -47,6 +47,14 @@ export const notificationService = {
             const response = await apiClient.get<NotificationPage>(
                 `${baseURI}?page=0&size=${limit}&statuses=UNREAD`
             );
+            
+            // 디버깅: API 응답 구조 확인
+            console.log("🔍 [DEBUG] API Response structure:", response);
+            console.log("🔍 [DEBUG] First notification:", response.content[0]);
+            if (response.content[0]) {
+                console.log("🔍 [DEBUG] First notification keys:", Object.keys(response.content[0]));
+            }
+            
             return response.content;
         } catch (error) {
             console.error("최근 알림 목록 조회 실패:", error);

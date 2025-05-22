@@ -115,7 +115,10 @@ const PostCommentItem: React.FC<PostCommentItemProps> = ({
     }
 
     return (
-        <div className="py-3 border-t border-gray-100 first:border-t-0">
+        <div 
+            id={`comment-${comment.id}`}
+            className="py-3 border-t border-gray-100 first:border-t-0 transition-all duration-300"
+        >
             {/* 비밀글이고, 볼 수 없는 경우 */}
             {comment.isPrivate && !canViewSecretComment ? (
                 <div className="flex items-center text-gray-500 text-sm py-2">

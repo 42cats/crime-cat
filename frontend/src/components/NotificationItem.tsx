@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Notification, NotificationType } from '@/types/notification';
 import { handleNotificationRouting } from '@/utils/notificationRouting';
 import { cn } from '@/lib/utils';
-import { Gamepad2, Users, MessageSquare, Megaphone, Mail } from 'lucide-react';
+import { Gamepad2, Users, MessageSquare, Megaphone, Mail, FileText, MessageCircle, Reply } from 'lucide-react';
 import { useReadNotifications } from '@/hooks/useReadNotifications';
 
 interface NotificationItemProps {
@@ -28,6 +28,12 @@ const getNotificationIcon = (type: NotificationType) => {
       return <Megaphone className="w-5 h-5 text-green-500" />;
     case NotificationType.GAME_NOTICE:
       return <Gamepad2 className="w-5 h-5 text-orange-500" />;
+    case NotificationType.USER_POST_NEW:
+      return <FileText className="w-5 h-5 text-blue-600" />;
+    case NotificationType.USER_POST_COMMENT:
+      return <MessageCircle className="w-5 h-5 text-green-600" />;
+    case NotificationType.USER_POST_COMMENT_REPLY:
+      return <Reply className="w-5 h-5 text-purple-600" />;
     default:
       return <Mail className="w-5 h-5 text-gray-500" />;
   }

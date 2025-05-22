@@ -44,7 +44,7 @@ public class UserPostNewBuilder extends NotificationBuilder<UserPostNewBuilder> 
         data("postId", postId);
         data("authorId", authorId);
         data("notificationType", "USER_POST_NEW");
-        data("linkUrl", "/posts/" + postId);
+        data("linkUrl", "/sns/post/" + postId);
     }
     
     /**

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/useToast";
+import { useLocation } from "react-router-dom";
 import { Loader2, MessageSquare } from "lucide-react";
 import {
     UserPostCommentDto,
@@ -30,6 +31,7 @@ const PostCommentList: React.FC<PostCommentListProps> = ({
 }) => {
     const { toast } = useToast();
     const { isAuthenticated } = useAuth();
+    const location = useLocation();
     const [comments, setComments] = useState<UserPostCommentDto[]>([]);
     const [sortType, setSortType] = useState<CommentSortType>("LATEST");
     const [isLoading, setIsLoading] = useState(false);
@@ -132,6 +134,32 @@ const PostCommentList: React.FC<PostCommentListProps> = ({
             fetchComments(0, sortType, pageSize);
         }
     }, [postId, sortType]);
+
+    // 해시 기반 댓글 스크롤 처리
+    useEffect(() => {
+        const scrollToComment = () => {
+            const hash = location.hash;
+            if (hash && hash.startsWith('#comment-') && comments.length > 0) {
+                const commentId = hash.replace('#comment-', '');
+                const commentElement = document.getElementById(`comment-${commentId}`);
+                if (commentElement) {
+                    setTimeout(() => {
+                        commentElement.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'center' 
+                        });
+                        // 하이라이트 효과 추가
+                        commentElement.classList.add('bg-blue-50', 'border-blue-200');
+                        setTimeout(() => {
+                            commentElement.classList.remove('bg-blue-50', 'border-blue-200');
+                        }, 3000);
+                    }, 100);
+                }
+            }
+        };
+
+        scrollToComment();
+    }, [location.hash, comments]);
 
     // 정렬 방식 변경 핸들러
     const handleSortChange = (value: CommentSortType) => {

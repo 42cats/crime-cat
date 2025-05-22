@@ -3,6 +3,7 @@ package com.crimecat.backend.notification.dto.response;
 import com.crimecat.backend.notification.enums.NotificationType;
 import com.crimecat.backend.notification.enums.NotificationStatus;
 import com.crimecat.backend.notification.domain.Notification;
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -31,10 +32,19 @@ public class NotificationDto {
     private UUID senderId;
     private String senderName;
     
+    // 메타데이터 (JSON 원본 그대로 포함)
+    private String metadata;
+    
     /**
      * static factory method
      */
     public static NotificationDto from(Notification notification) {
+        // 디버깅: 메타데이터 로깅
+        System.out.println("🔍 [DEBUG] Creating NotificationDto:");
+        System.out.println("  - ID: " + notification.getId());
+        System.out.println("  - Type: " + notification.getType());
+        System.out.println("  - DataJson: " + notification.getDataJson());
+        
         return NotificationDto.builder()
             .id(notification.getId())
             .type(notification.getType())
@@ -45,6 +55,7 @@ public class NotificationDto {
             .expiresAt(notification.getExpiresAt())
             .senderId(notification.getSenderId())
             .senderName(notification.getSender() != null ? notification.getSender().getName() : null)
+            .metadata(notification.getDataJson())
             .build();
     }
 }

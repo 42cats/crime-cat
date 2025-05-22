@@ -164,7 +164,17 @@ public class NotificationService {
         String message,
         Map<String, Object> data
     ) {
-        return Notification.from(type, recipientId, senderId, title, message, data);
+        // 디버깅: 알림 생성 시 데이터 확인
+        System.out.println("🔍 [DEBUG] Creating Notification:");
+        System.out.println("  - Type: " + type);
+        System.out.println("  - Data Map: " + data);
+        System.out.println("  - Data as JSON: " + JsonUtil.toJson(data));
+        
+        Notification notification = Notification.from(type, recipientId, senderId, title, message, data);
+        
+        System.out.println("  - Created notification dataJson: " + notification.getDataJson());
+        
+        return notification;
     }
     
     /**

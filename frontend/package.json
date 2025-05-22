@@ -78,6 +78,7 @@
         "tailwind-merge": "^2.5.2",
         "tailwindcss-animate": "^1.0.7",
         "turndown": "^7.2.0",
+        "typecheck": "^0.1.2",
         "uuid": "^11.1.0",
         "vaul": "^0.9.3",
         "zod": "^3.23.8"
