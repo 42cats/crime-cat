@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { UserPostDto, userPostService } from "@/api/userPost/userPostService";
+import { UserPostDto, userPostService } from "@/api/sns/post";
 import { getProfileDetail, ProfileDetailDto } from "@/api/profile/detail";
 import {
     AlertDialog,
@@ -22,7 +22,11 @@ interface PostDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
     userId: string;
-    onLikeStatusChange?: (postId: string, liked: boolean, likeCount: number) => void;
+    onLikeStatusChange?: (
+        postId: string,
+        liked: boolean,
+        likeCount: number
+    ) => void;
 }
 
 type ModalTab = "info" | "comments";
@@ -44,7 +48,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
     const [showLoginDialog, setShowLoginDialog] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [activeTab, setActiveTab] = useState<ModalTab>("info");
-    
+
     // 탭 변경 핸들러 - 로그인 없이도 탭 이동 가능하게 수정
     const handleTabChange = (tab: ModalTab) => {
         setActiveTab(tab);
@@ -100,11 +104,13 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
         setIsLikeLoading(true);
         try {
             const nowLiked = await userPostService.togglePostLike(post.postId);
-            const newLikeCount = nowLiked ? likeCount + 1 : Math.max(0, likeCount - 1);
-            
+            const newLikeCount = nowLiked
+                ? likeCount + 1
+                : Math.max(0, likeCount - 1);
+
             setLiked(nowLiked);
             setLikeCount(newLikeCount);
-            
+
             // 부모 컴포넌트에 좋아요 상태 변경 알림
             if (onLikeStatusChange) {
                 onLikeStatusChange(post.postId, nowLiked, newLikeCount);
@@ -147,15 +153,22 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
     return (
         <>
-            <Dialog open={isOpen} onOpenChange={(open) => {
-                if (!open) {
-                    // 모달이 닫힐 때 변경된 좋아요 상태 전달
-                    if (onLikeStatusChange && (liked !== post.liked || likeCount !== post.likeCount)) {
-                        onLikeStatusChange(post.postId, liked, likeCount);
+            <Dialog
+                open={isOpen}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        // 모달이 닫힐 때 변경된 좋아요 상태 전달
+                        if (
+                            onLikeStatusChange &&
+                            (liked !== post.liked ||
+                                likeCount !== post.likeCount)
+                        ) {
+                            onLikeStatusChange(post.postId, liked, likeCount);
+                        }
+                        onClose();
                     }
-                    onClose();
-                }
-            }}>
+                }}
+            >
                 <DialogContent className="max-w-4xl w-[95%] md:w-full bg-white rounded-lg p-0 overflow-hidden">
                     <DialogTitle className="sr-only">
                         포스트 상세 정보
@@ -165,20 +178,22 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                         {/* 모바일 레이아웃 (작은 화면) */}
                         <div className="block md:hidden">
                             <MobilePostLayout
-                            post={post}
-                            profile={profile}
-                            activeTab={activeTab}
-                            setActiveTab={handleTabChange}
-                            liked={liked}
-                            isLikeLoading={isLikeLoading}
-                            likeCount={likeCount}
-                            currentImageIndex={currentImageIndex}
-                            handlePrevImage={handlePrevImage}
-                            handleNextImage={handleNextImage}
-                            handleLike={handleLike}
-                            handleShare={handleShare}
-                            handleLoginRequired={() => setShowLoginDialog(true)}
-                            userId={user?.id}
+                                post={post}
+                                profile={profile}
+                                activeTab={activeTab}
+                                setActiveTab={handleTabChange}
+                                liked={liked}
+                                isLikeLoading={isLikeLoading}
+                                likeCount={likeCount}
+                                currentImageIndex={currentImageIndex}
+                                handlePrevImage={handlePrevImage}
+                                handleNextImage={handleNextImage}
+                                handleLike={handleLike}
+                                handleShare={handleShare}
+                                handleLoginRequired={() =>
+                                    setShowLoginDialog(true)
+                                }
+                                userId={user?.id}
                             />
                         </div>
 
@@ -197,7 +212,9 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                 handleNextImage={handleNextImage}
                                 handleLike={handleLike}
                                 handleShare={handleShare}
-                                handleLoginRequired={() => setShowLoginDialog(true)}
+                                handleLoginRequired={() =>
+                                    setShowLoginDialog(true)
+                                }
                                 onClose={onClose}
                                 userId={user?.id}
                             />

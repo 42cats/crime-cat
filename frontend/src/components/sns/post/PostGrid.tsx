@@ -1,121 +1,46 @@
-import React, { useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { UserPostGalleryDto } from '@/api/userPost/userPostService';
-import LazyImage from '../common/LazyImage';
-import PostPrivacyBadge from '../common/PostPrivacyBadge';
-import PostAuthorInfo from '../common/PostAuthorInfo';
-import { Heart, MessageCircle, Image } from 'lucide-react';
+import React, { useState } from "react";
+import { UserPostGalleryDto } from "@/api/sns/post";
+import PostGrid from "@/components/common/PostGrid";
+import PostDetailModal from "@/components/common/PostDetailModal";
 
-interface PostGridProps {
-  posts: UserPostGalleryDto[];
-  lastPostRef?: (node: HTMLElement | null) => void; // 무한 스크롤을 위한 IntersectionObserver ref
-  onAuthorClick?: (authorId: string) => void; // 작성자 클릭 핸들러
+interface SNSPostGridProps {
+    posts: UserPostGalleryDto[];
+    lastPostRef?: (node: HTMLElement | null) => void; // 무한 스크롤을 위한 IntersectionObserver ref
+    onAuthorClick?: (authorId: string) => void; // 작성자 클릭 핸들러
 }
 
-const PostGrid: React.FC<PostGridProps> = ({ posts, lastPostRef, onAuthorClick }) => {
-  // 빈 그리드 렌더링 (데이터 없는 경우)
-  if (!posts || posts.length === 0) {
+const SNSPostGrid: React.FC<SNSPostGridProps> = ({
+    posts,
+    lastPostRef,
+    onAuthorClick,
+}) => {
+    const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+
+    const handleOpenPostModal = (postId: string) => {
+        setSelectedPostId(postId);
+    };
+
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-        <Image className="w-16 h-16 mb-4" />
-        <p className="text-lg font-medium">게시물이 없습니다</p>
-        <p className="text-sm">새로운 게시물을 작성해보세요</p>
-      </div>
+        <>
+            <PostGrid
+                posts={posts}
+                mode="modal"
+                lastPostRef={lastPostRef}
+                onAuthorClick={onAuthorClick}
+                onPostClick={handleOpenPostModal}
+            />
+
+            {/* 포스트 상세 모달 */}
+            {selectedPostId && (
+                <PostDetailModal
+                    postId={selectedPostId}
+                    isOpen={!!selectedPostId}
+                    onClose={() => setSelectedPostId(null)}
+                    mode="modal"
+                />
+            )}
+        </>
     );
-  }
-  
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1 sm:gap-2">
-      {posts.map((post, index) => {
-        // 마지막 항목에 대한 ref 설정 (무한 스크롤)
-        const isLastItem = index === posts.length - 1;
-        
-        return (
-          <div 
-            key={post.postId}
-            ref={isLastItem && lastPostRef ? lastPostRef : null} 
-            className="relative aspect-square group"
-          >
-            <Link to={`/sns/post/${post.postId}`}>
-              {post.thumbnailUrl ? (
-                // 이미지가 있는 경우
-                <div className="relative">
-                  <LazyImage 
-                    src={post.thumbnailUrl} 
-                    alt={`${post.authorNickname}의 게시물`}
-                    aspectRatio="square"
-                    className="rounded-sm"
-                  />
-                  {/* 비밀글 배지 */}
-                  <div className="absolute top-2 left-2">
-                    <PostPrivacyBadge
-                      isPrivate={post.private}
-                      isFollowersOnly={post.followersOnly}
-                      size="sm"
-                    />
-                  </div>
-                  {/* 작성자 및 시간 정보 */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3">
-                    <PostAuthorInfo
-                      authorNickname={post.authorNickname}
-                      authorId={post.authorId}
-                      createdAt={post.createdAt}
-                      locationName={post.locationName}
-                      onAuthorClick={onAuthorClick}
-                      showAvatar={false}
-                      size="sm"
-                      className="text-white [&_.text-muted-foreground]:text-gray-300"
-                    />
-                  </div>
-                </div>
-              ) : (
-                // 이미지가 없는 경우 텍스트 표시
-                <div className="w-full h-full bg-gray-100 rounded-sm p-3 flex flex-col justify-between relative">
-                  {/* 비밀글 배지 */}
-                  <div className="absolute top-2 left-2 z-10">
-                    <PostPrivacyBadge
-                      isPrivate={post.private}
-                      isFollowersOnly={post.followersOnly}
-                      size="sm"
-                    />
-                  </div>
-                  <div className="text-sm text-gray-800 line-clamp-4 leading-relaxed mt-6">
-                    {post.content}
-                  </div>
-                  <div className="mt-2">
-                    <PostAuthorInfo
-                      authorNickname={post.authorNickname}
-                      authorId={post.authorId}
-                      createdAt={post.createdAt}
-                      locationName={post.locationName}
-                      onAuthorClick={onAuthorClick}
-                      showAvatar={false}
-                      size="sm"
-                      className="text-gray-600"
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {/* 오버레이 (호버 시 표시) */}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center text-white">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center">
-                    <Heart className="w-5 h-5 mr-2" />
-                    <span>{post.likeCount}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <MessageCircle className="w-5 h-5 mr-2" />
-                    <span>0</span> {/* 댓글 수가 없으므로 임시로 0 */}
-                  </div>
-                </div>
-              </div>
-            </Link>
-          </div>
-        );
-      })}
-    </div>
-  );
 };
 
-export default PostGrid;
+export default SNSPostGrid;
