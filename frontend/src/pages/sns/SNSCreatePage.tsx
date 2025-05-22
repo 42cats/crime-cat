@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, Image, X, Plus } from "lucide-react";
@@ -9,6 +9,7 @@ import LocationPicker from "@/components/sns/location/LocationPicker";
 import { Location } from "@/api/sns/locationService";
 import { userPostService } from "@/api/userPost/userPostService";
 import { toast } from "sonner";
+import SnsBottomNavigation from '@/components/sns/SnsBottomNavigation';
 
 const SNSCreatePage: React.FC = () => {
     const { user, isAuthenticated } = useAuth();
@@ -21,8 +22,13 @@ const SNSCreatePage: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // 로그인 상태 확인
+    useEffect(() => {
+        if (!isAuthenticated) {
+            navigate("/login", { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
+
     if (!isAuthenticated) {
-        navigate("/login", { replace: true });
         return null;
     }
 
@@ -103,7 +109,8 @@ const SNSCreatePage: React.FC = () => {
     };
 
     return (
-        <div className="container mx-auto px-4 py-6 max-w-lg">
+        <>
+        <div className="container mx-auto px-4 py-6 max-w-lg mb-16 md:mb-0">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">새 게시물 작성</h1>
             </div>
@@ -216,6 +223,8 @@ const SNSCreatePage: React.FC = () => {
                 </div>
             </form>
         </div>
+        <SnsBottomNavigation />
+        </>
     );
 };
 

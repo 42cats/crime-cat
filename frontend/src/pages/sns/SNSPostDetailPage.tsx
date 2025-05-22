@@ -12,6 +12,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { userPostService, UserPostDto } from '@/api/userPost/userPostService';
 import { toast } from 'sonner';
+import SnsBottomNavigation from '@/components/sns/SnsBottomNavigation';
 
 const SNSPostDetailPage: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
@@ -183,7 +184,8 @@ const SNSPostDetailPage: React.FC = () => {
   const timeAgo = formatDistanceToNow(createdDate, { addSuffix: true, locale: ko });
   
   return (
-    <div className="container mx-auto px-4 py-6 max-w-4xl">
+    <>
+    <div className="container mx-auto px-4 py-6 max-w-4xl mb-16 md:mb-0">
       {/* 헤더와 이전 버튼 */}
       <div className="flex items-center mb-6">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -276,6 +278,8 @@ const SNSPostDetailPage: React.FC = () => {
         />
       )}
     </div>
+    <SnsBottomNavigation />
+    </>
   );
 };
 

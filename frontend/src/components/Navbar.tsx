@@ -411,68 +411,7 @@ const Navbar: React.FC = () => {
                 </div>
             )}
 
-            {/* 모바일 SNS 네비게이션 */}
-            {location.pathname.startsWith("/sns") && (
-                <div className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
-                    <div className="flex justify-around items-center py-2">
-                        <Link
-                            to="/sns/feed"
-                            className={`flex flex-col items-center p-2 ${
-                                location.pathname === "/sns/feed"
-                                    ? "text-primary"
-                                    : "text-muted-foreground"
-                            }`}
-                        >
-                            <Home className="w-6 h-6" />
-                            <span className="text-xs mt-1">피드</span>
-                        </Link>
-                        <Link
-                            to="/sns/explore"
-                            className={`flex flex-col items-center p-2 ${
-                                location.pathname === "/sns/explore"
-                                    ? "text-primary"
-                                    : "text-muted-foreground"
-                            }`}
-                        >
-                            <Search className="w-6 h-6" />
-                            <span className="text-xs mt-1">탐색</span>
-                        </Link>
-                        <Link
-                            to="/sns/create"
-                            className={`flex flex-col items-center p-2 ${
-                                location.pathname === "/sns/create"
-                                    ? "text-primary"
-                                    : "text-muted-foreground"
-                            }`}
-                        >
-                            <PlusSquare className="w-6 h-6" />
-                            <span className="text-xs mt-1">작성</span>
-                        </Link>
-                        <Link
-                            to="/sns/saved"
-                            className={`flex flex-col items-center p-2 ${
-                                location.pathname === "/sns/saved"
-                                    ? "text-primary"
-                                    : "text-muted-foreground"
-                            }`}
-                        >
-                            <BookmarkIcon className="w-6 h-6" />
-                            <span className="text-xs mt-1">저장됨</span>
-                        </Link>
-                        <Link
-                            to="/profile"
-                            className={`flex flex-col items-center p-2 ${
-                                location.pathname === "/dashboard"
-                                    ? "text-primary"
-                                    : "text-muted-foreground"
-                            }`}
-                        >
-                            <User className="w-6 h-6" />
-                            <span className="text-xs mt-1">프로필</span>
-                        </Link>
-                    </div>
-                </div>
-            )}
+
         </div>
     );
 };

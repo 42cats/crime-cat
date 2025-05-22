@@ -26,7 +26,7 @@ class ExploreService {
   // 인기 게시물 조회
   async getPopularPosts(page: number = 0, size: number = 12): Promise<ExplorePostsResponse> {
     try {
-      return await apiClient.get<ExplorePostsResponse>(`/posts/explore/popular`, {
+      return await apiClient.get<ExplorePostsResponse>(`/public/posts/explore/popular`, {
         params: {
           page,
           size
@@ -46,7 +46,7 @@ class ExploreService {
   // 무작위 게시물 조회
   async getRandomPosts(page: number = 0, size: number = 12): Promise<ExplorePostsResponse> {
     try {
-      return await apiClient.get<ExplorePostsResponse>(`/posts/explore/random`, {
+      return await apiClient.get<ExplorePostsResponse>(`/public/posts/explore/random`, {
         params: {
           page,
           size
@@ -95,7 +95,7 @@ class ExploreService {
         };
       }
 
-      return await apiClient.get<ExplorePostsResponse>(`/posts/explore/search`, {
+      return await apiClient.get<ExplorePostsResponse>(`/public/posts/explore/search`, {
         params: {
           query: query.trim(),
           page,
@@ -125,7 +125,7 @@ class ExploreService {
         };
       }
 
-      return await apiClient.get<ExplorePostsResponse>(`/posts/explore/search`, {
+      return await apiClient.get<ExplorePostsResponse>(`/public/posts/explore/search`, {
         params: {
           query: keyword.trim(),
           page,
@@ -158,7 +158,7 @@ class ExploreService {
       // #이 없으면 추가
       const searchQuery = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
       
-      return await apiClient.get<ExplorePostsResponse>(`/posts/explore/search`, {
+      return await apiClient.get<ExplorePostsResponse>(`/public/posts/explore/search`, {
         params: {
           query: searchQuery,
           page,

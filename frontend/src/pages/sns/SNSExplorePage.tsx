@@ -1,9 +1,4 @@
-    // 검색어 입력 처리 - 디바운스로 성능 최적화
-    const handleSearchInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        console.log('Search input changed:', value);
-        setLocalSearchQuery(value);
-    }, []);import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +9,7 @@ import { searchService } from "@/api/search";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
+import SnsBottomNavigation from '@/components/sns/SnsBottomNavigation';
 
 const SNSExplorePage: React.FC = () => {
     const { isAuthenticated } = useAuth();
@@ -227,7 +223,8 @@ const SNSExplorePage: React.FC = () => {
     };
 
     return (
-        <div className="container mx-auto px-4 py-6">
+        <>
+        <div className="container mx-auto px-4 py-6 mb-16 md:mb-0">
             <h1 className="text-2xl font-bold mb-6">탐색</h1>
 
             {/* 검색 폼 */}
@@ -340,6 +337,8 @@ const SNSExplorePage: React.FC = () => {
                 </div>
             )}
         </div>
+        <SnsBottomNavigation />
+        </>
     );
 };
 

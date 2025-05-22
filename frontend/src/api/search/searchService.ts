@@ -59,7 +59,7 @@ class SearchService {
         };
       }
 
-      return await apiClient.get<SearchResult>(`/posts/explore/search`, {
+      return await apiClient.get<SearchResult>(`/public/posts/explore/search`, {
         params: {
           query: query.trim(),
           page,
@@ -128,7 +128,7 @@ class SearchService {
         };
       }
 
-      return await apiClient.get<HashtagSearchResult>(`/hashtags/search`, {
+      return await apiClient.get<HashtagSearchResult>(`/public/hashtags/search`, {
         params: {
           query: query.trim(),
           page,
@@ -154,7 +154,7 @@ class SearchService {
    */
   async getPopularHashtags(page: number = 0, size: number = 20): Promise<HashtagSearchResult> {
     try {
-      return await apiClient.get<HashtagSearchResult>(`/hashtags/popular`, {
+      return await apiClient.get<HashtagSearchResult>(`/public/hashtags/popular`, {
         params: {
           page,
           size
