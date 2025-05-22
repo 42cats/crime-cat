@@ -37,7 +37,7 @@ public class UserPostCommentServiceImpl implements UserPostCommentService {
                 .orElseThrow(ErrorStatus.USER_POST_NOT_FOUND::asServiceException);
         
         // 부모 댓글이 있는 경우 존재 확인
-        UserPostComment parentComment = null;
+        UserPostComment parentComment;
         if (request.getParentId() != null) {
             parentComment = userPostCommentRepository.findById(request.getParentId())
                     .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
@@ -51,8 +51,10 @@ public class UserPostCommentServiceImpl implements UserPostCommentService {
             if (parentComment.getParent() != null) {
                 throw ErrorStatus.COMMENT_INVALID_NESTING.asServiceException();
             }
+        } else {
+            parentComment = null;
         }
-        
+
         // 댓글 생성
         UserPostComment comment = UserPostComment.builder()
                 .content(request.getContent())

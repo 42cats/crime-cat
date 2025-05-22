@@ -17,6 +17,7 @@ import com.crimecat.backend.webUser.dto.NotificationToggleRequest;
 import com.crimecat.backend.webUser.dto.UserPostNotificationSettingsDto;
 import com.crimecat.backend.webUser.dto.UserProfileInfoResponseDto;
 import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
+import com.crimecat.backend.webUser.enums.AlarmType;
 import com.crimecat.backend.webUser.enums.UserRole;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import com.crimecat.backend.webUser.service.WebUserService;
@@ -110,61 +111,18 @@ public class WebUserController {
     return ResponseEntity.ok().body(userNotificationSettings);
   }
 
-  @PutMapping("{user_id}/notifications/discord")
-  public ResponseEntity<NotificationSettingsResponseDto> setDiscordAlarm(
-      @PathVariable("user_id") String userId,
-      @RequestBody NotificationToggleRequest body
-  ){
-    AuthenticationUtil.validateCurrentUserMatches(UUID.fromString(userId));
-    NotificationSettingsResponseDto notificationSettingsResponseDto = webUserService.setDiscordAlarm(
-        userId, body);
-    return ResponseEntity.ok().body(notificationSettingsResponseDto);
-  }
-  @PutMapping("{user_id}/notifications/email")
-  public ResponseEntity<NotificationSettingsResponseDto> setEmailAlarm(
-      @PathVariable("user_id") String userId,
-      @RequestBody NotificationToggleRequest body
-      ){
-    AuthenticationUtil.validateCurrentUserMatches(UUID.fromString(userId));
-    NotificationSettingsResponseDto notificationSettingsResponseDto = webUserService.setEmailAlarm(
-        userId, body);
-    return ResponseEntity.ok().body(notificationSettingsResponseDto);
-  }
-
-  @PutMapping("/{user_id}/notifications/settings")
+  @PutMapping("/{user_id}/notifications/{type}")
   public ResponseEntity<NotificationSettingsResponseDto> setAllNotificationSetting(
       @PathVariable("user_id") String userId,
-      @RequestBody NotificationSettingsRequestDto body
+      @RequestBody NotificationSettingsRequestDto body,
+      @PathVariable("type") AlarmType alarmType
       ){
     AuthenticationUtil.validateCurrentUserMatches(UUID.fromString(userId));
     NotificationSettingsResponseDto notificationSettingsResponseDto = webUserService.setAllNotificationSetting(
-        userId, body);
+        userId, body, alarmType);
     return ResponseEntity.ok().body(notificationSettingsResponseDto);
   }
   
-  /**
-   * 유저 포스트 알림 설정 조회
-   */
-  @GetMapping("/{user_id}/notifications/userpost")
-  public ResponseEntity<UserPostNotificationSettingsDto> getUserPostNotificationSettings(
-      @PathVariable("user_id") String userId) {
-    AuthenticationUtil.validateCurrentUserMatches(UUID.fromString(userId));
-    UserPostNotificationSettingsDto settings = webUserService.getUserPostNotificationSettings(userId);
-    return ResponseEntity.ok().body(settings);
-  }
-  
-  /**
-   * 유저 포스트 알림 설정 업데이트
-   */
-  @PutMapping("/{user_id}/notifications/userpost")
-  public ResponseEntity<UserPostNotificationSettingsDto> updateUserPostNotificationSettings(
-      @PathVariable("user_id") String userId,
-      @RequestBody UserPostNotificationSettingsDto body) {
-    AuthenticationUtil.validateCurrentUserMatches(UUID.fromString(userId));
-    UserPostNotificationSettingsDto settings = webUserService.updateUserPostNotificationSettings(userId, body);
-    return ResponseEntity.ok().body(settings);
-  }
-
   /**
    * 사용자 검색 API
    * @param keyword 검색 키워드 (닉네임 또는 Discord Snowflake)

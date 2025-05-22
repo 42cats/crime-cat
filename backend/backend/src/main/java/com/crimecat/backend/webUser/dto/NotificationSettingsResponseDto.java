@@ -11,6 +11,9 @@ import lombok.Getter;
 public class NotificationSettingsResponseDto {
   private Boolean email;
   private Boolean discord;
+  private Boolean post;
+  private Boolean postComment;
+  private Boolean commentComment;
 
   static public NotificationSettingsResponseDto from(WebUser webUser){
     Boolean discord = Optional.ofNullable(webUser.getUser().getDiscordUser())
@@ -19,6 +22,9 @@ public class NotificationSettingsResponseDto {
     return NotificationSettingsResponseDto.builder()
         .discord(discord)
         .email(webUser.getEmailAlarm())
+            .post(webUser.getPostAlarm())
+            .commentComment(webUser.getCommentComment())
+            .postComment(webUser.getPostComment())
         .build();
     }
 }
