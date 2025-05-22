@@ -46,7 +46,8 @@ public class ExploreController {
             @AuthenticationPrincipal WebUser currentUser,
             @PageableDefault(size = 20) Pageable pageable) {
         
-        Page<UserPostGalleryPageDto> posts = userPostService.searchPosts(query, currentUser, pageable);
+        // 통합 검색: 제목 + 태그 + 작성자 이름으로 검색
+        Page<UserPostGalleryPageDto> posts = userPostService.searchPostsWithAuthor(query, currentUser, pageable);
         return ResponseEntity.ok(new PageResponseDto<>(posts));
     }
 }

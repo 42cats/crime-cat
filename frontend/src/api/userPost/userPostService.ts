@@ -78,7 +78,7 @@ class UserPostService {
     // 특정 포스트 상세 정보 가져오기
     async getUserPostDetail(postId: string): Promise<UserPostDto> {
         try {
-            return await apiClient.get(`/public/user-posts/${postId}`, {
+            return await apiClient.get(`/user-posts/${postId}`, {
                 headers: {
                     Accept: "application/json",
                 },
@@ -124,15 +124,22 @@ class UserPostService {
     // 내 포스트 리스트 가져오기
     async getMyPosts(
         page: number = 0,
-        size: number = 12
+        size: number = 12,
+        search?: string
     ): Promise<UserPostGalleryPageDto> {
         try {
+            const params: any = {
+                page,
+                size,
+                sort: "LATEST",
+            };
+            
+            if (search && search.trim()) {
+                params.search = search.trim();
+            }
+            
             return await apiClient.get("/user-posts/my", {
-                params: {
-                    page,
-                    size,
-                    sort: "LATEST",
-                },
+                params,
                 headers: {
                     Accept: "application/json",
                 },
@@ -148,21 +155,29 @@ class UserPostService {
         }
     }
 
-    // 포스트 생성 (해시태그, 위치 정보 포함)
+    // 포스트 생성 (해시태그, 위치 정보, 비밀글 설정 포함)
     async createPost(
         content: string, 
         images?: File[],
-        location?: Location | null
+        location?: Location | null,
+        isPrivate?: boolean,
+        isFollowersOnly?: boolean
     ): Promise<void> {
         try {
             console.log("포스트 생성 시작:", {
                 content,
                 imageCount: images?.length,
-                location
+                location,
+                isPrivate,
+                isFollowersOnly
             });
 
             const formData = new FormData();
             formData.append("content", content);
+            
+            // 비밀글 설정
+            formData.append("isPrivate", String(isPrivate || false));
+            formData.append("isFollowersOnly", String(isFollowersOnly || false));
 
             // 이미지 추가
             if (images && images.length > 0) {
@@ -221,13 +236,15 @@ class UserPostService {
         }
     }
 
-    // 포스트 업데이트 (해시태그, 위치 정보 포함)
+    // 포스트 업데이트 (해시태그, 위치 정보, 비밀글 설정 포함)
     async updatePost(
         postId: string,
         content: string,
         newImages?: File[],
         keepImageUrls?: string[],
-        location?: Location | null
+        location?: Location | null,
+        isPrivate?: boolean,
+        isFollowersOnly?: boolean
     ): Promise<void> {
         try {
             console.log("포스트 업데이트 시작:", {
@@ -235,11 +252,17 @@ class UserPostService {
                 content,
                 newImagesCount: newImages?.length,
                 keepImageUrls,
-                location
+                location,
+                isPrivate,
+                isFollowersOnly
             });
 
             const formData = new FormData();
             formData.append("content", content);
+            
+            // 비밀글 설정
+            formData.append("isPrivate", String(isPrivate || false));
+            formData.append("isFollowersOnly", String(isFollowersOnly || false));
 
             // 유효한 이미지만 추가
             let validImages: File[] = [];
