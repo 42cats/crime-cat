@@ -118,9 +118,9 @@ public interface UserPostRepository extends JpaRepository<UserPost, UUID> {
     /**
      * 무작위로 공개 게시물 조회
      */
-    @Query(value = "SELECT * FROM user_posts p WHERE p.is_private = false AND p.is_followers_only = false ORDER BY RAND()",
+    @Query(value = "SELECT * FROM user_posts p WHERE p.is_private = false AND p.is_followers_only = false ORDER BY RANDOM() LIMIT :limit",
             nativeQuery = true)
-    Page<UserPost> findRandomPublicPosts(Pageable pageable);
+    Page<UserPost> findRandomPublicPosts(Pageable pageable, @Param("limit") int limit);
 
     /**
      * 무작위로 접근 가능한 게시물 조회

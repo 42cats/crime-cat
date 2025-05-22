@@ -573,7 +573,7 @@ public class UserPostServiceImpl implements UserPostService {
         // 무작위 게시물 조회
         Page<UserPost> posts;
         if (currentUser == null) {
-            posts = userPostRepository.findRandomPublicPosts(pageable);
+            posts = userPostRepository.findRandomPublicPosts(pageable, pageable.getPageSize());
         } else {
             posts = userPostRepository.findRandomAccessiblePosts(currentUser.getId(), pageable);
         }
