@@ -30,7 +30,7 @@ import {
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import ProfileForm from "@/components/profile/ProfileForm";
 import SocialLinks from "@/components/profile/SocialLinks";
-import NotificationSettings from "@/components/profile/NotificationSettings";
+import { NotificationSettingsContainer } from "@/components/profile/notifications";
 import CropImageModal from "@/components/profile/CropImageModal";
 import BadgeSelectModal from "@/components/profile/BadgeSelectModal";
 
@@ -53,9 +53,6 @@ const Profile: React.FC = () => {
         updateProfile,
         checkNickname,
         fetchUserBadges,
-        fetchNotificationSettings,
-        updateEmailNotification,
-        updateDiscordNotification,
         deleteUserAccount,
     } = useProfileAPI();
 
@@ -80,8 +77,7 @@ const Profile: React.FC = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletePassword, setDeletePassword] = useState("");
 
-    const [notifyByEmail, setNotifyByEmail] = useState(true);
-    const [notifyByDiscord, setNotifyByDiscord] = useState(true);
+
 
     const [instagram, setInstagram] = useState("");
     const [twitter, setTwitter] = useState("");
@@ -132,11 +128,6 @@ const Profile: React.FC = () => {
             }
             // const badges = await fetchUserBadges();
             // setBadgeList(badges.map((b) => b.name));
-            const setting = await fetchNotificationSettings();
-            if (setting) {
-                setNotifyByEmail(setting.email);
-                setNotifyByDiscord(setting.discord);
-            }
         })();
     }, [user?.id]);
 
@@ -213,15 +204,7 @@ const Profile: React.FC = () => {
         }
     };
 
-    /* ---------- 알림 설정 ---------- */
-    const handleEmailNotificationChange = async (v: boolean) => {
-        setNotifyByEmail(v);
-        await updateEmailNotification(v);
-    };
-    const handleDiscordNotificationChange = async (v: boolean) => {
-        setNotifyByDiscord(v);
-        await updateDiscordNotification(v);
-    };
+
 
     /* ---------- 제출 ---------- */
     const handleSubmit = async (e: React.FormEvent) => {
@@ -432,15 +415,7 @@ const Profile: React.FC = () => {
                             value="notifications"
                             className="space-y-6"
                         >
-                            <NotificationSettings
-                                notifyByEmail={notifyByEmail}
-                                notifyByDiscord={notifyByDiscord}
-                                setNotifyByEmail={handleEmailNotificationChange}
-                                setNotifyByDiscord={
-                                    handleDiscordNotificationChange
-                                }
-                                isDark={isDark}
-                            />
+                            <NotificationSettingsContainer />
                         </TabsContent>
                     </form>
                 </Tabs>
