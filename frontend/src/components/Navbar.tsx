@@ -89,11 +89,6 @@ const Navbar: React.FC = () => {
             path: "/sns/create",
             icon: <PlusSquare className="w-4 h-4 mr-1" />,
         },
-        {
-            name: "저장된 포스트",
-            path: "/sns/saved",
-            icon: <BookmarkIcon className="w-4 h-4 mr-1" />,
-        },
     ];
 
     const isActive = (path: string) => location.pathname === path;
@@ -410,8 +405,6 @@ const Navbar: React.FC = () => {
                     </div>
                 </div>
             )}
-
-
         </div>
     );
 };

@@ -5,7 +5,7 @@ import PostCard from "@/components/sns/post/PostCard";
 import { exploreService } from "@/api/explore/exploreService";
 import { UserPostDto } from "@/api/posts";
 import SnsBottomNavigation from "@/components/sns/SnsBottomNavigation";
-
+import PostDetailModal from "@/components/common/PostDetailModal";
 const SNSFeedPage: React.FC = () => {
     const { isAuthenticated } = useAuth();
     const [posts, setPosts] = useState<UserPostDto[]>([]);
@@ -13,6 +13,10 @@ const SNSFeedPage: React.FC = () => {
     const [hasMore, setHasMore] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const observer = useRef<IntersectionObserver | null>(null);
+    
+    // 모달 상태
+    const [selectedPost, setSelectedPost] = useState<UserPostDto | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     // 피드 게시물 로드
     const loadFeedPosts = useCallback(async () => {
@@ -137,6 +141,29 @@ const SNSFeedPage: React.FC = () => {
         );
     };
 
+    // 포스트 클릭 핸들러
+    const handlePostClick = (post: UserPostDto) => {
+        setSelectedPost(post);
+        setIsModalOpen(true);
+    };
+
+    // 모달 닫기 핸들러
+    const handleModalClose = () => {
+        setIsModalOpen(false);
+        setSelectedPost(null);
+    };
+
+    // 모달에서 좋아요 상태 변경 시 업데이트
+    const handleModalLikeChange = (postId: string, liked: boolean, likeCount: number) => {
+        setPosts((prevPosts) =>
+            prevPosts.map((post) =>
+                post.postId === postId
+                    ? { ...post, liked, likeCount }
+                    : post
+            )
+        );
+    };
+
     return (
         <>
             <div className="container mx-auto px-4 py-6 max-w-lg mb-16 md:mb-0">
@@ -161,6 +188,7 @@ const SNSFeedPage: React.FC = () => {
                                     <PostCard
                                         post={post}
                                         onLikeChange={handleLikeChange}
+                                        onPostClick={handlePostClick}
                                     />
                                 </div>
                             );
@@ -170,6 +198,7 @@ const SNSFeedPage: React.FC = () => {
                                     key={post.postId}
                                     post={post}
                                     onLikeChange={handleLikeChange}
+                                    onPostClick={handlePostClick}
                                 />
                             );
                         }
@@ -200,6 +229,17 @@ const SNSFeedPage: React.FC = () => {
                 </div>
             </div>
             <SnsBottomNavigation />
+            
+            {/* 포스트 상세 모달 */}
+            {selectedPost && (
+                <PostDetailModal
+                    post={selectedPost}
+                    isOpen={isModalOpen}
+                    onClose={handleModalClose}
+                    userId={selectedPost.authorId}
+                    onLikeStatusChange={handleModalLikeChange}
+                />
+            )}
         </>
     );
 };
