@@ -1,7 +1,6 @@
 package com.crimecat.backend.userPost.domain;
 
 import com.crimecat.backend.hashtag.domain.PostHashTag;
-import com.crimecat.backend.userPost.domain.saved.SavedPost;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
 import lombok.*;
@@ -73,11 +72,6 @@ public class UserPost {
     @Builder.Default
     private List<PostHashTag> hashtags = new ArrayList<>();
 
-    // 저장된 게시물 관계 추가
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<SavedPost> savedBy = new ArrayList<>();
-
     // 조회수 필드 추가
     @Column(name = "view_count")
     @Builder.Default
@@ -132,8 +126,7 @@ public class UserPost {
         
         this.popularityScore = 
             this.likes.size() * likeWeight + 
-            this.comments.size() * commentWeight + 
-            this.savedBy.size() * saveWeight;
+            this.comments.size() * commentWeight;
     }
     
     public void setLocationInfo(String locationName, Double latitude, Double longitude) {
