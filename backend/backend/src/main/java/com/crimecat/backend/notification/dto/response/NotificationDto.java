@@ -39,12 +39,7 @@ public class NotificationDto {
      * static factory method
      */
     public static NotificationDto from(Notification notification) {
-        // 디버깅: 메타데이터 로깅
-        System.out.println("🔍 [DEBUG] Creating NotificationDto:");
-        System.out.println("  - ID: " + notification.getId());
-        System.out.println("  - Type: " + notification.getType());
-        System.out.println("  - DataJson: " + notification.getDataJson());
-        
+
         return NotificationDto.builder()
             .id(notification.getId())
             .type(notification.getType())
