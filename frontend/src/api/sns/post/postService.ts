@@ -128,7 +128,8 @@ class PostService {
     // 내 포스트 리스트 가져오기
     async getMyPosts(
         page: number = 0,
-        size: number = 12
+        size: number = 12,
+        search: string = ""
     ): Promise<UserPostGalleryPageDto> {
         try {
             return await apiClient.get("/user-posts/my", {
@@ -136,6 +137,7 @@ class PostService {
                     page,
                     size,
                     sort: "LATEST",
+                    search,
                 },
                 headers: {
                     Accept: "application/json",

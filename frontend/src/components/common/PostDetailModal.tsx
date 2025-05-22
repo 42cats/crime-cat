@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Loader2 } from "lucide-react";
+import PostActions from "@/components/sns/common/PostActions";
+import DeleteConfirmDialog from "@/components/sns/common/DeleteConfirmDialog";
 
 // 포스트 상세 레이아웃 컴포넌트 임포트
 import {
@@ -68,6 +70,10 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
     // 프로필 모달 상태
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    
+    // 수정/삭제 상태
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const { user, isAuthenticated } = useAuth();
     const navigate = useNavigate();
@@ -234,6 +240,37 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
         }
     };
 
+    // 수정 핸들러
+    const handleEdit = () => {
+        // TODO: 포스트 수정 모달이나 페이지로 이동
+        toast.success("수정 기능은 곧 추가될 예정입니다.");
+    };
+    
+    // 삭제 핸들러
+    const handleDelete = async () => {
+        if (!post) return;
+        
+        setIsDeleting(true);
+        try {
+            await userPostService.deletePost(post.postId);
+            toast.success("포스트가 삭제되었습니다.");
+            
+            // 모달 닫기
+            handleClose();
+            
+            // 페이지 모드에서는 이전 페이지로 이동
+            if (mode === "page") {
+                navigate(-1);
+            }
+        } catch (error) {
+            console.error("포스트 삭제 실패:", error);
+            toast.error("포스트 삭제에 실패했습니다.");
+        } finally {
+            setIsDeleting(false);
+            setShowDeleteDialog(false);
+        }
+    };
+    
     // 모달 닫기 핸들러
     const handleClose = () => {
         if (mode === "page") {
@@ -250,6 +287,9 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
             onClose();
         }
     };
+    
+    // 작성자 권한 확인
+    const isAuthor = user?.id === post?.authorId;
 
     // 로딩 상태
     if (isLoading) {
@@ -305,15 +345,26 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
             <>
                 <div className="container mx-auto px-4 py-6 max-w-4xl mb-16 md:mb-0">
                     {/* 헤더와 이전 버튼 */}
-                    <div className="flex items-center mb-6">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleClose}
-                        >
-                            <ChevronLeft className="h-6 w-6" />
-                        </Button>
-                        <h1 className="text-xl font-bold ml-2">게시물 상세</h1>
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleClose}
+                            >
+                                <ChevronLeft className="h-6 w-6" />
+                            </Button>
+                            <h1 className="text-xl font-bold ml-2">게시물 상세</h1>
+                        </div>
+                        
+                        {/* 작성자 권한이 있을 때 수정/삭제 버튼 */}
+                        {isAuthor && (
+                            <PostActions
+                                postId={post.postId}
+                                onEdit={handleEdit}
+                                onDelete={() => setShowDeleteDialog(true)}
+                            />
+                        )}
                     </div>
 
                     {/* 세로형 레이아웃으로 표시 */}
@@ -355,7 +406,19 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                         포스트 상세 정보
                     </DialogTitle>
 
-                    <div className="h-[85vh] md:h-[80vh] overflow-y-auto">
+                    <div className="h-[85vh] md:h-[80vh] overflow-y-auto relative">
+                        {/* 작성자 권한이 있을 때 수정/삭제 버튼 (모달 내부) */}
+                        {isAuthor && (
+                            <div className="absolute top-4 right-4 z-10">
+                                <PostActions
+                                    postId={post.postId}
+                                    onEdit={handleEdit}
+                                    onDelete={() => setShowDeleteDialog(true)}
+                                    className="bg-white/80 backdrop-blur-sm hover:bg-white/90"
+                                />
+                            </div>
+                        )}
+                        
                         {/* 세로형 레이아웃 사용 */}
                         <VerticalPostLayout
                             post={post}
@@ -400,6 +463,14 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 </AlertDialogContent>
             </AlertDialog>
 
+            {/* 삭제 확인 다이얼로그 */}
+            <DeleteConfirmDialog
+                open={showDeleteDialog}
+                onOpenChange={setShowDeleteDialog}
+                onConfirm={handleDelete}
+                isLoading={isDeleting}
+            />
+            
             {/* 프로필 모달 */}
             {selectedUserId && (
                 <ProfileDetailModal

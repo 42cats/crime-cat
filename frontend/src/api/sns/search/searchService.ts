@@ -59,9 +59,15 @@ class SnsSearchService {
         };
       }
 
+      // 맨앞 #이 있으면 제거
+      let cleanQuery = query.trim();
+      if (cleanQuery.startsWith('#')) {
+        cleanQuery = cleanQuery.substring(1);
+      }
+
       return await apiClient.get<SearchResult>(`/public/posts/explore/search`, {
         params: {
-          query: query.trim(),
+          query: cleanQuery,
           page,
           size
         }
