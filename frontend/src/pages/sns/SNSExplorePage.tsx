@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useAuth } from "@/hooks/useAuth";
 import { useSearchParams } from "react-router-dom";
 import PostGrid from "@/components/sns/post/PostGrid";
 import { exploreService } from "@/api/sns/exploreService";
@@ -14,190 +13,118 @@ import {
 } from '@/components/sns/explore';
 
 const SNSExplorePage: React.FC = () => {
-    const { isAuthenticated } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
+    const observer = useRef<IntersectionObserver | null>(null);
+    
+    // URL에서 파생된 상태 (Single Source of Truth)
     const searchQuery = searchParams.get("search") || "";
-    const [activeTab, setActiveTab] = useState("popular");
+    const activeTab = searchParams.get("tab") || "popular";
+    const isSearching = !!searchQuery;
+    
+    // 데이터 상태 (최소한으로 유지)
     const [posts, setPosts] = useState<Array<any>>([]);
     const [popularHashtags, setPopularHashtags] = useState<Array<any>>([]);
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
-    const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
-    const [isSearching, setIsSearching] = useState(!!searchQuery);
-    const observer = useRef<IntersectionObserver | null>(null);
-    const prevSearchQueryRef = useRef<string>("");
+    
+    // 이전 검색 키를 추적하여 데이터 초기화 시점 결정
+    const prevKey = useRef<string>("");
+    const currentKey = `${searchQuery}:${activeTab}`;
 
-    // 게시물 로드 함수 - 의존성 문제 해결
-    const loadPosts = useCallback(
-        async (resetPage = false) => {
-            if (isLoading) return;
-            
-            // resetPage가 true가 아닌 경우에만 hasMore 체크
-            if (!resetPage && !hasMore) return;
+    // 데이터 로딩 함수 (useCallback 제거로 의존성 문제 해결)
+    const loadPosts = async (resetPage = false) => {
+        if (isLoading) return;
+        if (!resetPage && !hasMore) return;
 
-            const currentPage = resetPage ? 0 : page;
-            const trimmedQuery = localSearchQuery.trim();
-            const shouldSearch = trimmedQuery.length > 0 && isSearching;
+        const currentPage = resetPage ? 0 : page;
+        
+        setIsLoading(true);
+        try {
+            let postsData;
 
-            setIsLoading(true);
-            try {
-                let postsData;
+            console.log('Loading posts:', { 
+                searchQuery, 
+                activeTab, 
+                isSearching,
+                currentPage,
+                resetPage
+            });
 
-                console.log('Loading posts:', { 
-                    isSearching, 
-                    localSearchQuery, 
-                    trimmedQuery,
-                    shouldSearch,
-                    activeTab, 
-                    currentPage,
-                    resetPage
-                });
-
-                if (shouldSearch) {
-                    // 통합 검색 (키워드 또는 해시태그)
-                    console.log('Using search service for:', trimmedQuery);
-                    postsData = await searchService.searchPosts(
-                        trimmedQuery,
-                        currentPage,
-                        12
-                    );
-                } else if (activeTab === "popular") {
-                    // 인기 게시물
-                    console.log('Using explore service for popular posts');
-                    postsData = await exploreService.getPopularPosts(
-                        currentPage,
-                        12
-                    );
-                } else {
-                    // 무작위 게시물
-                    console.log('Using explore service for random posts');
-                    postsData = await exploreService.getRandomPosts(
-                        currentPage,
-                        12
-                    );
-                }
-
-                console.log('Posts data received:', postsData);
-
-                if (resetPage || currentPage === 0) {
-                    setPosts(postsData.content || []);
-                    setPage(1);
-                } else {
-                    setPosts((prevPosts) => [
-                        ...prevPosts,
-                        ...(postsData.content || []),
-                    ]);
-                    setPage(prev => prev + 1);
-                }
-
-                // 더 불러올 데이터가 있는지 확인
-                setHasMore(!postsData.last && (postsData.content?.length || 0) > 0);
-
-            } catch (error) {
-                console.error("게시물 로드 실패:", error);
-                if (resetPage) {
-                    setPosts([]);
-                    setHasMore(false);
-                }
-            } finally {
-                setIsLoading(false);
+            if (isSearching) {
+                console.log('Using search service for:', searchQuery);
+                postsData = await searchService.searchPosts(searchQuery, currentPage, 12);
+            } else if (activeTab === "popular") {
+                console.log('Using explore service for popular posts');
+                postsData = await exploreService.getPopularPosts(currentPage, 12);
+            } else {
+                console.log('Using explore service for random posts');
+                postsData = await exploreService.getRandomPosts(currentPage, 12);
             }
-        },
-        [activeTab, isSearching, localSearchQuery]
-    );
 
-    // 인기 해시태그 로드
-    const loadPopularHashtags = useCallback(async () => {
-        console.log('loadPopularHashtags called - isSearching:', isSearching);
-        if (isSearching) {
-            console.log('Skipping loadPopularHashtags because isSearching is true');
-            return;
+            console.log('Posts data received:', postsData);
+
+            if (resetPage || currentPage === 0) {
+                setPosts(postsData.content || []);
+                setPage(1);
+            } else {
+                setPosts(prev => [...prev, ...(postsData.content || [])]);
+                setPage(prev => prev + 1);
+            }
+
+            setHasMore(!postsData.last && (postsData.content?.length || 0) > 0);
+
+        } catch (error) {
+            console.error("게시물 로드 실패:", error);
+            if (resetPage) {
+                setPosts([]);
+                setHasMore(false);
+            }
+        } finally {
+            setIsLoading(false);
         }
+    };
+
+    // 인기 해시태그 로딩
+    const loadPopularHashtags = async () => {
+        if (isSearching) return;
         
         try {
-            console.log('Actually loading popular hashtags...');
+            console.log('Loading popular hashtags...');
             const hashtags = await searchService.getPopularHashtags();
-            if (hashtags == null || !hashtags.content) {
-                setPopularHashtags([]);
-                return;
-            }
-            setPopularHashtags(hashtags.content.slice(0, 10));
+            setPopularHashtags(hashtags?.content?.slice(0, 10) || []);
         } catch (error) {
             console.error("인기 해시태그 로드 실패:", error);
             setPopularHashtags([]);
         }
-    }, [isSearching]);
+    };
 
-    // URL 파라미터 변경 감지 및 상태 동기화
+    // URL 변경 감지 및 데이터 리로드 (핵심 로직)
     useEffect(() => {
-        const urlSearchQuery = searchParams.get("search") || "";
-        console.log('URL params changed:', { urlSearchQuery, currentLocal: localSearchQuery, currentIsSearching: isSearching });
+        console.log('Key changed:', { prevKey: prevKey.current, currentKey });
         
-        // URL에 검색어가 있지만 현재 검색 상태가 아닌 경우
-        if (urlSearchQuery && !isSearching) {
-            console.log('URL has search query but not in searching state - updating');
-            setLocalSearchQuery(urlSearchQuery);
-            setIsSearching(true);
-            setPosts([]);
-            setPage(0);
-            setHasMore(true);
-        }
-        // URL에 검색어가 없지만 현재 검색 상태인 경우  
-        else if (!urlSearchQuery && isSearching) {
-            console.log('URL has no search query but in searching state - clearing');
-            setLocalSearchQuery("");
-            setIsSearching(false);
-            setPosts([]);
-            setPage(0);
-            setHasMore(true);
-        }
-        // URL 검색어와 로컬 검색어가 다른 경우
-        else if (urlSearchQuery !== localSearchQuery) {
-            console.log('URL search query differs from local - syncing');
-            setLocalSearchQuery(urlSearchQuery);
-            const newIsSearching = !!urlSearchQuery;
-            setIsSearching(newIsSearching);
-            setPosts([]);
-            setPage(0);
-            setHasMore(true);
-            console.log('State synced:', { urlSearchQuery, newIsSearching });
-        }
-    }, [searchParams, isSearching]); // isSearching 추가
-
-    // 첫 로드 및 탭/검색 상태 변경 시 데이터 로드
-    useEffect(() => {
-        console.log('Effect triggered for loadPosts:', { activeTab, isSearching, localSearchQuery });
-        loadPosts(true);
-    }, [loadPosts]);
-    
-    // 인기 해시태그는 검색 중이 아닐 때만 로드
-    useEffect(() => {
-        if (!isSearching) {
-            loadPopularHashtags();
-        } else {
-            setPopularHashtags([]);
-        }
-    }, [loadPopularHashtags]);
-
-    // 탭 변경 시 데이터 초기화
-    const handleTabChange = (tab: string) => {
-        console.log('Tab change:', { from: activeTab, to: tab });
-        if (tab !== activeTab) {
-            setActiveTab(tab);
+        // 키가 변경되었을 때만 데이터 리로드
+        if (prevKey.current !== currentKey) {
+            prevKey.current = currentKey;
+            
+            // 상태 초기화
             setPosts([]);
             setPage(0);
             setHasMore(true);
             
-            // 탭 변경 시 검색 상태 클리어
-            setIsSearching(false);
-            setLocalSearchQuery("");
-            setSearchParams({});
-            console.log('Tab changed, search cleared');
+            // 데이터 로드
+            loadPosts(true);
+            
+            // 해시태그 로드 (검색 중이 아닐 때만)
+            if (!isSearching) {
+                loadPopularHashtags();
+            } else {
+                setPopularHashtags([]);
+            }
         }
-    };
+    }, [currentKey]); // currentKey만 의존성으로 사용
 
-    // 무한 스크롤 설정 - 개선된 버전
+    // 무한 스크롤
     const lastPostElementRef = useCallback(
         (node: HTMLElement | null) => {
             if (isLoading) return;
@@ -205,27 +132,27 @@ const SNSExplorePage: React.FC = () => {
 
             observer.current = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting && hasMore && !isLoading) {
-                    console.log('Intersection detected, loading more posts...');
+                    console.log('Loading more posts...');
                     loadPosts(false);
                 }
             });
 
             if (node) observer.current.observe(node);
         },
-        [isLoading, hasMore, loadPosts]
+        [isLoading, hasMore] // loadPosts 제거로 무한 루프 방지
     );
 
     // 검색 처리
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        const trimmedQuery = localSearchQuery.trim();
-        console.log('handleSearch called:', { localSearchQuery, trimmedQuery });
+        const formData = new FormData(e.target as HTMLFormElement);
+        const query = (formData.get('search') as string)?.trim();
         
-        if (trimmedQuery) {
-            console.log('Setting search params, other states will be updated by useEffect');
-            setSearchParams({ search: trimmedQuery });
+        console.log('handleSearch called:', { query });
+        
+        if (query) {
+            setSearchParams({ search: query });
         } else {
-            console.log('Empty search query, clearing search');
             setSearchParams({});
         }
     };
@@ -233,30 +160,20 @@ const SNSExplorePage: React.FC = () => {
     // 검색 취소
     const handleClearSearch = () => {
         console.log('Clearing search');
-        setLocalSearchQuery("");
         setSearchParams({});
     };
-
-    // 검색어 입력 처리
-    const handleSearchInputChange = useCallback((value: string) => {
-        console.log('Search input changed:', value);
-        setLocalSearchQuery(value);
-    }, []);
 
     // 해시태그 클릭
     const handleHashtagClick = (tag: string) => {
         const hashtagQuery = `#${tag}`;
         console.log('Hashtag clicked:', { tag, hashtagQuery });
-        
-        // 상태 즉시 업데이트
-        setLocalSearchQuery(hashtagQuery);
-        setIsSearching(true);
-        setPosts([]);
-        setPage(0);
-        setHasMore(true);
-        
-        // URL 파라미터 업데이트
         setSearchParams({ search: hashtagQuery });
+    };
+
+    // 탭 변경
+    const handleTabChange = (tab: string) => {
+        console.log('Tab change:', { tab });
+        setSearchParams({ tab });
     };
 
     return (
@@ -264,13 +181,34 @@ const SNSExplorePage: React.FC = () => {
         <div className="container mx-auto px-4 py-6 mb-16 md:mb-0">
             <h1 className="text-2xl font-bold mb-6">탐색</h1>
 
-            {/* 검색 폼 */}
-            <SearchForm
-                searchQuery={localSearchQuery}
-                onSearchChange={handleSearchInputChange}
-                onSubmit={handleSearch}
-                onClear={handleClearSearch}
-            />
+            {/* 검색 폼 - 단순한 form 사용 */}
+            <form onSubmit={handleSearch} className="mb-6">
+                <div className="relative">
+                    <input
+                        name="search"
+                        type="text"
+                        placeholder="검색 또는 #해시태그 검색..."
+                        key={searchQuery} // key로 리렌더링 강제하여 defaultValue 업데이트
+                        defaultValue={searchQuery}
+                        className="w-full px-3 py-2 border border-input rounded-md pr-20"
+                    />
+                    {searchQuery && (
+                        <button
+                            type="button"
+                            className="absolute right-12 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            onClick={handleClearSearch}
+                        >
+                            ✕
+                        </button>
+                    )}
+                    <button
+                        type="submit"
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 px-2 py-1 text-muted-foreground hover:text-foreground"
+                    >
+                        🔍
+                    </button>
+                </div>
+            </form>
 
             {/* 인기 해시태그 */}
             <PopularHashtags
@@ -282,7 +220,7 @@ const SNSExplorePage: React.FC = () => {
             {/* 검색 상태 표시 */}
             <SearchStatus
                 isSearching={isSearching}
-                searchQuery={localSearchQuery}
+                searchQuery={searchQuery}
                 onClearSearch={handleClearSearch}
             />
 
