@@ -24,6 +24,7 @@ import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
+@Log4j2
 @RequiredArgsConstructor
 public class UserPostServiceImpl implements UserPostService {
 
@@ -106,7 +108,7 @@ public class UserPostServiceImpl implements UserPostService {
                 }
             } catch (Exception e) {
                 // 알림 발송 실패가 포스트 생성에 영향주지 않도록 로깅만 처리
-                System.err.println("Failed to send post creation notification: " + e.getMessage());
+                log.error("Failed to send post creation notification: {}", e.getMessage());
             }
         });
     }
