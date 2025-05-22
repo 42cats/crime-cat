@@ -30,9 +30,10 @@ import {
 interface PostCardProps {
     post: UserPostDto;
     onLikeChange?: (postId: string, liked: boolean) => void;
+    onPostClick?: (post: UserPostDto) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange, onPostClick }) => {
     const { isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const [liked, setLiked] = useState(post.liked);
@@ -41,7 +42,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange }) => {
     const [showLoginDialog, setShowLoginDialog] = useState(false);
 
     // 좋아요 토글 처리
-    const handleLikeToggle = async () => {
+    const handleLikeToggle = async (e: React.MouseEvent) => {
+        e.stopPropagation(); // 이벤트 전파 방지
         if (!isAuthenticated) {
             setShowLoginDialog(true);
             return;
@@ -143,12 +145,16 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange }) => {
     });
 
     return (
-        <div className="bg-card border border-border rounded-md overflow-hidden mb-6">
+        <div 
+            className="bg-card border border-border rounded-md overflow-hidden mb-6 cursor-pointer"
+            onClick={() => onPostClick?.(post)}
+        >
             {/* 포스트 헤더 */}
             <div className="p-4 flex items-center justify-between">
                 <Link
                     to={`/profile/${post.authorId}`}
                     className="flex items-center gap-2"
+                    onClick={(e) => e.stopPropagation()}
                 >
                     <Avatar className="w-8 h-8">
                         <AvatarImage
@@ -175,7 +181,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange }) => {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => setIsOptionsOpen(!isOptionsOpen)}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setIsOptionsOpen(!isOptionsOpen);
+                    }}
                 >
                     <MoreHorizontal className="h-5 w-5" />
                 </Button>
@@ -201,12 +210,23 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange }) => {
                             }`}
                         />
                     </Button>
-                    <Link to={`/sns/post/${post.postId}`}>
-                        <Button variant="ghost" size="icon" className="h-9 w-9">
-                            <MessageCircle className="h-6 w-6" />
-                        </Button>
-                    </Link>
-                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onPostClick?.(post);
+                        }}
+                    >
+                        <MessageCircle className="h-6 w-6" />
+                    </Button>
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <Share2 className="h-6 w-6" />
                     </Button>
                 </div>
@@ -215,7 +235,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange }) => {
                     variant="ghost"
                     size="icon"
                     className="h-9 w-9"
-                    onClick={() => {
+                    onClick={(e) => {
+                        e.stopPropagation();
                         if (!isAuthenticated) {
                             setShowLoginDialog(true);
                             return;
@@ -244,12 +265,15 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange }) => {
                 </div>
 
                 {/* 댓글 바로가기 */}
-                <Link
-                    to={`/sns/post/${post.postId}`}
-                    className="block text-xs text-muted-foreground mt-2"
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onPostClick?.(post);
+                    }}
+                    className="block text-xs text-muted-foreground mt-2 hover:underline cursor-pointer"
                 >
                     댓글 더 보기
-                </Link>
+                </button>
 
                 {/* 작성 시간 */}
                 <p className="text-xs text-muted-foreground mt-2">{timeAgo}</p>

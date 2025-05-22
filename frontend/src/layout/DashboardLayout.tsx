@@ -37,11 +37,14 @@ const DashboardLayout: React.FC = () => {
     const location = useLocation();
     const isMobile = useIsMobile();
     // 페이지 변경시 사이드바 상태를 초기화하기 위한 키 값
-    const locationKey = React.useMemo(() => location.pathname, [location.pathname]);
+    const locationKey = React.useMemo(
+        () => location.pathname,
+        [location.pathname]
+    );
     if (!isAuthenticated) {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
-    
+
     return (
         <SidebarProvider key={locationKey}>
             <MobileSidebarToggle />
@@ -51,7 +54,7 @@ const DashboardLayout: React.FC = () => {
                     <Sidebar
                         collapsible="icon"
                         className="min-h-screen border-r"
-                        >
+                    >
                         <SidebarInner />
                     </Sidebar>
                 </div>
@@ -70,9 +73,9 @@ const DashboardLayout: React.FC = () => {
 const MobileSidebarToggle = () => {
     const isMobile = useIsMobile();
     const { toggleSidebar } = useSidebar();
-    
+
     if (!isMobile) return null;
-    
+
     return (
         <div className="fixed top-4 left-4 z-50">
             <Button
@@ -80,7 +83,7 @@ const MobileSidebarToggle = () => {
                 size="icon"
                 onClick={toggleSidebar}
                 className="h-10 w-10 border rounded-md bg-background shadow-md"
-                >
+            >
                 <Menu className="w-6 h-6" />
                 <span className="sr-only">사이드바 열기</span>
             </Button>
@@ -104,24 +107,28 @@ const SidebarInner = React.memo(() => {
     const location = useLocation();
     const isCollapsed = state === "collapsed";
     const { theme } = useTheme(); // theme === "light" | "dark" | "system"
-    
+
     // 로고 이미지 프리로딩
     useImagePreload(
-        "/content/image/logo_dark.png", 
+        "/content/image/logo_dark.png",
         "/content/image/logo_light.png"
     );
     useImagePreload(
-        "/content/image/mystery_place_dark.png", 
+        "/content/image/mystery_place_dark.png",
         "/content/image/mystery_place_light.png"
     );
-    
+
     return (
         <>
-            <div 
+            <div
                 className={`
                     flex h-14 justify-between items-center px-4 border-b
                     transition-all duration-300 ease-in-out
-                    ${isCollapsed ? 'opacity-0 max-h-0 overflow-hidden pointer-events-none' : 'opacity-100 max-h-14'}
+                    ${
+                        isCollapsed
+                            ? "opacity-0 max-h-0 overflow-hidden pointer-events-none"
+                            : "opacity-100 max-h-14"
+                    }
                 `}
             >
                 <Link to="/" className="flex items-center space-x-2">
@@ -129,12 +136,12 @@ const SidebarInner = React.memo(() => {
                         <img
                             src={
                                 theme === "dark"
-                                ? "/content/image/logo_dark.png"
-                                : "/content/image/logo_light.png"
+                                    ? "/content/image/logo_dark.png"
+                                    : "/content/image/logo_light.png"
                             }
                             alt="미스터리 플레이스 로고"
                             className="w-full h-full object-cover"
-                            />
+                        />
                     </div>
                     <div className="relative w-20 h-15 overflow-hidden">
                         <img
@@ -156,10 +163,14 @@ const SidebarInner = React.memo(() => {
             <SidebarContent>
                 <ScrollArea className="h-[calc(100vh-8rem)]">
                     <div className="px-3 py-2">
-                        <div 
+                        <div
                             className={`
                                 transition-all duration-300 ease-in-out
-                                ${isCollapsed ? 'opacity-0 max-h-0 overflow-hidden pointer-events-none' : 'opacity-100'}
+                                ${
+                                    isCollapsed
+                                        ? "opacity-0 max-h-0 overflow-hidden pointer-events-none"
+                                        : "opacity-100"
+                                }
                             `}
                         >
                             <div className="mb-6">
@@ -169,133 +180,91 @@ const SidebarInner = React.memo(() => {
                                     </p>
                                 </div>
                                 <nav className="grid gap-1">
-                                        {[
-                                            {
-                                                name: "포스트",
-                                                path: "/dashboard/posts",
-                                                icon: FileText,
-                                                roles: [
-                                                    "ADMIN",
-                                                    "MANAGER",
-                                                    "USER",
-                                                ],
-                                            },
-                                            {
-                                                name: "팔로우",
-                                                path: "/dashboard/follows",
-                                                icon: UserPlus,
-                                                roles: [
-                                                    "ADMIN",
-                                                    "MANAGER",
-                                                    "USER",
-                                                ],
-                                            },
-                                            {
-                                                name: "대시보드",
-                                                path: "/dashboard",
-                                                icon: LayoutDashboard,
-                                                roles: [
-                                                    "ADMIN",
-                                                    "MANAGER",
-                                                    "USER",
-                                                ],
-                                            },
-                                            {
-                                                name: "알림",
-                                                path: "/dashboard/notifications",
-                                                icon: Bell,
-                                                roles: [
-                                                    "ADMIN",
-                                                    "MANAGER",
-                                                    "USER",
-                                                ],
-                                            },
-                                            {
-                                                name: "길드",
-                                                path: "/dashboard/guilds",
-                                                icon: Server,
-                                                roles: [
-                                                    "ADMIN",
-                                                    "MANAGER",
-                                                    "USER",
-                                                ],
-                                            },
-                                            {
-                                                name: "플레이기록",
-                                                path: "/dashboard/users/my-history",
-                                                icon: History,
-                                                roles: [
-                                                    "ADMIN",
-                                                    "MANAGER",
-                                                    "USER",
-                                                ],
-                                            },
-                                            {
-                                                name: "포인트 내역",
-                                                path: "/dashboard/point-history",
-                                                icon: Coins,
-                                                roles: [
-                                                    "ADMIN",
-                                                    "MANAGER",
-                                                    "USER",
-                                                ],
-                                            },
-                                            {
-                                                name: "프로필",
-                                                path: "/dashboard/profile",
-                                                icon: UserRoundPen,
-                                                roles: [
-                                                    "ADMIN",
-                                                    "MANAGER",
-                                                    "USER",
-                                                ],
-                                            },
-                                            {
-                                                name: "팀",
-                                                path: "/dashboard/teams",
-                                                icon: Users,
-                                                roles: [
-                                                    "ADMIN",
-                                                    "MANAGER",
-                                                    "USER",
-                                                ],
-                                            },
-                                            {
-                                                name: "사용자 관리",
-                                                path: "/dashboard/users",
-                                                icon: UserCog,
-                                                roles: ["ADMIN"],
-                                            },
-                                            {
-                                                name: "설정",
-                                                path: "/dashboard/settings",
-                                                icon: Settings,
-                                                roles: ["ADMIN", "MANAGER"],
-                                            },
-                                        ]
-                                            .filter((item) =>
-                                                item.roles.includes(
-                                                    user?.role || "USER"
-                                                )
+                                    {[
+                                        {
+                                            name: "대시보드",
+                                            path: "/dashboard",
+                                            icon: LayoutDashboard,
+                                            roles: ["ADMIN", "MANAGER", "USER"],
+                                        },
+                                        {
+                                            name: "팔로우",
+                                            path: "/dashboard/follows",
+                                            icon: UserPlus,
+                                            roles: ["ADMIN", "MANAGER", "USER"],
+                                        },
+                                        {
+                                            name: "알림",
+                                            path: "/dashboard/notifications",
+                                            icon: Bell,
+                                            roles: ["ADMIN", "MANAGER", "USER"],
+                                        },
+                                        {
+                                            name: "길드",
+                                            path: "/dashboard/guilds",
+                                            icon: Server,
+                                            roles: ["ADMIN", "MANAGER", "USER"],
+                                        },
+                                        {
+                                            name: "플레이기록",
+                                            path: "/dashboard/users/my-history",
+                                            icon: History,
+                                            roles: ["ADMIN", "MANAGER", "USER"],
+                                        },
+                                        {
+                                            name: "포인트 내역",
+                                            path: "/dashboard/point-history",
+                                            icon: Coins,
+                                            roles: ["ADMIN", "MANAGER", "USER"],
+                                        },
+                                        {
+                                            name: "프로필",
+                                            path: "/dashboard/profile",
+                                            icon: UserRoundPen,
+                                            roles: ["ADMIN", "MANAGER", "USER"],
+                                        },
+                                        {
+                                            name: "팀",
+                                            path: "/dashboard/teams",
+                                            icon: Users,
+                                            roles: ["ADMIN", "MANAGER", "USER"],
+                                        },
+                                        {
+                                            name: "사용자 관리",
+                                            path: "/dashboard/users",
+                                            icon: UserCog,
+                                            roles: ["ADMIN"],
+                                        },
+                                        {
+                                            name: "설정",
+                                            path: "/dashboard/settings",
+                                            icon: Settings,
+                                            roles: ["ADMIN", "MANAGER"],
+                                        },
+                                    ]
+                                        .filter((item) =>
+                                            item.roles.includes(
+                                                user?.role || "USER"
                                             )
-                                            .map((item) => (
-                                                <Link
-                                                    key={item.path}
-                                                    to={item.path}
-                                                    className={`group flex items-center gap-x-3 rounded-md px-3 py-2 transition-colors
+                                        )
+                                        .map((item) => (
+                                            <Link
+                                                key={item.path}
+                                                to={item.path}
+                                                className={`group flex items-center gap-x-3 rounded-md px-3 py-2 transition-colors
                             ${
                                 location.pathname === item.path
                                     ? "text-foreground bg-muted"
                                     : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                             }
                             justify-start`}
-                                                >
-                                                    <item.icon className="h-4 w-4" />
-                                                    <span className="text-sm font-medium">
-                                                        {item.name}
-                                                    </span>
-                                                </Link>
-                                            ))}
+                                            >
+                                                <item.icon className="h-4 w-4" />
+                                                <span className="text-sm font-medium">
+                                                    {item.name}
+                                                </span>
+                                            </Link>
+                                        ))}
                                 </nav>
                             </div>
 
@@ -347,21 +316,29 @@ const SidebarInner = React.memo(() => {
                         className="h-8 w-8 p-0 border rounded-md bg-background shadow-md transition-all duration-300"
                     >
                         <div className="relative w-4 h-4 overflow-hidden transition-all duration-300">
-                            <div className={`absolute inset-0 transition-opacity duration-300 ${isCollapsed ? 'opacity-100' : 'opacity-0'}`}>
+                            <div
+                                className={`absolute inset-0 transition-opacity duration-300 ${
+                                    isCollapsed ? "opacity-100" : "opacity-0"
+                                }`}
+                            >
                                 <ChevronRight className="h-4 w-4" />
                             </div>
-                            <div className={`absolute inset-0 transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+                            <div
+                                className={`absolute inset-0 transition-opacity duration-300 ${
+                                    isCollapsed ? "opacity-0" : "opacity-100"
+                                }`}
+                            >
                                 <ChevronLeft className="h-4 w-4" />
                             </div>
                         </div>
                         <span className="sr-only">
-                            {isCollapsed ? '사이드바 펼치기' : '사이드바 접기'}
+                            {isCollapsed ? "사이드바 펼치기" : "사이드바 접기"}
                         </span>
                     </Button>
                 </SidebarTrigger>
             </div>
         </>
-    )
+    );
 });
 
 export default DashboardLayout;
