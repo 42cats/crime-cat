@@ -5,7 +5,7 @@ import { Loader2, ChevronLeft, Heart, Bookmark, Share2, MoreHorizontal } from 'l
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ImageCarousel from '@/components/sns/post/ImageCarousel';
-import SaveButton from '@/components/sns/save/SaveButton';
+
 import { PostCommentList } from '@/components/profile/post-comments';
 import ProfileDetailModal from '@/components/profile/ProfileDetailModal';
 import { formatDistanceToNow } from 'date-fns';
@@ -239,8 +239,6 @@ const SNSPostDetailPage: React.FC = () => {
                 <Share2 className="h-6 w-6" />
               </Button>
             </div>
-            
-            <SaveButton postId={post.postId} />
           </div>
           
           {likeCount > 0 && (

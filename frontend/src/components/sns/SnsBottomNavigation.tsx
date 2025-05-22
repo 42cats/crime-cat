@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Home, Search, PlusSquare, BookmarkIcon, User } from 'lucide-react';
+import { Home, Search, PlusSquare, User } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogContent,
@@ -84,17 +84,6 @@ const SnsBottomNavigation: React.FC = () => {
                     >
                         <PlusSquare className="w-6 h-6" />
                         <span className="text-xs mt-1">작성</span>
-                    </button>
-                    <button
-                        onClick={() => handleProtectedAction('/sns/saved')}
-                        className={`flex flex-col items-center p-2 ${
-                            location.pathname === "/sns/saved"
-                                ? "text-primary"
-                                : "text-muted-foreground"
-                        }`}
-                    >
-                        <BookmarkIcon className="w-6 h-6" />
-                        <span className="text-xs mt-1">저장됨</span>
                     </button>
                     <button
                         onClick={handleProfileClick}
