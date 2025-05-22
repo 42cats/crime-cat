@@ -4,6 +4,7 @@ export interface HashTag {
   id: string;
   name: string;
   useCount: number;
+  lastUsedAt?: string;
 }
 
 export interface HashTagResponse {
@@ -14,6 +15,7 @@ export interface HashTagResponse {
   };
   totalElements: number;
   totalPages: number;
+  last?: boolean;
 }
 
 export interface HashTagPostsResponse {

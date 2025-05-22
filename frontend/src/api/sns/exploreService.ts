@@ -8,6 +8,10 @@ export interface ExplorePostsResponse {
     content: string;
     likeCount: number;
     liked: boolean;
+    authorId?: string;
+    isPrivate?: boolean;
+    isFollowersOnly?: boolean;
+    createdAt?: string;
   }[];
   pageable: {
     pageNumber: number;
@@ -15,6 +19,7 @@ export interface ExplorePostsResponse {
   };
   totalElements: number;
   totalPages: number;
+  last?: boolean;
 }
 
 class ExploreService {
