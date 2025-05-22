@@ -27,10 +27,13 @@ const SNSExplorePage: React.FC = () => {
     const [isSearching, setIsSearching] = useState(!!searchQuery);
     const observer = useRef<IntersectionObserver | null>(null);
 
-    // 게시물 로드
+    // 게시물 로드 함수 - 의존성 문제 해결
     const loadPosts = useCallback(
         async (resetPage = false) => {
-            if (isLoading || (!hasMore && !resetPage)) return;
+            if (isLoading) return;
+            
+            // resetPage가 true가 아닌 경우에만 hasMore 체크
+            if (!resetPage && !hasMore) return;
 
             const currentPage = resetPage ? 0 : page;
             const trimmedQuery = localSearchQuery.trim();
@@ -46,7 +49,8 @@ const SNSExplorePage: React.FC = () => {
                     trimmedQuery,
                     shouldSearch,
                     activeTab, 
-                    currentPage 
+                    currentPage,
+                    resetPage
                 });
 
                 if (shouldSearch) {
@@ -54,48 +58,52 @@ const SNSExplorePage: React.FC = () => {
                     console.log('Using search service for:', trimmedQuery);
                     postsData = await searchService.searchPosts(
                         trimmedQuery,
-                        currentPage
+                        currentPage,
+                        12
                     );
                 } else if (activeTab === "popular") {
                     // 인기 게시물
                     console.log('Using explore service for popular posts');
                     postsData = await exploreService.getPopularPosts(
-                        currentPage
+                        currentPage,
+                        12
                     );
                 } else {
                     // 무작위 게시물
                     console.log('Using explore service for random posts');
                     postsData = await exploreService.getRandomPosts(
-                        currentPage
+                        currentPage,
+                        12
                     );
                 }
 
                 console.log('Posts data received:', postsData);
 
                 if (resetPage || currentPage === 0) {
-                    setPosts(postsData.content);
+                    setPosts(postsData.content || []);
+                    setPage(1);
                 } else {
                     setPosts((prevPosts) => [
                         ...prevPosts,
-                        ...postsData.content,
+                        ...(postsData.content || []),
                     ]);
+                    setPage(prev => prev + 1);
                 }
 
                 // 더 불러올 데이터가 있는지 확인
-                setHasMore(!postsData.last && postsData.content.length > 0);
+                setHasMore(!postsData.last && (postsData.content?.length || 0) > 0);
 
-                if (resetPage) {
-                    setPage(1);
-                } else {
-                    setPage((prev) => prev + 1);
-                }
             } catch (error) {
                 console.error("게시물 로드 실패:", error);
+                if (resetPage) {
+                    setPosts([]);
+                    setHasMore(false);
+                }
             } finally {
                 setIsLoading(false);
             }
         },
-        [activeTab, page, hasMore, isSearching, localSearchQuery]
+        [activeTab, isSearching, localSearchQuery]
     );
 
     // 인기 해시태그 로드
@@ -130,26 +138,30 @@ const SNSExplorePage: React.FC = () => {
             setLocalSearchQuery(urlSearchQuery);
             const newIsSearching = !!urlSearchQuery;
             setIsSearching(newIsSearching);
+            
+            // 상태 초기화
             setPosts([]);
             setPage(0);
             setHasMore(true);
             
             console.log('State updated:', { urlSearchQuery, newIsSearching });
         }
-    }, [searchParams]);
+    }, [searchParams, localSearchQuery]);
 
     // 첫 로드 및 탭/검색 상태 변경 시 데이터 로드
     useEffect(() => {
-        console.log('Effect triggered:', { activeTab, isSearching, localSearchQuery });
+        console.log('Effect triggered for loadPosts:', { activeTab, isSearching, localSearchQuery });
         loadPosts(true);
-    }, [activeTab, isSearching, localSearchQuery]);
+    }, [loadPosts]);
     
     // 인기 해시태그는 검색 중이 아닐 때만 로드
     useEffect(() => {
         if (!isSearching) {
             loadPopularHashtags();
+        } else {
+            setPopularHashtags([]);
         }
-    }, [isSearching]);
+    }, [loadPopularHashtags]);
 
     // 탭 변경 시 데이터 초기화
     const handleTabChange = (tab: string) => {
@@ -159,6 +171,8 @@ const SNSExplorePage: React.FC = () => {
             setPosts([]);
             setPage(0);
             setHasMore(true);
+            
+            // 탭 변경 시 검색 상태 클리어
             setIsSearching(false);
             setLocalSearchQuery("");
             setSearchParams({});
@@ -166,15 +180,16 @@ const SNSExplorePage: React.FC = () => {
         }
     };
 
-    // 무한 스크롤 설정
+    // 무한 스크롤 설정 - 개선된 버전
     const lastPostElementRef = useCallback(
         (node: HTMLElement | null) => {
-            if (isLoading || !hasMore) return;
+            if (isLoading) return;
             if (observer.current) observer.current.disconnect();
 
             observer.current = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting && hasMore && !isLoading) {
-                    loadPosts();
+                    console.log('Intersection detected, loading more posts...');
+                    loadPosts(false);
                 }
             });
 

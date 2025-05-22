@@ -67,7 +67,6 @@ import PointHistoryPage from "@/pages/PointHistory/PointHistoryPage";
 import SNSFeedPage from "@/pages/sns/SNSFeedPage";
 import SNSExplorePage from "@/pages/sns/SNSExplorePage";
 import SNSCreatePage from "@/pages/sns/SNSCreatePage";
-import SNSSavedPage from "@/pages/sns/SNSSavedPage";
 import SNSPostDetailPage from "@/pages/sns/SNSPostDetailPage";
 
 import { queryClient } from "@/lib/reactQuery";
@@ -172,14 +171,6 @@ const App = () => (
                                 <Route
                                     path="/sns/create"
                                     element={<SNSCreatePage />}
-                                />
-                                <Route
-                                    path="/sns/saved"
-                                    element={<SNSSavedPage />}
-                                />
-                                <Route
-                                    path="/sns/post/:postId"
-                                    element={<SNSPostDetailPage />}
                                 />
                                 <Route
                                     path="/sns/hashtag/:tagName"
