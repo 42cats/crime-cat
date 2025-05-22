@@ -37,8 +37,8 @@ const PostActions: React.FC<PostActionsProps> = ({
                     <Edit3 className="h-4 w-4 mr-2" />
                     수정
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                    onClick={onDelete} 
+                <DropdownMenuItem
+                    onClick={onDelete}
                     className="cursor-pointer text-red-600 focus:text-red-600"
                 >
                     <Trash2 className="h-4 w-4 mr-2" />

@@ -71,7 +71,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
     // 프로필 모달 상태
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-    
+
     // 수정/삭제 상태
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -246,12 +246,13 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
     const handleEdit = () => {
         setShowEditModal(true);
     };
-    
+
     // 수정 성공 핸들러
     const handleEditSuccess = () => {
         // 포스트 데이터 다시 로드
         if (postId) {
-            userPostService.getUserPostDetail(postId)
+            userPostService
+                .getUserPostDetail(postId)
                 .then((updatedPost) => {
                     setPost(updatedPost);
                     setLiked(updatedPost.liked);
@@ -262,19 +263,19 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 });
         }
     };
-    
+
     // 삭제 핸들러
     const handleDelete = async () => {
         if (!post) return;
-        
+
         setIsDeleting(true);
         try {
             await userPostService.deletePost(post.postId);
             toast.success("포스트가 삭제되었습니다.");
-            
+
             // 모달 닫기
             handleClose();
-            
+
             // 페이지 모드에서는 이전 페이지로 이동
             if (mode === "page") {
                 navigate(-1);
@@ -287,7 +288,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
             setShowDeleteDialog(false);
         }
     };
-    
+
     // 모달 닫기 핸들러
     const handleClose = () => {
         if (mode === "page") {
@@ -304,7 +305,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
             onClose();
         }
     };
-    
+
     // 작성자 권한 확인
     const isAuthor = user?.id === post?.authorId;
 
@@ -371,9 +372,11 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                             >
                                 <ChevronLeft className="h-6 w-6" />
                             </Button>
-                            <h1 className="text-xl font-bold ml-2">게시물 상세</h1>
+                            <h1 className="text-xl font-bold ml-2">
+                                게시물 상세
+                            </h1>
                         </div>
-                        
+
                         {/* 작성자 권한이 있을 때 수정/삭제 버튼 */}
                         {isAuthor && (
                             <PostActions
@@ -396,17 +399,9 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                         handleLoginRequired={handleLoginRequired}
                         userId={user?.id}
                         onProfileClick={handleProfileClick}
+                        isAuthor={isAuthenticated}
                     />
                 </div>
-
-                {/* 프로필 모달 */}
-                {selectedUserId && (
-                    <ProfileDetailModal
-                        userId={selectedUserId}
-                        open={isProfileModalOpen}
-                        onOpenChange={setIsProfileModalOpen}
-                    />
-                )}
             </>
         );
     }
@@ -419,21 +414,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 onOpenChange={(open) => !open && handleClose()}
             >
                 <DialogContent className="max-w-4xl w-[95%] md:w-full bg-white rounded-lg p-0 overflow-hidden">
-                    {/* 모달 헤더 */}
-                    <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                        
-                        {/* 작성자 권한이 있을 때 수정/삭제 버튼 */}
-                        {isAuthor && (
-                            <PostActions
-                                postId={post.postId}
-                                onEdit={handleEdit}
-                                onDelete={() => setShowDeleteDialog(true)}
-                            />
-                        )}
-                    </div>
-
                     <div className="h-[85vh] md:h-[80vh] overflow-y-auto">
-                        
                         {/* 세로형 레이아웃 사용 */}
                         <VerticalPostLayout
                             post={post}
@@ -446,6 +427,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                             handleLoginRequired={handleLoginRequired}
                             userId={user?.id}
                             onProfileClick={handleProfileClick}
+                            isAuthor={isAuthenticated}
                         />
                     </div>
                 </DialogContent>
@@ -485,7 +467,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 onConfirm={handleDelete}
                 isLoading={isDeleting}
             />
-            
+
             {/* 수정 모달 */}
             {post && (
                 <PostEditModal
@@ -495,7 +477,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                     onSuccess={handleEditSuccess}
                 />
             )}
-            
+
             {/* 프로필 모달 */}
             {selectedUserId && (
                 <ProfileDetailModal
