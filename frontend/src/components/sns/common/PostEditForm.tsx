@@ -7,7 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { X, Upload, MapPin, Loader2 } from "lucide-react";
 import { UserPostDto, Location } from "@/api/posts/postService";
-import { parsePostContent } from "@/utils/postUtils";
 import HashtagEditor from "@/components/sns/common/HashtagEditor";
 import { useToast } from "@/hooks/useToast";
 
@@ -73,11 +72,10 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
         }))
     );
 
-    // 해시태그 미리보기 (내용에서 자동 추출 + 수동 추가)
-    const { hashtags: autoHashtags } = parsePostContent(content);
+    // 해시태그는 수동으로 관리되는 것만 사용 (자동 추출 기능 제거)
     const allHashtags = useMemo(() => [
-        ...new Set([...autoHashtags, ...manualHashtags])
-    ], [autoHashtags, manualHashtags]);
+        ...new Set(manualHashtags)
+    ], [manualHashtags]);
 
     // Switch 컴포너트 핸들러 (간단하게 수정)
     const handlePrivateChange = useCallback((checked: boolean) => {

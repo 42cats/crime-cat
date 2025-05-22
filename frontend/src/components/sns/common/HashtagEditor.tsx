@@ -41,8 +41,8 @@ const HashtagEditor: React.FC<HashtagEditorProps> = ({
             return false;
         }
         
-        // 한글(완성형+자음모음), 영문, 숫자, 언더스코어만 허용
-        if (!/^[\u3131-\u3163\uac00-\ud7a3a-zA-Z0-9_]+$/.test(trimmed)) {
+        // 한글 완성형, 영문, 숫자, 언더스코어만 허용 (자음/모음 제외)
+        if (!/^[\uac00-\ud7a3a-zA-Z0-9_]+$/.test(trimmed)) {
             setError("한글, 영문, 숫자, 언더스코어(_)만 사용 가능합니다.");
             return false;
         }
