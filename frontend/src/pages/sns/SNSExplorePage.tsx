@@ -122,7 +122,8 @@ const SNSExplorePage: React.FC = () => {
             setPage(0);
             setHasMore(true);
             setIsSearching(false);
-            setSearchQuery("");
+            setLocalSearchQuery("");
+            setSearchParams({});
         }
     };
 

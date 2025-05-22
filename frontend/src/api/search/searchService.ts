@@ -8,6 +8,7 @@ export interface SearchResult {
   };
   totalElements: number;
   totalPages: number;
+  last?: boolean;
 }
 
 export interface SearchResultItem {
@@ -28,6 +29,7 @@ export interface HashtagSearchResult {
     id: string;
     name: string;
     useCount: number;
+    lastUsedAt?: string;
   }[];
   pageable: {
     pageNumber: number;
@@ -35,6 +37,7 @@ export interface HashtagSearchResult {
   };
   totalElements: number;
   totalPages: number;
+  last?: boolean;
 }
 
 class SearchService {
