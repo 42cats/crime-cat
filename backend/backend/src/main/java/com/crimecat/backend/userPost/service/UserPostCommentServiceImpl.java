@@ -77,16 +77,17 @@ public class UserPostCommentServiceImpl implements UserPostCommentService {
                     // 대댓글인 경우 - 부모 댓글 작성자에게 알림
                     WebUser parentCommentAuthor = parentComment.getAuthor();
                     if (!parentCommentAuthor.getId().equals(author.getId()) && // 자기 자신에게는 알림 안보냄
-                        parentCommentAuthor.isNotificationEnabled("userPostCommentReply")) {
+                        parentCommentAuthor.getUser() != null && // User 존재 확인
+                        parentCommentAuthor.getCommentComment()) { // 답글 알림 설정 확인
                         
                         UserPostCommentRepliedEvent event = UserPostCommentRepliedEvent.of(
                             this,
-                            parentCommentAuthor.getId(),
+                            parentCommentAuthor.getUser().getId(), // User ID 사용
                             comment.getId(),
                             comment.getContent(),
                             parentComment.getId(),
                             post.getId(),
-                            author.getId(),
+                            author.getUser().getId(), // User ID 사용
                             author.getNickname()
                         );
                         notificationEventPublisher.publishEvent(event);
@@ -95,15 +96,16 @@ public class UserPostCommentServiceImpl implements UserPostCommentService {
                     // 일반 댓글인 경우 - 포스트 작성자에게 알림
                     WebUser postAuthor = post.getUser();
                     if (!postAuthor.getId().equals(author.getId()) && // 자기 자신에게는 알림 안보냄
-                        postAuthor.isNotificationEnabled("userPostComment")) {
+                        postAuthor.getUser() != null && // User 존재 확인
+                        postAuthor.getPostComment()) { // 댓글 알림 설정 확인
                         
                         UserPostCommentedEvent event = UserPostCommentedEvent.of(
                             this,
-                            postAuthor.getId(),
+                            postAuthor.getUser().getId(), // User ID 사용
                             comment.getId(),
                             comment.getContent(),
                             post.getId(),
-                            author.getId(),
+                            author.getUser().getId(), // User ID 사용
                             author.getNickname()
                         );
                         notificationEventPublisher.publishEvent(event);
