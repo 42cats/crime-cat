@@ -61,6 +61,12 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
     // 알림 클릭 처리를 위한 함수 (시스템 알림, 일반 알림)
     const handleNotificationClick = (notification: Notification) => {
+        // 디버깅: 알림 객체 전체 구조 확인
+        console.log("🔍 [DEBUG] Notification object:", notification);
+        console.log("🔍 [DEBUG] Notification metadata:", notification.metadata);
+        console.log("🔍 [DEBUG] Notification type:", notification.type);
+        console.log("🔍 [DEBUG] Notification keys:", Object.keys(notification));
+
         // 읽지 않은 알림이면 읽음 처리
         if (notification.status === "UNREAD") {
             markAsRead(notification.id);

@@ -51,6 +51,7 @@ public class UserPostCommentBuilder extends NotificationBuilder<UserPostCommentB
         data("postId", postId);
         data("commenterId", commenterId);
         data("notificationType", "USER_POST_COMMENT");
+        data("linkUrl", "/sns/post/" + postId);
     }
     
     /**
