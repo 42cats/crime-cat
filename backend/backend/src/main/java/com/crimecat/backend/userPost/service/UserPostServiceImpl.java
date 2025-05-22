@@ -678,6 +678,79 @@ public class UserPostServiceImpl implements UserPostService {
         return savedPostRepository.findAllCollectionNamesByUserId(currentUser.getId());
     }
 
+    @Override
+    public Page<UserPostGalleryPageDto> searchPostsByKeyword(String keyword, WebUser currentUser, Pageable pageable) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        String trimmedKeyword = keyword.trim();
+        Page<UserPost> posts;
+        
+        if (currentUser == null) {
+            posts = userPostRepository.findPublicPostsByKeyword(trimmedKeyword, pageable);
+        } else {
+            posts = userPostRepository.findAccessiblePostsByKeyword(trimmedKeyword, currentUser.getId(), pageable);
+        }
+
+        return convertToGalleryDtos(posts);
+    }
+
+    @Override
+    public Page<UserPostGalleryPageDto> searchPosts(String query, WebUser currentUser, Pageable pageable) {
+        if (query == null || query.trim().isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        String trimmedQuery = query.trim();
+        
+        // 해시태그 검색인지 확인 (#으로 시작)
+        if (trimmedQuery.startsWith("#")) {
+            String hashtag = trimmedQuery.substring(1); // # 제거
+            return getPostsByHashTag(hashtag, currentUser, pageable);
+        }
+        
+        // 일반 키워드 검색
+        return searchPostsByKeyword(trimmedQuery, currentUser, pageable);
+    }
+
+    @Override
+    public Page<UserPostGalleryPageDto> searchPostsByKeywordAndHashtags(String keyword, List<String> hashtags, WebUser currentUser, Pageable pageable) {
+        if ((keyword == null || keyword.trim().isEmpty()) && (hashtags == null || hashtags.isEmpty())) {
+            return Page.empty(pageable);
+        }
+
+        // 해시태그만 있는 경우
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getPostsByAllHashTags(hashtags, currentUser, pageable);
+        }
+        
+        // 키워드만 있는 경우
+        if (hashtags == null || hashtags.isEmpty()) {
+            return searchPostsByKeyword(keyword, currentUser, pageable);
+        }
+
+        // 키워드와 해시태그 둘 다 있는 경우
+        String trimmedKeyword = keyword.trim();
+        
+        // 먼저 해시태그로 게시물 ID 목록을 가져옴
+        List<UUID> postIds = hashTagService.findPostsWithAllHashTags(hashtags);
+        
+        if (postIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        // 해시태그가 있는 게시물 중에서 키워드로 필터링
+        Page<UserPost> posts;
+        if (currentUser == null) {
+            posts = userPostRepository.findPublicPostsByKeywordAndIds(trimmedKeyword, postIds, pageable);
+        } else {
+            posts = userPostRepository.findAccessiblePostsByKeywordAndIds(trimmedKeyword, postIds, currentUser.getId(), pageable);
+        }
+
+        return convertToGalleryDtos(posts);
+    }
+
     /**
      * UserPost 목록을 UserPostGalleryPageDto 목록으로 변환
      */

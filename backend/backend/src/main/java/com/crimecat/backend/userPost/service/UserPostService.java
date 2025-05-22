@@ -258,4 +258,32 @@ public interface UserPostService {
      * @return 사용자가 생성한 컬렉션 이름 목록
      */
     List<String> getUserCollections(WebUser currentUser);
+    
+    /**
+     * 키워드로 게시물 검색
+     * @param keyword 검색 키워드
+     * @param currentUser 현재 사용자
+     * @param pageable 페이징 정보
+     * @return 키워드가 포함된 게시물 목록
+     */
+    Page<UserPostGalleryPageDto> searchPostsByKeyword(String keyword, WebUser currentUser, Pageable pageable);
+    
+    /**
+     * 통합 검색 (키워드 + 해시태그)
+     * @param query 검색어 (키워드 또는 #해시태그)
+     * @param currentUser 현재 사용자
+     * @param pageable 페이징 정보
+     * @return 검색 결과 게시물 목록
+     */
+    Page<UserPostGalleryPageDto> searchPosts(String query, WebUser currentUser, Pageable pageable);
+    
+    /**
+     * 키워드와 해시태그를 모두 포함하는 게시물 검색
+     * @param keyword 키워드
+     * @param hashtags 해시태그 목록
+     * @param currentUser 현재 사용자
+     * @param pageable 페이징 정보
+     * @return 키워드와 해시태그를 모두 포함하는 게시물 목록
+     */
+    Page<UserPostGalleryPageDto> searchPostsByKeywordAndHashtags(String keyword, List<String> hashtags, WebUser currentUser, Pageable pageable);
 }

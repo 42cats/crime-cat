@@ -38,4 +38,14 @@ public class ExploreController {
         Page<UserPostGalleryPageDto> posts = userPostService.getRandomPosts(currentUser, pageable);
         return ResponseEntity.ok(new PageResponseDto<>(posts));
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<PageResponseDto<UserPostGalleryPageDto>> searchPosts(
+            @RequestParam String query,
+            @AuthenticationPrincipal WebUser currentUser,
+            @PageableDefault(size = 20) Pageable pageable) {
+        
+        Page<UserPostGalleryPageDto> posts = userPostService.searchPosts(query, currentUser, pageable);
+        return ResponseEntity.ok(new PageResponseDto<>(posts));
+    }
 }
