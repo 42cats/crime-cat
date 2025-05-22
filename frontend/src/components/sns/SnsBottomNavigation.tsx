@@ -12,12 +12,14 @@ import {
     AlertDialogCancel,
     AlertDialogAction,
 } from '@/components/ui/alert-dialog';
+import ProfileDetailModal from '@/components/profile/ProfileDetailModal';
 
 const SnsBottomNavigation: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
     const [showLoginDialog, setShowLoginDialog] = useState(false);
+    const [showProfileModal, setShowProfileModal] = useState(false);
 
     const handleProtectedAction = (path: string) => {
         if (!isAuthenticated) {
@@ -27,20 +29,13 @@ const SnsBottomNavigation: React.FC = () => {
         navigate(path);
     };
 
-    const getProfilePath = () => {
-        if (isAuthenticated && user?.id) {
-            return `/profile/${user.id}`;
-        }
-        return '/profile';
-    };
-
     const handleProfileClick = (e: React.MouseEvent) => {
         e.preventDefault();
         if (!isAuthenticated) {
             setShowLoginDialog(true);
             return;
         }
-        navigate(getProfilePath());
+        setShowProfileModal(true);
     };
 
     const handleLoginRedirect = () => {
@@ -99,7 +94,7 @@ const SnsBottomNavigation: React.FC = () => {
                     <button
                         onClick={handleProfileClick}
                         className={`flex flex-col items-center p-2 ${
-                            location.pathname.startsWith("/profile")
+                            showProfileModal
                                 ? "text-primary"
                                 : "text-muted-foreground"
                         }`}
@@ -133,6 +128,15 @@ const SnsBottomNavigation: React.FC = () => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* 프로필 모달 */}
+            {isAuthenticated && user?.id && (
+                <ProfileDetailModal
+                    userId={user.id}
+                    open={showProfileModal}
+                    onOpenChange={setShowProfileModal}
+                />
+            )}
         </>
     );
 };

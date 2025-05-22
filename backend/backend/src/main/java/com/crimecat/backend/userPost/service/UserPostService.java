@@ -242,4 +242,22 @@ public interface UserPostService {
      * @return 키워드와 해시태그를 모두 포함하는 게시물 목록
      */
     Page<UserPostGalleryPageDto> searchPostsByKeywordAndHashtags(String keyword, List<String> hashtags, WebUser currentUser, Pageable pageable);
+    
+    /**
+     * 내 게시물 검색
+     * @param currentUser 현재 사용자
+     * @param keyword 검색 키워드
+     * @param pageable 페이징 정보
+     * @return 검색된 내 게시물 목록
+     */
+    Page<UserPostGalleryPageDto> searchMyUserPosts(WebUser currentUser, String keyword, Pageable pageable);
+    
+    /**
+     * 통합 검색 (제목 + 태그 + 작성자 이름)
+     * @param query 검색어
+     * @param currentUser 현재 사용자
+     * @param pageable 페이징 정보
+     * @return 통합 검색 결과
+     */
+    Page<UserPostGalleryPageDto> searchPostsWithAuthor(String query, WebUser currentUser, Pageable pageable);
 }

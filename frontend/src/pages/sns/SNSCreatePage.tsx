@@ -10,9 +10,11 @@ import ContentTextArea from "@/components/sns/input/ContentTextArea";
 import LocationPicker from "@/components/sns/location/LocationPicker";
 import { Location } from "@/api/sns/locationService";
 import { userPostService } from "@/api/sns/post";
-import PrivacySettingsComponent, { PrivacySettings } from "@/components/sns/privacy/PrivacySettings";
+import PrivacySettingsComponent, {
+    PrivacySettings,
+} from "@/components/sns/privacy/PrivacySettings";
 import { toast } from "sonner";
-import SnsBottomNavigation from '@/components/sns/SnsBottomNavigation';
+import SnsBottomNavigation from "@/components/sns/SnsBottomNavigation";
 
 const SNSCreatePageContent: React.FC = () => {
     const { user } = useAuth();
@@ -25,7 +27,7 @@ const SNSCreatePageContent: React.FC = () => {
     const [location, setLocation] = useState<Location | null>(null);
     const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
         isPrivate: false,
-        isFollowersOnly: false
+        isFollowersOnly: false,
     });
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -95,16 +97,19 @@ const SNSCreatePageContent: React.FC = () => {
 
         try {
             // 태그를 해시태그 형태로 변환하여 내용에 추가
-            const contentWithTags = tags.length > 0 
-                ? `${content} ${tags.map(tag => `#${tag}`).join(' ')}`.trim()
-                : content;
-            
+            const contentWithTags =
+                tags.length > 0
+                    ? `${content} ${tags
+                          .map((tag) => `#${tag}`)
+                          .join(" ")}`.trim()
+                    : content;
+
             await userPostService.createPost(
-                contentWithTags, 
-                images, 
-                location,
+                contentWithTags,
                 privacySettings.isPrivate,
-                privacySettings.isFollowersOnly
+                privacySettings.isFollowersOnly,
+                images,
+                location
             );
             toast.success("게시물이 작성되었습니다.");
             navigate("/sns/feed");
@@ -118,92 +123,94 @@ const SNSCreatePageContent: React.FC = () => {
 
     return (
         <>
-        <div className="container mx-auto px-4 py-6 max-w-lg mb-16 md:mb-0">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">새 게시물 작성</h1>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-                {/* 이미지 업로드 영역 */}
-                <div className="border border-dashed border-border rounded-md p-4">
-                    {imagePreviewUrls.length > 0 ? (
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {imagePreviewUrls.map((url, index) => (
-                                <div
-                                    key={index}
-                                    className="relative aspect-square"
-                                >
-                                    <img
-                                        src={url}
-                                        alt={`미리보기 ${index + 1}`}
-                                        className="w-full h-full object-cover rounded-md"
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="destructive"
-                                        size="icon"
-                                        className="absolute top-1 right-1 h-6 w-6 rounded-full"
-                                        onClick={() => handleRemoveImage(index)}
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            ))}
-
-                            {/* 이미지 추가 버튼 (5개 미만일 때만 표시) */}
-                            {images.length < 5 && (
-                                <button
-                                    type="button"
-                                    className="aspect-square border border-dashed border-border rounded-md flex flex-col items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
-                                    onClick={handleAddImageClick}
-                                >
-                                    <Plus className="h-8 w-8 mb-2" />
-                                    <span className="text-sm">추가</span>
-                                </button>
-                            )}
-                        </div>
-                    ) : (
-                        <button
-                            type="button"
-                            className="w-full py-12 flex flex-col items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
-                            onClick={handleAddImageClick}
-                        >
-                            <Image className="h-12 w-12 mb-2" />
-                            <span className="font-medium">이미지 추가</span>
-                            <span className="text-sm mt-1">
-                                최대 5개까지 업로드 가능
-                            </span>
-                        </button>
-                    )}
-
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleImageChange}
-                        className="hidden"
-                    />
+            <div className="container mx-auto px-4 py-6 max-w-lg mb-16 md:mb-0">
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold">새 게시물 작성</h1>
                 </div>
 
-                {/* 태그 입력 */}
-                <TagInputField
-                    tags={tags}
-                    onTagsChange={setTags}
-                    placeholder="태그를 입력하세요... (예: 일상, 맛집, 여행)"
-                    maxTags={10}
-                />
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* 이미지 업로드 영역 */}
+                    <div className="border border-dashed border-border rounded-md p-4">
+                        {imagePreviewUrls.length > 0 ? (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                {imagePreviewUrls.map((url, index) => (
+                                    <div
+                                        key={index}
+                                        className="relative aspect-square"
+                                    >
+                                        <img
+                                            src={url}
+                                            alt={`미리보기 ${index + 1}`}
+                                            className="w-full h-full object-cover rounded-md"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="icon"
+                                            className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                                            onClick={() =>
+                                                handleRemoveImage(index)
+                                            }
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))}
 
-                {/* 내용 입력 */}
-                <ContentTextArea
-                    value={content}
-                    onChange={setContent}
-                    placeholder="무슨 일이 일어나고 있나요?"
-                    maxLength={500}
-                />
+                                {/* 이미지 추가 버튼 (5개 미만일 때만 표시) */}
+                                {images.length < 5 && (
+                                    <button
+                                        type="button"
+                                        className="aspect-square border border-dashed border-border rounded-md flex flex-col items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
+                                        onClick={handleAddImageClick}
+                                    >
+                                        <Plus className="h-8 w-8 mb-2" />
+                                        <span className="text-sm">추가</span>
+                                    </button>
+                                )}
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                className="w-full py-12 flex flex-col items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
+                                onClick={handleAddImageClick}
+                            >
+                                <Image className="h-12 w-12 mb-2" />
+                                <span className="font-medium">이미지 추가</span>
+                                <span className="text-sm mt-1">
+                                    최대 5개까지 업로드 가능
+                                </span>
+                            </button>
+                        )}
 
-                {/* 위치 선택 */}
-                {/* <div className="space-y-2">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleImageChange}
+                            className="hidden"
+                        />
+                    </div>
+
+                    {/* 태그 입력 */}
+                    <TagInputField
+                        tags={tags}
+                        onTagsChange={setTags}
+                        placeholder="태그를 입력하세요... (예: 일상, 맛집, 여행)"
+                        maxTags={10}
+                    />
+
+                    {/* 내용 입력 */}
+                    <ContentTextArea
+                        value={content}
+                        onChange={setContent}
+                        placeholder="무슨 일이 일어나고 있나요?"
+                        maxLength={500}
+                    />
+
+                    {/* 위치 선택 */}
+                    {/* <div className="space-y-2">
           <label className="text-sm font-medium">위치 정보 (선택)</label>
           <LocationPicker
             value={location}
@@ -211,43 +218,43 @@ const SNSCreatePageContent: React.FC = () => {
           />
         </div> */}
 
-                {/* 공개 설정 */}
-                <PrivacySettingsComponent
-                    value={privacySettings}
-                    onChange={setPrivacySettings}
-                />
+                    {/* 공개 설정 */}
+                    <PrivacySettingsComponent
+                        value={privacySettings}
+                        onChange={setPrivacySettings}
+                    />
 
-                {/* 제출 버튼 */}
-                <div className="flex justify-end">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        className="mr-2"
-                        onClick={() => navigate(-1)}
-                        disabled={isLoading}
-                    >
-                        취소
-                    </Button>
-                    <Button
-                        type="submit"
-                        disabled={
-                            isLoading ||
-                            (!content.trim() && images.length === 0)
-                        }
-                    >
-                        {isLoading ? (
-                            <>
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                게시 중...
-                            </>
-                        ) : (
-                            "게시하기"
-                        )}
-                    </Button>
-                </div>
-            </form>
-        </div>
-        <SnsBottomNavigation />
+                    {/* 제출 버튼 */}
+                    <div className="flex justify-end">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="mr-2"
+                            onClick={() => navigate(-1)}
+                            disabled={isLoading}
+                        >
+                            취소
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={
+                                isLoading ||
+                                (!content.trim() && images.length === 0)
+                            }
+                        >
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                    게시 중...
+                                </>
+                            ) : (
+                                "게시하기"
+                            )}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+            <SnsBottomNavigation />
         </>
     );
 };

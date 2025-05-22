@@ -660,4 +660,41 @@ public class UserPostServiceImpl implements UserPostService {
                     .build();
         });
     }
+    
+    @Override
+    public Page<UserPostGalleryPageDto> searchMyUserPosts(WebUser currentUser, String keyword, Pageable pageable) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getMyUserPostGalleryPage(currentUser, pageable);
+        }
+
+        String trimmedKeyword = keyword.trim();
+        Page<UserPost> posts = userPostRepository.findByUserAndContentContaining(currentUser, trimmedKeyword, pageable);
+        
+        return convertToGalleryDtos(posts);
+    }
+    
+    @Override
+    public Page<UserPostGalleryPageDto> searchPostsWithAuthor(String query, WebUser currentUser, Pageable pageable) {
+        if (query == null || query.trim().isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        String trimmedQuery = query.trim();
+        
+        // 해시태그 검색인지 확인 (#으로 시작)
+        if (trimmedQuery.startsWith("#")) {
+            String hashtag = trimmedQuery.substring(1); // # 제거
+            return getPostsByHashTag(hashtag, currentUser, pageable);
+        }
+        
+        // 통합 검색: 제목 + 태그 + 작성자 이름
+        Page<UserPost> posts;
+        if (currentUser == null) {
+            posts = userPostRepository.findPublicPostsByKeywordOrAuthor(trimmedQuery, pageable);
+        } else {
+            posts = userPostRepository.findAccessiblePostsByKeywordOrAuthor(trimmedQuery, currentUser.getId(), pageable);
+        }
+
+        return convertToGalleryDtos(posts);
+    }
 }
