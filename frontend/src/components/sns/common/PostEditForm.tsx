@@ -1,14 +1,13 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "@/components/ui/switch-custom"; // 커스텀 Switch 사용
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { X, Upload, MapPin, Loader2 } from "lucide-react";
 import { UserPostDto, Location } from "@/api/posts/postService";
 import { parsePostContent } from "@/utils/postUtils";
-import HashtagBadges from "@/components/sns/common/HashtagBadges";
 import HashtagEditor from "@/components/sns/common/HashtagEditor";
 import { useToast } from "@/hooks/useToast";
 
@@ -76,21 +75,17 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
 
     // 해시태그 미리보기 (내용에서 자동 추출 + 수동 추가)
     const { hashtags: autoHashtags } = parsePostContent(content);
-    const allHashtags = [...new Set([...autoHashtags, ...manualHashtags])];
+    const allHashtags = useMemo(() => [
+        ...new Set([...autoHashtags, ...manualHashtags])
+    ], [autoHashtags, manualHashtags]);
 
-    // Switch 컴포너트 상태 변경 오류 예방 (flushSync 문제 해결)
+    // Switch 컴포너트 핸들러 (간단하게 수정)
     const handlePrivateChange = useCallback((checked: boolean) => {
-        // 비동기로 상태 변경
-        setTimeout(() => {
-            setIsPrivate(checked);
-        }, 0);
+        setIsPrivate(checked);
     }, []);
 
     const handleFollowersOnlyChange = useCallback((checked: boolean) => {
-        // 비동기로 상태 변경
-        setTimeout(() => {
-            setIsFollowersOnly(checked);
-        }, 0);
+        setIsFollowersOnly(checked);
     }, []);
 
     // 이미지 추가
@@ -200,24 +195,12 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
                     placeholder="무슨 일이 일어나고 있나요?"
                     className="min-h-[120px] resize-none"
                     disabled={isLoading}
+                    maxLength={500}
                 />
                 <div className="text-xs text-muted-foreground">
-                    {content.length}/2000자
+                    {content.length}/500자
                 </div>
             </div>
-
-            {/* 해시태그 미리보기 */}
-            {allHashtags.length > 0 && (
-                <div className="space-y-2">
-                    <Label>모든 해시태그 미리보기</Label>
-                    <HashtagBadges
-                        hashtags={allHashtags}
-                        maxDisplay={15}
-                        size="sm"
-                        variant="light"
-                    />
-                </div>
-            )}
 
             {/* 해시태그 편집기 */}
             <HashtagEditor
