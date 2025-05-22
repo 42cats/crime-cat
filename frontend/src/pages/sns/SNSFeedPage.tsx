@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import PostCard from '@/components/sns/post/PostCard';
 import { exploreService } from '@/api/sns/exploreService';
-import { UserPostDto } from '@/api/userPost/userPostService';
+import { UserPostDto } from '@/api/sns/post';
 import SnsBottomNavigation from '@/components/sns/SnsBottomNavigation';
 
 const SNSFeedPage: React.FC = () => {

@@ -5,7 +5,7 @@ import {
   UserPostCommentDto, 
   UserPostCommentRequest, 
   userPostCommentService 
-} from "@/api/userPost/userPostCommentService";
+} from "@/api/sns/post";
 import { useAuth } from "@/hooks/useAuth";
 import PostCommentForm from './PostCommentForm';
 import PostCommentItem from './PostCommentItem';

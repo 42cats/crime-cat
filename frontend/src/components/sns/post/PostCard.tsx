@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { UserPostDto } from '@/api/userPost/userPostService';
+import { Link, useNavigate } from 'react-router-dom';
+import { UserPostDto, userPostService } from '@/api/sns/post';
 import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -8,7 +8,6 @@ import LazyImage from '../common/LazyImage';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import ImageCarousel from './ImageCarousel';
-import { userPostService } from '@/api/userPost/userPostService';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import {
@@ -29,6 +28,7 @@ interface PostCardProps {
 
 const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange }) => {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [liked, setLiked] = useState(post.liked);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
@@ -236,7 +236,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange }) => {
             <AlertDialogAction
               onClick={() => {
                 setShowLoginDialog(false);
-                window.location.href = "/login";
+                navigate('/login');
               }}
             >
               로그인 하러 가기

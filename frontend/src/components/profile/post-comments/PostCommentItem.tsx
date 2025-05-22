@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserPostCommentDto, UserPostCommentRequest } from '@/api/userPost/userPostCommentService';
+import { UserPostCommentDto, UserPostCommentRequest } from '@/api/sns/post';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { UserPostCommentRequest } from '@/api/userPost/userPostCommentService';
+import { UserPostCommentRequest } from '@/api/sns/post';
 import { Switch } from '@/components/ui/switch';
 import { Lock } from 'lucide-react';
 import { Label } from '@/components/ui/label';

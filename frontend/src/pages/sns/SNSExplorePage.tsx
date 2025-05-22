@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import PostGrid from "@/components/sns/post/PostGrid";
 import { exploreService } from "@/api/sns/exploreService";
-import { searchService } from "@/api/search";
+import { searchService } from "@/api/sns/search";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
