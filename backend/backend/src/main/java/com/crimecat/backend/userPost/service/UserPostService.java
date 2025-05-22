@@ -16,6 +16,7 @@ public interface UserPostService {
      * 유저 게시글 생성 (해시태그 및 위치 정보 포함)
      * @param user 로그인된 사용자 (webUser)
      * @param content 게시글 내용
+     * @param hashtags 해시태그 목록 (# 제외)
      * @param imageIds 이미지uuid
      * @param imageUrls 업로드된 이미지 URL 리스트 (최대 5장)
      * @param isPrivate 비밀글 여부
@@ -24,21 +25,21 @@ public interface UserPostService {
      * @param latitude 위도 (선택 사항)
      * @param longitude 경도 (선택 사항)
      */
-    void createUserPost(WebUser user, String content, List<UUID> imageIds, List<String> imageUrls, 
+    void createUserPost(WebUser user, String content, List<String> hashtags, List<UUID> imageIds, List<String> imageUrls, 
                        boolean isPrivate, boolean isFollowersOnly, String locationName, Double latitude, Double longitude);
     
     /**
      * 기존 메서드와의 호환성을 위한 오버로딩 메서드
      */
     default void createUserPost(WebUser user, String content, List<UUID> imageIds, List<String> imageUrls, boolean isPrivate, boolean isFollowersOnly) {
-        createUserPost(user, content, imageIds, imageUrls, isPrivate, isFollowersOnly, null, null, null);
+        createUserPost(user, content, null, imageIds, imageUrls, isPrivate, isFollowersOnly, null, null, null);
     }
 
     /**
      * 기존 메서드와의 호환성을 위한 오버로딩 메서드
      */
     default void createUserPost(WebUser user, String content, List<UUID> imageIds, List<String> imageUrls) {
-        createUserPost(user, content, imageIds, imageUrls, false, false, null, null, null);
+        createUserPost(user, content, null, imageIds, imageUrls, false, false, null, null, null);
     }
 
     /**
@@ -48,6 +49,7 @@ public interface UserPostService {
             UUID postId,
             WebUser user,
             String content,
+            List<String> hashtags,
             List<MultipartFile> newImages,
             List<UUID> newImageIds,
             List<String> keepImageUrls,
@@ -71,7 +73,7 @@ public interface UserPostService {
             boolean isPrivate,
             boolean isFollowersOnly
     ) {
-        updateUserPostPartially(postId, user, content, newImages, newImageIds, keepImageUrls, isPrivate, isFollowersOnly, null, null, null);
+        updateUserPostPartially(postId, user, content, null, newImages, newImageIds, keepImageUrls, isPrivate, isFollowersOnly, null, null, null);
     }
 
     /**
@@ -85,7 +87,7 @@ public interface UserPostService {
             List<UUID> newImageIds,
             List<String> keepImageUrls
     ) {
-        updateUserPostPartially(postId, user, content, newImages, newImageIds, keepImageUrls, false, false, null, null, null);
+        updateUserPostPartially(postId, user, content, null, newImages, newImageIds, keepImageUrls, false, false, null, null, null);
     }
 
     /**

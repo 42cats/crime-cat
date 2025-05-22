@@ -12,7 +12,7 @@ export interface UserPostGalleryDto {
     followersOnly: boolean;
     createdAt: string;
     collectionName?: string;
-    hashTags?: string[]; // 해시태그 추가
+    hashtags?: string[]; // 해시태그 추가 (hashTags -> hashtags로 수정)
     locationName?: string; // 위치 정보 추가
 }
 
@@ -26,13 +26,15 @@ export interface UserPostDto {
     likeCount: number;
     liked: boolean;
     createdAt: string;
+    updatedAt?: string;
     private: boolean;
     followersOnly: boolean;
-    hashTags?: string[]; // 해시태그 추가
+    hashtags?: string[]; // 해시태그 추가 (hashTags -> hashtags로 수정)
     locationName?: string; // 위치 정보 추가
     locationId?: string; // 위치 ID 추가
     latitude?: number; // 위도 추가
     longitude?: number; // 경도 추가
+    comments?: any[]; // 댓글 목록
 }
 
 export interface UserPostGalleryPageDto {
@@ -165,6 +167,7 @@ class UserPostService {
     // 포스트 생성 (해시태그, 위치 정보, 비밀글 설정 포함)
     async createPost(
         content: string, 
+        hashtags?: string[],
         images?: File[],
         location?: Location | null,
         isPrivate?: boolean,
@@ -181,6 +184,13 @@ class UserPostService {
 
             const formData = new FormData();
             formData.append("content", content);
+            
+            // 해시태그 추가 (분리 전송)
+            if (hashtags && hashtags.length > 0) {
+                hashtags.forEach(tag => {
+                    formData.append("hashtags", tag);
+                });
+            }
             
             // 비밀글 설정
             formData.append("isPrivate", String(isPrivate || false));
@@ -247,6 +257,7 @@ class UserPostService {
     async updatePost(
         postId: string,
         content: string,
+        hashtags?: string[],
         newImages?: File[],
         keepImageUrls?: string[],
         location?: Location | null,
@@ -266,6 +277,13 @@ class UserPostService {
 
             const formData = new FormData();
             formData.append("content", content);
+            
+            // 해시태그 추가 (분리 전송)
+            if (hashtags && hashtags.length > 0) {
+                hashtags.forEach(tag => {
+                    formData.append("hashtags", tag);
+                });
+            }
             
             // 비밀글 설정
             formData.append("isPrivate", String(isPrivate || false));

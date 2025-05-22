@@ -9,7 +9,7 @@ export interface UserPostGalleryDto {
     private: boolean;
     followersOnly: boolean;
     liked: boolean;
-    hashTags?: string[]; // 해시태그 추가
+    hashtags?: string[]; // 해시태그 추가 (hashTags -> hashtags로 수정)
     locationName?: string; // 위치 정보 추가
 }
 
@@ -25,7 +25,7 @@ export interface UserPostDto {
     followersOnly: boolean;
     liked: boolean;
     createdAt: string;
-    hashTags?: string[]; // 해시태그 추가
+    hashtags?: string[]; // 해시태그 추가 (hashTags -> hashtags로 수정)
     locationName?: string; // 위치 정보 추가
     locationId?: string; // 위치 ID 추가
     latitude?: number; // 위도 추가
@@ -157,6 +157,7 @@ class PostService {
     // 포스트 생성 (해시태그, 위치 정보 포함)
     async createPost(
         content: string,
+        hashtags: string[],
         isPrivate: boolean,
         isFollowersOnly: boolean,
         images?: File[],
@@ -165,12 +166,21 @@ class PostService {
         try {
             console.log("포스트 생성 시작:", {
                 content,
+                hashtags,
                 imageCount: images?.length,
                 location,
             });
 
             const formData = new FormData();
             formData.append("content", content);
+            
+            // 해시태그 추가 (분리 전송)
+            if (hashtags && hashtags.length > 0) {
+                hashtags.forEach(tag => {
+                    formData.append("hashtags", tag);
+                });
+            }
+            
             formData.append("isPrivate", isPrivate.toString());
             formData.append("isFollowersOnly", isFollowersOnly.toString());
 
@@ -235,6 +245,7 @@ class PostService {
     async updatePost(
         postId: string,
         content: string,
+        hashtags: string[],
         newImages?: File[],
         keepImageUrls?: string[],
         location?: Location | null
@@ -243,6 +254,7 @@ class PostService {
             console.log("포스트 업데이트 시작:", {
                 postId,
                 content,
+                hashtags,
                 newImagesCount: newImages?.length,
                 keepImageUrls,
                 location,
@@ -250,6 +262,13 @@ class PostService {
 
             const formData = new FormData();
             formData.append("content", content);
+
+            // 해시태그 추가 (분리 전송)
+            if (hashtags && hashtags.length > 0) {
+                hashtags.forEach(tag => {
+                    formData.append("hashtags", tag);
+                });
+            }
 
             // 유효한 이미지만 추가
             let validImages: File[] = [];

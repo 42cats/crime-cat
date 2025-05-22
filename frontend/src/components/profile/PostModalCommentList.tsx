@@ -1,6 +1,6 @@
 import React from "react";
 import { PostCommentList } from "../post-comments";
-import { UserPostDto } from "@/api/sns/post";
+import { UserPostDto } from "@/api/posts/postService";
 
 interface PostModalCommentListProps {
     postId: string;

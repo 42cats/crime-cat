@@ -60,32 +60,23 @@ class HashTagService {
         query: string,
         page: number = 0,
         size: number = 10
-    ): Promise<HashTagResponse | null> {
+    ): Promise<HashTag[]> {
         if (!query || query.length < 2) {
-            return {
-                content: [],
-                pageable: { pageNumber: 0, pageSize: size },
-                totalElements: 0,
-                totalPages: 0
-            };
+            return [];
         }
 
         try {
-            return await apiClient.get<HashTagResponse>(`/hashtags/search`, {
+            const response = await apiClient.get<HashTagResponse>(`/hashtags/search`, {
                 params: {
                     query,
                     page,
                     size,
                 },
             });
+            return response.content || [];
         } catch (error) {
             console.error("해시태그 검색 실패:", error);
-            return {
-                content: [],
-                pageable: { pageNumber: 0, pageSize: size },
-                totalElements: 0,
-                totalPages: 0
-            };
+            return [];
         }
     }
 

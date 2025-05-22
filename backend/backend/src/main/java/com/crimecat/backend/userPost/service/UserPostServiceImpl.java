@@ -47,7 +47,7 @@ public class UserPostServiceImpl implements UserPostService {
 
     @Override
     @Transactional
-    public void createUserPost(WebUser user, String content, List<UUID> imageIds, List<String> imageUrls, 
+    public void createUserPost(WebUser user, String content, List<String> hashtags, List<UUID> imageIds, List<String> imageUrls, 
                               boolean isPrivate, boolean isFollowersOnly, String locationName, Double latitude, Double longitude) {
         // 게시물 생성
         UserPost post = UserPost.builder()
@@ -71,8 +71,8 @@ public class UserPostServiceImpl implements UserPostService {
         }
         userPostImageRepository.saveAll(images);
         
-        // 해시태그 처리
-        hashTagService.processPostHashTags(post, content);
+        // 해시태그 처리 - 명시적 태그 목록 사용
+        hashTagService.processPostHashTagsExplicit(post, hashtags);
     }
 
     @Override
@@ -141,6 +141,9 @@ public class UserPostServiceImpl implements UserPostService {
             }
         }
 
+        // 해시태그 정보 조회
+        List<String> postHashtags = hashTagService.getPostHashTagNames(post.getId());
+        
         UserPostDto postDto = UserPostDto.builder()
                 .postId(post.getId())
                 .authorId(post.getUser().getId())
@@ -154,6 +157,10 @@ public class UserPostServiceImpl implements UserPostService {
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .comments(commentDtos)
+                .hashtags(postHashtags)
+                .locationName(post.getLocationName())
+                .latitude(post.getLatitude())
+                .longitude(post.getLongitude())
                 .liked(false) // 기본값, 아래에서 업데이트
                 .build();
         
@@ -230,6 +237,9 @@ public class UserPostServiceImpl implements UserPostService {
 
             // 좋아요 수는 별도 조회
             long likeCount = userPostLikeRepository.countByPostId(post.getId());
+            
+            // 해시태그 정보 조회
+            List<String> hashtags = hashTagService.getPostHashTagNames(post.getId());
 
             return UserPostGalleryPageDto.builder()
                     .postId(post.getId())
@@ -241,6 +251,8 @@ public class UserPostServiceImpl implements UserPostService {
                     .isPrivate(post.isPrivate())
                     .isFollowersOnly(post.isFollowersOnly())
                     .createdAt(post.getCreatedAt())
+                    .hashtags(hashtags)
+                    .locationName(post.getLocationName())
                     .build();
         });
     }
@@ -251,6 +263,7 @@ public class UserPostServiceImpl implements UserPostService {
             UUID postId,
             WebUser user,
             String content,
+            List<String> hashtags,
             List<MultipartFile> newImages,
             List<UUID> newImageIds,
             List<String> keepImageUrls,
@@ -344,7 +357,7 @@ public class UserPostServiceImpl implements UserPostService {
         post.setLocationInfo(locationName, latitude, longitude);
 
         // ── 해시태그 처리 ────────────────────────────────
-        hashTagService.processPostHashTags(post, content);
+        hashTagService.processPostHashTagsExplicit(post, hashtags);
     }
 
     @Override
@@ -377,6 +390,9 @@ public class UserPostServiceImpl implements UserPostService {
             // 좋아요 수는 별도 조회
             long likeCount = userPostLikeRepository.countByPostId(post.getId());
 
+            // 해시태그 정보 조회
+            List<String> hashtags = hashTagService.getPostHashTagNames(post.getId());
+            
             return UserPostGalleryPageDto.builder()
                     .postId(post.getId())
                     .authorId(post.getUser().getId())
@@ -387,6 +403,8 @@ public class UserPostServiceImpl implements UserPostService {
                     .isPrivate(post.isPrivate())
                     .isFollowersOnly(post.isFollowersOnly())
                     .createdAt(post.getCreatedAt())
+                    .hashtags(hashtags)
+                    .locationName(post.getLocationName())
                     .build();
         });
     }
@@ -404,6 +422,9 @@ public class UserPostServiceImpl implements UserPostService {
 
             // 좋아요 수는 별도 조회
             long likeCount = userPostLikeRepository.countByPostId(post.getId());
+            
+            // 해시태그 정보 조회
+            List<String> hashtags = hashTagService.getPostHashTagNames(post.getId());
 
             return UserPostGalleryPageDto.builder()
                     .postId(post.getId())
@@ -415,6 +436,8 @@ public class UserPostServiceImpl implements UserPostService {
                     .isPrivate(post.isPrivate())
                     .isFollowersOnly(post.isFollowersOnly())
                     .createdAt(post.getCreatedAt())
+                    .hashtags(hashtags)
+                    .locationName(post.getLocationName())
                     .build();
         });
     }
@@ -643,6 +666,9 @@ public class UserPostServiceImpl implements UserPostService {
                     .orElse(null);
 
             long likeCount = userPostLikeRepository.countByPostId(post.getId());
+            
+            // 해시태그 정보 조회
+            List<String> hashtags = hashTagService.getPostHashTagNames(post.getId());
 
             return UserPostGalleryPageDto.builder()
                     .postId(post.getId())
@@ -654,6 +680,8 @@ public class UserPostServiceImpl implements UserPostService {
                     .isPrivate(post.isPrivate())
                     .isFollowersOnly(post.isFollowersOnly())
                     .createdAt(post.getCreatedAt())
+                    .hashtags(hashtags)
+                    .locationName(post.getLocationName())
                     .build();
         });
     }

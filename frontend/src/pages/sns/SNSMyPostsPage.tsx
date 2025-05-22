@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/auth";
-import { userPostService, UserPostGalleryDto } from "@/api/sns/post";
+import { userPostService, UserPostGalleryDto } from "@/api/posts/postService";
 import PostGrid from "@/components/sns/post/PostGrid";
 import ProfileDetailModal from "@/components/profile/ProfileDetailModal";
 import SnsBottomNavigation from "@/components/sns/SnsBottomNavigation";

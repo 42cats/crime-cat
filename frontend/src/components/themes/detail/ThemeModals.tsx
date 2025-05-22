@@ -25,7 +25,7 @@ import ContactUserModal from "@/components/themes/modals/ContactUserModal";
 import PostDetailModal from "@/components/profile/PostDetailModal";
 import ProfileDetailModal from "@/components/profile/ProfileDetailModal";
 import { ThemeDetailType } from "@/lib/types";
-import { UserPostDto } from "@/api/sns/post";
+import { UserPostDto } from "@/api/posts/postService";
 
 interface ThemeModalsProps {
     theme: ThemeDetailType;

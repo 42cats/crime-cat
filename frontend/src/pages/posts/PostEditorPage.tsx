@@ -10,7 +10,7 @@ import {
     Save,
     X,
 } from "lucide-react";
-import { userPostService } from "@/api/sns/post";
+import { userPostService } from "@/api/posts/postService";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";

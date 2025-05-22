@@ -3,7 +3,7 @@ import { Heart, MessageSquare, Share2, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostCommentList } from "../post-comments";
-import { UserPostDto } from "@/api/sns/post";
+import { UserPostDto } from "@/api/posts/postService";
 import { ProfileDetailDto } from "@/api/profile/detail";
 import PostInfoContent from "./PostInfoContent";
 import PostImageSection from "./PostImageSection";

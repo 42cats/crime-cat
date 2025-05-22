@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Hash } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { hashtagService } from '@/api/sns/hashtagService';
+import { hashtagService } from "@/api/hashtags/hashtagService";
 
 interface TagInputFieldProps {
   tags: string[];
@@ -24,28 +24,28 @@ const TagInputField: React.FC<TagInputFieldProps> = ({
 
   // 해시태그 추천 검색
   useEffect(() => {
-    const searchHashTags = async () => {
-      if (inputValue.length > 0) {
-        try {
-          const hashTags = await hashtagService.searchHashTags(inputValue);
-          const filteredSuggestions = hashTags
-            .map(tag => tag.name)
-            .filter(tagName => !tags.includes(tagName))
-            .slice(0, 5);
-          setSuggestions(filteredSuggestions);
-          setShowSuggestions(filteredSuggestions.length > 0);
-        } catch (error) {
-          console.error('해시태그 검색 오류:', error);
-          setSuggestions([]);
-          setShowSuggestions(false);
-        }
-      } else {
-        setShowSuggestions(false);
-      }
-    };
+  const searchHashTags = async () => {
+  if (inputValue.length > 0) {
+  try {
+  const hashTags = await hashtagService.searchHashTags(inputValue);
+  const filteredSuggestions = hashTags
+  .map(tag => tag.name)
+  .filter(tagName => !tags.includes(tagName))
+  .slice(0, 5);
+  setSuggestions(filteredSuggestions);
+  setShowSuggestions(filteredSuggestions.length > 0);
+  } catch (error) {
+  console.error('해시태그 검색 오류:', error);
+  setSuggestions([]);
+  setShowSuggestions(false);
+  }
+  } else {
+  setShowSuggestions(false);
+  }
+  };
 
-    const timeoutId = setTimeout(searchHashTags, 300); // 디바운싱
-    return () => clearTimeout(timeoutId);
+  const timeoutId = setTimeout(searchHashTags, 300); // 디바운싱
+  return () => clearTimeout(timeoutId);
   }, [inputValue, tags]);
 
   // 태그 추가

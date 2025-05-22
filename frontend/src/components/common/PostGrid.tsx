@@ -1,10 +1,7 @@
 import React from "react";
-import { UserPostGalleryDto } from "@/api/sns/post";
+import { UserPostGalleryDto } from "@/api/posts/postService";
 import PostGridItem from "@/components/sns/common/PostGridItem";
-import {
-    Image,
-    FileTextIcon,
-} from "lucide-react";
+import { Image, FileTextIcon } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
 
 interface PostGridProps {

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { UserPostGalleryDto } from "@/api/sns/post";
+import { UserPostGalleryDto } from "@/api/posts/postService";
 import PostGrid from "@/components/common/PostGrid";
 import PostDetailModal from "@/components/common/PostDetailModal";
 
