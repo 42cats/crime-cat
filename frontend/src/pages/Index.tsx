@@ -15,9 +15,9 @@ const Index: React.FC = () => {
                 {/* <BotStatsSection /> */}
                 <AnnouncementSection />
                 <GameAdsSection />
-                {/* <LatestPostsSection />
-        <GameAdsSection />
-        <CurrentGamesSection /> */}
+                <LatestPostsSection />
+                {/* <GameAdsSection />
+                <CurrentGamesSection /> */}
             </div>
         </PageTransition>
     );
