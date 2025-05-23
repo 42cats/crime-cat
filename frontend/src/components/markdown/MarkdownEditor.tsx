@@ -57,6 +57,28 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 }) => {
   const { theme } = useTheme();
 
+  // MDEditor에 전달할 props에서 커스텀 prop 제외
+  const mdEditorProps = {
+    value,
+    onChange,
+    onBlur,
+    height,
+    preview,
+    placeholder,
+    visibledragbar: visibledragbar ? "true" : "false",
+    commands: [
+      {
+        name: "toggle-preview",
+        keyCommand: "toggle-preview",
+        icon: <WritePreviewToggle />,
+      },
+      videoCommand,
+      ...commands.getCommands(),
+    ],
+    extraCommands,
+    ...(textareaId && { textareaProps: { id: textareaId } })
+  };
+
   return (
     <div>
       {label && (
@@ -64,26 +86,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
       )}
       <div data-color-mode={theme === "dark" ? "dark" : "light"}>
         <div className={`border rounded-md overflow-hidden ${className}`}>
-          <MDEditor
-            value={value}
-            onChange={onChange}
-            onBlur={onBlur}
-            height={height}
-            preview={preview}
-            textareaId={textareaId}
-            placeholder={placeholder}
-            visibledragbar={visibledragbar ? "true" : "false"}
-            commands={[
-              {
-                name: "toggle-preview",
-                keyCommand: "toggle-preview",
-                icon: <WritePreviewToggle />,
-              },
-              videoCommand,
-              ...commands.getCommands(),
-            ]}
-            extraCommands={extraCommands}
-          />
+          <MDEditor {...mdEditorProps} />
         </div>
       </div>
       {error && <p className="text-red-500 text-sm mt-1">{error}</p>}

@@ -8,8 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/useToast";
 import { Edit } from "lucide-react";
-import { FilterValues } from "@/components/themes/filters/types";
+import { FilterValues, EscapeRoomFilterValues, ThemeFilterValues } from "@/components/themes/filters/types";
 import ThemeFilters from "@/components/themes/filters/ThemeFilters";
+import EscapeRoomFilters from "@/components/themes/filters/EscapeRoomFilters";
+import MurderMysteryFilters from "@/components/themes/filters/MurderMysteryFilters";
+import RealWorldFilters from "@/components/themes/filters/RealWorldFilters";
 import ThemeGrid from "@/components/themes/ThemeGrid";
 import Pagination from "@/components/themes/Pagination";
 
@@ -46,6 +49,14 @@ const CATEGORY_DESCRIPTIONS: Record<Theme["type"], string> = {
     REALWORLD: "현실 세계의 장소와 상황을 기반으로 한 몰입형 체험 테마입니다.",
 };
 
+// 테마 타입별 필터 컴포넌트 매핑
+const FILTER_COMPONENTS = {
+    CRIMESCENE: ThemeFilters,
+    ESCAPE_ROOM: EscapeRoomFilters,
+    MURDER_MYSTERY: MurderMysteryFilters,
+    REALWORLD: RealWorldFilters,
+} as const;
+
 const ThemeList: React.FC = () => {
     const navigate = useNavigate();
     const { category } = useParams<{ category: string }>();
@@ -59,34 +70,68 @@ const ThemeList: React.FC = () => {
     const [sort, setSort] = useState(searchParams.get("sort") || "LATEST");
     const [hasSearched, setHasSearched] = useState(false);
 
-    const [filters, setFilters] = useState<FilterValues>({
-        priceMin: searchParams.get("priceMin") || "",
-        priceMax: searchParams.get("priceMax") || "",
-        playerMin: searchParams.get("playerMin") || "",
-        playerMax: searchParams.get("playerMax") || "",
-        playtimeMin: searchParams.get("playtimeMin") || "",
-        playtimeMax: searchParams.get("playtimeMax") || "",
-        difficultyMin: searchParams.get("difficultyMin") || "",
-        difficultyMax: searchParams.get("difficultyMax") || "",
-    });
+    // 테마 타입별 초기 필터 상태 생성
+    const getInitialFilters = (): ThemeFilterValues => {
+        const baseFilters = {
+            priceMin: searchParams.get("priceMin") || "",
+            priceMax: searchParams.get("priceMax") || "",
+            playerMin: searchParams.get("playerMin") || "",
+            playerMax: searchParams.get("playerMax") || "",
+            playtimeMin: searchParams.get("playtimeMin") || "",
+            playtimeMax: searchParams.get("playtimeMax") || "",
+            difficultyMin: searchParams.get("difficultyMin") || "",
+            difficultyMax: searchParams.get("difficultyMax") || "",
+        };
 
-    const handleFilterChange = (key: keyof FilterValues, value: string) => {
+        if (validCategory === "ESCAPE_ROOM") {
+            return {
+                ...baseFilters,
+                horrorMin: searchParams.get("horrorMin") || "",
+                horrorMax: searchParams.get("horrorMax") || "",
+                deviceMin: searchParams.get("deviceMin") || "",
+                deviceMax: searchParams.get("deviceMax") || "",
+                activityMin: searchParams.get("activityMin") || "",
+                activityMax: searchParams.get("activityMax") || "",
+                isOperating: searchParams.get("isOperating") || "",
+                selectedGenres: searchParams.get("selectedGenres")?.split(",").filter(Boolean) || [],
+                selectedLocations: searchParams.get("selectedLocations")?.split(",").filter(Boolean) || [],
+            };
+        }
+
+        return baseFilters;
+    };
+
+    const [filters, setFilters] = useState<ThemeFilterValues>(getInitialFilters());
+
+    // 테마 타입별 필터 변경 핸들러
+    const handleFilterChange = (key: string, value: string | string[]) => {
         setFilters((prev) => ({ ...prev, [key]: value }));
     };
 
     const validateFilters = () => {
-        const pairs: [keyof FilterValues, keyof FilterValues][] = [
+        const basePairs: [string, string][] = [
             ["priceMin", "priceMax"],
             ["playerMin", "playerMax"],
             ["playtimeMin", "playtimeMax"],
             ["difficultyMin", "difficultyMax"],
         ];
 
-        for (const [minKey, maxKey] of pairs) {
-            const min = Number(filters[minKey]);
-            const max = Number(filters[maxKey]);
+        // 방탈출 전용 필터 추가
+        const escapeRoomPairs: [string, string][] = [
+            ["horrorMin", "horrorMax"],
+            ["deviceMin", "deviceMax"],
+            ["activityMin", "activityMax"],
+        ];
 
-            if (filters[minKey] && min < 1) {
+        const pairs = validCategory === "ESCAPE_ROOM" 
+            ? [...basePairs, ...escapeRoomPairs] 
+            : basePairs;
+
+        for (const [minKey, maxKey] of pairs) {
+            const min = Number((filters as any)[minKey]);
+            const max = Number((filters as any)[maxKey]);
+
+            if ((filters as any)[minKey] && min < 1) {
                 toast({
                     description: "최소 값은 1보다 커야 합니다.",
                     variant: "destructive",
@@ -94,7 +139,7 @@ const ThemeList: React.FC = () => {
                 return false;
             }
 
-            if (filters[maxKey] && max < min) {
+            if ((filters as any)[maxKey] && max < min) {
                 toast({
                     description: "최대 값은 최소 값보다 크거나 같아야 합니다.",
                     variant: "destructive",
@@ -102,12 +147,27 @@ const ThemeList: React.FC = () => {
                 return false;
             }
 
+            // 난이도는 1-5, 방탈출 특성은 1-10
+            const maxLimit = minKey.includes("difficulty") ? 5 : 10;
             if (
-                (minKey.includes("difficulty") && min > 5) ||
-                (maxKey.includes("difficulty") && max > 5)
+                (minKey.includes("difficulty") || minKey.includes("horror") || 
+                 minKey.includes("device") || minKey.includes("activity")) && min > maxLimit
             ) {
+                const limitText = minKey.includes("difficulty") ? "1에서 5" : "1에서 10";
                 toast({
-                    description: "난이도는 1에서 5 사이여야 합니다.",
+                    description: `${minKey.includes("difficulty") ? "난이도" : "특성"}는 ${limitText} 사이여야 합니다.`,
+                    variant: "destructive",
+                });
+                return false;
+            }
+
+            if (
+                (maxKey.includes("difficulty") || maxKey.includes("horror") || 
+                 maxKey.includes("device") || maxKey.includes("activity")) && max > maxLimit
+            ) {
+                const limitText = maxKey.includes("difficulty") ? "1에서 5" : "1에서 10";
+                toast({
+                    description: `${maxKey.includes("difficulty") ? "난이도" : "특성"}는 ${limitText} 사이여야 합니다.`,
                     variant: "destructive",
                 });
                 return false;
@@ -145,7 +205,9 @@ const ThemeList: React.FC = () => {
             prev.set("sort", sort);
             prev.set("page", "0");
             Object.entries(filters).forEach(([k, v]) => {
-                if (v) {
+                if (Array.isArray(v) && v.length > 0) {
+                    prev.set(k, v.join(","));
+                } else if (typeof v === "string" && v) {
                     prev.set(k, v);
                 } else {
                     prev.delete(k);
@@ -159,16 +221,22 @@ const ThemeList: React.FC = () => {
 
     const handleResetFilters = () => {
         setSearchInput("");
-        setFilters({
-            priceMin: "",
-            priceMax: "",
-            playerMin: "",
-            playerMax: "",
-            playtimeMin: "",
-            playtimeMax: "",
-            difficultyMin: "",
-            difficultyMax: "",
-        });
+        
+        // 테마 타입별 초기 필터 상태로 리셋
+        const resetFilters: ThemeFilterValues = validCategory === "ESCAPE_ROOM" 
+            ? {
+                priceMin: "", priceMax: "", playerMin: "", playerMax: "",
+                playtimeMin: "", playtimeMax: "", difficultyMin: "", difficultyMax: "",
+                horrorMin: "", horrorMax: "", deviceMin: "", deviceMax: "",
+                activityMin: "", activityMax: "", isOperating: "",
+                selectedGenres: [], selectedLocations: [],
+            }
+            : {
+                priceMin: "", priceMax: "", playerMin: "", playerMax: "",
+                playtimeMin: "", playtimeMax: "", difficultyMin: "", difficultyMax: "",
+            };
+        
+        setFilters(resetFilters);
         setSort("LATEST");
 
         setSearchParams({ page: "0" });
@@ -235,17 +303,23 @@ const ThemeList: React.FC = () => {
                     </Button>
                 </div>
 
-                <ThemeFilters
-                    filters={filters}
-                    searchInput={searchInput}
-                    sort={sort}
-                    sortOptions={SORT_OPTIONS}
-                    onSearchInputChange={setSearchInput}
-                    onFilterChange={handleFilterChange}
-                    onSortChange={handleSortChange}
-                    onSearch={handleSearch}
-                    onReset={handleResetFilters}
-                />
+                {(() => {
+                    const FilterComponent = validCategory ? FILTER_COMPONENTS[validCategory] : ThemeFilters;
+                    
+                    return (
+                        <FilterComponent
+                            filters={filters}
+                            searchInput={searchInput}
+                            sort={sort}
+                            sortOptions={SORT_OPTIONS}
+                            onSearchInputChange={setSearchInput}
+                            onFilterChange={handleFilterChange}
+                            onSortChange={handleSortChange}
+                            onSearch={handleSearch}
+                            onReset={handleResetFilters}
+                        />
+                    );
+                })()}
 
                 <Card className="border-0 shadow-sm overflow-hidden">
                     <CardContent className="p-4 sm:p-6">
