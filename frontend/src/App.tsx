@@ -332,6 +332,14 @@ const App = () => (
                                         </PrivateRoute>
                                     }
                                 />
+                                <Route
+                                    path="admin/coupon"
+                                    element={
+                                        <PrivateRoute allowedRoles={["ADMIN"]}>
+                                            <CouponManagementPage />
+                                        </PrivateRoute>
+                                    }
+                                />
                             </Route>
 
                             {/* 404 Route */}
