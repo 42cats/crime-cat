@@ -1,5 +1,6 @@
 package com.crimecat.backend.boardPost.domain;
 
+import com.crimecat.backend.boardPost.dto.BoardPostRequest;
 import com.crimecat.backend.boardPost.enums.BoardType;
 import com.crimecat.backend.boardPost.enums.PostType;
 import com.crimecat.backend.webUser.domain.WebUser;
@@ -35,12 +36,12 @@ public class BoardPost {
     private String content;
 
     @JdbcTypeCode(SqlTypes.BINARY)
-    @Column(name = "USER_ID")
-    private UUID userId;
+    @Column(name = "AUTHOR_ID")
+    private UUID authorId;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "USER_ID", updatable = false, insertable = false)
-    private WebUser user;
+    @JoinColumn(name = "AUTHOR_ID", updatable = false, insertable = false)
+    private WebUser author;
 
     @Builder.Default
     @Column(name = "CREATED_AT")
@@ -80,4 +81,27 @@ public class BoardPost {
     @Builder.Default
     @Column(name = "IS_PINNED")
     private Boolean isPinned = false;
+
+    // author를 설정하는 메서드
+    public void setUser(WebUser author) {
+        this.author = author;
+        if (author != null) {
+            this.authorId = author.getId();
+        }
+    }
+
+    public static BoardPost from(BoardPostRequest request, WebUser author){
+        BoardPost boardPost = BoardPost.builder()
+                .subject(request.getSubject())
+                .content(request.getContent())
+                .isSecret(request.getIsSecret())
+                .postType(request.getPostType())
+                .boardtype(request.getBoardType())
+                .isPinned(request.getIsPinned())
+                .build();
+
+        boardPost.setUser(author);
+
+        return boardPost;
+    }
 }

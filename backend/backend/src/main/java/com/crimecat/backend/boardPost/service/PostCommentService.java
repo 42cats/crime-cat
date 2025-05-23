@@ -29,12 +29,12 @@ public class PostCommentService {
         List<PostComment> comments = postCommentRepository.findAllByPostIdAndParentIdIsNull(postId, sort);
 
         if (!comments.isEmpty()) {
-            boolean isOwnPost = comments.getFirst().getBoardPost().getUserId().equals(userId);
+            boolean isOwnPost = comments.getFirst().getBoardPost().getAuthorId().equals(userId);
 
             return comments.stream()
                     .map(comment -> {
                         boolean isLikedComment = postCommentLikeRepository.existsByCommentIdAndUserId(comment.getId(), userId);
-                        boolean isOwnComment = comment.getUserId().equals(userId);
+                        boolean isOwnComment = comment.getAuthorId().equals(userId);
                         boolean canViewSecret = (isOwnComment || isOwnPost);
                         List<PostCommentResponse> replies = getCommentReplies(comment.getId(), userId, sort, isOwnComment);
 
@@ -52,7 +52,7 @@ public class PostCommentService {
 
         for (PostComment reply : replies) {
             boolean isLiked = postCommentLikeRepository.existsByCommentIdAndUserId(reply.getId(), userId);
-            boolean isOwnReply = reply.getUserId().equals(userId);
+            boolean isOwnReply = reply.getAuthorId().equals(userId);
             boolean canViewSecret = (isOwnParent || isOwnReply);
             List<PostCommentResponse> commentReplies = getCommentReplies(reply.getId(), userId, sort, isOwnReply);
             replyResponses.add(PostCommentResponse.from(reply, isLiked, isOwnReply, canViewSecret, commentReplies));

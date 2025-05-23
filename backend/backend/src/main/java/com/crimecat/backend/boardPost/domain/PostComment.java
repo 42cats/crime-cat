@@ -30,12 +30,12 @@ public class PostComment {
     private String content;
 
     @JdbcTypeCode(SqlTypes.BINARY)
-    @Column(name = "USER_ID")
-    private UUID userId;
+    @Column(name = "AUTHOR_ID")
+    private UUID authorId;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "USER_ID", referencedColumnName = "ID", updatable = false, insertable = false)
-    private WebUser user;
+    @JoinColumn(name = "AUTHOR_ID", referencedColumnName = "ID", updatable = false, insertable = false)
+    private WebUser author;
 
     @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "POST_ID")

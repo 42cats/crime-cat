@@ -1,9 +1,14 @@
--- Migration: V1.1.0_010_add_post_post_comment_table.sql
--- Created: 2025-05-13 13:37:47
+-- Migration: V1.2.3_002_post_tables_update.sql
+-- Created: 2025-05-23 10:44:42
 
 USE ${DB_DISCORD};
 
 -- 여기에 마이그레이션 SQL을 작성하세요
+
+DROP TABLE IF EXISTS board_post_likes
+DROP TABLE IF EXISTS post_comment_likes
+DROP TABLE IF EXISTS board_posts
+DROP TABLE IF EXISTS post_comments
 
 -- 1) board_posts 테이블
 CREATE TABLE IF NOT EXISTS `board_posts` (
