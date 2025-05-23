@@ -7,6 +7,7 @@ import com.crimecat.backend.gametheme.dto.GetGameThemeResponse;
 import com.crimecat.backend.gametheme.dto.GetGameThemesResponse;
 import com.crimecat.backend.gametheme.dto.GetLikeStatusResponse;
 import com.crimecat.backend.gametheme.dto.UpdateCrimesceneThemeRequest;
+import com.crimecat.backend.gametheme.dto.UpdateEscapeRoomThemeRequest;
 import com.crimecat.backend.gametheme.dto.UpdateGameThemeRequest;
 import com.crimecat.backend.gametheme.service.GameThemeService;
 import lombok.RequiredArgsConstructor;
@@ -23,71 +24,71 @@ public class GameThemeController {
     private final GameThemeService gameThemeService;
 
     // ================================
-    // 크라임씬 테마 전용 엔드포인트
+    // 방탈출 테마 전용 엔드포인트 (우선순위 높게 먼저 선언)
     // ================================
     
-    @PostMapping("/crimescene")
-    public void addCrimesceneTheme(@RequestPart(name = "thumbnail", required = false) MultipartFile file,
-                                   @Validated @RequestPart("data") AddCrimesceneThemeRequest request) {
-        gameThemeService.addGameTheme(file, request);
-    }
-
-    @PostMapping("/crimescene/{themeId}")
-    public void updateCrimesceneTheme(@PathVariable UUID themeId,
-                                      @RequestPart(value = "thumbnail", required = false) MultipartFile file,
-                                      @Validated @RequestPart("data") UpdateCrimesceneThemeRequest request) {
-        gameThemeService.updateGameTheme(themeId, file, request);
-    }
-
-    // ================================
-    // 방탈출 테마 전용 엔드포인트
-    // ================================
-    
-    @PostMapping("/escape-room")
+    @PostMapping(value = "/escape-room", consumes = "multipart/form-data")
     public void addEscapeRoomTheme(@RequestPart(name = "thumbnail", required = false) MultipartFile file,
                                    @Validated @RequestPart("data") AddEscapeRoomThemeRequest request) {
         gameThemeService.addGameTheme(file, request);
     }
 
-    @PostMapping("/escape-room/{themeId}")
+    @PostMapping(value = "/escape-room/{themeId}", consumes = "multipart/form-data")
     public void updateEscapeRoomTheme(@PathVariable UUID themeId,
                                       @RequestPart(value = "thumbnail", required = false) MultipartFile file,
-                                      @Validated @RequestPart("data") AddEscapeRoomThemeRequest request) {
-        gameThemeService.updateGameTheme(themeId, file, request);
+                                      @Validated @RequestPart("data") UpdateEscapeRoomThemeRequest request) {
+        gameThemeService.updateEscapeRoomTheme(themeId, file, request);
+    }
+
+    // ================================
+    // 크라임씬 테마 전용 엔드포인트
+    // ================================
+    
+    @PostMapping(value = "/crimescene", consumes = "multipart/form-data")
+    public void addCrimesceneTheme(@RequestPart(name = "thumbnail", required = false) MultipartFile file,
+                                   @Validated @RequestPart("data") AddCrimesceneThemeRequest request) {
+        gameThemeService.addGameTheme(file, request);
+    }
+
+    @PostMapping(value = "/crimescene/{themeId}", consumes = "multipart/form-data")
+    public void updateCrimesceneTheme(@PathVariable UUID themeId,
+                                      @RequestPart(value = "thumbnail", required = false) MultipartFile file,
+                                      @Validated @RequestPart("data") UpdateCrimesceneThemeRequest request) {
+        gameThemeService.updateCrimesceneTheme(themeId, file, request);
     }
 
     // ================================
     // 머더미스터리 테마 전용 엔드포인트 (기본 구조)
     // ================================
     
-    @PostMapping("/murder-mystery")
+    @PostMapping(value = "/murder-mystery", consumes = "multipart/form-data")
     public void addMurderMysteryTheme(@RequestPart(name = "thumbnail", required = false) MultipartFile file,
                                       @Validated @RequestPart("data") AddGameThemeRequest request) {
         gameThemeService.addGameTheme(file, request);
     }
 
-    @PostMapping("/murder-mystery/{themeId}")
+    @PostMapping(value = "/murder-mystery/{themeId}", consumes = "multipart/form-data")
     public void updateMurderMysteryTheme(@PathVariable UUID themeId,
                                          @RequestPart(value = "thumbnail", required = false) MultipartFile file,
                                          @Validated @RequestPart("data") UpdateGameThemeRequest request) {
-        gameThemeService.updateGameTheme(themeId, file, request);
+        gameThemeService.updateMurderMysteryTheme(themeId, file, request);
     }
 
     // ================================
     // 리얼월드 테마 전용 엔드포인트 (기본 구조)
     // ================================
     
-    @PostMapping("/realworld")
+    @PostMapping(value = "/realworld", consumes = "multipart/form-data")
     public void addRealWorldTheme(@RequestPart(name = "thumbnail", required = false) MultipartFile file,
                                   @Validated @RequestPart("data") AddGameThemeRequest request) {
         gameThemeService.addGameTheme(file, request);
     }
 
-    @PostMapping("/realworld/{themeId}")
+    @PostMapping(value = "/realworld/{themeId}", consumes = "multipart/form-data")
     public void updateRealWorldTheme(@PathVariable UUID themeId,
                                      @RequestPart(value = "thumbnail", required = false) MultipartFile file,
                                      @Validated @RequestPart("data") UpdateGameThemeRequest request) {
-        gameThemeService.updateGameTheme(themeId, file, request);
+        gameThemeService.updateRealWorldTheme(themeId, file, request);
     }
 
     // ================================
@@ -114,23 +115,4 @@ public class GameThemeController {
         gameThemeService.like(themeId);
     }
 
-    // ================================
-    // 레거시 엔드포인트 (하위 호환성)
-    // ================================
-    
-    @PostMapping
-    @Deprecated
-    public void addGameTheme(@RequestPart(name = "thumbnail", required = false) MultipartFile file,
-                            @Validated @RequestPart("data") AddGameThemeRequest request) {
-        // 기본적으로 크라임씬으로 처리 (하위 호환성)
-        gameThemeService.addGameTheme(file, request);
-    }
-
-    @PostMapping("/{themeId}")
-    @Deprecated
-    public void updateGameTheme(@PathVariable UUID themeId,
-                                @RequestPart(value = "thumbnail", required = false) MultipartFile file,
-                                @Validated @RequestPart("data") UpdateGameThemeRequest request) {
-        gameThemeService.updateGameTheme(themeId, file, request);
-    }
 }

@@ -24,6 +24,7 @@ import org.openapitools.jackson.nullable.JsonNullable;
 )
 @JsonSubTypes({
         @JsonSubTypes.Type(value = UpdateCrimesceneThemeRequest.class, name = ThemeType.Values.CRIMESCENE),
+        @JsonSubTypes.Type(value = UpdateEscapeRoomThemeRequest.class, name = ThemeType.Values.ESCAPE_ROOM),
 })
 @Getter
 @AllArgsConstructor
