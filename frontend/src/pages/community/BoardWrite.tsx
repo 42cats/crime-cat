@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import {
@@ -23,10 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/useToast";
 import { boardPostService } from "@/api/posts/boardPostService";
 import { BoardType, DetailedPostType } from "@/lib/types/board";
-import { useTheme } from "@/hooks/useTheme";
-
-// MD 편집기 가져오기
-import MDEditor, { commands, EditorContext } from "@uiw/react-md-editor";
+import { MarkdownEditor } from "@/components/markdown";
 
 interface FormData {
     subject: string;
@@ -83,39 +80,9 @@ const POST_TYPE_LABELS: Record<string, string> = {
     [DetailedPostType.REAL_WORLD]: "리얼월드",
 };
 
-// 미리보기 토글 컴포넌트 (NoticeForm에서 가져옴)
-const WritePreviewToggle = () => {
-    const { preview, dispatch } = useContext(EditorContext);
-    const base =
-        "md-editor-toolbar-button h-[29px] px-2 text-sm font-bold rounded hover:bg-gray-100";
-    const selected = "text-blue-600";
-    const unselected = "text-gray-500";
-    return (
-        <div className="flex items-center">
-            <button
-                onClick={() => dispatch({ preview: "edit" })}
-                className={`${base} ${
-                    preview === "edit" ? selected : unselected
-                }`}
-            >
-                작성
-            </button>
-            <button
-                onClick={() => dispatch({ preview: "preview" })}
-                className={`${base} ${
-                    preview === "preview" ? selected : unselected
-                }`}
-            >
-                미리보기
-            </button>
-        </div>
-    );
-};
-
 const BoardWrite: React.FC<BoardWriteProps> = ({
     boardType: propsBoardType,
 }) => {
-    const { theme } = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
     const { toast } = useToast();
@@ -332,7 +299,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                             </Label>
                         </div>
 
-                        {/* MDEditor - NoticeForm과 동일한 방식으로 구현 */}
+                        {/* MarkdownEditor 컴포넌트 사용 */}
                         <div className="space-y-2">
                             <Label
                                 htmlFor="content"
@@ -340,34 +307,16 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                             >
                                 내용
                             </Label>
-                            <div
-                                data-color-mode={
-                                    theme === "dark" ? "dark" : "light"
-                                }
-                            >
-                                <div className="border rounded-md overflow-hidden">
-                                    <MDEditor
-                                        value={markdownContent}
-                                        onChange={handleEditorChange}
-                                        height={400}
-                                        preview="edit"
-                                        commands={[
-                                            {
-                                                name: "toggle-preview",
-                                                keyCommand: "toggle-preview",
-                                                icon: <WritePreviewToggle />,
-                                            },
-                                            ...commands.getCommands(),
-                                        ]}
-                                        extraCommands={[]}
-                                    />
-                                </div>
-                                {errors.content && (
-                                    <p className="text-sm text-red-500 mt-1">
-                                        {errors.content.message}
-                                    </p>
-                                )}
-                            </div>
+                            <MarkdownEditor
+                                value={markdownContent}
+                                onChange={handleEditorChange}
+                                height={400}
+                            />
+                            {errors.content && (
+                                <p className="text-sm text-red-500 mt-1">
+                                    {errors.content.message}
+                                </p>
+                            )}
                         </div>
                     </CardContent>
 

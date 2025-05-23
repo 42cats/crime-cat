@@ -1,15 +1,14 @@
-import React, { useState, useContext, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import MDEditor, { commands, EditorContext } from "@uiw/react-md-editor";
-import { useTheme } from "@/hooks/useTheme";
+import { MarkdownEditor } from "@/components/markdown";
 import { useToast } from "@/hooks/useToast";
 import PageTransition from "@/components/PageTransition";
 import { useLocation } from "react-router-dom";
-import { Star, X, Loader2, Video } from "lucide-react";
+import { Star, X, Loader2 } from "lucide-react";
 import CrimeSceneFields from "@/components/themes/type/CrimeSceneFields";
 import EscapeRoomFields from "@/components/themes/type/EscapeRoomFields";
 import MurderMysteryFields from "@/components/themes/type/MurderMysteryFields";
@@ -58,61 +57,6 @@ const initialExtraFieldsMap = {
     ESCAPE_ROOM: { extra: {} },
     MURDER_MYSTERY: { extra: {} },
     REALWORLD: { extra: {} },
-};
-
-// URL에서 동영상 ID 추출 함수
-const extractVideoId = (url: string) => {
-    // YouTube URL 패턴
-    const youtubeMatch = url.match(
-        /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
-    );
-    if (youtubeMatch) {
-        return {
-            platform: "youtube",
-            id: youtubeMatch[1],
-            embedUrl: `https://www.youtube.com/embed/${youtubeMatch[1]}`,
-        };
-    }
-
-    // Vimeo URL 패턴
-    const vimeoMatch = url.match(/(?:vimeo\.com\/)([0-9]+)/);
-    if (vimeoMatch) {
-        return {
-            platform: "vimeo",
-            id: vimeoMatch[1],
-            embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}`,
-        };
-    }
-
-    return null;
-};
-
-const WritePreviewToggle = () => {
-    const { preview, dispatch } = useContext(EditorContext);
-    const base =
-        "md-editor-toolbar-button h-[29px] px-2 text-sm font-bold rounded hover:bg-gray-100";
-    const selected = "text-blue-600";
-    const unselected = "text-gray-500";
-    return (
-        <div className="flex items-center">
-            <button
-                onClick={() => dispatch({ preview: "edit" })}
-                className={`${base} ${
-                    preview === "edit" ? selected : unselected
-                }`}
-            >
-                작성
-            </button>
-            <button
-                onClick={() => dispatch({ preview: "preview" })}
-                className={`${base} ${
-                    preview === "preview" ? selected : unselected
-                }`}
-            >
-                미리보기
-            </button>
-        </div>
-    );
 };
 
 // 별점 표시 및 선택 컴포넌트
@@ -174,7 +118,6 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
     isLoading = false,
     imageOptions,
 }) => {
-    const { theme } = useTheme();
     const location = useLocation();
     const state = location.state as { category?: string };
     const initialType = (state?.category?.toUpperCase() ??
@@ -488,33 +431,6 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
         }
     };
 
-    // 동영상 삽입 명령어
-    const videoCommand = {
-        name: "video",
-        keyCommand: "video",
-        buttonProps: { "aria-label": "Insert video", title: "동영상 삽입" },
-        icon: <Video size={16} />,
-        execute: (state: any, api: any) => {
-            const url = prompt("YouTube 또는 Vimeo URL을 입력하세요:");
-            if (url) {
-                const videoInfo = extractVideoId(url.trim());
-                if (videoInfo) {
-                    const iframe = `<iframe 
-  width="560" 
-  height="315" 
-  src="${videoInfo.embedUrl}" 
-  frameborder="0" 
-  allowfullscreen
-  sandbox="allow-scripts allow-same-origin allow-presentation">
-</iframe>`;
-                    api.replaceSelection(iframe);
-                } else {
-                    alert("올바른 YouTube 또는 Vimeo URL을 입력해주세요.");
-                }
-            }
-        },
-    };
-
     return (
         <PageTransition>
             <div className="max-w-3xl mx-auto px-6 py-20 space-y-6">
@@ -633,11 +549,6 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                                 className="flex gap-6"
                             >
                                 <div className="flex flex-col items-center gap-2">
-                                    {/* <div className="relative w-24 h-24 border rounded overflow-hidden flex items-center justify-center">
-                                        <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
-                                            Fit 모드
-                                        </div>
-                                    </div> */}
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="fit" id="fit" />
                                         <Label
@@ -652,11 +563,6 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                                     </p>
                                 </div>
                                 <div className="flex flex-col items-center gap-2">
-                                    {/* <div className="relative w-24 h-24 border rounded overflow-hidden">
-                                        <div className="absolute inset-[-5px] bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
-                                            Cover 모드
-                                        </div>
-                                    </div> */}
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem
                                             value="cover"
@@ -989,38 +895,14 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
 
                 {/* 본문 */}
                 <div>
-                    <Label className="font-bold mb-1 block">본문 내용 *</Label>
-                    <div data-color-mode={theme === "dark" ? "dark" : "light"}>
-                        <div className="border rounded-md overflow-hidden">
-                            <MDEditor
-                                value={form.content}
-                                onChange={(val) =>
-                                    setForm({ ...form, content: val || "" })
-                                }
-                                onBlur={() =>
-                                    validateField("content", form.content)
-                                }
-                                height={400}
-                                preview="edit"
-                                commands={[
-                                    {
-                                        name: "toggle-preview",
-                                        keyCommand: "toggle-preview",
-                                        icon: <WritePreviewToggle />,
-                                    },
-                                    videoCommand,
-                                    ...commands.getCommands(),
-                                ]}
-                                extraCommands={[]}
-                                visibledragbar={false}
-                            />
-                        </div>
-                        {errors.content && (
-                            <p className="text-red-500 text-sm mt-1">
-                                {errors.content}
-                            </p>
-                        )}
-                    </div>
+                    <MarkdownEditor
+                        label="본문 내용 *"
+                        value={form.content}
+                        onChange={(val) => setForm({ ...form, content: val || "" })}
+                        onBlur={() => validateField("content", form.content)}
+                        height={400}
+                        error={errors.content}
+                    />
                 </div>
 
                 {/* 제출 */}
