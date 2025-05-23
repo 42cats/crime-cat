@@ -28,6 +28,7 @@ public class EscapeRoomTheme extends GameTheme {
      * 장르 태그들 (정규화된 관계, 검색 성능 최적화)
      */
     @OneToMany(mappedBy = "escapeRoomTheme", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
     private java.util.Set<EscapeRoomGenreTag> genreTags = new java.util.HashSet<>();
 
     /**
@@ -72,6 +73,7 @@ public class EscapeRoomTheme extends GameTheme {
      * 하나 이상의 매장이 반드시 등록되어야 함
      */
     @OneToMany(mappedBy = "escapeRoomTheme", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
     private java.util.Set<EscapeRoomLocation> locations = new java.util.HashSet<>();
 
     /**
@@ -151,6 +153,9 @@ public class EscapeRoomTheme extends GameTheme {
      * 장르 태그 문자열 목록으로 설정
      */
     public void setGenreTagsFromStrings(java.util.Set<String> tagNames) {
+        if (this.genreTags == null) {
+            this.genreTags = new java.util.HashSet<>();
+        }
         this.genreTags.clear();
         if (tagNames != null) {
             for (String tagName : tagNames) {
@@ -163,6 +168,9 @@ public class EscapeRoomTheme extends GameTheme {
      * 매장 위치 DTO 목록으로 설정
      */
     public void setLocationsFromDtos(java.util.List<com.crimecat.backend.gametheme.dto.EscapeRoomLocation> locationDtos) {
+        if (this.locations == null) {
+            this.locations = new java.util.HashSet<>();
+        }
         this.locations.clear();
         if (locationDtos != null) {
             for (com.crimecat.backend.gametheme.dto.EscapeRoomLocation dto : locationDtos) {
