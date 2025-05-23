@@ -599,7 +599,7 @@ const FollowsPage: React.FC = () => {
                                 <div>
                                     {followers.content.map((follow) => (
                                         <UserCard
-                                            key={follow.id}
+                                            key={`follower-${follow.id}`}
                                             follow={follow}
                                             isFollowing={false}
                                         />
@@ -646,7 +646,7 @@ const FollowsPage: React.FC = () => {
                                 <div>
                                     {followings.content.map((follow) => (
                                         <UserCard
-                                            key={follow.id}
+                                            key={`following-${follow.id}`}
                                             follow={follow}
                                             isFollowing={true}
                                         />
