@@ -23,6 +23,7 @@ const ThemeDetailRouter: React.FC = () => {
             return <CrimesceneThemeDetail />;
             
         case 'escape-room':
+        case 'escape_room':
             if (escapeRoomLoading) {
                 return (
                     <div className="container mx-auto py-8">
