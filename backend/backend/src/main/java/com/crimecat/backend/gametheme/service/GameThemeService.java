@@ -104,12 +104,15 @@ public class GameThemeService {
     }
 
     private void checkTeam(CrimesceneTheme gameTheme, WebUser webUser) {
-        if (gameTheme.getTeamId() == null) {
+        if (gameTheme.getTeamId() == null || gameTheme.getTeamId().toString().isEmpty()) {
+            // 팀 ID가 null이거나 빈 문자열인 경우 개인 팀 처리
             List<MakerTeamMember> teams = teamService.getIndividualTeams(webUser.getId());
             if (teams.isEmpty()) {
+                // 개인 팀이 없는 경우 생성
                 UUID teamId = teamService.create(webUser.getNickname(), webUser, true);
                 gameTheme.setTeamId(teamId);
             } else {
+                // 기존 개인 팀 사용
                 gameTheme.setTeamId(teams.getFirst().getTeam().getId());
             }
         }
@@ -150,17 +153,29 @@ public class GameThemeService {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
         AuthenticationUtil.validateCurrentUserMatches(gameTheme.getAuthorId());
+        
+        // 요청에서 데이터 업데이트
         request.update(gameTheme);
-
+        
+        // CrimesceneTheme인 경우 개인 팀 처리 (개인 모드로 변경된 경우를 처리)
         if (gameTheme instanceof CrimesceneTheme) {
-            updateGameHistoriesForCrimesceneTheme((CrimesceneTheme) gameTheme);
+            CrimesceneTheme crimesceneTheme = (CrimesceneTheme) gameTheme;
+            WebUser webUser = AuthenticationUtil.getCurrentWebUser();
+            
+            // 팀 ID가 null이거나 빈 값이면 개인 팀 처리 (개인 모드로 변경된 경우)
+            if (crimesceneTheme.getTeamId() == null || crimesceneTheme.getTeamId().toString().isEmpty()) {
+                checkTeam(crimesceneTheme, webUser);
+            }
+            
+            updateGameHistoriesForCrimesceneTheme(crimesceneTheme);
         }
 
         if (file != null && !file.isEmpty()) {
             String path = storageService.storeAt(StorageFileType.GAME_THEME, file, gameTheme.getId().toString());
             gameTheme.setThumbnail(path);
-            themeRepository.save(gameTheme);
         }
+        
+        themeRepository.save(gameTheme);
     }
 
     @Transactional

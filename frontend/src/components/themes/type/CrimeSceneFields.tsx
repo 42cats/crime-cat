@@ -43,7 +43,7 @@ const CrimeSceneFields: React.FC<Props> = ({ extraFields, setExtraFields, onOpen
       setExtraFields((prev: any) => ({
         ...prev,
         makerMode: "personal",
-        makerTeamsId: "",
+        makerTeamsId: "", // 개인 모드에서는 빈 문자열로 설정
         makerTeamsName: "",
       }));
     } else {
