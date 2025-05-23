@@ -15,6 +15,7 @@ import PrivacySettingsComponent, {
 } from "@/components/sns/privacy/PrivacySettings";
 import { toast } from "sonner";
 import SnsBottomNavigation from "@/components/sns/SnsBottomNavigation";
+import { compressImageOnly, isValidImageFile } from "@/utils/imageCompression";
 
 const SNSCreatePageContent: React.FC = () => {
     const { user } = useAuth();
@@ -24,6 +25,7 @@ const SNSCreatePageContent: React.FC = () => {
     const [images, setImages] = useState<File[]>([]);
     const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isCompressing, setIsCompressing] = useState(false);
     const [location, setLocation] = useState<Location | null>(null);
     const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
         isPrivate: false,
@@ -32,7 +34,7 @@ const SNSCreatePageContent: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // 이미지 선택 처리
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         e.preventDefault();
 
         const files = Array.from(e.target.files || []);
@@ -52,18 +54,59 @@ const SNSCreatePageContent: React.FC = () => {
             toast.warning("이미지 파일만 업로드할 수 있습니다.");
         }
 
-        // 미리보기 URL 생성
-        const newPreviewUrls = validFiles.map((file) =>
-            URL.createObjectURL(file)
-        );
+        if (validFiles.length === 0) return;
 
-        // 상태 업데이트
-        setImages((prevImages) => [...prevImages, ...validFiles]);
-        setImagePreviewUrls((prevUrls) => [...prevUrls, ...newPreviewUrls]);
+        try {
+            setIsCompressing(true);
+            
+            // 각 이미지 압축 처리
+            const compressedResults = await Promise.all(
+                validFiles.map(async (file) => {
+                    // 이미지 파일 확인
+                    const isValid = await isValidImageFile(file);
+                    if (!isValid) return null;
 
-        // 파일 입력 초기화 (동일 파일 재선택 가능하게)
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
+                    // 이미지 압축
+                    try {
+                        return await compressImageOnly(file, {
+                            maxSizeMB: 1, // 최대 1MB
+                            quality: 0.7 // 70% 품질
+                        });
+                    } catch (err) {
+                        console.error(`이미지 압축 실패: ${file.name}`, err);
+                        return null;
+                    }
+                })
+            );
+
+            // null 값 필터링 및 압축된 파일 추출
+            const compressedFiles = compressedResults
+                .filter(result => result !== null)
+                .map(result => result!.file);
+
+            if (compressedFiles.length === 0) {
+                toast.error("이미지 처리 중 오류가 발생했습니다.");
+                return;
+            }
+
+            // 미리보기 URL 생성
+            const newPreviewUrls = compressedFiles.map((file) =>
+                URL.createObjectURL(file)
+            );
+
+            // 상태 업데이트
+            setImages((prevImages) => [...prevImages, ...compressedFiles]);
+            setImagePreviewUrls((prevUrls) => [...prevUrls, ...newPreviewUrls]);
+        } catch (error) {
+            console.error("이미지 압축 중 오류:", error);
+            toast.error("이미지 처리 중 오류가 발생했습니다.");
+        } finally {
+            setIsCompressing(false);
+            
+            // 파일 입력 초기화 (동일 파일 재선택 가능하게)
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
         }
     };
 
@@ -157,9 +200,19 @@ const SNSCreatePageContent: React.FC = () => {
                                         type="button"
                                         className="aspect-square border border-dashed border-border rounded-md flex flex-col items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
                                         onClick={handleAddImageClick}
+                                        disabled={isCompressing}
                                     >
-                                        <Plus className="h-8 w-8 mb-2" />
-                                        <span className="text-sm">추가</span>
+                                        {isCompressing ? (
+                                            <>
+                                                <Loader2 className="h-8 w-8 mb-2 animate-spin" />
+                                                <span className="text-sm">압축 중...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Plus className="h-8 w-8 mb-2" />
+                                                <span className="text-sm">추가</span>
+                                            </>
+                                        )}
                                     </button>
                                 )}
                             </div>
@@ -168,12 +221,23 @@ const SNSCreatePageContent: React.FC = () => {
                                 type="button"
                                 className="w-full py-12 flex flex-col items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
                                 onClick={handleAddImageClick}
+                                disabled={isCompressing}
                             >
-                                <Image className="h-12 w-12 mb-2" />
-                                <span className="font-medium">이미지 추가</span>
-                                <span className="text-sm mt-1">
-                                    최대 5개까지 업로드 가능
-                                </span>
+                                {isCompressing ? (
+                                    <>
+                                        <Loader2 className="h-12 w-12 mb-2 animate-spin" />
+                                        <span className="font-medium">이미지 압축 중...</span>
+                                        <span className="text-sm mt-1">잠시만 기다려주세요</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Image className="h-12 w-12 mb-2" />
+                                        <span className="font-medium">이미지 추가</span>
+                                        <span className="text-sm mt-1">
+                                            최대 5개까지 업로드 가능
+                                        </span>
+                                    </>
+                                )}
                             </button>
                         )}
 
@@ -232,7 +296,7 @@ const SNSCreatePageContent: React.FC = () => {
                         <Button
                             type="submit"
                             disabled={
-                                isLoading ||
+                                isLoading || isCompressing ||
                                 (!content.trim() && images.length === 0)
                             }
                         >

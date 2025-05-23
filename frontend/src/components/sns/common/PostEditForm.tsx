@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch-custom"; // 커스텀 Switch 사용
@@ -9,6 +9,7 @@ import { X, Upload, MapPin, Loader2 } from "lucide-react";
 import { UserPostDto, Location } from "@/api/posts/postService";
 import HashtagEditor from "@/components/sns/common/HashtagEditor";
 import { useToast } from "@/hooks/useToast";
+import { compressImageOnly, formatFileSize } from "@/utils/imageCompression";
 
 interface PostEditFormProps {
     initialPost: UserPostDto;
@@ -32,6 +33,8 @@ interface ImageItem {
     url: string;
     file?: File;
     isNew: boolean;
+    originalSize?: number;  // 원본 파일 크기
+    compressedSize?: number;  // 압축후 파일 크기
 }
 
 const PostEditForm: React.FC<PostEditFormProps> = ({
@@ -63,7 +66,7 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
             : null
     );
 
-    // 이미지 상태
+    // 이미지 관련 상태
     const [images, setImages] = useState<ImageItem[]>(
         initialPost.imageUrls.map((url, index) => ({
             id: `existing-${index}`,
@@ -71,6 +74,7 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
             isNew: false,
         }))
     );
+    const [isCompressing, setIsCompressing] = useState(false);
 
     // 해시태그는 수동으로 관리되는 것만 사용 (자동 추출 기능 제거)
     const allHashtags = useMemo(() => [
@@ -87,29 +91,82 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
     }, []);
 
     // 이미지 추가
-    const handleImageAdd = (files: FileList | null) => {
+    const handleImageAdd = async (files: FileList | null) => {
         if (!files) return;
-
-        const newImages: ImageItem[] = [];
-        Array.from(files).forEach((file, index) => {
-            if (file.type.startsWith("image/")) {
-                const id = `new-${Date.now()}-${index}`;
-                newImages.push({
-                    id,
-                    url: URL.createObjectURL(file),
-                    file,
-                    isNew: true,
-                });
+        
+        // 이미지 추가 전 압축 중임을 표시
+        setIsCompressing(true);
+        
+        try {
+            const newImages: ImageItem[] = [];
+            
+            // 이미지 압축 처리
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.type.startsWith("image/")) {
+                    const id = `new-${Date.now()}-${i}`;
+                    
+                    // 이미지 압축 수행
+                    try {
+                        const originalSize = file.size;
+                        const compressionResult = await compressImageOnly(file, {
+                            maxSizeMB: 1,  // 최대 1MB
+                            quality: 0.7,  // 70% 품질
+                        });
+                        
+                        // 압축된 이미지를 사용
+                        newImages.push({
+                            id,
+                            url: URL.createObjectURL(compressionResult.file),
+                            file: compressionResult.file,
+                            isNew: true,
+                            originalSize,
+                            compressedSize: compressionResult.compressedSize
+                        });
+                        
+                        // 압축 결과 출력 (디버깅용)
+                        console.log(`이미지 압축: ${formatFileSize(originalSize)} → ${formatFileSize(compressionResult.compressedSize)} (${compressionResult.compressionRate}% 감소)`);
+                        
+                    } catch (error) {
+                        // 압축 실패 시 원본 사용
+                        console.error('이미지 압축 실패:', error);
+                        newImages.push({
+                            id,
+                            url: URL.createObjectURL(file),
+                            file,
+                            isNew: true,
+                            originalSize: file.size,
+                            compressedSize: file.size
+                        });
+                    }
+                }
             }
-        });
-
-        if (newImages.length > 0) {
-            setImages((prev) => [...prev, ...newImages]);
-        }
-
-        // 파일 input 초기화
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
+            
+            if (newImages.length > 0) {
+                // 이미지 추가 완료 메시지
+                if (newImages.some(img => img.originalSize !== img.compressedSize)) {
+                    toast({
+                        title: "이미지 압축 완료",
+                        description: "이미지가 성공적으로 압축되었습니다.",
+                    });
+                }
+                
+                setImages((prev) => [...prev, ...newImages]);
+            }
+        } catch (error) {
+            console.error('이미지 처리 오류:', error);
+            toast({
+                title: '이미지 처리 오류',
+                description: '이미지를 처리하는 중 문제가 발생했습니다.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsCompressing(false);
+            
+            // 파일 input 초기화
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
         }
     };
 
@@ -211,18 +268,27 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
             {/* 이미지 관리 */}
             <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                    <Label>이미지 ({images.length}/10)</Label>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isLoading || images.length >= 10}
-                    >
-                        <Upload className="w-4 h-4 mr-2" />
-                        이미지 추가
-                    </Button>
-                </div>
+                <Label>이미지 ({images.length}/10)</Label>
+                <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading || isCompressing || images.length >= 10}
+                >
+                {isCompressing ? (
+                    <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                압축 중...
+                                </>
+                            ) : (
+                                <>
+                                    <Upload className="w-4 h-4 mr-2" />
+                                    이미지 추가
+                                </>
+                            )}
+                        </Button>
+                    </div>
 
                 {/* 이미지 그리드 - 작은 크기로 수정 */}
                 {images.length > 0 && (
