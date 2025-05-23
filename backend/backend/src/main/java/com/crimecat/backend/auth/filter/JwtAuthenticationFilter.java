@@ -6,6 +6,7 @@ import com.crimecat.backend.auth.service.RefreshTokenService;
 import com.crimecat.backend.utils.TokenCookieUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
+import com.crimecat.backend.webUser.service.WebUserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final WebUserRepository webUserRepository;
     private final JwtBlacklistService jwtBlacklistService;
     private final RefreshTokenService refreshTokenService;
+    private final WebUserService webUserService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -55,7 +57,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Optional<WebUser> optUser = webUserRepository.findById(UUID.fromString(userId));
             if (optUser.isPresent()) {
                 WebUser webUser = optUser.get();
-                authenticateUser(webUser, request);
+                // 차단 상태 확인 및 자동 해제 처리
+                if (isUserBlocked(webUser)) {
+                    log.warn("🚫 User {} is blocked. Access denied.", webUser.getNickname());
+                    // public API이므로 인증 없이 진행
+                } else {
+                    authenticateUser(webUser, request);
+                }
             }
             filterChain.doFilter(request, response);
             return;
@@ -88,6 +96,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         WebUser webUser = optUser.get();
+        
+        // 차단 상태 확인 및 자동 해제 처리
+        if (isUserBlocked(webUser)) {
+            log.warn("🚫 User {} is blocked. Access denied.", webUser.getNickname());
+            unauthorized(response, "User account is blocked");
+            return;
+        }
+        
         authenticateUser(webUser, request);
         filterChain.doFilter(request, response);
     }
@@ -119,6 +135,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         log.info("✅ Authentication set for userId = {}", webUser.getId());
     }
 
+    /**
+     * 사용자의 차단 상태를 확인하고 만료된 차단을 자동 해제합니다.
+     */
+    private boolean isUserBlocked(WebUser webUser) {
+        if (!webUser.getIsBanned()) {
+            return false;
+        }
+        
+        // 영구 차단인 경우
+        if (webUser.getBlockExpiresAt() == null) {
+            return true;
+        }
+        
+        // 차단 기간이 만료된 경우 자동 해제
+        if (java.time.LocalDateTime.now().isAfter(webUser.getBlockExpiresAt())) {
+            try {
+                webUserService.unblockUser(webUser.getId());
+                log.info("✅ User {} block has expired and been automatically removed.", webUser.getNickname());
+                return false;
+            } catch (Exception e) {
+                log.error("❌ Failed to auto-unblock user {}: {}", webUser.getNickname(), e.getMessage());
+                // 오류 발생 시 안전을 위해 차단 상태 유지
+                return true;
+            }
+        }
+        
+        return true;
+    }
+    
     private void unauthorized(HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");

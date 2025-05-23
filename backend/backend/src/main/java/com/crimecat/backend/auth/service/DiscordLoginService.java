@@ -41,6 +41,24 @@ public class DiscordLoginService extends BaseDiscordOAuth2UserService {
         
         // 로그인 처리 (마지막 로그인 시간 업데이트)
         WebUser webUser = existingUser.get();
+        
+        // 차단 상태 확인
+        if (webUser.getIsBanned()) {
+            // 차단 기간이 만료된 경우 자동 해제
+            if (webUser.getBlockExpiresAt() != null && 
+                LocalDateTime.now().isAfter(webUser.getBlockExpiresAt())) {
+                
+                webUserService.unblockUser(webUser.getId());
+                log.info("✅ User {} block has expired and been automatically removed during OAuth login.", webUser.getNickname());
+            } else {
+                // 여전히 차단된 상태
+                String reason = webUser.getBlockReason() != null ? webUser.getBlockReason() : "관리자에 의한 차단";
+                log.warn("🚫 Blocked user {} attempted to login via Discord OAuth.", webUser.getNickname());
+                throw new OAuth2AuthenticationException(new OAuth2Error("account_blocked"), 
+                    "계정이 차단되었습니다: " + reason);
+            }
+        }
+        
         webUser.setLastLoginAt(LocalDateTime.now());
         return webUserRepository.save(webUser);
     }

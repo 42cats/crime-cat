@@ -159,6 +159,8 @@ public class SecurityConfig {
                         // 특정 에러 타입에 따라 다른 페이지로 리다이렉션
                         if ("account_not_found".equals(errorType)) {
                             response.sendRedirect("https://" + serviceUrlConfig.getDomain() + "/login-error?type=account_not_found");
+                        } else if ("account_blocked".equals(errorType)) {
+                            response.sendRedirect("https://" + serviceUrlConfig.getDomain() + "/login-error?type=account_blocked");
                         } else {
                             response.sendRedirect("https://" + serviceUrlConfig.getDomain() + "/login-error?type=" + errorType);
                         }

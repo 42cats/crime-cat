@@ -43,6 +43,14 @@ const LoginError: React.FC = () => {
                     action: "다시 시도하기",
                     actionHandler: () => navigate("/login"),
                 };
+            case "account_blocked":
+                return {
+                    title: "계정이 차단되었습니다",
+                    description:
+                        "귀하의 계정이 관리자에 의해 차단되었습니다. 자세한 사항은 관리자에게 문의해주세요.",
+                    action: "홈으로 돌아가기",
+                    actionHandler: () => navigate("/"),
+                };
             default:
                 return {
                     title: "로그인 오류",
