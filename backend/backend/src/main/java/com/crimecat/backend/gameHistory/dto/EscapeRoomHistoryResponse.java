@@ -62,7 +62,7 @@ public class EscapeRoomHistoryResponse {
                 .escapeRoomThemeTitle(history.getEscapeRoomTheme().getTitle())
                 .userId(history.getUser().getId())
                 .userNickname(history.getUser().getName())
-                .userAvatarUrl(history.getUser().getProfileImagePath())
+                .userAvatarUrl(history.getUser().getWebUser().getProfileImagePath())
                 .isSuccess(history.getIsSuccess())
                 .escapeTimeMinutes(history.getEscapeTimeMinutes())
                 .formattedEscapeTime(history.getFormattedEscapeTime())

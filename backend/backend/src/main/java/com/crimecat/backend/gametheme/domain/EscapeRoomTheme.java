@@ -1,7 +1,6 @@
 package com.crimecat.backend.gametheme.domain;
 
 import com.crimecat.backend.gametheme.dto.AddEscapeRoomThemeRequest;
-import com.crimecat.backend.gametheme.dto.EscapeRoomLocation;
 import com.crimecat.backend.gametheme.enums.ThemeType;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
@@ -87,6 +86,20 @@ public class EscapeRoomTheme extends GameTheme {
      * AddEscapeRoomThemeRequest로부터 EscapeRoomTheme 생성
      */
     public static EscapeRoomTheme from(AddEscapeRoomThemeRequest request) {
+        // extra 필드 초기화 및 URL 정보 추가
+        java.util.Map<String, Object> extraData = new java.util.HashMap<>();
+        if (request.getExtra() != null) {
+            extraData.putAll(request.getExtra());
+        }
+        
+        // URL 정보를 extra에 저장
+        if (request.getHomepageUrl() != null && !request.getHomepageUrl().trim().isEmpty()) {
+            extraData.put("homepageUrl", request.getHomepageUrl().trim());
+        }
+        if (request.getReservationUrl() != null && !request.getReservationUrl().trim().isEmpty()) {
+            extraData.put("reservationUrl", request.getReservationUrl().trim());
+        }
+
         EscapeRoomTheme theme = EscapeRoomTheme.builder()
                 .title(request.getTitle())
                 .summary(request.getSummary())
@@ -108,7 +121,7 @@ public class EscapeRoomTheme extends GameTheme {
                 .activityLevel(request.getActivityLevel())
                 .openDate(request.getOpenDate())
                 .isOperating(request.getIsOperating())
-                .extra(request.getExtra())
+                .extra(extraData)
                 .build();
         
         // 장르 태그 설정
@@ -153,8 +166,19 @@ public class EscapeRoomTheme extends GameTheme {
         this.locations.clear();
         if (locationDtos != null) {
             for (com.crimecat.backend.gametheme.dto.EscapeRoomLocation dto : locationDtos) {
-                this.locations.add(EscapeRoomLocation.of(this, dto.getStoreName(), dto.getAddress(), 
-                    dto.getRoadAddress(), dto.getLat(), dto.getLng(), dto.getLink()));
+                EscapeRoomLocation location = 
+                    EscapeRoomLocation.builder()
+                        .escapeRoomTheme(this)
+                        .storeName(dto.getStoreName())
+                        .address(dto.getAddress())
+                        .roadAddress(dto.getRoadAddress())
+                        .latitude(dto.getLat())
+                        .longitude(dto.getLng())
+                        .naverLink(dto.getLink())
+                        .phone(dto.getPhone())
+                        .description(dto.getDescription())
+                        .build();
+                this.locations.add(location);
             }
         }
     }
@@ -204,5 +228,42 @@ public class EscapeRoomTheme extends GameTheme {
             setGenreTagsFromStrings(tagNames);
             this.update();
         }
+    }
+
+    /**
+     * 홈페이지 URL 반환
+     */
+    public String getHomepageUrl() {
+        return extra != null ? (String) extra.get("homepageUrl") : null;
+    }
+
+    /**
+     * 예약 페이지 URL 반환
+     */
+    public String getReservationUrl() {
+        return extra != null ? (String) extra.get("reservationUrl") : null;
+    }
+
+    /**
+     * URL 정보 업데이트
+     */
+    public void updateUrls(String homepageUrl, String reservationUrl) {
+        if (this.extra == null) {
+            this.extra = new java.util.HashMap<>();
+        }
+        
+        if (homepageUrl != null && !homepageUrl.trim().isEmpty()) {
+            this.extra.put("homepageUrl", homepageUrl.trim());
+        } else {
+            this.extra.remove("homepageUrl");
+        }
+        
+        if (reservationUrl != null && !reservationUrl.trim().isEmpty()) {
+            this.extra.put("reservationUrl", reservationUrl.trim());
+        } else {
+            this.extra.remove("reservationUrl");
+        }
+        
+        this.update();
     }
 }

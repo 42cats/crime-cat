@@ -99,4 +99,20 @@ public class EscapeRoomLocation {
                 .naverLink(link)
                 .build();
     }
+
+    // DTO에서 생성하는 정적 팩토리 메서드
+    public static EscapeRoomLocation fromDto(EscapeRoomTheme theme, 
+                                           com.crimecat.backend.gametheme.dto.EscapeRoomLocation dto) {
+        return EscapeRoomLocation.builder()
+                .escapeRoomTheme(theme)
+                .storeName(dto.getStoreName())
+                .address(dto.getAddress())
+                .roadAddress(dto.getRoadAddress())
+                .latitude(dto.getLat())
+                .longitude(dto.getLng())
+                .naverLink(dto.getLink())
+                .phone(dto.getPhone())
+                .description(dto.getDescription())
+                .build();
+    }
 }
