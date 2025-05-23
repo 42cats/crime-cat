@@ -271,3 +271,27 @@ export const resizeImage = (
     quality: options.quality || 0.8  // 리사이징에서는 기본 품질을 더 높게 설정
   });
 };
+
+/**
+ * 이미지 압축만 수행하는 간편 함수
+ * 리사이징 없이 파일 크기만 축소합니다.
+ * 
+ * @param file 원본 이미지 파일
+ * @param options 압축 옵션 (품질, 최대 크기 등)
+ * @returns 압축된 이미지 결과 객체 (Promise)
+ */
+export const compressImageOnly = (
+  file: File,
+  options: {
+    maxSizeMB?: number;
+    quality?: number;
+    onProgress?: CompressionProgressCallback;
+  } = {}
+): Promise<CompressionResult> => {
+  // 리사이징 옵션 없이 압축만 수행
+  return compressImage(file, {
+    maxSizeMB: options.maxSizeMB || 1,
+    quality: options.quality || 0.7,
+    onProgress: options.onProgress
+  });
+};

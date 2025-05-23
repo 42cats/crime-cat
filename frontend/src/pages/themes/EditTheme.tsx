@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import ThemeForm from '@/components/themes/ThemeForm';
 import { themesService } from '@/api/themesService';
 import { Theme } from '@/lib/types';
+import { ResizeMode } from '@/utils/imageCompression';
 
 const EditTheme: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [resizeMode, setResizeMode] = useState<ResizeMode>('fit');
 
   const initialTheme = (location.state as { theme?: Theme })?.theme;
 
