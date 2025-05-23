@@ -13,6 +13,7 @@ import java.util.UUID;
 public class TeamDto {
     private UUID id;
     private String name;
+    private Integer count;
 
     public static TeamDto from(MakerTeam makerTeam) {
         if (makerTeam == null) {
@@ -21,6 +22,7 @@ public class TeamDto {
         return TeamDto.builder()
                 .id(makerTeam.getId())
                 .name(makerTeam.getName())
+                .count(makerTeam.getMembers().size())
                 .build();
     }
 }
