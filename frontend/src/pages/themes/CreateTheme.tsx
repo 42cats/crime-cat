@@ -22,8 +22,15 @@ const CreateTheme: React.FC = () => {
 
   const handleSubmit = async (formData: FormData) => {
     try {
-      // FormData에서 테마 타입 추출
-      const themeType = formData.get('themeType') as string;
+      // FormData에서 JSON 데이터 추출하여 테마 타입 확인
+      const dataBlob = formData.get('data') as Blob;
+      if (!dataBlob) {
+        throw new Error('테마 데이터가 없습니다.');
+      }
+      
+      const jsonText = await dataBlob.text();
+      const themeData = JSON.parse(jsonText);
+      const themeType = themeData.type;
       
       if (!themeType) {
         throw new Error('테마 타입이 지정되지 않았습니다.');

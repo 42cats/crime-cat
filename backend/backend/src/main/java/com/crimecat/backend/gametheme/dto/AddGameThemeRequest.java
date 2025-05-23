@@ -21,6 +21,7 @@ import org.hibernate.validator.constraints.Range;
 )
 @JsonSubTypes({
         @JsonSubTypes.Type(value = AddCrimesceneThemeRequest.class, name = ThemeType.Values.CRIMESCENE),
+        @JsonSubTypes.Type(value = AddEscapeRoomThemeRequest.class, name = ThemeType.Values.ESCAPE_ROOM),
 })
 @Data
 @MinMaxCheck(min = "playerMin", max = "playerMax", message = "인원수 최소값이 최대값보다 큽니다.")
