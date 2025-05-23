@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { UserPostGalleryDto } from '@/api/posts';
+import { UserPostGalleryDto } from "@/api/posts";
 import LazyImage from "./LazyImage";
 import PostPrivacyBadge from "./PostPrivacyBadge";
 import PostAuthorInfo from "./PostAuthorInfo";
@@ -189,24 +189,6 @@ const PostGridItem: React.FC<PostGridItemProps> = ({
                                 />
                             </div>
                         )}
-                    </div>
-                )}
-
-                {/* 호버 오버레이 (SNS 모드에서만) */}
-                {!userId && (
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center text-white z-20">
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center">
-                                <Heart className="w-4 h-4 mr-1" />
-                                <span className="text-sm">
-                                    {post.likeCount}
-                                </span>
-                            </div>
-                            <div className="flex items-center">
-                                <MessageCircle className="w-4 h-4 mr-1" />
-                                <span className="text-sm">0</span>
-                            </div>
-                        </div>
                     </div>
                 )}
             </div>
