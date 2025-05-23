@@ -1,6 +1,7 @@
 package com.crimecat.backend.gametheme.dto;
 
 import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
+import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
 import com.crimecat.backend.gametheme.domain.GameTheme;
 import java.util.Set;
 import java.util.UUID;
@@ -35,24 +36,11 @@ public class GameThemeDto {
     public static GameThemeDto from(GameTheme theme) {
         if (theme instanceof CrimesceneTheme) {
             return CrimesceneThemeDto.from((CrimesceneTheme) theme);
+        } else if (theme instanceof EscapeRoomTheme) {
+            return EscapeRoomThemeDto.from((EscapeRoomTheme) theme);
         }
-        return GameThemeDto.builder()
-                .id(theme.getId())
-                .title(theme.getTitle())
-                .thumbnail(theme.getThumbnail())
-                .summary(theme.getSummary())
-                .recommendations(theme.getRecommendations())
-                .views(theme.getViews())
-                .playCount(theme.getPlayCount())
-                .author(theme.getAuthorId())
-                .playersMin(theme.getPlayerMin())
-                .playersMax(theme.getPlayerMax())
-                .playTimeMin(theme.getPlayTimeMin())
-                .playTimeMax(theme.getPlayTimeMax())
-                .price(theme.getPrice())
-                .difficulty(theme.getDifficulty())
-                .recommendationEnabled(theme.isRecommendationEnabled())
-                .tags(theme.getTags())
-                .build();
+        
+        // 기본 GameTheme은 abstract이므로 이 부분은 실행되지 않아야 함
+        throw new IllegalArgumentException("Unknown theme type: " + theme.getClass().getName());
     }
 }
