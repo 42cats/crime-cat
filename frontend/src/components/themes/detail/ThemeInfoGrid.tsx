@@ -1,5 +1,5 @@
 import React from "react";
-import { Clock, Users, Tag, CreditCard, User } from "lucide-react";
+import { Clock, Users, Tag, CreditCard, User, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CrimesceneThemeDetailType } from "@/lib/types";
 
@@ -8,19 +8,62 @@ interface ThemeInfoGridProps {
     formatPlayTime: (min: number, max: number) => string;
 }
 
+// 별점 표시 컴포넌트
+const RatingStars: React.FC<{ rating: number }> = ({ rating }) => {
+    // 1-10 스케일을 0.5 단위로 표시 (5개 별 기준)
+    const fullStars = Math.floor(rating / 2);
+    const hasHalfStar = rating % 2 === 1;
+    
+    return (
+        <div className="flex">
+            {[...Array(5)].map((_, i) => {
+                if (i < fullStars) {
+                    // 꽉 찬 별
+                    return (
+                        <Star 
+                            key={i} 
+                            className="h-4 w-4 fill-yellow-400 text-yellow-400" 
+                        />
+                    );
+                } else if (i === fullStars && hasHalfStar) {
+                    // 반개 별 - CSS clip-path 사용하여 오른쪽 반개만 채움
+                    return (
+                        <div key={i} className="relative h-4 w-4">
+                            {/* 빈 별 배경 */}
+                            <Star className="h-4 w-4 text-muted-foreground absolute" />
+                            {/* 반개 별 (왼쪽 반) */}
+                            <div className="absolute top-0 left-0 w-1/2 h-full overflow-hidden">
+                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            </div>
+                        </div>
+                    );
+                } else {
+                    // 빈 별
+                    return (
+                        <Star 
+                            key={i} 
+                            className="h-4 w-4 text-muted-foreground" 
+                        />
+                    );
+                }
+            })}
+        </div>
+    );
+};
+
 const ThemeInfoGrid: React.FC<ThemeInfoGridProps> = ({
     theme,
     formatPlayTime,
 }) => {
     return (
         <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                 {/* 인원 정보 */}
                 <div className="flex items-center p-4 bg-muted/40 rounded-lg">
                     <Users className="h-5 w-5 mr-3 text-primary" />
                     <div>
                         <div className="text-sm text-muted-foreground">
-                            인원{theme.difficulty}
+                            인원
                         </div>
                         <div className="font-medium">
                             {theme.playersMin === theme.playersMax
@@ -57,6 +100,20 @@ const ThemeInfoGrid: React.FC<ThemeInfoGridProps> = ({
                             {typeof theme.price === "number"
                                 ? `${theme.price.toLocaleString()}원`
                                 : "정보 없음"}
+                        </div>
+                    </div>
+                </div>
+
+                {/* 난이도 */}
+                <div className="flex items-center p-4 bg-muted/40 rounded-lg">
+                    <Star className="h-5 w-5 mr-3 text-primary" />
+                    <div>
+                        <div className="text-sm text-muted-foreground">
+                            난이도
+                        </div>
+                        <div className="font-medium flex items-center">
+                            <RatingStars rating={theme.difficulty} />
+                            <span className="ml-2">{theme.difficulty}/10</span>
                         </div>
                     </div>
                 </div>
