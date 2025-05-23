@@ -29,6 +29,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ShieldCheck, AlertCircle, CheckCircle, Ban, Clock, Shield } from "lucide-react";
 import BlockUserModal from "@/components/admin/BlockUserModal";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const UserRoleManagementPage: React.FC = () => {
     const { toast } = useToast();
@@ -40,6 +50,8 @@ const UserRoleManagementPage: React.FC = () => {
     const [blockModalOpen, setBlockModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<any>(null);
     const [blockLoading, setBlockLoading] = useState(false);
+    const [unblockDialogOpen, setUnblockDialogOpen] = useState(false);
+    const [userToUnblock, setUserToUnblock] = useState<any>(null);
 
     // 사용자 목록 가져오기
     const fetchUsers = async (page = 0) => {
@@ -120,15 +132,25 @@ const UserRoleManagementPage: React.FC = () => {
         }
     };
 
-    // 사용자 차단 해제
-    const handleUnblockUser = async (userId: string) => {
+    // 차단 해제 다이얼로그 열기
+    const handleUnblockDialogOpen = (user: any) => {
+        setUserToUnblock(user);
+        setUnblockDialogOpen(true);
+    };
+    
+    // 사용자 차단 해제 확인
+    const handleConfirmUnblock = async () => {
+        if (!userToUnblock) return;
+        
         try {
-            await adminApi.userManagement.unblockUser(userId);
+            await adminApi.userManagement.unblockUser(userToUnblock.id);
             toast({
                 title: "성공",
-                description: "사용자 차단이 해제되었습니다.",
+                description: `${userToUnblock.nickname} 사용자의 차단이 해제되었습니다.`,
             });
             fetchUsers(currentPage);
+            setUnblockDialogOpen(false);
+            setUserToUnblock(null);
         } catch (error) {
             console.error("사용자 차단 해제 중 오류가 발생했습니다:", error);
             toast({
@@ -141,7 +163,7 @@ const UserRoleManagementPage: React.FC = () => {
 
     // 차단 정보 포매팅
     const formatBlockInfo = (user: any) => {
-        if (!user.isBlocked) return null;
+        if (!user.blocked) return null;
         
         const blockReason = user.blockReason || "사유 없음";
         const isExpired = user.blockExpiresAt && new Date(user.blockExpiresAt) < new Date();
@@ -238,7 +260,7 @@ const UserRoleManagementPage: React.FC = () => {
                                     <TableHead>이메일</TableHead>
                                     <TableHead>현재 역할</TableHead>
                                     <TableHead>역할 변경</TableHead>
-                                    <TableHead>상태</TableHead>
+                                    <TableHead className="w-80">차단 상태 및 관리</TableHead>
                                     <TableHead>포인트 지급</TableHead>
                                     <TableHead>가입일</TableHead>
                                 </TableRow>
@@ -294,44 +316,75 @@ const UserRoleManagementPage: React.FC = () => {
                                         </TableCell>
                                         <TableCell>
                                             <div className="space-y-2">
-                                                {user.isBlocked ? (
+                                                {user.blocked ? (
                                                     <>
-                                                        <div className="flex items-center space-x-2">
-                                                            {(() => {
-                                                                const blockInfo = formatBlockInfo(user);
-                                                                if (!blockInfo) return null;
-                                                                const IconComponent = blockInfo.icon;
-                                                                return (
-                                                                    <div className={`flex items-center text-xs ${blockInfo.color}`}>
-                                                                        <IconComponent className="h-3 w-3 mr-1" />
-                                                                        <span>{blockInfo.status}</span>
-                                                                    </div>
-                                                                );
-                                                            })()}
-                                                        </div>
-                                                        {user.blockReason && (
-                                                            <div className="text-xs text-gray-600 max-w-32 truncate" title={user.blockReason}>
-                                                                {user.blockReason}
+                                                        {/* 차단 상태 정보 */}
+                                                        <div className="bg-red-50 dark:bg-red-900/20 p-2 rounded-md border border-red-200 dark:border-red-800">
+                                                            <div className="flex items-center space-x-2 mb-1">
+                                                                {(() => {
+                                                                    const blockInfo = formatBlockInfo(user);
+                                                                    if (!blockInfo) return null;
+                                                                    const IconComponent = blockInfo.icon;
+                                                                    return (
+                                                                        <div className={`flex items-center text-xs font-medium ${blockInfo.color}`}>
+                                                                            <IconComponent className="h-3 w-3 mr-1" />
+                                                                            <span>{blockInfo.status}</span>
+                                                                        </div>
+                                                                    );
+                                                                })()}
                                                             </div>
-                                                        )}
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleUnblockUser(user.id)}
-                                                        >
-                                                            <CheckCircle className="h-4 w-4 mr-1" />
-                                                            차단 해제
-                                                        </Button>
+                                                            {user.blockReason && (
+                                                                <div className="text-xs text-gray-700 dark:text-gray-300 mb-2" title={user.blockReason}>
+                                                                    <span className="font-medium">사유:</span> {user.blockReason.length > 30 ? user.blockReason.substring(0, 30) + '...' : user.blockReason}
+                                                                </div>
+                                                            )}
+                                                            {user.blockedAt && (
+                                                                <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                                                                    <span className="font-medium">차단일:</span> {new Date(user.blockedAt).toLocaleDateString()}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        
+                                                        {/* 차단 해제 버튼 */}
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => handleUnblockDialogOpen(user)}
+                                                                className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400"
+                                                            >
+                                                                <CheckCircle className="h-4 w-4 mr-1" />
+                                                                차단 해제
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    alert(`차단 정보:\n\n사유: ${user.blockReason || '사유 없음'}\n차단일: ${user.blockedAt ? new Date(user.blockedAt).toLocaleString() : '정보 없음'}\n만료일: ${user.blockExpiresAt ? new Date(user.blockExpiresAt).toLocaleString() : '영구 차단'}`);
+                                                                }}
+                                                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                                                            >
+                                                                <AlertCircle className="h-4 w-4 mr-1" />
+                                                                상세보기
+                                                            </Button>
+                                                        </div>
                                                     </>
                                                 ) : (
-                                                    <Button
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        onClick={() => handleBlockUser(user)}
-                                                    >
-                                                        <Ban className="h-4 w-4 mr-1" />
-                                                        차단
-                                                    </Button>
+                                                    <div className="bg-gray-50 dark:bg-gray-800/50 p-2 rounded-md border">
+                                                        <div className="text-xs text-green-600 dark:text-green-400 font-medium mb-2 flex items-center">
+                                                            <CheckCircle className="h-3 w-3 mr-1" />
+                                                            정상 상태
+                                                        </div>
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            onClick={() => handleBlockUser(user)}
+                                                            className="w-full"
+                                                        >
+                                                            <Ban className="h-4 w-4 mr-1" />
+                                                            차단하기
+                                                        </Button>
+                                                    </div>
                                                 )}
                                             </div>
                                         </TableCell>
@@ -404,6 +457,51 @@ const UserRoleManagementPage: React.FC = () => {
                 userNickname={selectedUser?.nickname || ""}
                 loading={blockLoading}
             />
+            
+            {/* 차단 해제 확인 다이얼로그 */}
+            <AlertDialog open={unblockDialogOpen} onOpenChange={setUnblockDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center text-green-600">
+                            <CheckCircle className="h-5 w-5 mr-2" />
+                            차단 해제 확인
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="space-y-2">
+                            {userToUnblock && (
+                                <>
+                                    <p>
+                                        <strong>{userToUnblock.nickname}</strong> 사용자의 차단을 해제하시겠습니까?
+                                    </p>
+                                    {userToUnblock.blockReason && (
+                                        <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-md">
+                                            <p className="text-sm">
+                                                <span className="font-medium">현재 차단 사유:</span> {userToUnblock.blockReason}
+                                            </p>
+                                        </div>
+                                    )}
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        차단 해제 후 해당 사용자는 즉시 서비스를 이용할 수 있습니다.
+                                    </p>
+                                </>
+                            )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => {
+                            setUnblockDialogOpen(false);
+                            setUserToUnblock(null);
+                        }}>
+                            취소
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmUnblock}
+                            className="bg-green-600 hover:bg-green-700"
+                        >
+                            차단 해제
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

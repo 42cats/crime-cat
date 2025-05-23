@@ -24,7 +24,7 @@ public class WebUserResponse {
     private String nickname;           // 닉네임
     private String email;              // 이메일 주소
     private UserRole role;             // 사용자 역할 (USER, MANAGER, ADMIN)
-    private boolean isBlocked;         // 차단 여부
+    private boolean blocked;         // 차단 여부
     private String blockReason;        // 차단 사유
     private LocalDateTime blockedAt;   // 차단 시작 시간
     private LocalDateTime blockExpiresAt; // 차단 만료 시간
@@ -46,7 +46,7 @@ public class WebUserResponse {
                 .nickname(webUser.getNickname())
                 .email(webUser.getEmail())
                 .role(webUser.getRole())
-                .isBlocked(webUser.getIsBanned())
+                .blocked(webUser.getIsBanned())
                 .blockReason(webUser.getBlockReason())
                 .blockedAt(webUser.getBlockedAt())
                 .blockExpiresAt(webUser.getBlockExpiresAt())

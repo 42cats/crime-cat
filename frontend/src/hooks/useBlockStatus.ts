@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { adminApi } from "@/api/admin";
+import { apiClient } from "@/lib/api";
 import { BlockInfo } from "@/types/user";
 
 export const useBlockStatus = () => {
@@ -10,17 +10,17 @@ export const useBlockStatus = () => {
     const checkBlockStatus = async () => {
         try {
             setLoading(true);
-            const response = await adminApi.userManagement.getCurrentUserBlockStatus();
+            const response = await apiClient.get("/auth/block-status");
             const blockData: BlockInfo = response.data;
-            
+
             setBlockInfo(blockData);
             setIsBlocked(blockData.isBlocked);
-            
+
             // 차단 기간이 만료된 경우 자동으로 차단 해제
             if (blockData.isBlocked && blockData.blockExpiresAt) {
                 const expiryDate = new Date(blockData.blockExpiresAt);
                 const now = new Date();
-                
+
                 if (now > expiryDate) {
                     setIsBlocked(false);
                     setBlockInfo({ ...blockData, isBlocked: false });

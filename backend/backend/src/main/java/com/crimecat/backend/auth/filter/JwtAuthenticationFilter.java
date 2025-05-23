@@ -96,6 +96,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         WebUser webUser = optUser.get();
+        log.info("🔍 Found user: {} (ID: {}), isBanned: {}, blockReason: {}, blockExpiresAt: {}", 
+                 webUser.getNickname(), webUser.getId(), webUser.getIsBanned(), 
+                 webUser.getBlockReason(), webUser.getBlockExpiresAt());
         
         // 차단 상태 확인 및 자동 해제 처리
         if (isUserBlocked(webUser)) {

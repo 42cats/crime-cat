@@ -3,10 +3,14 @@ import { userState, isLoadingState } from "@/atoms/auth";
 import { authService } from '@/api/auth';
 import { isUser } from "@/utils/guard";
 import { UserRole } from "@/lib/types";
+import { BlockInfo } from "@/types/user";
+import { useState } from "react";
 
 export const useAuth = () => {
     const [user, setUser] = useRecoilState(userState);
     const [isLoading, setIsLoading] = useRecoilState(isLoadingState);
+    const [blockInfo, setBlockInfo] = useState<BlockInfo | null>(null);
+    const [isBlocked, setIsBlocked] = useState(false);
 
     const getCurrentUser = async () => {
         setIsLoading(true);
@@ -22,8 +26,23 @@ export const useAuth = () => {
                 }
                 setUser(user);
             }
-        } catch {
-            setUser(null);
+        } catch (error: any) {
+            if (error?.response?.status === 403 && error?.response?.data?.error === 'ACCOUNT_BLOCKED') {
+                // 차단된 계정 처리
+                const blockData = error.response.data;
+                setBlockInfo({
+                    isBlocked: true,
+                    blockReason: blockData.blockReason || '사유를 알 수 없습니다.',
+                    blockedAt: blockData.blockedAt || undefined,
+                    blockExpiresAt: blockData.blockExpiresAt || undefined,
+                    isPermanent: !blockData.blockExpiresAt,
+                });
+                setIsBlocked(true);
+            } else {
+                setUser(null);
+                setBlockInfo(null);
+                setIsBlocked(false);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -51,5 +70,7 @@ export const useAuth = () => {
         login,
         logout,
         getCurrentUser,
+        blockInfo,
+        isBlocked,
     };
 };
