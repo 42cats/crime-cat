@@ -20,14 +20,7 @@ const BoardSection = ({
         isError,
     } = useQuery<Theme[]>({
         queryKey: ["latest-themes", category],
-        queryFn: () => {
-            // 현재는 크라임씬(CRIMESCENE)만 실제 API 호출, 나머지는 빈 배열 반환
-            if (category === "CRIMESCENE") {
-                return themesService.getLatestThemes(category);
-            }
-            // 다른 카테고리는 아직 준비 중이므로 빈 배열 반환
-            return Promise.resolve([]);
-        },
+        queryFn: () => themesService.getLatestThemes(category),
     });
 
     return (
