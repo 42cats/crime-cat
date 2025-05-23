@@ -192,7 +192,9 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange, onPostClick }) 
 
             {/* 포스트 이미지 */}
             {post.imageUrls && post.imageUrls.length > 0 && (
-                <ImageCarousel images={post.imageUrls} />
+                <div onClick={(e) => e.stopPropagation()}>
+                    <ImageCarousel images={post.imageUrls} />
+                </div>
             )}
 
             {/* 포스트 액션 버튼 */}
