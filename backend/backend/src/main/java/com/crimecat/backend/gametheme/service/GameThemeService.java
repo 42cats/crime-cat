@@ -7,14 +7,7 @@ import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
 import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.domain.GameThemeRecommendation;
 import com.crimecat.backend.gametheme.domain.MakerTeamMember;
-import com.crimecat.backend.gametheme.dto.AddGameThemeRequest;
-import com.crimecat.backend.gametheme.dto.CrimesceneThemeSummeryDto;
-import com.crimecat.backend.gametheme.dto.CrimesceneThemeSummeryListDto;
-import com.crimecat.backend.gametheme.dto.GameThemeDetailDto;
-import com.crimecat.backend.gametheme.dto.GameThemeDto;
-import com.crimecat.backend.gametheme.dto.GetGameThemeResponse;
-import com.crimecat.backend.gametheme.dto.GetGameThemesResponse;
-import com.crimecat.backend.gametheme.dto.UpdateGameThemeRequest;
+import com.crimecat.backend.gametheme.dto.*;
 import com.crimecat.backend.gametheme.dto.filter.GetGameThemesFilter;
 import com.crimecat.backend.gametheme.dto.filter.RangeFilter;
 import com.crimecat.backend.gametheme.enums.ThemeType;
@@ -146,20 +139,19 @@ public class GameThemeService {
                 .build();
     }
 
+    // ================================
+    // 크라임씬 테마 전용 업데이트
+    // ================================
+    
     @Transactional
-    public void updateGameTheme(UUID themeId, MultipartFile file, UpdateGameThemeRequest request) {
-        GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        if (gameTheme.isDeleted()) {
-            throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
-        }
-        AuthenticationUtil.validateCurrentUserMatches(gameTheme.getAuthorId());
+    public void updateCrimesceneTheme(UUID themeId, MultipartFile file, UpdateCrimesceneThemeRequest request) {
+        GameTheme gameTheme = getThemeForUpdate(themeId);
         
         // 요청에서 데이터 업데이트
         request.update(gameTheme);
         
-        // CrimesceneTheme인 경우 개인 팀 처리 (개인 모드로 변경된 경우를 처리)
-        if (gameTheme instanceof CrimesceneTheme) {
-            CrimesceneTheme crimesceneTheme = (CrimesceneTheme) gameTheme;
+        // CrimesceneTheme 전용 로직
+        if (gameTheme instanceof CrimesceneTheme crimesceneTheme) {
             WebUser webUser = AuthenticationUtil.getCurrentWebUser();
             
             // 팀 ID가 null이거나 빈 값이면 개인 팀 처리 (개인 모드로 변경된 경우)
@@ -170,12 +162,98 @@ public class GameThemeService {
             updateGameHistoriesForCrimesceneTheme(crimesceneTheme);
         }
 
+        updateThumbnailIfProvided(gameTheme, file);
+        themeRepository.save(gameTheme);
+    }
+
+    // ================================
+    // 방탈출 테마 전용 업데이트
+    // ================================
+    
+    @Transactional
+    public void updateEscapeRoomTheme(UUID themeId, MultipartFile file, UpdateEscapeRoomThemeRequest request) {
+        GameTheme gameTheme = getThemeForUpdate(themeId);
+        
+        // 요청에서 데이터 업데이트
+        request.update(gameTheme);
+
+        updateThumbnailIfProvided(gameTheme, file);
+        themeRepository.save(gameTheme);
+    }
+
+    // ================================
+    // 머더미스터리 테마 전용 업데이트
+    // ================================
+    
+    @Transactional
+    public void updateMurderMysteryTheme(UUID themeId, MultipartFile file, UpdateGameThemeRequest request) {
+        GameTheme gameTheme = getThemeForUpdate(themeId);
+        
+        // 요청에서 데이터 업데이트
+        request.update(gameTheme);
+
+        updateThumbnailIfProvided(gameTheme, file);
+        themeRepository.save(gameTheme);
+    }
+
+    // ================================
+    // 리얼월드 테마 전용 업데이트
+    // ================================
+    
+    @Transactional
+    public void updateRealWorldTheme(UUID themeId, MultipartFile file, UpdateGameThemeRequest request) {
+        GameTheme gameTheme = getThemeForUpdate(themeId);
+        
+        // 요청에서 데이터 업데이트
+        request.update(gameTheme);
+
+        updateThumbnailIfProvided(gameTheme, file);
+        themeRepository.save(gameTheme);
+    }
+
+    // ================================
+    // 공통 헬퍼 메서드들
+    // ================================
+    
+    private GameTheme getThemeForUpdate(UUID themeId) {
+        GameTheme gameTheme = themeRepository.findById(themeId)
+            .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        
+        if (gameTheme.isDeleted()) {
+            throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
+        }
+        
+        AuthenticationUtil.validateCurrentUserMatches(gameTheme.getAuthorId());
+        return gameTheme;
+    }
+    
+    private void updateThumbnailIfProvided(GameTheme gameTheme, MultipartFile file) {
         if (file != null && !file.isEmpty()) {
             String path = storageService.storeAt(StorageFileType.GAME_THEME, file, gameTheme.getId().toString());
             gameTheme.setThumbnail(path);
         }
+    }
+
+    // ================================
+    // 레거시 메서드 (하위 호환성) - 추후 제거 예정
+    // ================================
+    
+    @Transactional
+    @Deprecated
+    public void updateGameTheme(UUID themeId, MultipartFile file, UpdateGameThemeRequest request) {
+        // 타입에 따라 적절한 메서드로 분기
+        GameTheme gameTheme = getThemeForUpdate(themeId);
         
-        themeRepository.save(gameTheme);
+        if (request instanceof UpdateCrimesceneThemeRequest crimesceneRequest) {
+            updateCrimesceneTheme(themeId, file, crimesceneRequest);
+        } else if (request instanceof UpdateEscapeRoomThemeRequest escapeRoomRequest) {
+            updateEscapeRoomTheme(themeId, file, escapeRoomRequest);
+        } else {
+            // 기본 업데이트 로직
+            request.update(gameTheme);
+            updateThumbnailIfProvided(gameTheme, file);
+            themeRepository.save(gameTheme);
+        }
     }
 
     @Transactional
