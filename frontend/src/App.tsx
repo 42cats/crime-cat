@@ -63,6 +63,11 @@ import MessageFormat from "@/pages/MessageButtonEditor";
 import Teams from "@/pages/dashboard/Teams";
 import PointHistoryPage from "@/pages/PointHistory/PointHistoryPage";
 
+// Admin Pages
+import UserRoleManagementPage from "@/pages/admin/UserRoleManagementPage";
+import CouponManagementPage from "@/pages/admin/CouponManagementPage";
+import AdManagementPage from "@/pages/admin/AdManagementPage";
+
 // SNS Pages
 import SNSFeedPage from "@/pages/sns/SNSFeedPage";
 import SNSExplorePage from "@/pages/sns/SNSExplorePage";
@@ -316,6 +321,16 @@ const App = () => (
                                 <Route
                                     path="follows"
                                     element={<FollowsPage />}
+                                />
+                                
+                                {/* 관리자 페이지 라우트 */}
+                                <Route
+                                    path="admin/user-role"
+                                    element={
+                                        <PrivateRoute allowedRoles={["ADMIN"]}>
+                                            <UserRoleManagementPage />
+                                        </PrivateRoute>
+                                    }
                                 />
                             </Route>
 

@@ -18,6 +18,9 @@ import {
     Menu,
     FileText,
     UserPlus,
+    ShieldCheck,
+    Ticket,
+    ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -267,6 +270,65 @@ const SidebarInner = React.memo(() => {
                                         ))}
                                 </nav>
                             </div>
+
+                            {/* 관리자 전용 메뉴 */}
+                            {(user?.role === "ADMIN" || user?.role === "MANAGER") && (
+                                <>
+                                    <Separator className="my-4" />
+
+                                    <div className="px-4 py-2">
+                                        <p className="text-xs font-medium text-muted-foreground">
+                                            관리자 메뉴
+                                        </p>
+                                    </div>
+
+                                    <nav className="grid gap-1">
+                                        {[
+                                            {
+                                                name: "사용자 권한 관리",
+                                                path: "/dashboard/admin/user-role",
+                                                icon: ShieldCheck,
+                                                roles: ["ADMIN"],
+                                            },
+                                            {
+                                                name: "쿠폰 관리",
+                                                path: "/dashboard/admin/coupons",
+                                                icon: Ticket,
+                                                roles: ["ADMIN", "MANAGER"],
+                                            },
+                                            {
+                                                name: "광고 관리",
+                                                path: "/dashboard/admin/advertisements",
+                                                icon: ImageIcon,
+                                                roles: ["ADMIN", "MANAGER"],
+                                            },
+                                        ]
+                                            .filter((item) =>
+                                                item.roles.includes(
+                                                    user?.role || "USER"
+                                                )
+                                            )
+                                            .map((item) => (
+                                                <Link
+                                                    key={item.path}
+                                                    to={item.path}
+                                                    className={`group flex items-center gap-x-3 rounded-md px-3 py-2 transition-colors
+                                ${
+                                    location.pathname === item.path
+                                        ? "text-foreground bg-muted"
+                                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                }
+                                justify-start`}
+                                                >
+                                                    <item.icon className="h-4 w-4" />
+                                                    <span className="text-sm font-medium">
+                                                        {item.name}
+                                                    </span>
+                                                </Link>
+                                            ))}
+                                    </nav>
+                                </>
+                            )}
 
                             <Separator className="my-4" />
 
