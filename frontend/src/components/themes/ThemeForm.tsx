@@ -8,7 +8,7 @@ import { MarkdownEditor } from "@/components/markdown";
 import { useToast } from "@/hooks/useToast";
 import PageTransition from "@/components/PageTransition";
 import { useLocation } from "react-router-dom";
-import { Star, X, Loader2 } from "lucide-react";
+import { Star, X, Loader2, MapPin } from "lucide-react";
 import CrimeSceneFields from "@/components/themes/type/CrimeSceneFields";
 import EscapeRoomFields from "@/components/themes/type/EscapeRoomFields";
 import MurderMysteryFields from "@/components/themes/type/MurderMysteryFields";
@@ -54,7 +54,17 @@ const initialExtraFieldsMap = {
         guildName: "",
         extra: { characters: [] },
     },
-    ESCAPE_ROOM: { extra: {} },
+    ESCAPE_ROOM: {
+        horrorLevel: 0,
+        deviceRatio: 0,
+        activityLevel: 0,
+        openDate: "",
+        isOperating: true,
+        genreTags: [],
+        locations: [],
+        homepageUrl: "",
+        reservationUrl: "",
+    },
     MURDER_MYSTERY: { extra: {} },
     REALWORLD: { extra: {} },
 };
@@ -187,6 +197,16 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                     form.type as keyof typeof initialExtraFieldsMap
                 ]
             );
+            
+            // 방탈출 테마일 때 강제로 모든 설정을 허용으로 변경
+            if (form.type === "ESCAPE_ROOM") {
+                setForm((prev) => ({
+                    ...prev,
+                    publicStatus: true,
+                    recommendationEnabled: true,
+                    commentEnabled: true,
+                }));
+            }
         } else {
             didMountRef.current = true;
         }
@@ -230,6 +250,13 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                     extraFields.makerTeamsId.trim() === "")
             ) {
                 newErrors.makerTeamsId = "팀 선택이 필요합니다.";
+            }
+            if (
+                data.type === "ESCAPE_ROOM" &&
+                extraFields &&
+                (!extraFields.locations || extraFields.locations.length === 0)
+            ) {
+                newErrors.locations = "최소 1개 이상의 매장 위치를 등록해주세요.";
             }
             return newErrors;
         }
@@ -300,6 +327,23 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
             if (extraFields.extra) {
                 jsonData.extra = extraFields.extra;
             }
+        }
+
+        if (data.type === "ESCAPE_ROOM" && extraFields) {
+            // 방탈출 전용 필드들 - 백엔드 API 스펙에 맞춰 수정
+            jsonData.horror_level = extraFields.horrorLevel || 0;
+            jsonData.device_ratio = extraFields.deviceRatio || 0;
+            jsonData.activity_level = extraFields.activityLevel || 0;
+            jsonData.open_date = extraFields.openDate || null;
+            jsonData.is_operating = extraFields.isOperating ?? true;
+            
+            // 장르 태그와 매장 위치
+            jsonData.genre_tags = extraFields.genreTags || [];
+            jsonData.store_locations = extraFields.locations || [];
+            
+            // URL 정보  
+            jsonData.homepage_url = extraFields.homepageUrl || null;
+            jsonData.reservation_url = extraFields.reservationUrl || null;
         }
 
         formData.append(
@@ -463,55 +507,84 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                 </div>
 
                 {/* 공개 / 추천 / 댓글 여부 설정 */}
-                <div className="flex flex-wrap gap-4">
-                    <div className="flex items-center gap-2 min-w-[120px]">
-                        <Label className="font-bold">공개</Label>
-                        <Switch
-                            checked={form.publicStatus}
-                            onCheckedChange={(v) =>
-                                setForm((prev) => ({
-                                    ...prev,
-                                    publicStatus: v,
-                                }))
-                            }
-                        />
-                        <span className="text-sm text-muted-foreground">
-                            {form.publicStatus ? "공개" : "비공개"}
-                        </span>
+                {form.type === "ESCAPE_ROOM" ? (
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div className="flex items-center gap-2 mb-2">
+                            <MapPin className="w-4 h-4 text-blue-600" />
+                            <span className="font-medium text-blue-800">방탈출 테마 설정</span>
+                        </div>
+                        <p className="text-sm text-blue-700 mb-3">
+                            방탈출 테마는 정보 공유를 위해 <strong>공개, 추천, 댓글이 모두 허용</strong>으로 자동 설정됩니다.
+                        </p>
+                        <div className="flex flex-wrap gap-4">
+                            <div className="flex items-center gap-2">
+                                <Label className="font-medium text-blue-800">공개</Label>
+                                <Switch checked={true} disabled />
+                                <span className="text-sm text-blue-600">공개</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Label className="font-medium text-blue-800">추천</Label>
+                                <Switch checked={true} disabled />
+                                <span className="text-sm text-blue-600">허용</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Label className="font-medium text-blue-800">댓글</Label>
+                                <Switch checked={true} disabled />
+                                <span className="text-sm text-blue-600">허용</span>
+                            </div>
+                        </div>
                     </div>
+                ) : (
+                    <div className="flex flex-wrap gap-4">
+                        <div className="flex items-center gap-2 min-w-[120px]">
+                            <Label className="font-bold">공개</Label>
+                            <Switch
+                                checked={form.publicStatus}
+                                onCheckedChange={(v) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        publicStatus: v,
+                                    }))
+                                }
+                            />
+                            <span className="text-sm text-muted-foreground">
+                                {form.publicStatus ? "공개" : "비공개"}
+                            </span>
+                        </div>
 
-                    <div className="flex items-center gap-2 min-w-[150px]">
-                        <Label className="font-bold">추천</Label>
-                        <Switch
-                            checked={form.recommendationEnabled}
-                            onCheckedChange={(v) =>
-                                setForm((prev) => ({
-                                    ...prev,
-                                    recommendationEnabled: v,
-                                }))
-                            }
-                        />
-                        <span className="text-sm text-muted-foreground">
-                            {form.recommendationEnabled ? "허용" : "차단"}
-                        </span>
-                    </div>
+                        <div className="flex items-center gap-2 min-w-[150px]">
+                            <Label className="font-bold">추천</Label>
+                            <Switch
+                                checked={form.recommendationEnabled}
+                                onCheckedChange={(v) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        recommendationEnabled: v,
+                                    }))
+                                }
+                            />
+                            <span className="text-sm text-muted-foreground">
+                                {form.recommendationEnabled ? "허용" : "차단"}
+                            </span>
+                        </div>
 
-                    <div className="flex items-center gap-2 min-w-[150px]">
-                        <Label className="font-bold">댓글</Label>
-                        <Switch
-                            checked={form.commentEnabled}
-                            onCheckedChange={(v) =>
-                                setForm((prev) => ({
-                                    ...prev,
-                                    commentEnabled: v,
-                                }))
-                            }
-                        />
-                        <span className="text-sm text-muted-foreground">
-                            {form.commentEnabled ? "허용" : "차단"}
-                        </span>
+                        <div className="flex items-center gap-2 min-w-[150px]">
+                            <Label className="font-bold">댓글</Label>
+                            <Switch
+                                checked={form.commentEnabled}
+                                onCheckedChange={(v) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        commentEnabled: v,
+                                    }))
+                                }
+                            />
+                            <span className="text-sm text-muted-foreground">
+                                {form.commentEnabled ? "허용" : "차단"}
+                            </span>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* 제목 */}
                 <div>
@@ -875,10 +948,17 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                     </>
                 )}
                 {form.type === "ESCAPE_ROOM" && (
-                    <EscapeRoomFields
-                        extraFields={extraFields}
-                        setExtraFields={setExtraFields}
-                    />
+                    <>
+                        <EscapeRoomFields
+                            extraFields={extraFields}
+                            setExtraFields={setExtraFields}
+                        />
+                        {errors.locations && (
+                            <p className="text-red-500 text-sm mt-2">
+                                {errors.locations}
+                            </p>
+                        )}
+                    </>
                 )}
                 {form.type === "MURDER_MYSTERY" && (
                     <MurderMysteryFields
