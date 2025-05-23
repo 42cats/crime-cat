@@ -42,7 +42,7 @@ public class AddGameThemeRequest {
     private int playtimeMax; // 소요시간 (분)
     @Min(0)
     private int price; // 금액 (원화)
-    @Range(min = 1, max = 5)
+    @Range(min = 1, max = 10)
     private int difficulty; // 난이도 1~5
     private boolean publicStatus; // 공개 여부
     private boolean recommendationEnabled;
