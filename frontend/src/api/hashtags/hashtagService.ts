@@ -1,21 +1,21 @@
 import { apiClient } from "@/lib/api";
 
 export interface HashTag {
-  id: string;
-  name: string;
-  useCount: number;
-  lastUsedAt?: string;
+    id: string;
+    name: string;
+    useCount: number;
+    lastUsedAt?: string;
 }
 
 export interface HashTagResponse {
-  content: HashTag[];
-  pageable: {
-    pageNumber: number;
-    pageSize: number;
-  };
-  totalElements: number;
-  totalPages: number;
-  last?: boolean;
+    content: HashTag[];
+    pageable: {
+        pageNumber: number;
+        pageSize: number;
+    };
+    totalElements: number;
+    totalPages: number;
+    last?: boolean;
 }
 
 export interface HashTagPostsResponse {
@@ -41,7 +41,7 @@ class HashTagService {
         page: number = 0,
         size: number = 20
     ): Promise<HashTagResponse | null> {
-        console.trace('getPopularHashTags called from:'); // 호출 스택 추적
+        console.trace("getPopularHashTags called from:"); // 호출 스택 추적
         try {
             return await apiClient.get<HashTagResponse>(`/hashtags/popular`, {
                 params: {
@@ -66,13 +66,16 @@ class HashTagService {
         }
 
         try {
-            const response = await apiClient.get<HashTagResponse>(`/hashtags/search`, {
-                params: {
-                    query,
-                    page,
-                    size,
-                },
-            });
+            const response = await apiClient.get<HashTagResponse>(
+                `/public/hashtags/search`,
+                {
+                    params: {
+                        query,
+                        page,
+                        size,
+                    },
+                }
+            );
             return response.content || [];
         } catch (error) {
             console.error("해시태그 검색 실패:", error);
