@@ -358,9 +358,6 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
             new Blob([JSON.stringify(jsonData)], { type: "application/json" })
         );
         
-        // 테마 타입 정보를 FormData에 추가
-        formData.append("themeType", data.type);
-        
         onSubmit(formData);
     };
 
