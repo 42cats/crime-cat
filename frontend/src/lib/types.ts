@@ -189,6 +189,17 @@ export interface Place {
     lng?: number;
 }
 
+export interface EscapeRoomLocation {
+    storeName: string;        // 매장명
+    address: string;          // 주소
+    roadAddress: string;      // 도로명주소
+    lat: number;              // 위도
+    lng: number;              // 경도
+    link: string;             // 네이버 링크
+    phone?: string;           // 전화번호 (선택사항)
+    description?: string;     // 매장 설명 (선택사항)
+}
+
 export interface DailyCheck {
     isComplete: boolean;
     checkTime: string;
@@ -300,6 +311,15 @@ export interface CrimeSceneTheme extends BaseTheme {
 
 export interface EscapeRoomTheme extends BaseTheme {
     type: "ESCAPE_ROOM";
+    genreTags: string[];             // 장르 태그들 (해시태그 형태)
+    horrorLevel?: number;            // 공포도 (1-10)
+    deviceRatio?: number;            // 장치비중 (1-10)
+    activityLevel?: number;          // 활동도 (1-10)
+    openDate?: string;               // 오픈날짜 (ISO 날짜)
+    isOperating: boolean;            // 현재 운용여부
+    locations: EscapeRoomLocation[]; // 매장 위치 정보들
+    homepageUrl?: string;            // 홈페이지 URL
+    reservationUrl?: string;         // 예약 페이지 URL
 }
 
 export interface MurderMysteryTheme extends BaseTheme {
@@ -338,6 +358,15 @@ export interface CrimeSceneInput extends BaseThemeInput {
 
 export interface EscapeRoomInput extends BaseThemeInput {
     type: "ESCAPE_ROOM";
+    genreTags: string[];              // 장르 태그들 (해시태그 형태)
+    horrorLevel?: number;             // 공포도 (1-10)
+    deviceRatio?: number;             // 장치비중 (1-10)
+    activityLevel?: number;           // 활동도 (1-10)
+    openDate?: string;                // 오픈날짜 (ISO 날짜)
+    isOperating: boolean;             // 현재 운용여부
+    locations: EscapeRoomLocation[];  // 매장 위치 정보들
+    homepageUrl?: string;             // 홈페이지 URL
+    reservationUrl?: string;          // 예약 페이지 URL
 }
 
 export interface MurderMysteryInput extends BaseThemeInput {
@@ -420,4 +449,135 @@ export interface SearchUsers {
     hasNext: boolean;
     hasPrevious: boolean;
     searchType: string;
+}
+
+// 방탈출 히스토리 관련 타입들
+export interface EscapeRoomHistory {
+    id: string;
+    escapeRoomThemeId: string;
+    escapeRoomThemeTitle: string;
+    userId: string;
+    userNickname: string;
+    userAvatarUrl?: string;
+    
+    // 게임 결과
+    isSuccess: boolean;
+    escapeTimeMinutes?: number;
+    formattedEscapeTime?: string;
+    
+    // 평가
+    feltDifficulty: number;         // 1-10
+    feltDifficultyStars: number;    // 0.5-5.0
+    satisfaction: number;           // 1-10
+    satisfactionStars: number;      // 0.5-5.0
+    
+    // 플레이 정보
+    participantsCount: number;
+    hintUsedCount: number;
+    memo?: string;                  // 스포일러 보호 대상
+    safeMemo?: string;              // 마스킹된 메모 (권한 없을 때)
+    storeLocation?: string;
+    
+    // 메타 정보
+    isPublic: boolean;              // 기록 공개/비공개
+    hasSpoiler: boolean;            // 스포일러 포함 여부
+    playDate: string;
+    createdAt: string;
+    updatedAt?: string;
+    
+    // 권한 정보
+    isAuthor: boolean;
+    canViewMemo: boolean;           // 메모 볼 수 있는 권한
+    isVisible: boolean;             // 기록 자체 볼 수 있는 권한
+}
+
+export interface EscapeRoomHistoryInput {
+    escapeRoomThemeId: string;
+    isSuccess: boolean;
+    escapeTimeMinutes?: number;
+    feltDifficulty: number;         // 1-10
+    participantsCount: number;
+    hintUsedCount?: number;
+    satisfaction: number;           // 1-10
+    memo?: string;
+    isPublic?: boolean;
+    playDate: string;
+    hasSpoiler?: boolean;
+    storeLocation?: string;
+}
+
+export interface EscapeRoomHistoryStats {
+    totalRecords: number;
+    publicRecords: number;
+    successCount: number;
+    failCount: number;
+    successRate: number;
+    
+    // 평균 값들
+    averageEscapeTime?: number;
+    formattedAverageEscapeTime?: string;
+    averageFeltDifficulty?: number;
+    averageSatisfaction?: number;
+    averageParticipants?: number;
+    averageHintUsed?: number;
+    
+    // 별점 형태
+    averageFeltDifficultyStars?: number;
+    averageSatisfactionStars?: number;
+    
+    // 최고/최저 기록
+    fastestEscapeTime?: number;
+    formattedFastestTime?: string;
+    slowestEscapeTime?: number;
+    formattedSlowestTime?: string;
+}
+
+export interface EscapeRoomHistoryPage {
+    content: EscapeRoomHistory[];
+    page: number;
+    size: number;
+    totalPages: number;
+    totalElements: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+}
+
+// 방탈출 댓글 관련 타입들
+export interface EscapeRoomComment {
+    id: string;
+    escapeRoomThemeId: string;
+    escapeRoomHistoryId?: string;   // 게임 기록 기반 댓글인 경우
+    userId: string;
+    userNickname: string;
+    userAvatarUrl?: string;
+    
+    content: string;
+    hasSpoiler: boolean;            // 스포일러 포함 여부
+    isDeleted: boolean;
+    
+    createdAt: string;
+    updatedAt?: string;
+    
+    // 권한 및 메타 정보
+    isAuthor: boolean;
+    isVisible: boolean;             // 댓글 볼 수 있는 권한
+    isGameHistoryComment: boolean;  // 게임 기록 기반 댓글인지
+    isGeneralComment: boolean;      // 일반 댓글인지
+}
+
+export interface EscapeRoomCommentInput {
+    escapeRoomThemeId: string;
+    escapeRoomHistoryId?: string;   // 게임 기록 기반 댓글인 경우
+    content: string;
+    hasSpoiler?: boolean;
+}
+
+export interface EscapeRoomCommentPage {
+    content: EscapeRoomComment[];
+    page: number;
+    size: number;
+    totalPages: number;
+    totalElements: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
 }
