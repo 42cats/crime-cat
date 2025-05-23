@@ -23,7 +23,7 @@ import org.hibernate.type.SqlTypes;
 @Getter
 @SuperBuilder
 @AllArgsConstructor
-@DiscriminatorValue(value = ThemeType.Numbers.CRIMESCENE)
+@DiscriminatorValue("CRIMESCENE")
 public class CrimesceneTheme extends GameTheme {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MAKER_TEAMS_ID", updatable = false, insertable = false)

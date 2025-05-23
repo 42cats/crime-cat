@@ -1,6 +1,7 @@
 package com.crimecat.backend.gametheme.domain;
 
 import com.crimecat.backend.gametheme.dto.AddCrimesceneThemeRequest;
+import com.crimecat.backend.gametheme.dto.AddEscapeRoomThemeRequest;
 import com.crimecat.backend.gametheme.dto.AddGameThemeRequest;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.vladmihalcea.hibernate.type.json.JsonType;
@@ -25,8 +26,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @SuperBuilder
 @AllArgsConstructor
 @Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "`TYPE`", discriminatorType = DiscriminatorType.INTEGER)
-public class GameTheme {
+@DiscriminatorColumn(name = "`TYPE`", discriminatorType = DiscriminatorType.STRING)
+public abstract class GameTheme {
     @Id
     @UuidGenerator
     @JdbcTypeCode(SqlTypes.BINARY)
@@ -125,23 +126,10 @@ public class GameTheme {
     public static GameTheme from(AddGameThemeRequest request) {
         if (request instanceof AddCrimesceneThemeRequest) {
             return CrimesceneTheme.from((AddCrimesceneThemeRequest) request);
+        } else if (request instanceof AddEscapeRoomThemeRequest) {
+            return EscapeRoomTheme.from((AddEscapeRoomThemeRequest) request);
         }
-        return GameTheme.builder()
-                .title(request.getTitle())
-                .summary(request.getSummary())
-                .tags(request.getTags())
-                .content(request.getContent())
-                .playerMin(request.getPlayerMin())
-                .playerMax(request.getPlayerMax())
-                .playTimeMin(request.getPlaytimeMin())
-                .playTimeMax(request.getPlaytimeMax())
-                .price(request.getPrice())
-                .difficulty(request.getDifficulty())
-                .publicStatus(request.isPublicStatus())
-                .updatedAt(LocalDateTime.now())
-                .recommendationEnabled(request.isRecommendationEnabled())
-                .commentEnabled(request.isCommentEnabled())
-                .build();
+        throw new IllegalArgumentException("Unknown theme type for request: " + request.getClass().getName());
     }
 
     public void setIsDelete(Boolean isDeleted) {

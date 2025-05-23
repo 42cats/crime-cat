@@ -21,7 +21,7 @@ import java.util.List;
 @Getter
 @SuperBuilder
 @AllArgsConstructor
-@DiscriminatorValue(value = ThemeType.Numbers.ESCAPE_ROOM)
+@DiscriminatorValue("ESCAPE_ROOM")
 public class EscapeRoomTheme extends GameTheme {
 
     /**
