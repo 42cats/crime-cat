@@ -1,5 +1,6 @@
 package com.crimecat.backend.auth.controller;
 
+import com.crimecat.backend.admin.dto.BlockInfoResponse;
 import com.crimecat.backend.auth.jwt.JwtTokenProvider;
 import com.crimecat.backend.auth.service.JwtBlacklistService;
 import com.crimecat.backend.auth.service.RefreshTokenService;
@@ -8,6 +9,7 @@ import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.utils.TokenCookieUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
+import com.crimecat.backend.webUser.service.WebUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -36,6 +38,7 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final JwtBlacklistService jwtBlacklistService;
     private final WebUserRepository webUserRepository;
+    private final WebUserService webUserService;
     
     @GetMapping("/login-success")
     public ResponseEntity<?> redirectLoginSuccess(HttpServletResponse response, Principal principal) throws IOException {
@@ -168,6 +171,27 @@ public class AuthController {
                 "nickname", nickname,
                 "message", "로그아웃 성공"
         ));
+    }
+    
+    /**
+     * 현재 사용자의 차단 상태를 확인합니다.
+     * 인증되지 않은 사용자도 접근 가능한 공개 API입니다.
+     */
+    @GetMapping("/block-status")
+    public ResponseEntity<BlockInfoResponse> getBlockStatus(HttpServletRequest request) {
+        try {
+            String accessToken = TokenCookieUtil.getCookieValue(request, "Authorization");
+            
+            if (accessToken == null || !jwtTokenProvider.validateToken(accessToken)) {
+                return ResponseEntity.ok(BlockInfoResponse.notBlocked());
+            }
+            
+            String userId = jwtTokenProvider.getUserIdFromToken(accessToken);
+            BlockInfoResponse blockInfo = webUserService.getBlockInfo(UUID.fromString(userId));
+            return ResponseEntity.ok(blockInfo);
+        } catch (Exception e) {
+            return ResponseEntity.ok(BlockInfoResponse.notBlocked());
+        }
     }
     private static Map<String, String> getStringStringMap(WebUser user) {
         Map<String,String> resp  = new HashMap<>();

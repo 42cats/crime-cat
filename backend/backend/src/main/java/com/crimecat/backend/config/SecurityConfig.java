@@ -94,6 +94,7 @@ public class SecurityConfig {
                         "/bot/v1/**",
                         "/api/v1/auth/logout",
                         "/api/v1/auth/reissue",
+                        "/api/v1/auth/block-status",
                         "/api/v1/auth/oauth2/error",
                         "/login/**",
                         "/api/v1/public/**",

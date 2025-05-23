@@ -60,4 +60,23 @@ export const userManagementApi = {
     unblockUser: (userId: string) => {
         return apiClient.post(`/admin/users/${userId}/unblock`);
     },
+
+    // 사용자 차단 (사유와 기간 포함)
+    blockUserWithReason: (userId: string, reason: string, expiresAt?: string) => {
+        return apiClient.post("/admin/users/block-with-reason", {
+            userId,
+            blockReason: reason,
+            blockExpiresAt: expiresAt || null,
+        });
+    },
+
+    // 사용자 차단 정보 조회
+    getBlockInfo: (userId: string) => {
+        return apiClient.get(`/admin/users/${userId}/block-info`);
+    },
+
+    // 현재 사용자 차단 상태 확인 (공개 API)
+    getCurrentUserBlockStatus: () => {
+        return apiClient.get("/auth/block-status");
+    },
 };

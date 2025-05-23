@@ -117,6 +117,18 @@ public class WebUser implements UserDetails, OAuth2User {
     @Builder.Default
     @Column(name ="is_Banned", nullable = false)
     private Boolean isBanned = false;
+    
+    // ✅ 차단 사유
+    @Column(name = "block_reason", columnDefinition = "TEXT")
+    private String blockReason;
+    
+    // ✅ 차단 시작 시간
+    @Column(name = "blocked_at")
+    private LocalDateTime blockedAt;
+    
+    // ✅ 차단 만료 시간 (null이면 영구 차단)
+    @Column(name = "block_expires_at")
+    private LocalDateTime blockExpiresAt;
 
     // ✅ 마지막 로그인 시각
     @Column(name = "last_login_at")
@@ -185,7 +197,22 @@ public class WebUser implements UserDetails, OAuth2User {
     // ✅ 계정 잠김 여부 (true면 잠김 아님)
     @Override
     public boolean isAccountNonLocked() {
-        return !isBanned;
+        // 차단되지 않았거나, 차단 기간이 만료된 경우에만 잠김 해제
+        if (!isBanned) {
+            return true;
+        }
+        
+        // 영구 차단인 경우 (blockExpiresAt이 null)
+        if (blockExpiresAt == null) {
+            return false;
+        }
+        
+        // 차단 기간이 만료된 경우 자동 차단 해제
+        if (LocalDateTime.now().isAfter(blockExpiresAt)) {
+            return true;
+        }
+        
+        return false;
     }
 
     // ✅ 자격 증명 만료 여부 (true면 만료 아님)
