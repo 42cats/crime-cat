@@ -102,7 +102,7 @@ export const UserSearch: React.FC = () => {
                 <UserCardSkeleton key={index} />
               ))}
             </div>
-          ) : searchResults?.users?.length ? (
+          ) : searchResults?.users && searchResults.users.length > 0 ? (
             <AnimatePresence>
               <motion.div
                 className="w-full"
