@@ -387,6 +387,7 @@ export interface Team {
     id: string;
     name: string;
     members?: TeamMember[];
+    count: Number;
 }
 
 export interface Teams {
