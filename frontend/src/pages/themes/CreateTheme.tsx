@@ -1,13 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ThemeForm from '@/components/themes/ThemeForm';
 import { useAuth } from '@/hooks/useAuth';
 import { themesService } from '@/api/themesService';
+import { ResizeMode } from '@/utils/imageCompression';
 
 const CreateTheme: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, isLoading } = useAuth();
+  const [resizeMode, setResizeMode] = useState<ResizeMode>('fit');
 
   const state = location.state as { category?: string };
   const initialCategory = state?.category?.toLowerCase() || '';
