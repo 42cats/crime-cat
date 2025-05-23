@@ -3,12 +3,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UTCToKST } from "@/lib/dateFormat";
 import { useQuery } from "@tanstack/react-query";
 import { guildsService } from "@/api/guildsService";
-import { ThemeDetailType } from "@/lib/types";
+import { CrimesceneThemeDetailType } from "@/lib/types";
 import { Users, Calendar, Clock, Medal, UserCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ThemeGuildInfoProps {
-    theme: ThemeDetailType;
+    theme: CrimesceneThemeDetailType;
 }
 
 const ThemeGuildInfo: React.FC<ThemeGuildInfoProps> = ({ theme }) => {
@@ -130,7 +130,6 @@ const ThemeGuildInfo: React.FC<ThemeGuildInfoProps> = ({ theme }) => {
                             {guild?.guildCreatedAt ? (
                                 <UTCToKST
                                     date={guild.guildCreatedAt}
-                                    format="yyyy년 MM월 dd일"
                                 />
                             ) : (
                                 "-"
@@ -148,7 +147,6 @@ const ThemeGuildInfo: React.FC<ThemeGuildInfoProps> = ({ theme }) => {
                             {guild?.lastPlayTime ? (
                                 <UTCToKST
                                     date={guild.lastPlayTime}
-                                    format="yyyy년 MM월 dd일"
                                 />
                             ) : (
                                 "-"

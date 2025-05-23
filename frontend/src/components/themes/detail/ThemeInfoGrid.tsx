@@ -1,10 +1,10 @@
 import React from "react";
 import { Clock, Users, Tag, CreditCard, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { ThemeDetailType } from "@/lib/types";
+import { CrimesceneThemeDetailType } from "@/lib/types";
 
 interface ThemeInfoGridProps {
-    theme: ThemeDetailType;
+    theme: CrimesceneThemeDetailType;
     formatPlayTime: (min: number, max: number) => string;
 }
 
@@ -20,7 +20,7 @@ const ThemeInfoGrid: React.FC<ThemeInfoGridProps> = ({
                     <Users className="h-5 w-5 mr-3 text-primary" />
                     <div>
                         <div className="text-sm text-muted-foreground">
-                            인원
+                            인원{theme.difficulty}
                         </div>
                         <div className="font-medium">
                             {theme.playersMin === theme.playersMax
