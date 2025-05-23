@@ -12,20 +12,18 @@ SET @escape_room_themes_exists = (SELECT COUNT(*) FROM information_schema.tables
 
 SET @create_escape_room_themes = IF(@escape_room_themes_exists = 0,
     'CREATE TABLE escape_room_themes (
-        id BINARY(16) PRIMARY KEY COMMENT ''내부 고유 식별자'',
-        game_theme_id BINARY(16) NOT NULL COMMENT ''게임 테마 ID'',
-        maker_team_id BINARY(16) COMMENT ''제작 팀 ID'',
-        company_name VARCHAR(100) COMMENT ''업체명'',
+        id BINARY(16) PRIMARY KEY COMMENT ''내부 고유 식별자 (GameTheme과 동일한 PK)'',
+        horror_level INT COMMENT ''공포도 (1-10, 별 5개 표시용)'',
+        device_ratio INT COMMENT ''장치비중 (1-10, 별 5개 표시용)'',
+        activity_level INT COMMENT ''활동도 (1-10, 별 5개 표시용)'',
+        open_date DATE COMMENT ''오픈날짜'',
+        is_operating BOOLEAN NOT NULL DEFAULT TRUE COMMENT ''현재 운용여부'',
         extra LONGTEXT COMMENT ''추가 정보 (JSON)'' CHECK (JSON_VALID(extra)),
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         
-        CONSTRAINT fk_escape_room_game_theme FOREIGN KEY (game_theme_id) 
-            REFERENCES game_themes(id) ON DELETE CASCADE,
-        CONSTRAINT fk_escape_room_maker_team FOREIGN KEY (maker_team_id) 
-            REFERENCES maker_teams(id) ON DELETE SET NULL
+        CONSTRAINT fk_escape_room_game_theme FOREIGN KEY (id) 
+            REFERENCES game_themes(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
-    COMMENT=''방탈출 테마 테이블''',
+    COMMENT=''방탈출 테마 테이블 (JPA JOINED 상속)''',
     'DO 0'
 );
 
@@ -41,13 +39,14 @@ SET @create_escape_room_locations = IF(@escape_room_locations_exists = 0,
     'CREATE TABLE escape_room_locations (
         id BINARY(16) PRIMARY KEY COMMENT ''내부 고유 식별자'',
         escape_room_theme_id BINARY(16) NOT NULL COMMENT ''방탈출 테마 ID'',
-        name VARCHAR(100) NOT NULL COMMENT ''지점명'',
+        store_name VARCHAR(100) NOT NULL COMMENT ''매장명'',
         address TEXT NOT NULL COMMENT ''주소'',
+        road_address TEXT COMMENT ''도로명 주소'',
         latitude DECIMAL(10, 8) COMMENT ''위도'',
         longitude DECIMAL(11, 8) COMMENT ''경도'',
+        naver_link VARCHAR(500) COMMENT ''네이버 지도 링크'',
         phone VARCHAR(20) COMMENT ''전화번호'',
-        operating_hours TEXT COMMENT ''운영시간'',
-        is_active BOOLEAN NOT NULL DEFAULT TRUE COMMENT ''운영 여부'',
+        description TEXT COMMENT ''설명'',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         
