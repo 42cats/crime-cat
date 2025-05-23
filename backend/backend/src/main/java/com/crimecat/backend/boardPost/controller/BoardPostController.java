@@ -56,4 +56,14 @@ public class BoardPostController {
         BoardPostDetailResponse response = boardPostService.createBoardPost(request, currentUser.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<BoardPostDetailResponse> updateBoardPost(
+            @PathVariable("id") UUID postId,
+            @RequestBody @Valid BoardPostRequest request,
+            @AuthenticationPrincipal WebUser currentUser
+    ) {
+        BoardPostDetailResponse response = boardPostService.updateBoardPost(request, postId, currentUser.getId());
+        return ResponseEntity.ok().body(response);
+    }
 }

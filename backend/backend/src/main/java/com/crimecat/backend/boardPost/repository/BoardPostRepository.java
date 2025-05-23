@@ -30,7 +30,7 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID> {
             + "   or c.content like %:kw% "
             + "   or u2.nickname like %:kw% "
             + ") "
-            + " and p.boardtype = :boardType "
+            + " and p.boardType = :boardType "
             + " and p.postType = :postType "
             + " and p.isDeleted = false "
             + " ORDER BY p.isPinned DESC ")
