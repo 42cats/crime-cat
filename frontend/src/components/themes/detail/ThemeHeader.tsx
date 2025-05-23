@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavigateFunction } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { UTCToKST } from "@/lib/dateFormat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeDetailType } from "@/lib/types";
+import ImageViewerModal from "@/components/sns/image/ImageViewerModal";
 
 interface ThemeHeaderProps {
   theme: ThemeDetailType;
@@ -17,6 +18,8 @@ const ThemeHeader: React.FC<ThemeHeaderProps> = ({
   navigate, 
   onProfileClick 
 }) => {
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  
   return (
     <>
       {/* 상단 내비게이션 */}
@@ -35,7 +38,16 @@ const ThemeHeader: React.FC<ThemeHeaderProps> = ({
           <img
             src={`${theme?.thumbnail || "/content/image/default_image2.png"}`}
             alt={theme.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover cursor-pointer"
+            onClick={() => setIsImageViewerOpen(true)}
+          />
+          
+          {/* 이미지 뷰어 모달 */}
+          <ImageViewerModal
+            isOpen={isImageViewerOpen}
+            onClose={() => setIsImageViewerOpen(false)}
+            images={[theme?.thumbnail || "/content/image/default_image2.png"]}
+            initialIndex={0}
           />
         </div>
 
