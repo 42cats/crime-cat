@@ -48,7 +48,7 @@ public class UpdateGameThemeRequest {
     private Integer playtimeMax;
     @Min(0)
     private Integer price;
-    @Range(min = 1, max = 5)
+    @Range(min = 1, max = 10)
     private Integer difficulty;
     private Boolean publicStatus;
     private Boolean recommendationEnabled;

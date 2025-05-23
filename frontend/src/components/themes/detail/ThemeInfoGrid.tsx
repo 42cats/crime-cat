@@ -13,16 +13,16 @@ const RatingStars: React.FC<{ rating: number }> = ({ rating }) => {
     // 1-10 스케일을 0.5 단위로 표시 (5개 별 기준)
     const fullStars = Math.floor(rating / 2);
     const hasHalfStar = rating % 2 === 1;
-    
+
     return (
         <div className="flex">
             {[...Array(5)].map((_, i) => {
                 if (i < fullStars) {
                     // 꽉 찬 별
                     return (
-                        <Star 
-                            key={i} 
-                            className="h-4 w-4 fill-yellow-400 text-yellow-400" 
+                        <Star
+                            key={i}
+                            className="h-4 w-4 fill-yellow-400 text-yellow-400"
                         />
                     );
                 } else if (i === fullStars && hasHalfStar) {
@@ -40,9 +40,9 @@ const RatingStars: React.FC<{ rating: number }> = ({ rating }) => {
                 } else {
                     // 빈 별
                     return (
-                        <Star 
-                            key={i} 
-                            className="h-4 w-4 text-muted-foreground" 
+                        <Star
+                            key={i}
+                            className="h-4 w-4 text-muted-foreground"
                         />
                     );
                 }
@@ -113,7 +113,6 @@ const ThemeInfoGrid: React.FC<ThemeInfoGridProps> = ({
                         </div>
                         <div className="font-medium flex items-center">
                             <RatingStars rating={theme.difficulty} />
-                            <span className="ml-2">{theme.difficulty}/10</span>
                         </div>
                     </div>
                 </div>
