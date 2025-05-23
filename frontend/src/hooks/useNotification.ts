@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { useRecoilState } from 'recoil';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { notificationService } from '@/api/notificationService';
+import { notificationService } from '@/api/social/notifications';
 import {
   notificationCountState,
   recentNotificationsState,

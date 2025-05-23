@@ -4,8 +4,8 @@ import { Share2, X, Send, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { themesService } from "@/api/themesService";
-import { getProfileDetail, ProfileDetailDto } from "@/api/profile/detail";
+import { themesService } from '@/api/content';
+import { getProfileDetail, ProfileDetailDto } from '@/api/profile';
 import { CrimesceneThemeSummeryDto } from "@/api/profile/themes";
 import {
     AlertDialog,
@@ -17,7 +17,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { gameHistoryService } from "@/api/gameHistoryService";
+import { gameHistoryService } from '@/api/game';
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 

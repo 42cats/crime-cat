@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { themesService } from '@/api/themesService';
+import { themesService } from '@/api/content';
 import { formatDateTime } from '@/utils/formatDateTime';
 import { Theme } from '@/lib/types';
 

@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, {
+    useState,
+    useEffect,
+    useCallback,
+    useRef,
+    useMemo,
+} from "react";
 import { v4 as uuidv4 } from "uuid";
 import { Button as UIButton } from "@/components/ui/button";
 import { SortableGroup } from "@/components/message-editor/SortableGroup";
@@ -7,25 +13,44 @@ import { GroupData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { fetchGroupsFromServer, saveData } from "@/api/messageButtonService";
+import {
+    fetchGroupsFromServer,
+    saveData,
+} from "@/api/misc/messageButtonService";
 import { useLocation, useParams } from "react-router-dom";
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, arrayMove, verticalListSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    SortableContext,
+    arrayMove,
+    verticalListSortingStrategy,
+    sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import {
+    restrictToVerticalAxis,
+    restrictToWindowEdges,
+} from "@dnd-kit/modifiers";
 import { ChannelProvider } from "@/contexts/ChannelContext";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 
 /**
@@ -36,7 +61,10 @@ const AUTO_SAVE_DELAY = 5000;
 const MessageButtonEditor: React.FC = () => {
     const location = useLocation();
     const params = useParams();
-    const state = location.state as { guildId?: string; guildName?: string } | null;
+    const state = location.state as {
+        guildId?: string;
+        guildName?: string;
+    } | null;
 
     // guildId, guildName 가져오기
     const guildId = useMemo(() => {
@@ -49,11 +77,7 @@ const MessageButtonEditor: React.FC = () => {
     }, [params.guildId, state]);
 
     const guildName = useMemo(() => {
-        return (
-            state?.guildName ||
-            sessionStorage.getItem("guildName") ||
-            ""
-        );
+        return state?.guildName || sessionStorage.getItem("guildName") || "";
     }, [state]);
 
     // 세션스토리지 동기화
@@ -94,9 +118,9 @@ const MessageButtonEditor: React.FC = () => {
             try {
                 // 그룹 정보 가져오기
                 const serverGroups = await fetchGroupsFromServer(guildId);
-                
+
                 if (!mounted) return;
-                
+
                 setGroups(
                     serverGroups.length > 0
                         ? serverGroups
@@ -124,7 +148,7 @@ const MessageButtonEditor: React.FC = () => {
     // 그룹 데이터 변경 감지 → 5초 뒤 자동 저장
     useEffect(() => {
         if (saveTimeout.current) clearTimeout(saveTimeout.current);
-        
+
         if (groups.length > 0) {
             saveTimeout.current = setTimeout(() => {
                 handleSave();
@@ -143,7 +167,7 @@ const MessageButtonEditor: React.FC = () => {
         // 중복 그룹 이름 검사
         const duplicateGroupNames = [];
         const groupNameMap = {};
-        
+
         for (const group of groups) {
             const normalizedName = group.name.trim().toLowerCase();
             if (groupNameMap[normalizedName]) {
@@ -152,19 +176,21 @@ const MessageButtonEditor: React.FC = () => {
                 groupNameMap[normalizedName] = true;
             }
         }
-        
+
         if (duplicateGroupNames.length > 0) {
-            toast.error(`중복된 그룹 이름이 있습니다: ${duplicateGroupNames.join(', ')}`);
+            toast.error(
+                `중복된 그룹 이름이 있습니다: ${duplicateGroupNames.join(", ")}`
+            );
             return;
         }
 
         // 각 그룹 내에서 버튼 이름 중복 검사
         const groupsWithDuplicateButtons = [];
-        
+
         for (const group of groups) {
             const buttonNameMap = {};
             const duplicateButtonNames = [];
-            
+
             for (const button of group.buttons) {
                 const normalizedButtonName = button.name.trim().toLowerCase();
                 if (buttonNameMap[normalizedButtonName]) {
@@ -173,20 +199,25 @@ const MessageButtonEditor: React.FC = () => {
                     buttonNameMap[normalizedButtonName] = true;
                 }
             }
-            
+
             if (duplicateButtonNames.length > 0) {
                 groupsWithDuplicateButtons.push({
                     groupName: group.name,
-                    buttonNames: duplicateButtonNames
+                    buttonNames: duplicateButtonNames,
                 });
             }
         }
-        
+
         if (groupsWithDuplicateButtons.length > 0) {
-            const errorMessages = groupsWithDuplicateButtons.map(item => 
-                `그룹 "${item.groupName}"에 중복된 버튼 이름이 있습니다: ${item.buttonNames.join(', ')}`
+            const errorMessages = groupsWithDuplicateButtons.map(
+                (item) =>
+                    `그룹 "${
+                        item.groupName
+                    }"에 중복된 버튼 이름이 있습니다: ${item.buttonNames.join(
+                        ", "
+                    )}`
             );
-            toast.error(errorMessages.join('\n'));
+            toast.error(errorMessages.join("\n"));
             return;
         }
 
@@ -220,19 +251,25 @@ const MessageButtonEditor: React.FC = () => {
 
     const isDuplicateName = useCallback(
         (id: string, name: string) =>
-            groups.some((g) => g.id !== id && g.name.trim().toLowerCase() === name.trim().toLowerCase()),
+            groups.some(
+                (g) =>
+                    g.id !== id &&
+                    g.name.trim().toLowerCase() === name.trim().toLowerCase()
+            ),
         [groups]
     );
-    
+
     // 그룹 내 버튼 이름 중복 검사 함수
     const isButtonNameDuplicate = useCallback(
         (groupId: string, buttonId: string, buttonName: string) => {
-            const group = groups.find(g => g.id === groupId);
+            const group = groups.find((g) => g.id === groupId);
             if (!group) return false;
-            
-            return group.buttons.some(b => 
-                b.id !== buttonId && 
-                b.name.trim().toLowerCase() === buttonName.trim().toLowerCase()
+
+            return group.buttons.some(
+                (b) =>
+                    b.id !== buttonId &&
+                    b.name.trim().toLowerCase() ===
+                        buttonName.trim().toLowerCase()
             );
         },
         [groups]
@@ -244,16 +281,18 @@ const MessageButtonEditor: React.FC = () => {
                 toast.error("같은 이름의 그룹이 이미 존재합니다.");
                 return false;
             }
-            
+
             // 버튼 추가 시 최대 버튼 개수(25개) 제한 확인
             if (updated.buttons) {
-                const group = groups.find(g => g.id === groupId);
+                const group = groups.find((g) => g.id === groupId);
                 if (group && updated.buttons.length > 25) {
-                    toast.error("디스코드 제한으로 인해 한 그룹당 최대 25개의 버튼만 추가할 수 있습니다.");
+                    toast.error(
+                        "디스코드 제한으로 인해 한 그룹당 최대 25개의 버튼만 추가할 수 있습니다."
+                    );
                     return false;
                 }
             }
-            
+
             setGroups((prev) =>
                 prev.map((g) => (g.id === groupId ? { ...g, ...updated } : g))
             );
@@ -266,7 +305,10 @@ const MessageButtonEditor: React.FC = () => {
         setGroups((prev) => prev.filter((g) => g.id !== groupId));
     }, []);
 
-    const initializeDefaultGroup = (order: number, guildId: string): GroupData => {
+    const initializeDefaultGroup = (
+        order: number,
+        guildId: string
+    ): GroupData => {
         const groupId = uuidv4();
         const buttonId = uuidv4();
         const contentId = uuidv4();
@@ -305,27 +347,29 @@ const MessageButtonEditor: React.FC = () => {
         }),
         [groups.length]
     );
-    
+
     const addButtonToGroup = useCallback(
         (groupId: string) => {
             // 그룹 찾기
-            const group = groups.find(g => g.id === groupId);
+            const group = groups.find((g) => g.id === groupId);
             if (!group) return;
-            
+
             // 최대 버튼 개수(25개) 제한 확인
             if (group.buttons.length >= 25) {
-                toast.error("디스코드 제한으로 인해 한 그룹당 최대 25개의 버튼만 추가할 수 있습니다.");
+                toast.error(
+                    "디스코드 제한으로 인해 한 그룹당 최대 25개의 버튼만 추가할 수 있습니다."
+                );
                 return;
             }
-            
+
             const newButtonId = uuidv4();
             const contentId = uuidv4();
-            
+
             // 새 버튼 이름 생성 (중복 방지)
             let baseName = "새버튼";
             let newButtonName = baseName;
             let counter = 1;
-            
+
             // 이미 같은 이름의 버튼이 있는지 확인하고 번호 붙이기
             while (isButtonNameDuplicate(groupId, newButtonId, newButtonName)) {
                 newButtonName = `${baseName}${counter}`;
@@ -349,8 +393,8 @@ const MessageButtonEditor: React.FC = () => {
                 ],
             };
 
-            setGroups(prev => 
-                prev.map(group => {
+            setGroups((prev) =>
+                prev.map((group) => {
                     if (group.id === groupId) {
                         return {
                             ...group,
@@ -363,20 +407,24 @@ const MessageButtonEditor: React.FC = () => {
         },
         [guildId, groups, isButtonNameDuplicate]
     );
-    
+
     // 그룹 순서 변경
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
-        
+
         if (active.id !== over.id) {
             setGroups((items) => {
-                const oldIndex = items.findIndex(item => item.id === active.id);
-                const newIndex = items.findIndex(item => item.id === over.id);
-                
-                return arrayMove(items, oldIndex, newIndex).map((item, index) => ({
-                    ...item,
-                    index
-                }));
+                const oldIndex = items.findIndex(
+                    (item) => item.id === active.id
+                );
+                const newIndex = items.findIndex((item) => item.id === over.id);
+
+                return arrayMove(items, oldIndex, newIndex).map(
+                    (item, index) => ({
+                        ...item,
+                        index,
+                    })
+                );
             });
         }
     };
@@ -386,7 +434,9 @@ const MessageButtonEditor: React.FC = () => {
             <div className="flex justify-center items-center min-h-screen">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">데이터를 불러오는 중...</p>
+                    <p className="text-muted-foreground">
+                        데이터를 불러오는 중...
+                    </p>
                 </div>
             </div>
         );
@@ -403,7 +453,8 @@ const MessageButtonEditor: React.FC = () => {
                                 {guildName} 서버 메시지 매크로 에디터
                             </CardTitle>
                             <CardDescription>
-                                메시지를 버튼 하나로 쉽게 보낼 수 있도록 편집하세요.
+                                메시지를 버튼 하나로 쉽게 보낼 수 있도록
+                                편집하세요.
                             </CardDescription>
                         </CardHeader>
                         <CardFooter className="flex justify-between">
@@ -428,14 +479,17 @@ const MessageButtonEditor: React.FC = () => {
                                             disabled={isSaving}
                                             className={cn(
                                                 "inline-flex items-center gap-2 px-6 py-2 font-medium",
-                                                isSaving && "opacity-50 cursor-not-allowed"
+                                                isSaving &&
+                                                    "opacity-50 cursor-not-allowed"
                                             )}
                                         >
                                             <Save className="h-5 w-5" />
                                             {isSaving ? "저장 중…" : "저장하기"}
                                         </UIButton>
                                     </TooltipTrigger>
-                                    <TooltipContent>모든 변경사항을 저장합니다</TooltipContent>
+                                    <TooltipContent>
+                                        모든 변경사항을 저장합니다
+                                    </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
                         </CardFooter>
@@ -446,10 +500,13 @@ const MessageButtonEditor: React.FC = () => {
                         sensors={sensors}
                         collisionDetection={closestCenter}
                         onDragEnd={handleDragEnd}
-                        modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}
+                        modifiers={[
+                            restrictToVerticalAxis,
+                            restrictToWindowEdges,
+                        ]}
                     >
                         <SortableContext
-                            items={groups.map(group => group.id)}
+                            items={groups.map((group) => group.id)}
                             strategy={verticalListSortingStrategy}
                         >
                             <div className="space-y-6">
@@ -461,10 +518,12 @@ const MessageButtonEditor: React.FC = () => {
                                         onChange={handleGroupChange}
                                         onRemove={handleGroupRemove}
                                         onButtonAdd={addButtonToGroup}
-                                        isButtonNameDuplicate={isButtonNameDuplicate}
+                                        isButtonNameDuplicate={
+                                            isButtonNameDuplicate
+                                        }
                                     />
                                 ))}
-                                
+
                                 {/* 그룹 추가 버튼 */}
                                 <div className="flex justify-center mt-8">
                                     <UIButton

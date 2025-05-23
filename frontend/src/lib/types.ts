@@ -22,7 +22,7 @@ export interface GuildDto {
     createdAt: string; // ISO 8601 문자열 (LocalDateTime → string)
 }
 
-export type ThemeType =
+export type ThemeTypes =
     | "ESCAPE_ROOM"
     | "CRIMESCENE"
     | "REALWORLD"

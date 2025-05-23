@@ -1,4 +1,4 @@
-import { PermissionWithStatus } from "@/api/permissionService";
+import { PermissionWithStatus } from '@/api/auth';
 
 // 만료일까지 남은 일수 계산
 export const getDaysUntilExpiry = (expiredDate: string) => {

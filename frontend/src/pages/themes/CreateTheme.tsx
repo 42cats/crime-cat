@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ThemeForm from '@/components/themes/ThemeForm';
 import { useAuth } from '@/hooks/useAuth';
-import { themesService } from '@/api/themesService';
+import { themesService } from '@/api/content';
 import { ResizeMode } from '@/utils/imageCompression';
 
 const CreateTheme: React.FC = () => {

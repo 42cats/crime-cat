@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { GameRecordAcceptDto } from '@/api/notificationService';
+import { GameRecordAcceptDto } from '@/api/social/notifications';
 import {
   Dialog,
   DialogContent,

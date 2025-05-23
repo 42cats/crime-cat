@@ -3,8 +3,15 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { UserPostDto, userPostService } from "@/api/posts/postService";
-import { getProfileDetail, ProfileDetailDto } from "@/api/profile/detail";
+import { UserPostDto, userPostService } from "@/api/posts";
+import { getProfileDetail, ProfileDetailDto } from "@/api/profile";
+import {
+    followUser,
+    unfollowUser,
+    isFollowing,
+    getFollowerCount,
+    getFollowingCount,
+} from "@/api/social/follow/index";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -17,16 +24,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Loader2 } from "lucide-react";
-import PostActions from "@/components/sns/common/PostActions";
 import DeleteConfirmDialog from "@/components/sns/common/DeleteConfirmDialog";
 import PostEditModal from "@/components/sns/common/PostEditModal";
 
 // 포스트 상세 레이아웃 컴포넌트 임포트
-import {
-    MobilePostLayout,
-    DesktopPostLayout,
-    VerticalPostLayout,
-} from "@/components/profile/post-detail";
+import { VerticalPostLayout } from "@/components/profile/post-detail";
 import ProfileDetailModal from "@/components/profile/ProfileDetailModal";
 
 interface PostDetailModalProps {
@@ -228,8 +230,14 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
     // 프로필 클릭 핸들러
     const handleProfileClick = (authorId: string) => {
+        console.log("프로필 클릭됨:", authorId);
+        console.log("현재 유저:", user);
+        console.log("작성자 권한 확인:", user?.id === post?.authorId);
+
         setSelectedUserId(authorId);
         setIsProfileModalOpen(true);
+
+        console.log("프로필 모달 상태:", isProfileModalOpen);
     };
 
     // 로그인 필요 핸들러
@@ -244,7 +252,14 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
     // 수정 핸들러
     const handleEdit = () => {
+        console.log("수정 버튼 클릭됨");
         setShowEditModal(true);
+    };
+
+    // 삭제 버튼 클릭 핸들러
+    const handleDeleteButtonClick = () => {
+        console.log("삭제 버튼 클릭됨");
+        setShowDeleteDialog(true);
     };
 
     // 수정 성공 핸들러
@@ -321,6 +336,9 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 onOpenChange={(open) => !open && handleClose()}
             >
                 <DialogContent className="max-w-4xl w-[95%] md:w-full bg-white rounded-lg p-0 overflow-hidden">
+                    <DialogTitle className="sr-only">
+                        게시물 상세 보기
+                    </DialogTitle>
                     <div className="flex items-center justify-center h-64">
                         <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
@@ -351,6 +369,9 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 onOpenChange={(open) => !open && handleClose()}
             >
                 <DialogContent className="max-w-md">
+                    <DialogTitle className="sr-only">
+                        게시물 상세 보기
+                    </DialogTitle>
                     {errorContent}
                 </DialogContent>
             </Dialog>
@@ -376,15 +397,6 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                 게시물 상세
                             </h1>
                         </div>
-
-                        {/* 작성자 권한이 있을 때 수정/삭제 버튼 */}
-                        {isAuthor && (
-                            <PostActions
-                                postId={post.postId}
-                                onEdit={handleEdit}
-                                onDelete={() => setShowDeleteDialog(true)}
-                            />
-                        )}
                     </div>
 
                     {/* 세로형 레이아웃으로 표시 */}
@@ -399,7 +411,9 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                         handleLoginRequired={handleLoginRequired}
                         userId={user?.id}
                         onProfileClick={handleProfileClick}
-                        isAuthor={isAuthenticated}
+                        onEdit={handleEdit}
+                        onDelete={handleDeleteButtonClick}
+                        isAuthor={user?.id === post.authorId}
                     />
                 </div>
             </>
@@ -414,6 +428,9 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 onOpenChange={(open) => !open && handleClose()}
             >
                 <DialogContent className="max-w-4xl w-[95%] md:w-full bg-white rounded-lg p-0 overflow-hidden">
+                    <DialogTitle className="sr-only">
+                        게시물 상세 보기
+                    </DialogTitle>
                     <div className="h-[85vh] md:h-[80vh] overflow-y-auto">
                         {/* 세로형 레이아웃 사용 */}
                         <VerticalPostLayout
@@ -427,7 +444,9 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                             handleLoginRequired={handleLoginRequired}
                             userId={user?.id}
                             onProfileClick={handleProfileClick}
-                            isAuthor={isAuthenticated}
+                            onEdit={handleEdit}
+                            onDelete={handleDeleteButtonClick}
+                            isAuthor={user?.id === post.authorId}
                         />
                     </div>
                 </DialogContent>
@@ -478,14 +497,16 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 />
             )}
 
-            {/* 프로필 모달 */}
-            {selectedUserId && (
-                <ProfileDetailModal
-                    userId={selectedUserId}
-                    open={isProfileModalOpen}
-                    onOpenChange={setIsProfileModalOpen}
-                />
-            )}
+            {/* 프로필 모달 - 항상 렌더링하고 open 값으로 제어 */}
+            <ProfileDetailModal
+                userId={selectedUserId || ""}
+                open={isProfileModalOpen && !!selectedUserId}
+                onOpenChange={(open) => {
+                    console.log("프로필 모달 상태 변경:", open);
+                    setIsProfileModalOpen(open);
+                    if (!open) setSelectedUserId(null);
+                }}
+            />
         </>
     );
 };

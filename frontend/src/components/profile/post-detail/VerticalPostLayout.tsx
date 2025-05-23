@@ -8,8 +8,8 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PostCommentList } from "../post-comments";
-import { UserPostDto } from "@/api/posts/postService";
-import { ProfileDetailDto } from "@/api/profile/detail";
+import { UserPostDto } from '@/api/posts';
+import { ProfileDetailDto } from '@/api/profile';
 import PostInfoContent from "./PostInfoContent";
 import PostAuthorInfo from "@/components/sns/common/PostAuthorInfo";
 import PostPrivacyBadge from "@/components/sns/common/PostPrivacyBadge";
@@ -59,16 +59,18 @@ const VerticalPostLayout: React.FC<VerticalPostLayoutProps> = ({
                                     src={post.authorAvatarUrl}
                                     alt={post.authorNickname}
                                     className="w-10 h-10 rounded-full cursor-pointer"
-                                    onClick={() =>
-                                        onProfileClick?.(post.authorId)
-                                    }
+                                    onClick={() => {
+                                        console.log('프로필 이미지 클릭됨', post.authorId);
+                                        onProfileClick?.(post.authorId);
+                                    }}
                                 />
                             ) : (
                                 <div
                                     className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center cursor-pointer"
-                                    onClick={() =>
-                                        onProfileClick?.(post.authorId)
-                                    }
+                                    onClick={() => {
+                                        console.log('기본 프로필 이미지 클릭됨', post.authorId);
+                                        onProfileClick?.(post.authorId);
+                                    }}
                                 >
                                     <span className="text-primary font-medium">
                                         {post.authorNickname
@@ -85,9 +87,10 @@ const VerticalPostLayout: React.FC<VerticalPostLayoutProps> = ({
                                 <div className="flex items-center space-x-2">
                                     <span
                                         className="font-semibold text-sm cursor-pointer hover:underline"
-                                        onClick={() =>
-                                            onProfileClick?.(post.authorId)
-                                        }
+                                        onClick={() => {
+                                            console.log('프로필 이름 클릭됨', post.authorId);
+                                            onProfileClick?.(post.authorId);
+                                        }}
                                     >
                                         {post.authorNickname}
                                     </span>
@@ -120,12 +123,18 @@ const VerticalPostLayout: React.FC<VerticalPostLayoutProps> = ({
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={onEdit}>
+                                            <DropdownMenuItem onClick={() => {
+                                                console.log('수정 드롭다운 메뉴 클릭됨');
+                                                onEdit && onEdit();
+                                            }}>
                                                 <Edit className="h-4 w-4 mr-2" />
                                                 수정
                                             </DropdownMenuItem>
                                             <DropdownMenuItem
-                                                onClick={onDelete}
+                                                onClick={() => {
+                                                    console.log('삭제 드롭다운 메뉴 클릭됨');
+                                                    onDelete && onDelete();
+                                                }}
                                                 className="text-destructive focus:text-destructive"
                                             >
                                                 <Trash2 className="h-4 w-4 mr-2" />

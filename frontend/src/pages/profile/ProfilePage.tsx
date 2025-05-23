@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getProfileDetail, ProfileDetailDto } from "@/api/profile/detail";
+import { getProfileDetail, ProfileDetailDto } from "@/api/profile";
 import {
     getFollowerCount,
     getFollowingCount,
     isFollowing,
     followUser,
     unfollowUser,
-} from "@/api/follow";
+} from "@/api/social/follow/index";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileBio from "@/components/profile/ProfileBio";
 import ProfileThemeGrid from "@/components/profile/ProfileThemeGrid";

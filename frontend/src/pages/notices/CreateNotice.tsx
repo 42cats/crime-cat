@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import NoticeForm from '@/components/notices/NoticeForm';
-import { noticesService } from '@/api/noticesService';
+import { noticesService } from '@/api/content';
 import { NoticeInput } from '@/lib/types';
 
 const CreateNotice: React.FC = () => {

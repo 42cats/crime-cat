@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -182,22 +182,42 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
     return Math.sqrt(dx * dx + dy * dy);
   };
 
-  // 휠 이벤트 핸들러
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
+  // 휠 이벤트 처리를 위한 참조
+  const viewerRef = useRef<HTMLDivElement>(null);
+
+  // 휠 이벤트 리스너 추가
+  useEffect(() => {
+    const element = viewerRef.current;
+    if (!element) return;
+
+    const handleWheelEvent = (e: WheelEvent) => {
+      e.preventDefault();
+      const delta = e.deltaY * -0.01;
+      const newScale = Math.max(0.5, Math.min(5, scale + delta));
+      setScale(newScale);
+    };
+
+    // passive: false로 이벤트 리스너 추가
+    element.addEventListener('wheel', handleWheelEvent, { passive: false });
     
-    // 휠을 위로 올리면 확대, 아래로 내리면 축소
-    const delta = e.deltaY * -0.01;
-    const newScale = Math.max(0.5, Math.min(5, scale + delta));
-    setScale(newScale);
-  };
+    return () => {
+      element.removeEventListener('wheel', handleWheelEvent);
+    };
+  }, [scale]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         className="max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh] p-0 bg-transparent border-0 shadow-none"
-        closeButton={false}
+        aria-labelledby="image-viewer-title"
+        aria-describedby="image-viewer-description"
       >
+        <DialogTitle id="image-viewer-title" className="sr-only">
+          이미지 뷰어
+        </DialogTitle>
+        <div id="image-viewer-description" className="sr-only">
+          이미지를 크게 보고 확대/축소할 수 있는 뷰어입니다. 키보드 화살표로 이미지를 넘기고, +/- 키를 사용하여 확대/축소할 수 있습니다.
+        </div>
         <div className="relative w-full h-full bg-black/90 flex items-center justify-center overflow-hidden">
           {/* 닫기 버튼 */}
           <Button
@@ -239,6 +259,7 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
           
           {/* 이미지 뷰어 */}
           <div 
+            ref={viewerRef}
             className="w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -253,7 +274,6 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
               handleTouchMove(e);
             }}
             onTouchEnd={handleTouchEnd}
-            onWheel={handleWheel}
           >
             <img
               ref={imageRef}

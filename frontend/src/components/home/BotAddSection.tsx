@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { statsService } from "@/api/statsService";
+import { statsService } from '@/api/stats';
 import { Skeleton } from "@/components/ui/skeleton";
 
 const container = {

@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { Notification, NotificationType } from "@/types/notification";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { notificationService } from "@/api/notificationService";
+import { notificationService } from '@/api/social/notifications';
 import { toast } from "sonner";
 
 interface NotificationDropdownProps {

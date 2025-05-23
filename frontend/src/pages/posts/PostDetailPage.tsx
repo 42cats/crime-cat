@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { userPostService, UserPostDto } from "@/api/posts/postService";
-import { authService } from "@/api/authService";
+import { userPostService, UserPostDto } from '@/api/posts';
+import { authService } from '@/api/auth';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import VerticalPostLayout from "@/components/profile/post-detail/VerticalPostLayout";

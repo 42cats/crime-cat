@@ -4,10 +4,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageTransition from "@/components/PageTransition";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/hooks/useAuth";
-import { themesService } from "@/api/themesService";
-import { gameHistoryService } from "@/api/gameHistoryService";
-import { teamsService } from "@/api/teamsService";
-import { UserPostDto } from "@/api/posts/postService";
+import { themesService } from '@/api/content';
+import { gameHistoryService } from '@/api/game';
+import { teamsService } from '@/api/guild';
+import { UserPostDto } from '@/api/posts';
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     ThemeHeader,

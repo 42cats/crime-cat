@@ -5,7 +5,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { UserPostDto, userPostService } from "@/api/posts/postService";
+import { UserPostDto, userPostService } from '@/api/posts';
 import PostEditForm, { PostEditData } from "./PostEditForm";
 import { toast } from "sonner";
 

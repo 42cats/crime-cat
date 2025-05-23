@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { authService } from "@/api/authService";
+import { authService } from '@/api/auth';
 import { Guild } from "@/lib/types";
 import { Server } from "lucide-react";
 

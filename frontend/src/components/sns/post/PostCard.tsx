@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { UserPostDto, userPostService } from "@/api/posts/postService";
+import { UserPostDto, userPostService } from '@/api/posts';
 import {
     Heart,
     MessageCircle,
@@ -26,6 +26,8 @@ import {
     AlertDialogCancel,
     AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+
+// Dialog 관련 import는 현재 사용하지 않으므로 제거
 
 interface PostCardProps {
     post: UserPostDto;
@@ -286,10 +288,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange, onPostClick }) 
                 open={showLoginDialog}
                 onOpenChange={setShowLoginDialog}
             >
-                <AlertDialogContent>
+                <AlertDialogContent aria-labelledby="login-dialog-title" aria-describedby="login-dialog-description">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
-                        <AlertDialogDescription>
+                        <AlertDialogTitle id="login-dialog-title">로그인이 필요합니다</AlertDialogTitle>
+                        <AlertDialogDescription id="login-dialog-description">
                             이 기능을 사용하려면 로그인이 필요합니다. 로그인
                             페이지로 이동하시겠습니까?
                         </AlertDialogDescription>

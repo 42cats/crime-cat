@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import ThemeForm from '@/components/themes/ThemeForm';
-import { themesService } from '@/api/themesService';
+import { themesService } from '@/api/content';
 import { Theme } from '@/lib/types';
 import { ResizeMode } from '@/utils/imageCompression';
 

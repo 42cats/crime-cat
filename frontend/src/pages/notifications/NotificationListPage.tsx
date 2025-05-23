@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { notificationService } from "@/api/notificationService";
+import { notificationService } from '@/api/social/notifications';
 import { NotificationItem } from "@/components/NotificationItem";
 import { SystemNotificationItem } from "@/components/notification/SystemNotificationItem";
 import { GameRecordNotificationItem } from "@/components/notification/GameRecordNotificationItem";

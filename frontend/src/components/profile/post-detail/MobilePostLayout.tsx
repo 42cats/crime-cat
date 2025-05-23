@@ -1,5 +1,12 @@
 import React from "react";
-import { Heart, MessageSquare, Share2, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import {
+    Heart,
+    MessageSquare,
+    Share2,
+    MoreHorizontal,
+    Edit,
+    Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -9,8 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostCommentList } from "../post-comments";
-import { UserPostDto } from "@/api/posts/postService";
-import { ProfileDetailDto } from "@/api/profile/detail";
+import { UserPostDto } from '@/api/posts';
+import { ProfileDetailDto } from '@/api/profile';
 import PostInfoContent from "./PostInfoContent";
 
 interface MobilePostLayoutProps {
@@ -69,7 +76,7 @@ const MobilePostLayout: React.FC<MobilePostLayoutProps> = ({
                                 className="w-10 h-10 rounded-full object-cover"
                             />
                         </div>
-                        
+
                         {/* 작성자 정보 및 더보기 버튼 */}
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
@@ -81,29 +88,36 @@ const MobilePostLayout: React.FC<MobilePostLayoutProps> = ({
                                         •
                                     </span>
                                     <span className="text-xs text-muted-foreground">
-                                        {post.createdAt && new Date(post.createdAt).toLocaleDateString('ko-KR', {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        })}
+                                        {post.createdAt &&
+                                            new Date(
+                                                post.createdAt
+                                            ).toLocaleDateString("ko-KR", {
+                                                month: "short",
+                                                day: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                            })}
                                     </span>
                                 </div>
-                                
+
                                 {/* 작성자 권한이 있을 때만 드롭다운 메뉴 표시 */}
                                 {isAuthor && (
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 ml-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 ml-2"
+                                            >
                                                 <MoreHorizontal className="h-5 w-5" />
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem onClick={onEdit}>
                                                 <Edit className="h-4 w-4 mr-2" />
-                                                수정
+                                                수정b
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem 
+                                            <DropdownMenuItem
                                                 onClick={onDelete}
                                                 className="text-destructive focus:text-destructive"
                                             >
@@ -114,7 +128,7 @@ const MobilePostLayout: React.FC<MobilePostLayoutProps> = ({
                                     </DropdownMenu>
                                 )}
                             </div>
-                            
+
                             {/* 위치 정보 */}
                             {post.locationName && (
                                 <div className="text-xs text-muted-foreground mt-1">

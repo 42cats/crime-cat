@@ -1,6 +1,6 @@
 import { useRecoilState } from "recoil";
 import { userState, isLoadingState } from "@/atoms/auth";
-import { authService } from "@/api/authService";
+import { authService } from '@/api/auth';
 import { isUser } from "@/utils/guard";
 import { UserRole } from "@/lib/types";
 

@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/useToast";
 import {
     permissionService,
     PermissionWithStatus,
-} from "@/api/permissionService";
+} from '@/api/auth';
 import { ShoppingCart, Clock, Crown, Package } from "lucide-react";
 import { UTCToKSTMultiline } from "@/lib/UTCToKSTMultiline";
 import { MobilePermissionCard } from "./MobilePermissionCard";

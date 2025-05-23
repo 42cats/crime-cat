@@ -2,7 +2,7 @@ import React from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageTransition from "@/components/PageTransition";
-import { noticesService } from "@/api/noticesService";
+import { noticesService } from '@/api/content';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Share2, Edit, Trash } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";

@@ -16,7 +16,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Gift, CheckCircle, Copy } from "lucide-react";
-import { couponService } from "@/api/couponService";
+import { couponService } from "@/api/misc/couponService";
 import { useToast } from "@/hooks/useToast";
 import { UserPermissionCard } from "@/components/UserPermissionCard";
 import { UTCToKST } from "@/lib/dateFormat";

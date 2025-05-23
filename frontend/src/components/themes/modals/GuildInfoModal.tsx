@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
-import { guildsService } from "@/api/guildsService";
+import { guildsService } from '@/api/guild';
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { UTCToKST } from "@/lib/dateFormat";
 

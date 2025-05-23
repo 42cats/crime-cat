@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Place } from '@/lib/types';
-import { naverMapService } from '@/api/naverMapService';
+import { naverMapService } from '@/api/external';
 
 interface LocalSearchModalProps {
   onSelect: (place: Place) => void;

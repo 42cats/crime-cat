@@ -3,7 +3,7 @@ import {
     userPostService,
     UserPostGalleryDto,
     UserPostDto,
-} from "@/api/posts/postService";
+} from '@/api/posts';
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/hooks/useAuth";
 import PostGrid from "@/components/common/PostGrid";
