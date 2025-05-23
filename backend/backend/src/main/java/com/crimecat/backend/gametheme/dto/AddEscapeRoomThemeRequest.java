@@ -71,6 +71,26 @@ public class AddEscapeRoomThemeRequest extends AddGameThemeRequest {
     private List<EscapeRoomLocation> locations;
 
     /**
+     * 홈페이지 URL (선택사항)
+     */
+    @Pattern(
+        regexp = "^(https?://).*$|^$", 
+        message = "홈페이지 URL은 http:// 또는 https://로 시작해야 합니다."
+    )
+    @Size(max = 500, message = "홈페이지 URL은 500자 이하여야 합니다.")
+    private String homepageUrl;
+
+    /**
+     * 예약 페이지 URL (선택사항)
+     */
+    @Pattern(
+        regexp = "^(https?://).*$|^$", 
+        message = "예약 페이지 URL은 http:// 또는 https://로 시작해야 합니다."
+    )
+    @Size(max = 500, message = "예약 페이지 URL은 500자 이하여야 합니다.")
+    private String reservationUrl;
+
+    /**
      * 추가 정보 (확장용)
      */
     private Map<String, Object> extra;
