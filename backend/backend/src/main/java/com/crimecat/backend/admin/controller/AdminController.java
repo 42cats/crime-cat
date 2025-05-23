@@ -53,7 +53,7 @@ public class AdminController {
         // 현재 인증된 사용자가 본인의 역할을 변경하려는 경우 방지
         WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
         if (currentUser.getId().equals(request.getUserId())) {
-            throw ErrorStatus.INVALID_REQUEST.asException();
+            throw ErrorStatus.INVALID_REQUEST.asControllerException();
         }
         
         WebUserResponse updatedUser = webUserService.changeUserRole(request.getUserId(), request.getNewRole());
@@ -95,7 +95,7 @@ public class AdminController {
             
             return ResponseEntity.ok(savedUser.getPoint());
         } catch (IllegalStateException e) {
-            throw ErrorStatus.INVALID_REQUEST.asException();
+            throw ErrorStatus.INVALID_REQUEST.asControllerException();
         }
     }
     
@@ -110,7 +110,7 @@ public class AdminController {
         // 현재 인증된 사용자가 본인을 차단하려는 경우 방지
         WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
         if (currentUser.getId().equals(userId)) {
-            throw ErrorStatus.INVALID_REQUEST.asException();
+            throw ErrorStatus.INVALID_REQUEST.asControllerException();
         }
         
         WebUserResponse blockedUser = webUserService.blockUser(userId);
@@ -128,7 +128,7 @@ public class AdminController {
         // 현재 인증된 사용자가 본인을 차단하려는 경우 방지
         WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
         if (currentUser.getId().equals(request.getUserId())) {
-            throw ErrorStatus.INVALID_REQUEST.asException();
+            throw ErrorStatus.INVALID_REQUEST.asControllerException();
         }
         
         WebUserResponse blockedUser = webUserService.blockUserWithReason(request);
