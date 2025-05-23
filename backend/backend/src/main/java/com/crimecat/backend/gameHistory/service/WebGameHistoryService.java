@@ -213,10 +213,33 @@ public class WebGameHistoryService {
 		gameHistoryQueryService.save(gameHistory);
 	}
 
-	public CheckPlayResponseDto checkHasPlayed(UUID gameThemeId,WebUser currentWebUser) {
+	/**
+	 * 게임 테마에 대해 사용자가 플레이했는지 혹은 제작팀 멤버인지 확인
+	 *
+	 * @param gameThemeId 확인할 게임 테마 ID
+	 * @param currentWebUser 현재 사용자
+	 * @return 플레이 여부 혹은 제작팀 멤버 여부
+	 */
+	public CheckPlayResponseDto checkHasPlayed(UUID gameThemeId, WebUser currentWebUser) {
+		// 1. 게임 테마 조회
+		GameTheme gameTheme = gameThemeRepository.findById(gameThemeId)
+				.orElseThrow(ErrorStatus.INVALID_ACCESS::asServiceException);
+		
+		// 2. 범죄현장 테마인 경우 제작팀 멤버 여부 확인
+		if (gameTheme instanceof CrimesceneTheme crimesceneTheme) {
+			// 스트림 API를 사용하여 제작팀 멤버 확인
+			boolean isMember = crimesceneTheme.getTeam().getMembers().stream()
+					.anyMatch(member -> member.getWebUserId().equals(currentWebUser.getId()));
+			
+			if (isMember) {
+				return CheckPlayResponseDto.from(true);
+			}
+		}
+		
+		// 3. 이미 플레이했는지 확인
 		boolean hasPlayed = gameHistoryRepository.existsByUser_WebUser_IdAndGameTheme_Id(
-				gameThemeId, currentWebUser.getUser()
-						.getId());
+				currentWebUser.getId(), gameThemeId);
+				
 		return CheckPlayResponseDto.from(hasPlayed);
 	}
 
