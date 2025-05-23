@@ -141,10 +141,23 @@ public class MakerTeamService {
             return deletedMembers;
         }
         List<MakerTeamMember> members = team.getMembers();
+        // 팀에 있는 리더 수 확인
+        long leaderCount = members.stream().filter(MakerTeamMember::isLeader).count();
+        
         for (MakerTeamMember member : members) {
-            if (deletedMembers.contains(member.getId().toString()) && !member.isLeader()) {
-                teamMemberRepository.delete(member);
-                deletedMembers.remove(member.getId().toString());
+            if (deletedMembers.contains(member.getId().toString())) {
+                // 리더인 경우 처리
+                if (member.isLeader()) {
+                    // 리더가 2명 이상인 경우에만 삭제 허용
+                    if (leaderCount > 1) {
+                        teamMemberRepository.delete(member);
+                        deletedMembers.remove(member.getId().toString());
+                    }
+                } else {
+                    // 리더가 아닌 멤버는 그냥 삭제
+                    teamMemberRepository.delete(member);
+                    deletedMembers.remove(member.getId().toString());
+                }
             }
         }
         return deletedMembers;
