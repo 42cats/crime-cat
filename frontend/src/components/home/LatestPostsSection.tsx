@@ -31,7 +31,7 @@ const BoardSection = ({
     });
 
     return (
-        <div>
+        <div className="flex flex-col h-full">
             <div className="flex items-center justify-between mb-2">
                 <h3 className="text-base font-semibold">{title}</h3>
                 <Button
@@ -44,21 +44,25 @@ const BoardSection = ({
                 </Button>
             </div>
 
-            <div className="glass p-3 rounded-lg min-h-[180px]">
+            <div className="glass p-4 rounded-lg min-h-[180px] flex-grow">
                 {isLoading ? (
-                    <p className="text-sm text-muted-foreground">
-                        불러오는 중...
-                    </p>
+                    <div className="flex items-center justify-center h-full">
+                        <p className="text-sm text-muted-foreground">
+                            불러오는 중...
+                        </p>
+                    </div>
                 ) : isError ? (
-                    <p className="text-sm text-red-500">
-                        게시글을 불러오지 못했습니다.
-                    </p>
+                    <div className="flex items-center justify-center h-full">
+                        <p className="text-sm text-red-500">
+                            게시글을 불러오지 못했습니다.
+                        </p>
+                    </div>
                 ) : posts?.length ? (
                     <ul className="space-y-2">
                         {posts.map((post) => (
                             <li
                                 key={post.id}
-                                className="border-b border-slate-700/20 pb-2 last:border-0 last:pb-0"
+                                className="group border-b border-slate-700/20 pb-2 last:border-0 last:pb-0 hover:bg-slate-800/5 transition-colors"
                             >
                                 <button
                                     className="text-left w-full hover:text-primary transition-colors"
@@ -68,25 +72,32 @@ const BoardSection = ({
                                         )
                                     }
                                 >
-                                    <h4 className="text-sm font-medium truncate">
-                                        {post.title}
-                                    </h4>
-                                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                                        <span>{post.summary}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                                        <span>제작 {post.teamName}</span>
+                                    <div className="flex flex-col">
+                                        <h4 className="text-sm font-medium truncate">
+                                            {post.title}
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                            {post.summary}
+                                        </p>
+                                        <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                                            <span>제작 {post.teamName}</span>
+                                            <span className="opacity-0 group-hover:opacity-100 transition-all duration-200 text-primary">
+                                                더보기
+                                            </span>
+                                        </div>
                                     </div>
                                 </button>
                             </li>
                         ))}
                     </ul>
                 ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                        {category === "CRIMESCENE"
-                            ? "게시글이 없습니다."
-                            : "준비 중입니다. 조금만 기다려주세요."}
-                    </p>
+                    <div className="flex items-center justify-center h-full">
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                            {category === "CRIMESCENE"
+                                ? "게시글이 없습니다."
+                                : "준비 중입니다. 조금만 기다려주세요."}
+                        </p>
+                    </div>
                 )}
             </div>
         </div>
