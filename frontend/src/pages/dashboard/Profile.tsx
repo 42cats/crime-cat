@@ -38,11 +38,14 @@ import { useProfileAPI } from "@/hooks/profile";
 import { ProfileUpdateParams } from "@/api/profile";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
+import { compressImageOnly, formatFileSize } from "@/utils/imageCompression";
+import { useToast } from "@/hooks/useToast";
 
 /** 프로필 관리 페이지 */
 const Profile: React.FC = () => {
     const { theme } = useTheme();
     const isDark = theme === "dark";
+    const { toast } = useToast();
 
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -71,6 +74,7 @@ const Profile: React.FC = () => {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+    const [isCompressing, setIsCompressing] = useState(false);
 
     const [showCropModal, setShowCropModal] = useState(false);
     const [showBadgeModal, setShowBadgeModal] = useState(false);
@@ -192,15 +196,48 @@ const Profile: React.FC = () => {
     const applyCroppedImage = async () => {
         const blob = await getCroppedImage();
         if (blob) {
-            const url = URL.createObjectURL(blob);
-            setCroppedImageUrl(url);
-            setShowCropModal(false);
-
-            // 크롭된 이미지를 File 객체로 변환
-            const file = new File([blob], "profile.jpg", {
-                type: "image/jpeg",
-            });
-            setAvatar(file);
+            try {
+                setIsCompressing(true);
+                
+                // 크롭된 이미지를 File 객체로 변환
+                const croppedFile = new File([blob], "profile.jpg", {
+                    type: "image/jpeg",
+                });
+                
+                // 이미지 압축 처리
+                const originalSize = croppedFile.size;
+                const compressionResult = await compressImageOnly(croppedFile, {
+                    maxSizeMB: 1,
+                    quality: 0.7
+                });
+                
+                // 압축 결과 정보 (클라이언트용)
+                console.log(`프로필 이미지 압축: ${formatFileSize(originalSize)} → ${formatFileSize(compressionResult.compressedSize)} (${compressionResult.compressionRate}% 감소)`);
+                
+                // 압축된 이미지 사용
+                const url = URL.createObjectURL(compressionResult.file);
+                setCroppedImageUrl(url);
+                setAvatar(compressionResult.file);
+                setShowCropModal(false);
+                
+                // 압축 성공 메시지
+                if (compressionResult.compressionRate > 5) { // 5% 이상 압축된 경우만 표시
+                    toast({
+                        title: "이미지 압축 완료",
+                        description: `이미지 크기가 ${compressionResult.compressionRate}% 감소되었습니다.`,
+                    });
+                }
+                
+            } catch (error) {
+                console.error('이미지 압축 오류:', error);
+                // 압축 실패 시 원본 사용
+                const url = URL.createObjectURL(blob);
+                setCroppedImageUrl(url);
+                setAvatar(new File([blob], "profile.jpg", { type: "image/jpeg" }));
+                setShowCropModal(false);
+            } finally {
+                setIsCompressing(false);
+            }
         }
     };
 

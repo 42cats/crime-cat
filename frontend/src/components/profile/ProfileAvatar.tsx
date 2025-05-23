@@ -3,16 +3,18 @@ import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserCircle, Camera } from "lucide-react";
+import { UserCircle, Camera, Loader2 } from "lucide-react";
 
 interface ProfileAvatarProps {
   croppedImageUrl: string | null;
   handleImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  isLoading?: boolean;
 }
 
 const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
   croppedImageUrl,
   handleImageChange,
+  isLoading = false,
 }) => {
   return (
     <motion.div
@@ -36,8 +38,13 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
           className="rounded-full absolute bottom-0 right-0 shadow-md"
           onClick={() => document.getElementById("profile-upload")?.click()}
           type="button"
+          disabled={isLoading}
         >
-          <Camera className="w-4 h-4" />
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Camera className="w-4 h-4" />
+          )}
         </Button>
         <Input
           id="profile-upload"

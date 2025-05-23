@@ -9,7 +9,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useToast } from "@/hooks/useToast";
 import PageTransition from "@/components/PageTransition";
 import { useLocation } from "react-router-dom";
-import { Star } from "lucide-react";
+import { Star, X, Loader2, Video } from "lucide-react";
 import CrimeSceneFields from "@/components/themes/type/CrimeSceneFields";
 import EscapeRoomFields from "@/components/themes/type/EscapeRoomFields";
 import MurderMysteryFields from "@/components/themes/type/MurderMysteryFields";
@@ -24,8 +24,13 @@ import {
     SelectContent,
     SelectItem,
 } from "@/components/ui/select";
-import { X, Loader2 } from "lucide-react";
-import { compressImage, isValidImageFile, formatFileSize } from "@/utils/imageCompression";
+import {
+    compressImage,
+    isValidImageFile,
+    formatFileSize,
+    ResizeMode,
+} from "@/utils/imageCompression";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface ThemeFormProps {
     mode: "create" | "edit";
@@ -35,9 +40,9 @@ interface ThemeFormProps {
     isLoading?: boolean;
     // 이미지 리사이징 관련 옵션
     imageOptions?: {
-        width?: number;        // 이미지 타겟 너비
-        height?: number;       // 이미지 타겟 높이
-        quality?: number;      // 이미지 품질 (0-1)
+        width?: number; // 이미지 타겟 너비
+        height?: number; // 이미지 타겟 높이
+        quality?: number; // 이미지 품질 (0-1)
         backgroundColor?: string; // 배경색 (기본값: 흰색)
     };
 }
@@ -53,6 +58,33 @@ const initialExtraFieldsMap = {
     ESCAPE_ROOM: { extra: {} },
     MURDER_MYSTERY: { extra: {} },
     REALWORLD: { extra: {} },
+};
+
+// URL에서 동영상 ID 추출 함수
+const extractVideoId = (url: string) => {
+    // YouTube URL 패턴
+    const youtubeMatch = url.match(
+        /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
+    );
+    if (youtubeMatch) {
+        return {
+            platform: "youtube",
+            id: youtubeMatch[1],
+            embedUrl: `https://www.youtube.com/embed/${youtubeMatch[1]}`,
+        };
+    }
+
+    // Vimeo URL 패턴
+    const vimeoMatch = url.match(/(?:vimeo\.com\/)([0-9]+)/);
+    if (vimeoMatch) {
+        return {
+            platform: "vimeo",
+            id: vimeoMatch[1],
+            embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}`,
+        };
+    }
+
+    return null;
 };
 
 const WritePreviewToggle = () => {
@@ -149,6 +181,9 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
         "") as keyof typeof initialExtraFieldsMap;
     const { toast } = useToast();
 
+    // 이미지 리사이징 모드 상태 추가
+    const [resizeMode, setResizeMode] = useState<ResizeMode>("fit");
+
     const [form, setForm] = useState({
         type: initialData.type || initialType || "CRIMESCENE",
         title: initialData.title || "",
@@ -213,6 +248,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
             didMountRef.current = true;
         }
     }, [form.type]);
+
     const { errors, validateField, validateWithErrors } = useFormValidator(
         (data: Record<string, any>) => {
             const newErrors: Record<string, string> = {};
@@ -332,8 +368,6 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
 
     const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
 
-    // isValidImageFile 함수는 utils/imageCompression.ts로 이동
-
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const resetFileInput = useCallback(() => {
@@ -363,62 +397,75 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
 
         try {
             setIsCompressing(true);
-            
+
             // 리사이징 옵션 확인
             const needsResize = imageOptions?.width && imageOptions?.height;
-            
+
             // 파일 크기가 2MB를 초과하거나 리사이징이 필요한 경우
             if (file.size > MAX_IMAGE_SIZE || needsResize) {
                 const toastMessage = needsResize
                     ? "이미지 리사이징 및 최적화 중"
                     : "이미지 압축 중";
-                    
+
                 toast({
                     title: toastMessage,
-                    description: "이미지를 처리하고 있습니다. 잠시만 기다려주세요.",
+                    description:
+                        "이미지를 처리하고 있습니다. 잠시만 기다려주세요.",
                 });
-                
+
                 // 압축 및 리사이징 옵션 설정
                 const compressionOptions = {
                     maxSizeMB: 1.9, // 2MB보다 약간 작게 설정
-                    quality: imageOptions?.quality || 0.6,
+                    quality: imageOptions?.quality || 0.8,
                     onProgress: (progress) => {
                         // 압축 진행 상태 처리 (필요시 상태 업데이트)
-                    }
+                    },
                 };
-                
+
                 // 리사이징 옵션 추가
                 if (needsResize) {
                     Object.assign(compressionOptions, {
                         targetWidth: imageOptions.width,
                         targetHeight: imageOptions.height,
-                        resizeMode: 'fit', // 항상 모든 내용이 보이도록 fit 모드 사용
-                        backgroundColor: imageOptions.backgroundColor || '#FFFFFF'
+                        resizeMode: resizeMode, // 사용자가 선택한 모드 사용
+                        backgroundColor:
+                            imageOptions.backgroundColor || "#FFFFFF",
                     });
                 }
-                
+
                 // 이미지 압축 및 리사이징 실행
-                const compressionResult = await compressImage(file, compressionOptions);
-                
+                const compressionResult = await compressImage(
+                    file,
+                    compressionOptions
+                );
+
                 // 압축 결과 저장
                 setImageStats({
                     originalSize: compressionResult.originalSize,
                     compressedSize: compressionResult.compressedSize,
-                    compressionRate: compressionResult.compressionRate
+                    compressionRate: compressionResult.compressionRate,
                 });
-                
+
                 // 압축된 이미지 사용
                 const previewURL = URL.createObjectURL(compressionResult.file);
                 setThumbnailFile(compressionResult.file);
                 setForm((prev) => ({ ...prev, thumbnail: previewURL }));
-                
+
                 // 압축 결과 알림
                 const resultMessage = needsResize
-                    ? `${formatFileSize(compressionResult.originalSize)} → ${formatFileSize(compressionResult.compressedSize)}`
-                    : `${formatFileSize(compressionResult.originalSize)} → ${formatFileSize(compressionResult.compressedSize)} (${compressionResult.compressionRate}% 감소)`;
-                
+                    ? `${formatFileSize(
+                          compressionResult.originalSize
+                      )} → ${formatFileSize(compressionResult.compressedSize)}`
+                    : `${formatFileSize(
+                          compressionResult.originalSize
+                      )} → ${formatFileSize(
+                          compressionResult.compressedSize
+                      )} (${compressionResult.compressionRate}% 감소)`;
+
                 toast({
-                    title: needsResize ? "이미지 리사이징 완료" : "이미지 최적화 완료",
+                    title: needsResize
+                        ? "이미지 리사이징 완료"
+                        : "이미지 최적화 완료",
                     description: resultMessage,
                 });
             } else {
@@ -429,7 +476,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                 setImageStats(null);
             }
         } catch (error) {
-            console.error('이미지 처리 중 오류:', error);
+            console.error("이미지 처리 중 오류:", error);
             toast({
                 title: "이미지 처리 실패",
                 description: "이미지를 처리하는 중 오류가 발생했습니다.",
@@ -439,6 +486,33 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
         } finally {
             setIsCompressing(false);
         }
+    };
+
+    // 동영상 삽입 명령어
+    const videoCommand = {
+        name: "video",
+        keyCommand: "video",
+        buttonProps: { "aria-label": "Insert video", title: "동영상 삽입" },
+        icon: <Video size={16} />,
+        execute: (state: any, api: any) => {
+            const url = prompt("YouTube 또는 Vimeo URL을 입력하세요:");
+            if (url) {
+                const videoInfo = extractVideoId(url.trim());
+                if (videoInfo) {
+                    const iframe = `<iframe 
+  width="560" 
+  height="315" 
+  src="${videoInfo.embedUrl}" 
+  frameborder="0" 
+  allowfullscreen
+  sandbox="allow-scripts allow-same-origin allow-presentation">
+</iframe>`;
+                    api.replaceSelection(iframe);
+                } else {
+                    alert("올바른 YouTube 또는 Vimeo URL을 입력해주세요.");
+                }
+            }
+        },
     };
 
     return (
@@ -544,7 +618,66 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                 {/* 썸네일 */}
                 <div>
                     <Label className="font-bold mb-1 block">썸네일</Label>
-                    
+
+                    {/* 이미지 리사이징 모드 선택 */}
+                    {imageOptions?.width && imageOptions?.height && (
+                        <div className="mb-4">
+                            <Label className="text-sm font-medium mb-2 block">
+                                이미지 표시 방식
+                            </Label>
+                            <RadioGroup
+                                value={resizeMode}
+                                onValueChange={(value) =>
+                                    setResizeMode(value as ResizeMode)
+                                }
+                                className="flex gap-6"
+                            >
+                                <div className="flex flex-col items-center gap-2">
+                                    {/* <div className="relative w-24 h-24 border rounded overflow-hidden flex items-center justify-center">
+                                        <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
+                                            Fit 모드
+                                        </div>
+                                    </div> */}
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="fit" id="fit" />
+                                        <Label
+                                            htmlFor="fit"
+                                            className="text-sm font-normal cursor-pointer"
+                                        >
+                                            전체 이미지 표시 (Fit)
+                                        </Label>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground max-w-[150px] text-center">
+                                        전체 이미지가 보이도록 여백을 추가합니다
+                                    </p>
+                                </div>
+                                <div className="flex flex-col items-center gap-2">
+                                    {/* <div className="relative w-24 h-24 border rounded overflow-hidden">
+                                        <div className="absolute inset-[-5px] bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
+                                            Cover 모드
+                                        </div>
+                                    </div> */}
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem
+                                            value="cover"
+                                            id="cover"
+                                        />
+                                        <Label
+                                            htmlFor="cover"
+                                            className="text-sm font-normal cursor-pointer"
+                                        >
+                                            꽉 채워 표시 (Cover)
+                                        </Label>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground max-w-[150px] text-center">
+                                        이미지 일부가 잘리더라도 공간을 꽉
+                                        채웁니다
+                                    </p>
+                                </div>
+                            </RadioGroup>
+                        </div>
+                    )}
+
                     {/* 압축 중 로딩 표시 */}
                     {isCompressing && (
                         <div className="flex items-center justify-center py-4 mb-2">
@@ -552,7 +685,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                             <span className="text-sm">이미지 최적화 중...</span>
                         </div>
                     )}
-                    
+
                     {/* 썸네일 미리보기 */}
                     {!isCompressing && form.thumbnail && (
                         <div className="mb-2 flex justify-center relative">
@@ -572,14 +705,17 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                             </div>
                         </div>
                     )}
-                    
+
+                    {/* 압축 정보 표시 */}
                     {imageStats && (
                         <div className="text-xs text-muted-foreground mb-2">
-                            <span className="font-medium">JPEG 최적화:</span> {formatFileSize(imageStats.originalSize)} → {formatFileSize(imageStats.compressedSize)} 
-                            ({imageStats.compressionRate}% 감소)
+                            <span className="font-medium">JPEG 최적화:</span>{" "}
+                            {formatFileSize(imageStats.originalSize)} →{" "}
+                            {formatFileSize(imageStats.compressedSize)}(
+                            {imageStats.compressionRate}% 감소)
                         </div>
                     )}
-                    
+
                     {/* 파일 입력 */}
                     <div className="space-y-2">
                         <Input
@@ -592,7 +728,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                         <p className="text-xs text-muted-foreground">
                             {imageOptions?.width && imageOptions?.height
                                 ? `이미지는 ${imageOptions.width}x${imageOptions.height} 크기로 자동 리사이징됩니다.`
-                                : '모든 이미지는 자동으로 최적화됩니다. 2MB 초과 시 JPEG 형식으로 변환됩니다.'}
+                                : "모든 이미지는 자동으로 최적화됩니다. 2MB 초과 시 JPEG 형식으로 변환됩니다."}
                         </p>
                     </div>
                 </div>
@@ -872,9 +1008,11 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                                         keyCommand: "toggle-preview",
                                         icon: <WritePreviewToggle />,
                                     },
+                                    videoCommand,
                                     ...commands.getCommands(),
                                 ]}
                                 extraCommands={[]}
+                                visibleDragBar={false}
                             />
                         </div>
                         {errors.content && (
