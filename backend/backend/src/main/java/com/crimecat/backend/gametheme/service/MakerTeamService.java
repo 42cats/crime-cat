@@ -167,6 +167,7 @@ public class MakerTeamService {
         UUID webUserId = AuthenticationUtil.getCurrentWebUserId();
         return new GetTeamsResponse(
                 teamMemberRepository.findByWebUserId(webUserId).stream()
+                        .filter(v -> !v.getTeam().isIndividual()) // 개인 팀은 제외하고 조회
                         .map(v -> TeamDto.from(v.getTeam()))
                         .toList()
         );

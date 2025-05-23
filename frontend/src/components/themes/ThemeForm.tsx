@@ -1012,7 +1012,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                                     ...commands.getCommands(),
                                 ]}
                                 extraCommands={[]}
-                                visibleDragBar={false}
+                                visibledragbar={false}
                             />
                         </div>
                         {errors.content && (
