@@ -4,6 +4,67 @@ export interface UserSetting {
     notifyByEmail: boolean;
     notifyByDiscord: boolean;
 }
+export interface AuthorDto {
+    id: string;
+    nickname: string;
+    avatarUrl: string | null;
+}
+
+export interface TeamDto {
+    id: string;
+    name: string;
+}
+
+export interface GuildDto {
+    snowflake: string;
+    name: string;
+    ownerSnowflake: string;
+    createdAt: string; // ISO 8601 문자열 (LocalDateTime → string)
+}
+
+export type ThemeType =
+    | "ESCAPE_ROOM"
+    | "CRIMESCENE"
+    | "REALWORLD"
+    | "MURDER_MYSTERY";
+
+/**
+ * 기본 테마 상세 타입
+ */
+export interface ThemeDetailType {
+    id: string;
+    title: string;
+    thumbnail: string;
+    summary: string;
+    recommendations: number;
+    views: number;
+    playCount: number;
+    author: AuthorDto | null;
+    playersMin: number;
+    playersMax: number;
+    playTimeMin: number;
+    playTimeMax: number;
+    price: number;
+    difficulty: number;
+    tags: string[];
+    content: string;
+    publicStatus: boolean;
+    createdAt: string;
+    updatedAt: string;
+    recommendationEnabled: boolean;
+    commentEnabled: boolean;
+    type: ThemeType;
+}
+
+/**
+ * 범죄현장 테마 상세 타입 (확장된 필드 포함)
+ */
+export interface CrimesceneThemeDetailType extends ThemeDetailType {
+    team: TeamDto | null;
+    guild: GuildDto | null;
+    guildSnowflake: string;
+    extra: Record<string, any>; // JSON 형태의 유동적 필드
+}
 
 export interface SocialLinks {
     instagram?: string;
