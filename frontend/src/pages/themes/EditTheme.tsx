@@ -46,6 +46,13 @@ const EditTheme: React.FC = () => {
       initialData={data}
       onSubmit={handleSubmit}
       isLoading={updateMutation.isPending}
+      imageOptions={{
+        // 테마 썸네일에 적합한 크기로 설정
+        width: 800,
+        height: 450,
+        quality: 0.8,
+        backgroundColor: '#FFFFFF'
+      }}
     />
   );
 };
