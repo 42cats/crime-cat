@@ -1,6 +1,9 @@
 package com.crimecat.backend.gametheme.specification;
 
 import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
+import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
+import com.crimecat.backend.gametheme.domain.EscapeRoomGenreTag;
+import com.crimecat.backend.gametheme.domain.EscapeRoomLocation;
 import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.domain.MakerTeam;
 import com.crimecat.backend.gametheme.domain.MakerTeamMember;
@@ -66,6 +69,25 @@ public class GameThemeSpecification {
                         criteriaBuilder.like(memberJoin.get("name"), pattern)
                 ));
             }
+            
+            // 방탈출 테마 전용 검색 (최적화된 JOIN 사용)
+            if (ThemeType.Values.ESCAPE_ROOM.equals(category)) {
+                Root<EscapeRoomTheme> escapeRoomThemeRoot = criteriaBuilder.treat(root, EscapeRoomTheme.class);
+                
+                // 장르 태그 검색 - 정규화된 테이블 JOIN (인덱스 활용)
+                Join<EscapeRoomTheme, EscapeRoomGenreTag> genreTagJoin = escapeRoomThemeRoot.join("genreTags", JoinType.LEFT);
+                predicates.add(criteriaBuilder.like(
+                    criteriaBuilder.lower(genreTagJoin.get("tagName")), 
+                    pattern.toLowerCase()
+                ));
+                
+                // 매장 위치 검색 - 정규화된 테이블 JOIN (인덱스 활용)
+                Join<EscapeRoomTheme, EscapeRoomLocation> locationJoin = escapeRoomThemeRoot.join("locations", JoinType.LEFT);
+                predicates.add(criteriaBuilder.or(
+                    criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("storeName")), pattern.toLowerCase()),
+                    criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address")), pattern.toLowerCase())
+                ));
+            }
             return criteriaBuilder.or(predicates.toArray(new Predicate[0]));
         };
     }
@@ -80,6 +102,80 @@ public class GameThemeSpecification {
                 );
             }
             return criteriaBuilder.between(root.get(type.min), range.getMin(), range.getMax());
+        };
+    }
+
+    /**
+     * 방탈출 테마의 장르 태그로 검색 (최적화된 JOIN)
+     */
+    public static Specification<GameTheme> hasGenreTag(String genreTag) {
+        return (root, query, criteriaBuilder) -> {
+            if (StringUtils.isEmpty(genreTag)) {
+                return criteriaBuilder.conjunction();
+            }
+            
+            Root<EscapeRoomTheme> escapeRoomThemeRoot = criteriaBuilder.treat(root, EscapeRoomTheme.class);
+            Join<EscapeRoomTheme, EscapeRoomGenreTag> genreTagJoin = escapeRoomThemeRoot.join("genreTags", JoinType.INNER);
+            
+            return criteriaBuilder.equal(
+                criteriaBuilder.lower(genreTagJoin.get("tagName")), 
+                genreTag.toLowerCase().trim()
+            );
+        };
+    }
+
+    /**
+     * 방탈출 테마의 매장명으로 검색 (최적화된 JOIN)
+     */
+    public static Specification<GameTheme> hasStoreName(String storeName) {
+        return (root, query, criteriaBuilder) -> {
+            if (StringUtils.isEmpty(storeName)) {
+                return criteriaBuilder.conjunction();
+            }
+            
+            Root<EscapeRoomTheme> escapeRoomThemeRoot = criteriaBuilder.treat(root, EscapeRoomTheme.class);
+            Join<EscapeRoomTheme, EscapeRoomLocation> locationJoin = escapeRoomThemeRoot.join("locations", JoinType.INNER);
+            
+            String pattern = String.format("%%%s%%", storeName.toLowerCase());
+            return criteriaBuilder.like(
+                criteriaBuilder.lower(locationJoin.get("storeName")), 
+                pattern
+            );
+        };
+    }
+
+    /**
+     * 방탈출 테마의 별점 범위 검색 (공포도, 장치비중, 활동도)
+     */
+    public static Specification<GameTheme> hasStarRatingRange(String ratingType, Integer minRating, Integer maxRating) {
+        return (root, query, criteriaBuilder) -> {
+            if (StringUtils.isEmpty(ratingType) || minRating == null || maxRating == null) {
+                return criteriaBuilder.conjunction();
+            }
+            
+            Root<EscapeRoomTheme> escapeRoomThemeRoot = criteriaBuilder.treat(root, EscapeRoomTheme.class);
+            
+            // ratingType: "horrorLevel", "deviceRatio", "activityLevel"
+            Path<Integer> ratingPath = escapeRoomThemeRoot.get(ratingType);
+            
+            return criteriaBuilder.and(
+                criteriaBuilder.isNotNull(ratingPath),
+                criteriaBuilder.between(ratingPath, minRating, maxRating)
+            );
+        };
+    }
+
+    /**
+     * 방탈출 테마의 운영 상태로 검색
+     */
+    public static Specification<GameTheme> isOperating(Boolean isOperating) {
+        return (root, query, criteriaBuilder) -> {
+            if (isOperating == null) {
+                return criteriaBuilder.conjunction();
+            }
+            
+            Root<EscapeRoomTheme> escapeRoomThemeRoot = criteriaBuilder.treat(root, EscapeRoomTheme.class);
+            return criteriaBuilder.equal(escapeRoomThemeRoot.get("isOperating"), isOperating);
         };
     }
 }

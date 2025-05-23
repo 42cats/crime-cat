@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 public enum ThemeType {
     CRIMESCENE(Values.CRIMESCENE, Numbers.CRIMESCENE),
-//    ESCAPE_ROOM,
+    ESCAPE_ROOM(Values.ESCAPE_ROOM, Numbers.ESCAPE_ROOM),
 //    MURDER_MYSTERY,
 //    REALWORLD
     ;
@@ -21,9 +21,11 @@ public enum ThemeType {
 
     public static class Values {
         public static final String CRIMESCENE = "CRIMESCENE";
+        public static final String ESCAPE_ROOM = "ESCAPE_ROOM";
     }
 
     public static class Numbers {
         public static final String CRIMESCENE = "0";
+        public static final String ESCAPE_ROOM = "1";
     }
 }
