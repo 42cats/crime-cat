@@ -1,124 +1,125 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { teamsService } from '@/api/guild';
 import { Team } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Trash2 } from "lucide-react";
-import TeamDetailModal from "@/components/dashboard/TeamDetailModal";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  TeamCard, 
+  TeamDetailModal, 
+  TeamCreationForm,
+  ConfirmationDialog,
+  useTeams
+} from "@/components/teams";
+import { useToast } from "@/hooks/useToast";
 
 const DashboardTeams: React.FC = () => {
   const { user } = useAuth();
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
-  const [newTeamName, setNewTeamName] = useState("");
-
+  const { toast } = useToast();
+  const { teams, isLoading, fetchTeams, createTeam, deleteTeam } = useTeams();
+  
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-
-  const fetchTeams = async () => {
-    if (!user?.id) return;
-    setIsLoading(true);
-    try {
-      const data = await teamsService.getMyTeams();
-      setTeams(data.map(team => ({ ...team, members: team.members || [] })));
-    } catch (error) {
-      console.error("팀 목록 조회 실패:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCreateTeam = async () => {
-    try {
-      await teamsService.createTeam({ name: newTeamName });
-      setNewTeamName("");
-      setCreateDialogOpen(false);
-      fetchTeams();
-    } catch (error) {
-      console.error("팀 생성 실패:", error);
-    }
-  };
-
-  const handleDeleteTeam = async (teamId: string) => {
-    try {
-      await teamsService.deleteTeam(teamId);
-      fetchTeams();
-    } catch (error) {
-      console.error("팀 삭제 실패:", error);
-    }
-  };
+  const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+  const [deleteTeamTarget, setDeleteTeamTarget] = useState<string | null>(null);
+  const [deletingTeamName, setDeletingTeamName] = useState<string>("");
 
   useEffect(() => {
-    fetchTeams();
-  }, []);
+    if (user?.id) {
+      fetchTeams();
+    }
+  }, [user?.id]);
+
+  const handleCreateTeam = async (teamName: string) => {
+    await createTeam(teamName);
+  };
+
+  const handleDeleteTeamConfirm = async () => {
+    if (!deleteTeamTarget) return;
+    await deleteTeam(deleteTeamTarget);
+  };
+
+  const handleDeleteTeamRequest = (teamId: string, teamName: string) => {
+    setDeleteTeamTarget(teamId);
+    setDeletingTeamName(teamName);
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">팀 관리</h1>
-        <Button onClick={() => setCreateDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" /> 새 팀 만들기
+    <div className="container max-w-6xl mx-auto px-4 py-8 md:py-12">
+      {/* 헤더 영역 */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">팀 관리</h1>
+          <p className="text-muted-foreground mt-1">
+            팀을 생성하고 관리하여 함께 활동해보세요.
+          </p>
+        </div>
+        <Button 
+          onClick={() => setCreateDialogOpen(true)}
+          className="gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          새 팀 만들기
         </Button>
       </div>
 
+      {/* 팀 목록 */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[...Array(4)].map((_, idx) => (
-            <Skeleton key={idx} className="h-40 w-full rounded-lg" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, idx) => (
+            <div key={idx} className="space-y-3">
+              <Skeleton className="h-48 w-full rounded-lg" />
+            </div>
           ))}
         </div>
-      ) : teams.length ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {teams.map((team) => (
-            <Card key={team.id} 
-              className="cursor-pointer hover:shadow-md transition"
-              onClick={() => setSelectedTeam(team)}
-            >
-              <CardHeader className="flex justify-between items-center">
-                <CardTitle>{team.name}</CardTitle>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation(); // 카드 클릭 방지
-                    handleDeleteTeam(team.id);
-                  }}
-                >
-                  <Trash2 className="w-5 h-5 text-destructive" />
-                </Button>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
+      ) : teams.length > 0 ? (
+        <motion.div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <AnimatePresence>
+            {teams.map((team) => (
+              <TeamCard
+                key={team.id}
+                team={team}
+                onSelect={setSelectedTeam}
+                onDelete={(teamId) => handleDeleteTeamRequest(teamId, team.name)}
+              />
+            ))}
+          </AnimatePresence>
+        </motion.div>
       ) : (
-        <p className="text-center text-muted-foreground py-10">팀이 없습니다. 새로 생성해보세요!</p>
+        <div className="text-center py-24 border border-dashed rounded-lg bg-muted/30">
+          <h3 className="text-xl font-medium mb-2">아직 팀이 없습니다</h3>
+          <p className="text-muted-foreground mb-6">새로운 팀을 생성하고 멤버들과 함께 활동해보세요.</p>
+          <Button 
+            onClick={() => setCreateDialogOpen(true)}
+            className="gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            새 팀 만들기
+          </Button>
+        </div>
       )}
 
       {/* 팀 생성 다이얼로그 */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>새 팀 만들기</DialogTitle>
-            <DialogDescription>
-              생성할 팀의 이름을 입력하세요.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              placeholder="팀 이름 입력"
-              value={newTeamName}
-              onChange={(e) => setNewTeamName(e.target.value)}
-            />
-            <Button className="w-full" onClick={handleCreateTeam} disabled={!newTeamName.trim()}>
-              생성하기
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <TeamCreationForm
+        isOpen={isCreateDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSubmit={handleCreateTeam}
+      />
 
       {/* 팀 상세 다이얼로그 */}
       {selectedTeam && (
@@ -128,6 +129,17 @@ const DashboardTeams: React.FC = () => {
           onUpdated={fetchTeams}
         />
       )}
+
+      {/* 팀 삭제 확인 다이얼로그 */}
+      <ConfirmationDialog
+        isOpen={Boolean(deleteTeamTarget)}
+        onClose={() => setDeleteTeamTarget(null)}
+        onConfirm={handleDeleteTeamConfirm}
+        title="팀 삭제"
+        description={`"${deletingTeamName}" 팀을 삭제하시겠습니까? 이 작업은 되돌릴 수 없으며, 모든 팀원 정보가 삭제됩니다.`}
+        confirmText="삭제"
+        variant="destructive"
+      />
     </div>
   );
 };
