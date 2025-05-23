@@ -22,7 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Pagination } from "@/components/ui/pagination";
+import { PaginationController } from "@/components/ui/pagination-controller";
 import { Badge } from "@/components/ui/badge";
 import { UserPlus, UserMinus, User, Search, Users, X } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
@@ -538,7 +538,7 @@ const FollowsPage: React.FC = () => {
 
                                     {/* 검색 결과 페이지네이션 */}
                                     {searchResults.totalPages > 1 && (
-                                        <Pagination
+                                        <PaginationController
                                             totalPages={
                                                 searchResults.totalPages
                                             }
@@ -607,7 +607,7 @@ const FollowsPage: React.FC = () => {
 
                                     {/* 팔로워 페이지네이션 */}
                                     {followers.totalPages > 1 && (
-                                        <Pagination
+                                        <PaginationController
                                             totalPages={followers.totalPages}
                                             currentPage={followersPage + 1}
                                             onPageChange={(page) =>
@@ -654,7 +654,7 @@ const FollowsPage: React.FC = () => {
 
                                     {/* 팔로잉 페이지네이션 */}
                                     {followings.totalPages > 1 && (
-                                        <Pagination
+                                        <PaginationController
                                             totalPages={followings.totalPages}
                                             currentPage={followingsPage + 1}
                                             onPageChange={(page) =>
