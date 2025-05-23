@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UTCToKST } from "@/lib/dateFormat";
 import { useQuery } from "@tanstack/react-query";
-import { guildsService } from "@/api/guildsService";
+import { guildsService } from '@/api/guild';
 import { CrimesceneThemeDetailType } from "@/lib/types";
 import { Users, Calendar, Clock, Medal, UserCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";

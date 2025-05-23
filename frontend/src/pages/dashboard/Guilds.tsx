@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Search, Server, Users, Settings, Globe, Lock } from "lucide-react";
-import { authService } from "@/api/authService";
+import { authService } from '@/api/auth';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const Guilds: React.FC = () => {

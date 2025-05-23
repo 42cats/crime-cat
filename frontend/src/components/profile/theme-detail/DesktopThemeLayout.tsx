@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ModalCommentList } from '../ModalCommentList';
 import ThemeInfoContent from './ThemeInfoContent';
 import ThemeImageSection from './ThemeImageSection';
-import { ProfileDetailDto } from '@/api/profile/detail';
+import { ProfileDetailDto } from '@/api/profile';
 import { CrimesceneThemeSummeryDto } from '@/api/profile/themes';
 
 // 탭 CSS 커스텀 스타일 - 정보/댓글 탭의 스타일을 반대로 적용

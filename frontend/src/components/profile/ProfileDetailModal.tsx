@@ -6,7 +6,7 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog";
 import { X, Copy, UserX, AlertCircle, UserPlus, UserMinus } from "lucide-react";
-import { getProfileDetail, ProfileDetailDto } from "@/api/profile/detail";
+import { getProfileDetail, ProfileDetailDto } from "@/api/profile";
 import { Button } from "@/components/ui/button";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { toast } from "sonner";
@@ -23,7 +23,7 @@ import {
     isFollowing,
     getFollowerCount,
     getFollowingCount,
-} from "@/api/follow";
+} from "@/api/social/follow/index";
 
 interface ProfileDetailModalProps {
     userId: string;
@@ -65,8 +65,14 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
 
     // 프로필 ID가 변경되면 모달 ID 업데이트
     useEffect(() => {
+        console.log("ProfileDetailModal - userId 변경:", userId);
         setProfileModalId(userId);
     }, [userId]);
+
+    // 모달 open 상태 변경 감지
+    useEffect(() => {
+        console.log("ProfileDetailModal - open 상태 변경:", open);
+    }, [open]);
 
     // 프로필이 로드되면 팔로워/팔로잉 수 가져오기
     useEffect(() => {
@@ -117,6 +123,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
             // 상위 컴포넌트에서 제공한 전환 함수 사용
             onSwitchProfile(newUserId);
         } else {
+            console.log("프로필 전환:", newUserId);
             // 현재 모달을 닫지 않고 데이터만 바꿈
             setProfile(null); // 기존 프로필 데이터 제거
 
@@ -159,6 +166,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
 
             // 탭 초기화
             setActiveTab("themes");
+            console.log("프로필 전환 완료");
         }
     };
 
@@ -267,48 +275,55 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
 
     useEffect(() => {
         if (!open) return;
+
+        console.log(
+            "ProfileDetailModal - 프로필 정보 로드 시작:",
+            profileModalId
+        );
         setLoading(true);
 
         // 프로필 정보 로드 - 프로필모달ID 사용(사용자 전환 지원)
-        getProfileDetail(profileModalId)
-            .then((data) => {
-                console.log("프로필 데이터:", data);
-                setProfile(data);
-                setError(null);
-            })
-            .catch((err) => {
-                console.error("프로필 로드 실패:", err);
-                // 오류 유형 처리
-                if (err.response) {
-                    // 서버 응답이 왔지만 오류 상태코드인 경우
-                    if (err.response.status === 404) {
+        if (profileModalId) {
+            getProfileDetail(profileModalId)
+                .then((data) => {
+                    console.log("프로필 데이터 로드 성공:", data);
+                    setProfile(data);
+                    setError(null);
+                })
+                .catch((err) => {
+                    console.error("프로필 로드 실패:", err);
+                    // 오류 유형 처리
+                    if (err.response) {
+                        // 서버 응답이 왔지만 오류 상태코드인 경우
+                        if (err.response.status === 404) {
+                            setError({
+                                type: "not_found",
+                                message: "해당 사용자를 찾을 수 없습니다.",
+                            });
+                        } else {
+                            setError({
+                                type: "server_error",
+                                message:
+                                    "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+                            });
+                        }
+                    } else if (err.request) {
+                        // 요청은 보냈지만 응답을 받지 못한 경우
                         setError({
-                            type: "not_found",
-                            message: "해당 사용자를 찾을 수 없습니다.",
+                            type: "network_error",
+                            message:
+                                "네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.",
                         });
                     } else {
+                        // 기타 오류
                         setError({
-                            type: "server_error",
-                            message:
-                                "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+                            type: "unknown_error",
+                            message: "알 수 없는 오류가 발생했습니다.",
                         });
                     }
-                } else if (err.request) {
-                    // 요청은 보냈지만 응답을 받지 못한 경우
-                    setError({
-                        type: "network_error",
-                        message:
-                            "네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.",
-                    });
-                } else {
-                    // 기타 오류
-                    setError({
-                        type: "unknown_error",
-                        message: "알 수 없는 오류가 발생했습니다.",
-                    });
-                }
-            })
-            .finally(() => setLoading(false));
+                })
+                .finally(() => setLoading(false));
+        }
     }, [open, profileModalId]); // userId 대신 profileModalId 사용
 
     // 프로필 로딩 중 스켈레톤

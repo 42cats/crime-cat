@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { themesService } from "@/api/themesService";
+import { themesService } from '@/api/content';
 import { Theme, ThemePage } from "@/lib/types";
 import PageTransition from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";

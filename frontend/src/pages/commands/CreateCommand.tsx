@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommandForm from '@/components/commands/CommandForm';
-import { commandsService } from '@/api/commandsService';
+import { commandsService } from '@/api/content';
 import { Command } from '@/lib/types';
 
 const CreateCommand: React.FC = () => {

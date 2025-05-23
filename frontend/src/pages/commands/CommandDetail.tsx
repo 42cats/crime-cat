@@ -2,7 +2,7 @@ import React from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageTransition from "@/components/PageTransition";
-import { commandsService } from "@/api/commandsService";
+import { commandsService } from '@/api/content';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Edit, Trash, Share2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";

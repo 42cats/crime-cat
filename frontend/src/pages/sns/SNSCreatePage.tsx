@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import TagInputField from "@/components/sns/input/TagInputField";
 import ContentTextArea from "@/components/sns/input/ContentTextArea";
 import LocationPicker from "@/components/sns/location/LocationPicker";
-import { Location } from "@/api/posts/postService";
+import { Location } from '@/api/posts';
 import { userPostService } from "@/api/posts";
 import PrivacySettingsComponent, {
     PrivacySettings,

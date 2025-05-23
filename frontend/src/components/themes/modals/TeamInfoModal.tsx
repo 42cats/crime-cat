@@ -1,7 +1,7 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
-import { teamsService } from "@/api/teamsService";
+import { teamsService } from '@/api/guild';
 import { Crown } from "lucide-react";
 
 interface TeamInfoModalProps {

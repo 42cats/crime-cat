@@ -1,6 +1,6 @@
 import React from "react";
 import { Crown, Coins, Timer } from "lucide-react";
-import { PermissionWithStatus } from "@/api/permissionService";
+import { PermissionWithStatus } from '@/api/auth';
 
 interface PermissionHeaderProps {
     permission: PermissionWithStatus;

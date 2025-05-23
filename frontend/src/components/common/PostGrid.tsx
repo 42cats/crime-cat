@@ -1,5 +1,5 @@
 import React from "react";
-import { UserPostGalleryDto } from "@/api/posts/postService";
+import { UserPostGalleryDto } from '@/api/posts';
 import PostGridItem from "@/components/sns/common/PostGridItem";
 import { Image, FileTextIcon } from "lucide-react";
 import { useToast } from "@/hooks/useToast";

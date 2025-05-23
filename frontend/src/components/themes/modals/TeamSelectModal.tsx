@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Users } from "lucide-react";
-import { teamsService } from "@/api/teamsService";
+import { teamsService } from '@/api/guild';
 import { useAuth } from "@/hooks/useAuth";
 import { Team } from "@/lib/types";
 

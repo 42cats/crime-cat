@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ProfileDetailDto } from "@/api/profile/detail";
+import { ProfileDetailDto } from '@/api/profile';
 import {
     PackageIcon,
     GamepadIcon,
@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { followUser, unfollowUser, isFollowing } from "@/api/follow";
+import { followUser, unfollowUser, isFollowing } from "@/api/social/follow/index";
 
 interface ProfileHeaderProps {
     profile: ProfileDetailDto;
@@ -145,7 +145,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                             <span className="text-xs md:text-sm font-medium">
                                 제작{" "}
                                 <span className="font-bold">
-                                    {creationCount ?? profile.creationCount ?? 0}
+                                    {creationCount ??
+                                        profile.creationCount ??
+                                        0}
                                 </span>
                             </span>
                         </div>

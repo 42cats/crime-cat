@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { X, Upload, MapPin, Loader2 } from "lucide-react";
-import { UserPostDto, Location } from "@/api/posts/postService";
+import { UserPostDto, Location } from '@/api/posts';
 import HashtagEditor from "@/components/sns/common/HashtagEditor";
 import { useToast } from "@/hooks/useToast";
 import { compressImageOnly, formatFileSize } from "@/utils/imageCompression";

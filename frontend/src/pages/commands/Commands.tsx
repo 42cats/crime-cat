@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import CommandList from '@/components/commands/CommandList';
 import PageTransition from '@/components/PageTransition';
-import { commandsService } from '@/api/commandsService';
+import { commandsService } from '@/api/content';
 import { Card } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
 import { Skeleton } from '@/components/ui/skeleton';

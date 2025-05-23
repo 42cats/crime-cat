@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/useToast";
-import { boardPostService } from "@/api/boardPostService";
+import { boardPostService } from "@/api/posts/boardPostService";
 import { BoardType, DetailedPostType } from "@/lib/types/board";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -86,20 +86,25 @@ const POST_TYPE_LABELS: Record<string, string> = {
 // 미리보기 토글 컴포넌트 (NoticeForm에서 가져옴)
 const WritePreviewToggle = () => {
     const { preview, dispatch } = useContext(EditorContext);
-    const base = "md-editor-toolbar-button h-[29px] px-2 text-sm font-bold rounded hover:bg-gray-100";
+    const base =
+        "md-editor-toolbar-button h-[29px] px-2 text-sm font-bold rounded hover:bg-gray-100";
     const selected = "text-blue-600";
     const unselected = "text-gray-500";
     return (
         <div className="flex items-center">
             <button
                 onClick={() => dispatch({ preview: "edit" })}
-                className={`${base} ${preview === "edit" ? selected : unselected}`}
+                className={`${base} ${
+                    preview === "edit" ? selected : unselected
+                }`}
             >
                 작성
             </button>
             <button
                 onClick={() => dispatch({ preview: "preview" })}
-                className={`${base} ${preview === "preview" ? selected : unselected}`}
+                className={`${base} ${
+                    preview === "preview" ? selected : unselected
+                }`}
             >
                 미리보기
             </button>
@@ -335,7 +340,11 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                             >
                                 내용
                             </Label>
-                            <div data-color-mode={theme === "dark" ? "dark" : "light"}>
+                            <div
+                                data-color-mode={
+                                    theme === "dark" ? "dark" : "light"
+                                }
+                            >
                                 <div className="border rounded-md overflow-hidden">
                                     <MDEditor
                                         value={markdownContent}

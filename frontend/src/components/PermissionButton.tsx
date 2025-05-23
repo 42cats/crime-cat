@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Clock, Check } from "lucide-react";
-import { PermissionWithStatus } from "@/api/permissionService";
+import { PermissionWithStatus } from '@/api/auth';
 
 interface PermissionButtonProps {
     permission: PermissionWithStatus;

@@ -7,7 +7,7 @@ import { GameRecordDeclineModal } from "./GameRecordDeclineModal";
 import {
     GameRecordAcceptDto,
     GameRecordDeclineDto,
-} from "@/api/notificationService";
+} from '@/api/social/notifications';
 import { cn } from "@/lib/utils";
 import { useProcessedNotifications } from "@/hooks/useProcessedNotifications";
 import {

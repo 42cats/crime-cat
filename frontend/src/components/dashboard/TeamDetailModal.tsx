@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Trash2, Check, Plus, Search, Crown, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { Team } from "@/lib/types";
-import { teamsService } from "@/api/teamsService";
-import { searchUserService } from "@/api/searchUserService";
+import { teamsService } from '@/api/guild';
+import { searchUserService } from '@/api/social/search';
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/useToast";
 import {

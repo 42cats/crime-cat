@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Gift } from "lucide-react";
-import { couponService } from "@/api/couponService";
+import { couponService } from '@/api/misc';
 import { useToast } from "@/hooks/useToast";
 import type { UserProfile } from "@/types/profile";
 

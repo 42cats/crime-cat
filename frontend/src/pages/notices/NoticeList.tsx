@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { noticesService } from "@/api/noticesService";
+import { noticesService } from '@/api/content';
 import { Notice, NoticePage } from "@/lib/types";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";

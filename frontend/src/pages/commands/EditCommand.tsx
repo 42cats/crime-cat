@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { commandsService } from '@/api/commandsService';
+import { commandsService } from '@/api/content';
 import CommandForm from '@/components/commands/CommandForm';
 import { Command, CommandInput } from '@/lib/types';
 

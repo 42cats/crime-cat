@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { teamsService } from "@/api/teamsService";
+import { teamsService } from '@/api/guild';
 import { Team } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { UserPostDto } from "@/api/posts/postService";
+import { UserPostDto } from '@/api/posts';
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import TagBadge from "@/components/sns/common/TagBadge";

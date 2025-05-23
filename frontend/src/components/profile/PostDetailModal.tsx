@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { UserPostDto, userPostService } from "@/api/posts/postService";
-import { getProfileDetail, ProfileDetailDto } from "@/api/profile/detail";
+import { UserPostDto, userPostService } from '@/api/posts';
+import { getProfileDetail, ProfileDetailDto } from '@/api/profile';
 import {
     AlertDialog,
     AlertDialogAction,
