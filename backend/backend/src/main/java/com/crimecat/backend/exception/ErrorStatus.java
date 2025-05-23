@@ -82,7 +82,8 @@ public enum ErrorStatus {
     // 팔로우 관련
     FOLLOW_SELF_NOT_ALLOWED("자기 자신을 팔로우할 수 없습니다.", HttpStatus.BAD_REQUEST),
     FOLLOW_ALREADY_EXISTS("이미 팔로우하고 있습니다.", HttpStatus.CONFLICT),
-    FOLLOW_NOT_FOUND("팔로우 관계를 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+    FOLLOW_NOT_FOUND("팔로우 관계를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    INVALID_REQUEST("본인의 등급은 변경할 수 없습니다.", HttpStatus.BAD_REQUEST );
 
     private final String message;
     private final HttpStatus status;
