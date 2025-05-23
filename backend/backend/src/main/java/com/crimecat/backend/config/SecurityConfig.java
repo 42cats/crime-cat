@@ -151,16 +151,23 @@ public class SecurityConfig {
                     .failureHandler((request, response, exception) -> {
                         // OAuth2 인증 실패 처리
                         String errorType = "unknown_error";
+                        String blockInfo = "";
+                        
                         if (exception instanceof OAuth2AuthenticationException) {
                             OAuth2Error error = ((OAuth2AuthenticationException) exception).getError();
                             errorType = error.getErrorCode();
+                            
+                            // 차단 정보가 있는 경우 URL에 포함
+                            if ("account_blocked".equals(errorType) && error.getUri() != null) {
+                                blockInfo = "&blockInfo=" + java.net.URLEncoder.encode(error.getUri(), java.nio.charset.StandardCharsets.UTF_8);
+                            }
                         }
                         
                         // 특정 에러 타입에 따라 다른 페이지로 리다이렉션
                         if ("account_not_found".equals(errorType)) {
                             response.sendRedirect("https://" + serviceUrlConfig.getDomain() + "/login-error?type=account_not_found");
                         } else if ("account_blocked".equals(errorType)) {
-                            response.sendRedirect("https://" + serviceUrlConfig.getDomain() + "/login-error?type=account_blocked");
+                            response.sendRedirect("https://" + serviceUrlConfig.getDomain() + "/login-error?type=account_blocked" + blockInfo);
                         } else {
                             response.sendRedirect("https://" + serviceUrlConfig.getDomain() + "/login-error?type=" + errorType);
                         }

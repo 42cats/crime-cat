@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import PageTransition from "@/components/PageTransition";
@@ -10,12 +10,36 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Clock, Shield } from "lucide-react";
+import BlockedUserModal from "@/components/auth/BlockedUserModal";
+import { BlockInfo } from "@/types/user";
 
 const LoginError: React.FC = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const errorType = searchParams.get("type");
+    const blockInfoParam = searchParams.get("blockInfo");
+    
+    const [showBlockModal, setShowBlockModal] = useState(false);
+    const [blockInfo, setBlockInfo] = useState<BlockInfo | null>(null);
+    
+    useEffect(() => {
+        if (errorType === "account_blocked" && blockInfoParam) {
+            try {
+                const parsedBlockInfo = JSON.parse(decodeURIComponent(blockInfoParam));
+                setBlockInfo({
+                    isBlocked: true,
+                    blockReason: parsedBlockInfo.reason || "사유를 알 수 없습니다.",
+                    blockedAt: parsedBlockInfo.blockedAt || undefined,
+                    blockExpiresAt: parsedBlockInfo.blockExpiresAt || undefined,
+                    isPermanent: parsedBlockInfo.isPermanent || false,
+                });
+                setShowBlockModal(true);
+            } catch (error) {
+                console.error("차단 정보 파싱 오류:", error);
+            }
+        }
+    }, [errorType, blockInfoParam]);
 
     const getErrorContent = () => {
         switch (errorType) {
@@ -46,10 +70,11 @@ const LoginError: React.FC = () => {
             case "account_blocked":
                 return {
                     title: "계정이 차단되었습니다",
-                    description:
+                    description: blockInfo ? 
+                        `차단 사유: ${blockInfo.blockReason}` :
                         "귀하의 계정이 관리자에 의해 차단되었습니다. 자세한 사항은 관리자에게 문의해주세요.",
-                    action: "홈으로 돌아가기",
-                    actionHandler: () => navigate("/"),
+                    action: blockInfo ? "차단 정보 확인" : "홈으로 돌아가기",
+                    actionHandler: blockInfo ? () => setShowBlockModal(true) : () => navigate("/"),
                 };
             default:
                 return {
@@ -98,6 +123,17 @@ const LoginError: React.FC = () => {
                     </CardFooter>
                 </Card>
             </div>
+            
+            {blockInfo && (
+                <BlockedUserModal
+                    isOpen={showBlockModal}
+                    blockInfo={blockInfo}
+                    onClose={() => {
+                        setShowBlockModal(false);
+                        navigate("/");
+                    }}
+                />
+            )}
         </PageTransition>
     );
 };

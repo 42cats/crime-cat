@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -101,6 +102,32 @@ public class AuthController {
         String userId = jwtTokenProvider.getUserIdFromToken(accessToken);
         WebUser user = webUserRepository.findById(UUID.fromString(userId))
                 .orElseThrow(ErrorStatus.USER_NOT_FOUND::asControllerException);
+
+        // 차단 상태 확인
+        log.info("🔍 /me endpoint - User: {} (ID: {}), isBanned: {}, blockReason: {}, blockExpiresAt: {}", 
+                 user.getNickname(), user.getId(), user.getIsBanned(), 
+                 user.getBlockReason(), user.getBlockExpiresAt());
+        
+        if (user.getIsBanned()) {
+            // 차단 기간이 만료된 경우 자동 해제
+            if (user.getBlockExpiresAt() != null && 
+                LocalDateTime.now().isAfter(user.getBlockExpiresAt())) {
+                
+                webUserService.unblockUser(user.getId());
+                log.info("✅ User {} block has expired and been automatically removed at /me endpoint.", user.getNickname());
+            } else {
+                // 여전히 차단된 상태
+                String reason = user.getBlockReason() != null ? user.getBlockReason() : "관리자에 의한 차단";
+                log.warn("🚫 Blocked user {} attempted to access /me endpoint.", user.getNickname());
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                    "error", "ACCOUNT_BLOCKED",
+                    "message", "계정이 차단되었습니다: " + reason,
+                    "blockReason", reason,
+                    "blockedAt", user.getBlockedAt() != null ? user.getBlockedAt().toString() : "",
+                    "blockExpiresAt", user.getBlockExpiresAt() != null ? user.getBlockExpiresAt().toString() : ""
+                ));
+            }
+        }
 
         Map<String, String> UserAuthInfo = getStringStringMap(user);
 

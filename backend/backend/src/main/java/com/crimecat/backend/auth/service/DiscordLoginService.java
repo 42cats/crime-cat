@@ -53,8 +53,20 @@ public class DiscordLoginService extends BaseDiscordOAuth2UserService {
             } else {
                 // 여전히 차단된 상태
                 String reason = webUser.getBlockReason() != null ? webUser.getBlockReason() : "관리자에 의한 차단";
+                String blockedAt = webUser.getBlockedAt() != null ? webUser.getBlockedAt().toString() : "";
+                String blockExpiresAt = webUser.getBlockExpiresAt() != null ? webUser.getBlockExpiresAt().toString() : "";
+                boolean isPermanent = webUser.getBlockExpiresAt() == null;
+                
                 log.warn("🚫 Blocked user {} attempted to login via Discord OAuth.", webUser.getNickname());
-                throw new OAuth2AuthenticationException(new OAuth2Error("account_blocked"), 
+                
+                // 차단 정보를 OAuth2Error의 description에 JSON 형태로 포함
+                String blockInfoJson = String.format(
+                    "{\"reason\":\"%s\",\"blockedAt\":\"%s\",\"blockExpiresAt\":\"%s\",\"isPermanent\":%b}",
+                    reason.replace("\"", "\\\""), blockedAt, blockExpiresAt, isPermanent
+                );
+                
+                throw new OAuth2AuthenticationException(
+                    new OAuth2Error("account_blocked", "계정이 차단되었습니다: " + reason, blockInfoJson), 
                     "계정이 차단되었습니다: " + reason);
             }
         }

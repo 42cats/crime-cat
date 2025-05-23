@@ -13,6 +13,7 @@ export interface User {
     role: UserRole;
     emailVerified: boolean;
     isBlocked?: boolean;
+    blocked?: boolean;  // 백엔드 JSON 응답에서 사용
     blockReason?: string;
     blockedAt?: string;
     blockExpiresAt?: string;
