@@ -17,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -77,5 +78,22 @@ public class BoardPostService {
 
         BoardPost savedBoardPost = boardPostRepository.save(boardPost);
         return BoardPostDetailResponse.from(savedBoardPost, true, false);
+    }
+
+    @Transactional
+    public BoardPostDetailResponse updateBoardPost(
+            BoardPostRequest boardPostRequest,
+            UUID postId,
+            UUID userId
+    ) {
+        BoardPost boardPost = boardPostRepository.findById(postId).orElseThrow(() -> new EntityNotFoundException("게시물물 찾을 수 없습니다."));
+
+        if (!boardPost.getAuthorId().equals(userId)) {
+            throw new AccessDeniedException("게시물을 수정할 권한이 없습니다");
+        }
+
+        boardPost.update(boardPostRequest);
+        BoardPost updatedBoardPost = boardPostRepository.save(boardPost);
+        return BoardPostDetailResponse.from(updatedBoardPost, true, false);
     }
 }

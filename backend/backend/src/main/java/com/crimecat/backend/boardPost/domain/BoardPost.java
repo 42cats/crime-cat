@@ -76,7 +76,7 @@ public class BoardPost {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "BOARD_TYPE")
-    private BoardType boardtype;
+    private BoardType boardType;
 
     @Builder.Default
     @Column(name = "IS_PINNED")
@@ -90,13 +90,23 @@ public class BoardPost {
         }
     }
 
+    public void update(BoardPostRequest boardPostRequest) {
+        this.updatedAt = LocalDateTime.now();
+        this.subject = boardPostRequest.getSubject();
+        this.content = boardPostRequest.getContent();
+        this.isSecret = boardPostRequest.getIsSecret();
+        this.isPinned = boardPostRequest.getIsPinned();
+        this.postType = boardPostRequest.getPostType();
+        this.boardType = boardPostRequest.getBoardType();
+    }
+
     public static BoardPost from(BoardPostRequest request, WebUser author){
         BoardPost boardPost = BoardPost.builder()
                 .subject(request.getSubject())
                 .content(request.getContent())
                 .isSecret(request.getIsSecret())
                 .postType(request.getPostType())
-                .boardtype(request.getBoardType())
+                .boardType(request.getBoardType())
                 .isPinned(request.getIsPinned())
                 .build();
 
@@ -104,4 +114,5 @@ public class BoardPost {
 
         return boardPost;
     }
+
 }
