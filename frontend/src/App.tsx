@@ -25,7 +25,7 @@ import CommandDetail from "@/pages/commands/CommandDetail";
 import CreateCommand from "@/pages/commands/CreateCommand";
 import EditCommand from "@/pages/commands/EditCommand";
 import ThemeList from "@/pages/themes/ThemeList";
-import ThemeDetail from "@/pages/themes/ThemeDetail";
+import ThemeDetailRouter from "@/components/themes/router/ThemeDetailRouter";
 import CreateTheme from "@/pages/themes/CreateTheme";
 import EditTheme from "@/pages/themes/EditTheme";
 import Login from "@/pages/Login";
@@ -154,7 +154,7 @@ const App = () => (
                                 />
                                 <Route
                                     path="/themes/:category/:id"
-                                    element={<ThemeDetail />}
+                                    element={<ThemeDetailRouter />}
                                 />
                                 <Route
                                     path="/themes/new"

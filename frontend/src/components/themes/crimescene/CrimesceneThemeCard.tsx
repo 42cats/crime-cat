@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Card, CardContent } from "../ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
     Users,
     Tag,
@@ -36,7 +36,7 @@ const formatCount = (num: number): string => {
         : num.toString();
 };
 
-const ThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
+const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
     const playerText =
         theme.playersMin === theme.playersMax
             ? `${theme.playersMin}인`
@@ -157,4 +157,4 @@ const ThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
     );
 };
 
-export default ThemeCard;
+export default CrimesceneThemeCard;
