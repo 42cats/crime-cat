@@ -19,7 +19,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 public class GameThemeSpecification {
     public static Specification<GameTheme> equalCategory(String type) {
-        return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.type(), Integer.toString(ThemeType.valueOf(type).ordinal()));
+        return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.type(), type);
     }
 
     public static Specification<GameTheme> defaultSpec(UUID userId) {
