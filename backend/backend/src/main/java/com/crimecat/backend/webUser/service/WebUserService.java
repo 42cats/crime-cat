@@ -13,6 +13,8 @@ import com.crimecat.backend.user.service.UserPermissionService;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.utils.UserDailyCheckUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.admin.dto.BlockInfoResponse;
+import com.crimecat.backend.admin.dto.BlockUserRequest;
 import com.crimecat.backend.webUser.dto.*;
 import com.crimecat.backend.webUser.enums.AlarmType;
 import com.crimecat.backend.webUser.enums.UserRole;
@@ -392,9 +394,41 @@ public class WebUserService {
                 .orElseThrow(() -> ErrorStatus.USER_NOT_FOUND.asException());
         
         webUser.setIsBanned(true);
+        webUser.setBlockedAt(LocalDateTime.now());
+        webUser.setBlockReason("관리자에 의한 차단"); // 기본 사유
+        webUser.setBlockExpiresAt(null); // 영구 차단
         WebUser savedUser = webUserRepository.save(webUser);
         
         return WebUserResponse.from(savedUser);
+    }
+    
+    /**
+     * 사용자를 차단합니다 (사유와 기간 포함). 관리자만 가능합니다.
+     */
+    @Transactional
+    public WebUserResponse blockUserWithReason(BlockUserRequest request) {
+        WebUser webUser = webUserRepository.findById(request.getUserId())
+                .orElseThrow(() -> ErrorStatus.USER_NOT_FOUND.asException());
+        
+        webUser.setIsBanned(true);
+        webUser.setBlockedAt(LocalDateTime.now());
+        webUser.setBlockReason(request.getBlockReason());
+        webUser.setBlockExpiresAt(request.getBlockExpiresAt());
+        
+        WebUser savedUser = webUserRepository.save(webUser);
+        
+        return WebUserResponse.from(savedUser);
+    }
+    
+    /**
+     * 사용자의 차단 정보를 조회합니다.
+     */
+    @Transactional(readOnly = true)
+    public BlockInfoResponse getBlockInfo(UUID userId) {
+        WebUser webUser = webUserRepository.findById(userId)
+                .orElseThrow(() -> ErrorStatus.USER_NOT_FOUND.asException());
+        
+        return BlockInfoResponse.from(webUser);
     }
     
     /**
@@ -406,8 +440,36 @@ public class WebUserService {
                 .orElseThrow(() -> ErrorStatus.USER_NOT_FOUND.asException());
         
         webUser.setIsBanned(false);
+        webUser.setBlockReason(null);
+        webUser.setBlockedAt(null);
+        webUser.setBlockExpiresAt(null);
+        
         WebUser savedUser = webUserRepository.save(webUser);
         
         return WebUserResponse.from(savedUser);
+    }
+    
+    /**
+     * 만료된 차단을 자동으로 해제합니다.
+     */
+    @Transactional
+    public void processExpiredBlocks() {
+        LocalDateTime now = LocalDateTime.now();
+        
+        // 차단되어 있으면서 만료 시간이 지난 사용자들을 찾아서 차단 해제
+        webUserRepository.findAll().forEach(webUser -> {
+            if (webUser.getIsBanned() && 
+                webUser.getBlockExpiresAt() != null && 
+                now.isAfter(webUser.getBlockExpiresAt())) {
+                
+                webUser.setIsBanned(false);
+                webUser.setBlockReason(null);
+                webUser.setBlockedAt(null);
+                webUser.setBlockExpiresAt(null);
+                
+                webUserRepository.save(webUser);
+                log.info("사용자 {} 의 차단이 만료되어 자동으로 해제되었습니다.", webUser.getNickname());
+            }
+        });
     }
 }

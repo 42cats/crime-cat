@@ -27,7 +27,8 @@ import {
 } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, AlertCircle, CheckCircle, Ban } from "lucide-react";
+import { ShieldCheck, AlertCircle, CheckCircle, Ban, Clock, Shield } from "lucide-react";
+import BlockUserModal from "@/components/admin/BlockUserModal";
 
 const UserRoleManagementPage: React.FC = () => {
     const { toast } = useToast();
@@ -36,6 +37,9 @@ const UserRoleManagementPage: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [searchTerm, setSearchTerm] = useState("");
+    const [blockModalOpen, setBlockModalOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<any>(null);
+    const [blockLoading, setBlockLoading] = useState(false);
 
     // 사용자 목록 가져오기
     const fetchUsers = async (page = 0) => {
@@ -80,31 +84,93 @@ const UserRoleManagementPage: React.FC = () => {
         }
     };
 
-    // 사용자 차단/차단 해제
-    const handleToggleBlock = async (userId: string, isBlocked: boolean) => {
+    // 사용자 차단 모달 열기
+    const handleBlockUser = (user: any) => {
+        setSelectedUser(user);
+        setBlockModalOpen(true);
+    };
+
+    // 사용자 차단 실행
+    const handleConfirmBlock = async (reason: string, expiresAt?: string) => {
+        if (!selectedUser) return;
+        
         try {
-            if (isBlocked) {
-                await adminApi.userManagement.unblockUser(userId);
-                toast({
-                    title: "성공",
-                    description: "사용자 차단이 해제되었습니다.",
-                });
-            } else {
-                await adminApi.userManagement.blockUser(userId);
-                toast({
-                    title: "성공",
-                    description: "사용자가 차단되었습니다.",
-                });
-            }
+            setBlockLoading(true);
+            await adminApi.userManagement.blockUserWithReason(
+                selectedUser.id,
+                reason,
+                expiresAt
+            );
+            toast({
+                title: "성공",
+                description: "사용자가 차단되었습니다.",
+            });
+            setBlockModalOpen(false);
+            setSelectedUser(null);
             fetchUsers(currentPage);
         } catch (error) {
-            console.error("사용자 차단 상태 변경 중 오류가 발생했습니다:", error);
+            console.error("사용자 차단 중 오류가 발생했습니다:", error);
             toast({
                 title: "오류",
-                description: "사용자 차단 상태 변경 중 오류가 발생했습니다.",
+                description: "사용자 차단 중 오류가 발생했습니다.",
+                variant: "destructive",
+            });
+        } finally {
+            setBlockLoading(false);
+        }
+    };
+
+    // 사용자 차단 해제
+    const handleUnblockUser = async (userId: string) => {
+        try {
+            await adminApi.userManagement.unblockUser(userId);
+            toast({
+                title: "성공",
+                description: "사용자 차단이 해제되었습니다.",
+            });
+            fetchUsers(currentPage);
+        } catch (error) {
+            console.error("사용자 차단 해제 중 오류가 발생했습니다:", error);
+            toast({
+                title: "오류",
+                description: "사용자 차단 해제 중 오류가 발생했습니다.",
                 variant: "destructive",
             });
         }
+    };
+
+    // 차단 정보 포매팅
+    const formatBlockInfo = (user: any) => {
+        if (!user.isBlocked) return null;
+        
+        const blockReason = user.blockReason || "사유 없음";
+        const isExpired = user.blockExpiresAt && new Date(user.blockExpiresAt) < new Date();
+        
+        if (isExpired) {
+            return {
+                status: "만료",
+                reason: blockReason,
+                color: "text-yellow-600",
+                icon: Clock
+            };
+        }
+        
+        if (user.blockExpiresAt) {
+            const expiresAt = new Date(user.blockExpiresAt);
+            return {
+                status: `${expiresAt.toLocaleDateString()} 까지`,
+                reason: blockReason,
+                color: "text-orange-600",
+                icon: Clock
+            };
+        }
+        
+        return {
+            status: "영구 차단",
+            reason: blockReason,
+            color: "text-red-600",
+            icon: Shield
+        };
     };
 
     // 포인트 지급
@@ -190,6 +256,8 @@ const UserRoleManagementPage: React.FC = () => {
                                                     ? "bg-primary/20 text-primary"
                                                     : user.role === UserRole.MANAGER
                                                     ? "bg-blue-500/20 text-blue-500"
+                                                    : user.role === UserRole.CREATOR
+                                                    ? "bg-purple-500/20 text-purple-500"
                                                     : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
                                             }`}>
                                                 {user.role}
@@ -212,6 +280,9 @@ const UserRoleManagementPage: React.FC = () => {
                                                     <SelectItem value={UserRole.USER}>
                                                         {UserRole.USER}
                                                     </SelectItem>
+                                                    <SelectItem value={UserRole.CREATOR}>
+                                                        {UserRole.CREATOR}
+                                                    </SelectItem>
                                                     <SelectItem value={UserRole.MANAGER}>
                                                         {UserRole.MANAGER}
                                                     </SelectItem>
@@ -222,25 +293,47 @@ const UserRoleManagementPage: React.FC = () => {
                                             </Select>
                                         </TableCell>
                                         <TableCell>
-                                            <Button
-                                                variant={user.isBlocked ? "outline" : "destructive"}
-                                                size="sm"
-                                                onClick={() =>
-                                                    handleToggleBlock(user.id, user.isBlocked)
-                                                }
-                                            >
+                                            <div className="space-y-2">
                                                 {user.isBlocked ? (
                                                     <>
-                                                        <CheckCircle className="h-4 w-4 mr-1" />
-                                                        차단 해제
+                                                        <div className="flex items-center space-x-2">
+                                                            {(() => {
+                                                                const blockInfo = formatBlockInfo(user);
+                                                                if (!blockInfo) return null;
+                                                                const IconComponent = blockInfo.icon;
+                                                                return (
+                                                                    <div className={`flex items-center text-xs ${blockInfo.color}`}>
+                                                                        <IconComponent className="h-3 w-3 mr-1" />
+                                                                        <span>{blockInfo.status}</span>
+                                                                    </div>
+                                                                );
+                                                            })()}
+                                                        </div>
+                                                        {user.blockReason && (
+                                                            <div className="text-xs text-gray-600 max-w-32 truncate" title={user.blockReason}>
+                                                                {user.blockReason}
+                                                            </div>
+                                                        )}
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleUnblockUser(user.id)}
+                                                        >
+                                                            <CheckCircle className="h-4 w-4 mr-1" />
+                                                            차단 해제
+                                                        </Button>
                                                     </>
                                                 ) : (
-                                                    <>
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => handleBlockUser(user)}
+                                                    >
                                                         <Ban className="h-4 w-4 mr-1" />
                                                         차단
-                                                    </>
+                                                    </Button>
                                                 )}
-                                            </Button>
+                                            </div>
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex gap-2">
@@ -300,6 +393,17 @@ const UserRoleManagementPage: React.FC = () => {
                     </Pagination>
                 </>
             )}
+            
+            <BlockUserModal
+                isOpen={blockModalOpen}
+                onClose={() => {
+                    setBlockModalOpen(false);
+                    setSelectedUser(null);
+                }}
+                onConfirm={handleConfirmBlock}
+                userNickname={selectedUser?.nickname || ""}
+                loading={blockLoading}
+            />
         </div>
     );
 };

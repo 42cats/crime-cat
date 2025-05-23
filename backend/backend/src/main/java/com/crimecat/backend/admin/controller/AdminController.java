@@ -1,6 +1,8 @@
 package com.crimecat.backend.admin.controller;
 
 import com.crimecat.backend.admin.dto.AddUserPointsRequest;
+import com.crimecat.backend.admin.dto.BlockInfoResponse;
+import com.crimecat.backend.admin.dto.BlockUserRequest;
 import com.crimecat.backend.admin.dto.ChangeUserRoleRequest;
 import com.crimecat.backend.admin.dto.SubtractUserPointsRequest;
 import com.crimecat.backend.exception.ErrorStatus;
@@ -116,6 +118,36 @@ public class AdminController {
     }
     
     /**
+     * 사용자를 차단합니다 (사유와 기간 포함). 관리자만 가능합니다.
+     */
+    @PostMapping("/users/block-with-reason")
+    public ResponseEntity<WebUserResponse> blockUserWithReason(@Valid @RequestBody BlockUserRequest request) {
+        // 관리자 권한 확인
+        AuthenticationUtil.validateUserHasMinimumRole(UserRole.ADMIN);
+        
+        // 현재 인증된 사용자가 본인을 차단하려는 경우 방지
+        WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
+        if (currentUser.getId().equals(request.getUserId())) {
+            throw ErrorStatus.INVALID_REQUEST.asException();
+        }
+        
+        WebUserResponse blockedUser = webUserService.blockUserWithReason(request);
+        return ResponseEntity.ok(blockedUser);
+    }
+    
+    /**
+     * 사용자의 차단 정보를 조회합니다.
+     */
+    @GetMapping("/users/{userId}/block-info")
+    public ResponseEntity<BlockInfoResponse> getBlockInfo(@PathVariable UUID userId) {
+        // 관리자 권한 확인
+        AuthenticationUtil.validateUserHasMinimumRole(UserRole.ADMIN);
+        
+        BlockInfoResponse blockInfo = webUserService.getBlockInfo(userId);
+        return ResponseEntity.ok(blockInfo);
+    }
+    
+    /**
      * 사용자의 차단을 해제합니다. 관리자만 가능합니다.
      */
     @PostMapping("/users/{userId}/unblock")
@@ -125,5 +157,20 @@ public class AdminController {
         
         WebUserResponse unblockedUser = webUserService.unblockUser(userId);
         return ResponseEntity.ok(unblockedUser);
+    }
+    
+    /**
+     * 현재 사용자의 차단 상태를 확인합니다 (인증 실패 시 호출).
+     */
+    @GetMapping("/block-status")
+    public ResponseEntity<BlockInfoResponse> getCurrentUserBlockStatus() {
+        try {
+            WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
+            BlockInfoResponse blockInfo = webUserService.getBlockInfo(currentUser.getId());
+            return ResponseEntity.ok(blockInfo);
+        } catch (Exception e) {
+            // 인증되지 않은 사용자의 경우 차단되지 않은 상태로 반환
+            return ResponseEntity.ok(BlockInfoResponse.notBlocked());
+        }
     }
 }
