@@ -1,8 +1,7 @@
 import React from "react";
 import { Theme } from "@/lib/types";
-import ThemeCard from "@/components/themes/ThemeCard";
+import CrimesceneThemeCard from "./CrimesceneThemeCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
 
 interface ThemeGridProps {
   themes: Theme[];
@@ -10,7 +9,7 @@ interface ThemeGridProps {
   pageSize: number;
 }
 
-const ThemeGrid: React.FC<ThemeGridProps> = ({ themes, isLoading, pageSize }) => {
+const CrimesceneThemeGrid: React.FC<ThemeGridProps> = ({ themes, isLoading, pageSize }) => {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -35,10 +34,10 @@ const ThemeGrid: React.FC<ThemeGridProps> = ({ themes, isLoading, pageSize }) =>
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
       {themes.map((theme, i) => (
-        <ThemeCard key={theme.id} theme={theme} index={i} />
+        <CrimesceneThemeCard key={theme.id} theme={theme} index={i} />
       ))}
     </div>
   );
 };
 
-export default ThemeGrid;
+export default CrimesceneThemeGrid;

@@ -17,6 +17,17 @@ export const themesService = {
     // 공통 조회 기능
     // ================================
     
+    // 방탈출 테마 상세 조회
+    getEscapeRoomTheme: async (id: string): Promise<any> => {
+        try {
+            const response = await apiClient.get(`${publicBaseURI}/escape-room/${id}`);
+            return response.theme;
+        } catch (error) {
+            console.error("방탈출 테마 상세 불러오기 실패:", error);
+            throw error;
+        }
+    },
+    
     getLatestThemes: async (
         category: "CRIMESCENE" | "ESCAPE_ROOM" | "MURDER_MYSTERY" | "REALWORLD"
     ): Promise<Theme[]> => {

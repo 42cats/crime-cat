@@ -13,7 +13,7 @@ import ThemeFilters from "@/components/themes/filters/ThemeFilters";
 import EscapeRoomFilters from "@/components/themes/filters/EscapeRoomFilters";
 import MurderMysteryFilters from "@/components/themes/filters/MurderMysteryFilters";
 import RealWorldFilters from "@/components/themes/filters/RealWorldFilters";
-import ThemeGrid from "@/components/themes/ThemeGrid";
+import ThemeGridRouter from "@/components/themes/router/ThemeGridRouter";
 import Pagination from "@/components/themes/Pagination";
 
 const PAGE_SIZE = 9;
@@ -323,10 +323,13 @@ const ThemeList: React.FC = () => {
 
                 <Card className="border-0 shadow-sm overflow-hidden">
                     <CardContent className="p-4 sm:p-6">
-                        <ThemeGrid
+                        <ThemeGridRouter
                             themes={data?.themes || []}
                             isLoading={isLoading}
                             pageSize={PAGE_SIZE}
+                            category={category}
+                            onCreateTheme={() => navigate('/themes/new')}
+                            canCreateTheme={true}
                         />
 
                         {data && data.totalPages > 1 && (
