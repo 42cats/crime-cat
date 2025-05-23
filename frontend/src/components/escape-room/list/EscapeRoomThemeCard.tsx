@@ -86,7 +86,7 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
 
     return (
         <Link
-            to={`/escape-room/${theme.id}`}
+            to={`/themes/escape-room/${theme.id}`}
             className="block h-full"
         >
             <Card className="h-full hover:shadow-lg transition-all duration-300 hover:scale-[1.02] rounded-xl overflow-hidden flex flex-col">
