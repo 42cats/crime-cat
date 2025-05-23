@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import LazyImage from '../common/LazyImage';
+import ImageViewerModal from '../image/ImageViewerModal';
 
 interface ImageCarouselProps {
   images: string[];
@@ -9,6 +10,7 @@ interface ImageCarouselProps {
 
 const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
   
   // 이미지가 없거나 1장일 경우 컨트롤 불필요
   if (!images || images.length === 0) {
@@ -16,7 +18,17 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   }
   
   if (images.length === 1) {
-    return <LazyImage src={images[0]} alt="게시물 이미지" aspectRatio="4/5" />;
+    return (
+      <div onClick={() => setIsViewerOpen(true)} className="cursor-pointer">
+        <LazyImage src={images[0]} alt="게시물 이미지" aspectRatio="4/5" />
+        <ImageViewerModal 
+          isOpen={isViewerOpen} 
+          onClose={() => setIsViewerOpen(false)} 
+          images={images} 
+          initialIndex={0} 
+        />
+      </div>
+    );
   }
   
   const handlePrevious = () => {
@@ -38,8 +50,12 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
           {images.map((image, index) => (
             <div 
               key={index} 
-              className="w-full h-full flex-shrink-0"
+              className="w-full h-full flex-shrink-0 cursor-pointer"
               style={{ scrollSnapAlign: 'start' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsViewerOpen(true);
+              }}
             >
               <LazyImage 
                 src={image} 
@@ -50,6 +66,14 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
           ))}
         </div>
       </div>
+      
+      {/* 이미지 뷰어 모달 */}
+      <ImageViewerModal 
+        isOpen={isViewerOpen} 
+        onClose={() => setIsViewerOpen(false)} 
+        images={images} 
+        initialIndex={currentIndex} 
+      />
       
       {/* 좌우 컨트롤 버튼 */}
       <Button
