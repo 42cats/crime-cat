@@ -272,7 +272,8 @@ const SidebarInner = React.memo(() => {
                             </div>
 
                             {/* 관리자 전용 메뉴 */}
-                            {(user?.role === "ADMIN" || user?.role === "MANAGER") && (
+                            {(user?.role === "ADMIN" ||
+                                user?.role === "MANAGER") && (
                                 <>
                                     <Separator className="my-4" />
 
@@ -292,7 +293,7 @@ const SidebarInner = React.memo(() => {
                                             },
                                             {
                                                 name: "쿠폰 관리",
-                                                path: "/dashboard/admin/coupons",
+                                                path: "/dashboard/admin/coupon",
                                                 icon: Ticket,
                                                 roles: ["ADMIN", "MANAGER"],
                                             },
