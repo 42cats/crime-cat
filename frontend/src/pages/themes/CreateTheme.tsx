@@ -22,7 +22,14 @@ const CreateTheme: React.FC = () => {
 
   const handleSubmit = async (formData: FormData) => {
     try {
-      await themesService.createTheme(formData);
+      // FormData에서 테마 타입 추출
+      const themeType = formData.get('themeType') as string;
+      
+      if (!themeType) {
+        throw new Error('테마 타입이 지정되지 않았습니다.');
+      }
+
+      await themesService.createTheme(formData, themeType as any);
 
       if (initialCategory) {
         navigate(`/themes/${initialCategory}`);

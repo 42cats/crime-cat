@@ -330,26 +330,37 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
         }
 
         if (data.type === "ESCAPE_ROOM" && extraFields) {
-            // 방탈출 전용 필드들 - 백엔드 API 스펙에 맞춰 수정
-            jsonData.horror_level = extraFields.horrorLevel || 0;
-            jsonData.device_ratio = extraFields.deviceRatio || 0;
-            jsonData.activity_level = extraFields.activityLevel || 0;
-            jsonData.open_date = extraFields.openDate || null;
-            jsonData.is_operating = extraFields.isOperating ?? true;
+            // 방탈출 전용 필드들 - 백엔드 AddEscapeRoomThemeRequest 스펙에 맞춤
+            jsonData.horrorLevel = extraFields.horrorLevel || null;
+            jsonData.deviceRatio = extraFields.deviceRatio || null;
+            jsonData.activityLevel = extraFields.activityLevel || null;
+            jsonData.openDate = extraFields.openDate || null;
+            jsonData.isOperating = extraFields.isOperating ?? true;
             
-            // 장르 태그와 매장 위치
-            jsonData.genre_tags = extraFields.genreTags || [];
-            jsonData.store_locations = extraFields.locations || [];
+            // 장르 태그 (Set<String> 형태)
+            jsonData.genreTags = extraFields.genreTags || [];
             
-            // URL 정보  
-            jsonData.homepage_url = extraFields.homepageUrl || null;
-            jsonData.reservation_url = extraFields.reservationUrl || null;
+            // 매장 위치 (List<EscapeRoomLocation> 형태)
+            jsonData.locations = extraFields.locations || [];
+            
+            // URL 정보
+            jsonData.homepageUrl = extraFields.homepageUrl || null;
+            jsonData.reservationUrl = extraFields.reservationUrl || null;
+            
+            // 추가 정보
+            if (extraFields.extra) {
+                jsonData.extra = extraFields.extra;
+            }
         }
 
         formData.append(
             "data",
             new Blob([JSON.stringify(jsonData)], { type: "application/json" })
         );
+        
+        // 테마 타입 정보를 FormData에 추가
+        formData.append("themeType", data.type);
+        
         onSubmit(formData);
     };
 

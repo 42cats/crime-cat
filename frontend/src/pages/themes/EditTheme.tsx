@@ -23,7 +23,16 @@ const EditTheme: React.FC = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (formData: FormData) => themesService.updateTheme(id!, formData),
+    mutationFn: (formData: FormData) => {
+      // FormData에서 테마 타입 추출
+      const themeType = formData.get('themeType') as string;
+      
+      if (!themeType) {
+        throw new Error('테마 타입이 지정되지 않았습니다.');
+      }
+      
+      return themesService.updateTheme(id!, formData, themeType as any);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['themes'] });
 	  queryClient.invalidateQueries({ queryKey: ['theme', id] });

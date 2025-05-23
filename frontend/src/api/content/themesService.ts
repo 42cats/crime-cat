@@ -4,13 +4,26 @@ import { apiClient } from "@/lib/api";
 const publicBaseURI = "/public/themes";
 const baseURI = "/themes";
 
+// 테마 타입 매핑
+const THEME_TYPE_MAPPING = {
+    CRIMESCENE: "crimescene",
+    ESCAPE_ROOM: "escape-room", 
+    MURDER_MYSTERY: "murder-mystery",
+    REALWORLD: "realworld"
+} as const;
+
 export const themesService = {
+    // ================================
+    // 공통 조회 기능
+    // ================================
+    
     getLatestThemes: async (
         category: "CRIMESCENE" | "ESCAPE_ROOM" | "MURDER_MYSTERY" | "REALWORLD"
     ): Promise<Theme[]> => {
         try {
+            const themeEndpoint = THEME_TYPE_MAPPING[category];
             const response = await apiClient.get<ThemePage>(
-                `${publicBaseURI}?limit=5&category=${category}&sort=LATEST`
+                `${publicBaseURI}/${themeEndpoint}?limit=5&sort=LATEST`
             );
             return response.themes;
         } catch (error) {
@@ -25,23 +38,14 @@ export const themesService = {
         page: number,
         sort: string,
         keyword: string,
-        filters?: Partial<{
-            priceMin: string;
-            priceMax: string;
-            playerMin: string;
-            playerMax: string;
-            timeMin: string;
-            timeMax: string;
-            difficultyMin: string;
-            difficultyMax: string;
-        }>
+        filters?: any
     ): Promise<ThemePage> => {
         try {
+            const themeEndpoint = THEME_TYPE_MAPPING[category];
             const params = new URLSearchParams();
 
             params.append("limit", String(limit));
             params.append("page", String(page));
-            params.append("category", category);
 
             if (sort.trim()) {
                 params.append("sort", sort.trim());
@@ -53,14 +57,16 @@ export const themesService = {
 
             if (filters) {
                 Object.entries(filters).forEach(([key, value]) => {
-                    if (value?.trim()) {
+                    if (Array.isArray(value) && value.length > 0) {
+                        params.append(key, value.join(","));
+                    } else if (typeof value === "string" && value.trim()) {
                         params.append(key, value.trim());
                     }
                 });
             }
 
             const response = await apiClient.get<ThemePage>(
-                `${publicBaseURI}?${params.toString()}`
+                `${publicBaseURI}/${themeEndpoint}?${params.toString()}`
             );
             return response;
         } catch (error) {
@@ -69,11 +75,17 @@ export const themesService = {
         }
     },
 
-    getThemeById: async (id: string): Promise<Theme> => {
+    getThemeById: async (id: string, category?: "CRIMESCENE" | "ESCAPE_ROOM" | "MURDER_MYSTERY" | "REALWORLD"): Promise<Theme> => {
         try {
-            const response = await apiClient.get<ThemeType>(
-                `${publicBaseURI}/${id}`
-            );
+            let endpoint = `${publicBaseURI}/${id}`;
+            
+            // 카테고리가 주어진 경우 전용 엔드포인트 사용
+            if (category) {
+                const themeEndpoint = THEME_TYPE_MAPPING[category];
+                endpoint = `${publicBaseURI}/${themeEndpoint}/${id}`;
+            }
+            
+            const response = await apiClient.get<ThemeType>(endpoint);
             return response.theme;
         } catch (error) {
             console.error(`테마 ID로 조회 실패:`, error);
@@ -81,23 +93,131 @@ export const themesService = {
         }
     },
 
-    createTheme: async (data: FormData): Promise<Theme> => {
+    // ================================
+    // 크라임씬 테마 전용
+    // ================================
+    
+    createCrimesceneTheme: async (data: FormData): Promise<Theme> => {
         try {
-            return await apiClient.post<Theme>(`${baseURI}`, data);
+            return await apiClient.post<Theme>(`${baseURI}/crimescene`, data);
         } catch (error) {
-            console.error(`테마 생성 실패:`, error);
+            console.error(`크라임씬 테마 생성 실패:`, error);
             throw error;
         }
     },
 
-    updateTheme: async (id: string, data: FormData): Promise<Theme> => {
+    updateCrimesceneTheme: async (id: string, data: FormData): Promise<Theme> => {
         try {
-            return await apiClient.post<Theme>(`${baseURI}/${id}`, data);
+            return await apiClient.post<Theme>(`${baseURI}/crimescene/${id}`, data);
         } catch (error) {
-            console.error(`테마 수정 실패:`, error);
+            console.error(`크라임씬 테마 수정 실패:`, error);
             throw error;
         }
     },
+
+    // ================================
+    // 방탈출 테마 전용
+    // ================================
+    
+    createEscapeRoomTheme: async (data: FormData): Promise<Theme> => {
+        try {
+            return await apiClient.post<Theme>(`${baseURI}/escape-room`, data);
+        } catch (error) {
+            console.error(`방탈출 테마 생성 실패:`, error);
+            throw error;
+        }
+    },
+
+    updateEscapeRoomTheme: async (id: string, data: FormData): Promise<Theme> => {
+        try {
+            return await apiClient.post<Theme>(`${baseURI}/escape-room/${id}`, data);
+        } catch (error) {
+            console.error(`방탈출 테마 수정 실패:`, error);
+            throw error;
+        }
+    },
+
+    // ================================
+    // 머더미스터리 테마 전용
+    // ================================
+    
+    createMurderMysteryTheme: async (data: FormData): Promise<Theme> => {
+        try {
+            return await apiClient.post<Theme>(`${baseURI}/murder-mystery`, data);
+        } catch (error) {
+            console.error(`머더미스터리 테마 생성 실패:`, error);
+            throw error;
+        }
+    },
+
+    updateMurderMysteryTheme: async (id: string, data: FormData): Promise<Theme> => {
+        try {
+            return await apiClient.post<Theme>(`${baseURI}/murder-mystery/${id}`, data);
+        } catch (error) {
+            console.error(`머더미스터리 테마 수정 실패:`, error);
+            throw error;
+        }
+    },
+
+    // ================================
+    // 리얼월드 테마 전용
+    // ================================
+    
+    createRealWorldTheme: async (data: FormData): Promise<Theme> => {
+        try {
+            return await apiClient.post<Theme>(`${baseURI}/realworld`, data);
+        } catch (error) {
+            console.error(`리얼월드 테마 생성 실패:`, error);
+            throw error;
+        }
+    },
+
+    updateRealWorldTheme: async (id: string, data: FormData): Promise<Theme> => {
+        try {
+            return await apiClient.post<Theme>(`${baseURI}/realworld/${id}`, data);
+        } catch (error) {
+            console.error(`리얼월드 테마 수정 실패:`, error);
+            throw error;
+        }
+    },
+
+    // ================================
+    // 통합 생성/수정 함수 (테마 타입에 따라 분기)
+    // ================================
+    
+    createTheme: async (data: FormData, themeType: "CRIMESCENE" | "ESCAPE_ROOM" | "MURDER_MYSTERY" | "REALWORLD"): Promise<Theme> => {
+        switch (themeType) {
+            case "CRIMESCENE":
+                return themesService.createCrimesceneTheme(data);
+            case "ESCAPE_ROOM":
+                return themesService.createEscapeRoomTheme(data);
+            case "MURDER_MYSTERY":
+                return themesService.createMurderMysteryTheme(data);
+            case "REALWORLD":
+                return themesService.createRealWorldTheme(data);
+            default:
+                throw new Error(`지원하지 않는 테마 타입: ${themeType}`);
+        }
+    },
+
+    updateTheme: async (id: string, data: FormData, themeType: "CRIMESCENE" | "ESCAPE_ROOM" | "MURDER_MYSTERY" | "REALWORLD"): Promise<Theme> => {
+        switch (themeType) {
+            case "CRIMESCENE":
+                return themesService.updateCrimesceneTheme(id, data);
+            case "ESCAPE_ROOM":
+                return themesService.updateEscapeRoomTheme(id, data);
+            case "MURDER_MYSTERY":
+                return themesService.updateMurderMysteryTheme(id, data);
+            case "REALWORLD":
+                return themesService.updateRealWorldTheme(id, data);
+            default:
+                throw new Error(`지원하지 않는 테마 타입: ${themeType}`);
+        }
+    },
+
+    // ================================
+    // 공통 기능들
+    // ================================
 
     deleteTheme: async (id: string): Promise<void> => {
         try {
