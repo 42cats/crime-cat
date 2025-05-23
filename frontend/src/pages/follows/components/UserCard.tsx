@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { UserPlus, UserMinus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FollowDto } from "@/lib/api/followApi";
+import { useQueryClient } from "@tanstack/react-query";
 import { followApi } from "@/lib/api/followApi";
 import { UseMutationResult } from "@tanstack/react-query";
 
@@ -27,6 +28,7 @@ export const UserCard: React.FC<UserCardProps> = ({
   followMutation,
   unfollowMutation,
 }) => {
+  const queryClient = useQueryClient();
   const userToDisplay = isFollowing
     ? {
         id: follow.followingId,
@@ -43,14 +45,38 @@ export const UserCard: React.FC<UserCardProps> = ({
   const isMyProfile = userToDisplay.id === currentUserId;
 
   // 팔로잉 여부 확인 (팔로워 탭에서만 필요)
-  const [isFollowingUser, setIsFollowingUser] = useState<boolean | null>(null);
+  const [isFollowingUser, setIsFollowingUser] = useState<boolean | null>(
+    (follow as any).isFollowingUser !== undefined ? (follow as any).isFollowingUser : null
+  );
 
   useEffect(() => {
-    if (!isFollowing && !isMyProfile) {
+    // 이미 속성이 있는 경우 사용
+    if ((follow as any).isFollowingUser !== undefined) {
+      setIsFollowingUser((follow as any).isFollowingUser);
+      return;
+    }
+
+    // 필요한 경우에만 API 호출
+    if (!isFollowing && !isMyProfile && isFollowingUser === null) {
       const checkIsFollowing = async () => {
         try {
           const response = await followApi.isFollowing(userToDisplay.id);
           setIsFollowingUser(response.isFollowing);
+          
+          // 다음번 사용을 위해 쿼리 데이터에 저장
+          queryClient.setQueriesData({ queryKey: ["followers"] }, (old: any) => {
+            if (!old?.content) return old;
+            return {
+              ...old,
+              content: old.content.map((item: any) => {
+                if (item.id === follow.id) {
+                  return { ...item, isFollowingUser: response.isFollowing };
+                }
+                return item;
+              })
+            };
+          });
+          
         } catch (error) {
           console.error("Failed to check if following:", error);
           setIsFollowingUser(false);
@@ -59,7 +85,7 @@ export const UserCard: React.FC<UserCardProps> = ({
 
       checkIsFollowing();
     }
-  }, [userToDisplay.id, isFollowing, isMyProfile]);
+  }, [userToDisplay.id, isFollowing, isMyProfile, follow, queryClient]);
 
   return (
     <Card className="mb-3">

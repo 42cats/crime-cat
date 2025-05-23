@@ -85,6 +85,32 @@ export function useUserSearchQuery(
     queryKey: ["findUsers", searchQuery, "auto", searchPage, pageSize],
     queryFn: () => followApi.findUsers(searchQuery, "auto", searchPage, pageSize),
     enabled: !!searchQuery && showSearch,
+    select: (data) => {
+      console.log("API response:", data); // 디버그용
+      
+      // API 응답이 users 배열 대신 content 배열을 반환하는 경우 변환
+      if (data.content && !data.users) {
+        // content의 각 항목을 UserInfo 형식으로 변환
+        const transformedUsers = data.content.map((item: any) => ({
+          id: item.id || "",
+          nickname: item.nickname || "",
+          profileImagePath: item.profileImagePath || "",
+          role: item.role || "",
+        }));
+        
+        console.log("Transformed users:", transformedUsers); // 디버그용
+        
+        return {
+          ...data,
+          users: transformedUsers,
+          totalElements: data.totalElements || 0,
+          totalPages: data.totalPages || 1,
+        };
+      }
+      return data;
+    },
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 
   // 팔로우 여부 확인 및 결과에 추가
