@@ -89,7 +89,7 @@ public class BoardPostService {
         BoardPost boardPost = boardPostRepository.findById(postId).orElseThrow(() -> new EntityNotFoundException("게시글물 찾을 수 없습니다."));
 
         if (!boardPost.getAuthorId().equals(userId)) {
-            throw new AccessDeniedException("게시물을 수정할 권한이 없습니다");
+            throw new AccessDeniedException("게시글을 수정할 권한이 없습니다");
         }
 
         boardPost.update(boardPostRequest);
@@ -105,7 +105,7 @@ public class BoardPostService {
         BoardPost boardPost = boardPostRepository.findById(postId).orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
 
         if (!boardPost.getAuthorId().equals(userId)) {
-            throw new AccessDeniedException("게시물을 수정할 권한이 없습니다");
+            throw new AccessDeniedException("게시글을 수정할 권한이 없습니다");
         }
 
         boardPost.delete();
