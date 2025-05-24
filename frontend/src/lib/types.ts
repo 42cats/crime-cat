@@ -285,7 +285,7 @@ interface BaseTheme {
     recommendations: number;
     views: number;
     playCount: number;
-    author: AuthorInfo;
+    author: string | AuthorInfo;  // API는 string ID를 반환
     playersMin: number;
     playersMax: number;
     playTimeMin: number;
@@ -293,12 +293,12 @@ interface BaseTheme {
     price: number;
     difficulty: number;
     tags: string[];
-    content: string;
-    isPublic: boolean;
-    createdAt: string;
-    updatedAt: string;
+    content?: string;  // API 응답에 없을 수 있음
+    isPublic?: boolean;  // API 응답에 없을 수 있음
+    createdAt?: string;  // API 응답에 없을 수 있음
+    updatedAt?: string;  // API 응답에 없을 수 있음
     recommendationEnabled: boolean;
-    commentEnabled: boolean;
+    commentEnabled?: boolean;  // API 응답에 없을 수 있음
     type: "CRIMESCENE" | "ESCAPE_ROOM" | "MURDER_MYSTERY" | "REALWORLD";
 }
 

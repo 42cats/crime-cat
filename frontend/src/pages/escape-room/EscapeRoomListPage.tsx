@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Pagination } from '@/components/ui/pagination';
-import EscapeRoomSearchHeader from '@/components/escape-room/list/EscapeRoomSearchHeader';
-import EscapeRoomThemeGrid from '@/components/escape-room/list/EscapeRoomThemeGrid';
-import { EscapeRoomTheme, ThemePage } from '@/lib/types';
-import { themesService } from '@/api/content';
-import { useToast } from '@/hooks/useToast';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/pagination";
+import EscapeRoomSearchHeader from "@/components/escape-room/list/EscapeRoomSearchHeader";
+import EscapeRoomThemeGrid from "@/components/escape-room/list/EscapeRoomThemeGrid";
+import { EscapeRoomTheme, ThemePage } from "@/lib/types";
+import { themesService } from "@/api/content";
+import { useToast } from "@/hooks/useToast";
 
 interface SearchFilters {
     query: string;
@@ -17,7 +17,13 @@ interface SearchFilters {
     durationRange: [number, number];
     tags: string[];
     location: string;
-    sortBy: 'newest' | 'oldest' | 'popularity' | 'rating' | 'price_low' | 'price_high';
+    sortBy:
+        | "newest"
+        | "oldest"
+        | "popularity"
+        | "rating"
+        | "price_low"
+        | "price_high";
 }
 
 const EscapeRoomListPage: React.FC = () => {
@@ -29,18 +35,18 @@ const EscapeRoomListPage: React.FC = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
     const [canCreateTheme, setCanCreateTheme] = useState(false);
-    
+
     const pageSize = 9;
 
     const [filters, setFilters] = useState<SearchFilters>({
-        query: '',
+        query: "",
         difficulty: [],
         priceRange: [0, 100000],
         participantRange: [1, 20],
         durationRange: [15, 180],
         tags: [],
-        location: '',
-        sortBy: 'newest'
+        location: "",
+        sortBy: "newest",
     });
 
     const fetchThemes = async () => {
@@ -48,49 +54,60 @@ const EscapeRoomListPage: React.FC = () => {
         try {
             // 필터 파라미터 변환
             const filterParams: any = {};
-            
+
             // 기본 범위 필터
-            if (filters.priceRange[0] > 0) filterParams.priceMin = filters.priceRange[0].toString();
-            if (filters.priceRange[1] < 100000) filterParams.priceMax = filters.priceRange[1].toString();
-            if (filters.participantRange[0] > 1) filterParams.playerMin = filters.participantRange[0].toString();
-            if (filters.participantRange[1] < 20) filterParams.playerMax = filters.participantRange[1].toString();
-            if (filters.durationRange[0] > 15) filterParams.playtimeMin = filters.durationRange[0].toString();
-            if (filters.durationRange[1] < 180) filterParams.playtimeMax = filters.durationRange[1].toString();
-            
+            if (filters.priceRange[0] > 0)
+                filterParams.priceMin = filters.priceRange[0].toString();
+            if (filters.priceRange[1] < 100000)
+                filterParams.priceMax = filters.priceRange[1].toString();
+            if (filters.participantRange[0] > 1)
+                filterParams.playerMin = filters.participantRange[0].toString();
+            if (filters.participantRange[1] < 20)
+                filterParams.playerMax = filters.participantRange[1].toString();
+            if (filters.durationRange[0] > 15)
+                filterParams.playtimeMin = filters.durationRange[0].toString();
+            if (filters.durationRange[1] < 180)
+                filterParams.playtimeMax = filters.durationRange[1].toString();
+
             // 난이도 필터
             if (filters.difficulty.length > 0) {
-                filterParams.difficultyMin = Math.min(...filters.difficulty).toString();
-                filterParams.difficultyMax = Math.max(...filters.difficulty).toString();
+                filterParams.difficultyMin = Math.min(
+                    ...filters.difficulty
+                ).toString();
+                filterParams.difficultyMax = Math.max(
+                    ...filters.difficulty
+                ).toString();
             }
-            
+
             // 지역 검색은 keyword로 처리
             const keyword = filters.location || filters.query;
-            
+
             const response = await themesService.getEscapeRoomThemes({
-                type: 'ESCAPE_ROOM',
+                type: "ESCAPE_ROOM",
                 page: currentPage - 1,
                 size: pageSize,
                 sort: filters.sortBy,
                 keyword: keyword,
-                filters: filterParams
+                filters: filterParams,
             });
-            
+            console.log(response);
             if (response && response.themes) {
                 // API 응답에서 ESCAPE_ROOM 타입만 필터링
                 const escapeRoomThemes = response.themes.filter(
-                    (theme): theme is EscapeRoomTheme => theme.type === 'ESCAPE_ROOM'
+                    (theme): theme is EscapeRoomTheme =>
+                        theme.type === "ESCAPE_ROOM"
                 );
-                
+
                 setThemes(escapeRoomThemes);
                 setTotalPages(response.totalPages);
                 setTotalCount(response.totalElements);
             }
         } catch (error) {
-            console.error('Failed to fetch themes:', error);
+            console.error("Failed to fetch themes:", error);
             toast({
                 title: "오류",
                 description: "테마 목록을 불러오는데 실패했습니다.",
-                variant: "destructive"
+                variant: "destructive",
             });
         } finally {
             setIsLoading(false);
@@ -107,12 +124,12 @@ const EscapeRoomListPage: React.FC = () => {
     };
 
     const handleCreateTheme = () => {
-        navigate('/escape-room/create');
+        navigate("/escape-room/create");
     };
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     return (
@@ -126,7 +143,6 @@ const EscapeRoomListPage: React.FC = () => {
                 totalCount={totalCount}
                 isLoading={isLoading}
             />
-
             {/* 테마 그리드 */}
             <div className="mt-8">
                 <EscapeRoomThemeGrid
@@ -155,7 +171,9 @@ const EscapeRoomListPage: React.FC = () => {
             {!isLoading && themes.length > 0 && (
                 <div className="mt-16 text-center text-sm text-muted-foreground">
                     <p>더 많은 방탈출 테마를 찾고 계신가요?</p>
-                    <p className="mt-1">새로운 테마들이 계속 추가되고 있습니다!</p>
+                    <p className="mt-1">
+                        새로운 테마들이 계속 추가되고 있습니다!
+                    </p>
                 </div>
             )}
         </div>

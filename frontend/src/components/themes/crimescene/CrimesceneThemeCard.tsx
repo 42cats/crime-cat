@@ -6,6 +6,7 @@ import {
     Tag,
     Coins,
     Clock,
+    Gauge,
     Heart,
     Eye,
     MessageSquare,
@@ -119,6 +120,7 @@ const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
                             </span>
                         </div>
                         <div className="flex items-center gap-1">
+                            <Gauge className="w-3 h-3 flex-shrink-0" />
                             <div className="flex">
                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <Star
