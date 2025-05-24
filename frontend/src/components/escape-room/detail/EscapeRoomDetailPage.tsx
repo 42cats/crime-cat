@@ -51,10 +51,17 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
     const [hasGameHistory, setHasGameHistory] = useState(false);
     const [checkingHistory, setCheckingHistory] = useState(true);
     const [showLoginDialog, setShowLoginDialog] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [likeCount, setLikeCount] = useState(theme.recommendations || 0);
     const { toast } = useToast();
     const navigate = useNavigate();
     const { user } = useAuth();
     const queryClient = useQueryClient();
+
+    // 작성자 확인
+    const isAuthor = user?.id === theme.author?.id;
+    const canEdit =
+        isAuthor || user?.role === "ADMIN" || user?.role === "MANAGER";
 
     useEffect(() => {
         checkUserGameHistory();
@@ -85,23 +92,50 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
     const likeMutation = useMutation({
         mutationFn: () => themesService.setLike(theme.id),
         onMutate: async () => {
-            await queryClient.cancelQueries({ queryKey: ["theme-like", theme.id] });
-            const previousLiked = queryClient.getQueryData(["theme-like", theme.id]);
+            await queryClient.cancelQueries({
+                queryKey: ["theme-like", theme.id],
+            });
+            const previousLiked = queryClient.getQueryData([
+                "theme-like",
+                theme.id,
+            ]);
             queryClient.setQueryData(["theme-like", theme.id], true);
-            return { previousLiked };
+
+            // 좋아요 수 즉시 업데이트 (로컬 상태만)
+            setLikeCount((prev) => prev + 1);
+
+            return { previousLiked, previousCount: likeCount };
         },
-        onError: (err, variables, context) => {
+        onError: (err: any, variables, context: any) => {
+            console.error("좋아요 실패:", err);
+
             if (context?.previousLiked !== undefined) {
-                queryClient.setQueryData(["theme-like", theme.id], context.previousLiked);
+                queryClient.setQueryData(
+                    ["theme-like", theme.id],
+                    context.previousLiked
+                );
             }
+            if (context?.previousCount !== undefined) {
+                setLikeCount(context.previousCount);
+            }
+
+            // 더 구체적인 에러 메시지
+            const errorMessage =
+                err?.response?.data?.message ||
+                err?.message ||
+                "문제가 발생했습니다. 다시 시도해주세요.";
+
             toast({
                 title: "좋아요 실패",
-                description: "문제가 발생했습니다. 다시 시도해주세요.",
+                description: errorMessage,
                 variant: "destructive",
             });
         },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ["theme-like", theme.id] });
+        onSuccess: () => {
+            // 성공 시 좋아요 상태만 다시 불러오기
+            queryClient.invalidateQueries({
+                queryKey: ["theme-like", theme.id],
+            });
         },
     });
 
@@ -109,23 +143,50 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
     const unlikeMutation = useMutation({
         mutationFn: () => themesService.cancelLike(theme.id),
         onMutate: async () => {
-            await queryClient.cancelQueries({ queryKey: ["theme-like", theme.id] });
-            const previousLiked = queryClient.getQueryData(["theme-like", theme.id]);
+            await queryClient.cancelQueries({
+                queryKey: ["theme-like", theme.id],
+            });
+            const previousLiked = queryClient.getQueryData([
+                "theme-like",
+                theme.id,
+            ]);
             queryClient.setQueryData(["theme-like", theme.id], false);
-            return { previousLiked };
+
+            // 좋아요 수 즉시 업데이트 (로컬 상태만)
+            setLikeCount((prev) => Math.max(0, prev - 1));
+
+            return { previousLiked, previousCount: likeCount };
         },
-        onError: (err, variables, context) => {
+        onError: (err: any, variables, context: any) => {
+            console.error("좋아요 취소 실패:", err);
+
             if (context?.previousLiked !== undefined) {
-                queryClient.setQueryData(["theme-like", theme.id], context.previousLiked);
+                queryClient.setQueryData(
+                    ["theme-like", theme.id],
+                    context.previousLiked
+                );
             }
+            if (context?.previousCount !== undefined) {
+                setLikeCount(context.previousCount);
+            }
+
+            // 더 구체적인 에러 메시지
+            const errorMessage =
+                err?.response?.data?.message ||
+                err?.message ||
+                "문제가 발생했습니다. 다시 시도해주세요.";
+
             toast({
                 title: "좋아요 취소 실패",
-                description: "문제가 발생했습니다. 다시 시도해주세요.",
+                description: errorMessage,
                 variant: "destructive",
             });
         },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ["theme-like", theme.id] });
+        onSuccess: () => {
+            // 성공 시 좋아요 상태만 다시 불러오기
+            queryClient.invalidateQueries({
+                queryKey: ["theme-like", theme.id],
+            });
         },
     });
 
@@ -135,6 +196,17 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
             setShowLoginDialog(true);
             return;
         }
+
+        // 추천 기능이 비활성화된 경우
+        if (!theme.recommendationEnabled) {
+            toast({
+                title: "추천 불가",
+                description: "이 테마는 추천 기능이 비활성화되어 있습니다.",
+                variant: "destructive",
+            });
+            return;
+        }
+
         if (liked) {
             unlikeMutation.mutate();
         } else {
@@ -159,7 +231,42 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
         }
     };
 
+    // 테마 삭제
+    const deleteMutation = useMutation({
+        mutationFn: () => themesService.deleteTheme(theme.id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["themes"] });
+            toast({
+                title: "삭제 완료",
+                description: "테마가 삭제되었습니다.",
+            });
+            navigate("/themes/escape-room");
+        },
+        onError: () => {
+            toast({
+                title: "삭제 실패",
+                description: "문제가 발생했습니다. 다시 시도해주세요.",
+                variant: "destructive",
+            });
+        },
+    });
 
+    const handleDelete = () => {
+        setShowDeleteDialog(true);
+    };
+
+    const handleEdit = () => {
+        // 테마 타입을 소문자로 변환하여 라우팅 경로와 일치시킴
+        const themeTypeForRoute = theme.type.toLowerCase().replace("_", "-");
+        navigate(`/themes/edit/${theme.id}`, {
+            state: {
+                theme: {
+                    ...theme,
+                    type: theme.type, // 원본 타입 유지
+                },
+            },
+        });
+    };
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
@@ -167,7 +274,7 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
             <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/themes/escape-room')}
+                onClick={() => navigate("/themes/escape-room")}
                 className="flex items-center gap-2 mb-4"
             >
                 <ArrowLeft className="w-4 h-4" />
@@ -183,6 +290,10 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                 onToggleLike={handleToggleLike}
                 onShare={handleShare}
                 isLiking={likeMutation.isPending || unlikeMutation.isPending}
+                canEdit={canEdit}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                likeCount={likeCount}
             />
 
             {/* 메인 콘텐츠 - 세로 레이아웃으로 변경 */}
@@ -247,52 +358,52 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                             />
                         </TabsContent>
                     </Tabs>
-                    
+
                     {/* URL 바로가기 정보 */}
                     {(theme.homepageUrl || theme.reservationUrl) && (
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 text-lg">
-                                        <ExternalLink className="w-5 h-5" />
-                                        바로가기
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-3">
-                                    {theme.homepageUrl && (
-                                        <Button
-                                            variant="outline"
-                                            className="w-full justify-start"
-                                            onClick={() =>
-                                                window.open(
-                                                    theme.homepageUrl,
-                                                    "_blank",
-                                                    "noopener,noreferrer"
-                                                )
-                                            }
-                                        >
-                                            <Globe className="w-4 h-4 mr-2" />
-                                            홈페이지 방문
-                                            <ExternalLink className="w-3 h-3 ml-auto" />
-                                        </Button>
-                                    )}
-                                    {theme.reservationUrl && (
-                                        <Button
-                                            className="w-full justify-start bg-green-600 hover:bg-green-700"
-                                            onClick={() =>
-                                                window.open(
-                                                    theme.reservationUrl,
-                                                    "_blank",
-                                                    "noopener,noreferrer"
-                                                )
-                                            }
-                                        >
-                                            <Calendar className="w-4 h-4 mr-2" />
-                                            예약하기
-                                            <ExternalLink className="w-3 h-3 ml-auto" />
-                                        </Button>
-                                    )}
-                                </CardContent>
-                            </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                    <ExternalLink className="w-5 h-5" />
+                                    바로가기
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {theme.homepageUrl && (
+                                    <Button
+                                        variant="outline"
+                                        className="w-full justify-start"
+                                        onClick={() =>
+                                            window.open(
+                                                theme.homepageUrl,
+                                                "_blank",
+                                                "noopener,noreferrer"
+                                            )
+                                        }
+                                    >
+                                        <Globe className="w-4 h-4 mr-2" />
+                                        홈페이지 방문
+                                        <ExternalLink className="w-3 h-3 ml-auto" />
+                                    </Button>
+                                )}
+                                {theme.reservationUrl && (
+                                    <Button
+                                        className="w-full justify-start bg-green-600 hover:bg-green-700"
+                                        onClick={() =>
+                                            window.open(
+                                                theme.reservationUrl,
+                                                "_blank",
+                                                "noopener,noreferrer"
+                                            )
+                                        }
+                                    >
+                                        <Calendar className="w-4 h-4 mr-2" />
+                                        예약하기
+                                        <ExternalLink className="w-3 h-3 ml-auto" />
+                                    </Button>
+                                )}
+                            </CardContent>
+                        </Card>
                     )}
 
                     {/* 플레이 기록 버튼 - 고정 위치에서 제거하고 플로팅 버튼으로 */}
@@ -321,19 +432,47 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
             </div>
 
             {/* 로그인 안내 다이얼로그 */}
-            <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+            <AlertDialog
+                open={showLoginDialog}
+                onOpenChange={setShowLoginDialog}
+            >
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
                         <AlertDialogDescription>
-                            좋아요 기능을 사용하려면 로그인이 필요합니다.
-                            로그인 페이지로 이동하시겠습니까?
+                            좋아요 기능을 사용하려면 로그인이 필요합니다. 로그인
+                            페이지로 이동하시겠습니까?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>취소</AlertDialogCancel>
                         <AlertDialogAction onClick={() => navigate("/login")}>
                             로그인하기
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* 삭제 확인 다이얼로그 */}
+            <AlertDialog
+                open={showDeleteDialog}
+                onOpenChange={setShowDeleteDialog}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>테마 삭제</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            정말로 이 테마를 삭제하시겠습니까? 삭제된 테마는
+                            복구할 수 없습니다.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>취소</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => deleteMutation.mutate()}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            삭제
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

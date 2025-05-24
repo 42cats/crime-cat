@@ -9,6 +9,8 @@ import {
     Calendar,
     Heart,
     Share2,
+    Edit,
+    Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +24,10 @@ interface ThemeHeaderProps {
     onToggleLike?: () => void;
     onShare?: () => void;
     isLiking?: boolean;
+    canEdit?: boolean;
+    onEdit?: () => void;
+    onDelete?: () => void;
+    likeCount?: number;
 }
 
 const ThemeHeader: React.FC<ThemeHeaderProps> = ({ 
@@ -29,7 +35,11 @@ const ThemeHeader: React.FC<ThemeHeaderProps> = ({
     liked = false, 
     onToggleLike, 
     onShare, 
-    isLiking = false 
+    isLiking = false,
+    canEdit = false,
+    onEdit,
+    onDelete,
+    likeCount
 }) => {
     const formatDifficulty = (difficulty: number) => {
         return Array.from({ length: 5 }, (_, i) => (
@@ -73,59 +83,87 @@ const ThemeHeader: React.FC<ThemeHeaderProps> = ({
                     </div>
                 )}
             </div>
-            {/* 예약, 홈페이지 링크 및 좋아요, 공유 버튼 */}
-            <div className="flex flex-wrap gap-3">
-                    {theme.reservationUrl && (
-                        <Button asChild>
-                            <a
-                                href={theme.reservationUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                <Calendar className="w-4 h-4 mr-2" />
-                                예약하기
-                            </a>
-                        </Button>
-                    )}
-                    {theme.homepageUrl && (
-                        <Button variant="outline" asChild>
-                            <a
-                                href={theme.homepageUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                <Globe className="w-4 h-4 mr-2" />
-                                홈페이지
-                            </a>
-                        </Button>
-                    )}
-                    
-                    {/* 구분선 */}
-                    {(theme.reservationUrl || theme.homepageUrl) && <div className="w-px h-9 bg-gray-300" />}
-                    
+            {/* 버튼 그룹 - 중앙 정렬 */}
+            <div className="flex flex-col items-center gap-3">
+                {/* 첫 번째 줄 - 예약/홈페이지 */}
+                {(theme.reservationUrl || theme.homepageUrl) && (
+                    <div className="flex gap-3">
+                        {theme.reservationUrl && (
+                            <Button asChild>
+                                <a
+                                    href={theme.reservationUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <Calendar className="w-4 h-4 mr-2" />
+                                    예약하기
+                                </a>
+                            </Button>
+                        )}
+                        {theme.homepageUrl && (
+                            <Button variant="outline" asChild>
+                                <a
+                                    href={theme.homepageUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <Globe className="w-4 h-4 mr-2" />
+                                    홈페이지
+                                </a>
+                            </Button>
+                        )}
+                    </div>
+                )}
+                
+                {/* 두 번째 줄 - 좋아요/공유하기 */}
+                <div className="flex gap-3">
                     {/* 좋아요 버튼 */}
                     {theme.recommendationEnabled !== false && (
                         <Button 
-                            variant={liked ? "default" : "outline"}
+                            variant="ghost"
+                            size="sm"
                             onClick={onToggleLike}
                             disabled={isLiking}
+                            className="flex items-center gap-2"
                         >
                             <Heart 
-                                className={`w-4 h-4 mr-2 ${liked ? "fill-current" : ""}`} 
+                                className={`w-5 h-5 ${liked ? "fill-red-500 text-red-500" : ""}`} 
                             />
-                            {liked ? "좋아요 취소" : "좋아요"}
+                            <span className="font-medium">{likeCount !== undefined ? likeCount : theme.recommendations || 0}</span>
                         </Button>
                     )}
                     
                     {/* 공유하기 버튼 */}
                     <Button 
-                        variant="outline"
+                        variant="ghost"
+                        size="sm"
                         onClick={onShare}
                     >
-                        <Share2 className="w-4 h-4 mr-2" />
-                        공유하기
+                        <Share2 className="w-5 h-5" />
                     </Button>
+                    
+                    {/* 수정/삭제 버튼 - 작성자만 보임 */}
+                    {canEdit && (
+                        <>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={onEdit}
+                            >
+                                <Edit className="w-5 h-5" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={onDelete}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                                <Trash2 className="w-5 h-5" />
+                            </Button>
+                        </>
+                    )}
                 </div>
+            </div>
         </div>
     );
 };
