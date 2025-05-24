@@ -1,6 +1,7 @@
 package com.crimecat.backend.gameHistory.domain;
 
-import com.crimecat.backend.gameHistory.enum.SuccessStatus;
+import com.crimecat.backend.gameHistory.enums.SuccessStatus;
+
 import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;

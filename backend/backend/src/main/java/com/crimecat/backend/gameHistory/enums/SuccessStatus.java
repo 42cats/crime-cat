@@ -1,4 +1,4 @@
-package com.crimecat.backend.gameHistory.enum;
+package com.crimecat.backend.gameHistory.enums;
 
 /**
  * 방탈출 성공 상태 enum

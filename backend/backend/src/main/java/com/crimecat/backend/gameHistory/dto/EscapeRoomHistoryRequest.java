@@ -1,6 +1,12 @@
 package com.crimecat.backend.gameHistory.dto;
 
-import com.crimecat.backend.gameHistory.enum.SuccessStatus;
+import com.crimecat.backend.gameHistory.enums.SuccessStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,7 +21,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EscapeRoomHistoryRequest {
-    
     @NotNull(message = "테마 ID는 필수입니다")
     private UUID escapeRoomThemeId;
     

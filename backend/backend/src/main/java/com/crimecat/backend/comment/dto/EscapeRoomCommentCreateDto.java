@@ -26,4 +26,7 @@ public class EscapeRoomCommentCreateDto {
     
     // 게임 기록 기반 댓글인 경우 해당 기록 ID
     private UUID escapeRoomHistoryId;
+    
+    // 대댓글인 경우 부모 댓글 ID
+    private UUID parentCommentId;
 }
