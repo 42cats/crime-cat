@@ -94,10 +94,82 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                 onAddGameHistory={onAddGameHistory}
             />
 
-            {/* 메인 콘텐츠 */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* 왼쪽 콘텐츠 (테마 정보) */}
-                <div className="lg:col-span-2 space-y-6">
+            {/* 메인 콘텐츠 - 세로 레이아웃으로 변경 */}
+            <div className="space-y-6">
+                {/* 상단 요약 정보 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* 난이도 카드 */}
+                    <Card>
+                        <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">난이도</span>
+                                <div className="flex items-center gap-1">
+                                    {Array.from({ length: 5 }, (_, index) => (
+                                        <Star
+                                            key={index}
+                                            className={`w-4 h-4 ${
+                                                index < theme.difficulty
+                                                    ? 'text-yellow-400 fill-yellow-400'
+                                                    : 'text-gray-200'
+                                            }`}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* 참가 인원 카드 */}
+                    <Card>
+                        <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">참가 인원</span>
+                                <div className="flex items-center gap-1">
+                                    <Users className="w-4 h-4 text-gray-500" />
+                                    <span className="text-sm font-medium">
+                                        {theme.minParticipants === theme.maxParticipants 
+                                            ? `${theme.minParticipants}명`
+                                            : `${theme.minParticipants}-${theme.maxParticipants}명`
+                                        }
+                                    </span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* 플레이 시간 카드 */}
+                    <Card>
+                        <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">플레이 시간</span>
+                                <div className="flex items-center gap-1">
+                                    <Clock className="w-4 h-4 text-gray-500" />
+                                    <span className="text-sm font-medium">
+                                        {formatDuration(theme.estimatedDuration)}
+                                    </span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* 가격 카드 */}
+                    <Card>
+                        <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-600">1인당 가격</span>
+                                <div className="flex items-center gap-1">
+                                    <DollarSign className="w-4 h-4 text-gray-500" />
+                                    <span className="text-sm font-medium">
+                                        {formatPrice(theme.price)}
+                                    </span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* 메인 콘텐츠 탭 */}
+                <div className="space-y-6">
                     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
                         <TabsList className="w-full">
                             <TabsTrigger value="info" className="flex items-center gap-2">
@@ -147,82 +219,8 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                             />
                         </TabsContent>
                     </Tabs>
-                </div>
-
-                {/* 오른쪽 사이드바 (위치 정보 및 요약) */}
-                <div className="space-y-6">
-                    {/* 게임 정보 요약 */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">게임 정보</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {/* 난이도 */}
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">난이도</span>
-                                <div className="flex items-center gap-2">
-                                    <div className="flex items-center gap-1">
-                                        {Array.from({ length: 5 }, (_, index) => (
-                                            <Star
-                                                key={index}
-                                                className={`w-4 h-4 ${
-                                                    index < theme.difficulty
-                                                        ? 'text-yellow-400 fill-yellow-400'
-                                                        : 'text-gray-200'
-                                                }`}
-                                            />
-                                        ))}
-                                    </div>
-                                    <Badge variant="outline" className={difficultyInfo.color}>
-                                        {difficultyInfo.label}
-                                    </Badge>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            {/* 참가 인원 */}
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">참가 인원</span>
-                                <div className="flex items-center gap-1">
-                                    <Users className="w-4 h-4 text-gray-500" />
-                                    <span className="text-sm font-medium">
-                                        {theme.minParticipants === theme.maxParticipants 
-                                            ? `${theme.minParticipants}명`
-                                            : `${theme.minParticipants}-${theme.maxParticipants}명`
-                                        }
-                                    </span>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            {/* 플레이 시간 */}
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">플레이 시간</span>
-                                <div className="flex items-center gap-1">
-                                    <Clock className="w-4 h-4 text-gray-500" />
-                                    <span className="text-sm font-medium">
-                                        {formatDuration(theme.estimatedDuration)}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            {/* 가격 */}
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">1인당 가격</span>
-                                <div className="flex items-center gap-1">
-                                    <DollarSign className="w-4 h-4 text-gray-500" />
-                                    <span className="text-sm font-medium">
-                                        {formatPrice(theme.price)}
-                                    </span>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
+                {/* 하단 추가 정보 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* 장르 태그 */}
                     {theme.genreTags.length > 0 && (
                         <Card>
@@ -237,41 +235,6 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                                         </Badge>
                                     ))}
                                 </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* 매장 위치 */}
-                    {theme.locations.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <MapPin className="w-5 h-5" />
-                                    매장 위치
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                {theme.locations.map((location, index) => (
-                                    <div key={index} className="space-y-2">
-                                        <div className="font-medium text-sm">
-                                            {location.name}
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                            {location.roadAddress}
-                                        </div>
-                                        {location.phone && (
-                                            <div className="text-xs text-gray-500">
-                                                📞 {location.phone}
-                                            </div>
-                                        )}
-                                        {index < theme.locations.length - 1 && (
-                                            <Separator className="mt-3" />
-                                        )}
-                                    </div>
-                                ))}
-                                
-                                {/* 지도 컴포넌트 */}
-                                <LocationMap locations={theme.locations} />
                             </CardContent>
                         </Card>
                     )}
@@ -310,19 +273,68 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                             </CardContent>
                         </Card>
                     )}
+                </div>
 
-                    {/* 플레이 기록 버튼 */}
-                    {theme.allowGameHistory && onAddGameHistory && (
+                {/* 매장 위치 */}
+                {theme.locations.length > 0 && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <MapPin className="w-5 h-5" />
+                                매장 위치 ({theme.locations.length}개 지점)
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {theme.locations.map((location, index) => (
+                                    <div key={index} className="p-4 border rounded-lg space-y-2">
+                                        <div className="font-medium text-sm">
+                                            {location.name}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                            {location.roadAddress}
+                                        </div>
+                                        {location.phone && (
+                                            <div className="text-xs text-gray-500">
+                                                📞 {location.phone}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            {/* 지도 컴포넌트 */}
+                            <LocationMap locations={theme.locations} />
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* 플레이 기록 버튼 - 고정 위치에서 제거하고 플로팅 버튼으로 */}
+                {theme.allowGameHistory && onAddGameHistory && (
+                    <div className="fixed bottom-6 right-6 z-50 md:hidden">
                         <Button 
                             onClick={onAddGameHistory} 
-                            className="w-full"
+                            className="rounded-full shadow-lg"
+                            size="lg"
+                        >
+                            <Trophy className="w-5 h-5" />
+                        </Button>
+                    </div>
+                )}
+
+                {/* 데스크톱에서는 상단에 버튼 표시 */}
+                {theme.allowGameHistory && onAddGameHistory && (
+                    <div className="hidden md:flex justify-end">
+                        <Button 
+                            onClick={onAddGameHistory} 
                             size="lg"
                         >
                             <Trophy className="w-4 h-4 mr-2" />
                             플레이 기록 추가
                         </Button>
-                    )}
-                </div>
+                    </div>
+                )}
+            </div>
             </div>
         </div>
     );

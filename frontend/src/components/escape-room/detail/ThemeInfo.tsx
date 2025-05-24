@@ -91,7 +91,7 @@ const ThemeInfo: React.FC<ThemeInfoProps> = ({ theme }) => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-3">
-                        {theme.horrorLevel && (
+                        {theme.horrorLevel !== undefined && theme.horrorLevel !== null && (
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Ghost className="w-4 h-4" />
@@ -103,7 +103,7 @@ const ThemeInfo: React.FC<ThemeInfoProps> = ({ theme }) => {
                             </div>
                         )}
                         
-                        {theme.deviceRatio && (
+                        {theme.deviceRatio !== undefined && theme.deviceRatio !== null && (
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Zap className="w-4 h-4" />
@@ -115,7 +115,7 @@ const ThemeInfo: React.FC<ThemeInfoProps> = ({ theme }) => {
                             </div>
                         )}
                         
-                        {theme.activityLevel && (
+                        {theme.activityLevel !== undefined && theme.activityLevel !== null && (
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <Activity className="w-4 h-4" />
@@ -127,15 +127,17 @@ const ThemeInfo: React.FC<ThemeInfoProps> = ({ theme }) => {
                             </div>
                         )}
 
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <Calendar className="w-4 h-4" />
-                                <span className="text-sm text-gray-600">오픈일</span>
+                        {theme.openDate && (
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="w-4 h-4" />
+                                    <span className="text-sm text-gray-600">오픈일</span>
+                                </div>
+                                <div className="text-sm font-medium">
+                                    {formatDate(theme.openDate)}
+                                </div>
                             </div>
-                            <div className="text-sm font-medium">
-                                {formatDate(theme.openDate)}
-                            </div>
-                        </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>
