@@ -42,6 +42,27 @@ export interface EscapeRoomHistoryResponse {
     createdAt: string;
     updatedAt: string;
     isAuthor: boolean;
+    isOwn?: boolean;
+}
+
+export interface EscapeRoomHistoryStats {
+    totalRecords: number;
+    publicRecords: number;
+    successCount: number;
+    failCount: number;
+    successRate: number;
+    averageEscapeTime?: number;
+    averageFeltDifficulty?: number;
+    averageFeltDifficultyStars?: number;
+    averageSatisfaction?: number;
+    averageSatisfactionStars?: number;
+    averageParticipants?: number;
+    averageHintUsed?: number;
+    fastestEscapeTime?: number;
+    slowestEscapeTime?: number;
+    formattedAverageEscapeTime?: string;
+    formattedFastestTime?: string;
+    formattedSlowestTime?: string;
 }
 
 export interface PageResponse<T> {
@@ -178,6 +199,20 @@ export const escapeRoomHistoryService = {
             );
         } catch (error) {
             console.error("최근 방탈출 기록 조회 실패:", error);
+            throw error;
+        }
+    },
+
+    // 특정 테마의 통계 조회
+    getThemeStatistics: async (
+        themeId: string
+    ): Promise<EscapeRoomHistoryStats> => {
+        try {
+            return await apiClient.get<EscapeRoomHistoryStats>(
+                `${publicBaseURI}/theme/${themeId}/statistics`
+            );
+        } catch (error) {
+            console.error("테마 통계 조회 실패:", error);
             throw error;
         }
     },

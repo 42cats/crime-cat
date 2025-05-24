@@ -1,6 +1,7 @@
 package com.crimecat.backend.gameHistory.controller;
 
 import com.crimecat.backend.gameHistory.dto.EscapeRoomHistoryResponse;
+import com.crimecat.backend.gameHistory.dto.EscapeRoomHistoryStatsResponse;
 import com.crimecat.backend.gameHistory.service.EscapeRoomHistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,16 @@ public class EscapeRoomHistoryPublicController {
             @RequestParam(defaultValue = "10") int limit) {
         log.info("최근 방탈출 기록 조회 요청 - limit: {}", limit);
         List<EscapeRoomHistoryResponse> response = escapeRoomHistoryService.getRecentHistories(limit);
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * 특정 테마의 통계 정보 조회 (공개)
+     */
+    @GetMapping("/theme/{themeId}/statistics")
+    public ResponseEntity<EscapeRoomHistoryStatsResponse> getThemeStatistics(@PathVariable UUID themeId) {
+        log.info("테마 통계 정보 조회 요청 - themeId: {}", themeId);
+        EscapeRoomHistoryStatsResponse response = escapeRoomHistoryService.getThemeStatistics(themeId);
         return ResponseEntity.ok(response);
     }
 }
