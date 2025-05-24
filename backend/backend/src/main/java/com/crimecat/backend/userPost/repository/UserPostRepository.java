@@ -194,4 +194,15 @@ public interface UserPostRepository extends JpaRepository<UserPost, UUID> {
             "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id))) " +
             "ORDER BY p.createdAt DESC")
     Page<UserPost> findAccessiblePostsByKeywordOrAuthor(@Param("query") String query, @Param("userId") UUID userId, Pageable pageable);
+    
+    /**
+     * 특정 사용자의 게시물 개수 조회 (다른 사용자가 접근 가능한 게시물만)
+     */
+    @Query("SELECT COUNT(p) FROM UserPost p " +
+            "WHERE p.user.id = :authorId AND " +
+            "      ((p.isPrivate = false AND p.isFollowersOnly = false) " +  // 모든 공개 게시글
+            "       OR :viewerId = :authorId " +  // 본인이 조회하는 경우
+            "       OR (p.isFollowersOnly = true AND EXISTS " +  // 팔로워 공개이고 조회자가 팔로워인 게시글
+            "           (SELECT f FROM Follow f WHERE f.following.id = :authorId AND f.follower.id = :viewerId)))")
+    Long countAccessiblePostsByUserIdForViewer(@Param("authorId") UUID authorId, @Param("viewerId") UUID viewerId);
 }
