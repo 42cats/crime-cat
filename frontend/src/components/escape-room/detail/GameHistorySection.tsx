@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Calendar, Users, Clock, Star, Edit2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/useToast';
+import { useQuery } from '@tanstack/react-query';
 import { escapeRoomHistoryService, EscapeRoomHistoryResponse } from '@/api/game/escapeRoomHistoryService';
 
 interface GameHistorySectionProps {
@@ -23,32 +24,24 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
     onAddGameHistory,
     onEditGameHistory
 }) => {
-    const [histories, setHistories] = useState<EscapeRoomHistoryResponse[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
 
-    useEffect(() => {
-        if (allowGameHistory) {
-            fetchHistories();
-        }
-    }, [themeId, allowGameHistory]);
-
-    const fetchHistories = async () => {
-        try {
-            setIsLoading(true);
-            const response = await escapeRoomHistoryService.getThemeHistories(themeId, 0, 20);
-            setHistories(response.content);
-        } catch (error) {
+    // React Query를 사용하여 데이터 페칭
+    const { data: historiesData, isLoading, error } = useQuery({
+        queryKey: ['escape-room-histories', themeId],
+        queryFn: () => escapeRoomHistoryService.getThemeHistories(themeId, 0, 20),
+        enabled: allowGameHistory,
+        onError: (error) => {
             console.error('기록 목록 조회 실패:', error);
             toast({
                 title: "기록 로딩 실패",
                 description: "플레이 기록을 불러오는데 실패했습니다.",
                 variant: "destructive"
             });
-        } finally {
-            setIsLoading(false);
         }
-    };
+    });
+
+    const histories = historiesData?.content || [];
     if (!allowGameHistory) {
         return (
             <div className="text-center py-8">
