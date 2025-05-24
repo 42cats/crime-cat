@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import {
     MapPin,
     Clock,
+    Coins,
     Users,
     Star,
     DollarSign,
@@ -12,6 +13,7 @@ import {
     MessageCircle,
     Trophy,
     Tag,
+    Gauge,
     Globe,
     Calendar,
     Heart,
@@ -29,7 +31,15 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
         return new Intl.NumberFormat("ko-KR").format(amount) + "원";
     };
 
-    const formatDuration = (minTime: number, maxTime: number): string => {
+    const formatDuration = (
+        minTime: number | undefined,
+        maxTime: number | undefined
+    ): string => {
+        // undefined 또는 NaN 체크
+        if (!minTime || !maxTime || isNaN(minTime) || isNaN(maxTime)) {
+            return "시간 정보 없음";
+        }
+
         if (minTime === maxTime) {
             if (minTime < 60) return `${minTime}분`;
             const hours = Math.floor(minTime / 60);
@@ -61,10 +71,19 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
         return { label: "매우 어려움", color: "bg-red-100 text-red-800" };
     };
 
-    const participantText =
-        theme.playersMin === theme.playersMax
+    const participantText = (() => {
+        if (
+            !theme.playersMin ||
+            !theme.playersMax ||
+            isNaN(theme.playersMin) ||
+            isNaN(theme.playersMax)
+        ) {
+            return "인원 정보 없음";
+        }
+        return theme.playersMin === theme.playersMax
             ? `${theme.playersMin}명`
             : `${theme.playersMin}-${theme.playersMax}명`;
+    })();
 
     const difficultyInfo = getDifficultyLabel(theme.difficulty);
 
@@ -123,8 +142,7 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
                     </div>
 
                     {/* 비활성 상태 표시 */}
-                    {console.log("theme", theme)}
-                    {theme.isOperating && (
+                    {theme.isOperating === false && (
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                             <Badge
                                 variant="secondary"
@@ -142,25 +160,11 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
                         <h2 className="text-lg font-bold line-clamp-1 flex-1">
                             {theme.title}
                         </h2>
-                        {/* 난이도 별 표시 */}
-                        <div className="flex items-center gap-1 ml-2">
-                            {Array.from({ length: 5 }, (_, index) => (
-                                <Star
-                                    key={index}
-                                    className={`w-3 h-3 ${
-                                        index < Math.floor(theme.difficulty / 2)
-                                            ? "text-yellow-400 fill-current"
-                                            : "text-gray-300"
-                                    }`}
-                                />
-                            ))}
-                        </div>
                     </div>
 
                     <p className="text-sm text-muted-foreground line-clamp-2 mb-3 flex-grow">
                         {theme.summary}
                     </p>
-
                     {/* 게임 정보 그리드 */}
                     <div className="grid grid-cols-2 gap-x-2 gap-y-2 text-xs text-muted-foreground mb-3">
                         <div className="flex items-center gap-1">
@@ -168,7 +172,7 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
                             <span className="truncate">{participantText}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                            <DollarSign className="w-3 h-3 flex-shrink-0" />
+                            <Coins className="w-3 h-3 flex-shrink-0" />
                             <span className="truncate">
                                 {formatPrice(theme.price)}
                             </span>
@@ -182,8 +186,23 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
                                 )}
                             </span>
                         </div>
-                        {theme.openDate && (
+                        {/* 난이도 별 표시 */}
+                        <div className="flex items-center gap-1 ml-2">
+                            <Gauge className="w-3 h-3 flex-shrink-0" />
+                            {Array.from({ length: 5 }, (_, index) => (
+                                <Star
+                                    key={index}
+                                    className={`w-3 h-3 ${
+                                        index < Math.floor(theme.difficulty / 2)
+                                            ? "text-yellow-400 fill-current"
+                                            : "text-gray-300"
+                                    }`}
+                                />
+                            ))}
+                        </div>
+                        {/* {theme.openDate && (
                             <div className="flex items-center gap-1">
+                                <div className="text-sm">오픈</div>
                                 <Calendar className="w-3 h-3 flex-shrink-0" />
                                 <span className="truncate">
                                     {new Date(
@@ -191,11 +210,11 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
                                     ).toLocaleDateString("ko-KR")}
                                 </span>
                             </div>
-                        )}
+                        )} */}
                     </div>
 
                     {/* 위치 정보 */}
-                    {theme.locations.length > 0 && (
+                    {theme.locations && theme.locations.length > 0 && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
                             <MapPin className="w-3 h-3 flex-shrink-0" />
                             <span className="truncate">
@@ -280,7 +299,7 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
                                     {formatCount(theme.recommendations || 0)}
                                 </span>
                             </div>
-                            {theme.playCount > 0 && (
+                            {theme.playCount && theme.playCount > 0 && (
                                 <div className="flex items-center gap-1">
                                     <Trophy className="w-3 h-3" />
                                     <span>{formatCount(theme.playCount)}</span>
