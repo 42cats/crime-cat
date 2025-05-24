@@ -77,6 +77,7 @@ public class PostCommentService {
         BoardPost boardPost = boardPostRepository.findByIdAndIsDeletedFalse(postId).orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
         PostComment postComment = PostComment.from(boardPost, user, postCommentRequest);
         postCommentRepository.save(postComment);
+        boardPostRepository.incrementComments(postId);
         return getCommentResponses(postId, user.getId());
     }
 
@@ -106,6 +107,7 @@ public class PostCommentService {
         }
         postComment.delete();
         postCommentRepository.save(postComment);
+        boardPostRepository.decrementComments(postComment.getPostId());
         return getCommentResponses(postComment.getPostId(), userId);
     }
 }

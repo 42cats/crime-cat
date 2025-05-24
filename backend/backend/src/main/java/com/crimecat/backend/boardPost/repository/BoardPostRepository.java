@@ -47,4 +47,12 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID> {
     @Modifying(clearAutomatically = true)
     @Query("UPDATE BoardPost p SET p.views = p.views + 1 WHERE p.id = :postId")
     void incrementViews(@Param("postId") UUID postId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE BoardPost p SET p.comments = p.comments + 1 WHERE p.id = :postId")
+    void incrementComments(@Param("postId") UUID postId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE BoardPost p SET p.comments = p.comments - 1 WHERE p.id = :postId")
+    void decrementComments(@Param("postId") UUID postId);
 }
