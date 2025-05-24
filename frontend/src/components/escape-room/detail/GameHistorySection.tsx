@@ -10,6 +10,8 @@ import { escapeRoomHistoryService, EscapeRoomHistoryResponse } from '@/api/game/
 import StarRating from '@/components/ui/star-rating';
 import DeleteHistoryDialog from './DeleteHistoryDialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ProfileDetailModal from '@/components/profile/ProfileDetailModal';
 
 interface GameHistorySectionProps {
     themeId: string;
@@ -33,6 +35,8 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
     const [currentPage, setCurrentPage] = useState(0);
     const [deletingHistoryId, setDeletingHistoryId] = useState<string | null>(null);
     const [showSpoilers, setShowSpoilers] = useState<Set<string>>(new Set());
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const pageSize = 10;
 
     // 기록 목록 조회
@@ -151,7 +155,7 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             <div className="text-center p-3 border rounded-lg">
                                 <div className="text-2xl font-bold">{statsData.totalRecords}</div>
                                 <div className="text-sm text-gray-500">총 플레이 횟수</div>
@@ -166,22 +170,22 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
                                 <div className="text-2xl font-bold">
                                     {statsData.formattedAverageEscapeTime || '-'}
                                 </div>
-                                <div className="text-sm text-gray-500">평균 클리어 시간</div>
+                                <div className="text-sm text-gray-500">평균 시간</div>
                             </div>
                             <div className="text-center p-3 border rounded-lg">
                                 <div className="text-2xl font-bold">
                                     {statsData.averageParticipants?.toFixed(1) || '-'}명
                                 </div>
-                                <div className="text-sm text-gray-500">평균 참가 인원</div>
+                                <div className="text-sm text-gray-500">평균 인원</div>
                             </div>
                         </div>
 
                         {/* 평균 평점 */}
                         <div className="mt-4 pt-4 border-t">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {statsData.averageFeltDifficulty !== undefined && statsData.averageFeltDifficulty !== null && (
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-600">평균 체감 난이도</span>
+                                        <span className="text-sm text-gray-600">평균 난이도</span>
                                         <StarRating 
                                             rating={statsData.averageFeltDifficulty}
                                             isOneToTen={true}
@@ -189,35 +193,35 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
                                         />
                                     </div>
                                 )}
-                                {statsData.averageSatisfaction !== undefined && statsData.averageSatisfaction !== null && (
+                                {statsData.averageFunRating !== undefined && statsData.averageFunRating !== null && (
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-600">평균 만족도</span>
+                                        <span className="text-sm text-gray-600">평균 재미</span>
                                         <StarRating 
-                                            rating={statsData.averageSatisfaction}
+                                            rating={statsData.averageFunRating}
+                                            isOneToTen={true}
+                                            size="sm"
+                                        />
+                                    </div>
+                                )}
+                                {statsData.averageStoryRating !== undefined && statsData.averageStoryRating !== null && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm text-gray-600">평균 스토리</span>
+                                        <StarRating 
+                                            rating={statsData.averageStoryRating}
                                             isOneToTen={true}
                                             size="sm"
                                         />
                                     </div>
                                 )}
                             </div>
-                            {statsData.averageHintUsed !== undefined && statsData.averageHintUsed !== null && (
-                                <div className="mt-2 text-center">
-                                    <span className="text-sm text-gray-600">평균 힌트 사용: </span>
-                                    <span className="font-medium">{statsData.averageHintUsed.toFixed(1)}개</span>
-                                </div>
-                            )}
-                            {statsData.fastestEscapeTime && statsData.slowestEscapeTime && (
-                                <div className="mt-2 flex justify-center gap-4 text-sm">
-                                    <div>
-                                        <span className="text-gray-600">최단 시간: </span>
-                                        <span className="font-medium">{statsData.formattedFastestTime}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-600">최장 시간: </span>
-                                        <span className="font-medium">{statsData.formattedSlowestTime}</span>
-                                    </div>
-                                </div>
-                            )}
+                            <div className="mt-2 text-center">
+                                {statsData.averageHintUsed !== undefined && statsData.averageHintUsed !== null && (
+                                    <>
+                                        <span className="text-sm text-gray-600">평균 힌트: </span>
+                                        <span className="font-medium">{statsData.averageHintUsed.toFixed(1)}개</span>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -259,10 +263,30 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
                                             {/* 헤더 정보 */}
                                             <div className="flex items-start justify-between">
                                                 <div className="flex items-center gap-3 flex-wrap">
+                                                    <Avatar 
+                                                        className="h-8 w-8 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                                                        onClick={() => {
+                                                            setSelectedUserId(history.userId);
+                                                            setIsProfileModalOpen(true);
+                                                        }}
+                                                    >
+                                                        <AvatarImage src={history.userAvatarUrl} />
+                                                        <AvatarFallback className="text-xs">
+                                                            {history.userNickname?.substring(0, 2).toUpperCase()}
+                                                        </AvatarFallback>
+                                                    </Avatar>
                                                     {history.isOwn && (
                                                         <Badge variant="default" className="bg-primary">내 기록</Badge>
                                                     )}
-                                                    <span className="font-medium text-sm">{history.userNickname}</span>
+                                                    <span 
+                                                        className="font-medium text-sm cursor-pointer hover:text-primary transition-colors"
+                                                        onClick={() => {
+                                                            setSelectedUserId(history.userId);
+                                                            setIsProfileModalOpen(true);
+                                                        }}
+                                                    >
+                                                        {history.userNickname}
+                                                    </span>
                                                     <div className="flex items-center gap-2 text-sm text-gray-500">
                                                         <Calendar className="w-4 h-4" />
                                                         <span>{formatDate(history.playDate)}</span>
@@ -409,6 +433,13 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
                     }
                 }}
                 isDeleting={deleteMutation.isPending}
+            />
+            
+            {/* 프로필 상세 모달 */}
+            <ProfileDetailModal
+                userId={selectedUserId || ''}
+                open={isProfileModalOpen}
+                onOpenChange={setIsProfileModalOpen}
             />
         </div>
     );

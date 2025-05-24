@@ -30,6 +30,7 @@ public class EscapeRoomHistoryResponse {
     private String escapeRoomLocationName;
     private UUID userId;
     private String userNickname;
+    private String userAvatarUrl;
     private SuccessStatus successStatus;
     private Integer clearTime;
     private String formattedClearTime;
@@ -59,6 +60,7 @@ public class EscapeRoomHistoryResponse {
                 .escapeRoomLocationName(null) // 지점 정보는 별도로 조회해야 함
                 .userId(history.getWebUser().getId())
                 .userNickname(history.getWebUser().getNickname())
+                .userAvatarUrl(history.getWebUser().getProfileImage())
                 .successStatus(history.getSuccessStatus())
                 .clearTime(history.getClearTime())
                 .formattedClearTime(history.getFormattedClearTime())

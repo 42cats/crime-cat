@@ -28,10 +28,14 @@ public class EscapeRoomHistoryStatsResponse {
     private Double averageSatisfaction;     // 평균 만족도
     private Double averageParticipants;     // 평균 참여 인원
     private Double averageHintUsed;         // 평균 힌트 사용 횟수
+    private Double averageFunRating;        // 평균 재미 평점
+    private Double averageStoryRating;      // 평균 스토리 평점
 
     // 별점 형태로 변환된 값들
     private Double averageFeltDifficultyStars;  // 평균 체감 난이도 (별점)
     private Double averageSatisfactionStars;    // 평균 만족도 (별점)
+    private Double averageFunRatingStars;       // 평균 재미 평점 (별점)
+    private Double averageStoryRatingStars;     // 평균 스토리 평점 (별점)
 
     // 최고/최저 기록
     private Integer fastestEscapeTime;      // 최단 탈출 시간
@@ -51,6 +55,8 @@ public class EscapeRoomHistoryStatsResponse {
             Double averageSatisfaction,
             Double averageParticipants,
             Double averageHintUsed,
+            Double averageFunRating,
+            Double averageStoryRating,
             Integer fastestEscapeTime,
             Integer slowestEscapeTime
     ) {
@@ -69,8 +75,12 @@ public class EscapeRoomHistoryStatsResponse {
                 .averageSatisfaction(averageSatisfaction)
                 .averageParticipants(averageParticipants)
                 .averageHintUsed(averageHintUsed)
+                .averageFunRating(averageFunRating)
+                .averageStoryRating(averageStoryRating)
                 .averageFeltDifficultyStars(averageFeltDifficulty != null ? averageFeltDifficulty / 2.0 : null)
                 .averageSatisfactionStars(averageSatisfaction != null ? averageSatisfaction / 2.0 : null)
+                .averageFunRatingStars(averageFunRating != null ? averageFunRating / 2.0 : null)
+                .averageStoryRatingStars(averageStoryRating != null ? averageStoryRating / 2.0 : null)
                 .fastestEscapeTime(fastestEscapeTime)
                 .formattedFastestTime(formatTime(fastestEscapeTime))
                 .slowestEscapeTime(slowestEscapeTime)
