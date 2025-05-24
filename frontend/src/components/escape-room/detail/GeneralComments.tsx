@@ -12,7 +12,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/useToast';
-import { escapeRoomCommentService, EscapeRoomCommentResponseDto } from '@/api/comment/escapeRoomCommentService';
+import { escapeRoomCommentService, CommentResponse } from '@/api/comment/escapeRoomCommentService';
 
 interface GeneralCommentsProps {
     themeId: string;
@@ -23,7 +23,7 @@ const GeneralComments: React.FC<GeneralCommentsProps> = ({
     themeId, 
     hasGameHistory 
 }) => {
-    const [comments, setComments] = useState<EscapeRoomCommentResponseDto[]>([]);
+    const [comments, setComments] = useState<CommentResponse[]>([]);
     const [newComment, setNewComment] = useState('');
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
     const [replyContent, setReplyContent] = useState('');
@@ -41,7 +41,7 @@ const GeneralComments: React.FC<GeneralCommentsProps> = ({
         try {
             setIsLoading(true);
             const response = await escapeRoomCommentService.getCommentsByTheme(themeId, 0, 20, false);
-            setComments(response.content.filter(comment => !comment.hasSpoiler));
+            setComments(response.content.filter(comment => !comment.isSpoiler));
         } catch (error) {
             console.error('댓글 목록 조회 실패:', error);
             toast({
@@ -124,9 +124,9 @@ const GeneralComments: React.FC<GeneralCommentsProps> = ({
         }
     };
 
-    const handleLikeComment = async (comment: EscapeRoomCommentResponseDto) => {
+    const handleLikeComment = async (comment: CommentResponse) => {
         try {
-            if (comment.isLiked) {
+            if (comment.isLikedByCurrentUser) {
                 await escapeRoomCommentService.unlikeComment(comment.id);
             } else {
                 await escapeRoomCommentService.likeComment(comment.id);
@@ -186,19 +186,19 @@ const GeneralComments: React.FC<GeneralCommentsProps> = ({
         }
     };
 
-    const renderComment = (comment: EscapeRoomCommentResponseDto, isReply = false) => (
+    const renderComment = (comment: CommentResponse, isReply = false) => (
         <div key={comment.id} className={`${isReply ? 'ml-12 mt-3' : ''}`}>
             <div className="flex gap-3">
                 <Avatar className="w-8 h-8">
-                    <AvatarImage src={comment.userProfileImageUrl} />
-                    <AvatarFallback>{comment.userNickname[0]}</AvatarFallback>
+                    <AvatarImage src={comment.authorProfileImage} />
+                    <AvatarFallback>{comment.authorName && comment.authorName[0]}</AvatarFallback>
                 </Avatar>
                 
                 <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{comment.userNickname}</span>
+                        <span className="font-medium text-sm">{comment.authorName}</span>
                         <span className="text-xs text-gray-500">{formatDate(comment.createdAt)}</span>
-                        {comment.isAuthor && <Badge variant="outline" className="text-xs">내 댓글</Badge>}
+                        {comment.isOwnComment && <Badge variant="outline" className="text-xs">내 댓글</Badge>}
                     </div>
                     
                     {editingComment === comment.id ? (
@@ -237,10 +237,10 @@ const GeneralComments: React.FC<GeneralCommentsProps> = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => handleLikeComment(comment)}
-                            className={`h-auto p-1 gap-1 ${comment.isLiked ? 'text-red-500' : 'text-gray-500'}`}
+                            className={`h-auto p-1 gap-1 ${comment.isLikedByCurrentUser ? 'text-red-500' : 'text-gray-500'}`}
                         >
-                            <Heart className="w-3 h-3" fill={comment.isLiked ? 'currentColor' : 'none'} />
-                            <span className="text-xs">{comment.likesCount}</span>
+                            <Heart className="w-3 h-3" fill={comment.isLikedByCurrentUser ? 'currentColor' : 'none'} />
+                            <span className="text-xs">{comment.likes}</span>
                         </Button>
                         
                         {!isReply && (
@@ -262,7 +262,7 @@ const GeneralComments: React.FC<GeneralCommentsProps> = ({
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                {comment.isAuthor ? (
+                                {comment.isOwnComment ? (
                                     <>
                                         <DropdownMenuItem
                                             onClick={() => {
