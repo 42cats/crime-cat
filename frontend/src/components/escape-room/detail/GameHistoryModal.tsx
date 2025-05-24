@@ -8,11 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Clock, Users, Trophy, Star } from 'lucide-react';
+import { CalendarIcon, Clock, Users, Trophy } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/useToast';
+import StarInput from '@/components/ui/star-input';
 import { 
     escapeRoomHistoryService, 
     EscapeRoomHistoryRequest, 
@@ -45,6 +46,9 @@ const GameHistoryModal: React.FC<GameHistoryModalProps> = ({
         successStatus: 'SUCCESS' as SuccessStatus,
         playDate: format(new Date(), 'yyyy-MM-dd'),
         isSpoiler: false,
+        difficultyRating: 0,
+        funRating: 0,
+        storyRating: 0,
     });
 
     useEffect(() => {
@@ -88,9 +92,9 @@ const GameHistoryModal: React.FC<GameHistoryModalProps> = ({
                 ...(formData.escapeRoomLocationId && { escapeRoomLocationId: formData.escapeRoomLocationId }),
                 ...(formData.clearTime && { clearTime: formData.clearTime }),
                 ...(formData.hintCount !== undefined && { hintCount: formData.hintCount }),
-                ...(formData.difficultyRating && { difficultyRating: formData.difficultyRating }),
-                ...(formData.funRating && { funRating: formData.funRating }),
-                ...(formData.storyRating && { storyRating: formData.storyRating }),
+                ...(formData.difficultyRating !== undefined && { difficultyRating: formData.difficultyRating }),
+                ...(formData.funRating !== undefined && { funRating: formData.funRating }),
+                ...(formData.storyRating !== undefined && { storyRating: formData.storyRating }),
                 ...(formData.memo && { memo: formData.memo }),
             };
 
@@ -122,30 +126,6 @@ const GameHistoryModal: React.FC<GameHistoryModalProps> = ({
         }
     };
 
-    const StarRating = ({ value, onChange, label }: { value?: number, onChange: (value: number) => void, label: string }) => (
-        <div className="space-y-2">
-            <Label>{label}</Label>
-            <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                        key={star}
-                        type="button"
-                        onClick={() => onChange(star)}
-                        className="focus:outline-none"
-                    >
-                        <Star
-                            className={cn(
-                                "w-6 h-6 transition-colors",
-                                value && star <= value
-                                    ? "fill-yellow-400 text-yellow-400"
-                                    : "text-gray-300"
-                            )}
-                        />
-                    </button>
-                ))}
-            </div>
-        </div>
-    );
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -280,20 +260,23 @@ const GameHistoryModal: React.FC<GameHistoryModalProps> = ({
                     </div>
 
                     {/* 평점들 */}
-                    <StarRating 
-                        value={formData.difficultyRating}
+                    <StarInput 
+                        value={formData.difficultyRating || 0}
                         onChange={(value) => setFormData({ ...formData, difficultyRating: value })}
                         label="난이도"
+                        description="테마의 난이도를 평가해주세요 (0-10점)"
                     />
-                    <StarRating 
-                        value={formData.funRating}
+                    <StarInput 
+                        value={formData.funRating || 0}
                         onChange={(value) => setFormData({ ...formData, funRating: value })}
                         label="재미"
+                        description="테마의 재미를 평가해주세요 (0-10점)"
                     />
-                    <StarRating 
-                        value={formData.storyRating}
+                    <StarInput 
+                        value={formData.storyRating || 0}
                         onChange={(value) => setFormData({ ...formData, storyRating: value })}
                         label="스토리"
+                        description="테마의 스토리를 평가해주세요 (0-10점)"
                     />
 
                     {/* 메모 */}

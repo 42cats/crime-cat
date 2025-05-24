@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 interface StarInputProps {
     /**
-     * 현재 별점 값 (1-10)
+     * 현재 별점 값 (0-10)
      */
     value: number;
     
@@ -79,9 +79,15 @@ const StarInput: React.FC<StarInputProps> = ({
     const handleStarClick = (starIndex: number, isHalf: boolean = false) => {
         if (disabled) return;
         
-        const newRating = starIndex + (isHalf ? 0.5 : 1);
-        const outputRating = Math.round(newRating * 2); // 1-10 스케일로 변환
-        onChange(outputRating);
+        // 이미 선택된 별을 다시 클릭하면 0점으로 리셋
+        const clickedRating = starIndex + (isHalf ? 0.5 : 1);
+        const clickedValue = Math.round(clickedRating * 2);
+        
+        if (clickedValue === value) {
+            onChange(0);
+        } else {
+            onChange(clickedValue);
+        }
     };
     
     // 마우스 호버 핸들러
