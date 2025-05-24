@@ -12,7 +12,7 @@ interface SearchFilters {
     priceRange: [number, number];
     participantRange: [number, number];
     durationRange: [number, number];
-    genreTags: string[];
+    tags: string[];
     location: string;
     sortBy: 'newest' | 'oldest' | 'popularity' | 'rating' | 'price_low' | 'price_high';
 }
@@ -55,7 +55,7 @@ const EscapeRoomSearchHeader: React.FC<EscapeRoomSearchHeaderProps> = ({
             priceRange: [0, 100000],
             participantRange: [1, 20],
             durationRange: [15, 180],
-            genreTags: [],
+            tags: [],
             location: '',
             sortBy: 'newest'
         });
@@ -68,7 +68,7 @@ const EscapeRoomSearchHeader: React.FC<EscapeRoomSearchHeaderProps> = ({
         if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) count++;
         if (filters.participantRange[0] > 1 || filters.participantRange[1] < 20) count++;
         if (filters.durationRange[0] > 15 || filters.durationRange[1] < 180) count++;
-        if (filters.genreTags.length > 0) count++;
+        if (filters.tags.length > 0) count++;
         if (filters.location) count++;
         if (filters.sortBy !== 'newest') count++;
         return count;
@@ -107,7 +107,7 @@ const EscapeRoomSearchHeader: React.FC<EscapeRoomSearchHeaderProps> = ({
                         <div className="flex-1 relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                             <Input
-                                placeholder="테마 제목, 장르, 매장명으로 검색..."
+                                placeholder="테마 제목, 태그, 매장명으로 검색..."
                                 value={filters.query}
                                 onChange={(e) => handleQueryChange(e.target.value)}
                                 className="pl-10 pr-4"
@@ -155,10 +155,10 @@ const EscapeRoomSearchHeader: React.FC<EscapeRoomSearchHeaderProps> = ({
                                     난이도: {filters.difficulty.join(', ')}⭐
                                 </Badge>
                             )}
-                            {filters.genreTags.length > 0 && (
+                            {filters.tags.length > 0 && (
                                 <Badge variant="outline" className="bg-green-50 text-green-700">
-                                    장르: {filters.genreTags.slice(0, 2).join(', ')}
-                                    {filters.genreTags.length > 2 && ` 외 ${filters.genreTags.length - 2}개`}
+                                    태그: {filters.tags.slice(0, 2).join(', ')}
+                                    {filters.tags.length > 2 && ` 외 ${filters.tags.length - 2}개`}
                                 </Badge>
                             )}
                             {filters.location && (
