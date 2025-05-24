@@ -22,6 +22,30 @@ interface SpoilerCommentsProps {
     hasGameHistory: boolean;
 }
 
+interface CommentItemProps {
+    comment: CommentResponse;
+    isReply?: boolean;
+    isHidden: boolean;
+    showSpoilers: boolean;
+    onToggleVisibility: (commentId: string) => void;
+    onLike: (comment: CommentResponse) => void;
+    onReply: (commentId: string) => void;
+    onEdit: (commentId: string, content: string) => void;
+    onDelete: (commentId: string) => void;
+    replyingTo: string | null;
+    replyContent: string;
+    setReplyContent: (content: string) => void;
+    setReplyingTo: (id: string | null) => void;
+    isSubmitting: boolean;
+    handleSubmitReply: (parentId: string) => void;
+    editingComment: string | null;
+    editContent: string;
+    setEditContent: (content: string) => void;
+    setEditingComment: (id: string | null) => void;
+    handleEditComment: (commentId: string) => void;
+    formatDate: (date: string) => string;
+}
+
 const SpoilerComments: React.FC<SpoilerCommentsProps> = ({ 
     themeId, 
     hasGameHistory 
@@ -210,12 +234,33 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
         });
     };
 
-    const renderComment = (comment: CommentResponse, isReply = false) => {
+    const CommentItem: React.FC<CommentItemProps> = ({
+        comment,
+        isReply = false,
+        isHidden,
+        showSpoilers,
+        onToggleVisibility,
+        onLike,
+        onReply,
+        onEdit,
+        onDelete,
+        replyingTo,
+        replyContent,
+        setReplyContent,
+        setReplyingTo,
+        isSubmitting,
+        handleSubmitReply,
+        editingComment,
+        editContent,
+        setEditContent,
+        setEditingComment,
+        handleEditComment,
+        formatDate
+    }) => {
         const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-        const isHidden = hiddenComments.has(comment.id) && !showSpoilers;
         
         return (
-            <div key={comment.id} className={`${isReply ? 'ml-12 mt-3' : ''}`}>
+            <div className={`${isReply ? 'ml-12 mt-3' : ''}`}>
                 <div className="flex gap-3">
                     <Avatar 
                         className="w-8 h-8 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
@@ -246,7 +291,7 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        onClick={() => toggleCommentVisibility(comment.id)}
+                                        onClick={() => onToggleVisibility(comment.id)}
                                         className="gap-2"
                                     >
                                         <Eye className="w-4 h-4" />
@@ -291,7 +336,7 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
                                         <Button
                                             size="sm"
                                             variant="ghost"
-                                            onClick={() => toggleCommentVisibility(comment.id)}
+                                            onClick={() => onToggleVisibility(comment.id)}
                                             className="absolute top-1 right-1 h-auto p-1"
                                         >
                                             <EyeOff className="w-4 h-4" />
@@ -306,7 +351,7 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => handleLikeComment(comment)}
+                                    onClick={() => onLike(comment)}
                                     className={`h-auto p-1 gap-1 ${comment.isLikedByCurrentUser ? 'text-red-500' : 'text-gray-500'}`}
                                 >
                                     <Heart className="w-3 h-3" fill={comment.isLikedByCurrentUser ? 'currentColor' : 'none'} />
@@ -385,7 +430,32 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
                         
                         {comment.replies && comment.replies.length > 0 && (
                             <div className="mt-3 space-y-3">
-                                {comment.replies.map(reply => renderComment(reply, true))}
+                                {comment.replies.map(reply => (
+                                    <CommentItem
+                                        key={reply.id}
+                                        comment={reply}
+                                        isReply={true}
+                                        isHidden={hiddenComments.has(reply.id) && !showSpoilers}
+                                        showSpoilers={showSpoilers}
+                                        onToggleVisibility={onToggleVisibility}
+                                        onLike={onLike}
+                                        onReply={onReply}
+                                        onEdit={onEdit}
+                                        onDelete={onDelete}
+                                        replyingTo={replyingTo}
+                                        replyContent={replyContent}
+                                        setReplyContent={setReplyContent}
+                                        setReplyingTo={setReplyingTo}
+                                        isSubmitting={isSubmitting}
+                                        handleSubmitReply={handleSubmitReply}
+                                        editingComment={editingComment}
+                                        editContent={editContent}
+                                        setEditContent={setEditContent}
+                                        setEditingComment={setEditingComment}
+                                        handleEditComment={handleEditComment}
+                                        formatDate={formatDate}
+                                    />
+                                ))}
                             </div>
                         )}
                     </div>
@@ -505,7 +575,31 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
                     comments.map(comment => (
                         <Card key={comment.id}>
                             <CardContent className="pt-4">
-                                {renderComment(comment)}
+                                <CommentItem
+                                    comment={comment}
+                                    isHidden={hiddenComments.has(comment.id) && !showSpoilers}
+                                    showSpoilers={showSpoilers}
+                                    onToggleVisibility={toggleCommentVisibility}
+                                    onLike={handleLikeComment}
+                                    onReply={setReplyingTo}
+                                    onEdit={(id, content) => {
+                                        setEditingComment(id);
+                                        setEditContent(content);
+                                    }}
+                                    onDelete={handleDeleteComment}
+                                    replyingTo={replyingTo}
+                                    replyContent={replyContent}
+                                    setReplyContent={setReplyContent}
+                                    setReplyingTo={setReplyingTo}
+                                    isSubmitting={isSubmitting}
+                                    handleSubmitReply={handleSubmitReply}
+                                    editingComment={editingComment}
+                                    editContent={editContent}
+                                    setEditContent={setEditContent}
+                                    setEditingComment={setEditingComment}
+                                    handleEditComment={handleEditComment}
+                                    formatDate={formatDate}
+                                />
                             </CardContent>
                         </Card>
                     ))

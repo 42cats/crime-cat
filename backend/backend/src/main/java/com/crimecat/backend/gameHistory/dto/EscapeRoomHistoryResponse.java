@@ -60,7 +60,7 @@ public class EscapeRoomHistoryResponse {
                 .escapeRoomLocationName(null) // 지점 정보는 별도로 조회해야 함
                 .userId(history.getWebUser().getId())
                 .userNickname(history.getWebUser().getNickname())
-                .userAvatarUrl(history.getWebUser().getProfileImage())
+                .userAvatarUrl(history.getWebUser().getProfileImagePath())
                 .successStatus(history.getSuccessStatus())
                 .clearTime(history.getClearTime())
                 .formattedClearTime(history.getFormattedClearTime())
