@@ -34,10 +34,10 @@ public class EscapeRoomCommentPublicController {
                 themeId, spoilerOnly, pageable.getPageNumber(), pageable.getPageSize());
         Page<EscapeRoomCommentResponseDto> comments = escapeRoomCommentService.getCommentsByTheme(themeId, pageable);
         
-        // 스포일러 필터링
-        if (spoilerOnly != null) {
-            comments = comments.map(c -> c);  // Service에서 처리하도록 수정 필요
-        }
+//        // 스포일러 필터링
+//        if (spoilerOnly != null) {
+//            comments = comments.map(c -> c);  // Service에서 처리하도록 수정 필요
+//        }
         
         return ResponseEntity.ok(new PageResponseDto<>(comments));
     }
