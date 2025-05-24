@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Clock, Users, Star, DollarSign, MessageCircle, Trophy, Lock, Globe, Calendar, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,8 @@ import ThemeHeader from './ThemeHeader';
 import ThemeInfo from './ThemeInfo';
 import CommentTabs from './CommentTabs';
 import GameHistorySection from './GameHistorySection';
+import { escapeRoomHistoryService } from '@/api/game/escapeRoomHistoryService';
+import { useToast } from '@/hooks/useToast';
 
 interface EscapeRoomTheme {
     id: string;
@@ -32,33 +34,37 @@ interface EscapeRoomTheme {
     updatedAt: string;
 }
 
-interface UserGameHistory {
-    id: string;
-    playedAt: string;
-    completed: boolean;
-    participants: number;
-    playTime: number;
-    rating: number;
-    memo?: string;
-    hasSpoiler: boolean;
-}
-
 interface EscapeRoomDetailPageProps {
     theme: EscapeRoomTheme;
-    userGameHistory?: UserGameHistory[];
-    hasGameHistory: boolean;
     onAddGameHistory?: () => void;
     onEditGameHistory?: (historyId: string) => void;
 }
 
 const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
     theme,
-    userGameHistory = [],
-    hasGameHistory = false,
     onAddGameHistory,
     onEditGameHistory
 }) => {
     const [activeTab, setActiveTab] = useState<'info' | 'comments' | 'history'>('info');
+    const [hasGameHistory, setHasGameHistory] = useState(false);
+    const [checkingHistory, setCheckingHistory] = useState(true);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        checkUserGameHistory();
+    }, [theme.id]);
+
+    const checkUserGameHistory = async () => {
+        try {
+            setCheckingHistory(true);
+            const hasPlayed = await escapeRoomHistoryService.hasPlayedTheme(theme.id);
+            setHasGameHistory(hasPlayed);
+        } catch (error) {
+            console.error('게임 기록 확인 실패:', error);
+        } finally {
+            setCheckingHistory(false);
+        }
+    };
 
     const formatPrice = (amount: number): string => {
         if (amount === 0) return '무료';
@@ -211,7 +217,6 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                         <TabsContent value="history">
                             <GameHistorySection
                                 themeId={theme.id}
-                                userGameHistory={userGameHistory}
                                 hasGameHistory={hasGameHistory}
                                 allowGameHistory={theme.allowGameHistory}
                                 onAddGameHistory={onAddGameHistory}
