@@ -47,6 +47,15 @@ public class BoardPostController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @PostMapping("/{id}/like")
+    public ResponseEntity<BoardPostDetailResponse> likeBoardPost(
+            @PathVariable("id") UUID postId,
+            @AuthenticationPrincipal WebUser currentUser
+    ) {
+        BoardPostDetailResponse response = boardPostService.likeBoardPost(postId, currentUser);
+        return ResponseEntity.ok().body(response);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<BoardPostDetailResponse> updateBoardPost(
             @PathVariable("id") UUID postId,

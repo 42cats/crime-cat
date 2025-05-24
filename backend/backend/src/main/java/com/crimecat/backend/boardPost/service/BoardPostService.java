@@ -1,6 +1,7 @@
 package com.crimecat.backend.boardPost.service;
 
 import com.crimecat.backend.boardPost.domain.BoardPost;
+import com.crimecat.backend.boardPost.domain.BoardPostLike;
 import com.crimecat.backend.boardPost.dto.BoardPostDetailResponse;
 import com.crimecat.backend.boardPost.dto.BoardPostRequest;
 import com.crimecat.backend.boardPost.dto.BoardPostResponse;
@@ -81,6 +82,25 @@ public class BoardPostService {
     }
 
     @Transactional
+    public BoardPostDetailResponse likeBoardPost(
+            UUID postId,
+            WebUser user
+    ) {
+        BoardPost boardPost = boardPostRepository.findById(postId).orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
+        boolean isOwnPost = boardPost.getAuthorId().equals(user.getId());
+        boolean isLikedByCurrentUser = false;
+        if (boardPostLikeRepository.existsByUserIdAndPostId(user.getId(), postId)) {
+            boardPostLikeRepository.deleteByPostIdAndUserId(postId, user.getId());
+        } else {
+            BoardPostLike boardPostLike = BoardPostLike.from(boardPost, user);
+            boardPostLikeRepository.save(boardPostLike);
+            isLikedByCurrentUser = true;
+        }
+
+        return BoardPostDetailResponse.from(boardPost, isOwnPost, isLikedByCurrentUser);
+    }
+
+    @Transactional
     public BoardPostDetailResponse updateBoardPost(
             BoardPostRequest boardPostRequest,
             UUID postId,
@@ -94,7 +114,8 @@ public class BoardPostService {
 
         boardPost.update(boardPostRequest);
         BoardPost updatedBoardPost = boardPostRepository.save(boardPost);
-        return BoardPostDetailResponse.from(updatedBoardPost, true, false);
+        Boolean isLikedByCurrentUser = boardPostLikeRepository.existsByUserIdAndPostId(userId, postId);
+        return BoardPostDetailResponse.from(updatedBoardPost, true, isLikedByCurrentUser);
     }
 
     @Transactional
