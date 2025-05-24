@@ -19,7 +19,7 @@ public interface EscapeRoomCommentRepository extends JpaRepository<EscapeRoomCom
      * 특정 테마의 모든 댓글 조회 (삭제되지 않은 것만)
      */
     @Query("SELECT ec FROM EscapeRoomComment ec " +
-           "JOIN FETCH ec.user u " +
+           "JOIN FETCH ec.webUser u " +
            "LEFT JOIN FETCH ec.escapeRoomHistory eh " +
            "WHERE ec.escapeRoomTheme.id = :themeId " +
            "AND ec.isDeleted = false " +
@@ -33,23 +33,23 @@ public interface EscapeRoomCommentRepository extends JpaRepository<EscapeRoomCom
     @Query("SELECT ec FROM EscapeRoomComment ec " +
            "JOIN FETCH ec.escapeRoomTheme et " +
            "LEFT JOIN FETCH ec.escapeRoomHistory eh " +
-           "WHERE ec.user.id = :userId " +
+           "WHERE ec.webUser.id = :userId " +
            "AND ec.isDeleted = false " +
            "ORDER BY ec.createdAt DESC")
-    Page<EscapeRoomComment> findByUserIdAndIsDeletedFalse(
+    Page<EscapeRoomComment> findByWebUserIdAndIsDeletedFalse(
             @Param("userId") UUID userId, Pageable pageable);
     
     /**
      * 특정 사용자가 특정 테마에 댓글을 작성했는지 확인
      */
-    boolean existsByUserIdAndEscapeRoomThemeIdAndIsDeletedFalse(
-            UUID userId, UUID escapeRoomThemeId);
+    boolean existsByWebUserIdAndEscapeRoomThemeIdAndIsDeletedFalse(
+            UUID webUserId, UUID escapeRoomThemeId);
     
     /**
      * 특정 댓글 조회 (삭제되지 않은 것만)
      */
     @Query("SELECT ec FROM EscapeRoomComment ec " +
-           "JOIN FETCH ec.user u " +
+           "JOIN FETCH ec.webUser u " +
            "JOIN FETCH ec.escapeRoomTheme et " +
            "LEFT JOIN FETCH ec.escapeRoomHistory eh " +
            "WHERE ec.id = :commentId " +

@@ -4,9 +4,9 @@
 -- 트랜잭션 시작
 START TRANSACTION;
 
--- 1. escape_room_history 테이블에 deleted_at 컬럼 추가 (소프트 삭제)
+-- 1. escape_room_historys 테이블에 deleted_at 컬럼 추가 (소프트 삭제)
 SET @sql_add_deleted_at_history = '
-ALTER TABLE `escape_room_history`
+ALTER TABLE `escape_room_historys`
 ADD COLUMN `deleted_at` DATETIME NULL COMMENT ''삭제 시간 (소프트 삭제)''
 AFTER `updated_at`;
 ';
@@ -44,9 +44,9 @@ PREPARE stmt_drop_is_deleted FROM @sql_drop_is_deleted;
 EXECUTE stmt_drop_is_deleted;
 DEALLOCATE PREPARE stmt_drop_is_deleted;
 
--- 5. escape_room_history와 user의 unique constraint 추가 (중복 플레이 기록 방지)
+-- 5. escape_room_historys와 user의 unique constraint 추가 (중복 플레이 기록 방지)
 SET @sql_add_unique_history = '
-ALTER TABLE `escape_room_history`
+ALTER TABLE `escape_room_historys`
 ADD UNIQUE KEY `uk_escape_room_theme_user` (`escape_room_theme_id`, `web_user_id`, `deleted_at`);
 ';
 
@@ -68,8 +68,8 @@ DEALLOCATE PREPARE stmt_add_spoiler_index;
 
 -- 7. 소프트 삭제를 고려한 인덱스 추가
 SET @sql_add_deleted_index_history = '
-CREATE INDEX `idx_escape_room_history_deleted` 
-ON `escape_room_history` (`deleted_at`);
+CREATE INDEX `idx_escape_room_historys_deleted` 
+ON `escape_room_historys` (`deleted_at`);
 ';
 
 -- 실행 및 PREPARE
@@ -120,7 +120,7 @@ COMMENT='방탈출 댓글 좋아요 테이블';
 COMMIT;
 
 -- 변경사항 확인
-SHOW COLUMNS FROM `escape_room_history` LIKE 'deleted_at';
+SHOW COLUMNS FROM `escape_room_historys` LIKE 'deleted_at';
 SHOW COLUMNS FROM `escape_room_comments` LIKE 'deleted_at';
 SHOW COLUMNS FROM `escape_room_comments` LIKE 'likes_count';
 SHOW TABLES LIKE 'escape_room_comment_likes';

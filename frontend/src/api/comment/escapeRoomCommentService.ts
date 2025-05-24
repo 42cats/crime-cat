@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api";
+import { SuccessStatus } from "../game/escapeRoomHistoryService";
 
 export interface EscapeRoomCommentCreateDto {
     escapeRoomThemeId: string;
@@ -33,6 +34,18 @@ export interface EscapeRoomCommentResponseDto {
     replies?: EscapeRoomCommentResponseDto[];
     createdAt: string;
     updatedAt: string;
+    // 관련 게임 기록 정보 (게임 기록 기반 댓글일 경우)
+    gameHistoryInfo?: {
+        teamSize: number;
+        successStatus: SuccessStatus;
+        clearTime?: number;
+        formattedClearTime?: string;
+        hintCount?: number;
+        difficultyRating?: number;
+        funRating?: number;
+        storyRating?: number;
+        playDate: string;
+    };
 }
 
 export interface EscapeRoomCommentStatsDto {

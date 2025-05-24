@@ -60,7 +60,7 @@ public class EscapeRoomCommentService {
         // 게임 기록 조회 (있는 경우)
         EscapeRoomHistory history = null;
         if (dto.getEscapeRoomHistoryId() != null) {
-            history = escapeRoomHistoryRepository.findById(dto.getEscapeRoomHistoryId())
+            history = escapeRoomHistoryRepository.findByIdAndDeletedAtIsNull(dto.getEscapeRoomHistoryId())
                     .orElseThrow(ErrorStatus.GAME_HISTORY_NOT_FOUND::asServiceException);
             
             // 게임 기록 작성자 확인
@@ -86,7 +86,7 @@ public class EscapeRoomCommentService {
         // 댓글 생성
         EscapeRoomComment comment = EscapeRoomComment.builder()
                 .escapeRoomTheme(theme)
-                .user(user)
+                .webUser(user.getWebUser())
                 .escapeRoomHistory(history)
                 .content(dto.getContent().trim())
                 .hasSpoiler(dto.getHasSpoiler() != null ? dto.getHasSpoiler() : false)
@@ -104,8 +104,7 @@ public class EscapeRoomCommentService {
      * 특정 테마의 댓글 목록 조회
      */
     public Page<EscapeRoomCommentResponseDto> getCommentsByTheme(UUID themeId, Pageable pageable) {
-        UUID currentUserId = AuthenticationUtil.getCurrentUserIdOptional().orElse(null);
-
+        UUID currentUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
         // 테마 존재 확인
         if (!escapeRoomThemeRepository.existsById(themeId)) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
@@ -225,7 +224,7 @@ public class EscapeRoomCommentService {
      * 사용자의 댓글 목록 조회
      */
     public Page<EscapeRoomCommentResponseDto> getCommentsByUser(UUID userId, Pageable pageable) {
-        UUID currentUserId = AuthenticationUtil.getCurrentUserIdOptional().orElse(null);
+        UUID currentUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
 
         // 사용자 존재 확인
         if (!userRepository.existsById(userId)) {
@@ -234,7 +233,7 @@ public class EscapeRoomCommentService {
 
         // 댓글 조회
         Page<EscapeRoomComment> comments = escapeRoomCommentRepository
-                .findByUserIdAndIsDeletedFalse(userId, pageable);
+                .findByWebUserIdAndIsDeletedFalse(userId, pageable);
 
         // 각 댓글에 대해 게임 기록 확인 및 DTO 변환
         return comments.map(comment -> {

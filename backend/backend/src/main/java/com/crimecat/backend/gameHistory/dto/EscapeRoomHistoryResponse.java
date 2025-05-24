@@ -1,11 +1,13 @@
 package com.crimecat.backend.gameHistory.dto;
 
 import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
+import com.crimecat.backend.gameHistory.enum.SuccessStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -18,22 +20,24 @@ public class EscapeRoomHistoryResponse {
     private UUID id;
     private UUID escapeRoomThemeId;
     private String escapeRoomThemeTitle;
+    private UUID escapeRoomLocationId;
+    private String escapeRoomLocationName;
     private UUID userId;
     private String userNickname;
-    private Boolean isSuccess;
-    private Integer escapeTimeMinutes;
-    private String formattedEscapeTime;
-    private Integer feltDifficulty;
-    private Double feltDifficultyStars;
-    private Integer participantsCount;
-    private Integer hintUsedCount;
-    private Integer satisfaction;
-    private Double satisfactionStars;
+    private SuccessStatus successStatus;
+    private Integer clearTime;
+    private String formattedClearTime;
+    private Integer difficultyRating;
+    private Double difficultyRatingStars;
+    private Integer teamSize;
+    private Integer hintCount;
+    private Integer funRating;
+    private Double funRatingStars;
+    private Integer storyRating;
+    private Double storyRatingStars;
     private String memo;
-    private Boolean isPublic;
-    private LocalDateTime playDate;
-    private Boolean hasSpoiler;
-    private String storeLocation;
+    private LocalDate playDate;
+    private Boolean isSpoiler;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Boolean isAuthor;
@@ -45,22 +49,24 @@ public class EscapeRoomHistoryResponse {
                 .id(history.getId())
                 .escapeRoomThemeId(history.getEscapeRoomTheme().getId())
                 .escapeRoomThemeTitle(history.getEscapeRoomTheme().getTitle())
-                .userId(history.getUser().getId())
-                .userNickname(history.getUser().getName())
-                .isSuccess(history.getIsSuccess())
-                .escapeTimeMinutes(history.getEscapeTimeMinutes())
-                .formattedEscapeTime(history.getFormattedEscapeTime())
-                .feltDifficulty(history.getFeltDifficulty())
-                .feltDifficultyStars(history.getFeltDifficultyStars())
-                .participantsCount(history.getParticipantsCount())
-                .hintUsedCount(history.getHintUsedCount())
-                .satisfaction(history.getSatisfaction())
-                .satisfactionStars(history.getSatisfactionStars())
+                .escapeRoomLocationId(history.getEscapeRoomLocationId())
+                .escapeRoomLocationName(null) // 지점 정보는 별도로 조회해야 함
+                .userId(history.getWebUser().getId())
+                .userNickname(history.getWebUser().getNickname())
+                .successStatus(history.getSuccessStatus())
+                .clearTime(history.getClearTime())
+                .formattedClearTime(history.getFormattedClearTime())
+                .difficultyRating(history.getDifficultyRating())
+                .difficultyRatingStars(history.getDifficultyRatingStars())
+                .teamSize(history.getTeamSize())
+                .hintCount(history.getHintCount())
+                .funRating(history.getFunRating())
+                .funRatingStars(history.getFunRatingStars())
+                .storyRating(history.getStoryRating())
+                .storyRatingStars(history.getStoryRatingStars())
                 .memo(history.getMemo())
-                .isPublic(history.getIsPublic())
                 .playDate(history.getPlayDate())
-                .hasSpoiler(history.getHasSpoiler())
-                .storeLocation(history.getStoreLocation())
+                .isSpoiler(history.getIsSpoiler())
                 .createdAt(history.getCreatedAt())
                 .updatedAt(history.getUpdatedAt())
                 .isAuthor(isAuthor)
@@ -75,7 +81,7 @@ public class EscapeRoomHistoryResponse {
         EscapeRoomHistoryResponse response = from(history, currentUserId);
         
         // 스포일러 메모 처리
-        if (history.getHasSpoiler() && !history.canViewMemo(currentUserId, hasGameHistoryForTheme)) {
+        if (history.getIsSpoiler() && !history.canViewMemo(currentUserId, hasGameHistoryForTheme)) {
             response.memo = history.getSafeMemo(currentUserId, hasGameHistoryForTheme);
         }
         
