@@ -66,6 +66,22 @@ export interface CrimesceneThemeDetailType extends ThemeDetailType {
     extra: Record<string, any>; // JSON 형태의 유동적 필드
 }
 
+/**
+ * 방탈출 테마 상세 타입 (확장된 필드 포함)
+ */
+export interface EscapeRoomThemeDetailType extends ThemeDetailType {
+    horrorLevel?: number;
+    deviceRatio?: number;
+    activityLevel?: number;
+    openDate?: string;
+    isOperating?: boolean;
+    genreTags?: string[];
+    locations?: EscapeRoomLocation[];
+    homepageUrl?: string;
+    reservationUrl?: string;
+    allowGameHistory?: boolean;
+}
+
 export interface SocialLinks {
     instagram?: string;
     x?: string;

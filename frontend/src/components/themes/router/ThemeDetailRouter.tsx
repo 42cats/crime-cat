@@ -8,6 +8,7 @@ import { themesService } from '@/api/content';
 import { escapeRoomHistoryService, EscapeRoomHistoryResponse } from '@/api/game/escapeRoomHistoryService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
+import { EscapeRoomThemeDetailType } from '@/lib/types';
 
 const ThemeDetailRouter: React.FC = () => {
     const { category, id } = useParams<{ category: string; id: string }>();
@@ -54,32 +55,8 @@ const ThemeDetailRouter: React.FC = () => {
                 );
             }
             
-            // EscapeRoomDetailPage가 기대하는 데이터 형식으로 변환
-            const escapeRoomTheme = {
-                id: escapeRoomData.id,
-                title: escapeRoomData.title,
-                description: escapeRoomData.content || escapeRoomData.summary,
-                difficulty: escapeRoomData.difficulty,
-                minParticipants: escapeRoomData.playersMin,
-                maxParticipants: escapeRoomData.playersMax,
-                estimatedDuration: escapeRoomData.playTimeMax,
-                price: escapeRoomData.price,
-                genreTags: escapeRoomData.genreTags || [],
-                locations: escapeRoomData.locations || [],
-                isActive: escapeRoomData.publicStatus,
-                allowComments: escapeRoomData.commentEnabled,
-                allowGameHistory: true,
-                homepageUrl: escapeRoomData.homepageUrl,
-                reservationUrl: escapeRoomData.reservationUrl,
-                createdAt: escapeRoomData.createdAt || new Date().toISOString(),
-                updatedAt: escapeRoomData.updatedAt || new Date().toISOString(),
-                // 방탈출 전용 필드 추가
-                thumbnail: escapeRoomData.thumbnail,
-                horrorLevel: escapeRoomData.horrorLevel,
-                deviceRatio: escapeRoomData.deviceRatio,
-                activityLevel: escapeRoomData.activityLevel,
-                openDate: escapeRoomData.openDate,
-            };
+            // EscapeRoomThemeDetailType 형식으로 데이터 전달
+            const escapeRoomTheme = escapeRoomData;
             
             console.log('변환된 방탈출 테마 데이터:', escapeRoomTheme);
             
@@ -116,7 +93,6 @@ const ThemeDetailRouter: React.FC = () => {
                 <>
                     <EscapeRoomDetailPage 
                         theme={escapeRoomTheme}
-                        hasGameHistory={true}
                         onAddGameHistory={handleAddGameHistory}
                         onEditGameHistory={handleEditGameHistory}
                     />

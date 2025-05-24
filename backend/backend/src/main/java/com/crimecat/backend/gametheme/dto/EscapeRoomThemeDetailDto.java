@@ -1,53 +1,33 @@
 package com.crimecat.backend.gametheme.dto;
 
-import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
 import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
-import com.crimecat.backend.gametheme.domain.GameTheme;
+import com.crimecat.backend.gametheme.enums.ThemeType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
-@NoArgsConstructor
 @SuperBuilder
-public class GameThemeDetailDto {
-    private UUID id;
-    private String title;
-    private String thumbnail;
-    private String summary;
-    private int recommendations;
-    private int views;
-    private int playCount;
-    private AuthorDto author;
-    private int playersMin;
-    private int playersMax;
-    private int playTimeMin;
-    private int playTimeMax;
-    private int price;
-    private int difficulty;
-    private Set<String> tags;
-    private String content;
-    private boolean publicStatus;
-    private Instant createdAt;
-    private Instant updatedAt;
-    private boolean recommendationEnabled;
-    private boolean commentEnabled;
-    private String type;
+public class EscapeRoomThemeDetailDto extends GameThemeDetailDto {
+    private Integer horrorLevel;
+    private Integer deviceRatio;
+    private Integer activityLevel;
+    private LocalDate openDate;
+    private Boolean isOperating;
+    private Set<String> genreTags;
+    private List<EscapeRoomLocation> locations;
+    private String homepageUrl;
+    private String reservationUrl;
+    private Boolean allowGameHistory;
 
-    public static GameThemeDetailDto of(GameTheme theme) {
-        if (theme instanceof CrimesceneTheme) {
-            return CrimesceneThemeDetailDto.of((CrimesceneTheme) theme);
-        } else if (theme instanceof EscapeRoomTheme) {
-            return EscapeRoomThemeDetailDto.of((EscapeRoomTheme) theme);
-        }
-        return GameThemeDetailDto.builder()
+    public static EscapeRoomThemeDetailDto of(EscapeRoomTheme theme) {
+        return EscapeRoomThemeDetailDto.builder()
                 .id(theme.getId())
                 .title(theme.getTitle())
                 .thumbnail(theme.getThumbnail())
@@ -69,6 +49,18 @@ public class GameThemeDetailDto {
                 .updatedAt(theme.getUpdatedAt().toInstant(ZoneOffset.UTC))
                 .recommendationEnabled(theme.isRecommendationEnabled())
                 .commentEnabled(theme.isCommentEnabled())
+                .type(ThemeType.Values.ESCAPE_ROOM)
+                // 방탈출 전용 필드
+                .horrorLevel(theme.getHorrorLevel())
+                .deviceRatio(theme.getDeviceRatio())
+                .activityLevel(theme.getActivityLevel())
+                .openDate(theme.getOpenDate())
+                .isOperating(theme.getIsOperating())
+                .genreTags(theme.getGenreTagNames())
+                .locations(theme.getLocationDtos())
+                .homepageUrl(theme.getHomepageUrl())
+                .reservationUrl(theme.getReservationUrl())
+                .allowGameHistory(true) // 방탈출 테마는 기본적으로 게임 기록 허용
                 .build();
     }
 }
