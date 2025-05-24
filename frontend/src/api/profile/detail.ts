@@ -13,6 +13,8 @@ export interface ProfileDetailDto {
     followerCount: number;
     followingCount: number;
     socialLinks?: Record<string, string>;
+    crimeSceneCount?: number; // 크라임씬 플레이 수 (프론트엔드에서 추가)
+    escapeRoomCount?: number; // 방탈출 플레이 수 (프론트엔드에서 추가)
 }
 
 /**

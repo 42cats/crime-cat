@@ -157,9 +157,21 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                                 className="text-green-500 hidden md:inline"
                             />
                             <span className="text-xs md:text-sm font-medium">
-                                플레이{" "}
+                                크라임씬{" "}
                                 <span className="font-bold">
-                                    {profile.playCount || 0}
+                                    {profile.crimeSceneCount || 0}
+                                </span>
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <GamepadIcon
+                                size={12}
+                                className="text-blue-500 hidden md:inline"
+                            />
+                            <span className="text-xs md:text-sm font-medium">
+                                방탈출{" "}
+                                <span className="font-bold">
+                                    {profile.escapeRoomCount || 0}
                                 </span>
                             </span>
                         </div>
