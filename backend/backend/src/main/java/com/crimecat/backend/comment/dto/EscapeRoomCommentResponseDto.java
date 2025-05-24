@@ -31,6 +31,10 @@ public class EscapeRoomCommentResponseDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
+    // 좋아요 관련 필드
+    private Integer likesCount;
+    private Boolean isLiked;
+    
     // 스포일러 댓글이지만 볼 수 없는 경우 보여줄 메시지
     private String hiddenMessage;
     
@@ -47,6 +51,8 @@ public class EscapeRoomCommentResponseDto {
                 .userProfileImageUrl(comment.getUser().getWebUser().getProfileImagePath())
                 .hasSpoiler(comment.getHasSpoiler())
                 .isGameHistoryComment(comment.isGameHistoryComment())
+                .likesCount(comment.getLikesCount())
+                .isLiked(false) // 기본값, 서비스에서 설정
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt());
         
@@ -91,6 +97,8 @@ public class EscapeRoomCommentResponseDto {
                 .hasSpoiler(comment.getHasSpoiler())
                 .isGameHistoryComment(comment.isGameHistoryComment())
                 .escapeRoomHistoryId(comment.getEscapeRoomHistory() != null ? comment.getEscapeRoomHistory().getId() : null)
+                .likesCount(comment.getLikesCount())
+                .isLiked(false) // 서비스에서 설정 필요
                 .isAuthor(true)
                 .canEdit(!comment.getIsDeleted())
                 .canView(true)

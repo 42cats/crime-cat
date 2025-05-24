@@ -53,23 +53,29 @@ export interface PageResponseDto<T> {
     empty: boolean;
 }
 
-const baseURI = "/api/escape-room-comments";
+const baseURI = "/escape-room-comments";
+const publicBaseURI = "/public/escape-room-comments";
 
 export const escapeRoomCommentService = {
     // 댓글 작성
-    createComment: async (data: EscapeRoomCommentCreateDto): Promise<EscapeRoomCommentResponseDto> => {
+    createComment: async (
+        data: EscapeRoomCommentCreateDto
+    ): Promise<EscapeRoomCommentResponseDto> => {
         try {
-            return await apiClient.post<EscapeRoomCommentResponseDto>(baseURI, data);
+            return await apiClient.post<EscapeRoomCommentResponseDto>(
+                baseURI,
+                data
+            );
         } catch (error) {
             console.error("방탈출 댓글 작성 실패:", error);
             throw error;
         }
     },
 
-    // 테마별 댓글 목록 조회
+    // 테마별 댓글 목록 조회 (공개)
     getCommentsByTheme: async (
-        themeId: string, 
-        page: number = 0, 
+        themeId: string,
+        page: number = 0,
         size: number = 20,
         spoilerOnly?: boolean
     ): Promise<PageResponseDto<EscapeRoomCommentResponseDto>> => {
@@ -77,16 +83,16 @@ export const escapeRoomCommentService = {
             const params = new URLSearchParams({
                 page: page.toString(),
                 size: size.toString(),
-                sort: 'createdAt,desc'
+                sort: "createdAt,desc",
             });
-            
+
             if (spoilerOnly !== undefined) {
-                params.append('spoilerOnly', spoilerOnly.toString());
+                params.append("spoilerOnly", spoilerOnly.toString());
             }
-            
-            return await apiClient.get<PageResponseDto<EscapeRoomCommentResponseDto>>(
-                `${baseURI}/theme/${themeId}?${params}`
-            );
+
+            return await apiClient.get<
+                PageResponseDto<EscapeRoomCommentResponseDto>
+            >(`${publicBaseURI}/theme/${themeId}?${params}`);
         } catch (error) {
             console.error("테마별 댓글 목록 조회 실패:", error);
             throw error;
@@ -94,9 +100,15 @@ export const escapeRoomCommentService = {
     },
 
     // 댓글 수정
-    updateComment: async (commentId: string, data: EscapeRoomCommentUpdateDto): Promise<EscapeRoomCommentResponseDto> => {
+    updateComment: async (
+        commentId: string,
+        data: EscapeRoomCommentUpdateDto
+    ): Promise<EscapeRoomCommentResponseDto> => {
         try {
-            return await apiClient.put<EscapeRoomCommentResponseDto>(`${baseURI}/${commentId}`, data);
+            return await apiClient.put<EscapeRoomCommentResponseDto>(
+                `${baseURI}/${commentId}`,
+                data
+            );
         } catch (error) {
             console.error("댓글 수정 실패:", error);
             throw error;
@@ -113,10 +125,14 @@ export const escapeRoomCommentService = {
         }
     },
 
-    // 댓글 상세 조회
-    getComment: async (commentId: string): Promise<EscapeRoomCommentResponseDto> => {
+    // 댓글 상세 조회 (공개)
+    getComment: async (
+        commentId: string
+    ): Promise<EscapeRoomCommentResponseDto> => {
         try {
-            return await apiClient.get<EscapeRoomCommentResponseDto>(`${baseURI}/${commentId}`);
+            return await apiClient.get<EscapeRoomCommentResponseDto>(
+                `${publicBaseURI}/${commentId}`
+            );
         } catch (error) {
             console.error("댓글 상세 조회 실패:", error);
             throw error;
@@ -124,27 +140,35 @@ export const escapeRoomCommentService = {
     },
 
     // 사용자별 댓글 목록 조회
-    getCommentsByUser: async (userId: string, page: number = 0, size: number = 20): Promise<PageResponseDto<EscapeRoomCommentResponseDto>> => {
+    getCommentsByUser: async (
+        userId: string,
+        page: number = 0,
+        size: number = 20
+    ): Promise<PageResponseDto<EscapeRoomCommentResponseDto>> => {
         try {
             const params = new URLSearchParams({
                 page: page.toString(),
                 size: size.toString(),
-                sort: 'createdAt,desc'
+                sort: "createdAt,desc",
             });
-            
-            return await apiClient.get<PageResponseDto<EscapeRoomCommentResponseDto>>(
-                `${baseURI}/user/${userId}?${params}`
-            );
+
+            return await apiClient.get<
+                PageResponseDto<EscapeRoomCommentResponseDto>
+            >(`${baseURI}/user/${userId}?${params}`);
         } catch (error) {
             console.error("사용자별 댓글 목록 조회 실패:", error);
             throw error;
         }
     },
 
-    // 테마 댓글 통계 조회
-    getCommentStats: async (themeId: string): Promise<EscapeRoomCommentStatsDto> => {
+    // 테마 댓글 통계 조회 (공개)
+    getCommentStats: async (
+        themeId: string
+    ): Promise<EscapeRoomCommentStatsDto> => {
         try {
-            return await apiClient.get<EscapeRoomCommentStatsDto>(`${baseURI}/theme/${themeId}/stats`);
+            return await apiClient.get<EscapeRoomCommentStatsDto>(
+                `${publicBaseURI}/theme/${themeId}/stats`
+            );
         } catch (error) {
             console.error("테마 댓글 통계 조회 실패:", error);
             throw error;
@@ -169,5 +193,5 @@ export const escapeRoomCommentService = {
             console.error("댓글 좋아요 취소 실패:", error);
             throw error;
         }
-    }
+    },
 };

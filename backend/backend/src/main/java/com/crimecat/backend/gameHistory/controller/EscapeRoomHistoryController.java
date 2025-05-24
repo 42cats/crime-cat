@@ -80,18 +80,6 @@ public class EscapeRoomHistoryController {
     }
     
     /**
-     * 특정 테마의 공개 기록 목록 조회
-     */
-    @GetMapping("/theme/{themeId}")
-    public ResponseEntity<Page<EscapeRoomHistoryResponse>> getThemeHistories(
-            @PathVariable UUID themeId,
-            @PageableDefault(size = 20, sort = "playDate", direction = Sort.Direction.DESC) Pageable pageable) {
-        log.info("테마별 방탈출 기록 목록 조회 요청 - themeId: {}", themeId);
-        Page<EscapeRoomHistoryResponse> response = escapeRoomHistoryService.getThemeHistories(themeId, pageable);
-        return ResponseEntity.ok(response);
-    }
-    
-    /**
      * 현재 사용자가 특정 테마를 플레이했는지 확인
      */
     @GetMapping("/theme/{themeId}/played")
@@ -101,14 +89,4 @@ public class EscapeRoomHistoryController {
         return ResponseEntity.ok(hasPlayed);
     }
     
-    /**
-     * 최근 방탈출 기록 조회 (홈 화면용)
-     */
-    @GetMapping("/recent")
-    public ResponseEntity<List<EscapeRoomHistoryResponse>> getRecentHistories(
-            @RequestParam(defaultValue = "10") int limit) {
-        log.info("최근 방탈출 기록 조회 요청 - limit: {}", limit);
-        List<EscapeRoomHistoryResponse> response = escapeRoomHistoryService.getRecentHistories(limit);
-        return ResponseEntity.ok(response);
-    }
 }

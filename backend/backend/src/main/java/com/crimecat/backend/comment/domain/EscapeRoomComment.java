@@ -77,6 +77,13 @@ public class EscapeRoomComment {
     @Builder.Default
     private Boolean hasSpoiler = false;
 
+    /**
+     * 좋아요 수
+     */
+    @Column(name = "LIKES_COUNT", nullable = false)
+    @Builder.Default
+    private Integer likesCount = 0;
+
     // 비공개 댓글 기능 제거 - 스포일러 시스템만 지원
 
     /**
@@ -182,5 +189,21 @@ public class EscapeRoomComment {
         }
         
         return true;
+    }
+    
+    /**
+     * 좋아요 수 증가
+     */
+    public void increaseLikesCount() {
+        this.likesCount++;
+    }
+    
+    /**
+     * 좋아요 수 감소
+     */
+    public void decreaseLikesCount() {
+        if (this.likesCount > 0) {
+            this.likesCount--;
+        }
     }
 }
