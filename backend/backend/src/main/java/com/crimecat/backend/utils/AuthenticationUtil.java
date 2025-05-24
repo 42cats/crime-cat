@@ -232,4 +232,25 @@ public class AuthenticationUtil {
     }
   }
 
-}
+  /**
+   * 현재 인증된 사용자의 통합 User 객체를 Optional로 반환합니다.
+   * 인증되지 않은 사용자의 경우 Optional.empty()를 반환합니다.
+   *
+   * @return 인증된 사용자의 User 객체를 감싼 Optional
+   */
+  public static Optional<User> getCurrentUserOptional() {
+    return getCurrentWebUserOptional()
+            .map(WebUser::getUser);
+  }
+
+  /**
+   * 현재 인증된 사용자의 통합 User ID를 Optional로 반환합니다.
+   * 인증되지 않은 사용자의 경우 Optional.empty()를 반환합니다.
+   *
+   * @return 인증된 사용자의 User ID를 감싼 Optional
+   */
+  public static Optional<UUID> getCurrentUserIdOptional() {
+    return getCurrentUserOptional()
+            .map(User::getId);
+  }
+  }
