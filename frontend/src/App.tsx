@@ -161,7 +161,7 @@ const App = () => (
                                     element={<CreateTheme />}
                                 />
                                 <Route
-                                    path="/themes/:category/edit/:id"
+                                    path="/themes/edit/:id"
                                     element={<EditTheme />}
                                 />
 

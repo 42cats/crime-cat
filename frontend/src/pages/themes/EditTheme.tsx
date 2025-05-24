@@ -15,12 +15,19 @@ const EditTheme: React.FC = () => {
 
   const initialTheme = (location.state as { theme?: Theme })?.theme;
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['theme', id],
     queryFn: () => (id ? themesService.getThemeById(id) : Promise.reject('No ID')),
     enabled: !!id && !initialTheme,
     initialData: initialTheme,
   });
+
+  // 에러 로그 추가
+  React.useEffect(() => {
+    if (error) {
+      console.error('테마 로드 오류:', error);
+    }
+  }, [error]);
 
   const updateMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -42,9 +49,11 @@ const EditTheme: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['themes'] });
-	  queryClient.invalidateQueries({ queryKey: ['theme', id] });
+      queryClient.invalidateQueries({ queryKey: ['theme', id] });
       if (data) {
-        navigate(`/themes/${data.type}/${id}`);
+        // 테마 타입을 라우팅 경로에 맞게 변환 (ESCAPE_ROOM -> escape-room)
+        const themeTypeForRoute = data.type.toLowerCase().replace('_', '-');
+        navigate(`/themes/${themeTypeForRoute}/${id}`);
       } else {
         navigate('/');
       }
@@ -55,7 +64,37 @@ const EditTheme: React.FC = () => {
     updateMutation.mutate(formData);
   };
 
-  if (!data) return null;
+  // 로딩 상태 처리
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
+          <p>테마 정보를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 에러 처리
+  if (error || !data) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">테마를 찾을 수 없습니다</h1>
+          <p className="text-gray-600 mb-4">
+            요청하신 테마가 존재하지 않거나 접근 권한이 없습니다.
+          </p>
+          <button
+            onClick={() => navigate(-1)}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            뒤로 가기
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ThemeForm

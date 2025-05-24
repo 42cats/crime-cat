@@ -69,9 +69,8 @@ const ThemeActions: React.FC<ThemeActionsProps> = ({
                         size="sm"
                         onClick={() =>
                             navigate(
-                                `/themes/${theme.type.toLowerCase()}/edit/${
-                                    theme.id
-                                }`
+                                `/themes/edit/${theme.id}`,
+                                { state: { theme } }
                             )
                         }
                     >
