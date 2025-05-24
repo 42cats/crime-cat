@@ -90,13 +90,6 @@ const ThemeHeader: React.FC<ThemeHeaderProps> = ({ theme }) => {
                     )}
                 </div>
             )}
-
-            {/* 설명 */}
-            <div className="prose prose-sm max-w-none">
-                <p className="text-gray-700 leading-relaxed">
-                    {theme.content || theme.summary}
-                </p>
-            </div>
         </div>
     );
 };
