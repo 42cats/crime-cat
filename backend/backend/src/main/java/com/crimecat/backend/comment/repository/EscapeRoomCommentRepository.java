@@ -29,6 +29,19 @@ public interface EscapeRoomCommentRepository extends JpaRepository<EscapeRoomCom
             @Param("themeId") UUID themeId, Pageable pageable);
     
     /**
+     * 특정 테마의 모든 댓글 목록 조회 (페이징 없이)
+     */
+    @Query("SELECT ec FROM EscapeRoomComment ec " +
+           "JOIN FETCH ec.webUser u " +
+           "LEFT JOIN FETCH ec.escapeRoomHistory eh " +
+           "LEFT JOIN FETCH ec.parentComment pc " +
+           "WHERE ec.escapeRoomTheme.id = :themeId " +
+           "AND ec.deletedAt IS NULL " +
+           "ORDER BY ec.createdAt DESC")
+    List<EscapeRoomComment> findAllByEscapeRoomThemeIdAndDeletedAtIsNull(
+            @Param("themeId") UUID themeId);
+    
+    /**
      * 특정 사용자의 모든 댓글 조회 (삭제되지 않은 것만)
      */
     @Query("SELECT ec FROM EscapeRoomComment ec " +
@@ -87,4 +100,15 @@ public interface EscapeRoomCommentRepository extends JpaRepository<EscapeRoomCom
            "AND ec.deletedAt IS NULL " +
            "ORDER BY ec.createdAt ASC")
     List<EscapeRoomComment> findRepliesByParentIdAndDeletedAtIsNull(@Param("parentId") UUID parentId);
+    
+    /**
+     * 특정 부모 댓글의 대댓글 목록 조회
+     */
+    @Query("SELECT ec FROM EscapeRoomComment ec " +
+           "JOIN FETCH ec.webUser u " +
+           "WHERE ec.parentComment.id = :parentCommentId " +
+           "AND ec.deletedAt IS NULL " +
+           "ORDER BY ec.createdAt ASC")
+    List<EscapeRoomComment> findAllByParentCommentIdAndDeletedAtIsNull(
+            @Param("parentCommentId") UUID parentCommentId);
 }
