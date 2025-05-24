@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Star } from "lucide-react";
 
 interface DifficultyFilterProps {
+    filterLabel: string;
     minValue: string;
     maxValue: string;
     onMinChange: (value: string) => void;
@@ -10,6 +11,7 @@ interface DifficultyFilterProps {
 }
 
 const DifficultyFilter: React.FC<DifficultyFilterProps> = ({
+    filterLabel,
     minValue,
     maxValue,
     onMinChange,
@@ -55,21 +57,29 @@ const DifficultyFilter: React.FC<DifficultyFilterProps> = ({
             onMinChange(newValue.toString());
         }
     };
-    
+
     // 별표 렌더링 함수 생성
-    const renderStars = (value: number, hoveredValue: number | null, onStarClick: (value: number) => void, onHover: (value: number | null) => void) => {
+    const renderStars = (
+        value: number,
+        hoveredValue: number | null,
+        onStarClick: (value: number) => void,
+        onHover: (value: number | null) => void
+    ) => {
         const displayValue = hoveredValue !== null ? hoveredValue : value;
         const starElements = [];
-        
+
         for (let i = 1; i <= 5; i++) {
             // 각 별마다 0~2 값을 계산 (0: 비어있음, 1: 반만 채워짐, 2: 완전히 채워짐)
-            const starFill = Math.min(Math.max(displayValue - (i - 1) * 2, 0), 2);
-            
+            const starFill = Math.min(
+                Math.max(displayValue - (i - 1) * 2, 0),
+                2
+            );
+
             starElements.push(
                 <div key={i} className="relative w-6 h-6 cursor-pointer group">
                     {/* 기본 빈 별 */}
                     <Star className="w-6 h-6 text-muted-foreground" />
-                    
+
                     {/* 채워진 부분을 덕운 별로 표시 */}
                     {starFill > 0 && (
                         <div
@@ -79,14 +89,14 @@ const DifficultyFilter: React.FC<DifficultyFilterProps> = ({
                             <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
                         </div>
                     )}
-                    
+
                     {/* 왼쪽 영역 (이 값을 클릭하면 홍수값, 예: 1, 3, 5, 7, 9) */}
                     <div
                         className="absolute top-0 left-0 w-1/2 h-full z-10"
                         onMouseEnter={() => onHover(i * 2 - 1)}
                         onClick={() => onStarClick(i * 2 - 1)}
                     />
-                    
+
                     {/* 오른쪽 영역 (이 값을 클릭하면 짝수값, 예: 2, 4, 6, 8, 10) */}
                     <div
                         className="absolute top-0 right-0 w-1/2 h-full z-10"
@@ -96,9 +106,12 @@ const DifficultyFilter: React.FC<DifficultyFilterProps> = ({
                 </div>
             );
         }
-        
+
         return (
-            <div className="flex gap-1 w-fit" onMouseLeave={() => onHover(null)}>
+            <div
+                className="flex gap-1 w-fit"
+                onMouseLeave={() => onHover(null)}
+            >
                 {starElements}
             </div>
         );
@@ -106,15 +119,20 @@ const DifficultyFilter: React.FC<DifficultyFilterProps> = ({
 
     return (
         <div className="space-y-2">
-            <Label className="text-sm font-medium">난이도</Label>
+            <Label className="text-sm font-medium">{filterLabel}</Label>
 
             <div className="space-y-2">
                 <div className="flex items-center">
                     <span className="text-sm w-20 text-muted-foreground">
-                        최소 난이도:
+                        최소 {filterLabel}:
                     </span>
                     <div className="flex flex-col gap-1">
-                        {renderStars(minStar, hoveredMin, handleMinStarClick, setHoveredMin)}
+                        {renderStars(
+                            minStar,
+                            hoveredMin,
+                            handleMinStarClick,
+                            setHoveredMin
+                        )}
                         <div className="text-sm text-muted-foreground">
                             {minStar > 0 ? `${minStar}/10` : "선택 안함"}
                         </div>
@@ -123,10 +141,15 @@ const DifficultyFilter: React.FC<DifficultyFilterProps> = ({
 
                 <div className="flex items-center">
                     <span className="text-sm w-20 text-muted-foreground">
-                        최대 난이도:
+                        최대 {filterLabel}:
                     </span>
                     <div className="flex flex-col gap-1">
-                        {renderStars(maxStar, hoveredMax, handleMaxStarClick, setHoveredMax)}
+                        {renderStars(
+                            maxStar,
+                            hoveredMax,
+                            handleMaxStarClick,
+                            setHoveredMax
+                        )}
                         <div className="text-sm text-muted-foreground">
                             {maxStar > 0 ? `${maxStar}/10` : "선택 안함"}
                         </div>
