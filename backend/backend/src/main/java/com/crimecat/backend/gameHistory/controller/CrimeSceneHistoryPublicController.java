@@ -20,15 +20,6 @@ public class CrimeSceneHistoryPublicController {
     
     private final WebGameHistoryService webGameHistoryService;
     
-    /**
-     * 특정 사용자의 크라임씬 플레이 기록 개수 조회 (공개)
-     */
-    @GetMapping("/user/{userId}/count")
-    public ResponseEntity<Long> getUserCrimeSceneHistoryCount(@PathVariable String userId) {
-        log.info("사용자 크라임씬 기록 개수 조회 요청 - userId: {}", userId);
-        Long count = webGameHistoryService.getUserCrimeSceneHistoryCount(userId);
-        return ResponseEntity.ok(count);
-    }
     
     /**
      * 특정 사용자의 크라임씬 플레이 기록 목록 조회 (공개)

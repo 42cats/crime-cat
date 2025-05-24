@@ -56,15 +56,6 @@ public class EscapeRoomHistoryPublicController {
         return ResponseEntity.ok(response);
     }
     
-    /**
-     * 특정 사용자의 방탈출 플레이 기록 개수 조회 (공개)
-     */
-    @GetMapping("/user/{userId}/count")
-    public ResponseEntity<Long> getUserEscapeRoomHistoryCount(@PathVariable String userId) {
-        log.info("사용자 방탈출 기록 개수 조회 요청 - userId: {}", userId);
-        Long count = escapeRoomHistoryService.getUserEscapeRoomHistoryCount(userId);
-        return ResponseEntity.ok(count);
-    }
     
     /**
      * 특정 사용자의 방탈출 플레이 기록 목록 조회 (공개)
