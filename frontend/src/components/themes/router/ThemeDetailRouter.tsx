@@ -1,14 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import CrimesceneThemeDetail from '../crimescene/CrimesceneThemeDetail';
 import EscapeRoomDetailPage from '@/components/escape-room/detail/EscapeRoomDetailPage';
-import { useQuery } from '@tanstack/react-query';
+import GameHistoryModal from '@/components/escape-room/detail/GameHistoryModal';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { themesService } from '@/api/content';
+import { escapeRoomHistoryService, EscapeRoomHistoryResponse } from '@/api/game/escapeRoomHistoryService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 
 const ThemeDetailRouter: React.FC = () => {
     const { category, id } = useParams<{ category: string; id: string }>();
+    const queryClient = useQueryClient();
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+    const [editingHistoryId, setEditingHistoryId] = useState<string | undefined>();
+    const [editingHistoryData, setEditingHistoryData] = useState<EscapeRoomHistoryResponse | undefined>();
     
     // 방탈출 테마인 경우 별도 데이터 fetching
     const { data: escapeRoomData, isLoading: escapeRoomLoading, error: escapeRoomError } = useQuery({
@@ -77,15 +83,58 @@ const ThemeDetailRouter: React.FC = () => {
             
             console.log('변환된 방탈출 테마 데이터:', escapeRoomTheme);
             
+            // 기록 추가 핸들러
+            const handleAddGameHistory = () => {
+                console.log('플레이 기록 추가 클릭');
+                setEditingHistoryId(undefined);
+                setEditingHistoryData(undefined);
+                setIsHistoryModalOpen(true);
+            };
+            
+            // 기록 수정 핸들러
+            const handleEditGameHistory = async (historyId: string) => {
+                console.log('플레이 기록 수정 클릭:', historyId);
+                try {
+                    const historyData = await escapeRoomHistoryService.getHistory(historyId);
+                    setEditingHistoryId(historyId);
+                    setEditingHistoryData(historyData);
+                    setIsHistoryModalOpen(true);
+                } catch (error) {
+                    console.error('기록 조회 실패:', error);
+                }
+            };
+            
+            // 모달 성공 핸들러
+            const handleHistorySuccess = () => {
+                // 방탈출 테마 데이터 재조회 (hasPlayedTheme 업데이트를 위해)
+                queryClient.invalidateQueries({ queryKey: ['escape-room-theme', id] });
+                // GameHistorySection의 목록도 재조회
+                queryClient.invalidateQueries({ queryKey: ['escape-room-histories'] });
+            };
+            
             return (
-                <EscapeRoomDetailPage 
-                    theme={escapeRoomTheme}
-                    hasGameHistory={true}
-                    onAddGameHistory={() => {
-                        console.log('플레이 기록 추가 클릭');
-                        // TODO: 플레이 기록 추가 모달 또는 페이지로 이동
-                    }}
-                />
+                <>
+                    <EscapeRoomDetailPage 
+                        theme={escapeRoomTheme}
+                        hasGameHistory={true}
+                        onAddGameHistory={handleAddGameHistory}
+                        onEditGameHistory={handleEditGameHistory}
+                    />
+                    
+                    {/* 기록 추가/수정 모달 */}
+                    <GameHistoryModal
+                        isOpen={isHistoryModalOpen}
+                        onClose={() => {
+                            setIsHistoryModalOpen(false);
+                            setEditingHistoryId(undefined);
+                            setEditingHistoryData(undefined);
+                        }}
+                        themeId={escapeRoomData.id}
+                        historyId={editingHistoryId}
+                        initialData={editingHistoryData}
+                        onSuccess={handleHistorySuccess}
+                    />
+                </>
             );
             
         case 'murder-mystery':
