@@ -156,19 +156,15 @@ public class EscapeRoomComment {
 
     /**
      * 스포일러 댓글 열람 권한 확인
-     * 스포일러 댓글은 해당 테마의 게임 기록이 있는 사용자만 볼 수 있음
+     * 스포일러 댓글은 작성자도 포함하여 해당 테마의 게임 기록이 있는 사용자만 볼 수 있음
      */
-    public boolean canViewSpoilerComment(UUID userId) {
+    public boolean canViewSpoilerComment(UUID userId, boolean hasGameHistory) {
         if (!hasSpoiler) {
             return true; // 스포일러가 아니면 누구나 볼 수 있음
         }
         
-        if (isAuthor(userId)) {
-            return true; // 작성자는 항상 볼 수 있음
-        }
-        
-        // 해당 테마의 게임 기록이 있는지 확인 필요 (서비스 레이어에서 처리)
-        return false;
+        // 스포일러 댓글은 작성자여도 게임 기록이 있어야만 볼 수 있음
+        return hasGameHistory;
     }
 
     /**
