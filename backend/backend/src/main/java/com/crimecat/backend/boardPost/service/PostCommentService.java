@@ -87,10 +87,24 @@ public class PostCommentService {
             PostCommentRequest postCommentRequest
     ) {
         PostComment postComment = postCommentRepository.findByIdAndIsDeletedFalse(commentId).orElseThrow(() -> new EntityNotFoundException("댓글을 찾을 수 없습니다."));
-        if (postComment.getAuthorId().equals(userId)) {
+        if (!postComment.getAuthorId().equals(userId)) {
             throw new AccessDeniedException("댓글을 수정할 권한이 없습니다");
         }
         postComment.update(postCommentRequest);
+        postCommentRepository.save(postComment);
+        return getCommentResponses(postComment.getPostId(), userId);
+    }
+
+    @Transactional
+    public List<PostCommentResponse> deletePostComment(
+            UUID commentId,
+            UUID userId
+    ) {
+        PostComment postComment = postCommentRepository.findByIdAndIsDeletedFalse(commentId).orElseThrow(() -> new EntityNotFoundException("댓글을 찾을 수 없습니다."));
+        if (!postComment.getAuthorId().equals(userId)) {
+            throw new AccessDeniedException("댓글을 삭제할 권한이 없습니다");
+        }
+        postComment.delete();
         postCommentRepository.save(postComment);
         return getCommentResponses(postComment.getPostId(), userId);
     }

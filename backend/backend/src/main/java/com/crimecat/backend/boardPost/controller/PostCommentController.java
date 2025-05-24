@@ -55,4 +55,14 @@ public class PostCommentController {
                 postCommentService.updatePostComment(commentId, currentUser.getId(), postCommentRequest)
         );
     }
+
+    @DeleteMapping("{id}")
+    public ResponseEntity<List<PostCommentResponse>> deleteComment(
+            @PathVariable("id") UUID commentId,
+            @AuthenticationPrincipal WebUser currentUser
+    ) {
+        return ResponseEntity.ok().body(
+                postCommentService.deletePostComment(commentId, currentUser.getId())
+        );
+    }
 }

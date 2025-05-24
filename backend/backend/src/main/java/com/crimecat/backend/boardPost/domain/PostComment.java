@@ -2,6 +2,7 @@ package com.crimecat.backend.boardPost.domain;
 
 import com.crimecat.backend.boardPost.dto.PostCommentRequest;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,6 +11,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
+import org.springframework.cglib.core.Local;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -68,10 +70,13 @@ public class PostComment {
 
     @Builder.Default
     @Column(name = "IS_DELETED")
+    @JsonProperty("isDeleted")
     private Boolean isDeleted = false;
 
+    @Builder.Default
     @Column(name = "IS_SECRET")
-    private Boolean isSecret;
+    @JsonProperty("isSecret")
+    private Boolean isSecret = false;
 
     private void setBoardPost(BoardPost boardPost) {
         this.postId = boardPost.getId();
@@ -87,6 +92,11 @@ public class PostComment {
         this.updatedAt = LocalDateTime.now();
         this.content = request.getContent();
         this.isSecret = request.getIsSecret();
+    }
+
+    public void delete() {
+        this.updatedAt = LocalDateTime.now();
+        this.isDeleted = true;
     }
 
     public static PostComment from(BoardPost boardPost, WebUser author, PostCommentRequest request){

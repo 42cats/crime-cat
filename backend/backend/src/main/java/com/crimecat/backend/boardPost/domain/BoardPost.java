@@ -4,6 +4,7 @@ import com.crimecat.backend.boardPost.dto.BoardPostRequest;
 import com.crimecat.backend.boardPost.enums.BoardType;
 import com.crimecat.backend.boardPost.enums.PostType;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
@@ -68,6 +69,7 @@ public class BoardPost {
 
     @Builder.Default
     @Column(name = "IS_SECRET")
+    @JsonProperty("isSecret")
     private Boolean isSecret = false;
 
     @Enumerated(EnumType.STRING)
@@ -80,6 +82,7 @@ public class BoardPost {
 
     @Builder.Default
     @Column(name = "IS_PINNED")
+    @JsonProperty("isPinned")
     private Boolean isPinned = false;
 
     // author를 설정하는 메서드
