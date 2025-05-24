@@ -33,6 +33,11 @@ public interface EscapeRoomHistoryRepository extends JpaRepository<EscapeRoomHis
     Page<EscapeRoomHistory> findByWebUserIdAndDeletedAtIsNullOrderByPlayDateDesc(UUID userId, Pageable pageable);
     
     /**
+     * 사용자의 기록 개수 조회 (삭제되지 않은 기록만)
+     */
+    Long countByWebUserIdAndDeletedAtIsNull(UUID userId);
+    
+    /**
      * 특정 테마의 기록 목록 조회 (삭제되지 않은 기록만)
      */
     @Query("SELECT erh FROM EscapeRoomHistory erh " +

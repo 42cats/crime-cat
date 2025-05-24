@@ -55,4 +55,27 @@ public class EscapeRoomHistoryPublicController {
         EscapeRoomHistoryStatsResponse response = escapeRoomHistoryService.getThemeStatistics(themeId);
         return ResponseEntity.ok(response);
     }
+    
+    /**
+     * 특정 사용자의 방탈출 플레이 기록 개수 조회 (공개)
+     */
+    @GetMapping("/user/{userId}/count")
+    public ResponseEntity<Long> getUserEscapeRoomHistoryCount(@PathVariable String userId) {
+        log.info("사용자 방탈출 기록 개수 조회 요청 - userId: {}", userId);
+        Long count = escapeRoomHistoryService.getUserEscapeRoomHistoryCount(userId);
+        return ResponseEntity.ok(count);
+    }
+    
+    /**
+     * 특정 사용자의 방탈출 플레이 기록 목록 조회 (공개)
+     */
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<Page<EscapeRoomHistoryResponse>> getUserEscapeRoomHistories(
+            @PathVariable String userId,
+            @PageableDefault(size = 20, sort = "playDate", direction = Sort.Direction.DESC) Pageable pageable) {
+        log.info("사용자 방탈출 기록 목록 조회 요청 - userId: {}, page: {}, size: {}", 
+                userId, pageable.getPageNumber(), pageable.getPageSize());
+        Page<EscapeRoomHistoryResponse> response = escapeRoomHistoryService.getUserEscapeRoomHistories(userId, pageable);
+        return ResponseEntity.ok(response);
+    }
 }

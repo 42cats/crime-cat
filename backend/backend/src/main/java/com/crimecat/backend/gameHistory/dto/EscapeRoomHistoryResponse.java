@@ -95,4 +95,22 @@ public class EscapeRoomHistoryResponse {
         
         return response;
     }
+    
+    /**
+     * 공개 API용 응답 생성 (기본 정보만 포함)
+     */
+    public static EscapeRoomHistoryResponse fromPublic(EscapeRoomHistory history) {
+        return EscapeRoomHistoryResponse.builder()
+                .id(history.getId())
+                .escapeRoomThemeId(history.getEscapeRoomTheme().getId())
+                .escapeRoomThemeTitle(history.getEscapeRoomTheme().getTitle())
+                .userId(history.getWebUser().getId())
+                .userNickname(history.getWebUser().getNickname())
+                .userAvatarUrl(history.getWebUser().getProfileImagePath())
+                .successStatus(history.getSuccessStatus())
+                .playDate(history.getPlayDate())
+                .createdAt(history.getCreatedAt())
+                .isAuthor(false) // 공개 API에서는 작성자 정보를 제공하지 않음
+                .build();
+    }
 }
