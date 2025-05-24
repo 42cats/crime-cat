@@ -268,6 +268,7 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
                                     unit="분"
                                 />
                                 <DifficultyFilter
+                                    filterLabel="난이도"
                                     minValue={filters.difficultyMin}
                                     maxValue={filters.difficultyMax}
                                     onMinChange={(v) =>
@@ -288,6 +289,7 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
                             </h3>
                             <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
                                 <DifficultyFilter
+                                    filterLabel="공포"
                                     minValue={filters.horrorMin}
                                     maxValue={filters.horrorMax}
                                     onMinChange={(v) =>
@@ -298,6 +300,7 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
                                     }
                                 />
                                 <DifficultyFilter
+                                    filterLabel="장치"
                                     minValue={filters.deviceMin}
                                     maxValue={filters.deviceMax}
                                     onMinChange={(v) =>
@@ -308,6 +311,7 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
                                     }
                                 />
                                 <DifficultyFilter
+                                    filterLabel="활동"
                                     minValue={filters.activityMin}
                                     maxValue={filters.activityMax}
                                     onMinChange={(v) =>
