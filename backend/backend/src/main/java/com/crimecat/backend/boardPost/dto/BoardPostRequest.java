@@ -32,4 +32,14 @@ public class BoardPostRequest {
     @Builder.Default
     @JsonProperty("isPinned")
     private Boolean isPinned = false;
+
+    @JsonProperty("isPinned")
+    public boolean isPinned() {
+        return isPinned;
+    }
+
+    @JsonProperty("isSecret")
+    public boolean isSecret() {
+        return isSecret;
+    }
 }

@@ -11,8 +11,6 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
-import org.springframework.cglib.core.Local;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -78,16 +76,6 @@ public class PostComment {
     @JsonProperty("isSecret")
     private Boolean isSecret = false;
 
-    private void setBoardPost(BoardPost boardPost) {
-        this.postId = boardPost.getId();
-        this.boardPost = boardPost;
-    }
-
-    private void setAuthor(WebUser author) {
-        this.authorId = author.getId();
-        this.author = author;
-    }
-
     public void update(PostCommentRequest request) {
         this.updatedAt = LocalDateTime.now();
         this.content = request.getContent();
@@ -99,17 +87,20 @@ public class PostComment {
         this.isDeleted = true;
     }
 
-    public static PostComment from(BoardPost boardPost, WebUser author, PostCommentRequest request){
-        PostComment comment = PostComment.builder()
+    public static PostComment from(BoardPost boardPost, WebUser author, PostComment parent, PostCommentRequest request){
+        UUID parentId = null;
+        if (parent != null) {
+            parentId = parent.getId();
+        }
+        return PostComment.builder()
                 .content(request.getContent())
-                .parentId(request.getParentId())
+                .authorId(author.getId())
+                .author(author)
+                .postId(boardPost.getId())
+                .boardPost(boardPost)
+                .parentId(parentId)
+                .parent(parent)
                 .isSecret(request.getIsSecret())
                 .build();
-
-        // 작성자 객체 설정
-        comment.setBoardPost(boardPost);
-        comment.setAuthor(author);
-
-        return comment;
     }
 }

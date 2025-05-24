@@ -24,4 +24,9 @@ public class PostCommentRequest {
     private Boolean isSecret = false;
 
     private UUID parentId;
+
+    @JsonProperty("isSecret")
+    public boolean isSecret() {
+        return isSecret;
+    }
 }

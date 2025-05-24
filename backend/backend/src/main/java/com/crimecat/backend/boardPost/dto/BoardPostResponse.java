@@ -28,6 +28,16 @@ public class BoardPostResponse {
     @JsonProperty("isPinned")
     private Boolean isPinned;
 
+    @JsonProperty("isSecret")
+    public boolean isSecret() {
+        return isSecret;
+    }
+
+    @JsonProperty("isPinned")
+    public boolean isPinned() {
+        return isPinned;
+    }
+
     public static BoardPostResponse from(
             BoardPost boardPost
     ) {

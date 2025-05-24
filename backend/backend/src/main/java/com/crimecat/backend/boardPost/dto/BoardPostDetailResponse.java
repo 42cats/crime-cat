@@ -32,10 +32,29 @@ public class BoardPostDetailResponse {
     @JsonProperty("isLikedByCurrentUser")
     private boolean isLikedByCurrentUser;
     @JsonProperty("isPinned")
-    private Boolean isPinned;
+    private boolean isPinned;
     @JsonProperty("isSecret")
-    private Boolean isSecret;
+    private boolean isSecret;
 
+    @JsonProperty("isOwnPost")
+    public boolean isOwnPost() {
+        return isOwnPost;
+    }
+
+    @JsonProperty("isLikedByCurrentUser")
+    public boolean isLikedByCurrentUser() {
+        return isLikedByCurrentUser;
+    }
+
+    @JsonProperty("isPinned")
+    public boolean isPinned() {
+        return isPinned;
+    }
+
+    @JsonProperty("isSecret")
+    public boolean isSecret() {
+        return isSecret;
+    }
 
     public static BoardPostDetailResponse from(
             BoardPost boardPost,
