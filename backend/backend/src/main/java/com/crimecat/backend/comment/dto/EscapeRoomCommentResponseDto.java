@@ -1,9 +1,12 @@
 package com.crimecat.backend.comment.dto;
 
 import com.crimecat.backend.comment.domain.EscapeRoomComment;
+import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
+import com.crimecat.backend.gameHistory.enum.SuccessStatus;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -38,6 +41,29 @@ public class EscapeRoomCommentResponseDto {
     // 스포일러 댓글이지만 볼 수 없는 경우 보여줄 메시지
     private String hiddenMessage;
     
+    // 게임 기록 관련 정보 (선택적으로 표시)
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class GameHistoryInfo {
+        private Integer teamSize;
+        private SuccessStatus successStatus;
+        private Integer clearTime;
+        private String formattedClearTime;
+        private Integer hintCount;
+        private Integer difficultyRating;
+        private Double difficultyRatingStars;
+        private Integer funRating;
+        private Double funRatingStars;
+        private Integer storyRating;
+        private Double storyRatingStars;
+        private LocalDate playDate;
+    }
+    
+    private GameHistoryInfo gameHistoryInfo;
+    
     /**
      * Entity를 Response DTO로 변환
      */
@@ -46,9 +72,9 @@ public class EscapeRoomCommentResponseDto {
                 .id(comment.getId())
                 .escapeRoomThemeId(comment.getEscapeRoomTheme().getId())
                 .escapeRoomThemeName(comment.getEscapeRoomTheme().getTitle())
-                .userId(comment.getUser().getId())
-                .userNickname(comment.getUser().getName())
-                .userProfileImageUrl(comment.getUser().getWebUser().getProfileImagePath())
+                .userId(comment.getWebUser().getId())
+                .userNickname(comment.getWebUser().getNickname())
+                .userProfileImageUrl(comment.getWebUser().getProfileImagePath())
                 .hasSpoiler(comment.getHasSpoiler())
                 .isGameHistoryComment(comment.isGameHistoryComment())
                 .likesCount(comment.getLikesCount())
@@ -58,7 +84,26 @@ public class EscapeRoomCommentResponseDto {
         
         // 게임 기록 기반 댓글인 경우
         if (comment.isGameHistoryComment() && comment.getEscapeRoomHistory() != null) {
-            builder.escapeRoomHistoryId(comment.getEscapeRoomHistory().getId());
+            EscapeRoomHistory history = comment.getEscapeRoomHistory();
+            builder.escapeRoomHistoryId(history.getId());
+            
+            // 게임 기록 정보 추가
+            GameHistoryInfo historyInfo = GameHistoryInfo.builder()
+                    .teamSize(history.getTeamSize())
+                    .successStatus(history.getSuccessStatus())
+                    .clearTime(history.getClearTime())
+                    .formattedClearTime(history.getFormattedClearTime())
+                    .hintCount(history.getHintCount())
+                    .difficultyRating(history.getDifficultyRating())
+                    .difficultyRatingStars(history.getDifficultyRatingStars())
+                    .funRating(history.getFunRating())
+                    .funRatingStars(history.getFunRatingStars())
+                    .storyRating(history.getStoryRating())
+                    .storyRatingStars(history.getStoryRatingStars())
+                    .playDate(history.getPlayDate())
+                    .build();
+            
+            builder.gameHistoryInfo(historyInfo);
         }
         
         // 현재 사용자 관련 정보
@@ -86,24 +131,48 @@ public class EscapeRoomCommentResponseDto {
      * 작성자용 Response DTO 생성 (항상 모든 내용 표시)
      */
     public static EscapeRoomCommentResponseDto forAuthor(EscapeRoomComment comment) {
-        return EscapeRoomCommentResponseDto.builder()
+        EscapeRoomCommentResponseDtoBuilder builder = EscapeRoomCommentResponseDto.builder()
                 .id(comment.getId())
                 .escapeRoomThemeId(comment.getEscapeRoomTheme().getId())
                 .escapeRoomThemeName(comment.getEscapeRoomTheme().getTitle())
-                .userId(comment.getUser().getId())
-                .userNickname(comment.getUser().getName())
-                .userProfileImageUrl(comment.getUser().getWebUser().getProfileImagePath())
+                .userId(comment.getWebUser().getId())
+                .userNickname(comment.getWebUser().getNickname())
+                .userProfileImageUrl(comment.getWebUser().getProfileImagePath())
                 .content(comment.getContent())
                 .hasSpoiler(comment.getHasSpoiler())
                 .isGameHistoryComment(comment.isGameHistoryComment())
-                .escapeRoomHistoryId(comment.getEscapeRoomHistory() != null ? comment.getEscapeRoomHistory().getId() : null)
                 .likesCount(comment.getLikesCount())
                 .isLiked(false) // 서비스에서 설정 필요
                 .isAuthor(true)
                 .canEdit(!comment.getIsDeleted())
                 .canView(true)
                 .createdAt(comment.getCreatedAt())
-                .updatedAt(comment.getUpdatedAt())
-                .build();
+                .updatedAt(comment.getUpdatedAt());
+        
+        // 게임 기록 기반 댓글인 경우
+        if (comment.isGameHistoryComment() && comment.getEscapeRoomHistory() != null) {
+            EscapeRoomHistory history = comment.getEscapeRoomHistory();
+            builder.escapeRoomHistoryId(history.getId());
+            
+            // 게임 기록 정보 추가
+            GameHistoryInfo historyInfo = GameHistoryInfo.builder()
+                    .teamSize(history.getTeamSize())
+                    .successStatus(history.getSuccessStatus())
+                    .clearTime(history.getClearTime())
+                    .formattedClearTime(history.getFormattedClearTime())
+                    .hintCount(history.getHintCount())
+                    .difficultyRating(history.getDifficultyRating())
+                    .difficultyRatingStars(history.getDifficultyRatingStars())
+                    .funRating(history.getFunRating())
+                    .funRatingStars(history.getFunRatingStars())
+                    .storyRating(history.getStoryRating())
+                    .storyRatingStars(history.getStoryRatingStars())
+                    .playDate(history.getPlayDate())
+                    .build();
+            
+            builder.gameHistoryInfo(historyInfo);
+        }
+        
+        return builder.build();
     }
 }

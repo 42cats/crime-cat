@@ -14,60 +14,45 @@ import java.util.UUID;
 
 @Repository
 public interface EscapeRoomHistoryRepository extends JpaRepository<EscapeRoomHistory, UUID> {
+
+    /**
+     * ID로 조회 (삭제되지 않은 기록만)
+     */
+    Optional<EscapeRoomHistory> findByIdAndDeletedAtIsNull(UUID id);
     
     /**
-     * 특정 사용자의 모든 방탈출 기록 조회 (페이징)
+     * 사용자의 특정 테마 기록 조회 (삭제되지 않은 기록만)
      */
-    Page<EscapeRoomHistory> findByUserIdOrderByPlayDateDesc(UUID userId, Pageable pageable);
+    List<EscapeRoomHistory> findByWebUserIdAndEscapeRoomThemeIdAndDeletedAtIsNull(UUID userId, UUID themeId);
     
     /**
-     * 특정 테마에 대한 모든 공개 기록 조회 (페이징)
+     * 사용자의 기록 목록 조회 (플레이 날짜 내림차순, 삭제되지 않은 기록만)
      */
-    @Query("SELECT erh FROM EscapeRoomHistory erh WHERE erh.escapeRoomTheme.id = :themeId AND erh.isPublic = true ORDER BY erh.playDate DESC")
-    Page<EscapeRoomHistory> findPublicHistoriesByThemeId(@Param("themeId") UUID themeId, Pageable pageable);
+    Page<EscapeRoomHistory> findByWebUserIdAndDeletedAtIsNullOrderByPlayDateDesc(UUID userId, Pageable pageable);
     
     /**
-     * 특정 사용자가 특정 테마를 플레이한 기록이 있는지 확인
+     * 특정 테마의 기록 목록 조회 (삭제되지 않은 기록만)
      */
-    boolean existsByUserIdAndEscapeRoomThemeId(UUID userId, UUID themeId);
+    @Query("SELECT erh FROM EscapeRoomHistory erh " +
+           "JOIN FETCH erh.escapeRoomTheme et " +
+           "JOIN FETCH erh.webUser wu " +
+           "WHERE erh.escapeRoomTheme.id = :themeId " +
+           "AND erh.deletedAt IS NULL " +
+           "ORDER BY erh.playDate DESC")
+    Page<EscapeRoomHistory> findByEscapeRoomThemeIdAndDeletedAtIsNull(@Param("themeId") UUID themeId, Pageable pageable);
     
     /**
-     * 특정 사용자의 특정 테마 기록 조회
+     * 사용자가 특정 테마를 플레이했는지 확인 (삭제되지 않은 기록만)
      */
-    List<EscapeRoomHistory> findByUserIdAndEscapeRoomThemeIdOrderByPlayDateDesc(UUID userId, UUID themeId);
+    boolean existsByWebUserIdAndEscapeRoomThemeIdAndDeletedAtIsNull(UUID userId, UUID themeId);
     
     /**
-     * 특정 테마의 통계 정보 조회 (성공률, 평균 탈출 시간 등)
+     * 최근 생성된 기록 조회 (삭제되지 않은 기록만)
      */
-    @Query("SELECT " +
-           "COUNT(erh) as totalCount, " +
-           "SUM(CASE WHEN erh.isSuccess = true THEN 1 ELSE 0 END) as successCount, " +
-           "AVG(CASE WHEN erh.isSuccess = true THEN erh.escapeTimeMinutes ELSE NULL END) as avgEscapeTime, " +
-           "AVG(erh.satisfaction) as avgSatisfaction, " +
-           "AVG(erh.feltDifficulty) as avgFeltDifficulty " +
-           "FROM EscapeRoomHistory erh " +
-           "WHERE erh.escapeRoomTheme.id = :themeId AND erh.isPublic = true")
-    Optional<Object[]> findThemeStatistics(@Param("themeId") UUID themeId);
-    
-    /**
-     * 특정 사용자의 통계 정보 조회
-     */
-    @Query("SELECT " +
-           "COUNT(erh) as totalCount, " +
-           "SUM(CASE WHEN erh.isSuccess = true THEN 1 ELSE 0 END) as successCount, " +
-           "COUNT(DISTINCT erh.escapeRoomTheme.id) as uniqueThemeCount " +
-           "FROM EscapeRoomHistory erh " +
-           "WHERE erh.user.id = :userId")
-    Optional<Object[]> findUserStatistics(@Param("userId") UUID userId);
-    
-    /**
-     * 특정 기록이 특정 사용자의 것인지 확인
-     */
-    boolean existsByIdAndUserId(UUID id, UUID userId);
-    
-    /**
-     * 최근 기록 조회 (홈 화면용)
-     */
-    @Query("SELECT erh FROM EscapeRoomHistory erh WHERE erh.isPublic = true ORDER BY erh.createdAt DESC")
-    List<EscapeRoomHistory> findRecentHistories(Pageable pageable);
+    @Query("SELECT erh FROM EscapeRoomHistory erh " +
+           "JOIN FETCH erh.escapeRoomTheme et " +
+           "JOIN FETCH erh.webUser wu " +
+           "WHERE erh.deletedAt IS NULL " +
+           "ORDER BY erh.createdAt DESC")
+    List<EscapeRoomHistory> findByDeletedAtIsNullOrderByCreatedAtDesc(Pageable pageable);
 }

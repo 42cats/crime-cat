@@ -58,8 +58,8 @@ CREATE TABLE IF NOT EXISTS escape_room_genre_tags (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
 COMMENT='방탈출 장르 태그 테이블';
 
--- 4. Create escape_room_history table
-CREATE TABLE IF NOT EXISTS escape_room_history (
+-- 4. Create escape_room_historys table
+CREATE TABLE IF NOT EXISTS escape_room_historys (
     id BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     escape_room_theme_id BINARY(16) NOT NULL COMMENT '방탈출 테마 ID',
     escape_room_location_id BINARY(16) COMMENT '방탈출 지점 ID',
@@ -77,15 +77,15 @@ CREATE TABLE IF NOT EXISTS escape_room_history (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
-    CONSTRAINT fk_escape_room_history_theme FOREIGN KEY (escape_room_theme_id) 
+    CONSTRAINT fk_escape_room_historys_theme FOREIGN KEY (escape_room_theme_id) 
         REFERENCES escape_room_themes(id) ON DELETE CASCADE,
-    CONSTRAINT fk_escape_room_history_location FOREIGN KEY (escape_room_location_id) 
+    CONSTRAINT fk_escape_room_historys_location FOREIGN KEY (escape_room_location_id) 
         REFERENCES escape_room_locations(id) ON DELETE SET NULL,
-    CONSTRAINT fk_escape_room_history_user FOREIGN KEY (web_user_id) 
+    CONSTRAINT fk_escape_room_historys_user FOREIGN KEY (web_user_id) 
         REFERENCES web_users(id) ON DELETE CASCADE,
-    INDEX idx_escape_room_history_theme (escape_room_theme_id),
-    INDEX idx_escape_room_history_user (web_user_id),
-    INDEX idx_escape_room_history_date (play_date)
+    INDEX idx_escape_room_historys_theme (escape_room_theme_id),
+    INDEX idx_escape_room_historys_user (web_user_id),
+    INDEX idx_escape_room_historys_date (play_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
 COMMENT='방탈출 플레이 기록 테이블';
 
@@ -93,7 +93,7 @@ COMMENT='방탈출 플레이 기록 테이블';
 CREATE TABLE IF NOT EXISTS escape_room_comments (
     id BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     escape_room_theme_id BINARY(16) NOT NULL COMMENT '방탈출 테마 ID',
-    escape_room_history_id BINARY(16) COMMENT '방탈출 기록 ID (기록 기반 댓글)',
+    escape_room_historys_id BINARY(16) COMMENT '방탈출 기록 ID (기록 기반 댓글)',
     web_user_id BINARY(16) NOT NULL COMMENT '작성자 ID',
     content TEXT NOT NULL COMMENT '댓글 내용',
     is_spoiler BOOLEAN NOT NULL DEFAULT FALSE COMMENT '스포일러 포함 여부',
@@ -104,14 +104,14 @@ CREATE TABLE IF NOT EXISTS escape_room_comments (
     
     CONSTRAINT fk_escape_room_comment_theme FOREIGN KEY (escape_room_theme_id) 
         REFERENCES escape_room_themes(id) ON DELETE CASCADE,
-    CONSTRAINT fk_escape_room_comment_history FOREIGN KEY (escape_room_history_id) 
-        REFERENCES escape_room_history(id) ON DELETE CASCADE,
+    CONSTRAINT fk_escape_room_comment_history FOREIGN KEY (escape_room_historys_id) 
+        REFERENCES escape_room_historys(id) ON DELETE CASCADE,
     CONSTRAINT fk_escape_room_comment_user FOREIGN KEY (web_user_id) 
         REFERENCES web_users(id) ON DELETE CASCADE,
     CONSTRAINT fk_escape_room_comment_parent FOREIGN KEY (parent_comment_id) 
         REFERENCES escape_room_comments(id) ON DELETE CASCADE,
     INDEX idx_escape_room_comment_theme (escape_room_theme_id),
-    INDEX idx_escape_room_comment_history (escape_room_history_id),
+    INDEX idx_escape_room_comment_history (escape_room_historys_id),
     INDEX idx_escape_room_comment_user (web_user_id),
     INDEX idx_escape_room_comment_parent (parent_comment_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
@@ -159,11 +159,11 @@ DEALLOCATE PREPARE stmt_location_idx;
 
 -- Index for history statistics
 SET @history_stats_index_exists = (SELECT COUNT(*) FROM information_schema.statistics
-    WHERE table_schema = 'discord' AND table_name = 'escape_room_history'
-    AND index_name = 'idx_escape_room_history_stats');
+    WHERE table_schema = 'discord' AND table_name = 'escape_room_historys'
+    AND index_name = 'idx_escape_room_historys_stats');
 
 SET @create_history_index = IF(@history_stats_index_exists = 0,
-    'CREATE INDEX idx_escape_room_history_stats ON escape_room_history (escape_room_theme_id, success_status, play_date)',
+    'CREATE INDEX idx_escape_room_historys_stats ON escape_room_historys (escape_room_theme_id, success_status, play_date)',
     'SELECT 1');
 
 PREPARE stmt_history_idx FROM @create_history_index;

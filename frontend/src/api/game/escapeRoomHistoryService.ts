@@ -1,10 +1,12 @@
 import { apiClient } from "@/lib/api";
 
+export type SuccessStatus = "SUCCESS" | "FAIL" | "PARTIAL";
+
 export interface EscapeRoomHistoryRequest {
     escapeRoomThemeId: string;
     escapeRoomLocationId?: string;
     teamSize: number;
-    successStatus: "SUCCESS" | "FAIL" | "PARTIAL";
+    successStatus: SuccessStatus;
     clearTime?: number;
     hintCount?: number;
     difficultyRating?: number;
@@ -18,24 +20,28 @@ export interface EscapeRoomHistoryRequest {
 export interface EscapeRoomHistoryResponse {
     id: string;
     escapeRoomThemeId: string;
-    escapeRoomThemeName: string;
+    escapeRoomThemeTitle: string;
     escapeRoomLocationId?: string;
     escapeRoomLocationName?: string;
     userId: string;
     userNickname: string;
-    teamSize: number;
-    successStatus: "SUCCESS" | "FAIL" | "PARTIAL";
+    successStatus: SuccessStatus;
     clearTime?: number;
-    hintCount?: number;
+    formattedClearTime?: string;
     difficultyRating?: number;
+    difficultyRatingStars?: number;
+    teamSize: number;
+    hintCount?: number;
     funRating?: number;
+    funRatingStars?: number;
     storyRating?: number;
+    storyRatingStars?: number;
     playDate: string;
     memo?: string;
     isSpoiler: boolean;
-    isOwn: boolean;
     createdAt: string;
     updatedAt: string;
+    isAuthor: boolean;
 }
 
 export interface PageResponse<T> {
@@ -129,7 +135,7 @@ export const escapeRoomHistoryService = {
         }
     },
 
-    // 특정 테마의 공개 기록 목록 조회 (공개)
+    // 특정 테마의 기록 목록 조회 (공개)
     getThemeHistories: async (
         themeId: string,
         page: number = 0,

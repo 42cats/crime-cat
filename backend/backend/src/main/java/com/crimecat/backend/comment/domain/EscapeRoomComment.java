@@ -2,7 +2,7 @@ package com.crimecat.backend.comment.domain;
 
 import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
 import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
-import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -24,7 +24,7 @@ import java.util.UUID;
        indexes = {
            @Index(name = "idx_escape_room_theme_id", columnList = "escape_room_theme_id"),
            @Index(name = "idx_escape_room_history_id", columnList = "escape_room_history_id"),
-           @Index(name = "idx_user_id", columnList = "user_id"),
+           @Index(name = "idx_user_id", columnList = "web_user_id"),
            @Index(name = "idx_created_at", columnList = "created_at")
        })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -51,8 +51,8 @@ public class EscapeRoomComment {
      * 댓글 작성자 (필수)
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "USER_ID", nullable = false)
-    private User user;
+    @JoinColumn(name = "WEB_USER_ID", nullable = false)
+    private WebUser webUser;
 
     /**
      * 게임 기록 (있으면 게임 기록 기반 댓글, 없으면 일반 댓글)
@@ -129,7 +129,7 @@ public class EscapeRoomComment {
      * 작성자 여부 확인
      */
     public boolean isAuthor(UUID userId) {
-        return this.user.getId().equals(userId);
+        return this.webUser.getId().equals(userId);
     }
 
     /**
