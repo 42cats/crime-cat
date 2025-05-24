@@ -252,4 +252,34 @@ public class EscapeRoomHistoryService {
                 stats.getMaxClearTime()
         );
     }
+    
+    /**
+     * 특정 사용자의 방탈출 플레이 기록 개수 조회 (공개)
+     */
+    public Long getUserEscapeRoomHistoryCount(String userId) {
+        try {
+            UUID userUuid = UUID.fromString(userId);
+            return escapeRoomHistoryRepository.countByWebUserIdAndDeletedAtIsNull(userUuid);
+        } catch (IllegalArgumentException e) {
+            log.warn("잘못된 사용자 ID 형식 - userId: {}", userId);
+            return 0L;
+        }
+    }
+    
+    /**
+     * 특정 사용자의 방탈출 플레이 기록 목록 조회 (공개)
+     */
+    public Page<EscapeRoomHistoryResponse> getUserEscapeRoomHistories(String userId, Pageable pageable) {
+        try {
+            UUID userUuid = UUID.fromString(userId);
+            Page<EscapeRoomHistory> histories = escapeRoomHistoryRepository
+                    .findByWebUserIdAndDeletedAtIsNullOrderByPlayDateDesc(userUuid, pageable);
+            
+            // 공개 정보만 포함하여 응답 생성 (스포일러 처리 없이)
+            return histories.map(history -> EscapeRoomHistoryResponse.fromPublic(history));
+        } catch (IllegalArgumentException e) {
+            log.warn("잘못된 사용자 ID 형식 - userId: {}", userId);
+            return Page.empty(pageable);
+        }
+    }
 }

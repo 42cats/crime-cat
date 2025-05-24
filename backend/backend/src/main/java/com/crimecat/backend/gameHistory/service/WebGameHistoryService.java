@@ -279,4 +279,33 @@ public class WebGameHistoryService {
         
         return WebHistoryResponseDto.from("요청이 발송되었습니다.");
     }
+    
+    /**
+     * 특정 사용자의 크라임씬 플레이 기록 개수 조회 (공개)
+     */
+    @Transactional(readOnly = true)
+    public Long getUserCrimeSceneHistoryCount(String userId) {
+        try {
+            UUID userUuid = UUID.fromString(userId);
+            return gameHistoryRepository.countByUser_WebUser_Id(userUuid);
+        } catch (IllegalArgumentException e) {
+            log.warn("잘못된 사용자 ID 형식 - userId: {}", userId);
+            return 0L;
+        }
+    }
+    
+    /**
+     * 특정 사용자의 크라임씬 플레이 기록 목록 조회 (공개)
+     */
+    @Transactional(readOnly = true)
+    public Page<UserGameHistoryToUserDto> getPublicUserCrimeSceneGameHistory(String userId, Pageable pageable) {
+        try {
+            UUID userUuid = UUID.fromString(userId);
+            Page<GameHistory> histories = gameHistoryRepository.findByUser_WebUser_IdOrderByCreatedAtDesc(userUuid, pageable);
+            return histories.map(UserGameHistoryToUserDto::fromPublic);
+        } catch (IllegalArgumentException e) {
+            log.warn("잘못된 사용자 ID 형식 - userId: {}", userId);
+            return Page.empty(pageable);
+        }
+    }
 }

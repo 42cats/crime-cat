@@ -197,4 +197,14 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 			Pageable pageable
 	);
 	Integer countGameHistoriesByUser(User user);
+	
+	/**
+	 * 특정 웹유저의 게임 기록 개수 조회
+	 */
+	Long countByUser_WebUser_Id(UUID webUserId);
+	
+	/**
+	 * 특정 웹유저의 게임 기록을 생성일 내림차순으로 조회
+	 */
+	Page<GameHistory> findByUser_WebUser_IdOrderByCreatedAtDesc(UUID webUserId, Pageable pageable);
 }
