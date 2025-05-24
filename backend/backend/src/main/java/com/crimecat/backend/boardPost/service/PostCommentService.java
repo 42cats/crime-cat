@@ -11,6 +11,7 @@ import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,6 +87,9 @@ public class PostCommentService {
             PostCommentRequest postCommentRequest
     ) {
         PostComment postComment = postCommentRepository.findByIdAndIsDeletedFalse(commentId).orElseThrow(() -> new EntityNotFoundException("댓글을 찾을 수 없습니다."));
+        if (postComment.getAuthorId().equals(userId)) {
+            throw new AccessDeniedException("댓글을 수정할 권한이 없습니다");
+        }
         postComment.update(postCommentRequest);
         postCommentRepository.save(postComment);
         return getCommentResponses(postComment.getPostId(), userId);
