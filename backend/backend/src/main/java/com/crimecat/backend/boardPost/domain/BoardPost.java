@@ -100,6 +100,11 @@ public class BoardPost {
         this.boardType = boardPostRequest.getBoardType();
     }
 
+    public void delete() {
+        this.updatedAt = LocalDateTime.now();
+        this.isDeleted = true;
+    }
+
     public static BoardPost from(BoardPostRequest request, WebUser author){
         BoardPost boardPost = BoardPost.builder()
                 .subject(request.getSubject())

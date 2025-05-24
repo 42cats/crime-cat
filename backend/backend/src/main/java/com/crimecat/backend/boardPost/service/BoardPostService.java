@@ -62,7 +62,7 @@ public class BoardPostService {
             redisTemplate.opsForValue().set(redisKey, String.valueOf(1), Duration.ofMinutes(30));
         }
 
-        BoardPost boardPost = boardPostRepository.getBoardPostById(postId);
+        BoardPost boardPost = boardPostRepository.findByIdAndIsDeletedFalse(postId).orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
         boolean isLiked = boardPostLikeRepository.existsByUserIdAndPostId(userId, postId);
         boolean isOwnPost = boardPost.getAuthorId().equals(userId);
         return BoardPostDetailResponse.from(boardPost, isOwnPost, isLiked);
@@ -86,7 +86,7 @@ public class BoardPostService {
             UUID postId,
             UUID userId
     ) {
-        BoardPost boardPost = boardPostRepository.findById(postId).orElseThrow(() -> new EntityNotFoundException("게시물물 찾을 수 없습니다."));
+        BoardPost boardPost = boardPostRepository.findById(postId).orElseThrow(() -> new EntityNotFoundException("게시글물 찾을 수 없습니다."));
 
         if (!boardPost.getAuthorId().equals(userId)) {
             throw new AccessDeniedException("게시물을 수정할 권한이 없습니다");
@@ -95,5 +95,20 @@ public class BoardPostService {
         boardPost.update(boardPostRequest);
         BoardPost updatedBoardPost = boardPostRepository.save(boardPost);
         return BoardPostDetailResponse.from(updatedBoardPost, true, false);
+    }
+
+    @Transactional
+    public void deleteBoardPost(
+            UUID postId,
+            UUID userId
+    ) {
+        BoardPost boardPost = boardPostRepository.findById(postId).orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
+
+        if (!boardPost.getAuthorId().equals(userId)) {
+            throw new AccessDeniedException("게시물을 수정할 권한이 없습니다");
+        }
+
+        boardPost.delete();
+        boardPostRepository.save(boardPost);
     }
 }
