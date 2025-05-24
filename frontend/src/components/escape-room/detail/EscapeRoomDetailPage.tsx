@@ -256,15 +256,13 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
     };
 
     const handleEdit = () => {
-        // 테마 타입을 소문자로 변환하여 라우팅 경로와 일치시킴
-        const themeTypeForRoute = theme.type.toLowerCase().replace("_", "-");
-        navigate(`/themes/edit/${theme.id}`, {
-            state: {
+        navigate(`/themes/edit/${theme.id}`, { 
+            state: { 
                 theme: {
                     ...theme,
-                    type: theme.type, // 원본 타입 유지
-                },
-            },
+                    type: theme.type // 원본 타입 유지
+                }
+            } 
         });
     };
 
