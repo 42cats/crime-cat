@@ -106,6 +106,7 @@ const ThemeList: React.FC = () => {
                 selectedTags: selectedTagsParam,
                 selectedLocations: searchParams.get("selectedLocations")?.split(",").filter(Boolean) || [],
                 location: searchParams.get("location") || "",
+                hasPlayed: searchParams.get("hasPlayed") || "all",
             };
         }
 
@@ -264,7 +265,7 @@ const ThemeList: React.FC = () => {
                 playtimeMin: "", playtimeMax: "", difficultyMin: "", difficultyMax: "",
                 horrorMin: "", horrorMax: "", deviceMin: "", deviceMax: "",
                 activityMin: "", activityMax: "", isOperating: "",
-                selectedTags: [], selectedLocations: [], location: "",
+                selectedTags: [], selectedLocations: [], location: "", hasPlayed: "all",
             }
             : {
                 priceMin: "", priceMax: "", playerMin: "", playerMax: "",

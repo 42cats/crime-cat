@@ -28,6 +28,7 @@ export interface EscapeRoomFilterValues {
   selectedTags: string[];
   selectedLocations: string[];
   location: string;
+  hasPlayed: string; // "all": 전체, "true": 플레이함, "false": 플레이 안함
 }
 
 // 공통 필터 인터페이스
