@@ -16,6 +16,8 @@ import ProfileThemeGrid from "./ProfileThemeGrid";
 import ProfilePostGrid from "./ProfilePostGrid";
 import ProfileFollowerList from "./ProfileFollowerList";
 import ProfileFollowingList from "./ProfileFollowingList";
+import ProfileCrimeSceneGrid from "./ProfileCrimeSceneGrid";
+import ProfileEscapeRoomGrid from "./ProfileEscapeRoomGrid";
 import { useAuth } from "@/hooks/useAuth";
 import {
     followUser,
@@ -24,6 +26,7 @@ import {
     getFollowerCount,
     getFollowingCount,
 } from "@/api/social/follow/index";
+import { userGameHistoryService } from "@/api/game/userGameHistoryService";
 
 interface ProfileDetailModalProps {
     userId: string;
@@ -35,7 +38,7 @@ interface ProfileDetailModalProps {
     onFollowChange?: () => void;
 }
 
-type TabType = "themes" | "posts" | "followers" | "following";
+type TabType = "themes" | "posts" | "crimescene" | "escaperoom" | "followers" | "following";
 
 const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
     userId,
@@ -62,6 +65,8 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
     const [refreshFollowers, setRefreshFollowers] = useState(false);
     const [refreshFollowings, setRefreshFollowings] = useState(false);
     const [profileModalId, setProfileModalId] = useState<string>(userId);
+    const [crimeSceneCount, setCrimeSceneCount] = useState<number>(0);
+    const [escapeRoomCount, setEscapeRoomCount] = useState<number>(0);
 
     // 프로필 ID가 변경되면 모달 ID 업데이트
     useEffect(() => {
@@ -113,6 +118,29 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
         fetchFollowerCount();
         fetchFollowingCount();
     }, [profileModalId, open, profile, propFollowerCount, propFollowingCount]);
+
+    // 게임 기록 개수 로드
+    useEffect(() => {
+        if (!profileModalId || !open) return;
+
+        const fetchGameHistoryCounts = async () => {
+            try {
+                const [crimeSceneCountResult, escapeRoomCountResult] = await Promise.all([
+                    userGameHistoryService.getCrimeSceneHistoryCount(profileModalId),
+                    userGameHistoryService.getEscapeRoomHistoryCount(profileModalId)
+                ]);
+                
+                setCrimeSceneCount(crimeSceneCountResult);
+                setEscapeRoomCount(escapeRoomCountResult);
+            } catch (error) {
+                console.error("게임 기록 개수 조회 실패:", error);
+                setCrimeSceneCount(0);
+                setEscapeRoomCount(0);
+            }
+        };
+
+        fetchGameHistoryCounts();
+    }, [profileModalId, open]);
 
     // 다른 사용자의 프로필을 클릭했을 때 해당 사용자의 프로필로 전환
     const handleProfileClick = (newUserId: string) => {
@@ -418,7 +446,11 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                             {/* 프로필 헤더 섹션 */}
                             <div className="relative">
                                 <ProfileHeader
-                                    profile={profile}
+                                    profile={{
+                                        ...profile,
+                                        crimeSceneCount,
+                                        escapeRoomCount
+                                    }}
                                     creationCount={themesCount}
                                     followerCount={followerCount}
                                     followingCount={followingCount}
@@ -468,6 +500,30 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                         </button>
                                         <button
                                             className={`pb-1 md:pb-2 px-3 md:px-4 text-center text-sm md:text-base whitespace-nowrap ${
+                                                activeTab === "crimescene"
+                                                    ? "border-b-2 border-blue-500 text-blue-600 font-medium"
+                                                    : "text-gray-500"
+                                            }`}
+                                            onClick={() =>
+                                                setActiveTab("crimescene")
+                                            }
+                                        >
+                                            크라임씬
+                                        </button>
+                                        <button
+                                            className={`pb-1 md:pb-2 px-3 md:px-4 text-center text-sm md:text-base whitespace-nowrap ${
+                                                activeTab === "escaperoom"
+                                                    ? "border-b-2 border-blue-500 text-blue-600 font-medium"
+                                                    : "text-gray-500"
+                                            }`}
+                                            onClick={() =>
+                                                setActiveTab("escaperoom")
+                                            }
+                                        >
+                                            방탈출
+                                        </button>
+                                        <button
+                                            className={`pb-1 md:pb-2 px-3 md:px-4 text-center text-sm md:text-base whitespace-nowrap ${
                                                 activeTab === "followers"
                                                     ? "border-b-2 border-blue-500 text-blue-600 font-medium"
                                                     : "text-gray-500"
@@ -501,6 +557,14 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                             />
                                         ) : activeTab === "posts" ? (
                                             <ProfilePostGrid
+                                                userId={profile.userId}
+                                            />
+                                        ) : activeTab === "crimescene" ? (
+                                            <ProfileCrimeSceneGrid
+                                                userId={profile.userId}
+                                            />
+                                        ) : activeTab === "escaperoom" ? (
+                                            <ProfileEscapeRoomGrid
                                                 userId={profile.userId}
                                             />
                                         ) : activeTab === "followers" ? (
