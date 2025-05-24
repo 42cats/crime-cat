@@ -24,6 +24,7 @@ public class GetGameThemesFilter {
     private String sort = GameThemeSortType.DEFAULT.name();
     private String keyword;
     private List<RangeFilter> ranges = new ArrayList<>();
+    private Boolean hasPlayed; // true: 플레이한 테마만, false: 플레이하지 않은 테마만, null: 전체
 
     public GetGameThemesFilter(Integer playerMax, Integer playerMin, Integer priceMin, Integer priceMax,
                                Integer playtimeMin, Integer playtimeMax, Integer difficultyMin, Integer difficultyMax) {

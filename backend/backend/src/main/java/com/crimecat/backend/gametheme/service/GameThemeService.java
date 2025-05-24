@@ -272,6 +272,10 @@ public class GameThemeService {
         for (RangeFilter range : filter.getRanges()) {
             spec = spec.and(GameThemeSpecification.findIntRange(range));
         }
+        // 플레이 여부 필터 적용 (방탈출 테마일 경우만)
+        if (filter.getHasPlayed() != null && ThemeType.Values.ESCAPE_ROOM.equals(filter.getCategory())) {
+            spec = spec.and(GameThemeSpecification.hasBeenPlayedByUser(webUserId, filter.getHasPlayed()));
+        }
         Page<GameThemeDto> page = themeRepository.findAll(spec, pageable).map(GameThemeDto::from);
         return GetGameThemesResponse.from(page);
     }
