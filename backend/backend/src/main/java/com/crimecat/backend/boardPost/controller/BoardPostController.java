@@ -27,7 +27,6 @@ import java.util.UUID;
 public class BoardPostController {
 
     private final BoardPostService boardPostService;
-    private final PostCommentService postCommentService;
 
     @GetMapping("/{id}")
     public ResponseEntity<BoardPostDetailResponse> getPostDetail(
@@ -36,16 +35,6 @@ public class BoardPostController {
     ) {
         return ResponseEntity.ok().body(
                 boardPostService.getBoardPostDetail(postId, currentUser.getId())
-        );
-    }
-
-    @GetMapping("/{id}/comments")
-    public ResponseEntity<List<PostCommentResponse>> getCommentResponses(
-            @PathVariable("id") UUID postId,
-            @AuthenticationPrincipal WebUser currentUser
-    ) {
-        return ResponseEntity.ok().body(
-                postCommentService.getCommentResponses(postId, currentUser.getId())
         );
     }
 

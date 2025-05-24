@@ -1,5 +1,6 @@
 package com.crimecat.backend.boardPost.domain;
 
+import com.crimecat.backend.boardPost.dto.PostCommentRequest;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -71,4 +72,28 @@ public class PostComment {
 
     @Column(name = "IS_SECRET")
     private Boolean isSecret;
+
+    private void setBoardPost(BoardPost boardPost) {
+        this.postId = boardPost.getId();
+        this.boardPost = boardPost;
+    }
+
+    private void setAuthor(WebUser author) {
+        this.authorId = author.getId();
+        this.author = author;
+    }
+
+    public static PostComment from(BoardPost boardPost, WebUser author, PostCommentRequest request){
+        PostComment comment = PostComment.builder()
+                .content(request.getContent())
+                .parentId(request.getParentId())
+                .isSecret(request.getIsSecret())
+                .build();
+
+        // 작성자 객체 설정
+        comment.setBoardPost(boardPost);
+        comment.setAuthor(author);
+
+        return comment;
+    }
 }
