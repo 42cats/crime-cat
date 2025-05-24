@@ -41,6 +41,7 @@ export interface PageResponse<T> {
 
 export interface UserProfileStatsResponse {
     creationCount: number;
+    postCount: number;
     crimeSceneCount: number;
     escapeRoomCount: number;
     followerCount: number;
@@ -60,6 +61,7 @@ export const userGameHistoryService = {
             console.error("사용자 프로필 통계 조회 실패:", error);
             return {
                 creationCount: 0,
+                postCount: 0,
                 crimeSceneCount: 0,
                 escapeRoomCount: 0,
                 followerCount: 0,

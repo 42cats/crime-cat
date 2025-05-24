@@ -8,7 +8,10 @@ import {
     followUser,
     unfollowUser,
 } from "@/api/social/follow/index";
-import { userGameHistoryService, UserProfileStatsResponse } from "@/api/game/userGameHistoryService";
+import {
+    userGameHistoryService,
+    UserProfileStatsResponse,
+} from "@/api/game/userGameHistoryService";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileBio from "@/components/profile/ProfileBio";
 import ProfileThemeGrid from "@/components/profile/ProfileThemeGrid";
@@ -33,7 +36,12 @@ const ProfilePage: React.FC = () => {
         message: string;
     } | null>(null);
     const [activeTab, setActiveTab] = useState<
-        "themes" | "posts" | "crimescene" | "escaperoom" | "followers" | "following"
+        | "themes"
+        | "posts"
+        | "crimescene"
+        | "escaperoom"
+        | "followers"
+        | "following"
     >("themes");
     const [followerCount, setFollowerCount] = useState(0);
     const [followingCount, setFollowingCount] = useState(0);
@@ -43,6 +51,7 @@ const ProfilePage: React.FC = () => {
     const [refreshFollowings, setRefreshFollowings] = useState(false);
     const [profileStats, setProfileStats] = useState<UserProfileStatsResponse>({
         creationCount: 0,
+        postCount: 0,
         crimeSceneCount: 0,
         escapeRoomCount: 0,
         followerCount: 0,
@@ -83,7 +92,9 @@ const ProfilePage: React.FC = () => {
     const loadProfileStats = useCallback(
         async (id: string) => {
             try {
-                const stats = await userGameHistoryService.getUserProfileStats(id);
+                const stats = await userGameHistoryService.getUserProfileStats(
+                    id
+                );
                 setProfileStats(stats);
                 setFollowerCount(stats.followerCount);
                 setFollowingCount(stats.followingCount);
@@ -94,6 +105,7 @@ const ProfilePage: React.FC = () => {
                 setFollowingCount(0);
                 setProfileStats({
                     creationCount: 0,
+                    postCount: 0,
                     crimeSceneCount: 0,
                     escapeRoomCount: 0,
                     followerCount: 0,
@@ -143,19 +155,23 @@ const ProfilePage: React.FC = () => {
                 setIsFollowingUser(true);
                 toast.success("팔로우 했습니다");
             }
-            
+
             // 통합 프로필 통계 다시 가져오기
             try {
-                const stats = await userGameHistoryService.getUserProfileStats(profileId);
+                const stats = await userGameHistoryService.getUserProfileStats(
+                    profileId
+                );
                 setProfileStats(stats);
                 setFollowerCount(stats.followerCount);
                 setFollowingCount(stats.followingCount);
             } catch (error) {
                 console.error("프로필 통계 가져오기 실패:", error);
                 // 폴백: 현재 값 증감
-                setFollowerCount((c) => isFollowingUser ? Math.max(0, c - 1) : c + 1);
+                setFollowerCount((c) =>
+                    isFollowingUser ? Math.max(0, c - 1) : c + 1
+                );
             }
-            
+
             if (activeTab === "followers") setRefreshFollowers((p) => !p);
             if (activeTab === "following") setRefreshFollowings((p) => !p);
         } catch {
@@ -195,7 +211,7 @@ const ProfilePage: React.FC = () => {
                     profile={{
                         ...profile!,
                         crimeSceneCount: profileStats.crimeSceneCount,
-                        escapeRoomCount: profileStats.escapeRoomCount
+                        escapeRoomCount: profileStats.escapeRoomCount,
                     }}
                     creationCount={profileStats.creationCount}
                     followerCount={followerCount}
@@ -204,14 +220,6 @@ const ProfilePage: React.FC = () => {
                 />
                 <div className="p-4 overflow-y-auto flex-1">
                     <ProfileBio bio={profile!.bio} />
-                    <div className="mt-4 flex items-center space-x-2">
-                        <Button
-                            onClick={handleFollowToggle}
-                            disabled={isLoadingFollow}
-                        >
-                            {isFollowingUser ? "언팔로우" : "팔로우"}
-                        </Button>
-                    </div>
                     <div className="mt-6 flex space-x-4 border-b overflow-x-auto">
                         {(
                             [
@@ -233,16 +241,26 @@ const ProfilePage: React.FC = () => {
                                 onClick={() => setActiveTab(tab)}
                             >
                                 {tab === "themes"
-                                    ? "제작 테마"
+                                    ? `제작 테마 (${
+                                          profileStats.creationCount || 0
+                                      })`
                                     : tab === "posts"
-                                    ? "포스트"
+                                    ? `포스트 (${profileStats.postCount || 0})`
                                     : tab === "crimescene"
-                                    ? "크라임씬"
+                                    ? `크라임씬 (${
+                                          profileStats.crimeSceneCount || 0
+                                      })`
                                     : tab === "escaperoom"
-                                    ? "방탈출"
+                                    ? `방탈출 (${
+                                          profileStats.escapeRoomCount || 0
+                                      })`
                                     : tab === "followers"
-                                    ? `팔로워 (${followerCount})`
-                                    : `팔로잉 (${followingCount})`}
+                                    ? `팔로워 (${
+                                          profileStats.followerCount || 0
+                                      })`
+                                    : `팔로잉 (${
+                                          profileStats.followingCount || 0
+                                      })`}
                             </button>
                         ))}
                     </div>

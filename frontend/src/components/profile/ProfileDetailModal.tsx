@@ -26,7 +26,10 @@ import {
     getFollowerCount,
     getFollowingCount,
 } from "@/api/social/follow/index";
-import { userGameHistoryService, UserProfileStatsResponse } from "@/api/game/userGameHistoryService";
+import {
+    userGameHistoryService,
+    UserProfileStatsResponse,
+} from "@/api/game/userGameHistoryService";
 
 interface ProfileDetailModalProps {
     userId: string;
@@ -38,7 +41,13 @@ interface ProfileDetailModalProps {
     onFollowChange?: () => void;
 }
 
-type TabType = "themes" | "posts" | "crimescene" | "escaperoom" | "followers" | "following";
+type TabType =
+    | "themes"
+    | "posts"
+    | "crimescene"
+    | "escaperoom"
+    | "followers"
+    | "following";
 
 const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
     userId,
@@ -67,6 +76,7 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
     const [profileModalId, setProfileModalId] = useState<string>(userId);
     const [profileStats, setProfileStats] = useState<UserProfileStatsResponse>({
         creationCount: 0,
+        postCount: 0,
         crimeSceneCount: 0,
         escapeRoomCount: 0,
         followerCount: 0,
@@ -90,16 +100,21 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
 
         const fetchProfileStats = async () => {
             try {
-                const stats = await userGameHistoryService.getUserProfileStats(profileModalId);
+                const stats = await userGameHistoryService.getUserProfileStats(
+                    profileModalId
+                );
                 setProfileStats(stats);
-                
+
                 // 기존 state들도 업데이트 (하위 호환성)
                 setFollowerCount(stats.followerCount);
                 setFollowingCount(stats.followingCount);
             } catch (error) {
                 console.error("프로필 통계 조회 실패:", error);
                 // props에서 값이 전달된 경우 사용
-                if (propFollowerCount !== undefined && propFollowingCount !== undefined) {
+                if (
+                    propFollowerCount !== undefined &&
+                    propFollowingCount !== undefined
+                ) {
                     setFollowerCount(propFollowerCount);
                     setFollowingCount(propFollowingCount);
                 } else if (profile) {
@@ -134,22 +149,23 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
             // 다시 프로필 정보 로드
             Promise.all([
                 getProfileDetail(newUserId),
-                userGameHistoryService.getUserProfileStats(newUserId)
-            ]).then(([profileData, statsData]) => {
-                setProfile(profileData);
-                setProfileStats(statsData);
-                setFollowerCount(statsData.followerCount);
-                setFollowingCount(statsData.followingCount);
-                
-                // 현재 사용자가 새 프로필 사용자를 팔로우하는지 확인
-                if (isAuthenticated && user?.id !== newUserId) {
-                    isFollowing(newUserId)
-                        .then(setIsFollowingUser)
-                        .catch(console.error);
-                } else {
-                    setIsFollowingUser(false);
-                }
-            })
+                userGameHistoryService.getUserProfileStats(newUserId),
+            ])
+                .then(([profileData, statsData]) => {
+                    setProfile(profileData);
+                    setProfileStats(statsData);
+                    setFollowerCount(statsData.followerCount);
+                    setFollowingCount(statsData.followingCount);
+
+                    // 현재 사용자가 새 프로필 사용자를 팔로우하는지 확인
+                    if (isAuthenticated && user?.id !== newUserId) {
+                        isFollowing(newUserId)
+                            .then(setIsFollowingUser)
+                            .catch(console.error);
+                    } else {
+                        setIsFollowingUser(false);
+                    }
+                })
                 .catch((err) => {
                     console.error("프로필 로드 실패:", err);
                     setError({
@@ -205,7 +221,10 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
 
                 // 통합 프로필 통계 다시 가져오기
                 try {
-                    const stats = await userGameHistoryService.getUserProfileStats(profileModalId);
+                    const stats =
+                        await userGameHistoryService.getUserProfileStats(
+                            profileModalId
+                        );
                     setProfileStats(stats);
                     setFollowerCount(stats.followerCount);
                     setFollowingCount(stats.followingCount);
@@ -233,7 +252,10 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
 
                 // 통합 프로필 통계 다시 가져오기
                 try {
-                    const stats = await userGameHistoryService.getUserProfileStats(profileModalId);
+                    const stats =
+                        await userGameHistoryService.getUserProfileStats(
+                            profileModalId
+                        );
                     setProfileStats(stats);
                     setFollowerCount(stats.followerCount);
                     setFollowingCount(stats.followingCount);
@@ -421,19 +443,29 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                 <ProfileHeader
                                     profile={{
                                         ...profile,
-                                        crimeSceneCount: profileStats.crimeSceneCount,
-                                        escapeRoomCount: profileStats.escapeRoomCount
+                                        crimeSceneCount:
+                                            profileStats.crimeSceneCount,
+                                        escapeRoomCount:
+                                            profileStats.escapeRoomCount,
                                     }}
-                                    creationCount={profileStats.creationCount || themesCount}
+                                    creationCount={
+                                        profileStats.creationCount ||
+                                        themesCount
+                                    }
                                     followerCount={followerCount}
                                     followingCount={followingCount}
                                     onFollowChange={() => {
                                         // 통합 프로필 통계 다시 가져오기
-                                        userGameHistoryService.getUserProfileStats(profileModalId)
+                                        userGameHistoryService
+                                            .getUserProfileStats(profileModalId)
                                             .then((stats) => {
                                                 setProfileStats(stats);
-                                                setFollowerCount(stats.followerCount);
-                                                setFollowingCount(stats.followingCount);
+                                                setFollowerCount(
+                                                    stats.followerCount
+                                                );
+                                                setFollowingCount(
+                                                    stats.followingCount
+                                                );
                                             })
                                             .catch(console.error);
                                         // 상위 컴포넌트에도 변경 알림
@@ -461,7 +493,8 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                                 setActiveTab("themes")
                                             }
                                         >
-                                            제작 테마
+                                            제작 테마 (
+                                            {profileStats.creationCount || 0})
                                         </button>
                                         <button
                                             className={`pb-1 md:pb-2 px-3 md:px-4 text-center text-sm md:text-base whitespace-nowrap ${
@@ -473,7 +506,8 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                                 setActiveTab("posts")
                                             }
                                         >
-                                            포스트
+                                            포스트 (
+                                            {profileStats.postCount || 0})
                                         </button>
                                         <button
                                             className={`pb-1 md:pb-2 px-3 md:px-4 text-center text-sm md:text-base whitespace-nowrap ${
@@ -485,7 +519,8 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                                 setActiveTab("crimescene")
                                             }
                                         >
-                                            크라임씬
+                                            크라임씬 (
+                                            {profileStats.crimeSceneCount || 0})
                                         </button>
                                         <button
                                             className={`pb-1 md:pb-2 px-3 md:px-4 text-center text-sm md:text-base whitespace-nowrap ${
@@ -497,7 +532,8 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                                 setActiveTab("escaperoom")
                                             }
                                         >
-                                            방탈출
+                                            방탈출 (
+                                            {profileStats.escapeRoomCount || 0})
                                         </button>
                                         <button
                                             className={`pb-1 md:pb-2 px-3 md:px-4 text-center text-sm md:text-base whitespace-nowrap ${
@@ -509,7 +545,8 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                                 setActiveTab("followers")
                                             }
                                         >
-                                            팔로워 ({followerCount})
+                                            팔로워 (
+                                            {profileStats.followerCount || 0})
                                         </button>
                                         <button
                                             className={`pb-1 md:pb-2 px-3 md:px-4 text-center text-sm md:text-base whitespace-nowrap ${
@@ -521,7 +558,8 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                                 setActiveTab("following")
                                             }
                                         >
-                                            팔로잉 ({followingCount})
+                                            팔로잉 (
+                                            {profileStats.followingCount || 0})
                                         </button>
                                     </div>
 
