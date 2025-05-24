@@ -246,6 +246,8 @@ public class EscapeRoomHistoryService {
                     : null,
                 stats.getAvgTeamSize(),
                 0.0, // 힌트 평균은 현재 통계에 포함되지 않음
+                stats.getAvgFunRating(),
+                stats.getAvgStoryRating(),
                 stats.getMinClearTime(),
                 stats.getMaxClearTime()
         );

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/useToast';
 import { escapeRoomCommentService, CommentResponse } from '@/api/comment/escapeRoomCommentService';
+import ProfileDetailModal from '@/components/profile/ProfileDetailModal';
 
 interface SpoilerCommentsProps {
     themeId: string;
@@ -210,19 +211,28 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
     };
 
     const renderComment = (comment: CommentResponse, isReply = false) => {
+        const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
         const isHidden = hiddenComments.has(comment.id) && !showSpoilers;
         
         return (
             <div key={comment.id} className={`${isReply ? 'ml-12 mt-3' : ''}`}>
                 <div className="flex gap-3">
-                    <Avatar className="w-8 h-8">
+                    <Avatar 
+                        className="w-8 h-8 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                        onClick={() => setIsProfileModalOpen(true)}
+                    >
                         <AvatarImage src={comment.authorProfileImage} />
                         <AvatarFallback>{comment.authorName && comment.authorName[0]}</AvatarFallback>
                     </Avatar>
                     
                     <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm">{comment.authorName}</span>
+                            <span 
+                                className="font-medium text-sm cursor-pointer hover:text-primary transition-colors"
+                                onClick={() => setIsProfileModalOpen(true)}
+                            >
+                                {comment.authorName}
+                            </span>
                             <span className="text-xs text-gray-500">{formatDate(comment.createdAt)}</span>
                             <Badge variant="destructive" className="text-xs">스포일러</Badge>
                             {comment.isOwnComment && <Badge variant="outline" className="text-xs">내 댓글</Badge>}
@@ -315,40 +325,25 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
                                     </Button>
                                 )}
                                 
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="sm" className="h-auto p-1">
-                                            <MoreHorizontal className="w-3 h-3" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        {comment.isOwnComment ? (
-                                            <>
-                                                <DropdownMenuItem
-                                                    onClick={() => {
-                                                        setEditingComment(comment.id);
-                                                        setEditContent(comment.content);
-                                                    }}
-                                                >
-                                                    <Edit className="w-4 h-4 mr-2" />
-                                                    수정
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem 
-                                                    className="text-red-600"
-                                                    onClick={() => handleDeleteComment(comment.id)}
-                                                >
-                                                    <Trash2 className="w-4 h-4 mr-2" />
-                                                    삭제
-                                                </DropdownMenuItem>
-                                            </>
-                                        ) : (
-                                            <DropdownMenuItem>
-                                                <Flag className="w-4 h-4 mr-2" />
-                                                신고
-                                            </DropdownMenuItem>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                {comment.isOwnComment && (
+                                    <div className="flex gap-2 text-xs text-muted-foreground ml-auto">
+                                        <button
+                                            className="hover:text-foreground transition-colors"
+                                            onClick={() => {
+                                                setEditingComment(comment.id);
+                                                setEditContent(comment.content);
+                                            }}
+                                        >
+                                            수정
+                                        </button>
+                                        <button
+                                            className="hover:text-destructive transition-colors"
+                                            onClick={() => handleDeleteComment(comment.id)}
+                                        >
+                                            삭제
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
                         
@@ -395,6 +390,13 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
                         )}
                     </div>
                 </div>
+                
+                {/* 프로필 상세 모달 */}
+                <ProfileDetailModal
+                    userId={comment.authorId}
+                    open={isProfileModalOpen}
+                    onOpenChange={setIsProfileModalOpen}
+                />
             </div>
         );
     };

@@ -25,6 +25,7 @@ export interface EscapeRoomHistoryResponse {
     escapeRoomLocationName?: string;
     userId: string;
     userNickname: string;
+    userAvatarUrl?: string;
     successStatus: SuccessStatus;
     clearTime?: number;
     formattedClearTime?: string;
@@ -58,6 +59,10 @@ export interface EscapeRoomHistoryStats {
     averageSatisfactionStars?: number;
     averageParticipants?: number;
     averageHintUsed?: number;
+    averageFunRating?: number;
+    averageFunRatingStars?: number;
+    averageStoryRating?: number;
+    averageStoryRatingStars?: number;
     fastestEscapeTime?: number;
     slowestEscapeTime?: number;
     formattedAverageEscapeTime?: string;

@@ -155,14 +155,6 @@ const StarRating: React.FC<StarRatingProps> = ({
                 );
             })}
             
-            {/* 숫자 표시 */}
-            <span className={cn(
-                "ml-2 text-sm font-medium text-gray-600",
-                size === 'sm' && "text-xs",
-                size === 'lg' && "text-base"
-            )}>
-                {isOneToTen ? rating : normalizedRating.toFixed(1)}
-            </span>
         </div>
     );
 };
