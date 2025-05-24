@@ -11,6 +11,7 @@ import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -65,5 +66,13 @@ public class BoardPostController {
     ) {
         BoardPostDetailResponse response = boardPostService.updateBoardPost(request, postId, currentUser.getId());
         return ResponseEntity.ok().body(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteBoardPost(
+            @PathVariable("id") UUID postId,
+            @AuthenticationPrincipal WebUser currentUser
+    ) {
+        boardPostService.deleteBoardPost(postId, currentUser.getId());
     }
 }

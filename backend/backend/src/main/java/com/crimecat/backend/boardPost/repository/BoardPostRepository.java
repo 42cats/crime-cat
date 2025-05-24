@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -41,7 +42,7 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID> {
             Pageable pageable
     );
 
-    BoardPost getBoardPostById(UUID id);
+    Optional<BoardPost> findByIdAndIsDeletedFalse(UUID id);
 
     @Modifying(clearAutomatically = true)
     @Query("UPDATE BoardPost p SET p.views = p.views + 1 WHERE p.id = :postId")
