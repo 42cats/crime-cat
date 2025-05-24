@@ -1,4 +1,4 @@
--- Migration: V1.2.3_002_post_tables_update.sql
+-- Migration: V1.2.6_001_post_tables_update.sql
 -- Created: 2025-05-23 10:44:42
 
 USE ${DB_DISCORD};
