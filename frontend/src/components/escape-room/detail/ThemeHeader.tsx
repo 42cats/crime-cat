@@ -30,16 +30,16 @@ interface ThemeHeaderProps {
     likeCount?: number;
 }
 
-const ThemeHeader: React.FC<ThemeHeaderProps> = ({ 
-    theme, 
-    liked = false, 
-    onToggleLike, 
-    onShare, 
+const ThemeHeader: React.FC<ThemeHeaderProps> = ({
+    theme,
+    liked = false,
+    onToggleLike,
+    onShare,
     isLiking = false,
     canEdit = false,
     onEdit,
     onDelete,
-    likeCount
+    likeCount,
 }) => {
     const formatDifficulty = (difficulty: number) => {
         return Array.from({ length: 5 }, (_, i) => (
@@ -114,43 +114,44 @@ const ThemeHeader: React.FC<ThemeHeaderProps> = ({
                         )}
                     </div>
                 )}
-                
+
                 {/* 두 번째 줄 - 좋아요/공유하기 */}
                 <div className="flex gap-3">
                     {/* 좋아요 버튼 */}
                     {theme.recommendationEnabled !== false && (
-                        <Button 
+                        <Button
                             variant="ghost"
                             size="sm"
                             onClick={onToggleLike}
                             disabled={isLiking}
                             className="flex items-center gap-2"
                         >
-                            <Heart 
-                                className={`w-5 h-5 ${liked ? "fill-red-500 text-red-500" : ""}`} 
+                            <Heart
+                                className={`w-5 h-5 ${
+                                    liked ? "fill-red-500 text-red-500" : ""
+                                }`}
                             />
-                            <span className="font-medium">{likeCount !== undefined ? likeCount : theme.recommendations || 0}</span>
+                            좋아요
+                            <span className="font-medium">
+                                {likeCount !== undefined
+                                    ? likeCount
+                                    : theme.recommendations || 0}
+                            </span>
                         </Button>
                     )}
-                    
+
                     {/* 공유하기 버튼 */}
-                    <Button 
-                        variant="ghost"
-                        size="sm"
-                        onClick={onShare}
-                    >
+                    <Button variant="ghost" size="sm" onClick={onShare}>
                         <Share2 className="w-5 h-5" />
+                        공유하기
                     </Button>
-                    
+
                     {/* 수정/삭제 버튼 - 작성자만 보임 */}
                     {canEdit && (
                         <>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={onEdit}
-                            >
+                            <Button variant="ghost" size="sm" onClick={onEdit}>
                                 <Edit className="w-5 h-5" />
+                                수정
                             </Button>
                             <Button
                                 variant="ghost"
@@ -159,6 +160,7 @@ const ThemeHeader: React.FC<ThemeHeaderProps> = ({
                                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
                                 <Trash2 className="w-5 h-5" />
+                                삭제
                             </Button>
                         </>
                     )}
