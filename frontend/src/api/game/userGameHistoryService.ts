@@ -39,11 +39,36 @@ export interface PageResponse<T> {
     empty: boolean;
 }
 
+export interface UserProfileStatsResponse {
+    creationCount: number;
+    crimeSceneCount: number;
+    escapeRoomCount: number;
+    followerCount: number;
+    followingCount: number;
+}
+
 const crimeSceneBaseURI = "/public/crime-scene-histories";
 const escapeRoomBaseURI = "/public/escape-room-histories";
+const profileStatsBaseURI = "/public/user-profile-stats";
 
 export const userGameHistoryService = {
-    // 크라임씬 기록 개수 조회
+    // 사용자 프로필 통계 정보 조회 (통합)
+    getUserProfileStats: async (userId: string): Promise<UserProfileStatsResponse> => {
+        try {
+            return await apiClient.get<UserProfileStatsResponse>(`${profileStatsBaseURI}/user/${userId}`);
+        } catch (error) {
+            console.error("사용자 프로필 통계 조회 실패:", error);
+            return {
+                creationCount: 0,
+                crimeSceneCount: 0,
+                escapeRoomCount: 0,
+                followerCount: 0,
+                followingCount: 0,
+            };
+        }
+    },
+
+    // 크라임씬 기록 개수 조회 (개별 - 백업용)
     getCrimeSceneHistoryCount: async (userId: string): Promise<number> => {
         try {
             return await apiClient.get<number>(`${crimeSceneBaseURI}/user/${userId}/count`);
@@ -73,7 +98,7 @@ export const userGameHistoryService = {
         }
     },
 
-    // 방탈출 기록 개수 조회
+    // 방탈출 기록 개수 조회 (개별 - 백업용)
     getEscapeRoomHistoryCount: async (userId: string): Promise<number> => {
         try {
             return await apiClient.get<number>(`${escapeRoomBaseURI}/user/${userId}/count`);

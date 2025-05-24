@@ -26,7 +26,7 @@ import {
     getFollowerCount,
     getFollowingCount,
 } from "@/api/social/follow/index";
-import { userGameHistoryService } from "@/api/game/userGameHistoryService";
+import { userGameHistoryService, UserProfileStatsResponse } from "@/api/game/userGameHistoryService";
 
 interface ProfileDetailModalProps {
     userId: string;
@@ -65,8 +65,13 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
     const [refreshFollowers, setRefreshFollowers] = useState(false);
     const [refreshFollowings, setRefreshFollowings] = useState(false);
     const [profileModalId, setProfileModalId] = useState<string>(userId);
-    const [crimeSceneCount, setCrimeSceneCount] = useState<number>(0);
-    const [escapeRoomCount, setEscapeRoomCount] = useState<number>(0);
+    const [profileStats, setProfileStats] = useState<UserProfileStatsResponse>({
+        creationCount: 0,
+        crimeSceneCount: 0,
+        escapeRoomCount: 0,
+        followerCount: 0,
+        followingCount: 0,
+    });
 
     // 프로필 ID가 변경되면 모달 ID 업데이트
     useEffect(() => {
@@ -79,68 +84,33 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
         console.log("ProfileDetailModal - open 상태 변경:", open);
     }, [open]);
 
-    // 프로필이 로드되면 팔로워/팔로잉 수 가져오기
+    // 프로필 통계 정보 로드 (통합)
     useEffect(() => {
         if (!profileModalId || !open) return;
 
-        // 팔로워 수 가져오기
-        const fetchFollowerCount = async () => {
+        const fetchProfileStats = async () => {
             try {
-                const count = await getFollowerCount(profileModalId);
-                setFollowerCount(count);
+                const stats = await userGameHistoryService.getUserProfileStats(profileModalId);
+                setProfileStats(stats);
+                
+                // 기존 state들도 업데이트 (하위 호환성)
+                setFollowerCount(stats.followerCount);
+                setFollowingCount(stats.followingCount);
             } catch (error) {
-                console.error("팔로워 수 가져오기 실패:", error);
-                // props에서 값이 전달된 경우 사용, 아니면 API로 조회한 값 사용
-                if (propFollowerCount !== undefined) {
+                console.error("프로필 통계 조회 실패:", error);
+                // props에서 값이 전달된 경우 사용
+                if (propFollowerCount !== undefined && propFollowingCount !== undefined) {
                     setFollowerCount(propFollowerCount);
-                } else if (profile) {
-                    setFollowerCount(profile.followerCount || 0);
-                }
-            }
-        };
-
-        // 팔로잉 수 가져오기
-        const fetchFollowingCount = async () => {
-            try {
-                const count = await getFollowingCount(profileModalId);
-                setFollowingCount(count);
-            } catch (error) {
-                console.error("팔로잉 수 가져오기 실패:", error);
-                // props에서 값이 전달된 경우 사용, 아니면 API로 조회한 값 사용
-                if (propFollowingCount !== undefined) {
                     setFollowingCount(propFollowingCount);
                 } else if (profile) {
+                    setFollowerCount(profile.followerCount || 0);
                     setFollowingCount(profile.followingCount || 0);
                 }
             }
         };
 
-        fetchFollowerCount();
-        fetchFollowingCount();
-    }, [profileModalId, open, profile, propFollowerCount, propFollowingCount]);
-
-    // 게임 기록 개수 로드
-    useEffect(() => {
-        if (!profileModalId || !open) return;
-
-        const fetchGameHistoryCounts = async () => {
-            try {
-                const [crimeSceneCountResult, escapeRoomCountResult] = await Promise.all([
-                    userGameHistoryService.getCrimeSceneHistoryCount(profileModalId),
-                    userGameHistoryService.getEscapeRoomHistoryCount(profileModalId)
-                ]);
-                
-                setCrimeSceneCount(crimeSceneCountResult);
-                setEscapeRoomCount(escapeRoomCountResult);
-            } catch (error) {
-                console.error("게임 기록 개수 조회 실패:", error);
-                setCrimeSceneCount(0);
-                setEscapeRoomCount(0);
-            }
-        };
-
-        fetchGameHistoryCounts();
-    }, [profileModalId, open]);
+        fetchProfileStats();
+    }, [profileModalId, open, propFollowerCount, propFollowingCount, profile]);
 
     // 다른 사용자의 프로필을 클릭했을 때 해당 사용자의 프로필로 전환
     const handleProfileClick = (newUserId: string) => {
@@ -162,25 +132,24 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
             setProfileModalId(newUserId);
 
             // 다시 프로필 정보 로드
-            getProfileDetail(newUserId)
-                .then((data) => {
-                    setProfile(data);
-                    // 팔로우 카운트 로드
-                    getFollowerCount(newUserId)
-                        .then(setFollowerCount)
+            Promise.all([
+                getProfileDetail(newUserId),
+                userGameHistoryService.getUserProfileStats(newUserId)
+            ]).then(([profileData, statsData]) => {
+                setProfile(profileData);
+                setProfileStats(statsData);
+                setFollowerCount(statsData.followerCount);
+                setFollowingCount(statsData.followingCount);
+                
+                // 현재 사용자가 새 프로필 사용자를 팔로우하는지 확인
+                if (isAuthenticated && user?.id !== newUserId) {
+                    isFollowing(newUserId)
+                        .then(setIsFollowingUser)
                         .catch(console.error);
-                    getFollowingCount(newUserId)
-                        .then(setFollowingCount)
-                        .catch(console.error);
-                    // 현재 사용자가 새 프로필 사용자를 팔로우하는지 확인
-                    if (isAuthenticated && user?.id !== newUserId) {
-                        isFollowing(newUserId)
-                            .then(setIsFollowingUser)
-                            .catch(console.error);
-                    } else {
-                        setIsFollowingUser(false);
-                    }
-                })
+                } else {
+                    setIsFollowingUser(false);
+                }
+            })
                 .catch((err) => {
                     console.error("프로필 로드 실패:", err);
                     setError({
@@ -234,12 +203,14 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                     }님 팔로우를 취소했습니다`
                 );
 
-                // 팔로워 수 가져오기
+                // 통합 프로필 통계 다시 가져오기
                 try {
-                    const count = await getFollowerCount(profileModalId);
-                    setFollowerCount(count);
+                    const stats = await userGameHistoryService.getUserProfileStats(profileModalId);
+                    setProfileStats(stats);
+                    setFollowerCount(stats.followerCount);
+                    setFollowingCount(stats.followingCount);
                 } catch (error) {
-                    console.error("팔로워 수 가져오기 실패:", error);
+                    console.error("프로필 통계 가져오기 실패:", error);
                     // 현재 값에서 1 감소 (폴백)
                     setFollowerCount((prev) => Math.max(0, prev - 1));
 
@@ -260,12 +231,14 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                     `${profile?.userNickname || "사용자"}님을 팔로우했습니다`
                 );
 
-                // 팔로워 수 가져오기
+                // 통합 프로필 통계 다시 가져오기
                 try {
-                    const count = await getFollowerCount(profileModalId);
-                    setFollowerCount(count);
+                    const stats = await userGameHistoryService.getUserProfileStats(profileModalId);
+                    setProfileStats(stats);
+                    setFollowerCount(stats.followerCount);
+                    setFollowingCount(stats.followingCount);
                 } catch (error) {
-                    console.error("팔로워 수 가져오기 실패:", error);
+                    console.error("프로필 통계 가져오기 실패:", error);
                     // 현재 값에서 1 증가 (폴백)
                     setFollowerCount((prev) => prev + 1);
 
@@ -448,16 +421,20 @@ const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                                 <ProfileHeader
                                     profile={{
                                         ...profile,
-                                        crimeSceneCount,
-                                        escapeRoomCount
+                                        crimeSceneCount: profileStats.crimeSceneCount,
+                                        escapeRoomCount: profileStats.escapeRoomCount
                                     }}
-                                    creationCount={themesCount}
+                                    creationCount={profileStats.creationCount || themesCount}
                                     followerCount={followerCount}
                                     followingCount={followingCount}
                                     onFollowChange={() => {
-                                        // 내부적으로 팔로우 카운트 다시 가져오기
-                                        getFollowerCount(profileModalId)
-                                            .then(setFollowerCount)
+                                        // 통합 프로필 통계 다시 가져오기
+                                        userGameHistoryService.getUserProfileStats(profileModalId)
+                                            .then((stats) => {
+                                                setProfileStats(stats);
+                                                setFollowerCount(stats.followerCount);
+                                                setFollowingCount(stats.followingCount);
+                                            })
                                             .catch(console.error);
                                         // 상위 컴포넌트에도 변경 알림
                                         if (onFollowChange) onFollowChange();

@@ -8,12 +8,15 @@ import {
     followUser,
     unfollowUser,
 } from "@/api/social/follow/index";
+import { userGameHistoryService, UserProfileStatsResponse } from "@/api/game/userGameHistoryService";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileBio from "@/components/profile/ProfileBio";
 import ProfileThemeGrid from "@/components/profile/ProfileThemeGrid";
 import ProfilePostGrid from "@/components/profile/ProfilePostGrid";
 import ProfileFollowerList from "@/components/profile/ProfileFollowerList";
 import ProfileFollowingList from "@/components/profile/ProfileFollowingList";
+import ProfileCrimeSceneGrid from "@/components/profile/ProfileCrimeSceneGrid";
+import ProfileEscapeRoomGrid from "@/components/profile/ProfileEscapeRoomGrid";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,7 +33,7 @@ const ProfilePage: React.FC = () => {
         message: string;
     } | null>(null);
     const [activeTab, setActiveTab] = useState<
-        "themes" | "posts" | "followers" | "following"
+        "themes" | "posts" | "crimescene" | "escaperoom" | "followers" | "following"
     >("themes");
     const [followerCount, setFollowerCount] = useState(0);
     const [followingCount, setFollowingCount] = useState(0);
@@ -38,6 +41,13 @@ const ProfilePage: React.FC = () => {
     const [isLoadingFollow, setIsLoadingFollow] = useState(false);
     const [refreshFollowers, setRefreshFollowers] = useState(false);
     const [refreshFollowings, setRefreshFollowings] = useState(false);
+    const [profileStats, setProfileStats] = useState<UserProfileStatsResponse>({
+        creationCount: 0,
+        crimeSceneCount: 0,
+        escapeRoomCount: 0,
+        followerCount: 0,
+        followingCount: 0,
+    });
     const { user, isAuthenticated } = useAuth();
 
     // 프로필 로드
@@ -69,25 +79,22 @@ const ProfilePage: React.FC = () => {
         }
     }, []);
 
-    // 팔로우 카운트 로드 (profile state를 deps에서 제거)
-    const loadFollowCounts = useCallback(
+    // 프로필 통계 로드 (통합 API)
+    const loadProfileStats = useCallback(
         async (id: string) => {
             try {
-                const [fCount, fgCount] = await Promise.all([
-                    getFollowerCount(id),
-                    getFollowingCount(id),
-                ]);
-                setFollowerCount(fCount);
-                setFollowingCount(fgCount);
-            } catch {
+                const stats = await userGameHistoryService.getUserProfileStats(id);
+                setProfileStats(stats);
+                setFollowerCount(stats.followerCount);
+                setFollowingCount(stats.followingCount);
+            } catch (error) {
+                console.error("프로필 통계 조회 실패:", error);
                 // 실패 시 기존 프로필 값 사용
                 setFollowerCount(profile?.followerCount || 0);
                 setFollowingCount(profile?.followingCount || 0);
             }
         },
-        [
-            /* no deps */
-        ]
+        [profile]
     );
 
     // 팔로우 상태 확인
@@ -107,10 +114,10 @@ const ProfilePage: React.FC = () => {
     useEffect(() => {
         if (!profileId) return;
         loadProfile(profileId);
-        loadFollowCounts(profileId);
+        loadProfileStats(profileId);
         checkFollowingStatus(profileId);
         setActiveTab("themes");
-    }, [profileId, loadProfile, loadFollowCounts, checkFollowingStatus]);
+    }, [profileId, loadProfile, loadProfileStats, checkFollowingStatus]);
 
     // 팔로우 토글
     const handleFollowToggle = async () => {
@@ -123,14 +130,25 @@ const ProfilePage: React.FC = () => {
             if (isFollowingUser) {
                 await unfollowUser(profileId);
                 setIsFollowingUser(false);
-                setFollowerCount((c) => Math.max(0, c - 1));
                 toast.success("언팔로우 했습니다");
             } else {
                 await followUser(profileId);
                 setIsFollowingUser(true);
-                setFollowerCount((c) => c + 1);
                 toast.success("팔로우 했습니다");
             }
+            
+            // 통합 프로필 통계 다시 가져오기
+            try {
+                const stats = await userGameHistoryService.getUserProfileStats(profileId);
+                setProfileStats(stats);
+                setFollowerCount(stats.followerCount);
+                setFollowingCount(stats.followingCount);
+            } catch (error) {
+                console.error("프로필 통계 가져오기 실패:", error);
+                // 폴백: 현재 값 증감
+                setFollowerCount((c) => isFollowingUser ? Math.max(0, c - 1) : c + 1);
+            }
+            
             if (activeTab === "followers") setRefreshFollowers((p) => !p);
             if (activeTab === "following") setRefreshFollowings((p) => !p);
         } catch {
@@ -167,10 +185,15 @@ const ProfilePage: React.FC = () => {
         <div className="container mx-auto p-4 md:p-8">
             <div className="max-w-3xl mx-auto bg-white rounded-lg shadow overflow-hidden flex flex-col">
                 <ProfileHeader
-                    profile={profile!}
+                    profile={{
+                        ...profile!,
+                        crimeSceneCount: profileStats.crimeSceneCount,
+                        escapeRoomCount: profileStats.escapeRoomCount
+                    }}
+                    creationCount={profileStats.creationCount}
                     followerCount={followerCount}
                     followingCount={followingCount}
-                    onFollowChange={() => loadFollowCounts(profileId)}
+                    onFollowChange={() => loadProfileStats(profileId)}
                 />
                 <div className="p-4 overflow-y-auto flex-1">
                     <ProfileBio bio={profile!.bio} />
@@ -182,20 +205,22 @@ const ProfilePage: React.FC = () => {
                             {isFollowingUser ? "언팔로우" : "팔로우"}
                         </Button>
                     </div>
-                    <div className="mt-6 flex space-x-4 border-b">
+                    <div className="mt-6 flex space-x-4 border-b overflow-x-auto">
                         {(
                             [
                                 "themes",
                                 "posts",
+                                "crimescene",
+                                "escaperoom",
                                 "followers",
                                 "following",
                             ] as const
                         ).map((tab) => (
                             <button
                                 key={tab}
-                                className={`pb-2 ${
+                                className={`pb-2 px-3 text-center text-sm whitespace-nowrap ${
                                     activeTab === tab
-                                        ? "border-b-2 border-blue-500 text-blue-600"
+                                        ? "border-b-2 border-blue-500 text-blue-600 font-medium"
                                         : "text-gray-500"
                                 }`}
                                 onClick={() => setActiveTab(tab)}
@@ -204,6 +229,10 @@ const ProfilePage: React.FC = () => {
                                     ? "제작 테마"
                                     : tab === "posts"
                                     ? "포스트"
+                                    : tab === "crimescene"
+                                    ? "크라임씬"
+                                    : tab === "escaperoom"
+                                    ? "방탈출"
                                     : tab === "followers"
                                     ? `팔로워 (${followerCount})`
                                     : `팔로잉 (${followingCount})`}
@@ -216,6 +245,12 @@ const ProfilePage: React.FC = () => {
                         )}
                         {activeTab === "posts" && (
                             <ProfilePostGrid userId={profileId} />
+                        )}
+                        {activeTab === "crimescene" && (
+                            <ProfileCrimeSceneGrid userId={profileId} />
+                        )}
+                        {activeTab === "escaperoom" && (
+                            <ProfileEscapeRoomGrid userId={profileId} />
                         )}
                         {activeTab === "followers" && (
                             <ProfileFollowerList
