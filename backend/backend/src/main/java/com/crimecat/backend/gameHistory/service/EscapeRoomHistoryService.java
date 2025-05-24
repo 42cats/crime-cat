@@ -4,6 +4,7 @@ import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
 import com.crimecat.backend.gameHistory.dto.EscapeRoomHistoryRequest;
 import com.crimecat.backend.gameHistory.dto.EscapeRoomHistoryResponse;
+import com.crimecat.backend.gameHistory.dto.EscapeRoomHistoryStatsResponse;
 import com.crimecat.backend.gameHistory.repository.EscapeRoomHistoryRepository;
 import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
 import com.crimecat.backend.gametheme.repository.EscapeRoomThemeRepository;
@@ -133,12 +134,21 @@ public class EscapeRoomHistoryService {
     }
     
     /**
-     * 특정 테마의 공개 기록 조회 (페이징)
+     * 특정 테마의 공개 기록 조회 (페이징) - 사용자 자신의 기록을 먼저 표시
      */
     public Page<EscapeRoomHistoryResponse> getThemeHistories(UUID themeId, Pageable pageable) {
         UUID currentWebUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
-        Page<EscapeRoomHistory> histories = escapeRoomHistoryRepository
-                .findByEscapeRoomThemeIdAndDeletedAtIsNull(themeId, pageable);
+        
+        Page<EscapeRoomHistory> histories;
+        if (currentWebUserId != null) {
+            // 로그인한 사용자가 있으면 자신의 기록을 먼저 표시
+            histories = escapeRoomHistoryRepository
+                    .findByThemeIdWithUserFirst(themeId, currentWebUserId, pageable);
+        } else {
+            // 로그인하지 않은 경우 일반 조회
+            histories = escapeRoomHistoryRepository
+                    .findByEscapeRoomThemeIdAndDeletedAtIsNull(themeId, pageable);
+        }
         
         // 현재 사용자가 해당 테마를 플레이했는지 확인
         boolean hasGameHistory = false;
@@ -202,5 +212,39 @@ public class EscapeRoomHistoryService {
         return histories.stream()
                 .map(history -> EscapeRoomHistoryResponse.from(history, currentUserId))
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * 특정 테마의 통계 정보 조회
+     */
+    public EscapeRoomHistoryStatsResponse getThemeStatistics(UUID themeId) {
+        // 테마 존재 여부 확인
+        escapeRoomThemeRepository.findById(themeId)
+                .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        
+        // 통계 데이터 조회
+        EscapeRoomHistoryRepository.ThemeStatistics stats = escapeRoomHistoryRepository.getThemeStatistics(themeId);
+        
+        // 공개 기록 수 조회 (스포일러가 아닌 기록만)
+        long publicRecords = escapeRoomHistoryRepository.findByEscapeRoomThemeIdAndDeletedAtIsNull(themeId, Pageable.unpaged())
+                .stream()
+                .filter(history -> !history.getIsSpoiler())
+                .count();
+        
+        // DTO로 변환하여 반환
+        return EscapeRoomHistoryStatsResponse.of(
+                stats.getTotalPlays() != null ? stats.getTotalPlays() : 0L,
+                publicRecords,
+                stats.getSuccessCount() != null ? stats.getSuccessCount() : 0L,
+                stats.getAvgClearTime(),
+                stats.getAvgDifficultyRating(),
+                stats.getAvgFunRating() != null && stats.getAvgStoryRating() != null 
+                    ? (stats.getAvgFunRating() + stats.getAvgStoryRating()) / 2.0 
+                    : null,
+                stats.getAvgTeamSize(),
+                0.0, // 힌트 평균은 현재 통계에 포함되지 않음
+                stats.getMinClearTime(),
+                stats.getMaxClearTime()
+        );
     }
 }
