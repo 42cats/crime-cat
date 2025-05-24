@@ -68,6 +68,11 @@ export const themesService = {
 
             if (filters) {
                 Object.entries(filters).forEach(([key, value]) => {
+                    // hasPlayed가 "all"인 경우 파라미터에 추가하지 않음
+                    if (key === "hasPlayed" && value === "all") {
+                        return;
+                    }
+                    
                     if (Array.isArray(value) && value.length > 0) {
                         params.append(key, value.join(","));
                     } else if (typeof value === "string" && value.trim()) {
@@ -176,6 +181,11 @@ export const themesService = {
                 // 운영 상태
                 if (filters.isOperating && filters.isOperating !== "all") {
                     queryParams.append("isOperating", filters.isOperating === "operating" ? "true" : "false");
+                }
+                
+                // 플레이 여부
+                if (filters.hasPlayed && filters.hasPlayed !== "all") {
+                    queryParams.append("hasPlayed", filters.hasPlayed === "true" ? "true" : "false");
                 }
                 
                 // 지역 검색은 keyword로 처리
