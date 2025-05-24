@@ -1,11 +1,12 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Calendar, Users, Clock, Star, Edit2, Shield } from 'lucide-react';
+import { Trophy, Calendar, Users, Clock, Edit2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/useToast';
 import { useQuery } from '@tanstack/react-query';
 import { escapeRoomHistoryService, EscapeRoomHistoryResponse } from '@/api/game/escapeRoomHistoryService';
+import StarRating from '@/components/ui/star-rating';
 
 interface GameHistorySectionProps {
     themeId: string;
@@ -136,9 +137,11 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
                             </div>
                             <div className="text-center">
                                 <div className="text-2xl font-bold">
-                                    {(myHistories.reduce((sum, h) => sum + (h.funRating || 0), 0) / myHistories.filter(h => h.funRating).length || 0).toFixed(1)}
+                                    {myHistories.filter(h => h.funRating !== undefined && h.funRating !== null).length > 0
+                                        ? (myHistories.reduce((sum, h) => sum + (h.funRating || 0), 0) / myHistories.filter(h => h.funRating !== undefined && h.funRating !== null).length).toFixed(1)
+                                        : '0.0'}
                                 </div>
-                                <div className="text-sm text-gray-500">평균 평점</div>
+                                <div className="text-sm text-gray-500">평균 재미 평점</div>
                             </div>
                         </div>
                     </CardContent>
@@ -177,19 +180,13 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
                                                         <span>{formatPlayTime(history.clearTime)}</span>
                                                     </div>
                                                 )}
-                                                {history.funRating && (
-                                                    <div className="flex items-center gap-1">
-                                                        {Array.from({ length: 5 }, (_, i) => (
-                                                            <Star
-                                                                key={i}
-                                                                className={`w-4 h-4 ${
-                                                                    i < history.funRating
-                                                                        ? 'fill-yellow-400 text-yellow-400'
-                                                                        : 'text-gray-300'
-                                                                }`}
-                                                            />
-                                                        ))}
-                                                    </div>
+                                                {history.funRating !== undefined && history.funRating !== null && (
+                                                    <StarRating 
+                                                        rating={history.funRating}
+                                                        isOneToTen={true}
+                                                        size="sm"
+                                                        showEmptyStars={false}
+                                                    />
                                                 )}
                                             </div>
 
