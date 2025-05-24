@@ -27,6 +27,7 @@ export interface EscapeRoomFilterValues {
   isOperating: string;
   selectedGenres: string[];
   selectedLocations: string[];
+  location: string;
 }
 
 // 공통 필터 인터페이스
