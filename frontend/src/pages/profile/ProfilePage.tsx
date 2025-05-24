@@ -89,12 +89,19 @@ const ProfilePage: React.FC = () => {
                 setFollowingCount(stats.followingCount);
             } catch (error) {
                 console.error("프로필 통계 조회 실패:", error);
-                // 실패 시 기존 프로필 값 사용
-                setFollowerCount(profile?.followerCount || 0);
-                setFollowingCount(profile?.followingCount || 0);
+                // 실패 시 기본값 사용
+                setFollowerCount(0);
+                setFollowingCount(0);
+                setProfileStats({
+                    creationCount: 0,
+                    crimeSceneCount: 0,
+                    escapeRoomCount: 0,
+                    followerCount: 0,
+                    followingCount: 0,
+                });
             }
         },
-        [profile]
+        [] // 의존성 제거
     );
 
     // 팔로우 상태 확인
