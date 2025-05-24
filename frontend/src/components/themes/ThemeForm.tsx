@@ -60,7 +60,7 @@ const initialExtraFieldsMap = {
         activityLevel: 0,
         openDate: "",
         isOperating: true,
-        genreTags: [],
+
         locations: [],
         homepageUrl: "",
         reservationUrl: "",
@@ -175,7 +175,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                     activityLevel: initialData.activityLevel || 0,
                     openDate: initialData.openDate ? initialData.openDate.split('T')[0] : "",
                     isOperating: initialData.isOperating ?? true,
-                    genreTags: initialData.genreTags || [],
+
                     locations: initialData.locations || [],
                     homepageUrl: initialData.homepageUrl || "",
                     reservationUrl: initialData.reservationUrl || "",
@@ -351,8 +351,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
             jsonData.openDate = extraFields.openDate || null;
             jsonData.isOperating = extraFields.isOperating ?? true;
             
-            // 장르 태그 (Set<String> 형태)
-            jsonData.genreTags = extraFields.genreTags || [];
+
             
             // 매장 위치 (List<EscapeRoomLocation> 형태)
             jsonData.locations = extraFields.locations || [];

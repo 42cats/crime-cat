@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { EscapeRoomLocation } from '@/lib/types';
 import LocationSelector from '../location/LocationSelector';
-import GenreTagInput from './GenreTagInput';
+
 import DifficultySelector from './DifficultySelector';
 import ParticipantSettings from './ParticipantSettings';
 import TimeSettings from './TimeSettings';
@@ -20,7 +20,7 @@ interface EscapeRoomThemeFormData {
     title: string;
     description: string;
     locations: EscapeRoomLocation[];
-    genreTags: string[];
+
     difficulty: number;
     minParticipants: number;
     maxParticipants: number;
@@ -52,7 +52,7 @@ const EscapeRoomThemeForm: React.FC<EscapeRoomThemeFormProps> = ({
         title: '',
         description: '',
         locations: [],
-        genreTags: [],
+
         difficulty: 3,
         minParticipants: 2,
         maxParticipants: 6,
@@ -83,9 +83,7 @@ const EscapeRoomThemeForm: React.FC<EscapeRoomThemeFormProps> = ({
             newErrors.locations = '최소 1개 이상의 매장 위치를 등록해주세요.';
         }
 
-        if (formData.genreTags.length === 0) {
-            newErrors.genreTags = '최소 1개 이상의 장르 태그를 입력해주세요.';
-        }
+
 
         if (formData.minParticipants > formData.maxParticipants) {
             newErrors.participants = '최소 인원이 최대 인원보다 클 수 없습니다.';
@@ -190,25 +188,7 @@ const EscapeRoomThemeForm: React.FC<EscapeRoomThemeFormProps> = ({
                 </CardContent>
             </Card>
 
-            {/* 장르 태그 */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        장르 태그
-                        <Badge variant="outline">필수</Badge>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <GenreTagInput
-                        tags={formData.genreTags}
-                        onTagsChange={(tags) => updateFormData('genreTags', tags)}
-                        disabled={isLoading}
-                    />
-                    {errors.genreTags && (
-                        <p className="text-sm text-red-500 mt-2">{errors.genreTags}</p>
-                    )}
-                </CardContent>
-            </Card>
+
 
             {/* 게임 설정 */}
             <Card>

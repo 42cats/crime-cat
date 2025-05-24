@@ -98,7 +98,7 @@ const EscapeRoomFields: React.FC<Props> = ({ extraFields, setExtraFields }) => {
     description: "",
   });
 
-  const [newGenreTag, setNewGenreTag] = useState("");
+
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
   // extraFields 초기값 설정 - 편집 모드에서는 실행하지 않음
@@ -112,7 +112,7 @@ const EscapeRoomFields: React.FC<Props> = ({ extraFields, setExtraFields }) => {
         activityLevel: 0,
         openDate: "",
         isOperating: true,
-        genreTags: [],
+
         locations: [],
         homepageUrl: "",
         reservationUrl: "",
@@ -129,20 +129,7 @@ const EscapeRoomFields: React.FC<Props> = ({ extraFields, setExtraFields }) => {
     }));
   };
 
-  const addGenreTag = () => {
-    const trimmedTag = newGenreTag.trim();
-    if (trimmedTag && !extraFields.genreTags?.includes(trimmedTag)) {
-      updateField("genreTags", [...(extraFields.genreTags || []), trimmedTag]);
-      setNewGenreTag("");
-    }
-  };
 
-  const removeGenreTag = (tag: string) => {
-    updateField(
-      "genreTags",
-      extraFields.genreTags?.filter((t: string) => t !== tag) || []
-    );
-  };
 
   const addLocation = () => {
     if (newLocation.storeName.trim() && newLocation.address.trim()) {
@@ -282,52 +269,7 @@ const EscapeRoomFields: React.FC<Props> = ({ extraFields, setExtraFields }) => {
           </CardContent>
         </Card>
 
-        {/* 장르 태그 */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-base">장르 태그</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2 mb-3">
-              {extraFields.genreTags?.map((tag: string) => (
-                <Badge
-                  key={tag}
-                  variant="secondary"
-                  className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
-                  onClick={() => removeGenreTag(tag)}
-                >
-                  {tag}
-                  <X className="w-3 h-3 ml-1" />
-                </Badge>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="장르 태그 입력 (예: 호러, 추리, 판타지)"
-                value={newGenreTag}
-                onChange={(e) => setNewGenreTag(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-                    e.preventDefault();
-                    addGenreTag();
-                  }
-                }}
-                onCompositionEnd={(e) => {
-                  // IME 입력 완료 후 엔터키 처리를 위한 상태 업데이트
-                  const target = e.target as HTMLInputElement;
-                  if (target.value.endsWith('\n')) {
-                    target.value = target.value.slice(0, -1);
-                    setNewGenreTag(target.value);
-                    setTimeout(() => addGenreTag(), 0);
-                  }
-                }}
-              />
-              <Button type="button" onClick={addGenreTag} size="sm">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+
 
         {/* 매장 위치 */}
         <Card>

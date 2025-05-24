@@ -49,7 +49,6 @@ public class EscapeRoomThemeDto extends GameThemeDto {
                 .activityLevel(theme.getActivityLevel())
                 .openDate(theme.getOpenDate())
                 .isOperating(theme.getIsOperating())
-                .genreTags(theme.getGenreTagNames())
                 .locations(theme.getLocationDtos())
                 .homepageUrl(theme.getHomepageUrl())
                 .reservationUrl(theme.getReservationUrl())

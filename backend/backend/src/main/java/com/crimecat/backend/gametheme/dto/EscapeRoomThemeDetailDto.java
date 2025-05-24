@@ -20,7 +20,7 @@ public class EscapeRoomThemeDetailDto extends GameThemeDetailDto {
     private Integer activityLevel;
     private LocalDate openDate;
     private Boolean isOperating;
-    private Set<String> genreTags;
+
     private List<EscapeRoomLocation> locations;
     private String homepageUrl;
     private String reservationUrl;
@@ -56,7 +56,7 @@ public class EscapeRoomThemeDetailDto extends GameThemeDetailDto {
                 .activityLevel(theme.getActivityLevel())
                 .openDate(theme.getOpenDate())
                 .isOperating(theme.getIsOperating())
-                .genreTags(theme.getGenreTagNames())
+
                 .locations(theme.getLocationDtos())
                 .homepageUrl(theme.getHomepageUrl())
                 .reservationUrl(theme.getReservationUrl())

@@ -24,12 +24,7 @@ import java.util.List;
 @DiscriminatorValue("ESCAPE_ROOM")
 public class EscapeRoomTheme extends GameTheme {
 
-    /**
-     * 장르 태그들 (정규화된 관계, 검색 성능 최적화)
-     */
-    @OneToMany(mappedBy = "escapeRoomTheme", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @Builder.Default
-    private java.util.Set<EscapeRoomGenreTag> genreTags = new java.util.HashSet<>();
+
 
     /**
      * 공포도 (1-10, 별 5개 표시용)
@@ -126,10 +121,7 @@ public class EscapeRoomTheme extends GameTheme {
                 .extra(extraData)
                 .build();
         
-        // 장르 태그 설정
-        if (request.getGenreTags() != null) {
-            theme.setGenreTagsFromStrings(request.getGenreTags());
-        }
+
         
         // 매장 위치 설정
         if (request.getLocations() != null) {
@@ -149,20 +141,7 @@ public class EscapeRoomTheme extends GameTheme {
         }
     }
 
-    /**
-     * 장르 태그 문자열 목록으로 설정
-     */
-    public void setGenreTagsFromStrings(java.util.Set<String> tagNames) {
-        if (this.genreTags == null) {
-            this.genreTags = new java.util.HashSet<>();
-        }
-        this.genreTags.clear();
-        if (tagNames != null) {
-            for (String tagName : tagNames) {
-                this.genreTags.add(EscapeRoomGenreTag.of(this, tagName));
-            }
-        }
-    }
+
 
     /**
      * 매장 위치 DTO 목록으로 설정
@@ -191,14 +170,7 @@ public class EscapeRoomTheme extends GameTheme {
         }
     }
 
-    /**
-     * 장르 태그명 목록 반환 (DTO 변환용)
-     */
-    public java.util.Set<String> getGenreTagNames() {
-        return genreTags.stream()
-                .map(EscapeRoomGenreTag::getTagName)
-                .collect(java.util.stream.Collectors.toSet());
-    }
+
 
     /**
      * 매장 위치 DTO 목록 반환 (DTO 변환용)
@@ -228,15 +200,7 @@ public class EscapeRoomTheme extends GameTheme {
         }
     }
 
-    /**
-     * 장르 태그 업데이트
-     */
-    public void updateGenreTags(java.util.Set<String> tagNames) {
-        if (tagNames != null) {
-            setGenreTagsFromStrings(tagNames);
-            this.update();
-        }
-    }
+
 
     /**
      * 홈페이지 URL 반환
