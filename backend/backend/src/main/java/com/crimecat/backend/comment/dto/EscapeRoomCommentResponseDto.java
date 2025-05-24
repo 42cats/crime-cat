@@ -4,10 +4,12 @@ import com.crimecat.backend.comment.domain.EscapeRoomComment;
 import com.crimecat.backend.gameHistory.enums.SuccessStatus;
 import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,31 +24,39 @@ import java.util.stream.Collectors;
 public class EscapeRoomCommentResponseDto {
     
     private UUID id;
-    private UUID escapeRoomThemeId;
-    private String escapeRoomThemeName;
-    private UUID userId;
-    private String userNickname;
-    private String userProfileImageUrl;
     private String content;
-    private Boolean hasSpoiler;
-    private Boolean isGameHistoryComment;
-    private UUID escapeRoomHistoryId;
-    private Boolean isAuthor;
-    private Boolean canEdit;
-    private Boolean canView;
+    private String authorName;
+    private String authorProfileImage;
+    private UUID authorId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    // 좋아요 관련 필드
-    private Integer likesCount;
-    private Boolean isLiked;
+    @JsonProperty("isSpoiler")
+    private boolean isSpoiler;
     
-    // 스포일러 댓글이지만 볼 수 없는 경우 보여줄 메시지
-    private String hiddenMessage;
+    private int likes;
     
-    // 대댓글 관련 필드
-    private UUID parentCommentId;
+    @JsonProperty("isLikedByCurrentUser")
+    private boolean isLikedByCurrentUser;
+    
+    @JsonProperty("isOwnComment")
+    private boolean isOwnComment;
+    
+    @JsonProperty("isDeleted")
+    private boolean isDeleted;
+    
     private List<EscapeRoomCommentResponseDto> replies;
+    
+    // 부가 정보 (기존 필드들 중 필요한 것들)
+    private UUID escapeRoomThemeId;
+    private String escapeRoomThemeName;
+    private Boolean isGameHistoryComment;
+    private UUID escapeRoomHistoryId;
+    private Boolean canEdit;
+    private Boolean canView;
+    
+    // 숨겨진 메시지 (스포일러 댓글을 볼 수 없는 경우)
+    private String hiddenMessage;
     
     // 게임 기록 관련 정보 (선택적으로 표시)
     @Getter
@@ -79,15 +89,17 @@ public class EscapeRoomCommentResponseDto {
                 .id(comment.getId())
                 .escapeRoomThemeId(comment.getEscapeRoomTheme().getId())
                 .escapeRoomThemeName(comment.getEscapeRoomTheme().getTitle())
-                .userId(comment.getWebUser().getId())
-                .userNickname(comment.getWebUser().getNickname())
-                .userProfileImageUrl(comment.getWebUser().getProfileImagePath())
-                .hasSpoiler(comment.getIsSpoiler())
+                .authorId(comment.getWebUser().getId())
+                .authorName(comment.getWebUser().getNickname())
+                .authorProfileImage(comment.getWebUser().getProfileImagePath())
+                .isSpoiler(comment.getIsSpoiler())
                 .isGameHistoryComment(comment.isGameHistoryComment())
-                .likesCount(comment.getLikesCount())
-                .isLiked(false) // 기본값, 서비스에서 설정
+                .likes(comment.getLikesCount())
+                .isLikedByCurrentUser(false) // 기본값, 서비스에서 설정
                 .createdAt(comment.getCreatedAt())
-                .updatedAt(comment.getUpdatedAt());
+                .updatedAt(comment.getUpdatedAt())
+                .isDeleted(comment.isDeleted())
+                .replies(new ArrayList<>()); // 빈 replies 리스트 초기화
         
         // 게임 기록 기반 댓글인 경우
         if (comment.isGameHistoryComment() && comment.getEscapeRoomHistory() != null) {
@@ -113,15 +125,10 @@ public class EscapeRoomCommentResponseDto {
             builder.gameHistoryInfo(historyInfo);
         }
         
-        // 대댓글인 경우
-        if (comment.isReplyComment() && comment.getParentComment() != null) {
-            builder.parentCommentId(comment.getParentComment().getId());
-        }
-        
         // 현재 사용자 관련 정보
-        boolean isAuthor = currentUserId != null && comment.isAuthor(currentUserId);
-        builder.isAuthor(isAuthor);
-        builder.canEdit(isAuthor && !comment.isDeleted());
+        boolean isOwnComment = currentUserId != null && comment.isAuthor(currentUserId);
+        builder.isOwnComment(isOwnComment);
+        builder.canEdit(isOwnComment && !comment.isDeleted());
         
         // 스포일러 댓글 처리
         boolean canViewSpoiler = comment.canViewSpoilerComment(currentUserId, hasGameHistory);
@@ -147,19 +154,21 @@ public class EscapeRoomCommentResponseDto {
                 .id(comment.getId())
                 .escapeRoomThemeId(comment.getEscapeRoomTheme().getId())
                 .escapeRoomThemeName(comment.getEscapeRoomTheme().getTitle())
-                .userId(comment.getWebUser().getId())
-                .userNickname(comment.getWebUser().getNickname())
-                .userProfileImageUrl(comment.getWebUser().getProfileImagePath())
+                .authorId(comment.getWebUser().getId())
+                .authorName(comment.getWebUser().getNickname())
+                .authorProfileImage(comment.getWebUser().getProfileImagePath())
                 .content(comment.getContent())
-                .hasSpoiler(comment.getIsSpoiler())
+                .isSpoiler(comment.getIsSpoiler())
                 .isGameHistoryComment(comment.isGameHistoryComment())
-                .likesCount(comment.getLikesCount())
-                .isLiked(false) // 서비스에서 설정 필요
-                .isAuthor(true)
+                .likes(comment.getLikesCount())
+                .isLikedByCurrentUser(false) // 서비스에서 설정 필요
+                .isOwnComment(true)
                 .canEdit(!comment.isDeleted())
                 .canView(true)
+                .isDeleted(comment.isDeleted())
                 .createdAt(comment.getCreatedAt())
-                .updatedAt(comment.getUpdatedAt());
+                .updatedAt(comment.getUpdatedAt())
+                .replies(new ArrayList<>()); // 빈 replies 리스트 초기화
         
         // 게임 기록 기반 댓글인 경우
         if (comment.isGameHistoryComment() && comment.getEscapeRoomHistory() != null) {
@@ -185,41 +194,55 @@ public class EscapeRoomCommentResponseDto {
             builder.gameHistoryInfo(historyInfo);
         }
         
-        // 대댓글인 경우
-        if (comment.isReplyComment() && comment.getParentComment() != null) {
-            builder.parentCommentId(comment.getParentComment().getId());
-        }
-        
         return builder.build();
     }
     
     /**
-     * 댓글 목록에 대댓글을 추가
+     * 댓글 목록을 계층 구조로 구성
+     * 대댓글은 부모 댓글의 replies 필드에 추가
      */
-    public static List<EscapeRoomCommentResponseDto> addReplies(
-            List<EscapeRoomCommentResponseDto> comments, 
-            List<EscapeRoomComment> allReplies,
+    public static List<EscapeRoomCommentResponseDto> organizeHierarchy(
+            List<EscapeRoomComment> allComments,
             UUID currentUserId,
             boolean hasGameHistory) {
         
-        // 부모 댓글 ID별 대댓글 그룹화
-        var repliesByParentId = allReplies.stream()
-                .collect(Collectors.groupingBy(
-                        reply -> reply.getParentComment().getId()
+        // 모든 댓글을 DTO로 변환
+        List<EscapeRoomCommentResponseDto> allDtos = allComments.stream()
+                .map(comment -> from(comment, currentUserId, hasGameHistory))
+                .collect(Collectors.toList());
+        
+        // 댓글 ID를 키로 하는 맵 생성
+        var dtoMap = allDtos.stream()
+                .collect(Collectors.toMap(
+                        EscapeRoomCommentResponseDto::getId,
+                        dto -> dto
                 ));
         
-        // 각 댓글에 대댓글 추가
-        return comments.stream()
-                .map(comment -> {
-                    List<EscapeRoomComment> replies = repliesByParentId.get(comment.getId());
-                    if (replies != null && !replies.isEmpty()) {
-                        List<EscapeRoomCommentResponseDto> replyDtos = replies.stream()
-                                .map(reply -> EscapeRoomCommentResponseDto.from(reply, currentUserId, hasGameHistory))
-                                .collect(Collectors.toList());
-                        comment.setReplies(replyDtos);
+        // 부모 댓글 목록 (최상위 댓글만 포함)
+        List<EscapeRoomCommentResponseDto> parentComments = new ArrayList<>();
+        
+        // 각 댓글을 순회하며 부모-자식 관계 구성
+        for (EscapeRoomComment comment : allComments) {
+            EscapeRoomCommentResponseDto dto = dtoMap.get(comment.getId());
+            
+            if (comment.isReplyComment() && comment.getParentComment() != null) {
+                // 대댓글인 경우
+                UUID parentId = comment.getParentComment().getId();
+                EscapeRoomCommentResponseDto parentDto = dtoMap.get(parentId);
+                
+                if (parentDto != null) {
+                    // 부모 댓글의 replies 목록에 추가
+                    if (parentDto.getReplies() == null) {
+                        parentDto.setReplies(new ArrayList<>());
                     }
-                    return comment;
-                })
-                .collect(Collectors.toList());
+                    parentDto.getReplies().add(dto);
+                }
+            } else {
+                // 부모 댓글인 경우 (또는 parentComment가 null인 경우)
+                parentComments.add(dto);
+            }
+        }
+        
+        return parentComments;
     }
 }

@@ -21,6 +21,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -116,7 +119,7 @@ public class EscapeRoomCommentService {
     }
 
     /**
-     * 특정 테마의 댓글 목록 조회
+     * 특정 테마의 댓글 목록 조회 (계층 구조로 변환)
      */
     public Page<EscapeRoomCommentResponseDto> getCommentsByTheme(UUID themeId, Pageable pageable) {
         UUID currentUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
@@ -131,30 +134,55 @@ public class EscapeRoomCommentService {
             hasGameHistory = escapeRoomHistoryService.hasPlayedTheme(currentUserId, themeId);
         }
 
-        // 댓글 조회
-        Page<EscapeRoomComment> comments = escapeRoomCommentRepository
-                .findByEscapeRoomThemeIdAndDeletedAtIsNull(themeId, pageable);
+        // 테마의 모든 댓글 조회 (삭제되지 않은 댓글만)
+        List<EscapeRoomComment> allComments = escapeRoomCommentRepository
+                .findAllByEscapeRoomThemeIdAndDeletedAtIsNull(themeId);
 
         // 현재 사용자가 좋아요한 댓글 ID 목록 조회
         Set<UUID> likedCommentIds = Set.of();
-        if (currentUserId != null && !comments.isEmpty()) {
-            Set<UUID> commentIds = comments.stream()
+        if (currentUserId != null && !allComments.isEmpty()) {
+            Set<UUID> commentIds = allComments.stream()
                     .map(EscapeRoomComment::getId)
                     .collect(Collectors.toSet());
             likedCommentIds = escapeRoomCommentLikeRepository
                     .findLikedCommentIdsByUserIdAndCommentIds(currentUserId, commentIds);
         }
 
-        final boolean hasHistory = hasGameHistory;
-        final UUID userId = currentUserId;
-        final Set<UUID> likedIds = likedCommentIds;
+        // 댓글을 계층 구조로 구성
+        List<EscapeRoomCommentResponseDto> hierarchicalComments = 
+                EscapeRoomCommentResponseDto.organizeHierarchy(allComments, currentUserId, hasGameHistory);
 
-        // DTO 변환 (스포일러 필터링 및 좋아요 여부 포함)
-        return comments.map(comment -> {
-            EscapeRoomCommentResponseDto dto = EscapeRoomCommentResponseDto.from(comment, userId, hasHistory);
-            dto.setIsLiked(likedIds.contains(comment.getId()));
-            return dto;
-        });
+        // 좋아요 정보 설정
+        hierarchicalComments = setLikedStatus(hierarchicalComments, likedCommentIds);
+
+        // 페이징 처리
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), hierarchicalComments.size());
+        
+        List<EscapeRoomCommentResponseDto> pagedComments = 
+                start < end ? hierarchicalComments.subList(start, end) : new ArrayList<>();
+        
+        return new PageImpl<>(pagedComments, pageable, hierarchicalComments.size());
+    }
+
+    /**
+     * 좋아요 상태 설정 (계층 구조 댓글)
+     */
+    private List<EscapeRoomCommentResponseDto> setLikedStatus(
+            List<EscapeRoomCommentResponseDto> comments, 
+            Set<UUID> likedCommentIds) {
+        
+        for (EscapeRoomCommentResponseDto comment : comments) {
+            // 댓글 좋아요 상태 설정
+            comment.setIsLikedByCurrentUser(likedCommentIds.contains(comment.getId()));
+            
+            // 대댓글이 있는 경우, 재귀적으로 처리
+            if (comment.getReplies() != null && !comment.getReplies().isEmpty()) {
+                setLikedStatus(comment.getReplies(), likedCommentIds);
+            }
+        }
+        
+        return comments;
     }
 
     /**
@@ -234,7 +262,42 @@ public class EscapeRoomCommentService {
                     comment.getEscapeRoomTheme().getId());
         }
 
-        return EscapeRoomCommentResponseDto.from(comment, currentUserId, hasGameHistory);
+        EscapeRoomCommentResponseDto commentDto = EscapeRoomCommentResponseDto.from(comment, currentUserId, hasGameHistory);
+        
+        // 대댓글 조회 및 추가
+        if (!comment.isReplyComment()) {
+            List<EscapeRoomComment> replies = escapeRoomCommentRepository
+                    .findAllByParentCommentIdAndDeletedAtIsNull(comment.getId());
+            
+            if (!replies.isEmpty()) {
+                List<EscapeRoomCommentResponseDto> replyDtos = replies.stream()
+                        .map(reply -> EscapeRoomCommentResponseDto.from(reply, currentUserId, hasGameHistory))
+                        .collect(Collectors.toList());
+                
+                // 좋아요 정보 설정
+                if (currentUserId != null) {
+                    Set<UUID> replyIds = replies.stream()
+                            .map(EscapeRoomComment::getId)
+                            .collect(Collectors.toSet());
+                    Set<UUID> likedReplyIds = escapeRoomCommentLikeRepository
+                            .findLikedCommentIdsByUserIdAndCommentIds(currentUserId, replyIds);
+                    
+                    replyDtos.forEach(replyDto -> 
+                            replyDto.setIsLikedByCurrentUser(likedReplyIds.contains(replyDto.getId())));
+                }
+                
+                commentDto.setReplies(replyDtos);
+            }
+        }
+        
+        // 좋아요 정보 설정
+        if (currentUserId != null) {
+            boolean isLiked = escapeRoomCommentLikeRepository
+                    .existsByCommentIdAndWebUserId(commentId, currentUserId);
+            commentDto.setIsLikedByCurrentUser(isLiked);
+        }
+
+        return commentDto;
     }
 
     /**
@@ -259,7 +322,17 @@ public class EscapeRoomCommentService {
                 hasGameHistory = escapeRoomHistoryService.hasPlayedTheme(currentUserId,
                         comment.getEscapeRoomTheme().getId());
             }
-            return EscapeRoomCommentResponseDto.from(comment, currentUserId, hasGameHistory);
+            
+            EscapeRoomCommentResponseDto dto = EscapeRoomCommentResponseDto.from(comment, currentUserId, hasGameHistory);
+            
+            // 좋아요 정보 설정
+            if (currentUserId != null) {
+                boolean isLiked = escapeRoomCommentLikeRepository
+                        .existsByCommentIdAndWebUserId(comment.getId(), currentUserId);
+                dto.setIsLikedByCurrentUser(isLiked);
+            }
+            
+            return dto;
         });
     }
 
