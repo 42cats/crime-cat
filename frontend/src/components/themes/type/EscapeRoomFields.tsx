@@ -101,9 +101,11 @@ const EscapeRoomFields: React.FC<Props> = ({ extraFields, setExtraFields }) => {
   const [newGenreTag, setNewGenreTag] = useState("");
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
-  // extraFields 초기값 설정
+  // extraFields 초기값 설정 - 편집 모드에서는 실행하지 않음
   React.useEffect(() => {
-    if (!extraFields || Object.keys(extraFields).length === 0) {
+    // extraFields가 없거나 빈 객체인 경우에만 초기값 설정 (신규 생성 시)
+    if (!extraFields || (Object.keys(extraFields).length === 0 && !extraFields.isOperating)) {
+      console.log('EscapeRoomFields - 초기값 설정');
       setExtraFields({
         horrorLevel: 0,
         deviceRatio: 0,
@@ -115,8 +117,10 @@ const EscapeRoomFields: React.FC<Props> = ({ extraFields, setExtraFields }) => {
         homepageUrl: "",
         reservationUrl: "",
       });
+    } else {
+      console.log('EscapeRoomFields - 기존값 사용:', extraFields);
     }
-  }, [extraFields, setExtraFields]);
+  }, []);
 
   const updateField = (field: string, value: any) => {
     setExtraFields((prev: any) => ({
