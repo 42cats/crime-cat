@@ -66,7 +66,7 @@ import PointHistoryPage from "@/pages/PointHistory/PointHistoryPage";
 // Admin Pages
 import UserRoleManagementPage from "@/pages/admin/UserRoleManagementPage";
 import CouponManagementPage from "@/pages/admin/CouponManagementPage";
-import AdManagementPage from "@/pages/admin/AdManagementPage";
+// import AdManagementPage from "@/pages/admin/AdManagementPage";
 
 // SNS Pages
 import SNSFeedPage from "@/pages/sns/SNSFeedPage";
