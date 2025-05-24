@@ -44,4 +44,15 @@ public class PostCommentController {
                 postCommentService.createPostComment(postId, currentUser, postCommentRequest)
         );
     }
+
+    @PutMapping("{id}")
+    public ResponseEntity<List<PostCommentResponse>> updateComment(
+            @PathVariable("id") UUID commentId,
+            @RequestBody @Valid PostCommentRequest postCommentRequest,
+            @AuthenticationPrincipal WebUser currentUser
+    ) {
+        return ResponseEntity.ok().body(
+                postCommentService.updatePostComment(commentId, currentUser.getId(), postCommentRequest)
+        );
+    }
 }

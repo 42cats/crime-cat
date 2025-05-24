@@ -83,6 +83,12 @@ public class PostComment {
         this.author = author;
     }
 
+    public void update(PostCommentRequest request) {
+        this.updatedAt = LocalDateTime.now();
+        this.content = request.getContent();
+        this.isSecret = request.getIsSecret();
+    }
+
     public static PostComment from(BoardPost boardPost, WebUser author, PostCommentRequest request){
         PostComment comment = PostComment.builder()
                 .content(request.getContent())

@@ -78,4 +78,16 @@ public class PostCommentService {
         postCommentRepository.save(postComment);
         return getCommentResponses(postId, user.getId());
     }
+
+    @Transactional
+    public List<PostCommentResponse> updatePostComment(
+            UUID commentId,
+            UUID userId,
+            PostCommentRequest postCommentRequest
+    ) {
+        PostComment postComment = postCommentRepository.findByIdAndIsDeletedFalse(commentId).orElseThrow(() -> new EntityNotFoundException("댓글을 찾을 수 없습니다."));
+        postComment.update(postCommentRequest);
+        postCommentRepository.save(postComment);
+        return getCommentResponses(postComment.getPostId(), userId);
+    }
 }
