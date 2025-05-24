@@ -9,6 +9,7 @@ import com.crimecat.backend.gametheme.domain.MakerTeamMember;
 import com.crimecat.backend.gametheme.dto.filter.RangeFilter;
 import com.crimecat.backend.gametheme.enums.RangeType;
 import com.crimecat.backend.gametheme.enums.ThemeType;
+import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
 import io.micrometer.common.util.StringUtils;
 import jakarta.persistence.criteria.*;
 import java.util.ArrayList;
@@ -150,6 +151,37 @@ public class GameThemeSpecification {
             
             Root<EscapeRoomTheme> escapeRoomThemeRoot = criteriaBuilder.treat(root, EscapeRoomTheme.class);
             return criteriaBuilder.equal(escapeRoomThemeRoot.get("isOperating"), isOperating);
+        };
+    }
+    
+    /**
+     * 사용자의 플레이 여부로 검색
+     * @param userId 사용자 ID
+     * @param hasPlayed true: 플레이한 테마만, false: 플레이하지 않은 테마만, null: 전체
+     */
+    public static Specification<GameTheme> hasBeenPlayedByUser(UUID userId, Boolean hasPlayed) {
+        return (root, query, criteriaBuilder) -> {
+            if (userId == null || hasPlayed == null) {
+                return criteriaBuilder.conjunction();
+            }
+            
+            // EscapeRoomTheme으로 타입 캐스트
+            Root<EscapeRoomTheme> escapeRoomThemeRoot = criteriaBuilder.treat(root, EscapeRoomTheme.class);
+            
+            // EscapeRoomHistory와 연관된 테마 ID를 가져오는 서브쿼리
+            Subquery<UUID> subquery = query.subquery(UUID.class);
+            Root<EscapeRoomHistory> historyRoot = subquery.from(EscapeRoomHistory.class);
+            
+            subquery.select(historyRoot.get("escapeRoomTheme").get("id"))
+                    .where(criteriaBuilder.equal(historyRoot.get("webUser").get("id"), userId));
+            
+            if (hasPlayed) {
+                // 플레이한 테마만
+                return escapeRoomThemeRoot.get("id").in(subquery);
+            } else {
+                // 플레이하지 않은 테마만
+                return criteriaBuilder.not(escapeRoomThemeRoot.get("id").in(subquery));
+            }
         };
     }
 }
