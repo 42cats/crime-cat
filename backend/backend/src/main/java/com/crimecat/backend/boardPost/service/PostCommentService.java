@@ -1,9 +1,14 @@
 package com.crimecat.backend.boardPost.service;
 
+import com.crimecat.backend.boardPost.domain.BoardPost;
 import com.crimecat.backend.boardPost.domain.PostComment;
+import com.crimecat.backend.boardPost.dto.PostCommentRequest;
 import com.crimecat.backend.boardPost.dto.PostCommentResponse;
+import com.crimecat.backend.boardPost.repository.BoardPostRepository;
 import com.crimecat.backend.boardPost.repository.PostCommentLikeRepository;
 import com.crimecat.backend.boardPost.repository.PostCommentRepository;
+import com.crimecat.backend.webUser.domain.WebUser;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -18,6 +23,7 @@ public class PostCommentService {
 
     private final PostCommentRepository postCommentRepository;
     private final PostCommentLikeRepository postCommentLikeRepository;
+    private final BoardPostRepository boardPostRepository;
 
     @Transactional(readOnly = true)
     public List<PostCommentResponse> getCommentResponses(
@@ -46,7 +52,7 @@ public class PostCommentService {
 
     }
 
-    private List<PostCommentResponse> getCommentReplies(UUID commentId, UUID userId, Sort sort, boolean isOwnParent) {
+    public List<PostCommentResponse> getCommentReplies(UUID commentId, UUID userId, Sort sort, boolean isOwnParent) {
         List<PostComment> replies = postCommentRepository.findAllByParentId(commentId, sort);
         List<PostCommentResponse> replyResponses = new ArrayList<>();
 
@@ -59,5 +65,17 @@ public class PostCommentService {
         }
 
         return replyResponses;
+    }
+
+    @Transactional
+    public List<PostCommentResponse> createPostComment(
+            UUID postId,
+            WebUser user,
+            PostCommentRequest postCommentRequest
+    ) {
+        BoardPost boardPost = boardPostRepository.findByIdAndIsDeletedFalse(postId).orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
+        PostComment postComment = PostComment.from(boardPost, user, postCommentRequest);
+        postCommentRepository.save(postComment);
+        return getCommentResponses(postId, user.getId());
     }
 }
