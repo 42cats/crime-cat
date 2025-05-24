@@ -21,7 +21,7 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/escape-room-comments")
+@RequestMapping("/api/v1/escape-room-comments")
 @RequiredArgsConstructor
 public class EscapeRoomCommentController {
     
@@ -41,15 +41,15 @@ public class EscapeRoomCommentController {
     }
     
     /**
-     * 테마별 댓글 목록 조회
+     * 사용자별 댓글 목록 조회
      */
-    @GetMapping("/theme/{themeId}")
-    public ResponseEntity<PageResponseDto<EscapeRoomCommentResponseDto>> getCommentsByTheme(
-            @PathVariable UUID themeId,
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<PageResponseDto<EscapeRoomCommentResponseDto>> getCommentsByUser(
+            @PathVariable UUID userId,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        log.info("테마별 댓글 목록 조회 - themeId: {}, page: {}, size: {}", 
-                themeId, pageable.getPageNumber(), pageable.getPageSize());
-        Page<EscapeRoomCommentResponseDto> comments = escapeRoomCommentService.getCommentsByTheme(themeId, pageable);
+        log.info("사용자별 댓글 목록 조회 - userId: {}, page: {}, size: {}", 
+                userId, pageable.getPageNumber(), pageable.getPageSize());
+        Page<EscapeRoomCommentResponseDto> comments = escapeRoomCommentService.getCommentsByUser(userId, pageable);
         return ResponseEntity.ok(new PageResponseDto<>(comments));
     }
     
@@ -79,37 +79,26 @@ public class EscapeRoomCommentController {
     }
     
     /**
-     * 댓글 상세 조회
+     * 댓글 좋아요
      */
-    @GetMapping("/{commentId}")
-    public ResponseEntity<EscapeRoomCommentResponseDto> getComment(
+    @PostMapping("/{commentId}/like")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> likeComment(
             @PathVariable UUID commentId) {
-        log.info("댓글 상세 조회 - commentId: {}", commentId);
-        EscapeRoomCommentResponseDto response = escapeRoomCommentService.getComment(commentId);
-        return ResponseEntity.ok(response);
+        log.info("댓글 좋아요 - commentId: {}", commentId);
+        escapeRoomCommentService.likeComment(commentId);
+        return ResponseEntity.ok().build();
     }
     
     /**
-     * 사용자별 댓글 목록 조회
+     * 댓글 좋아요 취소
      */
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<PageResponseDto<EscapeRoomCommentResponseDto>> getCommentsByUser(
-            @PathVariable UUID userId,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        log.info("사용자별 댓글 목록 조회 - userId: {}, page: {}, size: {}", 
-                userId, pageable.getPageNumber(), pageable.getPageSize());
-        Page<EscapeRoomCommentResponseDto> comments = escapeRoomCommentService.getCommentsByUser(userId, pageable);
-        return ResponseEntity.ok(new PageResponseDto<>(comments));
-    }
-    
-    /**
-     * 테마 댓글 통계 조회
-     */
-    @GetMapping("/theme/{themeId}/stats")
-    public ResponseEntity<EscapeRoomCommentService.EscapeRoomCommentStatsDto> getCommentStats(
-            @PathVariable UUID themeId) {
-        log.info("테마 댓글 통계 조회 - themeId: {}", themeId);
-        EscapeRoomCommentService.EscapeRoomCommentStatsDto stats = escapeRoomCommentService.getCommentStats(themeId);
-        return ResponseEntity.ok(stats);
+    @DeleteMapping("/{commentId}/like")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> unlikeComment(
+            @PathVariable UUID commentId) {
+        log.info("댓글 좋아요 취소 - commentId: {}", commentId);
+        escapeRoomCommentService.unlikeComment(commentId);
+        return ResponseEntity.noContent().build();
     }
 }

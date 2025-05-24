@@ -1,10 +1,12 @@
 package com.crimecat.backend.comment.service;
 
 import com.crimecat.backend.comment.domain.EscapeRoomComment;
+import com.crimecat.backend.comment.domain.EscapeRoomCommentLike;
 import com.crimecat.backend.comment.dto.EscapeRoomCommentCreateDto;
 import com.crimecat.backend.comment.dto.EscapeRoomCommentResponseDto;
 import com.crimecat.backend.comment.dto.EscapeRoomCommentUpdateDto;
 import com.crimecat.backend.comment.repository.EscapeRoomCommentRepository;
+import com.crimecat.backend.comment.repository.EscapeRoomCommentLikeRepository;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
 import com.crimecat.backend.gameHistory.repository.EscapeRoomHistoryRepository;
@@ -24,6 +26,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -32,6 +36,7 @@ import java.util.UUID;
 public class EscapeRoomCommentService {
     
     private final EscapeRoomCommentRepository escapeRoomCommentRepository;
+    private final EscapeRoomCommentLikeRepository escapeRoomCommentLikeRepository;
     private final EscapeRoomThemeRepository escapeRoomThemeRepository;
     private final EscapeRoomHistoryRepository escapeRoomHistoryRepository;
     private final UserRepository userRepository;
@@ -86,148 +91,162 @@ public class EscapeRoomCommentService {
                 .content(dto.getContent().trim())
                 .hasSpoiler(dto.getHasSpoiler() != null ? dto.getHasSpoiler() : false)
                 .build();
-        
+
         EscapeRoomComment savedComment = escapeRoomCommentRepository.save(comment);
-        log.info("방탈출 댓글 생성 완료 - commentId: {}, userId: {}, themeId: {}", 
+        log.info("방탈출 댓글 생성 완료 - commentId: {}, userId: {}, themeId: {}",
                 savedComment.getId(), currentUserId, theme.getId());
-        
+
         // 작성자는 항상 자신의 댓글 내용을 볼 수 있음
         return EscapeRoomCommentResponseDto.forAuthor(savedComment);
     }
-    
+
     /**
      * 특정 테마의 댓글 목록 조회
      */
     public Page<EscapeRoomCommentResponseDto> getCommentsByTheme(UUID themeId, Pageable pageable) {
         UUID currentUserId = AuthenticationUtil.getCurrentUserIdOptional().orElse(null);
-        
+
         // 테마 존재 확인
         if (!escapeRoomThemeRepository.existsById(themeId)) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
-        
+
         // 현재 사용자가 해당 테마를 플레이했는지 확인
         boolean hasGameHistory = false;
         if (currentUserId != null) {
             hasGameHistory = escapeRoomHistoryService.hasPlayedTheme(currentUserId, themeId);
         }
-        
+
         // 댓글 조회
         Page<EscapeRoomComment> comments = escapeRoomCommentRepository
                 .findByEscapeRoomThemeIdAndIsDeletedFalse(themeId, pageable);
-        
+
+        // 현재 사용자가 좋아요한 댓글 ID 목록 조회
+        Set<UUID> likedCommentIds = Set.of();
+        if (currentUserId != null && !comments.isEmpty()) {
+            Set<UUID> commentIds = comments.stream()
+                    .map(EscapeRoomComment::getId)
+                    .collect(Collectors.toSet());
+            likedCommentIds = escapeRoomCommentLikeRepository
+                    .findLikedCommentIdsByUserIdAndCommentIds(currentUserId, commentIds);
+        }
+
         final boolean hasHistory = hasGameHistory;
         final UUID userId = currentUserId;
-        
-        // DTO 변환 (스포일러 필터링 포함)
-        return comments.map(comment -> 
-                EscapeRoomCommentResponseDto.from(comment, userId, hasHistory));
+        final Set<UUID> likedIds = likedCommentIds;
+
+        // DTO 변환 (스포일러 필터링 및 좋아요 여부 포함)
+        return comments.map(comment -> {
+            EscapeRoomCommentResponseDto dto = EscapeRoomCommentResponseDto.from(comment, userId, hasHistory);
+            dto.setIsLiked(likedIds.contains(comment.getId()));
+            return dto;
+        });
     }
-    
+
     /**
      * 댓글 수정
      */
     @Transactional
     public EscapeRoomCommentResponseDto updateComment(UUID commentId, EscapeRoomCommentUpdateDto dto) {
         UUID currentUserId = AuthenticationUtil.getCurrentUserIdOptional().orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
-        
+
         // 댓글 조회
         EscapeRoomComment comment = escapeRoomCommentRepository.findByIdAndIsDeletedFalse(commentId)
                 .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
-        
+
         // 작성자 확인
         if (!comment.isAuthor(currentUserId)) {
             throw ErrorStatus.FORBIDDEN.asServiceException();
         }
-        
+
         // 스포일러 댓글로 변경하는 경우 권한 확인
         if (dto.getHasSpoiler() != null && dto.getHasSpoiler() && !comment.getHasSpoiler()) {
-            boolean hasPlayed = escapeRoomHistoryService.hasPlayedTheme(currentUserId, 
+            boolean hasPlayed = escapeRoomHistoryService.hasPlayedTheme(currentUserId,
                     comment.getEscapeRoomTheme().getId());
             if (!hasPlayed) {
                 throw ErrorStatus.FORBIDDEN.asServiceException();
             }
         }
-        
+
         // 댓글 수정
         comment.updateContent(dto.getContent(), dto.getHasSpoiler());
-        
+
         EscapeRoomComment updatedComment = escapeRoomCommentRepository.save(comment);
         log.info("방탈출 댓글 수정 완료 - commentId: {}", commentId);
-        
+
         // 작성자는 항상 자신의 댓글 내용을 볼 수 있음
         return EscapeRoomCommentResponseDto.forAuthor(updatedComment);
     }
-    
+
     /**
      * 댓글 삭제 (소프트 삭제)
      */
     @Transactional
     public void deleteComment(UUID commentId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUserIdOptional().orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
-        
+
         // 댓글 조회
         EscapeRoomComment comment = escapeRoomCommentRepository.findByIdAndIsDeletedFalse(commentId)
                 .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
-        
+
         // 작성자 확인
         if (!comment.isAuthor(currentUserId)) {
             throw ErrorStatus.FORBIDDEN.asServiceException();
         }
-        
+
         // 소프트 삭제
         comment.delete();
         escapeRoomCommentRepository.save(comment);
-        
+
         log.info("방탈출 댓글 삭제 완료 - commentId: {}", commentId);
     }
-    
+
     /**
      * 특정 댓글 조회
      */
     public EscapeRoomCommentResponseDto getComment(UUID commentId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUserIdOptional().orElse(null);
-        
+
         // 댓글 조회
         EscapeRoomComment comment = escapeRoomCommentRepository.findByIdAndIsDeletedFalse(commentId)
                 .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
-        
+
         // 현재 사용자가 해당 테마를 플레이했는지 확인
         boolean hasGameHistory = false;
         if (currentUserId != null) {
-            hasGameHistory = escapeRoomHistoryService.hasPlayedTheme(currentUserId, 
+            hasGameHistory = escapeRoomHistoryService.hasPlayedTheme(currentUserId,
                     comment.getEscapeRoomTheme().getId());
         }
-        
+
         return EscapeRoomCommentResponseDto.from(comment, currentUserId, hasGameHistory);
     }
-    
+
     /**
      * 사용자의 댓글 목록 조회
      */
     public Page<EscapeRoomCommentResponseDto> getCommentsByUser(UUID userId, Pageable pageable) {
         UUID currentUserId = AuthenticationUtil.getCurrentUserIdOptional().orElse(null);
-        
+
         // 사용자 존재 확인
         if (!userRepository.existsById(userId)) {
             throw ErrorStatus.USER_NOT_FOUND.asServiceException();
         }
-        
+
         // 댓글 조회
         Page<EscapeRoomComment> comments = escapeRoomCommentRepository
                 .findByUserIdAndIsDeletedFalse(userId, pageable);
-        
+
         // 각 댓글에 대해 게임 기록 확인 및 DTO 변환
         return comments.map(comment -> {
             boolean hasGameHistory = false;
             if (currentUserId != null) {
-                hasGameHistory = escapeRoomHistoryService.hasPlayedTheme(currentUserId, 
+                hasGameHistory = escapeRoomHistoryService.hasPlayedTheme(currentUserId,
                         comment.getEscapeRoomTheme().getId());
             }
             return EscapeRoomCommentResponseDto.from(comment, currentUserId, hasGameHistory);
         });
     }
-    
+
     /**
      * 테마의 댓글 통계 조회
      */
@@ -237,7 +256,7 @@ public class EscapeRoomCommentService {
         long nonSpoilerComments = escapeRoomCommentRepository
                 .countByEscapeRoomThemeIdAndHasSpoilerFalseAndIsDeletedFalse(themeId);
         long spoilerComments = totalComments - nonSpoilerComments;
-        
+
         return EscapeRoomCommentStatsDto.builder()
                 .themeId(themeId)
                 .totalComments(totalComments)
@@ -245,7 +264,66 @@ public class EscapeRoomCommentService {
                 .spoilerComments(spoilerComments)
                 .build();
     }
-    
+
+    /**
+     * 댓글 좋아요
+     */
+    @Transactional
+    public void likeComment(UUID commentId) {
+        UUID currentUserId = AuthenticationUtil.getCurrentUserIdOptional().orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+
+        // 댓글 조회
+        EscapeRoomComment comment = escapeRoomCommentRepository.findByIdAndIsDeletedFalse(commentId)
+                .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
+
+        // 사용자 조회
+        User user = userRepository.findById(currentUserId)
+                .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+
+        // 이미 좋아요한 경우 중복 방지
+        if (escapeRoomCommentLikeRepository.existsByCommentIdAndUserId(commentId, currentUserId)) {
+            throw ErrorStatus.USER_POST_LIKE_DUPLICATED.asServiceException();
+        }
+
+        // 좋아요 엔티티 생성 및 저장
+        EscapeRoomCommentLike like = EscapeRoomCommentLike.builder()
+                .comment(comment)
+                .user(user)
+                .build();
+        escapeRoomCommentLikeRepository.save(like);
+
+        // 좋아요 수 증가 (캐시된 카운터)
+        comment.increaseLikesCount();
+        escapeRoomCommentRepository.save(comment);
+
+        log.info("댓글 좋아요 완료 - commentId: {}, userId: {}", commentId, currentUserId);
+    }
+
+    /**
+     * 댓글 좋아요 취소
+     */
+    @Transactional
+    public void unlikeComment(UUID commentId) {
+        UUID currentUserId = AuthenticationUtil.getCurrentUserIdOptional().orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+
+        // 댓글 조회
+        EscapeRoomComment comment = escapeRoomCommentRepository.findByIdAndIsDeletedFalse(commentId)
+                .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
+
+        // 좋아요 엔티티 조회 및 삭제
+        EscapeRoomCommentLike like = escapeRoomCommentLikeRepository
+                .findByCommentIdAndUserId(commentId, currentUserId)
+                .orElseThrow(ErrorStatus.USER_POST_LIKE_NOT_FOUND::asServiceException);
+
+        escapeRoomCommentLikeRepository.delete(like);
+
+        // 좋아요 수 감소 (캐시된 카운터)
+        comment.decreaseLikesCount();
+        escapeRoomCommentRepository.save(comment);
+
+        log.info("댓글 좋아요 취소 완료 - commentId: {}, userId: {}", commentId, currentUserId);
+    }
+
     @Getter
     @Builder
     public static class EscapeRoomCommentStatsDto {
