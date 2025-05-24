@@ -157,22 +157,33 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
     });
 
     const initialExtraFields = React.useMemo(() => {
-        if (
-            mode === "edit" &&
-            initialData &&
-            initialData.type === "CRIMESCENE"
-        ) {
-            return {
-                makerMode: initialData.team ? "team" : "personal",
-                makerTeamsId: initialData.team?.id || "",
-                makerTeamsName: initialData.team?.name || "",
-                guildSnowflake: initialData.guild?.snowflake || "",
-                guildName: initialData.guild?.name || "",
-                extra: initialData.extra || { characters: [] },
-            };
+        console.log('ThemeForm - mode:', mode, 'initialData:', initialData);
+        if (mode === "edit" && initialData) {
+            if (initialData.type === "CRIMESCENE") {
+                return {
+                    makerMode: initialData.team ? "team" : "personal",
+                    makerTeamsId: initialData.team?.id || "",
+                    makerTeamsName: initialData.team?.name || "",
+                    guildSnowflake: initialData.guild?.snowflake || "",
+                    guildName: initialData.guild?.name || "",
+                    extra: initialData.extra || { characters: [] },
+                };
+            } else if (initialData.type === "ESCAPE_ROOM") {
+                return {
+                    horrorLevel: initialData.horrorLevel || 0,
+                    deviceRatio: initialData.deviceRatio || 0,
+                    activityLevel: initialData.activityLevel || 0,
+                    openDate: initialData.openDate ? initialData.openDate.split('T')[0] : "",
+                    isOperating: initialData.isOperating ?? true,
+                    genreTags: initialData.genreTags || [],
+                    locations: initialData.locations || [],
+                    homepageUrl: initialData.homepageUrl || "",
+                    reservationUrl: initialData.reservationUrl || "",
+                };
+            }
         }
         return initialExtraFieldsMap[initialType] || {};
-    }, []);
+    }, [mode, initialData, initialType]);
 
     const [extraFields, setExtraFields] = useState<any>(initialExtraFields);
 
@@ -192,11 +203,14 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
 
     React.useEffect(() => {
         if (didMountRef.current) {
-            setExtraFields(
-                initialExtraFieldsMap[
-                    form.type as keyof typeof initialExtraFieldsMap
-                ]
-            );
+            // 타입 변경 시에만 초기화 (편집 모드에서 최초 로드 시에는 실행하지 않음)
+            if (mode === "create" || (mode === "edit" && initialData?.type !== form.type)) {
+                setExtraFields(
+                    initialExtraFieldsMap[
+                        form.type as keyof typeof initialExtraFieldsMap
+                    ]
+                );
+            }
             
             // 방탈출 테마일 때 강제로 모든 설정을 허용으로 변경
             if (form.type === "ESCAPE_ROOM") {
@@ -210,7 +224,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
         } else {
             didMountRef.current = true;
         }
-    }, [form.type]);
+    }, [form.type, mode, initialData?.type]);
 
     const { errors, validateField, validateWithErrors } = useFormValidator(
         (data: Record<string, any>) => {
