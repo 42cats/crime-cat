@@ -35,8 +35,8 @@ interface EscapeRoomFiltersProps {
   onReset: () => void;
 }
 
-// 인기 장르 태그 목록
-const POPULAR_GENRE_TAGS = [
+// 인기 태그 목록
+const POPULAR_TAGS = [
   "호러", "추리", "판타지", "SF", "어드벤처", 
   "코미디", "스릴러", "액션", "미스터리", "로맨스",
   "역사", "좀비", "마법", "시간여행", "공포"
@@ -60,7 +60,7 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
   onReset,
 }) => {
   const [filtersExpanded, setFiltersExpanded] = useState<boolean>(false);
-  const [genreTagInput, setGenreTagInput] = useState("");
+  const [tagInput, setTagInput] = useState("");
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -68,21 +68,20 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
     }
   };
 
-  const addGenreTag = (tag: string) => {
-    if (tag.trim() && !filters.selectedGenres.includes(tag.trim())) {
-      onFilterChange("selectedGenres", [...filters.selectedGenres, tag.trim()]);
+  const addTag = (tag: string) => {
+    const trimmedTag = tag.trim();
+    if (trimmedTag && !filters.selectedTags.includes(trimmedTag)) {
+      onFilterChange("selectedTags", [...filters.selectedTags, trimmedTag]);
+      setTagInput("");
     }
-    setGenreTagInput("");
   };
 
-  const removeGenreTag = (tag: string) => {
-    onFilterChange("selectedGenres", filters.selectedGenres.filter(t => t !== tag));
+  const removeTag = (tag: string) => {
+    onFilterChange("selectedTags", filters.selectedTags.filter(t => t !== tag));
   };
 
-  const addGenreTagFromInput = () => {
-    if (genreTagInput.trim()) {
-      addGenreTag(genreTagInput);
-    }
+  const addTagFromInput = () => {
+    addTag(tagInput);
   };
 
   // 별점 표시 컴포넌트 (1-10을 별 5개로 표시)
@@ -111,6 +110,71 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
       </div>
     );
   };
+  
+  // 별점 범위 필터 컴포넌트
+  const StarRangeFilter: React.FC<{
+    label: string;
+    minValue: string;
+    maxValue: string;
+    onMinChange: (value: string) => void;
+    onMaxChange: (value: string) => void;
+  }> = ({ label, minValue, maxValue, onMinChange, onMaxChange }) => {
+    return (
+      <div>
+        <Label className="text-sm font-medium mb-2 block">{label}</Label>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground w-8">최소:</span>
+            <div className="flex gap-1">
+              {[...Array(10)].map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => onMinChange(String(i + 1))}
+                  className="p-1 hover:scale-110 transition-transform"
+                >
+                  <Star
+                    className={`w-4 h-4 ${
+                      Number(minValue) > i
+                        ? "text-yellow-400 fill-yellow-400"
+                        : "text-gray-300"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+            <span className="text-xs text-muted-foreground ml-1">
+              {minValue || "0"}/10
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground w-8">최대:</span>
+            <div className="flex gap-1">
+              {[...Array(10)].map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => onMaxChange(String(i + 1))}
+                  className="p-1 hover:scale-110 transition-transform"
+                >
+                  <Star
+                    className={`w-4 h-4 ${
+                      Number(maxValue) > i
+                        ? "text-yellow-400 fill-yellow-400"
+                        : "text-gray-300"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+            <span className="text-xs text-muted-foreground ml-1">
+              {maxValue || "0"}/10
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <Card className="mb-6 overflow-hidden">
@@ -119,7 +183,7 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
         <div className="mb-4">
           <div className="relative">
             <Input
-              placeholder="방탈출 테마명, 매장명, 지역으로 검색하세요"
+              placeholder="테마명, 매장명으로 검색하세요"
               value={searchInput}
               onChange={(e) => onSearchInputChange(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -136,20 +200,20 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
           </div>
         </div>
 
-        {/* 빠른 필터 - 장르 태그 */}
-        {filters.selectedGenres.length > 0 && (
+        {/* 빠른 필터 - 태그 */}
+        {filters.selectedTags.length > 0 && (
           <div className="mb-4 p-3 bg-muted/30 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <Tag className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">선택된 장르</span>
+              <span className="text-sm font-medium">선택된 태그</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {filters.selectedGenres.map((tag) => (
+              {filters.selectedTags.map((tag) => (
                 <Badge
                   key={tag}
                   variant="secondary"
                   className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
-                  onClick={() => removeGenreTag(tag)}
+                  onClick={() => removeTag(tag)}
                 >
                   {tag}
                   <X className="w-3 h-3 ml-1" />
@@ -255,41 +319,29 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
                 <Star className="w-4 h-4" />
                 테마 특성
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <NumberRangeFilter
+              <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+                <StarRangeFilter
                   label="공포도"
                   minValue={filters.horrorMin}
                   maxValue={filters.horrorMax}
                   onMinChange={(value) => onFilterChange("horrorMin", value)}
                   onMaxChange={(value) => onFilterChange("horrorMax", value)}
-                  minPlaceholder="최소"
-                  maxPlaceholder="최대"
-                  min={0}
-                  max={10}
                 />
 
-                <NumberRangeFilter
+                <StarRangeFilter
                   label="장치 비중"
                   minValue={filters.deviceMin}
                   maxValue={filters.deviceMax}
                   onMinChange={(value) => onFilterChange("deviceMin", value)}
                   onMaxChange={(value) => onFilterChange("deviceMax", value)}
-                  minPlaceholder="최소"
-                  maxPlaceholder="최대"
-                  min={0}
-                  max={10}
                 />
 
-                <NumberRangeFilter
+                <StarRangeFilter
                   label="활동성"
                   minValue={filters.activityMin}
                   maxValue={filters.activityMax}
                   onMinChange={(value) => onFilterChange("activityMin", value)}
                   onMaxChange={(value) => onFilterChange("activityMax", value)}
-                  minPlaceholder="최소"
-                  maxPlaceholder="최대"
-                  min={0}
-                  max={10}
                 />
               </div>
             </div>
@@ -325,6 +377,9 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
                     value={filters.location}
                     onChange={(e) => onFilterChange("location", e.target.value)}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    지역명은 키워드 검색에 포함되어 매장 주소를 검색합니다.
+                  </p>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {POPULAR_LOCATIONS.slice(0, 6).map((location) => (
                       <Badge
@@ -341,47 +396,48 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
               </div>
             </div>
 
-            {/* 장르 태그 */}
+            {/* 태그 */}
             <div>
               <h3 className="font-medium mb-3 flex items-center gap-2">
                 <Tag className="w-4 h-4" />
-                장르 태그
+                태그
               </h3>
               <div className="space-y-3">
                 <div className="flex gap-2">
                   <Input
-                    placeholder="장르 태그 입력"
-                    value={genreTagInput}
-                    onChange={(e) => setGenreTagInput(e.target.value)}
+                    placeholder="태그 입력"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
-                        addGenreTagFromInput();
+                        e.stopPropagation();
+                        addTagFromInput();
                       }
                     }}
                   />
                   <Button 
                     type="button" 
-                    onClick={addGenreTagFromInput}
+                    onClick={addTagFromInput}
                     size="sm"
-                    disabled={!genreTagInput.trim()}
+                    disabled={!tagInput.trim()}
                   >
                     추가
                   </Button>
                 </div>
                 
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">인기 장르:</p>
+                  <p className="text-sm text-muted-foreground mb-2">인기 태그:</p>
                   <div className="flex flex-wrap gap-2">
-                    {POPULAR_GENRE_TAGS.map((tag) => (
+                    {POPULAR_TAGS.map((tag) => (
                       <Badge
                         key={tag}
-                        variant={filters.selectedGenres.includes(tag) ? "default" : "outline"}
+                        variant={filters.selectedTags.includes(tag) ? "default" : "outline"}
                         className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
                         onClick={() => 
-                          filters.selectedGenres.includes(tag) 
-                            ? removeGenreTag(tag) 
-                            : addGenreTag(tag)
+                          filters.selectedTags.includes(tag) 
+                            ? removeTag(tag) 
+                            : addTag(tag)
                         }
                       >
                         {tag}

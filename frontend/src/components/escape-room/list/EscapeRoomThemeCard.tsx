@@ -1,7 +1,7 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React from "react";
+import { Link } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
     MapPin,
     Clock,
@@ -13,91 +13,74 @@ import {
     Trophy,
     Tag,
     Globe,
-    Calendar
-} from 'lucide-react';
-import { EscapeRoomLocation } from '@/lib/types';
-
-interface EscapeRoomTheme {
-    id: string;
-    title: string;
-    description: string;
-    difficulty: number;
-    minParticipants: number;
-    maxParticipants: number;
-    estimatedDuration: number;
-    price: number;
-    genreTags: string[];
-    locations: EscapeRoomLocation[];
-    thumbnail?: string;
-    isActive: boolean;
-    allowComments: boolean;
-    allowGameHistory: boolean;
-    homepageUrl?: string;
-    reservationUrl?: string;
-    createdAt: string;
-    updatedAt: string;
-    // 통계
-    views?: number;
-    commentCount?: number;
-    gameHistoryCount?: number;
-    averageRating?: number;
-}
+    Calendar,
+    Heart,
+} from "lucide-react";
+import { EscapeRoomTheme as EscapeRoomThemeType } from "@/lib/types";
 
 interface EscapeRoomThemeCardProps {
-    theme: EscapeRoomTheme;
+    theme: EscapeRoomThemeType;
     index: number;
 }
 
 const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
     const formatPrice = (amount: number): string => {
-        if (amount === 0) return '무료';
-        return new Intl.NumberFormat('ko-KR').format(amount) + '원';
+        if (amount === 0) return "무료";
+        return new Intl.NumberFormat("ko-KR").format(amount) + "원";
     };
 
-    const formatDuration = (minutes: number): string => {
-        if (minutes < 60) return `${minutes}분`;
-        const hours = Math.floor(minutes / 60);
-        const remainingMinutes = minutes % 60;
-        return remainingMinutes > 0 ? `${hours}시간 ${remainingMinutes}분` : `${hours}시간`;
+    const formatDuration = (minTime: number, maxTime: number): string => {
+        if (minTime === maxTime) {
+            if (minTime < 60) return `${minTime}분`;
+            const hours = Math.floor(minTime / 60);
+            const remainingMinutes = minTime % 60;
+            return remainingMinutes > 0
+                ? `${hours}시간 ${remainingMinutes}분`
+                : `${hours}시간`;
+        }
+        return `${minTime}-${maxTime}분`;
     };
 
     const formatCount = (num: number): string => {
         return num >= 1000
-            ? (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k'
+            ? (num / 1000).toFixed(1).replace(/\.0$/, "") + "k"
             : num.toString();
     };
 
-    const getDifficultyLabel = (difficulty: number): { label: string; color: string } => {
-        const labels = {
-            1: { label: '매우 쉬움', color: 'bg-green-100 text-green-800' },
-            2: { label: '쉬움', color: 'bg-blue-100 text-blue-800' },
-            3: { label: '보통', color: 'bg-yellow-100 text-yellow-800' },
-            4: { label: '어려움', color: 'bg-orange-100 text-orange-800' },
-            5: { label: '매우 어려움', color: 'bg-red-100 text-red-800' }
-        };
-        return labels[difficulty as keyof typeof labels] || labels[3];
+    const getDifficultyLabel = (
+        difficulty: number
+    ): { label: string; color: string } => {
+        if (difficulty <= 2)
+            return { label: "매우 쉬움", color: "bg-green-100 text-green-800" };
+        if (difficulty <= 4)
+            return { label: "쉬움", color: "bg-blue-100 text-blue-800" };
+        if (difficulty <= 6)
+            return { label: "보통", color: "bg-yellow-100 text-yellow-800" };
+        if (difficulty <= 8)
+            return { label: "어려움", color: "bg-orange-100 text-orange-800" };
+        return { label: "매우 어려움", color: "bg-red-100 text-red-800" };
     };
 
-    const participantText = theme.minParticipants === theme.maxParticipants
-        ? `${theme.minParticipants}명`
-        : `${theme.minParticipants}-${theme.maxParticipants}명`;
+    const participantText =
+        theme.playersMin === theme.playersMax
+            ? `${theme.playersMin}명`
+            : `${theme.playersMin}-${theme.playersMax}명`;
 
     const difficultyInfo = getDifficultyLabel(theme.difficulty);
 
     return (
-        <Link
-            to={`/themes/escape-room/${theme.id}`}
-            className="block h-full"
-        >
+        <Link to={`/themes/escape-room/${theme.id}`} className="block h-full">
             <Card className="h-full hover:shadow-lg transition-all duration-300 hover:scale-[1.02] rounded-xl overflow-hidden flex flex-col">
                 {/* 썸네일 */}
                 <div className="relative w-full h-48 overflow-hidden">
                     <img
-                        src={theme.thumbnail || '/content/image/default_bar2.png'}
+                        src={
+                            theme.thumbnail || "/content/image/default_bar2.png"
+                        }
                         alt={theme.title}
                         className="absolute inset-0 w-full h-full object-cover object-center"
                     />
-                    
+
                     {/* 타입 뱃지 */}
                     <div className="absolute top-2 left-2 bg-black/60 text-white text-xs font-medium px-2 py-1 rounded">
                         방탈출
@@ -115,22 +98,39 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
                         {theme.views !== undefined && (
                             <div className="flex items-center bg-black/60 text-white rounded-full px-2 py-1 shadow-md">
                                 <Eye className="w-3 h-3 mr-1" />
-                                <span className="text-xs">{formatCount(theme.views)}</span>
+                                <span className="text-xs">
+                                    {formatCount(theme.views)}
+                                </span>
                             </div>
                         )}
-                        {theme.gameHistoryCount !== undefined && theme.gameHistoryCount > 0 && (
+                        {theme.recommendations !== undefined && (
                             <div className="flex items-center bg-black/60 text-white rounded-full px-2 py-1 shadow-md">
-                                <Trophy className="w-3 h-3 mr-1 text-yellow-400" />
-                                <span className="text-xs">{formatCount(theme.gameHistoryCount)}</span>
+                                <Heart className="w-3 h-3 mr-1 text-red-400" />
+                                <span className="text-xs">
+                                    {formatCount(theme.recommendations)}
+                                </span>
                             </div>
                         )}
+                        {theme.playCount !== undefined &&
+                            theme.playCount > 0 && (
+                                <div className="flex items-center bg-black/60 text-white rounded-full px-2 py-1 shadow-md">
+                                    <Trophy className="w-3 h-3 mr-1 text-yellow-400" />
+                                    <span className="text-xs">
+                                        {formatCount(theme.playCount)}
+                                    </span>
+                                </div>
+                            )}
                     </div>
 
                     {/* 비활성 상태 표시 */}
-                    {!theme.isActive && (
+                    {console.log("theme", theme)}
+                    {theme.isOperating && (
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                            <Badge variant="secondary" className="bg-gray-700 text-white">
-                                비활성
+                            <Badge
+                                variant="secondary"
+                                className="bg-gray-700 text-white"
+                            >
+                                운영종료
                             </Badge>
                         </div>
                     )}
@@ -142,18 +142,23 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
                         <h2 className="text-lg font-bold line-clamp-1 flex-1">
                             {theme.title}
                         </h2>
-                        {theme.averageRating && (
-                            <div className="flex items-center gap-1 ml-2">
-                                <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                                <span className="text-xs text-gray-600">
-                                    {theme.averageRating.toFixed(1)}
-                                </span>
-                            </div>
-                        )}
+                        {/* 난이도 별 표시 */}
+                        <div className="flex items-center gap-1 ml-2">
+                            {Array.from({ length: 5 }, (_, index) => (
+                                <Star
+                                    key={index}
+                                    className={`w-3 h-3 ${
+                                        index < Math.floor(theme.difficulty / 2)
+                                            ? "text-yellow-400 fill-current"
+                                            : "text-gray-300"
+                                    }`}
+                                />
+                            ))}
+                        </div>
                     </div>
 
                     <p className="text-sm text-muted-foreground line-clamp-2 mb-3 flex-grow">
-                        {theme.description}
+                        {theme.summary}
                     </p>
 
                     {/* 게임 정보 그리드 */}
@@ -164,26 +169,29 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
                         </div>
                         <div className="flex items-center gap-1">
                             <DollarSign className="w-3 h-3 flex-shrink-0" />
-                            <span className="truncate">{formatPrice(theme.price)}</span>
+                            <span className="truncate">
+                                {formatPrice(theme.price)}
+                            </span>
                         </div>
                         <div className="flex items-center gap-1">
                             <Clock className="w-3 h-3 flex-shrink-0" />
-                            <span className="truncate">{formatDuration(theme.estimatedDuration)}</span>
+                            <span className="truncate">
+                                {formatDuration(
+                                    theme.playTimeMin,
+                                    theme.playTimeMax
+                                )}
+                            </span>
                         </div>
-                        <div className="flex items-center gap-1">
-                            <div className="flex">
-                                {Array.from({ length: 5 }, (_, index) => (
-                                    <Star
-                                        key={index}
-                                        className={`w-3 h-3 ${
-                                            index < theme.difficulty
-                                                ? 'text-yellow-400 fill-current'
-                                                : 'text-gray-300'
-                                        }`}
-                                    />
-                                ))}
+                        {theme.openDate && (
+                            <div className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate">
+                                    {new Date(
+                                        theme.openDate
+                                    ).toLocaleDateString("ko-KR")}
+                                </span>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* 위치 정보 */}
@@ -191,23 +199,29 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
                             <MapPin className="w-3 h-3 flex-shrink-0" />
                             <span className="truncate">
-                                {theme.locations[0].name}
-                                {theme.locations.length > 1 && ` 외 ${theme.locations.length - 1}곳`}
+                                {theme.locations[0].storeName}
+                                {theme.locations.length > 1 &&
+                                    ` 외 ${theme.locations.length - 1}곳`}
                             </span>
                         </div>
                     )}
 
-                    {/* 장르 태그 */}
-                    {theme.genreTags.length > 0 && (
+                    {/* 태그 */}
+                    {theme.tags && theme.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-3">
-                            {theme.genreTags.slice(0, 3).map((tag, idx) => (
-                                <Badge key={idx} variant="secondary" className="text-xs">
+                            {theme.tags.slice(0, 3).map((tag, idx) => (
+                                <Badge
+                                    key={idx}
+                                    variant="secondary"
+                                    className="text-xs"
+                                >
+                                    <Tag className="w-3 h-3 mr-1" />
                                     {tag}
                                 </Badge>
                             ))}
-                            {theme.genreTags.length > 3 && (
+                            {theme.tags.length > 3 && (
                                 <Badge variant="secondary" className="text-xs">
-                                    +{theme.genreTags.length - 3}
+                                    +{theme.tags.length - 3}
                                 </Badge>
                             )}
                         </div>
@@ -221,7 +235,11 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        window.open(theme.homepageUrl, '_blank', 'noopener,noreferrer');
+                                        window.open(
+                                            theme.homepageUrl,
+                                            "_blank",
+                                            "noopener,noreferrer"
+                                        );
                                     }}
                                     className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
                                 >
@@ -234,7 +252,11 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        window.open(theme.reservationUrl, '_blank', 'noopener,noreferrer');
+                                        window.open(
+                                            theme.reservationUrl,
+                                            "_blank",
+                                            "noopener,noreferrer"
+                                        );
                                     }}
                                     className="flex items-center gap-1 px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors"
                                 >
@@ -245,26 +267,34 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
                         </div>
                     )}
 
-                    {/* 하단 액션 정보 */}
+                    {/* 하단 정보 */}
                     <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-auto">
                         <div className="flex items-center gap-3 text-xs text-gray-500">
-                            {theme.allowComments && theme.commentCount !== undefined && (
-                                <div className="flex items-center gap-1">
-                                    <MessageCircle className="w-3 h-3" />
-                                    <span>{theme.commentCount}</span>
-                                </div>
-                            )}
-                            {theme.allowGameHistory && theme.gameHistoryCount !== undefined && (
+                            <div className="flex items-center gap-1">
+                                <Eye className="w-3 h-3" />
+                                <span>{formatCount(theme.views || 0)}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <Heart className="w-3 h-3" />
+                                <span>
+                                    {formatCount(theme.recommendations || 0)}
+                                </span>
+                            </div>
+                            {theme.playCount > 0 && (
                                 <div className="flex items-center gap-1">
                                     <Trophy className="w-3 h-3" />
-                                    <span>{theme.gameHistoryCount}</span>
+                                    <span>{formatCount(theme.playCount)}</span>
                                 </div>
                             )}
                         </div>
-                        
-                        <div className="text-xs text-gray-400">
-                            {new Date(theme.createdAt).toLocaleDateString('ko-KR')}
-                        </div>
+
+                        {theme.createdAt && (
+                            <div className="text-xs text-gray-400">
+                                {new Date(theme.createdAt).toLocaleDateString(
+                                    "ko-KR"
+                                )}
+                            </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>

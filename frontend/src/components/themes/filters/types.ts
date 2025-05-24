@@ -25,7 +25,7 @@ export interface EscapeRoomFilterValues {
   activityMin: string;
   activityMax: string;
   isOperating: string;
-  selectedGenres: string[];
+  selectedTags: string[];
   selectedLocations: string[];
   location: string;
 }

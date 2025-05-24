@@ -130,6 +130,70 @@ export const themesService = {
     // 방탈출 테마 전용
     // ================================
     
+    getEscapeRoomThemes: async (params: {
+        type: string;
+        page: number;
+        size: number;
+        sort: string;
+        keyword?: string;
+        filters?: any;
+    }): Promise<ThemePage> => {
+        try {
+            const queryParams = new URLSearchParams();
+            
+            // 기본 파라미터
+            queryParams.append("limit", String(params.size));
+            queryParams.append("page", String(params.page));
+            queryParams.append("sort", params.sort);
+            
+            // 키워드 검색 (지역 검색 포함)
+            if (params.keyword?.trim()) {
+                queryParams.append("keyword", params.keyword.trim());
+            }
+            
+            // 필터 파라미터 변환
+            if (params.filters) {
+                const filters = params.filters;
+                
+                // 기본 범위 필터
+                if (filters.playerMin) queryParams.append("playerMin", filters.playerMin);
+                if (filters.playerMax) queryParams.append("playerMax", filters.playerMax);
+                if (filters.priceMin) queryParams.append("priceMin", filters.priceMin);
+                if (filters.priceMax) queryParams.append("priceMax", filters.priceMax);
+                if (filters.playtimeMin) queryParams.append("playtimeMin", filters.playtimeMin);
+                if (filters.playtimeMax) queryParams.append("playtimeMax", filters.playtimeMax);
+                if (filters.difficultyMin) queryParams.append("difficultyMin", filters.difficultyMin);
+                if (filters.difficultyMax) queryParams.append("difficultyMax", filters.difficultyMax);
+                
+                // 방탈출 전용 필터
+                if (filters.horrorMin) queryParams.append("horrorLevelMin", filters.horrorMin);
+                if (filters.horrorMax) queryParams.append("horrorLevelMax", filters.horrorMax);
+                if (filters.deviceMin) queryParams.append("deviceRatioMin", filters.deviceMin);
+                if (filters.deviceMax) queryParams.append("deviceRatioMax", filters.deviceMax);
+                if (filters.activityMin) queryParams.append("activityLevelMin", filters.activityMin);
+                if (filters.activityMax) queryParams.append("activityLevelMax", filters.activityMax);
+                
+                // 운영 상태
+                if (filters.isOperating && filters.isOperating !== "all") {
+                    queryParams.append("isOperating", filters.isOperating === "operating" ? "true" : "false");
+                }
+                
+                // 지역 검색은 keyword로 처리
+                if (filters.location?.trim() && !params.keyword) {
+                    queryParams.append("keyword", filters.location.trim());
+                }
+            }
+            
+            const response = await apiClient.get<ThemePage>(
+                `${publicBaseURI}/escape-room?${queryParams.toString()}`
+            );
+            return response;
+        } catch (error) {
+            console.error("방탈출 테마 목록 불러오기 실패:", error);
+            throw error;
+        }
+    },
+    
     createEscapeRoomTheme: async (data: FormData): Promise<Theme> => {
         try {
             return await apiClient.post<Theme>(`${baseURI}/escape-room`, data);

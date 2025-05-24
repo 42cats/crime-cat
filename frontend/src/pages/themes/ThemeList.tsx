@@ -85,13 +85,13 @@ const ThemeList: React.FC = () => {
         };
 
         if (validCategory === "ESCAPE_ROOM") {
-            // genre 파라미터 처리
-            const genreParam = searchParams.get("genre");
-            const selectedGenresParam = searchParams.get("selectedGenres")?.split(",").filter(Boolean) || [];
+            // tag 파라미터 처리
+            const tagParam = searchParams.get("tag");
+            const selectedTagsParam = searchParams.get("selectedTags")?.split(",").filter(Boolean) || [];
             
-            // genre 파라미터가 있고 selectedGenres에 없으면 추가
-            if (genreParam && !selectedGenresParam.includes(genreParam)) {
-                selectedGenresParam.push(genreParam);
+            // tag 파라미터가 있고 selectedTags에 없으면 추가
+            if (tagParam && !selectedTagsParam.includes(tagParam)) {
+                selectedTagsParam.push(tagParam);
             }
             
             return {
@@ -103,7 +103,7 @@ const ThemeList: React.FC = () => {
                 activityMin: searchParams.get("activityMin") || "",
                 activityMax: searchParams.get("activityMax") || "",
                 isOperating: searchParams.get("isOperating") || "",
-                selectedGenres: selectedGenresParam,
+                selectedTags: selectedTagsParam,
                 selectedLocations: searchParams.get("selectedLocations")?.split(",").filter(Boolean) || [],
                 location: searchParams.get("location") || "",
             };
@@ -211,25 +211,35 @@ const ThemeList: React.FC = () => {
         }
     }, []);
     
-    // genre 파라미터가 변경되면 자동으로 검색 실행
+    // tag 파라미터가 변경되면 자동으로 검색 실행
     useEffect(() => {
-        const genreParam = searchParams.get("genre");
-        if (genreParam && validCategory === "ESCAPE_ROOM") {
+        const tagParam = searchParams.get("tag");
+        if (tagParam && validCategory === "ESCAPE_ROOM") {
             handleSearch();
         }
-    }, [searchParams.get("genre")]);
+    }, [searchParams.get("tag")]);
 
     const handleSearch = () => {
         if (!validateFilters()) return;
+        
+        // 방탈출의 경우 location을 keyword와 통합
+        let finalKeyword = searchInput;
+        if (validCategory === "ESCAPE_ROOM" && filters.location) {
+            finalKeyword = searchInput ? `${searchInput} ${filters.location}` : filters.location;
+        }
+        
         setSearchParams((prev) => {
-            prev.set("keyword", searchInput);
+            prev.set("keyword", finalKeyword);
             prev.set("sort", sort);
             prev.set("page", "0");
             
-            // genre 파라미터 제거 (selectedGenres로 이동했으므로)
-            prev.delete("genre");
+            // tag 파라미터 제거 (selectedTags로 이동했으므로)
+            prev.delete("tag");
             
             Object.entries(filters).forEach(([k, v]) => {
+                // location은 keyword로 처리하므로 URL 파라미터에서 제외
+                if (k === "location") return;
+                
                 if (Array.isArray(v) && v.length > 0) {
                     prev.set(k, v.join(","));
                 } else if (typeof v === "string" && v) {
@@ -240,7 +250,7 @@ const ThemeList: React.FC = () => {
             });
             return prev;
         });
-        setKeyword(searchInput);
+        setKeyword(finalKeyword);
         setHasSearched(true);
     };
 
@@ -254,7 +264,7 @@ const ThemeList: React.FC = () => {
                 playtimeMin: "", playtimeMax: "", difficultyMin: "", difficultyMax: "",
                 horrorMin: "", horrorMax: "", deviceMin: "", deviceMax: "",
                 activityMin: "", activityMax: "", isOperating: "",
-                selectedGenres: [], selectedLocations: [], location: "",
+                selectedTags: [], selectedLocations: [], location: "",
             }
             : {
                 priceMin: "", priceMax: "", playerMin: "", playerMax: "",

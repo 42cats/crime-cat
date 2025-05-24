@@ -1,32 +1,8 @@
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, Plus } from 'lucide-react';
-import EscapeRoomThemeCard from './EscapeRoomThemeCard';
-import { EscapeRoomLocation } from '@/lib/types';
-
-interface EscapeRoomTheme {
-    id: string;
-    title: string;
-    description: string;
-    difficulty: number;
-    minParticipants: number;
-    maxParticipants: number;
-    estimatedDuration: number;
-    price: number;
-    genreTags: string[];
-    locations: EscapeRoomLocation[];
-    thumbnail?: string;
-    isActive: boolean;
-    allowComments: boolean;
-    allowGameHistory: boolean;
-    createdAt: string;
-    updatedAt: string;
-    views?: number;
-    commentCount?: number;
-    gameHistoryCount?: number;
-    averageRating?: number;
-}
+import React from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertTriangle, Plus } from "lucide-react";
+import EscapeRoomThemeCard from "./EscapeRoomThemeCard";
+import { EscapeRoomTheme } from "@/lib/types";
 
 interface EscapeRoomThemeGridProps {
     themes: EscapeRoomTheme[];
@@ -36,12 +12,12 @@ interface EscapeRoomThemeGridProps {
     canCreateTheme?: boolean;
 }
 
-const EscapeRoomThemeGrid: React.FC<EscapeRoomThemeGridProps> = ({ 
-    themes, 
-    isLoading, 
+const EscapeRoomThemeGrid: React.FC<EscapeRoomThemeGridProps> = ({
+    themes,
+    isLoading,
     pageSize,
     onCreateTheme,
-    canCreateTheme = false
+    canCreateTheme = false,
 }) => {
     if (isLoading) {
         return (
@@ -63,16 +39,17 @@ const EscapeRoomThemeGrid: React.FC<EscapeRoomThemeGridProps> = ({
                     등록된 방탈출 테마가 없습니다
                 </h3>
                 <p className="text-sm text-gray-500 mb-6 max-w-md">
-                    아직 등록된 방탈출 테마가 없습니다. 
-                    {canCreateTheme ? ' 첫 번째 테마를 등록해보세요!' : ' 곧 다양한 테마들이 추가될 예정입니다.'}
+                    아직 등록된 방탈출 테마가 없습니다.
+                    {canCreateTheme
+                        ? " 첫 번째 테마를 등록해보세요!"
+                        : " 곧 다양한 테마들이 추가될 예정입니다."}
                 </p>
                 {canCreateTheme && onCreateTheme && (
                     <button
                         onClick={onCreateTheme}
                         className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                        <Plus className="w-4 h-4" />
-                        첫 번째 테마 등록하기
+                        <Plus className="w-4 h-4" />첫 번째 테마 등록하기
                     </button>
                 )}
             </div>
@@ -81,34 +58,12 @@ const EscapeRoomThemeGrid: React.FC<EscapeRoomThemeGridProps> = ({
 
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {/* 테마 생성 카드 (권한이 있는 경우) */}
-            {canCreateTheme && onCreateTheme && (
-                <Card 
-                    onClick={onCreateTheme}
-                    className="h-[450px] border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-all duration-300 flex items-center justify-center"
-                >
-                    <CardContent className="text-center space-y-4">
-                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                            <Plus className="w-8 h-8 text-blue-600" />
-                        </div>
-                        <div>
-                            <h3 className="font-medium text-gray-700 mb-1">
-                                새 테마 등록
-                            </h3>
-                            <p className="text-sm text-gray-500">
-                                방탈출 테마를 등록하세요
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
             {/* 테마 카드들 */}
             {themes.map((theme, index) => (
-                <EscapeRoomThemeCard 
-                    key={theme.id} 
-                    theme={theme} 
-                    index={index} 
+                <EscapeRoomThemeCard
+                    key={theme.id}
+                    theme={theme}
+                    index={index}
                 />
             ))}
         </div>
