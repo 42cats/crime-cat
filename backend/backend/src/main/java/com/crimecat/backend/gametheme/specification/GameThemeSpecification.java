@@ -2,7 +2,6 @@ package com.crimecat.backend.gametheme.specification;
 
 import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
 import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
-import com.crimecat.backend.gametheme.domain.EscapeRoomGenreTag;
 import com.crimecat.backend.gametheme.domain.EscapeRoomLocation;
 import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.domain.MakerTeam;
@@ -74,13 +73,6 @@ public class GameThemeSpecification {
             if (ThemeType.Values.ESCAPE_ROOM.equals(category)) {
                 Root<EscapeRoomTheme> escapeRoomThemeRoot = criteriaBuilder.treat(root, EscapeRoomTheme.class);
                 
-                // 장르 태그 검색 - 정규화된 테이블 JOIN (인덱스 활용)
-                Join<EscapeRoomTheme, EscapeRoomGenreTag> genreTagJoin = escapeRoomThemeRoot.join("genreTags", JoinType.LEFT);
-                predicates.add(criteriaBuilder.like(
-                    criteriaBuilder.lower(genreTagJoin.get("tagName")), 
-                    pattern.toLowerCase()
-                ));
-                
                 // 매장 위치 검색 - 정규화된 테이블 JOIN (인덱스 활용)
                 Join<EscapeRoomTheme, EscapeRoomLocation> locationJoin = escapeRoomThemeRoot.join("locations", JoinType.LEFT);
                 predicates.add(criteriaBuilder.or(
@@ -105,24 +97,6 @@ public class GameThemeSpecification {
         };
     }
 
-    /**
-     * 방탈출 테마의 장르 태그로 검색 (최적화된 JOIN)
-     */
-    public static Specification<GameTheme> hasGenreTag(String genreTag) {
-        return (root, query, criteriaBuilder) -> {
-            if (StringUtils.isEmpty(genreTag)) {
-                return criteriaBuilder.conjunction();
-            }
-            
-            Root<EscapeRoomTheme> escapeRoomThemeRoot = criteriaBuilder.treat(root, EscapeRoomTheme.class);
-            Join<EscapeRoomTheme, EscapeRoomGenreTag> genreTagJoin = escapeRoomThemeRoot.join("genreTags", JoinType.INNER);
-            
-            return criteriaBuilder.equal(
-                criteriaBuilder.lower(genreTagJoin.get("tagName")), 
-                genreTag.toLowerCase().trim()
-            );
-        };
-    }
 
     /**
      * 방탈출 테마의 매장명으로 검색 (최적화된 JOIN)

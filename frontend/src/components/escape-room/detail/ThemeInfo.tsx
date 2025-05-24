@@ -5,7 +5,7 @@ import ThemeExperienceInfo from "./components/ThemeExperienceInfo";
 import ThemeOperationInfo from "./components/ThemeOperationInfo";
 import ThemeContent from "./components/ThemeContent";
 import ThemeLocationInfo from "./components/ThemeLocationInfo";
-import ThemeGenreTags from "./components/ThemeGenreTags";
+
 
 interface ThemeInfoProps {
     theme: EscapeRoomThemeDetailType;
@@ -17,8 +17,7 @@ const ThemeInfo: React.FC<ThemeInfoProps> = ({ theme }) => {
             {/* 기본 정보 */}
             <ThemeBasicInfo theme={theme} />
 
-            {/* 장르 태그 */}
-            <ThemeGenreTags theme={theme} />
+
 
             {/* 체험 정보와 운영 정보를 가로로 배치 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

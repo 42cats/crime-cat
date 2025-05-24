@@ -11,7 +11,7 @@ interface EscapeRoomThemeFormData {
     title: string;
     description: string;
     locations: EscapeRoomLocation[];
-    genreTags: string[];
+
     difficulty: number;
     minParticipants: number;
     maxParticipants: number;
@@ -47,10 +47,7 @@ const EscapeRoomCreatePage: React.FC = () => {
                         reject(new Error('최소 1개 이상의 매장 위치를 등록해주세요.'));
                         return;
                     }
-                    if (data.genreTags.length === 0) {
-                        reject(new Error('최소 1개 이상의 장르 태그를 입력해주세요.'));
-                        return;
-                    }
+
                     
                     resolve(data);
                 }, 1500);
@@ -123,9 +120,7 @@ const EscapeRoomCreatePage: React.FC = () => {
                     <p className="text-sm">
                         • <strong>매장 위치:</strong> Naver Map API를 통해 정확한 매장 정보를 검색하고 등록하세요.
                     </p>
-                    <p className="text-sm">
-                        • <strong>장르 태그:</strong> 테마의 분위기와 특징을 나타내는 태그를 추가하세요.
-                    </p>
+
                     <p className="text-sm">
                         • <strong>난이도 설정:</strong> 초보자부터 고수까지 고려하여 적절한 난이도를 선택하세요.
                     </p>

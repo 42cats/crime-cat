@@ -20,15 +20,7 @@ import java.util.Set;
 @Setter
 public class UpdateEscapeRoomThemeRequest extends UpdateGameThemeRequest {
 
-    /**
-     * 장르 태그들 (필수, 최소 1개 이상)
-     * 예: ["공포", "추리", "액션", "판타지"] 등
-     */
-    @NotNull(message = "장르 태그는 필수입니다.")
-    @NotEmpty(message = "최소 1개 이상의 장르 태그가 필요합니다.")
-    @Size(max = 10, message = "장르 태그는 최대 10개까지 등록 가능합니다.")
-    private Set<@NotBlank(message = "장르 태그는 공백일 수 없습니다.") 
-               @Size(max = 20, message = "각 장르 태그는 20자 이하여야 합니다.") String> genreTags;
+
 
     /**
      * 공포도 (1-10, 별 5개 표시용)
@@ -143,10 +135,7 @@ public class UpdateEscapeRoomThemeRequest extends UpdateGameThemeRequest {
             set(openDate, escapeRoomTheme::setOpenDate);
             set(isOperating, escapeRoomTheme::setIsOperating);
             
-            // 장르 태그 업데이트
-            if (genreTags != null) {
-                escapeRoomTheme.updateGenreTags(genreTags);
-            }
+
             
             // 매장 위치 업데이트
             if (locations != null) {

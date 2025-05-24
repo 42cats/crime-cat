@@ -75,7 +75,7 @@ export interface EscapeRoomThemeDetailType extends ThemeDetailType {
     activityLevel?: number;
     openDate?: string;
     isOperating?: boolean;
-    genreTags?: string[];
+
     locations?: EscapeRoomLocation[];
     homepageUrl?: string;
     reservationUrl?: string;
@@ -327,7 +327,7 @@ export interface CrimeSceneTheme extends BaseTheme {
 
 export interface EscapeRoomTheme extends BaseTheme {
     type: "ESCAPE_ROOM";
-    genreTags: string[];             // 장르 태그들 (해시태그 형태)
+
     horrorLevel?: number;            // 공포도 (1-10)
     deviceRatio?: number;            // 장치비중 (1-10)
     activityLevel?: number;          // 활동도 (1-10)
@@ -374,7 +374,7 @@ export interface CrimeSceneInput extends BaseThemeInput {
 
 export interface EscapeRoomInput extends BaseThemeInput {
     type: "ESCAPE_ROOM";
-    genreTags: string[];              // 장르 태그들 (해시태그 형태)
+
     horrorLevel?: number;             // 공포도 (1-10)
     deviceRatio?: number;             // 장치비중 (1-10)
     activityLevel?: number;           // 활동도 (1-10)
