@@ -14,7 +14,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/useToast';
-import { escapeRoomCommentService, EscapeRoomCommentResponseDto } from '@/api/comment/escapeRoomCommentService';
+import { escapeRoomCommentService, CommentResponse } from '@/api/comment/escapeRoomCommentService';
 
 interface SpoilerCommentsProps {
     themeId: string;
@@ -25,7 +25,7 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
     themeId, 
     hasGameHistory 
 }) => {
-    const [comments, setComments] = useState<EscapeRoomCommentResponseDto[]>([]);
+    const [comments, setComments] = useState<CommentResponse[]>([]);
     const [newComment, setNewComment] = useState('');
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
     const [replyContent, setReplyContent] = useState('');
@@ -48,7 +48,7 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
         try {
             setIsLoading(true);
             const response = await escapeRoomCommentService.getCommentsByTheme(themeId, 0, 20, true);
-            setComments(response.content.filter(comment => comment.hasSpoiler));
+            setComments(response.content.filter(comment => comment.isSpoiler));
             // 초기에는 모든 스포일러 댓글을 숨김 처리
             setHiddenComments(new Set(response.content.map(c => c.id)));
         } catch (error) {
@@ -134,9 +134,9 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
         }
     };
 
-    const handleLikeComment = async (comment: EscapeRoomCommentResponseDto) => {
+    const handleLikeComment = async (comment: CommentResponse) => {
         try {
-            if (comment.isLiked) {
+            if (comment.isLikedByCurrentUser) {
                 await escapeRoomCommentService.unlikeComment(comment.id);
             } else {
                 await escapeRoomCommentService.likeComment(comment.id);
@@ -209,23 +209,23 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
         });
     };
 
-    const renderComment = (comment: EscapeRoomCommentResponseDto, isReply = false) => {
+    const renderComment = (comment: CommentResponse, isReply = false) => {
         const isHidden = hiddenComments.has(comment.id) && !showSpoilers;
         
         return (
             <div key={comment.id} className={`${isReply ? 'ml-12 mt-3' : ''}`}>
                 <div className="flex gap-3">
                     <Avatar className="w-8 h-8">
-                        <AvatarImage src={comment.userProfileImageUrl} />
-                        <AvatarFallback>{comment.userNickname[0]}</AvatarFallback>
+                        <AvatarImage src={comment.authorProfileImage} />
+                        <AvatarFallback>{comment.authorName && comment.authorName[0]}</AvatarFallback>
                     </Avatar>
                     
                     <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm">{comment.userNickname}</span>
+                            <span className="font-medium text-sm">{comment.authorName}</span>
                             <span className="text-xs text-gray-500">{formatDate(comment.createdAt)}</span>
                             <Badge variant="destructive" className="text-xs">스포일러</Badge>
-                            {comment.isAuthor && <Badge variant="outline" className="text-xs">내 댓글</Badge>}
+                            {comment.isOwnComment && <Badge variant="outline" className="text-xs">내 댓글</Badge>}
                         </div>
                         
                         <div className="relative">
@@ -297,10 +297,10 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleLikeComment(comment)}
-                                    className={`h-auto p-1 gap-1 ${comment.isLiked ? 'text-red-500' : 'text-gray-500'}`}
+                                    className={`h-auto p-1 gap-1 ${comment.isLikedByCurrentUser ? 'text-red-500' : 'text-gray-500'}`}
                                 >
-                                    <Heart className="w-3 h-3" fill={comment.isLiked ? 'currentColor' : 'none'} />
-                                    <span className="text-xs">{comment.likesCount}</span>
+                                    <Heart className="w-3 h-3" fill={comment.isLikedByCurrentUser ? 'currentColor' : 'none'} />
+                                    <span className="text-xs">{comment.likes}</span>
                                 </Button>
                                 
                                 {!isReply && (
@@ -322,7 +322,7 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        {comment.isAuthor ? (
+                                        {comment.isOwnComment ? (
                                             <>
                                                 <DropdownMenuItem
                                                     onClick={() => {
