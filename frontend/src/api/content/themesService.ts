@@ -1,4 +1,4 @@
-import { Theme, ThemePage, ThemeType, Like } from "@/lib/types";
+import { Theme, ThemePage, ThemeType, Like, EscapeRoomThemeDetailType } from "@/lib/types";
 import { apiClient } from "@/lib/api";
 
 const publicBaseURI = "/public/themes";
@@ -18,7 +18,7 @@ export const themesService = {
     // ================================
     
     // 방탈출 테마 상세 조회
-    getEscapeRoomTheme: async (id: string): Promise<any> => {
+    getEscapeRoomTheme: async (id: string): Promise<EscapeRoomThemeDetailType> => {
         try {
             const response = await apiClient.get(`${publicBaseURI}/escape-room/${id}`);
             return response.theme;

@@ -1,33 +1,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Clock, DollarSign, Star, Calendar, Activity, Zap, Ghost } from 'lucide-react';
-
-interface EscapeRoomTheme {
-    id: string;
-    title: string;
-    description: string;
-    difficulty: number;
-    minParticipants: number;
-    maxParticipants: number;
-    estimatedDuration: number;
-    price: number;
-    genreTags: string[];
-    locations: any[];
-    isActive: boolean;
-    allowComments: boolean;
-    allowGameHistory: boolean;
-    homepageUrl?: string;
-    reservationUrl?: string;
-    createdAt: string;
-    updatedAt: string;
-    horrorLevel?: number;
-    deviceRatio?: number;
-    activityLevel?: number;
-    openDate?: string;
-}
+import { EscapeRoomThemeDetailType } from '@/lib/types';
 
 interface ThemeInfoProps {
-    theme: EscapeRoomTheme;
+    theme: EscapeRoomThemeDetailType;
 }
 
 const ThemeInfo: React.FC<ThemeInfoProps> = ({ theme }) => {
@@ -61,11 +38,11 @@ const ThemeInfo: React.FC<ThemeInfoProps> = ({ theme }) => {
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <div className="text-sm text-gray-600">참가 인원</div>
-                            <div className="font-medium">{theme.minParticipants}~{theme.maxParticipants}인</div>
+                            <div className="font-medium">{theme.playersMin}~{theme.playersMax}인</div>
                         </div>
                         <div>
                             <div className="text-sm text-gray-600">소요 시간</div>
-                            <div className="font-medium">{theme.estimatedDuration}분</div>
+                            <div className="font-medium">{theme.playTimeMax}분</div>
                         </div>
                         <div>
                             <div className="text-sm text-gray-600">이용 가격</div>
