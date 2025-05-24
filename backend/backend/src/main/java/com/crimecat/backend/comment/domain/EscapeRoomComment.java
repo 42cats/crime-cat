@@ -22,10 +22,12 @@ import java.util.UUID;
 @Entity
 @Table(name = "ESCAPE_ROOM_COMMENTS",
        indexes = {
-           @Index(name = "idx_escape_room_theme_id", columnList = "escape_room_theme_id"),
-           @Index(name = "idx_escape_room_history_id", columnList = "escape_room_history_id"),
-           @Index(name = "idx_user_id", columnList = "web_user_id"),
-           @Index(name = "idx_created_at", columnList = "created_at")
+           @Index(name = "idx_escape_room_comment_theme", columnList = "escape_room_theme_id"),
+           @Index(name = "idx_escape_room_comment_history", columnList = "escape_room_historys_id"),
+           @Index(name = "idx_escape_room_comment_user", columnList = "web_user_id"),
+           @Index(name = "idx_escape_room_comment_parent", columnList = "parent_comment_id"),
+           @Index(name = "idx_escape_room_comment_spoiler", columnList = "escape_room_theme_id,is_spoiler,deleted_at"),
+           @Index(name = "idx_escape_room_comment_deleted", columnList = "deleted_at")
        })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -58,14 +60,21 @@ public class EscapeRoomComment {
      * 게임 기록 (있으면 게임 기록 기반 댓글, 없으면 일반 댓글)
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ESCAPE_ROOM_HISTORY_ID")
+    @JoinColumn(name = "ESCAPE_ROOM_HISTORYS_ID")
     private EscapeRoomHistory escapeRoomHistory;
+
+    /**
+     * 부모 댓글 (대댓글 관계)
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "PARENT_COMMENT_ID")
+    private EscapeRoomComment parentComment;
 
     /**
      * 댓글 내용 (필수)
      */
     @Setter
-    @Column(name = "CONTENT", nullable = false, length = 2000)
+    @Column(name = "CONTENT", nullable = false, columnDefinition = "TEXT")
     private String content;
 
     /**
@@ -73,9 +82,9 @@ public class EscapeRoomComment {
      * true인 경우 게임 기록이 있는 사용자만 볼 수 있음
      */
     @Setter
-    @Column(name = "HAS_SPOILER", nullable = false)
+    @Column(name = "IS_SPOILER", nullable = false)
     @Builder.Default
-    private Boolean hasSpoiler = false;
+    private Boolean isSpoiler = false;
 
     /**
      * 좋아요 수
@@ -83,16 +92,6 @@ public class EscapeRoomComment {
     @Column(name = "LIKES_COUNT", nullable = false)
     @Builder.Default
     private Integer likesCount = 0;
-
-    // 비공개 댓글 기능 제거 - 스포일러 시스템만 지원
-
-    /**
-     * 댓글 삭제 여부 (soft delete)
-     */
-    @Setter
-    @Column(name = "IS_DELETED", nullable = false)
-    @Builder.Default
-    private Boolean isDeleted = false;
 
     /**
      * 댓글 생성 시간
@@ -105,9 +104,16 @@ public class EscapeRoomComment {
      * 댓글 수정 시간
      */
     @Setter
-    @LastModifiedDate
     @Column(name = "UPDATED_AT")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    /**
+     * 삭제 시간 (소프트 삭제)
+     */
+    @Setter
+    @Column(name = "DELETED_AT")
+    private LocalDateTime deletedAt;
 
     // === 비즈니스 메서드 ===
 
@@ -126,6 +132,13 @@ public class EscapeRoomComment {
     }
 
     /**
+     * 댓글 유형 확인 - 대댓글인지
+     */
+    public boolean isReplyComment() {
+        return parentComment != null;
+    }
+
+    /**
      * 작성자 여부 확인
      */
     public boolean isAuthor(UUID userId) {
@@ -135,21 +148,21 @@ public class EscapeRoomComment {
     /**
      * 댓글 수정
      */
-    public void updateContent(String content, Boolean hasSpoiler) {
+    public void updateContent(String content, Boolean isSpoiler) {
         if (content != null && !content.trim().isEmpty()) {
             this.content = content.trim();
         }
-        if (hasSpoiler != null) {
-            this.hasSpoiler = hasSpoiler;
+        if (isSpoiler != null) {
+            this.isSpoiler = isSpoiler;
         }
         this.updatedAt = LocalDateTime.now();
     }
 
     /**
-     * 댓글 삭제 (soft delete)
+     * 댓글 삭제 (소프트 삭제)
      */
     public void delete() {
-        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -157,7 +170,7 @@ public class EscapeRoomComment {
      * 스포일러 상태 토글
      */
     public void toggleSpoilerStatus() {
-        this.hasSpoiler = !this.hasSpoiler;
+        this.isSpoiler = !this.isSpoiler;
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -166,7 +179,7 @@ public class EscapeRoomComment {
      * 스포일러 댓글은 작성자도 포함하여 해당 테마의 게임 기록이 있는 사용자만 볼 수 있음
      */
     public boolean canViewSpoilerComment(UUID userId, boolean hasGameHistory) {
-        if (!hasSpoiler) {
+        if (!isSpoiler) {
             return true; // 스포일러가 아니면 누구나 볼 수 있음
         }
         
@@ -179,12 +192,12 @@ public class EscapeRoomComment {
      * 스포일러 댓글은 해당 테마의 게임 기록이 있는 사용자만 볼 수 있음
      */
     public boolean isVisible(UUID userId, boolean hasGameHistory) {
-        if (isDeleted) {
+        if (deletedAt != null) {
             return false;
         }
         
         // 스포일러 댓글 권한 체크
-        if (hasSpoiler && !isAuthor(userId) && !hasGameHistory) {
+        if (isSpoiler && !isAuthor(userId) && !hasGameHistory) {
             return false;
         }
         
@@ -205,5 +218,12 @@ public class EscapeRoomComment {
         if (this.likesCount > 0) {
             this.likesCount--;
         }
+    }
+    
+    /**
+     * 삭제되었는지 확인
+     */
+    public boolean isDeleted() {
+        return deletedAt != null;
     }
 }

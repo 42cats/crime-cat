@@ -1,7 +1,14 @@
 package com.crimecat.backend.gameHistory.dto;
 
 import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
-import com.crimecat.backend.gameHistory.enum.SuccessStatus;
+import com.crimecat.backend.gameHistory.enums.SuccessStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.util.UUID;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,7 +23,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EscapeRoomHistoryResponse {
-    
     private UUID id;
     private UUID escapeRoomThemeId;
     private String escapeRoomThemeTitle;

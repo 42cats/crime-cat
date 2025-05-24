@@ -1,6 +1,6 @@
 package com.crimecat.backend.comment.domain;
 
-import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -52,7 +52,7 @@ public class EscapeRoomCommentLike {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "WEB_USER_ID", nullable = false)
-    private User user;
+    private WebUser webUser;
 
     /**
      * 좋아요 생성 시간

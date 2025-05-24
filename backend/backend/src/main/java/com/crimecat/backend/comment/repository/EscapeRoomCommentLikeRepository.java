@@ -15,17 +15,17 @@ public interface EscapeRoomCommentLikeRepository extends JpaRepository<EscapeRoo
     /**
      * 특정 댓글에 대한 특정 사용자의 좋아요 존재 여부 확인
      */
-    boolean existsByCommentIdAndUserId(UUID commentId, UUID userId);
+    boolean existsByCommentIdAndWebUserId(UUID commentId, UUID webUserId);
     
     /**
      * 특정 댓글에 대한 특정 사용자의 좋아요 조회
      */
-    Optional<EscapeRoomCommentLike> findByCommentIdAndUserId(UUID commentId, UUID userId);
+    Optional<EscapeRoomCommentLike> findByCommentIdAndWebUserId(UUID commentId, UUID webUserId);
     
     /**
      * 특정 댓글에 대한 특정 사용자의 좋아요 삭제
      */
-    void deleteByCommentIdAndUserId(UUID commentId, UUID userId);
+    void deleteByCommentIdAndWebUserId(UUID commentId, UUID webUserId);
     
     /**
      * 특정 댓글의 좋아요 수 조회
@@ -36,7 +36,7 @@ public interface EscapeRoomCommentLikeRepository extends JpaRepository<EscapeRoo
      * 특정 사용자가 특정 댓글들에 좋아요했는지 확인 (벌크 조회)
      */
     @Query("SELECT DISTINCT ecl.comment.id FROM EscapeRoomCommentLike ecl " +
-           "WHERE ecl.comment.id IN :commentIds AND ecl.user.id = :userId")
-    java.util.Set<UUID> findLikedCommentIdsByUserIdAndCommentIds(@Param("userId") UUID userId, 
+           "WHERE ecl.comment.id IN :commentIds AND ecl.webUser.id = :webUserId")
+    java.util.Set<UUID> findLikedCommentIdsByUserIdAndCommentIds(@Param("webUserId") UUID webUserId, 
                                                                   @Param("commentIds") java.util.Collection<UUID> commentIds);
 }
