@@ -1,5 +1,6 @@
 package com.crimecat.backend.boardPost.domain;
 
+import com.crimecat.backend.boardPost.dto.BoardPostRequest;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -44,6 +45,16 @@ public class BoardPostLike {
     private BoardPost boardPost;
 
     @CreatedDate
+    @Builder.Default
     @Column(name = "CREATED_AT")
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    public static BoardPostLike from(BoardPost boardPost, WebUser user){
+        return BoardPostLike.builder()
+                .boardPost(boardPost)
+                .postId(boardPost.getId())
+                .user(user)
+                .userId(user.getId())
+                .build();
+    }
 }
