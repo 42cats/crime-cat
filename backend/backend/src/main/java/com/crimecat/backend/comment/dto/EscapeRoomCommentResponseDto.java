@@ -58,6 +58,19 @@ public class EscapeRoomCommentResponseDto {
     // 숨겨진 메시지 (스포일러 댓글을 볼 수 없는 경우)
     private String hiddenMessage;
     
+    // JsonProperty 필드를 위한 명시적 setter 메소드들
+    public void setIsLikedByCurrentUser(boolean isLikedByCurrentUser) {
+        this.isLikedByCurrentUser = isLikedByCurrentUser;
+    }
+    
+    public void setIsOwnComment(boolean isOwnComment) {
+        this.isOwnComment = isOwnComment;
+    }
+    
+    public void setIsSpoiler(boolean isSpoiler) {
+        this.isSpoiler = isSpoiler;
+    }
+    
     // 게임 기록 관련 정보 (선택적으로 표시)
     @Getter
     @Setter

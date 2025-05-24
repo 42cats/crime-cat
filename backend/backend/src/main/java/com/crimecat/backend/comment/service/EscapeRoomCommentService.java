@@ -256,10 +256,12 @@ public class EscapeRoomCommentService {
                 .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
 
         // 현재 사용자가 해당 테마를 플레이했는지 확인
-        boolean hasGameHistory = false;
+        boolean hasGameHistory;
         if (currentUserId != null) {
             hasGameHistory = escapeRoomHistoryService.hasPlayedTheme(currentUserId,
                     comment.getEscapeRoomTheme().getId());
+        } else {
+            hasGameHistory = false;
         }
 
         EscapeRoomCommentResponseDto commentDto = EscapeRoomCommentResponseDto.from(comment, currentUserId, hasGameHistory);
