@@ -10,6 +10,7 @@ import {
     ArrowLeft,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,19 @@ import ThemeInfo from "./ThemeInfo";
 import CommentTabs from "./CommentTabs";
 import GameHistorySection from "./GameHistorySection";
 import { escapeRoomHistoryService } from "@/api/game/escapeRoomHistoryService";
+import { themesService } from "@/api/content";
 import { useToast } from "@/hooks/useToast";
+import { useAuth } from "@/hooks/useAuth";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface EscapeRoomDetailPageProps {
     theme: EscapeRoomThemeDetailType;
@@ -37,8 +50,11 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
     );
     const [hasGameHistory, setHasGameHistory] = useState(false);
     const [checkingHistory, setCheckingHistory] = useState(true);
+    const [showLoginDialog, setShowLoginDialog] = useState(false);
     const { toast } = useToast();
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
 
     useEffect(() => {
         checkUserGameHistory();
@@ -55,6 +71,91 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
             console.error("게임 기록 확인 실패:", error);
         } finally {
             setCheckingHistory(false);
+        }
+    };
+
+    // 좋아요 상태 조회
+    const { data: liked = false } = useQuery({
+        queryKey: ["theme-like", theme.id],
+        queryFn: () => themesService.getLikeStatus(theme.id),
+        enabled: !!theme.id && !!user?.id,
+    });
+
+    // 좋아요 mutation
+    const likeMutation = useMutation({
+        mutationFn: () => themesService.setLike(theme.id),
+        onMutate: async () => {
+            await queryClient.cancelQueries({ queryKey: ["theme-like", theme.id] });
+            const previousLiked = queryClient.getQueryData(["theme-like", theme.id]);
+            queryClient.setQueryData(["theme-like", theme.id], true);
+            return { previousLiked };
+        },
+        onError: (err, variables, context) => {
+            if (context?.previousLiked !== undefined) {
+                queryClient.setQueryData(["theme-like", theme.id], context.previousLiked);
+            }
+            toast({
+                title: "좋아요 실패",
+                description: "문제가 발생했습니다. 다시 시도해주세요.",
+                variant: "destructive",
+            });
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ["theme-like", theme.id] });
+        },
+    });
+
+    // 좋아요 취소 mutation
+    const unlikeMutation = useMutation({
+        mutationFn: () => themesService.cancelLike(theme.id),
+        onMutate: async () => {
+            await queryClient.cancelQueries({ queryKey: ["theme-like", theme.id] });
+            const previousLiked = queryClient.getQueryData(["theme-like", theme.id]);
+            queryClient.setQueryData(["theme-like", theme.id], false);
+            return { previousLiked };
+        },
+        onError: (err, variables, context) => {
+            if (context?.previousLiked !== undefined) {
+                queryClient.setQueryData(["theme-like", theme.id], context.previousLiked);
+            }
+            toast({
+                title: "좋아요 취소 실패",
+                description: "문제가 발생했습니다. 다시 시도해주세요.",
+                variant: "destructive",
+            });
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ["theme-like", theme.id] });
+        },
+    });
+
+    // 좋아요 토글
+    const handleToggleLike = () => {
+        if (!user?.id) {
+            setShowLoginDialog(true);
+            return;
+        }
+        if (liked) {
+            unlikeMutation.mutate();
+        } else {
+            likeMutation.mutate();
+        }
+    };
+
+    // 공유하기
+    const handleShare = async () => {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            toast({
+                title: "링크 복사 완료",
+                description: "현재 페이지 링크가 복사되었습니다.",
+            });
+        } catch {
+            toast({
+                title: "복사 실패",
+                description: "브라우저 설정을 확인해주세요.",
+                variant: "destructive",
+            });
         }
     };
 
@@ -78,6 +179,10 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                 theme={theme}
                 hasGameHistory={hasGameHistory}
                 onAddGameHistory={onAddGameHistory}
+                liked={liked}
+                onToggleLike={handleToggleLike}
+                onShare={handleShare}
+                isLiking={likeMutation.isPending || unlikeMutation.isPending}
             />
 
             {/* 메인 콘텐츠 - 세로 레이아웃으로 변경 */}
@@ -214,6 +319,25 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                     )}
                 </div>
             </div>
+
+            {/* 로그인 안내 다이얼로그 */}
+            <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            좋아요 기능을 사용하려면 로그인이 필요합니다.
+                            로그인 페이지로 이동하시겠습니까?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>취소</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => navigate("/login")}>
+                            로그인하기
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

@@ -7,6 +7,8 @@ import {
     MapPin,
     Globe,
     Calendar,
+    Heart,
+    Share2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,9 +18,19 @@ interface ThemeHeaderProps {
     theme: EscapeRoomThemeDetailType;
     hasGameHistory?: boolean;
     onAddGameHistory?: () => void;
+    liked?: boolean;
+    onToggleLike?: () => void;
+    onShare?: () => void;
+    isLiking?: boolean;
 }
 
-const ThemeHeader: React.FC<ThemeHeaderProps> = ({ theme }) => {
+const ThemeHeader: React.FC<ThemeHeaderProps> = ({ 
+    theme, 
+    liked = false, 
+    onToggleLike, 
+    onShare, 
+    isLiking = false 
+}) => {
     const formatDifficulty = (difficulty: number) => {
         return Array.from({ length: 5 }, (_, i) => (
             <Star
@@ -61,9 +73,8 @@ const ThemeHeader: React.FC<ThemeHeaderProps> = ({ theme }) => {
                     </div>
                 )}
             </div>
-            {/* 예약 및 홈페이지 링크 */}
-            {(theme.reservationUrl || theme.homepageUrl) && (
-                <div className="flex gap-3">
+            {/* 예약, 홈페이지 링크 및 좋아요, 공유 버튼 */}
+            <div className="flex flex-wrap gap-3">
                     {theme.reservationUrl && (
                         <Button asChild>
                             <a
@@ -88,8 +99,33 @@ const ThemeHeader: React.FC<ThemeHeaderProps> = ({ theme }) => {
                             </a>
                         </Button>
                     )}
+                    
+                    {/* 구분선 */}
+                    {(theme.reservationUrl || theme.homepageUrl) && <div className="w-px h-9 bg-gray-300" />}
+                    
+                    {/* 좋아요 버튼 */}
+                    {theme.recommendationEnabled !== false && (
+                        <Button 
+                            variant={liked ? "default" : "outline"}
+                            onClick={onToggleLike}
+                            disabled={isLiking}
+                        >
+                            <Heart 
+                                className={`w-4 h-4 mr-2 ${liked ? "fill-current" : ""}`} 
+                            />
+                            {liked ? "좋아요 취소" : "좋아요"}
+                        </Button>
+                    )}
+                    
+                    {/* 공유하기 버튼 */}
+                    <Button 
+                        variant="outline"
+                        onClick={onShare}
+                    >
+                        <Share2 className="w-4 h-4 mr-2" />
+                        공유하기
+                    </Button>
                 </div>
-            )}
         </div>
     );
 };
