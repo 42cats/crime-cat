@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -17,5 +18,7 @@ public interface PostCommentRepository extends JpaRepository<PostComment, UUID> 
     List<PostComment> findAllByPostIdAndParentIdIsNull(UUID postId, Sort sort);
 
     List<PostComment> findAllByParentId(UUID commentId, Sort sort);
+
+    Optional<PostComment> findByIdAndIsDeletedFalse(UUID commentId);
 
 }
