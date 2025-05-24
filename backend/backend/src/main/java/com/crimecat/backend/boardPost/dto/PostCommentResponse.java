@@ -35,6 +35,26 @@ public class PostCommentResponse {
     private boolean isSecret;
     private List<PostCommentResponse> replies;
 
+    @JsonProperty("isLikedByCurrentUser")
+    public boolean isLikedByCurrentUser() {
+        return isLikedByCurrentUser;
+    }
+
+    @JsonProperty("isOwnComment")
+    public boolean isOwnComment() {
+        return isOwnComment;
+    }
+
+    @JsonProperty("isDeleted")
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    @JsonProperty("isSecret")
+    public boolean isSecret() {
+        return isSecret;
+    }
+
     public static PostCommentResponse from(
             PostComment comment,
             boolean isLikedByCurrentUser,

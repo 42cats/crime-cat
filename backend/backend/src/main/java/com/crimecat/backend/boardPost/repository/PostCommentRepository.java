@@ -15,6 +15,8 @@ import java.util.UUID;
 @Repository
 public interface PostCommentRepository extends JpaRepository<PostComment, UUID> {
 
+    Integer countAllByPostIdAndIsDeletedFalse(UUID postId);
+
     List<PostComment> findAllByPostIdAndParentIdIsNull(UUID postId, Sort sort);
 
     List<PostComment> findAllByParentId(UUID commentId, Sort sort);

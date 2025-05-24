@@ -10,6 +10,7 @@ import com.crimecat.backend.boardPost.repository.PostCommentRepository;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class PostCommentService {
 
@@ -75,9 +77,14 @@ public class PostCommentService {
             PostCommentRequest postCommentRequest
     ) {
         BoardPost boardPost = boardPostRepository.findByIdAndIsDeletedFalse(postId).orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
-        PostComment postComment = PostComment.from(boardPost, user, postCommentRequest);
+        PostComment parent = null;
+        if (postCommentRequest.getParentId() != null) {
+            parent = postCommentRepository.findById(postCommentRequest.getParentId()).get();
+        }
+        PostComment postComment = PostComment.from(boardPost, user, parent, postCommentRequest);
         postCommentRepository.save(postComment);
-        boardPostRepository.incrementComments(postId);
+        postCommentRepository.flush();
+        boardPostRepository.updateComments(postId, postCommentRepository.countAllByPostIdAndIsDeletedFalse(postId));
         return getCommentResponses(postId, user.getId());
     }
 
@@ -107,7 +114,8 @@ public class PostCommentService {
         }
         postComment.delete();
         postCommentRepository.save(postComment);
-        boardPostRepository.decrementComments(postComment.getPostId());
+        postCommentRepository.flush();
+        boardPostRepository.updateComments(postComment.getPostId(), postCommentRepository.countAllByPostIdAndIsDeletedFalse(postComment.getPostId()));
         return getCommentResponses(postComment.getPostId(), userId);
     }
 }
