@@ -13,7 +13,11 @@ const ThemeDetailRouter: React.FC = () => {
     // 방탈출 테마인 경우 별도 데이터 fetching
     const { data: escapeRoomData, isLoading: escapeRoomLoading, error: escapeRoomError } = useQuery({
         queryKey: ['escape-room-theme', id],
-        queryFn: () => themesService.getEscapeRoomTheme(id!),
+        queryFn: async () => {
+            const data = await themesService.getEscapeRoomTheme(id!);
+            console.log('방탈출 테마 원본 데이터:', data);
+            return data;
+        },
         enabled: category === 'escape-room' && !!id,
     });
 
@@ -63,12 +67,24 @@ const ThemeDetailRouter: React.FC = () => {
                 reservationUrl: escapeRoomData.reservationUrl,
                 createdAt: escapeRoomData.createdAt || new Date().toISOString(),
                 updatedAt: escapeRoomData.updatedAt || new Date().toISOString(),
+                // 방탈출 전용 필드 추가
+                thumbnail: escapeRoomData.thumbnail,
+                horrorLevel: escapeRoomData.horrorLevel,
+                deviceRatio: escapeRoomData.deviceRatio,
+                activityLevel: escapeRoomData.activityLevel,
+                openDate: escapeRoomData.openDate,
             };
+            
+            console.log('변환된 방탈출 테마 데이터:', escapeRoomTheme);
             
             return (
                 <EscapeRoomDetailPage 
                     theme={escapeRoomTheme}
-                    hasGameHistory={false}
+                    hasGameHistory={true}
+                    onAddGameHistory={() => {
+                        console.log('플레이 기록 추가 클릭');
+                        // TODO: 플레이 기록 추가 모달 또는 페이지로 이동
+                    }}
                 />
             );
             

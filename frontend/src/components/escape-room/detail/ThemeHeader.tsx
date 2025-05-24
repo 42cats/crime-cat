@@ -21,10 +21,13 @@ interface EscapeRoomTheme {
     reservationUrl?: string;
     createdAt: string;
     updatedAt: string;
+    thumbnail?: string;
 }
 
 interface ThemeHeaderProps {
     theme: EscapeRoomTheme;
+    hasGameHistory?: boolean;
+    onAddGameHistory?: () => void;
 }
 
 const ThemeHeader: React.FC<ThemeHeaderProps> = ({ theme }) => {
@@ -41,6 +44,21 @@ const ThemeHeader: React.FC<ThemeHeaderProps> = ({ theme }) => {
 
     return (
         <div className="space-y-6">
+            {/* 썸네일 이미지 */}
+            {theme.thumbnail && (
+                <div className="w-full h-64 md:h-96 rounded-lg overflow-hidden bg-gray-100">
+                    <img 
+                        src={theme.thumbnail} 
+                        alt={theme.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                            console.error('썸네일 로드 실패:', theme.thumbnail);
+                            e.currentTarget.style.display = 'none';
+                        }}
+                    />
+                </div>
+            )}
+
             {/* 제목 및 기본 정보 */}
             <div className="space-y-4">
                 <div className="flex items-start justify-between">
