@@ -67,6 +67,7 @@ import PointHistoryPage from "@/pages/PointHistory/PointHistoryPage";
 import UserRoleManagementPage from "@/pages/admin/UserRoleManagementPage";
 import CouponManagementPage from "@/pages/admin/CouponManagementPage";
 import LocationMappingPage from "@/pages/admin/LocationMappingPage";
+import PointMonitoringPage from "./pages/admin/point-monitoring";
 // import AdManagementPage from "@/pages/admin/AdManagementPage";
 
 // SNS Pages
@@ -333,7 +334,7 @@ const App = () => (
                                     path="follows"
                                     element={<FollowsPage />}
                                 />
-                                
+
                                 {/* 관리자 페이지 라우트 */}
                                 <Route
                                     path="admin/user-role"
@@ -354,8 +355,20 @@ const App = () => (
                                 <Route
                                     path="admin/location-mappings"
                                     element={
-                                        <PrivateRoute allowedRoles={["ADMIN", "MANAGER"]}>
+                                        <PrivateRoute
+                                            allowedRoles={["ADMIN", "MANAGER"]}
+                                        >
                                             <LocationMappingPage />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="admin/point-monitoring"
+                                    element={
+                                        <PrivateRoute
+                                            allowedRoles={["ADMIN", "MANAGER"]}
+                                        >
+                                            <PointMonitoringPage />
                                         </PrivateRoute>
                                     }
                                 />

@@ -22,6 +22,10 @@ public class PointHistoryResponseDto {
     private String relatedNickname;
     private String memo;
     private LocalDateTime usedAt;
+    
+    // 관리자용 추가 필드
+    private String userNickname;
+    private UUID userId;
 
     public static PointHistoryResponseDto from(PointHistory pointHistory) {
         return PointHistoryResponseDto.builder()

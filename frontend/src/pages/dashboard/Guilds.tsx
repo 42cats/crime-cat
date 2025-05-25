@@ -249,7 +249,7 @@ const Guilds: React.FC = () => {
                                         />
                                     </div>
                                 </CardContent>
-                                <CardFooter className="flex flex-col md:flex-row gap-2">
+                                <CardFooter className="flex flex-col gap-2">
                                     <Button
                                         variant="secondary"
                                         className="w-full"
