@@ -147,14 +147,45 @@ const GeneralComments: React.FC<GeneralCommentsProps> = ({
     };
 
     const handleLikeComment = async (comment: CommentResponse) => {
+        // Optimistic update
+        const updatedComments = comments.map(c => {
+            if (c.id === comment.id) {
+                return {
+                    ...c,
+                    isLikedByCurrentUser: !c.isLikedByCurrentUser,
+                    likes: c.isLikedByCurrentUser ? c.likes - 1 : c.likes + 1
+                };
+            }
+            // 대댓글도 처리
+            if (c.replies) {
+                return {
+                    ...c,
+                    replies: c.replies.map(reply => {
+                        if (reply.id === comment.id) {
+                            return {
+                                ...reply,
+                                isLikedByCurrentUser: !reply.isLikedByCurrentUser,
+                                likes: reply.isLikedByCurrentUser ? reply.likes - 1 : reply.likes + 1
+                            };
+                        }
+                        return reply;
+                    })
+                };
+            }
+            return c;
+        });
+        
+        setComments(updatedComments);
+        
         try {
             if (comment.isLikedByCurrentUser) {
                 await escapeRoomCommentService.unlikeComment(comment.id);
             } else {
                 await escapeRoomCommentService.likeComment(comment.id);
             }
-            await fetchComments();
         } catch (error) {
+            // 실패한 경우 원상태로 되돌리기
+            setComments(comments);
             console.error('좋아요 실패:', error);
             toast({
                 title: "좋아요 실패",
@@ -259,6 +290,7 @@ const GeneralComments: React.FC<GeneralCommentsProps> = ({
                                 value={editContent}
                                 onChange={(e) => setEditContent(e.target.value)}
                                 className="min-h-[80px]"
+                                autoFocus
                             />
                             <div className="flex gap-2">
                                 <Button

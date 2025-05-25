@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Calendar, Users, Clock, Edit2, Shield, Trash2, HelpCircle, Star, TrendingUp, Eye, EyeOff } from 'lucide-react';
+import { Trophy, Calendar, Users, Clock, Edit2, Shield, Trash2, HelpCircle, Star, TrendingUp, Eye, EyeOff, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/ui/pagination';
 import { useToast } from '@/hooks/useToast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { escapeRoomHistoryService, EscapeRoomHistoryResponse } from '@/api/game/escapeRoomHistoryService';
+import { escapeRoomCommentService, CommentResponse } from '@/api/comment/escapeRoomCommentService';
 import StarRating from '@/components/ui/star-rating';
 import DeleteHistoryDialog from './DeleteHistoryDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ProfileDetailModal from '@/components/profile/ProfileDetailModal';
+import { Textarea } from '@/components/ui/textarea';
 
 interface GameHistorySectionProps {
     themeId: string;
@@ -37,6 +39,10 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
     const [showSpoilers, setShowSpoilers] = useState<Set<string>>(new Set());
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
+    const [editingComment, setEditingComment] = useState<string | null>(null);
+    const [editContent, setEditContent] = useState('');
+    const [historyComments, setHistoryComments] = useState<Map<string, CommentResponse[]>>(new Map());
     const pageSize = 10;
 
     // 기록 목록 조회
@@ -133,7 +139,173 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
     const handleDelete = (historyId: string) => {
         deleteMutation.mutate(historyId);
     };
+    
+    // 게임 기록에 연결된 댓글 조회
+    const fetchHistoryComments = async (historyId: string) => {
+        try {
+            const response = await escapeRoomCommentService.getCommentsByTheme(themeId, 0, 100);
+            const historyComment = response.content.find(comment => 
+                comment.escapeRoomHistoryId === historyId && comment.isGameHistoryComment
+            );
+            
+            if (historyComment) {
+                setHistoryComments(prev => new Map(prev).set(historyId, [historyComment]));
+            }
+        } catch (error) {
+            console.error('게임 기록 댓글 조회 실패:', error);
+        }
+    };
+    
+    // 댓글 수정 처리
+    const handleEditComment = async (commentId: string, historyId: string) => {
+        if (!editContent.trim()) return;
+        
+        try {
+            await escapeRoomCommentService.updateComment(commentId, {
+                content: editContent,
+                hasSpoiler: true
+            });
+            
+            toast({
+                title: "수정 완료",
+                description: "댓글이 수정되었습니다."
+            });
+            
+            setEditingComment(null);
+            setEditContent('');
+            await fetchHistoryComments(historyId);
+        } catch (error) {
+            toast({
+                title: "수정 실패",
+                description: "댓글 수정에 실패했습니다.",
+                variant: "destructive"
+            });
+        }
+    };
+    
+    // 댓글 삭제 처리
+    const handleDeleteComment = async (commentId: string, historyId: string) => {
+        if (!confirm('정말로 이 댓글을 삭제하시겠습니기?')) return;
+        
+        try {
+            await escapeRoomCommentService.deleteComment(commentId);
+            
+            toast({
+                title: "삭제 완료",
+                description: "댓글이 삭제되었습니다."
+            });
+            
+            // 로컬 상태에서 삭제
+            setHistoryComments(prev => {
+                const newMap = new Map(prev);
+                newMap.delete(historyId);
+                return newMap;
+            });
+        } catch (error) {
+            toast({
+                title: "삭제 실패",
+                description: "댓글 삭제에 실패했습니다.",
+                variant: "destructive"
+            });
+        }
+    };
+    
+    // 게임 기록 댓글 렌더링
+    const renderHistoryComment = (history: EscapeRoomHistoryResponse) => {
+        const comments = historyComments.get(history.id) || [];
+        const comment = comments[0]; // 게임 기록당 하나의 댓글만 가능
+        
+        if (!comment && !expandedComments.has(history.id)) {
+            return (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                        setExpandedComments(prev => new Set(prev).add(history.id));
+                        fetchHistoryComments(history.id);
+                    }}
+                    className="mt-2"
+                >
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    댓글 보기
+                </Button>
+            );
+        }
+        
+        if (!comment) return null;
+        
+        return (
+            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                        {editingComment === comment.id ? (
+                            <div className="space-y-2">
+                                <Textarea
+                                    value={editContent}
+                                    onChange={(e) => setEditContent(e.target.value)}
+                                    className="min-h-[80px]"
+                                    autoFocus
+                                />
+                                <div className="flex gap-2">
+                                    <Button
+                                        size="sm"
+                                        onClick={() => handleEditComment(comment.id, history.id)}
+                                        disabled={!editContent.trim()}
+                                    >
+                                        수정 완료
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                            setEditingComment(null);
+                                            setEditContent('');
+                                        }}
+                                    >
+                                        취소
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <p className="text-sm text-gray-700">{comment.content}</p>
+                                {comment.isOwnComment && (
+                                    <div className="flex gap-2 mt-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                setEditingComment(comment.id);
+                                                setEditContent(comment.content);
+                                            }}
+                                        >
+                                            <Edit2 className="w-3 h-3 mr-1" />
+                                            수정
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleDeleteComment(comment.id, history.id)}
+                                        >
+                                            <Trash2 className="w-3 h-3 mr-1" />
+                                            삭제
+                                        </Button>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
+    // 히스토리 데이터가 바뀌면 댓글 초기화
+    React.useEffect(() => {
+        setHistoryComments(new Map());
+        setExpandedComments(new Set());
+    }, [themeId, currentPage]);
+    
     if (isLoading || statsLoading) {
         return (
             <div className="space-y-4">
@@ -403,6 +575,9 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
                                                     )}
                                                 </div>
                                             )}
+                                            
+                                            {/* 게임 기록에 연결된 댓글 */}
+                                            {renderHistoryComment(history)}
                                         </div>
                                     </CardContent>
                                 </Card>

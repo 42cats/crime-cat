@@ -1,34 +1,40 @@
 import React from "react";
 import { parseISO } from "date-fns";
-import { formatInTimeZone } from "date-fns-tz";
-import { ko } from "date-fns/locale";
 
 interface UTCToKSTProps {
     date: string;
 }
 
+const getRelativeTimeDetail = (date: Date): { unit: string; value: number } => {
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) return { unit: "일 전", value: days };
+    if (hours > 0) return { unit: "시간 전", value: hours };
+    if (minutes > 0) return { unit: "분 전", value: minutes };
+    return { unit: "", value: 0 };
+};
+
 export const UTCToKSTMultiline: React.FC<UTCToKSTProps> = ({ date }) => {
     if (!date) return <span>-</span>;
 
     try {
-        const utc = parseISO(date.endsWith("Z") ? date : `${date}Z`);
-
-        const datePart = formatInTimeZone(
-            utc,
-            "Asia/Seoul",
-            "yyyy년 MM월 dd일",
-            {
-                locale: ko,
-            }
-        );
-        const timePart = formatInTimeZone(utc, "Asia/Seoul", "a h시 mm분", {
-            locale: ko,
-        });
+        const utcDate = parseISO(date.endsWith("Z") ? date : `${date}Z`);
+        const { unit, value } = getRelativeTimeDetail(utcDate);
 
         return (
             <div className="flex flex-col items-center">
-                <span>{datePart}</span>
-                <span>{timePart}</span>
+                {value === 0 ? (
+                    <span className="text-sm">방금 전</span>
+                ) : (
+                    <>
+                        <span className="text-sm">{value}</span>
+                        <span className="text-xs text-gray-500">{unit}</span>
+                    </>
+                )}
             </div>
         );
     } catch (e) {
