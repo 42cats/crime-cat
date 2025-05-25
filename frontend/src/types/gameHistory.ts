@@ -15,3 +15,11 @@ export interface GameRecordRequest {
 export interface GameRecordResponse {
   message: string; // "이미 처리되었습니다." | "처리중입니다." | "요청이 발송되었습니다."
 }
+
+// 게임 히스토리 업데이트 요청
+export interface GameHistoryUpdateRequest {
+  characterName?: string;
+  win?: boolean;
+  memo?: string;
+  createdAt?: string; // ISO 날짜 문자열
+}
