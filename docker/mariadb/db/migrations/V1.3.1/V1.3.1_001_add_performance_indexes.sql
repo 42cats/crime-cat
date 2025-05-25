@@ -44,8 +44,8 @@ CREATE INDEX IF NOT EXISTS `idx_game_themes_type_public`
 
 -- 8) Add index for escape_room_histories table
 -- Optimizes queries by web_user_id and created_at
-CREATE INDEX IF NOT EXISTS `idx_escape_room_histories_user_created` 
-    ON `escape_room_histories` (`web_user_id`, `created_at` DESC);
+CREATE INDEX IF NOT EXISTS `idx_escape_room_historys_user_created` 
+    ON `escape_room_historys` (`web_user_id`, `created_at` DESC);
 
 -- 9) Add index for post_comments table
 -- Optimizes queries filtering by post_id and parent_id
