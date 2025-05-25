@@ -151,6 +151,9 @@ public class EscapeRoomCommentResponseDto {
             // 스포일러 댓글을 볼 수 없는 경우
             builder.content(null);
             builder.hiddenMessage("이 댓글은 스포일러를 포함하고 있습니다. 해당 테마를 플레이한 후에 확인할 수 있습니다.");
+        }
+        else if (comment.isDeleted()) {
+            builder.content("[삭제된 메시지 입니다]");
         } else {
             // 댓글을 볼 수 있는 경우
             builder.content(comment.getContent());
