@@ -1,21 +1,22 @@
 package com.crimecat.backend.boardPost.controller;
 
+import com.crimecat.backend.boardPost.dto.BoardPostDetailResponse;
 import com.crimecat.backend.boardPost.dto.BoardPostResponse;
 import com.crimecat.backend.boardPost.enums.BoardType;
 import com.crimecat.backend.boardPost.enums.PostType;
 import com.crimecat.backend.boardPost.service.BoardPostService;
 import com.crimecat.backend.boardPost.sort.BoardPostSortType;
+import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.utils.sort.SortUtil;
+import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -43,4 +44,15 @@ public class BoardPostPublicController {
         Page<BoardPostResponse> boardPosts = boardPostService.getBoardPage(page, size, kw, resolvedSort, boardType, postType);
         return ResponseEntity.ok().body(boardPosts);
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<BoardPostDetailResponse> getPostDetail(
+            @PathVariable("id") UUID postId
+    ) {
+        WebUser currentWebUser = AuthenticationUtil.getCurrentWebUserOptional().orElse(null);
+        return ResponseEntity.ok().body(
+                boardPostService.getBoardPostDetail(postId, currentWebUser)
+        );
+    }
+
 }

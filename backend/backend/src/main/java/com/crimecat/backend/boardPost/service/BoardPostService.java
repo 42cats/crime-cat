@@ -9,6 +9,7 @@ import com.crimecat.backend.boardPost.enums.BoardType;
 import com.crimecat.backend.boardPost.enums.PostType;
 import com.crimecat.backend.boardPost.repository.BoardPostLikeRepository;
 import com.crimecat.backend.boardPost.repository.BoardPostRepository;
+import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gametheme.service.ViewCountService;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
@@ -67,9 +68,10 @@ public class BoardPostService {
     @Transactional
     public BoardPostDetailResponse getBoardPostDetail(
             UUID postId,
-            UUID userId
+            WebUser webUser
     ) {
-        BoardPost boardPost = boardPostRepository.findByIdAndIsDeletedFalse(postId).orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
+        UUID userId = webUser != null ? webUser.getId() : null;
+        BoardPost boardPost = boardPostRepository.findByIdAndIsDeletedFalse(postId).orElseThrow(ErrorStatus.USER_POST_NOT_FOUND::asServiceException);
         
         // IP 기반 조회수 증가
         String clientIp = (String) ((ServletRequestAttributes) Objects.requireNonNull(
@@ -77,7 +79,12 @@ public class BoardPostService {
             .getRequest()
             .getAttribute("clientIp");
         viewCountService.boardIncrement(boardPost, clientIp);
-        
+        if(userId == null && boardPost.getIsSecret()){
+            throw ErrorStatus.USER_POST_ACCESS_DENIED.asServiceException();
+        }
+        if(userId == null) {
+            return BoardPostDetailResponse.from(boardPost, false, false);
+        }
         boolean isLiked = boardPostLikeRepository.existsByUserIdAndPostId(userId, postId);
         boolean isOwnPost = boardPost.getAuthorId().equals(userId);
         return BoardPostDetailResponse.from(boardPost, isOwnPost, isLiked);
