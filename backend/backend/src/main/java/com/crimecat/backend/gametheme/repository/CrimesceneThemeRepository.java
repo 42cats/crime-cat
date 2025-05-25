@@ -40,4 +40,5 @@ public interface CrimesceneThemeRepository extends JpaRepository<CrimesceneTheme
                                            @Param("minDifficulty") Integer minDifficulty,
                                            @Param("maxDifficulty") Integer maxDifficulty,
                                            Pageable pageable);
+
 }
