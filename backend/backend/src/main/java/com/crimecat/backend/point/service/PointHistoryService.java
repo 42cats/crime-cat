@@ -66,9 +66,9 @@ public class PointHistoryService {
 				.orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
 
 		if (type == null) {
-			return pointHistoryRepository.findByUserOrderByUsedAtDesc(user, pageable);
+			return pointHistoryRepository.findByUserWithFetchJoin(user, pageable);
 		} else {
-			return pointHistoryRepository.findByUserAndTypeOrderByUsedAtDesc(user, type, pageable);
+			return pointHistoryRepository.findByUserAndTypeWithFetchJoin(user, type, pageable);
 		}
 	}
 

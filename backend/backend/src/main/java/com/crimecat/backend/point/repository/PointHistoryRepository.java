@@ -19,6 +19,22 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PointHistoryRepository extends JpaRepository<PointHistory, UUID>, JpaSpecificationExecutor<PointHistory> {
 
+    @Query("SELECT ph FROM PointHistory ph " +
+           "LEFT JOIN FETCH ph.permission " +
+           "LEFT JOIN FETCH ph.relatedUserId ru " +
+           "LEFT JOIN FETCH ru.webUser " +
+           "WHERE ph.user = :user " +
+           "ORDER BY ph.usedAt DESC")
+    Page<PointHistory> findByUserWithFetchJoin(@Param("user") User user, Pageable pageable);
+
+    @Query("SELECT ph FROM PointHistory ph " +
+           "LEFT JOIN FETCH ph.permission " +
+           "LEFT JOIN FETCH ph.relatedUserId ru " +
+           "LEFT JOIN FETCH ru.webUser " +
+           "WHERE ph.user = :user AND ph.type = :type " +
+           "ORDER BY ph.usedAt DESC")
+    Page<PointHistory> findByUserAndTypeWithFetchJoin(@Param("user") User user, @Param("type") TransactionType type, Pageable pageable);
+
     Page<PointHistory> findByUserOrderByUsedAtDesc(User user, Pageable pageable);
 
     Page<PointHistory> findByUserAndTypeOrderByUsedAtDesc(User user, TransactionType type, Pageable pageable);
