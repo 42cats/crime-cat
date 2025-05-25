@@ -1,5 +1,5 @@
 import React from "react";
-import { parseISO } from "date-fns";
+import { parseISO, format } from "date-fns";
 
 interface UTCToKSTProps {
     /** ISO-8601 문자열 (예: 2025-04-27T13:23:00Z) */
@@ -13,7 +13,7 @@ const getRelativeTime = (date: Date): string => {
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(hours / 24);
 
-    if (days > 0) return `${days}일 전`;
+    if (days > 0) return format(date, "yyyy.MM.dd"); // ✅ 날짜 표시로 변경
     if (hours > 0) return `${hours}시간 전`;
     if (minutes > 0) return `${minutes}분 전`;
     return "방금 전";

@@ -1,5 +1,5 @@
 import React from "react";
-import { parseISO } from "date-fns";
+import { parseISO, format } from "date-fns";
 
 interface UTCToKSTProps {
     date: string;
