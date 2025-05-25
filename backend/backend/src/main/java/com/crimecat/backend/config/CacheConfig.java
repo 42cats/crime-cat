@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 public class CacheConfig {
 
   @Bean
+  @org.springframework.context.annotation.Primary
   public CacheManager cacheManager() {
     // Caffeine 설정 빌더
     Caffeine<Object, Object> caffeine = Caffeine.newBuilder()

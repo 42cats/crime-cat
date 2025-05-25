@@ -6,6 +6,7 @@ import org.hibernate.type.Type;
 import org.springframework.stereotype.Component;
 
 import java.io.Serializable;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 

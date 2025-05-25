@@ -23,10 +23,16 @@ import java.lang.reflect.Method;
 public class TransactionValidationAspect {
 
     /**
+     * com.crimecat.backend 패키지 이하의 클래스만 대상으로 하는 포인트컷
+     */
+    @org.aspectj.lang.annotation.Pointcut("within(com.crimecat.backend..*)")
+    public void applicationPackagePointcut() {}
+
+    /**
      * Repository 메서드 중 읽기 작업인데 readOnly가 설정되지 않은 경우 경고
      */
-    @Before("@within(org.springframework.stereotype.Repository) && " +
-            "execution(* find*(..)) || execution(* get*(..)) || execution(* count*(..)) || execution(* exists*(..))")
+    @Before("applicationPackagePointcut() && @within(org.springframework.stereotype.Repository) && " +
+            "(execution(* find*(..)) || execution(* get*(..)) || execution(* count*(..)) || execution(* exists*(..)))")
     public void validateReadOnlyTransaction(JoinPoint joinPoint) {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
@@ -46,9 +52,9 @@ public class TransactionValidationAspect {
     /**
      * Service 메서드 중 조회 작업인데 readOnly가 설정되지 않은 경우 경고
      */
-    @Before("@within(org.springframework.stereotype.Service) && " +
-            "execution(* find*(..)) || execution(* get*(..)) || execution(* search*(..)) || " +
-            "execution(* load*(..)) || execution(* count*(..)) || execution(* exists*(..))")
+    @Before("applicationPackagePointcut() && @within(org.springframework.stereotype.Service) && " +
+            "(execution(* find*(..)) || execution(* get*(..)) || execution(* search*(..)) || " +
+            "execution(* load*(..)) || execution(* count*(..)) || execution(* exists*(..)))")
     public void validateServiceReadOnlyTransaction(JoinPoint joinPoint) {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
