@@ -82,7 +82,8 @@ public class EscapeRoomCommentService {
         // 부모 댓글 조회 (대댓글인 경우)
         EscapeRoomComment parentComment = null;
         if (dto.getParentCommentId() != null) {
-            parentComment = escapeRoomCommentRepository.findByIdAndDeletedAtIsNull(dto.getParentCommentId())
+            parentComment = escapeRoomCommentRepository.findByIdWithDetails(dto.getParentCommentId())
+                    .filter(c -> c.getDeletedAt() == null)
                     .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
             
             // 부모 댓글과 테마 일치 확인
@@ -134,9 +135,9 @@ public class EscapeRoomCommentService {
             hasGameHistory = escapeRoomHistoryService.hasPlayedTheme(currentUserId, themeId);
         }
 
-        // 테마의 모든 댓글 조회 (삭제되지 않은 댓글만)
+        // 테마의 모든 댓글 조회
         List<EscapeRoomComment> allComments = escapeRoomCommentRepository
-                .findAllByEscapeRoomThemeIdAndDeletedAtIsNull(themeId);
+                .findAllByEscapeRoomThemeId(themeId);
 
         // 현재 사용자가 좋아요한 댓글 ID 목록 조회
         Set<UUID> likedCommentIds = Set.of();
@@ -194,7 +195,8 @@ public class EscapeRoomCommentService {
                 .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
 
         // 댓글 조회
-        EscapeRoomComment comment = escapeRoomCommentRepository.findByIdAndDeletedAtIsNull(commentId)
+        EscapeRoomComment comment = escapeRoomCommentRepository.findByIdWithDetails(commentId)
+                .filter(c -> c.getDeletedAt() == null)
                 .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
 
         // 작성자 확인
@@ -230,7 +232,8 @@ public class EscapeRoomCommentService {
                 .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
 
         // 댓글 조회
-        EscapeRoomComment comment = escapeRoomCommentRepository.findByIdAndDeletedAtIsNull(commentId)
+        EscapeRoomComment comment = escapeRoomCommentRepository.findByIdWithDetails(commentId)
+                .filter(c -> c.getDeletedAt() == null)
                 .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
 
         // 작성자 확인
@@ -238,11 +241,30 @@ public class EscapeRoomCommentService {
             throw ErrorStatus.FORBIDDEN.asServiceException();
         }
 
-        // 소프트 삭제
-        comment.delete();
-        escapeRoomCommentRepository.save(comment);
+        // 게임 기록 댓글인 경우 완전 삭제
+        if (comment.isGameHistoryComment()) {
+            comment.delete();
+            escapeRoomCommentRepository.save(comment);
+            log.info("게임 기록 댓글 삭제 완료 - commentId: {}", commentId);
+            return;
+        }
 
-        log.info("방탈출 댓글 삭제 완료 - commentId: {}", commentId);
+        // 일반 댓글인 경우
+        // 자식 댓글이 있는지 확인
+        long childCount = escapeRoomCommentRepository.countByParentCommentId(commentId);
+        
+        if (childCount > 0) {
+            // 자식 댓글이 있으면 내용만 변경하고 유지
+            comment.setContent("삭제된 댓글입니다.");
+            comment.setIsDeleted(true);
+            escapeRoomCommentRepository.save(comment);
+            log.info("부모 댓글 내용 변경 완료 (자식 댓글 존재) - commentId: {}", commentId);
+        } else {
+            // 자식 댓글이 없으면 소프트 삭제
+            comment.delete();
+            escapeRoomCommentRepository.save(comment);
+            log.info("댓글 소프트 삭제 완료 - commentId: {}", commentId);
+        }
     }
 
     /**
@@ -252,7 +274,7 @@ public class EscapeRoomCommentService {
         UUID currentUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
 
         // 댓글 조회
-        EscapeRoomComment comment = escapeRoomCommentRepository.findByIdAndDeletedAtIsNull(commentId)
+        EscapeRoomComment comment = escapeRoomCommentRepository.findByIdWithDetails(commentId)
                 .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
 
         // 현재 사용자가 해당 테마를 플레이했는지 확인
@@ -269,7 +291,10 @@ public class EscapeRoomCommentService {
         // 대댓글 조회 및 추가
         if (!comment.isReplyComment()) {
             List<EscapeRoomComment> replies = escapeRoomCommentRepository
-                    .findAllByParentCommentIdAndDeletedAtIsNull(comment.getId());
+                    .findAllByParentCommentId(comment.getId())
+                    .stream()
+                    .filter(r -> r.getDeletedAt() == null)
+                    .collect(Collectors.toList());
             
             if (!replies.isEmpty()) {
                 List<EscapeRoomCommentResponseDto> replyDtos = replies.stream()
@@ -315,7 +340,7 @@ public class EscapeRoomCommentService {
 
         // 댓글 조회
         Page<EscapeRoomComment> comments = escapeRoomCommentRepository
-                .findByWebUserIdAndDeletedAtIsNull(userId, pageable);
+                .findByWebUserId(userId, pageable);
 
         // 각 댓글에 대해 게임 기록 확인 및 DTO 변환
         return comments.map(comment -> {
@@ -343,9 +368,9 @@ public class EscapeRoomCommentService {
      */
     public EscapeRoomCommentStatsDto getCommentStats(UUID themeId) {
         long totalComments = escapeRoomCommentRepository
-                .countByEscapeRoomThemeIdAndDeletedAtIsNull(themeId);
+                .countByEscapeRoomThemeId(themeId);
         long nonSpoilerComments = escapeRoomCommentRepository
-                .countByEscapeRoomThemeIdAndIsSpoilerFalseAndDeletedAtIsNull(themeId);
+                .countNonSpoilerCommentsByThemeId(themeId);
         long spoilerComments = totalComments - nonSpoilerComments;
 
         return EscapeRoomCommentStatsDto.builder()
@@ -365,7 +390,8 @@ public class EscapeRoomCommentService {
                 .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
 
         // 댓글 조회
-        EscapeRoomComment comment = escapeRoomCommentRepository.findByIdAndDeletedAtIsNull(commentId)
+        EscapeRoomComment comment = escapeRoomCommentRepository.findByIdWithDetails(commentId)
+                .filter(c -> c.getDeletedAt() == null)
                 .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
 
         // 사용자 조회
@@ -400,7 +426,8 @@ public class EscapeRoomCommentService {
                 .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
 
         // 댓글 조회
-        EscapeRoomComment comment = escapeRoomCommentRepository.findByIdAndDeletedAtIsNull(commentId)
+        EscapeRoomComment comment = escapeRoomCommentRepository.findByIdWithDetails(commentId)
+                .filter(c -> c.getDeletedAt() == null)
                 .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
 
         // 좋아요 엔티티 조회 및 삭제

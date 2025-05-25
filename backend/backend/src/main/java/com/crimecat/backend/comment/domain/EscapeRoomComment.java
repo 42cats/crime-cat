@@ -115,6 +115,14 @@ public class EscapeRoomComment {
     @Column(name = "DELETED_AT")
     private LocalDateTime deletedAt;
 
+    /**
+     * 삭제 상태 (내용만 삭제된 경우 true)
+     */
+    @Setter
+    @Column(name = "IS_DELETED", nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
+
     // === 비즈니스 메서드 ===
 
     /**
@@ -164,6 +172,7 @@ public class EscapeRoomComment {
     public void delete() {
         this.deletedAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        this.isDeleted = true;
     }
 
     /**
