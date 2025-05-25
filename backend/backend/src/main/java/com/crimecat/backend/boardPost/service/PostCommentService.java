@@ -8,6 +8,7 @@ import com.crimecat.backend.boardPost.dto.PostCommentResponse;
 import com.crimecat.backend.boardPost.repository.BoardPostRepository;
 import com.crimecat.backend.boardPost.repository.PostCommentLikeRepository;
 import com.crimecat.backend.boardPost.repository.PostCommentRepository;
+import com.crimecat.backend.notification.event.NotificationEventPublisher;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class PostCommentService {
     private final PostCommentRepository postCommentRepository;
     private final PostCommentLikeRepository postCommentLikeRepository;
     private final BoardPostRepository boardPostRepository;
+    private final NotificationEventPublisher notificationEventPublisher;
 
     @Transactional(readOnly = true)
     public List<PostCommentResponse> getCommentResponses(
@@ -131,6 +133,49 @@ public class PostCommentService {
         boolean isOwnComment = true; // 방금 작성한 댓글이므로 항상 true
         boolean canViewSecret = true; // 자신이 작성한 댓글이므로 항상 true
         List<PostCommentResponse> replies = new ArrayList<>(); // 새 댓글은 답글이 없음
+        
+        // 알림 발행
+        if (parent != null) {
+            // 부모 댓글이 있는 경우 - 부모 댓글 작성자에게 알림
+            WebUser parentAuthor = parent.getAuthor();
+            // 자기 자신에게는 알림을 보내지 않음 & commentComment 설정 확인
+            if (!parentAuthor.getId().equals(user.getId()) && 
+                parentAuthor.getCommentComment() && 
+                parentAuthor.getUser() != null) {
+                notificationEventPublisher.publishUserPostCommentReplied(
+                    this,
+                    parentAuthor.getUser().getId(), // User ID 사용
+                    savedComment.getId(),
+                    savedComment.getContent(),
+                    parent.getId(),
+                    postId,
+                    user.getUser().getId(), // User ID 사용
+                    user.getNickname(),
+                    boardPost.getBoardType().name() // BoardType 전달
+                );
+            }
+        }
+        
+        // 게시글 작성자에게 알림 (부모 댓글 작성자와 중복 체크)
+        WebUser postAuthor = boardPost.getAuthor();
+        boolean alreadyNotified = parent != null && parent.getAuthorId().equals(boardPost.getAuthorId());
+        
+        // 자기 자신에게는 알림을 보내지 않음 & postComment 설정 확인 & 중복 제거
+        if (!postAuthor.getId().equals(user.getId()) && 
+            postAuthor.getPostComment() && 
+            !alreadyNotified && 
+            postAuthor.getUser() != null) {
+            notificationEventPublisher.publishUserPostCommented(
+                this,
+                postAuthor.getUser().getId(), // User ID 사용
+                savedComment.getId(),
+                savedComment.getContent(),
+                postId,
+                user.getUser().getId(), // User ID 사용
+                user.getNickname(),
+                boardPost.getBoardType().name() // BoardType 전달
+            );
+        }
         
         return PostCommentResponse.from(savedComment, false, isOwnComment, canViewSecret, replies);
     }

@@ -42,11 +42,64 @@ public class UserPostCommentedEvent extends NotificationEvent {
     }
     
     /**
-     * 팩토리 메서드
+     * BoardType을 포함한 생성자
+     */
+    public UserPostCommentedEvent(Object source, UUID postAuthorId, UUID commentId, String commentContent,
+                                 UUID postId, UUID commenterId, String commenterNickname, String boardType) {
+        super(source, postAuthorId, commenterId);
+        this.commentId = commentId;
+        this.commentContent = commentContent;
+        this.postId = postId;
+        this.commenterId = commenterId;
+        this.commenterNickname = commenterNickname;
+        
+        // 기본 제목과 메시지 설정
+        String shortContent = commentContent.length() > 50 ? 
+            commentContent.substring(0, 50) + "..." : commentContent;
+        
+        this.withTitle("새 댓글 알림")
+            .withMessage(String.format("%s님이 회원님의 게시글에 댓글을 남겼습니다: %s", commenterNickname, shortContent))
+            .withData("commentId", commentId)
+            .withData("commentContent", commentContent)
+            .withData("postId", postId)
+            .withData("commenterId", commenterId)
+            .withData("commenterNickname", commenterNickname)
+            .withData("boardType", boardType)
+            .withData("linkUrl", generateBoardUrl(boardType, postId, commentId));
+    }
+    
+    /**
+     * BoardType에 따른 URL 생성
+     */
+    private String generateBoardUrl(String boardType, UUID postId, UUID commentId) {
+        if (boardType == null) {
+            return "/posts/" + postId + "#comment-" + commentId;
+        }
+        
+        String basePath;
+        switch (boardType.toUpperCase()) {
+            case "CHAT":
+                basePath = "/community/chat/";
+                break;
+            case "QUESTION":
+                basePath = "/community/question/";
+                break;
+            case "CREATOR":
+                basePath = "/community/creator/";
+                break;
+            default:
+                basePath = "/posts/";
+        }
+        
+        return basePath + postId + "#comment-" + commentId;
+    }
+    
+    /**
+     * 팩토리 메서드 - BoardType 포함
      */
     public static UserPostCommentedEvent of(Object source, UUID postAuthorId, UUID commentId, String commentContent,
-                                           UUID postId, UUID commenterId, String commenterNickname) {
+                                           UUID postId, UUID commenterId, String commenterNickname, String boardType) {
         return new UserPostCommentedEvent(source, postAuthorId, commentId, commentContent,
-                                         postId, commenterId, commenterNickname);
+                                         postId, commenterId, commenterNickname, boardType);
     }
 }

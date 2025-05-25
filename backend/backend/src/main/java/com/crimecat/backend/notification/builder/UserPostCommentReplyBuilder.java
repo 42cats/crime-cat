@@ -59,10 +59,12 @@ public class UserPostCommentReplyBuilder extends NotificationBuilder<UserPostCom
         data("replierId", replierId);
         data("notificationType", "USER_POST_COMMENT_REPLY");
         
-        // linkUrl 설정 - postId가 있는 경우에만
-        Object postIdObj = this.data.get("postId");
-        if (postIdObj != null) {
-            data("linkUrl", "/sns/post/" + postIdObj);
+        // linkUrl 설정 - postId가 있는 경우에만, 이미 설정되어 있지 않은 경우에만
+        if (!data.containsKey("linkUrl")) {
+            Object postIdObj = this.data.get("postId");
+            if (postIdObj != null) {
+                data("linkUrl", "/sns/post/" + postIdObj);
+            }
         }
     }
     

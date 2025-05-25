@@ -13,6 +13,7 @@ import com.crimecat.backend.gameHistory.repository.EscapeRoomHistoryRepository;
 import com.crimecat.backend.gameHistory.service.EscapeRoomHistoryService;
 import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
 import com.crimecat.backend.gametheme.repository.EscapeRoomThemeRepository;
+import com.crimecat.backend.notification.event.NotificationEventPublisher;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import com.crimecat.backend.utils.AuthenticationUtil;
@@ -47,6 +48,7 @@ public class EscapeRoomCommentService {
     private final EscapeRoomHistoryRepository escapeRoomHistoryRepository;
     private final WebUserRepository webUserRepository;
     private final EscapeRoomHistoryService escapeRoomHistoryService;
+    private final NotificationEventPublisher notificationEventPublisher;
     
     /**
      * 댓글 생성
@@ -116,6 +118,29 @@ public class EscapeRoomCommentService {
         EscapeRoomComment savedComment = escapeRoomCommentRepository.save(comment);
         log.info("방탈출 댓글 생성 완료 - commentId: {}, userId: {}, themeId: {}",
                 savedComment.getId(), currentUserId, theme.getId());
+
+        // 알림 발행 - 부모 댓글이 있는 경우에만
+        if (parentComment != null) {
+            WebUser parentCommentAuthor = parentComment.getWebUser();
+            // 자기 자신에게는 알림을 보내지 않음 & commentComment 설정 확인
+            if (!parentCommentAuthor.getId().equals(currentUserId) && 
+                parentCommentAuthor.getCommentComment() && 
+                parentCommentAuthor.getUser() != null) {
+                notificationEventPublisher.publishGameThemeCommentReplied(
+                    this,
+                    parentCommentAuthor.getUser().getId(), // User ID 사용
+                    theme.getId(),
+                    theme.getTitle(),
+                    "ESCAPE_ROOM",
+                    savedComment.getId(),
+                    savedComment.getContent(),
+                    parentComment.getId(),
+                    webUser.getUser() != null ? webUser.getUser().getId() : currentUserId, // User ID 사용
+                    webUser.getNickname()
+                );
+            }
+        }
+        // 방탈출 테마는 테마 작성자에게 알림을 보내지 않음 (요구사항에 따라)
 
         // 작성자는 항상 자신의 댓글 내용을 볼 수 있음
         return EscapeRoomCommentResponseDto.forAuthor(savedComment);
