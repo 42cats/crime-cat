@@ -21,6 +21,7 @@ import {
     ShieldCheck,
     Ticket,
     ImageIcon,
+    GitCompare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -212,6 +213,18 @@ const SidebarInner = React.memo(() => {
                                             name: "플레이기록",
                                             path: "/dashboard/users/my-history",
                                             icon: History,
+                                            roles: ["ADMIN", "MANAGER", "USER"],
+                                        },
+                                        {
+                                            name: "플레이기록 V2",
+                                            path: "/dashboard/users/my-history-v2",
+                                            icon: History,
+                                            roles: ["ADMIN", "MANAGER", "USER"],
+                                        },
+                                        {
+                                            name: "게임 비교",
+                                            path: "/dashboard/game-comparison",
+                                            icon: GitCompare,
                                             roles: ["ADMIN", "MANAGER", "USER"],
                                         },
                                         {

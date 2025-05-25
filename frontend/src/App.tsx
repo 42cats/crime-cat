@@ -78,6 +78,8 @@ import SNSMyPostsPage from "@/pages/sns/SNSMyPostsPage";
 import { queryClient } from "@/lib/reactQuery";
 import GameHistoryManager from "@/pages/GameHistoryOwnerBoard";
 import UserGameHistoryPage from "@/pages/UserGameHistoryPage";
+import UserGameHistoryPageV2 from "@/pages/UserGameHistoryPageV2";
+import GameComparisonPage from "@/pages/GameComparisonPage";
 
 const App = () => (
     <RecoilRoot>
@@ -294,6 +296,14 @@ const App = () => (
                                 <Route
                                     path="users/my-history"
                                     element={<UserGameHistoryPage />}
+                                />
+                                <Route
+                                    path="users/my-history-v2"
+                                    element={<UserGameHistoryPageV2 />}
+                                />
+                                <Route
+                                    path="game-comparison"
+                                    element={<GameComparisonPage />}
                                 />
                                 <Route
                                     path="point-history"
