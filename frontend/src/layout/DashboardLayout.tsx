@@ -246,18 +246,18 @@ const SidebarInner = React.memo(() => {
                                             icon: Users,
                                             roles: ["ADMIN", "MANAGER", "USER"],
                                         },
-                                        {
-                                            name: "사용자 관리",
-                                            path: "/dashboard/users",
-                                            icon: UserCog,
-                                            roles: ["ADMIN"],
-                                        },
-                                        {
-                                            name: "설정",
-                                            path: "/dashboard/settings",
-                                            icon: Settings,
-                                            roles: ["ADMIN", "MANAGER"],
-                                        },
+                                        // {
+                                        //     name: "사용자 관리",
+                                        //     path: "/dashboard/users",
+                                        //     icon: UserCog,
+                                        //     roles: ["ADMIN"],
+                                        // },
+                                        // {
+                                        //     name: "설정",
+                                        //     path: "/dashboard/settings",
+                                        //     icon: Settings,
+                                        //     roles: ["ADMIN", "MANAGER"],
+                                        // },
                                     ]
                                         .filter((item) =>
                                             item.roles.includes(
