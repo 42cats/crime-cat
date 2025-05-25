@@ -10,6 +10,7 @@ import com.crimecat.backend.gametheme.dto.filter.RangeFilter;
 import com.crimecat.backend.gametheme.enums.RangeType;
 import com.crimecat.backend.gametheme.enums.ThemeType;
 import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
+import com.crimecat.backend.location.service.LocationMappingService;
 import io.micrometer.common.util.StringUtils;
 import jakarta.persistence.criteria.*;
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ public class GameThemeSpecification {
             );
     }
 
-    public static Specification<GameTheme> findKeyword(String keyword, String category) {
+    public static Specification<GameTheme> findKeyword(String keyword, String category, LocationMappingService locationMappingService) {
         return (root, query, criteriaBuilder) -> {
             if (StringUtils.isEmpty(keyword)) {
                 return criteriaBuilder.conjunction();
@@ -76,10 +77,20 @@ public class GameThemeSpecification {
                 
                 // 매장 위치 검색 - 정규화된 테이블 JOIN (인덱스 활용)
                 Join<EscapeRoomTheme, EscapeRoomLocation> locationJoin = escapeRoomThemeRoot.join("locations", JoinType.LEFT);
-                predicates.add(criteriaBuilder.or(
-                    criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("storeName")), pattern.toLowerCase()),
-                    criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address")), pattern.toLowerCase())
-                ));
+                
+                // 지역 매핑 서비스를 사용하여 확장된 검색어 가져오기
+                List<String> expandedTerms = locationMappingService.getExpandedSearchTerms(keyword);
+                List<Predicate> locationPredicates = new ArrayList<>();
+                
+                for (String term : expandedTerms) {
+                    String termPattern = String.format("%%%s%%", term.toLowerCase());
+                    locationPredicates.add(criteriaBuilder.or(
+                        criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("storeName")), termPattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address")), termPattern)
+                    ));
+                }
+                
+                predicates.add(criteriaBuilder.or(locationPredicates.toArray(new Predicate[0])));
             }
             return criteriaBuilder.or(predicates.toArray(new Predicate[0]));
         };

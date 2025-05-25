@@ -66,6 +66,7 @@ import PointHistoryPage from "@/pages/PointHistory/PointHistoryPage";
 // Admin Pages
 import UserRoleManagementPage from "@/pages/admin/UserRoleManagementPage";
 import CouponManagementPage from "@/pages/admin/CouponManagementPage";
+import LocationMappingPage from "@/pages/admin/LocationMappingPage";
 // import AdManagementPage from "@/pages/admin/AdManagementPage";
 
 // SNS Pages
@@ -347,6 +348,14 @@ const App = () => (
                                     element={
                                         <PrivateRoute allowedRoles={["ADMIN"]}>
                                             <CouponManagementPage />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="admin/location-mappings"
+                                    element={
+                                        <PrivateRoute allowedRoles={["ADMIN", "MANAGER"]}>
+                                            <LocationMappingPage />
                                         </PrivateRoute>
                                     }
                                 />
