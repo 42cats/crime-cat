@@ -2,6 +2,7 @@ package com.crimecat.backend.gameHistory.repository;
 
 import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
 import com.crimecat.backend.gameHistory.dto.integrated.ThemePlayCountDto;
+import com.crimecat.backend.gameHistory.enums.SuccessStatus;
 import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -224,7 +225,7 @@ public interface EscapeRoomHistoryRepository extends JpaRepository<EscapeRoomHis
            "WHERE erh.webUser.id = :userId " +
            "AND erh.successStatus = :status " +
            "AND erh.deletedAt IS NULL")
-    long countByWebUserIdAndSuccessStatus(@Param("userId") UUID userId, @Param("status") String status);
+    long countByWebUserIdAndSuccessStatus(@Param("userId") UUID userId, @Param("status") SuccessStatus status);
     
     /**
      * 사용자의 테마별 플레이 횟수를 한 번에 조회 (N+1 방지)
