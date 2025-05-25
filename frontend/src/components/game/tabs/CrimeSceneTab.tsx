@@ -115,7 +115,7 @@ export const CrimeSceneTab: React.FC<CrimeSceneTabProps> = ({ initialFilter }) =
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground">패배</p>
               <p className="text-2xl font-bold text-red-600">
-                {data.statistics.crimeScene.total - data.statistics.crimeScene.winCount}
+                {data.statistics.crimeScene.playCount - data.statistics.crimeScene.winCount}
               </p>
             </CardContent>
           </Card>
