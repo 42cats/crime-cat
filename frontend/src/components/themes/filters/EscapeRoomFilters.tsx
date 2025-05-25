@@ -114,15 +114,17 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
 
     const addTag = (tag: string) => {
         const trimmed = tag.trim();
-        if (trimmed && !filters.selectedTags.includes(trimmed)) {
-            onFilterChange("selectedTags", [...filters.selectedTags, trimmed]);
+        const currentTags = filters.selectedTags || [];
+        if (trimmed && !currentTags.includes(trimmed)) {
+            onFilterChange("selectedTags", [...currentTags, trimmed]);
             setTagInput("");
         }
     };
     const removeTag = (tag: string) => {
+        const currentTags = filters.selectedTags || [];
         onFilterChange(
             "selectedTags",
-            filters.selectedTags.filter((t) => t !== tag)
+            currentTags.filter((t) => t !== tag)
         );
     };
     const addTagFromInput = () => addTag(tagInput);
@@ -154,7 +156,7 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
                 </div>
 
                 {/* 선택된 태그 표시 */}
-                {filters.selectedTags.length > 0 && (
+                {filters.selectedTags && filters.selectedTags.length > 0 && (
                     <div className="mb-4 p-3 bg-muted/30 rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                             <Tag className="w-4 h-4 text-muted-foreground" />
@@ -398,7 +400,7 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
                                         운영 상태
                                     </Label>
                                     <Select
-                                        value={filters.isOperating}
+                                        value={filters.isOperating || "all"}
                                         onValueChange={(val) =>
                                             onFilterChange("isOperating", val)
                                         }
@@ -425,7 +427,7 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
                                     </Label>
                                     <Input
                                         placeholder="지역명 입력 (예: 홍대, 강남)"
-                                        value={filters.location}
+                                        value={filters.location || ""}
                                         onChange={(e) =>
                                             onFilterChange(
                                                 "location",
@@ -494,28 +496,27 @@ const EscapeRoomFilters: React.FC<EscapeRoomFiltersProps> = ({
                                         인기 태그:
                                     </p>
                                     <div className="flex flex-wrap gap-2">
-                                        {POPULAR_TAGS.map((tag) => (
-                                            <Badge
-                                                key={tag}
-                                                variant={
-                                                    filters.selectedTags.includes(
-                                                        tag
-                                                    )
-                                                        ? "default"
-                                                        : "outline"
-                                                }
-                                                className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
-                                                onClick={() =>
-                                                    filters.selectedTags.includes(
-                                                        tag
-                                                    )
-                                                        ? removeTag(tag)
-                                                        : addTag(tag)
-                                                }
-                                            >
-                                                {tag}
-                                            </Badge>
-                                        ))}
+                                        {POPULAR_TAGS.map((tag) => {
+                                            const currentTags = filters.selectedTags || [];
+                                            return (
+                                                <Badge
+                                                    key={tag}
+                                                    variant={
+                                                        currentTags.includes(tag)
+                                                            ? "default"
+                                                            : "outline"
+                                                    }
+                                                    className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                                                    onClick={() =>
+                                                        currentTags.includes(tag)
+                                                            ? removeTag(tag)
+                                                            : addTag(tag)
+                                                    }
+                                                >
+                                                    {tag}
+                                                </Badge>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </div>

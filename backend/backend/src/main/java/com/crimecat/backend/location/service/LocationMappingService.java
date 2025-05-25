@@ -116,6 +116,22 @@ public class LocationMappingService {
     }
     
     /**
+     * 검색 조건이 포함된 페이징된 매핑 목록 조회 (관리자용)
+     */
+    public LocationMappingResponse getMappings(Pageable pageable, String search) {
+        Page<LocationMapping> page;
+        
+        if (search != null && !search.trim().isEmpty()) {
+            page = locationMappingRepository.searchByKeywordOrNormalized(search.trim(), pageable);
+        } else {
+            page = locationMappingRepository.findAllByOrderByKeywordAsc(pageable);
+        }
+        
+        Page<LocationMappingDto> dtoPage = page.map(LocationMappingDto::from);
+        return LocationMappingResponse.from(dtoPage);
+    }
+    
+    /**
      * 매핑 생성
      */
     @Transactional

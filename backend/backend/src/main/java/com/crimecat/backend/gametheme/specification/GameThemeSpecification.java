@@ -86,7 +86,8 @@ public class GameThemeSpecification {
                     String termPattern = String.format("%%%s%%", term.toLowerCase());
                     locationPredicates.add(criteriaBuilder.or(
                         criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("storeName")), termPattern),
-                        criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address")), termPattern)
+                        criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address")), termPattern),
+                            criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("roadAddress")), termPattern)
                     ));
                 }
                 
