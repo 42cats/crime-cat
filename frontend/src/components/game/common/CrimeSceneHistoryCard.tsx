@@ -11,14 +11,12 @@ import {
     Home,
     Book,
     Edit,
+    StickyNote,
     User,
 } from "lucide-react";
 import { format, isValid, parseISO } from "date-fns";
 import { ko } from "date-fns/locale";
-import {
-    UserGameHistoryDto,
-    UserGameHistoryToUserDto,
-} from "@/types/integratedGameHistory";
+import { UserGameHistoryToUserDto } from "@/types/integratedGameHistory";
 import { cn } from "@/lib/utils";
 
 interface CrimeSceneHistoryCardProps {
@@ -53,6 +51,7 @@ export const CrimeSceneHistoryCard: React.FC<CrimeSceneHistoryCardProps> = ({
             return "날짜 없음";
         }
     };
+
     const getWinStatusColor = (isWin: boolean) => {
         return isWin
             ? "bg-green-100 text-green-800 border-green-200"
@@ -153,27 +152,18 @@ export const CrimeSceneHistoryCard: React.FC<CrimeSceneHistoryCardProps> = ({
                         {/* 플레이 날짜 */}
                         <div className="flex items-center gap-1.5 text-sm">
                             <Calendar className="w-4 h-4 text-gray-500" />
-                            <span>
-                                {formatDate(
-                                    history.createdAt || history.createdAt
-                                )}
-                            </span>
-                        </div>
-
-                        {/* 기록 날짜 */}
-                        <div className="flex items-center gap-1.5 text-sm">
-                            <Book className="w-4 h-4 text-gray-500" />
-                            <span>기록일: {formatDate(history.createdAt)}</span>
+                            <span>{formatDate(history.createdAt)}</span>
                         </div>
                     </div>
 
                     {/* 하단 정보 */}
                     <div className="flex justify-between items-center mt-3 pt-3 border-t">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xl text-gray-600">
-                                {history.memo}
-                            </span>
-                        </div>
+                        {history.memo && (
+                            <div className="flex items-center gap-1.5 text-sm">
+                                <StickyNote className="w-4 h-4" />
+                                <span>{history.memo}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
