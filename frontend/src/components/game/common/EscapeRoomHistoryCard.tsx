@@ -91,7 +91,7 @@ export const EscapeRoomHistoryCard: React.FC<EscapeRoomHistoryCardProps> = ({
                     <img
                         src={
                             history.themeThumbnail ||
-                            "/content/image/default_image"
+                            "/content/image/default_image.png"
                         }
                         alt={history.escapeRoomThemeTitle}
                         className="w-full h-full object-cover"
