@@ -216,6 +216,20 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 		   "WHERE gh.user.webUser.id = :webUserId AND gh.gameTheme IS NOT NULL")
 	Set<UUID> findDistinctThemeIdsByUserId(@Param("webUserId") UUID webUserId);
 
+	/**
+	 * 웹유저가 플레이한 고유 테마 개수 조회 (크라임씬은 중복 플레이 불가)
+	 */
+	@Query("SELECT COUNT(DISTINCT gh.gameTheme.id) FROM GameHistory gh " +
+			"WHERE gh.user.webUser.id = :webUserId AND gh.gameTheme IS NOT NULL")
+	Long countDistinctThemeIdsByUserId(@Param("webUserId") UUID webUserId);
+
+	/**
+	 * 웹유저가 승리한  고유 테마 개수 조회 (크라임씬은 중복 플레이 불가)
+	 */
+	@Query("SELECT COUNT(DISTINCT gh.gameTheme.id) FROM GameHistory gh " +
+			"WHERE gh.user.webUser.id = :webUserId AND gh.gameTheme IS NOT NULL AND gh.isWin = true")
+	Long countDistinctThemeIdsByUserIdAndWin(@Param("webUserId") UUID webUserId);
+
 	@Query("SELECT COUNT(g) FROM GameHistory g WHERE g.user.webUser.id = :webUserId AND g.isWin = true")
 	long countWinsByWebUserId(@Param("webUserId") UUID webUserId);
 

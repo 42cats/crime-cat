@@ -25,4 +25,5 @@ public interface GameThemeRepository extends JpaRepository<GameTheme, UUID>, Jpa
          "WHERE m.webUserId = :webUserId " +
          "AND gt.isDeleted = false")
   Long countByMakerTeamMember_WebUserId(@Param("webUserId") UUID webUserId);
+
 }
