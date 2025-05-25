@@ -73,7 +73,7 @@ public class IntegratedGameHistoryResponse {
         /**
          * 총 플레이 횟수 (중복 포함)
          */
-        private int total;
+        private int playCount;
         
         /**
          * 고유 테마 수 (중복 제거)
@@ -90,6 +90,10 @@ public class IntegratedGameHistoryResponse {
          * 승률 (%)
          */
         private double winRate;
+        /**
+         * 전체 테마수
+         */
+        private int total;
     }
     
     @Getter

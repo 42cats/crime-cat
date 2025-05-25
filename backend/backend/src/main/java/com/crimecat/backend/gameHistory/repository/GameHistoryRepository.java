@@ -215,4 +215,8 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	@Query("SELECT DISTINCT gh.gameTheme.id FROM GameHistory gh " +
 		   "WHERE gh.user.webUser.id = :webUserId AND gh.gameTheme IS NOT NULL")
 	Set<UUID> findDistinctThemeIdsByUserId(@Param("webUserId") UUID webUserId);
+
+	@Query("SELECT COUNT(g) FROM GameHistory g WHERE g.user.webUser.id = :webUserId AND g.isWin = true")
+	long countWinsByWebUserId(@Param("webUserId") UUID webUserId);
+
 }
