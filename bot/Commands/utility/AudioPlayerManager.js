@@ -232,51 +232,114 @@ class AudioPlayerManager {
     }
   }
 
-  // 점점 볼륨을 키우는 페이드인
-  fadeIn(targetVolume = 0.5, duration = 2000, step = 0.05) {
-    let currentVolume = 0;
-    this.player.state.resource.volume.setVolume(currentVolume);
-    const intervalTime = duration * step / targetVolume;
-    const interval = setInterval(() => {
-      currentVolume = Math.min(currentVolume + step, targetVolume);
-      this.player.state.resource.volume.setVolume(currentVolume);
-      if (currentVolume >= targetVolume) {
-        clearInterval(interval);
+  // 점점 볼륨을 키우는 페이드인 (easing 함수 적용)
+  fadeIn(targetVolume = 0.5, duration = 2000) {
+    if (!this.player?.state?.resource?.volume) return;
+
+    const startTime = Date.now();
+    const startVolume = 0;
+    this.player.state.resource.volume.setVolume(startVolume);
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // easeInOut 함수 적용
+      const easedProgress = this.easeInOut(progress);
+      const currentVolume = startVolume + (targetVolume - startVolume) * easedProgress;
+      
+      if (this.player?.state?.resource?.volume) {
+        this.player.state.resource.volume.setVolume(currentVolume);
       }
-    }, intervalTime);
+
+      if (progress < 1) {
+        this._fadeInTimer = setTimeout(animate, 16); // ~60fps
+      }
+    };
+
+    animate();
   }
 
-  // 점점 볼륨을 줄이는 페이드아웃
-  fadeOut(duration = 2000, step = 0.05) {
+  // 점점 볼륨을 줄이는 페이드아웃 (easing 함수 적용)
+  fadeOut(duration = 2000) {
     return new Promise((resolve) => {
-      let currentVolume = this.volume;
-      const intervalTime = duration * step / currentVolume;
-      const interval = setInterval(() => {
-        currentVolume = Math.max(currentVolume - step, 0);
+      if (!this.player?.state?.resource?.volume) {
+        resolve();
+        return;
+      }
+
+      const startTime = Date.now();
+      const startVolume = this.volume;
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // easeInOut 함수 적용
+        const easedProgress = this.easeInOut(progress);
+        const currentVolume = startVolume * (1 - easedProgress);
+
         if (this.player?.state?.resource?.volume) {
           this.player.state.resource.volume.setVolume(currentVolume);
         }
-        if (currentVolume <= 0) {
-          clearInterval(interval);
-          resolve(); // 볼륨 0 되면 완료
+
+        if (progress < 1) {
+          this._fadeOutTimer = setTimeout(animate, 16); // ~60fps
+        } else {
+          resolve();
         }
-      }, intervalTime);
+      };
+
+      animate();
     });
+  }
+
+  // Easing 함수 (smooth transition)
+  easeInOut(t) {
+    return t < 0.5 
+      ? 2 * t * t 
+      : -1 + (4 - 2 * t) * t;
   }
 
 
   destroy() {
     try {
+      // 타이머 정리
+      if (this._fadeInTimer) {
+        clearTimeout(this._fadeInTimer);
+        this._fadeInTimer = null;
+      }
+      if (this._fadeOutTimer) {
+        clearTimeout(this._fadeOutTimer);
+        this._fadeOutTimer = null;
+      }
+
+      // 프로세스 정리
+      if (this.process && !this.process.killed) {
+        this.process.kill('SIGKILL');
+        this.process = null;
+      }
+
+      // 플레이어 정리
       if (this.player) {
         this.player.stop();
         console.log("AudioPlayer stop 완료.");
         this.player.removeAllListeners();
+        this.player = null;
       }
+
+      // 연결 정리
       if (this.connection) {
+        this.connection.removeAllListeners();
         this.connection.destroy();
         console.log("VoiceConnection 해제 완료.");
         this.connection = null;
       }
+
+      // 참조 해제
+      this.parent = null;
+      this.interactionMsg = null;
+
       console.log("AudioPlayerManager 리소스 정리 완료.");
     } catch (error) {
       console.error("Error during resource cleanup:", error);
