@@ -130,7 +130,9 @@ public class BoardPost {
         this.likes++;
     }
     public void dislike() {
-        this.likes--;
+        if(this.likes > 0){
+            this.likes--;
+        }
     }
 
 }

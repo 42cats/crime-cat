@@ -91,7 +91,9 @@ public class PostComment {
         this.likes++;
     }
     public void decrementLikes(){
-        this.likes--;
+        if(this.likes > 0){
+            this.likes--;
+        }
     }
 
     public static PostComment from(BoardPost boardPost, WebUser author, PostComment parent, PostCommentRequest request){
