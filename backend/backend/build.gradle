@@ -93,10 +93,17 @@ dependencies {
 	//caffeine
 	implementation 'com.github.ben-manes.caffeine:caffeine:3.1.6'
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
+	
+	// JCache (JSR-107) 지원 - Hibernate 2차 캐시용
+	implementation 'org.hibernate:hibernate-jcache:6.6.8.Final'
+	implementation 'org.ehcache:ehcache:3.10.8'
 
 	// Handlebars for template processing
 	implementation 'com.github.jknack:handlebars:4.4.0'
 
+	//second chash
+	implementation 'org.hibernate:hibernate-jcache:6.6.8.Final'
+	implementation 'org.ehcache:ehcache:3.10.8'
 }
 
 tasks.named('test') {
