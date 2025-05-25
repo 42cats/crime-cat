@@ -4,6 +4,7 @@ import com.crimecat.backend.config.CacheType;
 import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryDto;
 import com.crimecat.backend.gameHistory.dto.integrated.*;
+import com.crimecat.backend.gameHistory.enums.SuccessStatus;
 import com.crimecat.backend.gameHistory.repository.EscapeRoomHistoryRepository;
 import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
@@ -273,7 +274,7 @@ public class IntegratedGameHistoryService {
         // 방탈출 통계 (중복 플레이 가능)
         long escapeRoomTotal = escapeRoomHistoryRepository.countByWebUserIdAndDeletedAtIsNull(userId);
         long escapeRoomUnique = escapeRoomHistoryRepository.countDistinctThemesByUserId(userId);
-        long escapeRoomSuccess = escapeRoomHistoryRepository.countByWebUserIdAndSuccessStatus(userId, "SUCCESS");
+        long escapeRoomSuccess = escapeRoomHistoryRepository.countByWebUserIdAndSuccessStatus(userId, SuccessStatus.SUCCESS);
         
         IntegratedGameHistoryResponse.GameTypeStats crimeSceneStats = 
                 IntegratedGameHistoryResponse.GameTypeStats.builder()
