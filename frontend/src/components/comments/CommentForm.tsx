@@ -10,6 +10,7 @@ interface CommentFormProps {
   parentId?: string;
   isEditing?: boolean;
   onCancel?: () => void;
+  showSpoilerToggle?: boolean;
 }
 
 export function CommentForm({
@@ -17,7 +18,8 @@ export function CommentForm({
   initialData,
   parentId,
   isEditing = false,
-  onCancel
+  onCancel,
+  showSpoilerToggle = true
 }: CommentFormProps) {
   const [content, setContent] = useState(initialData?.content || '');
   const [isSpoiler, setIsSpoiler] = useState(initialData?.isSpoiler || false);
@@ -62,17 +64,21 @@ export function CommentForm({
       
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <Switch
-            id={`spoiler-mode-${parentId || 'main'}`}
-            checked={isSpoiler}
-            onCheckedChange={setIsSpoiler}
-          />
-          <label 
-            htmlFor={`spoiler-mode-${parentId || 'main'}`} 
-            className="text-xs text-muted-foreground cursor-pointer"
-          >
-            스포일러
-          </label>
+          {showSpoilerToggle && (
+            <>
+              <Switch
+                id={`spoiler-mode-${parentId || 'main'}`}
+                checked={isSpoiler}
+                onCheckedChange={setIsSpoiler}
+              />
+              <label 
+                htmlFor={`spoiler-mode-${parentId || 'main'}`} 
+                className="text-xs text-muted-foreground cursor-pointer"
+              >
+                스포일러
+              </label>
+            </>
+          )}
         </div>
         
         <div className="flex space-x-2">

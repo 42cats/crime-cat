@@ -80,7 +80,8 @@ instance.interceptors.response.use(
         if (
             status === 401 &&
             !originalRequest._retry &&
-            !originalRequest.url?.includes("/auth/me")
+            !originalRequest.url?.includes("/auth/me") &&
+            !originalRequest.url?.includes("/public/")
         ) {
             originalRequest._retry = true;
 

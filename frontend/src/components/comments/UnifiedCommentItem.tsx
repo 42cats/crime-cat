@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import ProfileDetailModal from "@/components/profile/ProfileDetailModal";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
+import ProfileDetailModal from "@/components/profile/ProfileDetailModal";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
     MessageSquare,
     ThumbsUp,
@@ -25,30 +24,31 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CommentRequest } from "@/types/comment";
-import { CommentForm } from "@/components/comments/CommentForm";
-import { CommentResponse } from "@/api/comment/escapeRoomCommentService";
+import { CommentForm } from "./CommentForm";
+import { Button } from "@/components/ui/button";
 
-interface EscapeRoomCommentItemProps {
-    comment: CommentResponse;
-    themeId: string;
-    hasPlayedGame: boolean;
-    onReply: (commentId: string, data: CommentRequest) => Promise<void>;
-    onUpdate: (commentId: string, data: CommentRequest) => Promise<void>;
+interface UnifiedCommentItemProps {
+    comment: any;
+    onReply: (commentId: string, data: any) => Promise<void>;
+    onUpdate: (commentId: string, data: any) => Promise<void>;
     onDelete: (commentId: string) => Promise<void>;
     onLike: (commentId: string, isLiked: boolean) => Promise<void>;
-    depth?: number;
+    depth: number;
+    config: {
+        showSpoilerWarning?: boolean;
+        hasPlayedGame?: boolean;
+        maxDepth?: number;
+    };
 }
 
-const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
+export const UnifiedCommentItem: React.FC<UnifiedCommentItemProps> = ({
     comment,
-    themeId,
-    hasPlayedGame,
     onReply,
     onUpdate,
     onDelete,
     onLike,
-    depth = 0
+    depth,
+    config
 }) => {
     const [isReplying, setIsReplying] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -58,10 +58,11 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
     const [showSpoiler, setShowSpoiler] = useState(false);
 
     const isDeleted = comment.isDeleted;
-    const isSpoiler = comment.isSpoiler;
-    const canViewSpoiler = hasPlayedGame || comment.isOwnComment || !isSpoiler;
+    const isSpoiler = comment.isSpoiler || comment.hasSpoiler;
+    const canViewSpoiler = config.hasPlayedGame || comment.isOwnComment || !isSpoiler;
     const isLiked = comment.isLikedByCurrentUser;
     const isOwnComment = comment.isOwnComment;
+    const canReply = depth < (config.maxDepth || 2);
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -85,12 +86,12 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
         await onLike(comment.id, isLiked);
     };
 
-    const handleReplySubmit = async (data: CommentRequest) => {
+    const handleReplySubmit = async (data: any) => {
         await onReply(comment.id, data);
         setIsReplying(false);
     };
 
-    const handleUpdateSubmit = async (data: CommentRequest) => {
+    const handleUpdateSubmit = async (data: any) => {
         await onUpdate(comment.id, data);
         setIsEditing(false);
     };
@@ -100,7 +101,7 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
         setIsDeleteDialogOpen(false);
     };
 
-    // 삭제된 댓글 처리
+    // 삭제된 댓글 렌더링
     if (isDeleted) {
         return (
             <div className="py-3 border-b border-border/50 last:border-0 transition-colors duration-200">
@@ -130,20 +131,19 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                             삭제된 댓글입니다.
                         </div>
                         
-                        {/* 답글이 있는 경우 표시 */}
+                        {/* 답글 표시 */}
                         {comment.replies && comment.replies.length > 0 && (
                             <div className="mt-3 space-y-3">
-                                {comment.replies.map((reply) => (
-                                    <EscapeRoomCommentItem
+                                {comment.replies.map((reply: any) => (
+                                    <UnifiedCommentItem
                                         key={reply.id}
                                         comment={reply}
-                                        themeId={themeId}
-                                        hasPlayedGame={hasPlayedGame}
                                         onReply={onReply}
                                         onUpdate={onUpdate}
                                         onDelete={onDelete}
                                         onLike={onLike}
                                         depth={depth + 1}
+                                        config={config}
                                     />
                                 ))}
                             </div>
@@ -151,7 +151,6 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                     </div>
                 </div>
                 
-                {/* 프로필 모달 */}
                 <ProfileDetailModal
                     userId={comment.authorId}
                     open={isProfileModalOpen}
@@ -161,6 +160,7 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
         );
     }
 
+    // 일반 댓글 렌더링
     return (
         <div className="py-3 border-b border-border/50 last:border-0 transition-colors duration-200">
             <div className="flex gap-3">
@@ -187,7 +187,7 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                                 <span className="text-xs text-muted-foreground">
                                     {formatDate(comment.createdAt)}
                                 </span>
-                                {isSpoiler && (
+                                {isSpoiler && config.showSpoilerWarning && (
                                     <Badge variant="destructive" className="text-xs">
                                         <AlertTriangle className="w-3 h-3 mr-1" />
                                         스포일러
@@ -203,7 +203,7 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                             {/* 댓글 내용 */}
                             {!isEditing ? (
                                 <div className="mt-2">
-                                    {isSpoiler && !canViewSpoiler ? (
+                                    {isSpoiler && !canViewSpoiler && config.showSpoilerWarning ? (
                                         <div className="relative">
                                             {showSpoiler ? (
                                                 <div>
@@ -234,7 +234,7 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                                         </div>
                                     ) : (
                                         <p className={`text-sm text-foreground whitespace-pre-wrap break-words ${
-                                            isSpoiler ? 'bg-orange-50 border border-orange-200 rounded-md p-3' : ''
+                                            isSpoiler && config.showSpoilerWarning ? 'bg-orange-50 border border-orange-200 rounded-md p-3' : ''
                                         }`}>
                                             {comment.content}
                                         </p>
@@ -250,6 +250,7 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                                         }}
                                         isEditing
                                         onCancel={() => setIsEditing(false)}
+                                        showSpoilerToggle={config.showSpoilerWarning}
                                     />
                                 </div>
                             )}
@@ -268,7 +269,7 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                                     </span>
                                 </button>
 
-                                {depth < 2 && (
+                                {canReply && (
                                     <button
                                         className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
                                         onClick={() => setIsReplying(!isReplying)}
@@ -305,6 +306,7 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                                         onSubmit={handleReplySubmit}
                                         parentId={comment.id}
                                         onCancel={() => setIsReplying(false)}
+                                        showSpoilerToggle={config.showSpoilerWarning}
                                     />
                                 </div>
                             )}
@@ -323,17 +325,16 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
 
                                     {showReplies && (
                                         <div className="space-y-3">
-                                            {comment.replies.map((reply) => (
-                                                <EscapeRoomCommentItem
+                                            {comment.replies.map((reply: any) => (
+                                                <UnifiedCommentItem
                                                     key={reply.id}
                                                     comment={reply}
-                                                    themeId={themeId}
-                                                    hasPlayedGame={hasPlayedGame}
                                                     onReply={onReply}
                                                     onUpdate={onUpdate}
                                                     onDelete={onDelete}
                                                     onLike={onLike}
                                                     depth={depth + 1}
+                                                    config={config}
                                                 />
                                             ))}
                                         </div>
@@ -380,5 +381,3 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
         </div>
     );
 };
-
-export default EscapeRoomCommentItem;
