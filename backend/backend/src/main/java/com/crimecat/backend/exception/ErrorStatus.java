@@ -89,7 +89,12 @@ public enum ErrorStatus {
     FOLLOW_SELF_NOT_ALLOWED("자기 자신을 팔로우할 수 없습니다.", HttpStatus.BAD_REQUEST),
     FOLLOW_ALREADY_EXISTS("이미 팔로우하고 있습니다.", HttpStatus.CONFLICT),
     FOLLOW_NOT_FOUND("팔로우 관계를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
-    INVALID_REQUEST("본인의 등급은 변경할 수 없습니다.", HttpStatus.BAD_REQUEST );
+    INVALID_REQUEST("본인의 등급은 변경할 수 없습니다.", HttpStatus.BAD_REQUEST ),
+    
+    // 광고 관련
+    ADVERTISEMENT_NOT_FOUND("광고를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    ADVERTISEMENT_PERIOD_OVERLAP("해당 테마는 이미 겹치는 기간에 광고가 등록되어 있습니다.", HttpStatus.CONFLICT),
+    ADVERTISEMENT_INVALID_PERIOD("시작 날짜는 종료 날짜보다 이전이어야 합니다.", HttpStatus.BAD_REQUEST);
 
     private final String message;
     private final HttpStatus status;
