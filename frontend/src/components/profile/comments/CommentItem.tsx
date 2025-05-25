@@ -164,7 +164,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                             {comment.authorName}
                         </span>
                         <span className="text-xs text-gray-500">
-                            {formatDate(comment.createdAt)} />
+                            {formatDate(comment.createdAt)}
                         </span>
                     </div>
 

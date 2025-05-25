@@ -43,7 +43,7 @@ export const boardPostService = {
         size = 20,
         kw = "",
         boardType = BoardType.NONE,
-        postType = PostType.NONE,
+        postType = PostType.GENERAL,
         sort = [BoardPostSortType.LATEST],
     }: GetBoardPostsParams): Promise<BoardPostPage> {
         try {
@@ -51,15 +51,15 @@ export const boardPostService = {
             searchParams.append("page", page.toString());
             searchParams.append("size", size.toString());
             if (kw) searchParams.append("kw", kw);
-            searchParams.append("boardType", boardType);
-            searchParams.append("postType", postType);
+            if (boardType !== BoardType.NONE) searchParams.append("boardType", boardType);
+            if (postType !== PostType.GENERAL) searchParams.append("postType", postType);
             sort.forEach((sortOption) => {
                 searchParams.append("sort", sortOption);
             });
 
             const query = searchParams.toString();
             return await apiClient.get<BoardPostPage>(
-                `/posts${query ? "?" + query : ""}`
+                `/public/posts${query ? "?" + query : ""}`
             );
         } catch (error) {
             return handleApiError(error);

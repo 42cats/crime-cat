@@ -30,3 +30,15 @@ export const UTCToKST: React.FC<UTCToKSTProps> = ({ date }) => {
         return <span>-</span>;
     }
 };
+
+export const formatRelativeTime = (dateString: string): string => {
+    if (!dateString) return "-";
+
+    try {
+        const date = parseISO(dateString.endsWith("Z") ? dateString : `${dateString}Z`);
+        return getRelativeTime(date);
+    } catch (e) {
+        console.error("시간 변환 오류:", e);
+        return "-";
+    }
+};

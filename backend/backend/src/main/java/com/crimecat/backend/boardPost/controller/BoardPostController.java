@@ -7,6 +7,7 @@ import com.crimecat.backend.boardPost.dto.PostCommentResponse;
 import com.crimecat.backend.boardPost.service.BoardPostService;
 import com.crimecat.backend.boardPost.service.PostCommentService;
 import com.crimecat.backend.comment.dto.CommentResponse;
+import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,47 +31,47 @@ public class BoardPostController {
 
     @GetMapping("/{id}")
     public ResponseEntity<BoardPostDetailResponse> getPostDetail(
-            @PathVariable("id") UUID postId,
-            @AuthenticationPrincipal WebUser currentUser
+            @PathVariable("id") UUID postId
     ) {
+        WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
         return ResponseEntity.ok().body(
-                boardPostService.getBoardPostDetail(postId, currentUser.getId())
+                boardPostService.getBoardPostDetail(postId, currentWebUser.getId())
         );
     }
 
     @PostMapping
     public ResponseEntity<BoardPostDetailResponse> createBoardPost(
-            @RequestBody @Valid BoardPostRequest request,
-            @AuthenticationPrincipal WebUser currentUser
+            @RequestBody @Valid BoardPostRequest request
     ) {
-        BoardPostDetailResponse response = boardPostService.createBoardPost(request, currentUser.getId());
+        WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
+        BoardPostDetailResponse response = boardPostService.createBoardPost(request, currentWebUser.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/{id}/like")
     public ResponseEntity<BoardPostDetailResponse> likeBoardPost(
-            @PathVariable("id") UUID postId,
-            @AuthenticationPrincipal WebUser currentUser
+            @PathVariable("id") UUID postId
     ) {
-        BoardPostDetailResponse response = boardPostService.likeBoardPost(postId, currentUser);
+        WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
+        BoardPostDetailResponse response = boardPostService.likeBoardPost(postId, currentWebUser);
         return ResponseEntity.ok().body(response);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<BoardPostDetailResponse> updateBoardPost(
             @PathVariable("id") UUID postId,
-            @RequestBody @Valid BoardPostRequest request,
-            @AuthenticationPrincipal WebUser currentUser
+            @RequestBody @Valid BoardPostRequest request
     ) {
-        BoardPostDetailResponse response = boardPostService.updateBoardPost(request, postId, currentUser.getId());
+        WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
+        BoardPostDetailResponse response = boardPostService.updateBoardPost(request, postId, currentWebUser.getId());
         return ResponseEntity.ok().body(response);
     }
 
     @DeleteMapping("/{id}")
     public void deleteBoardPost(
-            @PathVariable("id") UUID postId,
-            @AuthenticationPrincipal WebUser currentUser
+            @PathVariable("id") UUID postId
     ) {
-        boardPostService.deleteBoardPost(postId, currentUser.getId());
+        WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
+        boardPostService.deleteBoardPost(postId, currentWebUser.getId());
     }
 }

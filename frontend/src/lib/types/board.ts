@@ -7,7 +7,7 @@ export enum BoardType {
 }
 
 export enum PostType {
-    NONE = "NONE",
+    GENERAL = "GENERAL", // 일반
     NORMAL = "NORMAL", // 일반
     NOTICE = "NOTICE", // 공지사항
     EVENT = "EVENT", // 이벤트
