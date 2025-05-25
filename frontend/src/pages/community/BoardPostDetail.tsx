@@ -25,6 +25,8 @@ import {
     AlertCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
+import { BoardCommentList } from "@/components/boards/BoardCommentList";
+import ProfileDetailModal from "@/components/profile/ProfileDetailModal";
 
 interface BoardPostDetailProps {
     boardType: BoardType;
@@ -37,6 +39,8 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
     const { toast } = useToast();
     const { user, isAuthenticated } = useAuth();
     const [isSharing, setIsSharing] = useState(false);
+    const [profileModalOpen, setProfileModalOpen] = useState(false);
+    const [selectedUserId, setSelectedUserId] = useState<string>("");
 
     // 게시글 조회 쿼리
     const {
@@ -148,6 +152,11 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
         navigate(`/community/${boardType.toLowerCase()}/edit/${id}`);
     };
 
+    const handleProfileClick = (userId: number) => {
+        setSelectedUserId(userId.toString());
+        setProfileModalOpen(true);
+    };
+
     // 현재 사용자가 게시글 작성자인지 확인
     const isAuthor = post && user && post.authorId === user.id;
 
@@ -210,7 +219,10 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
 
                     <div className="flex justify-between items-center mt-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
+                            <Avatar 
+                                className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => handleProfileClick(post.authorId)}
+                            >
                                 <AvatarImage
                                     src={post.authorProfileImagePath}
                                     alt={post.authorName}
@@ -219,7 +231,12 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                                     {post.authorName.substring(0, 2)}
                                 </AvatarFallback>
                             </Avatar>
-                            <span>{post.authorName}</span>
+                            <span 
+                                className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                onClick={() => handleProfileClick(post.authorId)}
+                            >
+                                {post.authorName}
+                            </span>
                             <span>•</span>
                             <span>
                                 {new Date(post.createdAt).toLocaleString()}
@@ -302,18 +319,14 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                 </CardFooter>
             </Card>
 
-            {/* 댓글 영역 (추후 구현) */}
+            {/* 댓글 영역 */}
             <Card className="mt-6">
-                <CardHeader>
-                    <CardTitle className="text-lg">
-                        댓글 {post.commentCount}개
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                     {isAuthenticated ? (
-                        <p className="text-muted-foreground text-center py-10">
-                            댓글 기능은 현재 준비 중입니다.
-                        </p>
+                        <BoardCommentList 
+                            postId={parseInt(id!)}
+                            onProfileClick={handleProfileClick}
+                        />
                     ) : (
                         <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
                             <AlertCircle className="h-10 w-10 text-muted-foreground" />
@@ -331,6 +344,16 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                     )}
                 </CardContent>
             </Card>
+
+            {/* 프로필 상세 모달 */}
+            <ProfileDetailModal
+                userId={selectedUserId}
+                open={profileModalOpen}
+                onOpenChange={setProfileModalOpen}
+                onSwitchProfile={(newUserId) => {
+                    setSelectedUserId(newUserId);
+                }}
+            />
         </div>
     );
 };

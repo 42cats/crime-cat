@@ -112,6 +112,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
         register,
         handleSubmit,
         setValue,
+        watch,
         formState: { errors, isSubmitting },
     } = useForm<FormData>({
         defaultValues: {
@@ -286,7 +287,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                         <div className="flex items-center space-x-2">
                             <Switch
                                 id="secret"
-                                checked={Boolean(register("secret").value)}
+                                checked={watch("secret")}
                                 onCheckedChange={(checked) =>
                                     setValue("secret", checked)
                                 }

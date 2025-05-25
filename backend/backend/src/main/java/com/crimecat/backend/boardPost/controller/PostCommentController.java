@@ -5,6 +5,7 @@ import com.crimecat.backend.boardPost.dto.PostCommentRequest;
 import com.crimecat.backend.boardPost.dto.PostCommentResponse;
 import com.crimecat.backend.boardPost.service.BoardPostService;
 import com.crimecat.backend.boardPost.service.PostCommentService;
+import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,43 +27,43 @@ public class PostCommentController {
 
     @GetMapping("/{id}")
     public ResponseEntity<List<PostCommentResponse>> getCommentResponses(
-            @PathVariable("id") UUID postId,
-            @AuthenticationPrincipal WebUser currentUser
+            @PathVariable("id") UUID postId
     ) {
+        WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
         return ResponseEntity.ok().body(
-                postCommentService.getCommentResponses(postId, currentUser.getId())
+                postCommentService.getCommentResponses(postId, currentWebUser.getId())
         );
     }
 
     @PostMapping("{id}")
     public ResponseEntity<List<PostCommentResponse>> createComment(
             @PathVariable("id") UUID postId,
-            @RequestBody @Valid PostCommentRequest postCommentRequest,
-            @AuthenticationPrincipal WebUser currentUser
+            @RequestBody @Valid PostCommentRequest postCommentRequest
     ) {
+        WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
         return ResponseEntity.ok().body(
-                postCommentService.createPostComment(postId, currentUser, postCommentRequest)
+                postCommentService.createPostComment(postId, currentWebUser, postCommentRequest)
         );
     }
 
     @PutMapping("{id}")
     public ResponseEntity<List<PostCommentResponse>> updateComment(
             @PathVariable("id") UUID commentId,
-            @RequestBody @Valid PostCommentRequest postCommentRequest,
-            @AuthenticationPrincipal WebUser currentUser
+            @RequestBody @Valid PostCommentRequest postCommentRequest
     ) {
+        WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
         return ResponseEntity.ok().body(
-                postCommentService.updatePostComment(commentId, currentUser.getId(), postCommentRequest)
+                postCommentService.updatePostComment(commentId, currentWebUser.getId(), postCommentRequest)
         );
     }
 
     @DeleteMapping("{id}")
     public ResponseEntity<List<PostCommentResponse>> deleteComment(
-            @PathVariable("id") UUID commentId,
-            @AuthenticationPrincipal WebUser currentUser
+            @PathVariable("id") UUID commentId
     ) {
+        WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
         return ResponseEntity.ok().body(
-                postCommentService.deletePostComment(commentId, currentUser.getId())
+                postCommentService.deletePostComment(commentId, currentWebUser.getId())
         );
     }
 }
