@@ -250,16 +250,31 @@ CREATE TABLE IF NOT EXISTS `game_histories`
     COLLATE=utf8mb4_unicode_ci
     COMMENT='게임 기록 테이블';
 
--- 유저 + 생성일 내림차순 인덱스
+-- 유저 + 생성일 내림차순 인덱스 (이미 존재하는지 확인)
 SET @user_created_index_exists = (SELECT COUNT(*) FROM information_schema.statistics
     WHERE table_schema = '${DB_DISCORD}' AND table_name = 'game_histories'
     AND index_name = 'idx_game_histories_user_created_at');
-CREATE INDEX idx_game_histories_user_created_at
-ON game_histories (user_snowflake, created_at DESC);
 
--- 게임 테마 기준 인덱스 (통계용)
-CREATE INDEX idx_game_histories_game_theme
-ON game_histories (game_theme_id);
+-- 인덱스가 없는 경우에만 생성
+SET @create_user_created_index = IF(@user_created_index_exists = 0, 
+    'CREATE INDEX idx_game_histories_user_created_at ON game_histories (user_snowflake, created_at DESC)', 
+    'SELECT "idx_game_histories_user_created_at already exists" AS msg');
+PREPARE stmt1 FROM @create_user_created_index;
+EXECUTE stmt1;
+DEALLOCATE PREPARE stmt1;
+
+-- 게임 테마 기준 인덱스 존재 확인
+SET @game_theme_index_exists = (SELECT COUNT(*) FROM information_schema.statistics
+    WHERE table_schema = '${DB_DISCORD}' AND table_name = 'game_histories'
+    AND index_name = 'idx_game_histories_game_theme');
+
+-- 인덱스가 없는 경우에만 생성
+SET @create_game_theme_index = IF(@game_theme_index_exists = 0, 
+    'CREATE INDEX idx_game_histories_game_theme ON game_histories (game_theme_id)', 
+    'SELECT "idx_game_histories_game_theme already exists" AS msg');
+PREPARE stmt2 FROM @create_game_theme_index;
+EXECUTE stmt2;
+DEALLOCATE PREPARE stmt2;
 
 
 
@@ -501,9 +516,9 @@ CREATE TABLE IF NOT EXISTS `group_items` (
     commands
 
 */
-CREATE TABLE `commands` (
+CREATE TABLE IF NOT EXISTS `commands` (
   `id` BINARY(16) NOT NULL
-    COMMENT '고유 식별자(UUID, 16바이트 이진 저장) – 애플리케이션에서 UNHEX(REPLACE(UUID(),"-",""))로 삽입',
+    COMMENT '고유 식별자(UUID, 16바이트 이진 저장)',
 
   `name` VARCHAR(255) NOT NULL
     COMMENT '명령어 이름(유니크, 예: "/계산")',
@@ -516,19 +531,10 @@ CREATE TABLE `commands` (
 
   `category` VARCHAR(100) NOT NULL
     COMMENT '카테고리(예: "유틸리티", "게임" 등)',
-
--- 게임 테마 인덱스 존재 확인
-SET @game_theme_index_exists = (SELECT COUNT(*) FROM information_schema.statistics
-    WHERE table_schema = '${DB_DISCORD}' AND table_name = 'game_histories'
-    AND index_name = 'idx_game_histories_game_theme');
-
--- 인덱스가 없는 경우에만 생성
-SET @create_user_created_index = IF(@user_created_index_exists = 0, 'CREATE INDEX idx_game_histories_user_created_at ON game_histories (user_snowflake, created_at DESC)', 'DO 0');
-PREPARE stmt1 FROM @create_user_created_index;
-EXECUTE stmt1;
-DEALLOCATE PREPARE stmt1;
-
-SET @create_game_theme_index = IF(@game_theme_index_exists = 0, 'CREATE INDEX idx_game_histories_game_theme ON game_histories (game_theme_id)', 'DO 0');
-PREPARE stmt2 FROM @create_game_theme_index;
-EXECUTE stmt2;
-DEALLOCATE PREPARE stmt2;
+  
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_commands_name` (`name`)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='봇 명령어 정보 테이블';

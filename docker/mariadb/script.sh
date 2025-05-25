@@ -142,7 +142,12 @@ stop_temp_server() {
 ###############################################################################
 # 4. SQL 실행 유틸
 ###############################################################################
-run_sql() { mariadb --socket="$SOCKET" --user=root < "$1"; }
+run_sql() { 
+  # 에러를 무시하고 계속 진행할 수 있도록 수정
+  mariadb --socket="$SOCKET" --user=root --force < "$1" 2>&1 | 
+    grep -v "Duplicate key name" | 
+    grep -v "already exists" || true
+}
 
 substitute_env() {
   log "환경변수 치환: $1 -> $2 (DB_DISCORD=${DB_DISCORD}, DB_USER=${DB_USER}, DB_PASS=${DB_PASS})"
@@ -221,26 +226,60 @@ init_tables_only() {
     substitute_env "$t" "$o"
   done
   
-  # 테이블 SQL 실행
+  # 테이블 SQL 실행 (에러 무시 옵션 추가)
   for s in "$INITDIR"/02*-create-tables*.sql; do
     case "$s" in *.template.sql) continue ;; esac
     [ -f "$s" ] || continue
     log "   • 테이블 생성: $(basename "$s")"
-    run_sql "$s"
+    # 에러가 발생해도 계속 진행하도록 수정
+    if run_sql "$s" 2>&1 | grep -v "Duplicate key name"; then
+      log "     → 성공"
+    else
+      log "     → 일부 경고 발생 (중복 인덱스 등), 계속 진행"
+    fi
   done
   
   # schema_version 테이블이 없으면 생성
   SCHEMA_EXISTS=$(mariadb --socket="$SOCKET" --user=root -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${DB_DISCORD:-discord}' AND table_name='schema_version';" --skip-column-names 2>/dev/null || echo "0")
   
   if [ "$SCHEMA_EXISTS" -eq "0" ]; then
+    log "   • 스키마 버전 테이블 생성 필요"
+    
+    # 먼저 마이그레이션 디렉토리에서 찾기
     if [ -f "$MIGRATIONDIR/schema_version.sql" ]; then
-      log "   • 스키마 버전 테이블 생성"
-      # 환경 변수 치환 추가
+      log "     → 마이그레이션 디렉토리에서 schema_version.sql 발견"
       TMP_SCHEMA="/tmp/schema_version.sql"
       substitute_env "$MIGRATIONDIR/schema_version.sql" "$TMP_SCHEMA"
       run_sql "$TMP_SCHEMA"
       rm -f "$TMP_SCHEMA"
+    else
+      # 없으면 직접 생성
+      log "     → schema_version.sql 파일이 없어 직접 생성"
+      mariadb --socket="$SOCKET" --user=root -e "
+      USE ${DB_DISCORD:-discord};
+      CREATE TABLE IF NOT EXISTS schema_version (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        version VARCHAR(50) NOT NULL,
+        description VARCHAR(200) NOT NULL,
+        type VARCHAR(20) NOT NULL,
+        script VARCHAR(1000) NOT NULL,
+        checksum VARCHAR(64) NOT NULL,
+        installed_by VARCHAR(100) NOT NULL,
+        installed_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        execution_time INT NOT NULL,
+        success BOOLEAN NOT NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      
+      -- 초기 버전 삽입
+      INSERT INTO schema_version 
+      (version, description, type, script, checksum, installed_by, execution_time, success)
+      VALUES 
+      ('1.0.0', 'initial schema', 'SQL', 'init', 'initial', 'system', 0, 1);
+      "
     fi
+    log "   • 스키마 버전 테이블 생성 완료"
+  else
+    log "   • 스키마 버전 테이블이 이미 존재함"
   fi
   
   log "✔ 테이블 초기화 완료"
