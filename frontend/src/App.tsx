@@ -68,7 +68,7 @@ import UserRoleManagementPage from "@/pages/admin/UserRoleManagementPage";
 import CouponManagementPage from "@/pages/admin/CouponManagementPage";
 import LocationMappingPage from "@/pages/admin/LocationMappingPage";
 import PointMonitoringPage from "./pages/admin/point-monitoring";
-// import AdManagementPage from "@/pages/admin/AdManagementPage";
+import ThemeAdsPage from "./pages/admin/theme-ads";
 
 // SNS Pages
 import SNSFeedPage from "@/pages/sns/SNSFeedPage";
@@ -393,6 +393,16 @@ const App = () => (
                                             allowedRoles={["ADMIN", "MANAGER"]}
                                         >
                                             <PointMonitoringPage />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="admin/theme-ads"
+                                    element={
+                                        <PrivateRoute
+                                            allowedRoles={["ADMIN", "MANAGER"]}
+                                        >
+                                            <ThemeAdsPage />
                                         </PrivateRoute>
                                     }
                                 />

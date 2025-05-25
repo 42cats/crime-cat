@@ -3,6 +3,8 @@ package com.crimecat.backend.advertisement.domain;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -19,9 +21,11 @@ public class ThemeAdvertisement {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(columnDefinition = "BINARY(16)")
     private UUID id;
     
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "theme_id", columnDefinition = "BINARY(16)", nullable = false)
     private UUID themeId;
     
@@ -44,12 +48,14 @@ public class ThemeAdvertisement {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "created_by", columnDefinition = "BINARY(16)", nullable = false)
     private UUID createdBy;
     
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "updated_by", columnDefinition = "BINARY(16)")
     private UUID updatedBy;
     

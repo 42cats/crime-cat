@@ -312,8 +312,8 @@ const SidebarInner = React.memo(() => {
                                                 roles: ["ADMIN", "MANAGER"],
                                             },
                                             {
-                                                name: "광고 관리",
-                                                path: "/dashboard/admin/advertisements",
+                                                name: "테마 광고 관리",
+                                                path: "/dashboard/admin/theme-ads",
                                                 icon: ImageIcon,
                                                 roles: ["ADMIN", "MANAGER"],
                                             },
