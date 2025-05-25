@@ -1,26 +1,42 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ThemeForm from '@/components/themes/ThemeForm';
 import { useAuth } from '@/hooks/useAuth';
-import { themesService } from '@/api/themesService';
+import { themesService } from '@/api/content';
+import { ResizeMode } from '@/utils/imageCompression';
 
 const CreateTheme: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, isLoading } = useAuth();
+  const [resizeMode, setResizeMode] = useState<ResizeMode>('fit');
 
   const state = location.state as { category?: string };
   const initialCategory = state?.category?.toLowerCase() || '';
 
-//   useEffect(() => {
-//     if (!isLoading && !isAuthenticated) {
-//       navigate('/login');
-//     }
-//   }, [isAuthenticated, isLoading, navigate]);
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   const handleSubmit = async (formData: FormData) => {
     try {
-      await themesService.createTheme(formData);
+      // FormData에서 JSON 데이터 추출하여 테마 타입 확인
+      const dataBlob = formData.get('data') as Blob;
+      if (!dataBlob) {
+        throw new Error('테마 데이터가 없습니다.');
+      }
+
+      const jsonText = await dataBlob.text();
+      const themeData = JSON.parse(jsonText);
+      const themeType = themeData.type;
+
+      if (!themeType) {
+        throw new Error('테마 타입이 지정되지 않았습니다.');
+      }
+
+      await themesService.createTheme(formData, themeType as any);
 
       if (initialCategory) {
         navigate(`/themes/${initialCategory}`);
@@ -37,6 +53,13 @@ const CreateTheme: React.FC = () => {
       mode="create"
       title="새 테마 작성"
       onSubmit={handleSubmit}
+      imageOptions={{
+        // 테마 썸네일에 적합한 크기로 설정
+        width: 800,
+        height: 450,
+        quality: 0.8,
+        backgroundColor: '#FFFFFF'
+      }}
     />
   );
 };

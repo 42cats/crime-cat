@@ -15,8 +15,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Gift, CheckCircle } from "lucide-react";
-import { couponService } from "@/api/couponService";
+import { Gift, CheckCircle, Copy } from "lucide-react";
+import { couponService } from "@/api/misc/couponService";
 import { useToast } from "@/hooks/useToast";
 import { UserPermissionCard } from "@/components/UserPermissionCard";
 import { UTCToKST } from "@/lib/dateFormat";
@@ -52,12 +52,7 @@ interface Props {
         recentlyPlayCrimeSeenThemeTime?: string;
         mostFavoriteCrimeSeenMaker?: string;
     };
-    permissions?: {
-        permissionId: string;
-        permissionName: string;
-        info?: string;
-        expiredDate: string;
-    }[];
+    // permissions: 기존 prop 제거 - 이제 UserPermissionCard에서 직접 fetch
 }
 
 export const DashboardProfileCard: React.FC<Props> = ({
@@ -66,12 +61,23 @@ export const DashboardProfileCard: React.FC<Props> = ({
     onCheckDaily,
     isChecking,
     additionalInfo,
-    permissions,
 }) => {
     const [isCouponModalOpen, setCouponModalOpen] = useState(false);
     const [couponCode, setCouponCode] = useState("");
     const [point, setPoint] = useState(user.point);
     const { toast } = useToast();
+
+    // 포인트 변경 핸들러 - 연장 시 특별 처리
+    const handlePointChange = (newPoint: number) => {
+        if (newPoint === -1) {
+            // 특별한 시그널 값으로 전체 새로고침 필요
+            // 이 경우 페이지 새로고침
+            // 대신 전체 사용자 정보를 다시 불러오는 방식을 추천
+            window.location.reload();
+        } else {
+            setPoint(newPoint);
+        }
+    };
 
     const handleApplyCoupon = async () => {
         try {
@@ -92,15 +98,20 @@ export const DashboardProfileCard: React.FC<Props> = ({
         }
     };
 
-    const formatDate = (dateString: string) => {
-        const d = new Date(dateString);
-        return d.toLocaleString("ko-KR", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
+    const copyToClipboard = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            toast({
+                title: "복사 완료",
+                description: "고유 아이디가 클립보드에 복사되었습니다.",
+            });
+        } catch (error) {
+            toast({
+                title: "복사 실패",
+                description: "클립보드 복사에 실패했습니다.",
+                variant: "destructive",
+            });
+        }
     };
 
     return (
@@ -128,11 +139,11 @@ export const DashboardProfileCard: React.FC<Props> = ({
                     {/* 기본 정보 */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <ProfileField label="닉네임" value={user.nickname} />
-                        <ProfileField label="타이틀" value={user.title} />
+                        {/* <ProfileField label="타이틀" value={user.title} />
                         <ProfileField
                             label="뱃지"
                             value={<Badge>{user.badge || "없음"}</Badge>}
-                        />
+                        /> */}
                         <ProfileField
                             label="포인트"
                             value={
@@ -156,6 +167,28 @@ export const DashboardProfileCard: React.FC<Props> = ({
                                     <UTCToKST date={user.last_login_at} />
                                 ) : (
                                     "-"
+                                )
+                            }
+                        />
+                        <ProfileField
+                            label="고유 아이디"
+                            value={
+                                user.snowflake ? (
+                                    <div className="flex items-center gap-2">
+                                        <span>{user.snowflake}</span>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() =>
+                                                copyToClipboard(user.snowflake!)
+                                            }
+                                            className="h-8 w-8 p-0"
+                                        >
+                                            <Copy className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    "디스코드 정보가 없습니다."
                                 )
                             }
                         />
@@ -273,17 +306,14 @@ export const DashboardProfileCard: React.FC<Props> = ({
                             />
                         </div>
                     )}
-                    {permissions && permissions.length > 0 && (
-                        <div className="mt-8">
-                            <UserPermissionCard permissions={permissions} />
-                        </div>
-                    )}
-                    {/* 퍼미션이 없을 경우 */}
-                    {(!permissions || permissions.length === 0) && (
-                        <div className="mt-8 text-center text-muted-foreground text-sm">
-                            보유한 권한이 없습니다.
-                        </div>
-                    )}
+
+                    {/* 권한 관리 섹션 */}
+                    <div className="mt-8">
+                        <UserPermissionCard
+                            userId={user.id}
+                            onPointChange={handlePointChange}
+                        />
+                    </div>
                 </CardContent>
             </Card>
 

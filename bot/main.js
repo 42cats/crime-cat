@@ -81,9 +81,10 @@ client.on(Events.GuildCreate, async (guild) => {
 		};
 
 		// 마스터에게 전송
-		client.master.send({ content: `길드 처리 완료: ${JSON.stringify(payload, null, 2)}` });
+		client.master.send(payload);
 
 		await guildAddProcess(client, targetGuild);
+		client.master.send()
 	}
 	catch (err) {
 		console.log(err.stack);

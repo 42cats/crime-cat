@@ -20,11 +20,10 @@ public class UpdateCrimesceneThemeRequest extends UpdateGameThemeRequest{
 
 
     public void update(GameTheme gameTheme) {
-        if (!(gameTheme instanceof CrimesceneTheme)) {
+        if (!(gameTheme instanceof CrimesceneTheme crimesceneTheme)) {
             throw ErrorStatus.INVALID_INPUT.asDomainException();
         }
         super.update(gameTheme);
-        CrimesceneTheme crimesceneTheme = (CrimesceneTheme) gameTheme;
         set(makerTeamsId, crimesceneTheme::setTeamId);
         set(guildSnowflake, crimesceneTheme::setGuildSnowflake);
         set(extra, crimesceneTheme::setExtra);

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { fetchChannels } from '@/api/messageButtonService';
+import { fetchChannels } from '@/api/misc/messageButtonService';
 import { Channel } from '@/lib/types';
 
 interface ChannelContextType {

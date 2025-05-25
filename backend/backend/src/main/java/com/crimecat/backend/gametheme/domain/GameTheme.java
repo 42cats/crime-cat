@@ -1,8 +1,9 @@
 package com.crimecat.backend.gametheme.domain;
 
-import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.gametheme.dto.AddCrimesceneThemeRequest;
+import com.crimecat.backend.gametheme.dto.AddEscapeRoomThemeRequest;
 import com.crimecat.backend.gametheme.dto.AddGameThemeRequest;
+import com.crimecat.backend.webUser.domain.WebUser;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -15,7 +16,6 @@ import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
@@ -26,8 +26,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @SuperBuilder
 @AllArgsConstructor
 @Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "`TYPE`", discriminatorType = DiscriminatorType.INTEGER)
-public class GameTheme {
+@DiscriminatorColumn(name = "`TYPE`", discriminatorType = DiscriminatorType.STRING)
+public abstract class GameTheme {
     @Id
     @UuidGenerator
     @JdbcTypeCode(SqlTypes.BINARY)
@@ -60,7 +60,7 @@ public class GameTheme {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "AUTHOR", updatable = false, insertable = false)
-    private User author;
+    private WebUser author;
 
     @Setter
     @JdbcTypeCode(SqlTypes.BINARY)
@@ -112,34 +112,34 @@ public class GameTheme {
     @Column(name = "CREATED_AT")
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
     @Column(name = "UPDATED_AT")
     private LocalDateTime updatedAt;
+
+    @Setter
+    @Column(name = "RECOMMENDATION_ENABLED")
+    private boolean recommendationEnabled;
+
+    @Setter
+    @Column(name = "COMMENT_ENABLED")
+    private boolean commentEnabled;
 
     public static GameTheme from(AddGameThemeRequest request) {
         if (request instanceof AddCrimesceneThemeRequest) {
             return CrimesceneTheme.from((AddCrimesceneThemeRequest) request);
+        } else if (request instanceof AddEscapeRoomThemeRequest) {
+            return EscapeRoomTheme.from((AddEscapeRoomThemeRequest) request);
         }
-        return GameTheme.builder()
-                .title(request.getTitle())
-                .summary(request.getSummary())
-                .tags(request.getTags())
-                .content(request.getContent())
-                .playerMin(request.getPlayerMin())
-                .playerMax(request.getPlayerMax())
-                .playTimeMin(request.getPlaytimeMin())
-                .playTimeMax(request.getPlaytimeMax())
-                .price(request.getPrice())
-                .difficulty(request.getDifficulty())
-                .publicStatus(request.isPublicStatus())
-                .build();
+        throw new IllegalArgumentException("Unknown theme type for request: " + request.getClass().getName());
     }
+
+    public abstract String getDiscriminator();
 
     public void setIsDelete(Boolean isDeleted) {
         if (isDeleted == null) {
             return;
         }
         this.isDeleted = isDeleted;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void viewed() {
@@ -152,5 +152,13 @@ public class GameTheme {
 
     public void cancleLike() {
         this.recommendations--;
+    }
+
+    public boolean isAuthor(UUID userId) {
+        return authorId.equals(userId);
+    }
+
+    public void update() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

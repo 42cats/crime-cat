@@ -1,6 +1,7 @@
 package com.crimecat.backend.gametheme.dto;
 
 import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
+import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
 import com.crimecat.backend.gametheme.domain.GameTheme;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,7 +25,7 @@ public class GameThemeDetailDto {
     private int recommendations;
     private int views;
     private int playCount;
-    private UUID author;
+    private AuthorDto author;
     private int playersMin;
     private int playersMax;
     private int playTimeMin;
@@ -36,11 +37,15 @@ public class GameThemeDetailDto {
     private boolean publicStatus;
     private Instant createdAt;
     private Instant updatedAt;
+    private boolean recommendationEnabled;
+    private boolean commentEnabled;
     private String type;
 
     public static GameThemeDetailDto of(GameTheme theme) {
         if (theme instanceof CrimesceneTheme) {
             return CrimesceneThemeDetailDto.of((CrimesceneTheme) theme);
+        } else if (theme instanceof EscapeRoomTheme) {
+            return EscapeRoomThemeDetailDto.of((EscapeRoomTheme) theme);
         }
         return GameThemeDetailDto.builder()
                 .id(theme.getId())
@@ -50,7 +55,7 @@ public class GameThemeDetailDto {
                 .recommendations(theme.getRecommendations())
                 .views(theme.getViews())
                 .playCount(theme.getPlayCount())
-                .author(theme.getAuthorId())
+                .author(AuthorDto.from(theme.getAuthor()))
                 .playersMin(theme.getPlayerMin())
                 .playersMax(theme.getPlayerMax())
                 .playTimeMin(theme.getPlayTimeMin())
@@ -62,6 +67,8 @@ public class GameThemeDetailDto {
                 .publicStatus(theme.isPublicStatus())
                 .createdAt(theme.getCreatedAt().toInstant(ZoneOffset.UTC))
                 .updatedAt(theme.getUpdatedAt().toInstant(ZoneOffset.UTC))
+                .recommendationEnabled(theme.isRecommendationEnabled())
+                .commentEnabled(theme.isCommentEnabled())
                 .build();
     }
 }

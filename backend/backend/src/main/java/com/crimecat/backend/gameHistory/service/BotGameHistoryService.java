@@ -1,28 +1,30 @@
 package com.crimecat.backend.gameHistory.service;
 
-import com.crimecat.backend.guild.domain.Guild;
-import com.crimecat.backend.guild.service.bot.GuildQueryService;
-import com.crimecat.backend.guild.service.bot.GuildService;
-import com.crimecat.backend.user.domain.DiscordUser;
-import com.crimecat.backend.user.service.UserService;
-import com.crimecat.backend.gameHistory.domain.GameHistory;
-import com.crimecat.backend.gameHistory.dto.GameHistoryUpdateRequestDto;
-import com.crimecat.backend.gameHistory.dto.SaveUserGameHistoryRequestDto;
-import com.crimecat.backend.gameHistory.dto.SaveUserHistoryResponseDto;
-import com.crimecat.backend.gameHistory.dto.UserGameHistoryDto;
-import com.crimecat.backend.gameHistory.dto.UserGameHistoryFailedResponseDto;
-import com.crimecat.backend.gameHistory.dto.UserGameHistoryResponseDto;
-import com.crimecat.backend.gameHistory.dto.UserGameHistorySuccessResponseDto;
-import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
-import com.crimecat.backend.gametheme.repository.GameThemeRepository;
-import com.crimecat.backend.gametheme.service.GameThemeService;
+import com.crimecat.backend.bot.guild.domain.Guild;
+import com.crimecat.backend.bot.guild.service.GuildQueryService;
+import com.crimecat.backend.bot.guild.service.GuildService;
+import com.crimecat.backend.bot.user.domain.DiscordUser;
+import com.crimecat.backend.bot.user.service.UserService;
+import com.crimecat.backend.web.gameHistory.domain.GameHistory;
+import com.crimecat.backend.web.gameHistory.dto.GameHistoryUpdateRequestDto;
+import com.crimecat.backend.web.gameHistory.dto.SaveUserGameHistoryRequestDto;
+import com.crimecat.backend.web.gameHistory.dto.SaveUserHistoryResponseDto;
+import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryDto;
+import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryFailedResponseDto;
+import com.crimecat.backend.web.gameHistory.dto.UserGameHistoryResponseDto;
+import com.crimecat.backend.web.gameHistory.dto.UserGameHistorySuccessResponseDto;
+import com.crimecat.backend.web.gametheme.domain.CrimesceneTheme;
+import com.crimecat.backend.web.gametheme.repository.GameThemeRepository;
+import com.crimecat.backend.web.gametheme.service.GameThemeService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BotGameHistoryService {
@@ -34,12 +36,13 @@ public class BotGameHistoryService {
 	private final GuildQueryService guildQueryService;
 	private final GameThemeService gameThemeService;
 	private final GameThemeRepository gameThemeRepository;
+	private final CrimesceneThemeRepository crimesceneThemeRepository;
 
 	@Transactional
 	public SaveUserHistoryResponseDto BotSaveCrimeSceneUserGameHistory(
 			SaveUserGameHistoryRequestDto saveUserGameHistoryRequestDto) {
 
-		DiscordUser user = userService.findUserBySnowflake(saveUserGameHistoryRequestDto.getUserSnowflake());
+		User user = userService.findUserByDiscordSnowflake(saveUserGameHistoryRequestDto.getUserSnowflake());
 		if (user == null) {
 			return new SaveUserHistoryResponseDto("History recorded failed");
 		}
@@ -50,16 +53,17 @@ public class BotGameHistoryService {
 		}
 
 		GameHistory gameHistoryByUserSnowFlakeAndGuildSnowflake = gameHistoryQueryService.findGameHistoryByUserSnowFlakeAndGuildSnowflake(
-				user.getSnowflake(),
+				user.getDiscordSnowflake(),
 				guild.getSnowflake());
 		if (gameHistoryByUserSnowFlakeAndGuildSnowflake != null) {
 			return new SaveUserHistoryResponseDto("History already recorded");
 		}
 
-		CrimesceneTheme byGuildSnowflake = gameThemeRepository.findByGuildSnowflake(
+		CrimesceneTheme byGuildSnowflake = crimesceneThemeRepository.findByGuildSnowflake(
 						guild.getSnowflake())
 				.orElse(null);
 
+		log.info("theme = {}", byGuildSnowflake);
 		gameHistoryQueryService.saveCrimeSceneUserGameHistory(
 				saveUserGameHistoryRequestDto.isWin(),
 				saveUserGameHistoryRequestDto.getCreatedAt(),
@@ -72,31 +76,31 @@ public class BotGameHistoryService {
 	}
 
 	@Transactional(readOnly = true)
-	public UserGameHistoryResponseDto BotGetUserCrimeSceneGameHistoryByUserSnowflake(String userSnowflake) {
+	public UserGameHistoryResponseDto BotGetUserCrimeSceneGameHistoryByUserSnowflake(String discordSnowflake) {
 
-		DiscordUser user = userService.findUserBySnowflake(userSnowflake);
+		User user = userService.findUserByDiscordSnowflake(discordSnowflake);
 		if (user == null) {
 			return new UserGameHistoryFailedResponseDto("user not found");
 		}
 
 		List<UserGameHistoryDto> userGameHistoryDtos = gameHistoryQueryService.getGameHistoryByUserSnowflake(
-						userSnowflake)
+						discordSnowflake)
 				.stream()
 				.map(UserGameHistoryDto::from)
 				.toList();
-		return new UserGameHistorySuccessResponseDto(userSnowflake, userGameHistoryDtos);
+		return new UserGameHistorySuccessResponseDto(discordSnowflake, userGameHistoryDtos);
 	}
 
-	public void BotUpdateGameHistory(String userSnowflake, String guildSnowflake,
+	public void BotUpdateGameHistory(String discordSnowflake, String guildSnowflake,
 			GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
-		if (userService.findUserBySnowflake(userSnowflake) == null) {
+		if (userService.findUserByDiscordSnowflake(discordSnowflake) == null) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user not exists");
 		}
 		if (!guildQueryService.existsBySnowflake(guildSnowflake)) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "guild not exists");
 		}
 		GameHistory gameHistory = gameHistoryQueryService.findGameHistoryByUserSnowFlakeAndGuildSnowflake(
-				userSnowflake, guildSnowflake);
+				discordSnowflake, guildSnowflake);
 		if (gameHistory == null) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "game history not exists");
 		}

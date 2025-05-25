@@ -1,5 +1,6 @@
 FROM eclipse-temurin:21-jdk-alpine AS builder
 RUN mkdir -p /app/backend /config
+RUN mkdir -p /images
 WORKDIR /app/backend
 COPY ./backend/backend .
 COPY ./config /config

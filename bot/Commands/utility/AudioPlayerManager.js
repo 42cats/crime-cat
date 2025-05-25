@@ -231,9 +231,17 @@ class AudioPlayerManager {
     if (this._fadeOutInterval) clearInterval(this._fadeOutInterval);
 
     try {
-      this.player.stop();
-      this.player.removeAllListeners();
-      if (this.connection) this.connection.destroy();
+      if (this.player) {
+        this.player.stop();
+        console.log("AudioPlayer stop 완료.");
+        this.player.removeAllListeners();
+      }
+      if (this.connection) {
+        this.connection.destroy();
+        console.log("VoiceConnection 해제 완료.");
+        this.connection = null;
+      }
+      console.log("AudioPlayerManager 리소스 정리 완료.");
     } catch (error) {
       console.error("Error during cleanup:", error);
     }

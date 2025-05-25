@@ -5,6 +5,8 @@ import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.gametheme.dto.AddCrimesceneThemeRequest;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 import lombok.*;
@@ -21,7 +23,7 @@ import org.hibernate.type.SqlTypes;
 @Getter
 @SuperBuilder
 @AllArgsConstructor
-@DiscriminatorValue(value = ThemeType.Numbers.CRIMESCENE)
+@DiscriminatorValue("CRIMESCENE")
 public class CrimesceneTheme extends GameTheme {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MAKER_TEAMS_ID", updatable = false, insertable = false)
@@ -50,7 +52,6 @@ public class CrimesceneTheme extends GameTheme {
     return CrimesceneTheme.builder()
         .title(request.getTitle())
         .summary(request.getSummary())
-        .authorId(UUID.fromString(request.getAuthor()))
         .tags(request.getTags())
         .content(request.getContent())
         .playerMin(request.getPlayerMin())
@@ -60,9 +61,17 @@ public class CrimesceneTheme extends GameTheme {
         .price(request.getPrice())
         .difficulty(request.getDifficulty())
         .publicStatus(request.isPublicStatus())
+        .updatedAt(LocalDateTime.now())
+        .recommendationEnabled(request.isRecommendationEnabled())
+        .commentEnabled(request.isCommentEnabled())
         .teamId(request.getMakerTeamsId())
         .guildSnowflake(request.getGuildSnowflake())
         .extra(request.getExtra())
         .build();
+    }
+
+    @Override
+    public String getDiscriminator() {
+        return "CRIMESCENE";
     }
 }

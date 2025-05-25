@@ -1,11 +1,9 @@
 package com.crimecat.backend.gametheme.controller;
 
-import com.crimecat.backend.gametheme.dto.AddMemberRequest;
-import com.crimecat.backend.gametheme.dto.CreateTeamRequest;
-import com.crimecat.backend.gametheme.dto.GetTeamResponse;
-import com.crimecat.backend.gametheme.dto.GetTeamsResponse;
-import com.crimecat.backend.gametheme.dto.ModifyMemberRequest;
+import com.crimecat.backend.gametheme.dto.*;
 import com.crimecat.backend.gametheme.service.MakerTeamService;
+import com.crimecat.backend.utils.AuthenticationUtil;
+import com.crimecat.backend.webUser.enums.UserRole;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -20,18 +18,15 @@ public class MakerTeamController {
     @PostMapping
     public void createTeam(@Valid @RequestBody CreateTeamRequest createTeamRequest) {
         // TODO: 만들 때 권한 확인 / 제한 두기
+        AuthenticationUtil.validateUserHasAuthority(UserRole.USER);
         makerTeamService.create(createTeamRequest.getName());
-    }
-
-    @GetMapping
-    public GetTeamsResponse getTeams() {
-        return makerTeamService.get();
     }
 
     @GetMapping("/{teamId}")
     public GetTeamResponse getTeam(@PathVariable UUID teamId) {
-        return makerTeamService.get(teamId);
+    return makerTeamService.get(teamId);
     }
+
 
     @DeleteMapping("/{teamId}")
     public void deleteTeam(@PathVariable UUID teamId) {
@@ -45,8 +40,13 @@ public class MakerTeamController {
     }
 
     @PatchMapping("/{teamId}/members")
-    public void deleteTeamMembers(@PathVariable UUID teamId, @RequestBody ModifyMemberRequest request) {
-        makerTeamService.deleteMembers(teamId, request.getMembers());
+    public DeleteMembersResponse deleteTeamMembers(@PathVariable UUID teamId, @RequestBody DeleteMembersRequest request) {
+        return new DeleteMembersResponse(makerTeamService.deleteMembers(teamId, request.getMembers()));
+    }
+
+    @PutMapping("/{teamId}/members/{memberId}")
+    public void updateTeamMember(@PathVariable UUID teamId, @PathVariable UUID memberId, @RequestBody UpdateMemberRequest request) {
+        makerTeamService.updateMember(teamId, memberId, request);
     }
 
     @GetMapping("/me")

@@ -1,12 +1,13 @@
 package com.crimecat.backend.utils;
 
-import com.crimecat.backend.auth.oauthUser.DiscordOAuth2User;
 import com.crimecat.backend.user.domain.DiscordUser;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.exception.CrimeCatException;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.webUser.enums.UserRole;
 import com.crimecat.backend.webUser.domain.WebUser;
+
+import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -37,12 +38,11 @@ public class AuthenticationUtil {
 
       Object principal = authentication.getPrincipal();
 
-      if (!(principal instanceof DiscordOAuth2User)) {
+      if (!(principal instanceof WebUser)) {
         throw ErrorStatus.INVALID_ACCESS.asException();
       }
 
-      DiscordOAuth2User discordUser = (DiscordOAuth2User) principal;
-      WebUser webUser = discordUser.getWebUser();
+      WebUser webUser = (WebUser) principal;
 
       if (webUser == null) {
         throw ErrorStatus.USER_NOT_FOUND.asException();
@@ -59,6 +59,30 @@ public class AuthenticationUtil {
       log.error("Authentication error", e);
       throw ErrorStatus.UNAUTHORIZED.asException();
     }
+  }
+
+  public static UUID getCurrentWebUserId() {
+    return getCurrentWebUser().getId();
+  }
+
+  public static Optional<WebUser> getCurrentWebUserOptional() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+    if (authentication == null || !authentication.isAuthenticated()) {
+      return Optional.empty();
+    }
+
+    Object principal = authentication.getPrincipal();
+
+    if (!(principal instanceof WebUser webUser)) {
+      return Optional.empty();
+    }
+
+    return Optional.of(webUser);
+  }
+
+  public static Optional<UUID> getCurrentWebUserIdOptional() {
+    return getCurrentWebUserOptional().map(WebUser::getId);
   }
 
   /**
@@ -89,7 +113,7 @@ public class AuthenticationUtil {
   public static boolean isAuthenticated() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     return authentication != null && authentication.isAuthenticated() &&
-        authentication.getPrincipal() instanceof DiscordOAuth2User;
+        authentication.getPrincipal() instanceof WebUser;
   }
 
   /**
@@ -208,4 +232,25 @@ public class AuthenticationUtil {
     }
   }
 
-}
+  /**
+   * 현재 인증된 사용자의 통합 User 객체를 Optional로 반환합니다.
+   * 인증되지 않은 사용자의 경우 Optional.empty()를 반환합니다.
+   *
+   * @return 인증된 사용자의 User 객체를 감싼 Optional
+   */
+  public static Optional<User> getCurrentUserOptional() {
+    return getCurrentWebUserOptional()
+            .map(WebUser::getUser);
+  }
+
+  /**
+   * 현재 인증된 사용자의 통합 User ID를 Optional로 반환합니다.
+   * 인증되지 않은 사용자의 경우 Optional.empty()를 반환합니다.
+   *
+   * @return 인증된 사용자의 User ID를 감싼 Optional
+   */
+  public static Optional<UUID> getCurrentUserIdOptional() {
+    return getCurrentUserOptional()
+            .map(User::getId);
+  }
+  }

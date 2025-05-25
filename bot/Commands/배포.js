@@ -119,7 +119,7 @@ module.exports = {
             if (deployScope === 'all' || deployScope === 'guild') {
                 if (guildCommands.length > 0) {
                     try {
-                        const guildId = process.env.PROD_GUILD_ID || interaction.guild.id;
+                        const guildId = process.env.DEV_GUILD_ID || interaction.guild.id;
                         const guildResult = await rest.put(
                             Routes.applicationGuildCommands(process.env.APP_ID, guildId),
                             { body: guildCommands }

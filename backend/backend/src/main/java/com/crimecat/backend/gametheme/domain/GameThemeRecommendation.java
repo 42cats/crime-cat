@@ -1,6 +1,7 @@
 package com.crimecat.backend.gametheme.domain;
 
 import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -15,7 +16,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "GAME_THEME_RECOMMENDATIONS",
         uniqueConstraints = {
-        @UniqueConstraint(name = "uk_gametheme_recommendations_user_theme", columnNames = {"USER_ID", "THEME_ID"})
+        @UniqueConstraint(name = "uk_gametheme_recommendations_user_theme", columnNames = {"WEB_USER_ID", "THEME_ID"})
 })
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
@@ -30,12 +31,12 @@ public class GameThemeRecommendation {
     private UUID id;
 
     @JdbcTypeCode(SqlTypes.BINARY)
-    @Column(name = "USER_ID")
-    private UUID userId;
+    @Column(name = "WEB_USER_ID")
+    private UUID webUserId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "USER_ID", updatable = false, insertable = false)
-    private User user;
+    @JoinColumn(name = "WEB_USER_ID", updatable = false, insertable = false)
+    private WebUser webUser;
 
     @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "THEME_ID")

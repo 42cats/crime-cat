@@ -1,35 +1,38 @@
 package com.crimecat.backend.webUser.domain;
 
 import com.crimecat.backend.user.domain.User;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.OneToOne;
-import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
-
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-
+import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
 import com.crimecat.backend.webUser.enums.LoginMethod;
 import com.crimecat.backend.webUser.enums.UserRole;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.OneToMany;
+import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 @Entity
 @Table(name = "web_users")
@@ -38,7 +41,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WebUser implements UserDetails {
+public class WebUser implements UserDetails, OAuth2User {
 
     // ✅ 고유 ID (UUID → BINARY(16) 저장)
     @Id
@@ -61,9 +64,25 @@ public class WebUser implements UserDetails {
     @Column(name = "email", unique = true, length = 100)
     private String email;
 
+    @Builder.Default
+    @Column(name = "email_alarm" , nullable = false)
+    private Boolean emailAlarm = false;
+
+    @Builder.Default
+    @Column(name = "post_alarm", nullable = false)
+    private Boolean postAlarm = false;
+
+    @Builder.Default
+    @Column(name = "post_comment", nullable = false)
+    private Boolean postComment = false;
+
+    @Builder.Default
+    @Column(name = "comment_comment", nullable = false)
+    private Boolean commentComment = false;
+
     @OneToOne(mappedBy = "webUser", fetch = FetchType.LAZY)
     private User user;
-
+    
     @Builder.Default
     @Column(name = "email_verified", nullable = false)
     private Boolean emailVerified = false;
@@ -98,6 +117,18 @@ public class WebUser implements UserDetails {
     @Builder.Default
     @Column(name ="is_Banned", nullable = false)
     private Boolean isBanned = false;
+    
+    // ✅ 차단 사유
+    @Column(name = "block_reason", columnDefinition = "TEXT")
+    private String blockReason;
+    
+    // ✅ 차단 시작 시간
+    @Column(name = "blocked_at")
+    private LocalDateTime blockedAt;
+    
+    // ✅ 차단 만료 시간 (null이면 영구 차단)
+    @Column(name = "block_expires_at")
+    private LocalDateTime blockExpiresAt;
 
     // ✅ 마지막 로그인 시각
     @Column(name = "last_login_at")
@@ -110,12 +141,12 @@ public class WebUser implements UserDetails {
     // ✅ 사용자 설정 (JSON 형식)
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSON")
-    private String settings;
+    private Map<String,Object> settings;
 
     // ✅ SNS 링크들 (JSON)
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "social_links", columnDefinition = "JSON")
-    private String socialLinks;
+    private Map<String,String> socialLinks;
 
     @PrePersist
     public void prePersist() {
@@ -138,7 +169,23 @@ public class WebUser implements UserDetails {
     // ✅ 사용자명 (UserDetails 기준 → 여기선 nickname 사용)
     @Override
     public String getUsername() {
-        return user.getName();
+        return user != null ? user.getName() : nickname;
+    }
+    
+    // OAuth2User 구현 메서드
+    @Override
+    public Map<String, Object> getAttributes() {
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("id", id.toString());
+        attributes.put("nickname", nickname);
+        attributes.put("discordId", discordUserSnowflake);
+        attributes.put("email", email);
+        return attributes;
+    }
+    
+    @Override
+    public String getName() {
+        return id.toString();
     }
 
     // ✅ 계정 만료 여부 (true면 만료 안됨)
@@ -150,7 +197,22 @@ public class WebUser implements UserDetails {
     // ✅ 계정 잠김 여부 (true면 잠김 아님)
     @Override
     public boolean isAccountNonLocked() {
-        return !isBanned;
+        // 차단되지 않았거나, 차단 기간이 만료된 경우에만 잠김 해제
+        if (!isBanned) {
+            return true;
+        }
+        
+        // 영구 차단인 경우 (blockExpiresAt이 null)
+        if (blockExpiresAt == null) {
+            return false;
+        }
+        
+        // 차단 기간이 만료된 경우 자동 차단 해제
+        if (LocalDateTime.now().isAfter(blockExpiresAt)) {
+            return true;
+        }
+        
+        return false;
     }
 
     // ✅ 자격 증명 만료 여부 (true면 만료 아님)
@@ -169,9 +231,37 @@ public class WebUser implements UserDetails {
         return user.getPoint();
     }
 
-    public void subtractPoint(int amount) {
-        this.user.subtractPoint(amount);
+
+    public void updateProfile(WebUserProfileEditRequestDto request) {
+        if(request.getNickName() != null){
+            this.nickname = request.getNickName();
+        }
+        if (request.getSocialLinks() != null) {
+            // 기존에 null 이었다면 새 맵 만들어 주기
+            if (this.socialLinks == null) {
+                this.socialLinks = new HashMap<>();
+                this.socialLinks.put("instagram?", "");
+                this.socialLinks.put("x", "");
+                this.socialLinks.put("openkakao", "");
+            }
+            // putAll 하면 같은 key 는 덮어쓰고, 새로운 key 는 추가
+            this.socialLinks.putAll(request.getSocialLinks());
+        }
+        if(request.getDiscordAlert() != null){
+            if(getUser().getDiscordUser() != null){
+                getUser().getDiscordUser().setDiscordAlarm(request.getDiscordAlert());
+            }
+        }
+        if(request.getBio() != null){
+            this.bio = request.getBio();
+        }
     }
 
-    public void addPoint(Integer point) {this.user.addPoint(point);}
+    public Map<String,String> getSocialLinks() {
+    if (socialLinks == null || socialLinks.isEmpty()){
+        return new HashMap<>();
+    }
+        return socialLinks;
+    }
+    
 }

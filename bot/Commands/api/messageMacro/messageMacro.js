@@ -7,10 +7,9 @@ const logger = require('../../utility/logger');
  */
 
 const axios = require('axios');
-const { formatApiError } = require('../../utility/logger');
-const { type } = require('node:os');
-// API 기본 설정
-const API_BASE_URL = process.env.BASE_URL || 'http://localhost:8080';
+const { User, Guild } = require('discord.js');
+const dotenv = require('dotenv');
+dotenv.config();
 const BEARER_TOKEN = process.env.DISCORD_CLIENT_SECRET;
 const API_PREFIX = '/bot/v1';
 const API_TIMEOUT = 8000; // 8초

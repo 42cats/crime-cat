@@ -29,19 +29,19 @@ public class BotGameHistoryController {
 
 	/**
 	 * 특정 유저의 게임 기록 조회
-	 * @param userSnowflake
+	 * @param discordSnowflake
 	 * @return
 	 */
 	@GetMapping("/crime_scene/{user_snowflake}")
-	public UserGameHistoryResponseDto getUserGameHistoryByUserSnowflake(@PathVariable("user_snowflake") String userSnowflake) {
-		return gameHistoryService.BotGetUserCrimeSceneGameHistoryByUserSnowflake(userSnowflake);
+	public UserGameHistoryResponseDto getUserGameHistoryByUserSnowflake(@PathVariable("user_snowflake") String discordSnowflake) {
+		return gameHistoryService.BotGetUserCrimeSceneGameHistoryByUserSnowflake(discordSnowflake);
 	}
 
 	@PatchMapping("/crime_scene/{user_snowflake}/guild/{guild_snowflake}")
-	public MessageDto<?> updateUserGameHistory(@PathVariable("user_snowflake") String userSnowflake,
-											   @PathVariable("guild_snowflake") String guildSnowflake,
-											   @RequestBody GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
-		gameHistoryService.BotUpdateGameHistory(userSnowflake, guildSnowflake, gameHistoryUpdateRequestDto);
-		return new MessageDto<>("History updated successfully");
+	public MessageDto<?> updateUserGameHistory(@PathVariable("user_snowflake") String discordSnowflake,
+	@PathVariable("guild_snowflake") String guildSnowflake,
+	@RequestBody GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
+	gameHistoryService.BotUpdateGameHistory(discordSnowflake, guildSnowflake, gameHistoryUpdateRequestDto);
+	return new MessageDto<>("History updated successfully");
 	}
 }

@@ -1,10 +1,7 @@
 package com.crimecat.backend.guild.dto.bot;
 
 import com.crimecat.backend.guild.domain.Guild;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -12,6 +9,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Setter
 @NoArgsConstructor
+@Builder
 public class GuildDto {
     private String snowflake;
     private String name;
@@ -23,5 +21,17 @@ public class GuildDto {
         this.name = guild.getName();
         this.ownerSnowflake = guild.getOwnerSnowflake();
         this.createdAt = guild.getCreatedAt();
+    }
+
+    public static GuildDto from(Guild guild) {
+        if (guild == null) {
+            return null;
+        }
+        return GuildDto.builder()
+                .snowflake(guild.getSnowflake())
+                .name(guild.getName())
+                .ownerSnowflake(guild.getOwnerSnowflake())
+                .createdAt(guild.getCreatedAt())
+                .build();
     }
 }

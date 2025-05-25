@@ -1,14 +1,14 @@
-import React, { useContext, useState } from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import MDEditor, { commands, EditorContext } from "@uiw/react-md-editor";
-import { useTheme } from "@/hooks/useTheme";
+import { MarkdownEditor } from "@/components/markdown";
 import { Command, CommandInput } from "@/lib/types";
 import PageTransition from "@/components/PageTransition";
 import { useFormValidator } from "@/hooks/useFormValidator";
+import { useToast } from "@/hooks/useToast";
 
 interface CommandFormProps {
   mode: "create" | "edit";
@@ -18,19 +18,6 @@ interface CommandFormProps {
   isLoading?: boolean;
 }
 
-const WritePreviewToggle = () => {
-  const { preview, dispatch } = useContext(EditorContext);
-  const base = "md-editor-toolbar-button h-[29px] px-2 text-sm font-bold rounded hover:bg-gray-100";
-  const selected = "text-blue-600";
-  const unselected = "text-gray-500";
-  return (
-    <div className="flex items-center">
-      <button onClick={() => dispatch({ preview: "edit" })} className={`${base} ${preview === "edit" ? selected : unselected}`}>작성</button>
-      <button onClick={() => dispatch({ preview: "preview" })} className={`${base} ${preview === "preview" ? selected : unselected}`}>미리보기</button>
-    </div>
-  );
-};
-
 const CommandForm: React.FC<CommandFormProps> = ({
   mode,
   title,
@@ -38,7 +25,7 @@ const CommandForm: React.FC<CommandFormProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
-  const { theme } = useTheme();
+  const { toast } = useToast();
 
   const [form, setForm] = useState<CommandInput>({
     name: initialData.name || "",
@@ -52,7 +39,7 @@ const CommandForm: React.FC<CommandFormProps> = ({
   const [permInput, setPermInput] = useState("");
   const [isComposing, setIsComposing] = useState(false);
 
-  const { errors, validate, validateField } = useFormValidator<CommandInput>((data) => {
+  const { errors, validateField, validateWithErrors } = useFormValidator<CommandInput>((data) => {
     const newErrors: Record<string, string> = {};
     if (!data.name) newErrors.name = "이름을 입력해주세요.";
     if (!data.description) newErrors.description = "설명을 입력해주세요.";
@@ -75,7 +62,24 @@ const CommandForm: React.FC<CommandFormProps> = ({
   };
 
   const handleSubmit = () => {
-    if (!validate(form)) return;
+    const currentErrors = validateWithErrors(form);
+    const errorMessages = Object.values(currentErrors);
+
+    if (errorMessages.length > 0) {
+      toast({
+        title: "입력 오류",
+        description: (
+          <div>
+            {errorMessages.map((msg, idx) => (
+              <div key={idx}>{msg}</div>
+            ))}
+          </div>
+        ),
+        variant: "destructive",
+      });
+      return;
+    }
+
     onSubmit(form);
   };
 
@@ -161,19 +165,12 @@ const CommandForm: React.FC<CommandFormProps> = ({
         {/* 필드: 본문 */}
         <div>
           <Label className="font-bold mb-1 block">본문 내용 *</Label>
-          <div data-color-mode={theme === "dark" ? "dark" : "light"}>
-            <div className="border rounded-md overflow-hidden">
-              <MDEditor
-                value={form.content}
-                onChange={(val) => setForm({ ...form, content: val || "" })}
-                onBlur={() => validateField("content", form.content)}
-                height={400}
-                preview="edit"
-                commands={[{ name: "toggle-preview", keyCommand: "toggle-preview", icon: <WritePreviewToggle /> }, ...commands.getCommands()]}
-                extraCommands={[]}
-              />
-            </div>
-          </div>
+          <MarkdownEditor
+            value={form.content}
+            onChange={(val) => setForm({ ...form, content: val || "" })}
+            onBlur={() => validateField("content", form.content)}
+            height={400}
+          />
           {errors.content && <p className="text-red-500 text-sm">{errors.content}</p>}
         </div>
 

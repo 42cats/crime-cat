@@ -1,5 +1,6 @@
 package com.crimecat.backend.auth.handler;
 
+import com.crimecat.backend.utils.ProfileChecker;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,7 +37,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     private final WebUserRepository webUserRepository;
     private final RefreshTokenService refreshTokenService;
     private final ServiceUrlConfig serviceUrlConfig;
-
+    private final ProfileChecker profileChecker;
     /**
      * 인증 성공 시 후속 처리를 담당
      *
@@ -49,10 +50,11 @@ public void onAuthenticationSuccess(HttpServletRequest request,
                                      HttpServletResponse response,
                                      Authentication authentication) throws IOException, ServletException {
 
-    OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-    log.info("🧾 [OAuth2User 정보] {}", oAuth2User);
+    // Principal을 WebUser로 직접 캠스팅하여 사용
+    WebUser webUser = (WebUser) authentication.getPrincipal();
+    log.info("🧾 [WebUser 정보] {}", webUser);
 
-    String webUserId = Objects.requireNonNull(oAuth2User.getName());
+    String webUserId = webUser.getId().toString();
     log.info("🆔 [WebUser UUID] {}", webUserId);
 
     Optional<WebUser> optionalUser = webUserRepository.findById(UUID.fromString(webUserId));
@@ -77,9 +79,19 @@ public void onAuthenticationSuccess(HttpServletRequest request,
     response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createAccessCookie(accessToken));
     response.addHeader(HttpHeaders.SET_COOKIE, TokenCookieUtil.createRefreshCookie(refreshToken));
 
+    var session = request.getSession(false);
+    if (session != null) session.invalidate();
     String baseUrl = serviceUrlConfig.getDomain();
     log.info("🔁 [리다이렉트 수행 → {}]", baseUrl);
-    response.sendRedirect(baseUrl);
+    if(profileChecker.check()){
+        response.sendRedirect("https://" + baseUrl+ "/");
+    }
+    else {
+        response.sendRedirect("https://" + baseUrl+ "/");
+    }
+    // response.setContentType("application/json");
+    // response.setCharacterEncoding("UTF-8");
+    // response.getWriter().write("{\"status\":\"success\"}");
 }
 
 }

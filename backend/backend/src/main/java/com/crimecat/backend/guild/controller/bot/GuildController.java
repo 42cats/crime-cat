@@ -1,8 +1,13 @@
 package com.crimecat.backend.guild.controller.bot;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -39,5 +44,22 @@ public class GuildController {
     public MessageDto<?> deleteGuild(@PathVariable String snowflake) {
         guildService.deleteGuild(snowflake);
         return new MessageDto<>("Guild deleted successfully");
+    }
+
+    @GetMapping("/{snowflake}/public")
+    public ResponseEntity<Map<String, Boolean>> getGuildPublicStatus(@PathVariable String snowflake) {
+        boolean isPublic = guildService.getGuildPublicStatus(snowflake);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("isPublic", isPublic);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{snowflake}/public")
+    public ResponseEntity<MessageDto<Map<String, Boolean>>> toggleGuildPublicStatus(@PathVariable String snowflake) {
+        boolean newStatus = guildService.toggleGuildPublicStatus(snowflake);
+        Map<String, Boolean> data = new HashMap<>();
+        data.put("isPublic", newStatus);
+        String message = newStatus ? "공개로 설정되었습니다." : "비공개로 설정되었습니다.";
+        return ResponseEntity.ok(new MessageDto<>(message, data));
     }
 }

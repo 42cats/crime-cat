@@ -9,31 +9,7 @@ import com.crimecat.backend.point.service.PointHistoryService;
 import com.crimecat.backend.user.domain.DiscordUser;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.domain.UserPermission;
-import com.crimecat.backend.user.dto.TotalGuildRankingByPlayCountDto;
-import com.crimecat.backend.user.dto.TotalUserRankingByMakerDto;
-import com.crimecat.backend.user.dto.TotalUserRankingByPlayTimeDto;
-import com.crimecat.backend.user.dto.TotalUserRankingByPointDto;
-import com.crimecat.backend.user.dto.TotalUserRankingDto;
-import com.crimecat.backend.user.dto.TotalUserRankingFailedResponseDto;
-import com.crimecat.backend.user.dto.TotalUserRankingResponseDto;
-import com.crimecat.backend.user.dto.TotalUserRankingSuccessResponseDto;
-import com.crimecat.backend.user.dto.UserDbInfoDto;
-import com.crimecat.backend.user.dto.UserDbInfoResponseDto;
-import com.crimecat.backend.user.dto.UserGrantedPermissionDto;
-import com.crimecat.backend.user.dto.UserGrantedPermissionResponseDto;
-import com.crimecat.backend.user.dto.UserHasPermissionResponseDto;
-import com.crimecat.backend.user.dto.UserInfoResponseDto;
-import com.crimecat.backend.user.dto.UserListResponseDto;
-import com.crimecat.backend.user.dto.UserPatchDto;
-import com.crimecat.backend.user.dto.UserPatchResponseDto;
-import com.crimecat.backend.user.dto.UserPermissionPurchaseDto;
-import com.crimecat.backend.user.dto.UserPermissionPurchaseFailedResponseDto;
-import com.crimecat.backend.user.dto.UserPermissionPurchaseResponseDto;
-import com.crimecat.backend.user.dto.UserPermissionPurchaseSuccessResponseDto;
-import com.crimecat.backend.user.dto.UserRankingFailedResponseDto;
-import com.crimecat.backend.user.dto.UserRankingResponseDto;
-import com.crimecat.backend.user.dto.UserRankingSuccessResponseDto;
-import com.crimecat.backend.user.dto.UserResponseDto;
+import com.crimecat.backend.user.dto.*;
 import com.crimecat.backend.user.repository.DiscordUserRepository;
 import com.crimecat.backend.user.repository.UserRepository;
 import com.crimecat.backend.exception.ErrorStatus;
@@ -48,9 +24,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -85,9 +64,32 @@ public class UserService {
 	private final EntityManager entityManager;
 
 	@Transactional(readOnly = true)
+	@Cacheable(value = "user:discord", key = "'snowflake:' + #userSnowflake")
 	public DiscordUser findUserBySnowflake(String userSnowflake) {
 		return discordUserQueryService.findByUserSnowflake(userSnowflake);
 	}
+
+	@Transactional(readOnly = true)
+	public User findUserByDiscordSnowflake(String userSnowflake) {
+		return userRepository.findByDiscordSnowflake(userSnowflake).orElse(null);
+	}
+	
+    /**
+     * ID로 사용자를 찾습니다.
+     */
+    @Transactional(readOnly = true)
+    public User getUserById(UUID userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> ErrorStatus.USER_NOT_FOUND.asException());
+    }
+    
+    /**
+     * 사용자를 저장합니다.
+     */
+    @Transactional
+    public User save(User user) {
+        return userRepository.save(user);
+    }
 
 	@Transactional
 	public UserInfoResponseDto saveUserInfo(String snowflake, String name, String avatar) {
@@ -222,6 +224,7 @@ public class UserService {
 	 * @return
 	 */
 	@Transactional(readOnly = true)
+	@Cacheable(value = "user:permissions", key = "'all:' + #userSnowflake")
 	public UserGrantedPermissionResponseDto getAllUserPermissions(String userSnowflake) {
 		if (StringUtils.isBlank(userSnowflake)) {
 			return new UserGrantedPermissionResponseDto("Invalid request format", null);
@@ -235,7 +238,7 @@ public class UserService {
 				= userPermissionService.getActiveUserPermissions(user)
 				.stream()
 				.map(aup -> new UserGrantedPermissionDto(
-						aup.getPermission().getId(),
+						aup.getPermission().getId().toString(),
 						aup.getPermission().getName(),
 						aup.getExpiredAt(),
 						aup.getPermission().getInfo()))
@@ -275,6 +278,7 @@ public class UserService {
 	 * @return
 	 */
 	@Transactional(readOnly = true)
+	@Cacheable(value = "user:ranking", key = "#userSnowflake")
 	public UserRankingResponseDto getUserRanking(String userSnowflake) {
 		if (StringUtils.isBlank(userSnowflake)) {
 			return new UserRankingFailedResponseDto("Invalid request format");
@@ -308,6 +312,7 @@ public class UserService {
 	}
 
 	@Transactional(readOnly = true)
+	@Cacheable(value = "user:ranking", key = "'total:' + #sortingCondition + ':page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize")
 	public TotalUserRankingResponseDto getTotalUserRankingByParamCondition(Pageable pageable,
 			String sortingCondition) {
 		if (StringUtils.isBlank(sortingCondition)) {
@@ -402,8 +407,8 @@ public class UserService {
 		}
 		return new UserListResponseDto(
 				gameHistoryQueryService.findUsersByGuildSnowflakeAndDiscordAlarm(guildSnowflake, discordAlarm).stream()
-						.map(GameHistory::getDiscordUser)
-						.map(DiscordUser::getSnowflake)
+						.map(GameHistory::getUser)
+						.map(User::getDiscordSnowflake)
 						.toList()
 		);
 	}
@@ -425,6 +430,6 @@ public class UserService {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "user not exists");
 		}
 		UserDbInfoDto userDbInfoDto = UserDbInfoDto.from(byUserSnowflake);
-		return new UserDbInfoResponseDto("user info founded",userDbInfoDto);
+		return new UserDbInfoResponseDto("user info founded", userDbInfoDto);
 	}
 }

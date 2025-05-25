@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { noticesService } from "@/api/noticesService";
+import { noticesService } from '@/api/content';
 import { Notice, NoticePage } from "@/lib/types";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { isWithinDays } from "@/utils/highlight";
 import { useAuth } from "@/hooks/useAuth";
 import { Pin } from "lucide-react";
 import { UTCToKST } from "@/lib/dateFormat";
+
 const PAGE_SIZE = 10;
 
 const noticeTypeBadge = (type: string) => {
@@ -47,37 +48,20 @@ const noticeTypeBadge = (type: string) => {
     }
 };
 
-const formatDateTime = (dateString: string) => {
-    const d = new Date(dateString);
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-    return d.toLocaleString(
-        "ko-KR",
-        isMobile
-            ? {
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-              }
-            : {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-              }
-    );
-};
-
 const NoticeList: React.FC = () => {
     const [page, setPage] = useState(0);
     const { hasRole } = useAuth();
     const navigate = useNavigate();
 
-    const { data, isLoading, error } = useQuery<NoticePage>({
+    const {
+        data,
+        isLoading,
+        isFetching,
+        error,
+    } = useQuery<NoticePage, Error, NoticePage, [string, number]>({
         queryKey: ["notices", page],
         queryFn: () => noticesService.getNotices(page, PAGE_SIZE),
-        keepPreviousData: true,
+        placeholderData: (prev) => prev,
     });
 
     const handleClick = (notice: Notice) => {
@@ -135,7 +119,7 @@ const NoticeList: React.FC = () => {
                     )}
                 </div>
 
-                {isLoading ? (
+                {isLoading && !data ? (
                     <div className="space-y-4">
                         {Array.from({ length: 5 }).map((_, idx) => (
                             <Skeleton key={idx} className="h-20 rounded-lg" />
@@ -149,7 +133,10 @@ const NoticeList: React.FC = () => {
                     <div className="space-y-4">
                         {data.content.map((notice) => {
                             const isNew = isWithinDays(notice.createdAt, 7);
-                            const isUpdated = isWithinDays(notice.updatedAt, 7);
+                            const isUpdated = isWithinDays(
+                                notice.updatedAt,
+                                7
+                            );
 
                             return (
                                 <div

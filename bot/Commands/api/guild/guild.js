@@ -95,5 +95,50 @@ async function guildAddProcess(client, guild) {
 module.exports = {
 	addGuild,
 	guildMembersAdd,
-	guildAddProcess
+	guildAddProcess,
+	getGuildPublicStatus,
+	toggleGuildPublicStatus
+}
+
+/**
+ * 길드의 공개 상태를 조회합니다.
+ * @param {string} guildId 길드 ID
+ * @returns {Promise<boolean>} 공개 여부 (true: 공개, false: 비공개)
+ */
+async function getGuildPublicStatus(guildId) {
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/public`;
+	try {
+		const response = await axios.get(API_URL, {
+			headers: {
+				'Authorization': `Bearer ${BEARER_TOKEN}`,
+				'Content-Type': 'application/json'
+			}
+		});
+		return response.data.isPublic;
+	} catch (error) {
+		logger.error('길드 공개 상태 조회 실패:', error.response?.data || error.message);
+		throw error;
+	}
+}
+
+/**
+ * 길드의 공개 상태를 토글합니다.
+ * @param {string} guildId 길드 ID
+ * @returns {Promise<{message: string, innerDto: {isPublic: boolean}}>} 변경 결과
+ */
+async function toggleGuildPublicStatus(guildId) {
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/public`;
+	try {
+		const response = await axios.patch(API_URL, {}, {
+			headers: {
+				'Authorization': `Bearer ${BEARER_TOKEN}`,
+				'Content-Type': 'application/json'
+			}
+		});
+		console.log(response);
+		return response.data;
+	} catch (error) {
+		logger.error('길드 공개 상태 토글 실패:', error.response?.data || error.message);
+		throw error;
+	}
 }

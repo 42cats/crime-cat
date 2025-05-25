@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS `web_users` (
     `profile_image_path` VARCHAR(255) DEFAULT NULL COMMENT '프로필 이미지 경로',
     `settings` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '유저 설정 (JSON)',
     `social_links` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'SNS 링크 (JSON)',
+    `email_alarm` BIT(1) NOT NULL DEFAULT b'0' COMMENT '이메일 수신설정',
     `login_method` ENUM('DISCORD', 'GOOGLE', 'LOCAL') NOT NULL COMMENT '로그인 방식',
     `role`         ENUM('ADMIN', 'MANAGER', 'USER') NOT NULL COMMENT '권한 등급',
     PRIMARY KEY (`id`),
@@ -48,7 +49,7 @@ COMMENT='웹 사용자 정보 테이블';
     users
 
 */
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
     `id`                BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     `discord_snowflake` VARCHAR(50) UNIQUE COMMENT '디스코드 유저 snowflake',
     `web_user_id`       BINARY(16) DEFAULT NULL COMMENT '웹 유저 아이디',
@@ -91,7 +92,7 @@ CREATE TABLE IF NOT EXISTS `guilds` (
 /**
   비번 테이블
 */
-CREATE TABLE `password_note` (
+CREATE TABLE IF NOT EXISTS `password_note` (
     `id` BINARY(16) NOT NULL COMMENT 'BINARY(16) 형식의 고유 식별자',
     `guild_snowflake` VARCHAR(50) NOT NULL COMMENT '연결된 길드의 Snowflake ID',
     `channel_snowflake` VARCHAR(50) NOT NULL COMMENT '길드의 채널 Snowflake ID',
@@ -143,9 +144,10 @@ CREATE TABLE IF NOT EXISTS `musics`
 /*
     maker_teams
 */
-CREATE TABLE `maker_teams` (
+CREATE TABLE IF NOT EXISTS `maker_teams` (
     `id`            BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
-    `name`          VARCHAR(50) NOT NULL COMMENT '팀 이름'
+    `name`          VARCHAR(50) NOT NULL COMMENT '팀 이름',
+    `is_individual` tinyint(1) NOT NULL DEFAULT 0 COMMENT '개인 팀 여부'
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci
@@ -154,24 +156,25 @@ CREATE TABLE `maker_teams` (
 /*
     maker_team_members
 */
-CREATE TABLE `maker_team_members` (
-    `id`         BINARY(16) PRIMARY KEY,
-    `team_id`    BINARY(16),
-    `name`       VARCHAR(50),
-    `user_id`    BINARY(16),
+CREATE TABLE IF NOT EXISTS `maker_team_members` (
+     `id`         BINARY(16) PRIMARY KEY,
+     `team_id`    BINARY(16),
+     `name`       VARCHAR(50),
+     `web_user_id`    BINARY(16),
+     `is_leader`  BOOLEAN NOT NULL DEFAULT FALSE,
 
-    CONSTRAINT `fk_team_id` FOREIGN KEY (`team_id`) REFERENCES `maker_teams`(`id`)
-        ON DELETE CASCADE,
-    CONSTRAINT `fk_user_id` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
-) ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4
-COLLATE = utf8mb4_unicode_ci
-COMMENT = '제작 팀 멤버 테이블';
+     CONSTRAINT `fk_team_id` FOREIGN KEY (`team_id`) REFERENCES `maker_teams`(`id`)
+         ON DELETE CASCADE,
+     CONSTRAINT `fk_web_user_id` FOREIGN KEY (`web_user_id`) REFERENCES `web_users`(`id`)
+ ) ENGINE = InnoDB
+ DEFAULT CHARSET = utf8mb4
+ COLLATE = utf8mb4_unicode_ci
+ COMMENT = '제작 팀 멤버 테이블';
 
 /*
     game_themes
 */
-CREATE TABLE `game_themes` (
+CREATE TABLE IF NOT EXISTS `game_themes` (
     `id`                BINARY(16) PRIMARY KEY COMMENT '내부 고유 식별자',
     `title`             VARCHAR(255) NOT NULL COMMENT '테마 제목',
     `thumbnail`         TEXT COMMENT '썸네일 이미지',
@@ -179,7 +182,7 @@ CREATE TABLE `game_themes` (
     `recommendations`   INT DEFAULT 0 COMMENT '추천수',
     `views`             INT DEFAULT 0 COMMENT '조회수',
     `play_count`        INT DEFAULT 0 COMMENT '총 플레이 횟수',
-    `author`            BINARY(16) NOT NULL COMMENT '작성자 (users.id 참조)',
+    `author`            BINARY(16) NOT NULL COMMENT '작성자 (web_users.id 참조)',
     `tags`              LONGTEXT COMMENT '태그 배열 ["tag1", "tag2"]',
     `content`           TEXT COMMENT '게시글 본문',
     `player_min`        INT COMMENT '최소 인원수',
@@ -190,12 +193,12 @@ CREATE TABLE `game_themes` (
     `difficulty`        INT COMMENT '난이도',
     `is_public`         BOOLEAN DEFAULT TRUE COMMENT '공개 여부',
     `is_deleted`        BOOLEAN DEFAULT FALSE COMMENT '소프트 삭제 여부',
-    `type`              ENUM('CRIMESCENE', 'ESCAPE_ROOM', 'MURDER_MYSTERY', 'REALWORLD') NOT NULL,
+    `type`              VARCHAR(50) NOT NULL COMMENT 'CRIMESCENE, ESCAPE_ROOM, MURDER_MYSTERY, REALWORLD',
     `created_at`        DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_at`        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT `fk_author` FOREIGN KEY (`author`)
-        REFERENCES `users`(`id`)
+        REFERENCES `web_users`(`id`)
         ON DELETE CASCADE
 
 ) ENGINE = InnoDB
@@ -206,28 +209,22 @@ CREATE TABLE `game_themes` (
 /*
     crimescene_themes
 */
-CREATE TABLE `crimescene_themes` (
-    `id` BINARY(16) PRIMARY KEY COMMENT '게임 테마',
-    `maker_teams_id` BINARY(16) COMMENT '제작 팀 정보',
-    `guild_snowflake` VARCHAR(50) COMMENT '디스코드 서버 id',
-    `extra` LONGTEXT COMMENT '추가 정보 (JSON)',
-
-    CONSTRAINT `fk_crimescene_game_theme` FOREIGN KEY (`id`)
-        REFERENCES `game_themes`(`id`)
-        ON DELETE CASCADE,
-
-    CONSTRAINT `fk_maker_teams_id` FOREIGN KEY (`maker_teams_id`)
-        REFERENCES `maker_teams`(`id`)
-        ON DELETE CASCADE,
-
-    CONSTRAINT `fk_guild_snowflake` FOREIGN KEY (`guild_snowflake`)
-        REFERENCES `guilds`(`snowflake`)
-        ON DELETE CASCADE
-)
-ENGINE=InnoDB
-DEFAULT CHARSET=utf8mb4
-COLLATE=utf8mb4_unicode_ci
-COMMENT='크라임씬 테마 테이블';
+CREATE TABLE IF NOT EXISTS `crimescene_themes` (
+     `game_theme_id`     BINARY(16) PRIMARY KEY COMMENT '게임 테마',
+     `maker_teams_id`     BINARY(16) COMMENT '제작 팀 정보',
+     `guild_snowflake`   VARCHAR(50) COMMENT '디스코드 서버 id',
+     `extra`             LONGTEXT COMMENT '추가 정보 (JSON)'
+         CHECK (JSON_VALID(`extra`)),
+     CONSTRAINT `fk_maker_teams_id` FOREIGN KEY (`maker_teams_id`)
+         REFERENCES `maker_teams`(`id`)
+         ON DELETE SET NULL,
+     CONSTRAINT `fk_guild_snowflake` FOREIGN KEY (`guild_snowflake`)
+         REFERENCES `guilds`(`snowflake`)
+         ON DELETE CASCADE
+ ) ENGINE = InnoDB
+   DEFAULT CHARSET = utf8mb4
+   COLLATE = utf8mb4_unicode_ci
+   COMMENT = '크라임씬 테마 테이블';
 
 
 CREATE TABLE IF NOT EXISTS `game_histories`
@@ -254,11 +251,14 @@ CREATE TABLE IF NOT EXISTS `game_histories`
     COMMENT='게임 기록 테이블';
 
 -- 유저 + 생성일 내림차순 인덱스
-CREATE INDEX idx_game_histories_user_created_at 
+SET @user_created_index_exists = (SELECT COUNT(*) FROM information_schema.statistics
+    WHERE table_schema = '${DB_DISCORD}' AND table_name = 'game_histories'
+    AND index_name = 'idx_game_histories_user_created_at');
+CREATE INDEX idx_game_histories_user_created_at
 ON game_histories (user_snowflake, created_at DESC);
 
 -- 게임 테마 기준 인덱스 (통계용)
-CREATE INDEX idx_game_histories_game_theme 
+CREATE INDEX idx_game_histories_game_theme
 ON game_histories (game_theme_id);
 
 
@@ -499,12 +499,12 @@ CREATE TABLE IF NOT EXISTS `group_items` (
 /*
 
     commands
-    
+
 */
 CREATE TABLE `commands` (
   `id` BINARY(16) NOT NULL
     COMMENT '고유 식별자(UUID, 16바이트 이진 저장) – 애플리케이션에서 UNHEX(REPLACE(UUID(),"-",""))로 삽입',
-  
+
   `name` VARCHAR(255) NOT NULL
     COMMENT '명령어 이름(유니크, 예: "/계산")',
 
@@ -517,51 +517,18 @@ CREATE TABLE `commands` (
   `category` VARCHAR(100) NOT NULL
     COMMENT '카테고리(예: "유틸리티", "게임" 등)',
 
-  `required_permissions` LONGTEXT NOT NULL
-    COMMENT '필수 권한 목록(JSON 배열, 예: ["공통"])',
+-- 게임 테마 인덱스 존재 확인
+SET @game_theme_index_exists = (SELECT COUNT(*) FROM information_schema.statistics
+    WHERE table_schema = '${DB_DISCORD}' AND table_name = 'game_histories'
+    AND index_name = 'idx_game_histories_game_theme');
 
-  `content` TEXT NOT NULL
-    COMMENT '명령어 상세 내용(Markdown 등으로 저장)',
+-- 인덱스가 없는 경우에만 생성
+SET @create_user_created_index = IF(@user_created_index_exists = 0, 'CREATE INDEX idx_game_histories_user_created_at ON game_histories (user_snowflake, created_at DESC)', 'DO 0');
+PREPARE stmt1 FROM @create_user_created_index;
+EXECUTE stmt1;
+DEALLOCATE PREPARE stmt1;
 
-  `created_at` DATETIME(6) NOT NULL
-    DEFAULT CURRENT_TIMESTAMP(6)
-    COMMENT '레코드 생성 시각(UTC, 자동 설정)',
-
-  `updated_at` DATETIME(6) NOT NULL
-    DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
-    COMMENT '레코드 최종 수정 시각(UTC, 자동 갱신)',
-
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UK_commands_name` (`name`)
-) ENGINE=InnoDB
-  DEFAULT CHARSET=utf8mb4
-  COLLATE=utf8mb4_general_ci
-  COMMENT='디스코드 명령어 정보 저장 테이블';
-
-CREATE TABLE IF NOT EXISTS notices (
-    id          BINARY(16)  PRIMARY KEY,
-    title       VARCHAR(200) NOT NULL,
-    content     TEXT         NOT NULL,
-    summary     VARCHAR(300) NOT NULL,
-    notice_type ENUM('SYSTEM','EVENT','UPDATE') NOT NULL DEFAULT 'SYSTEM',
-    is_pinned   BOOLEAN      NOT NULL DEFAULT FALSE,
-    order_index INT          DEFAULT 0,
-    created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_notice_type(created_at, notice_type)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS `game_theme_recommendations` (
-  `id`          BINARY(16) PRIMARY KEY,
-  `user_id`     BINARY(16) NOT NULL,
-  `theme_id`    BINARY(16) NOT NULL,
-  `created_at`  TIMESTAMP DEFAULT now(),
-  CONSTRAINT `fk_gametheme_recommendations_user_id`
-    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
-  CONSTRAINT `fk_gametheme_recommendations_theme_id`
-    FOREIGN KEY (`theme_id`) REFERENCES `game_themes` (`id`),
-  UNIQUE KEY `uk_gametheme_recommendations_user_theme` (`user_id`, `theme_id`)
-) ENGINE=InnoDB
-  DEFAULT CHARSET=utf8mb4
-  COLLATE=utf8mb4_general_ci
-  COMMENT='게임 테마 추천 정보 테이블';
+SET @create_game_theme_index = IF(@game_theme_index_exists = 0, 'CREATE INDEX idx_game_histories_game_theme ON game_histories (game_theme_id)', 'DO 0');
+PREPARE stmt2 FROM @create_game_theme_index;
+EXECUTE stmt2;
+DEALLOCATE PREPARE stmt2;

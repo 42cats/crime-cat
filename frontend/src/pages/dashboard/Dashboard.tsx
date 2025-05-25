@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DashboardProfileCard } from "@/pages/dashboard/DashbordProfileCard"; // ✅ 수정된 통합 카드
-import { dailycheckService } from "@/api/dailycheckService";
-import { userInfocheckService } from "@/api/userInfoService";
+import { dailycheckService } from "@/api/game";
+import { userInfocheckService } from "@/api/profile/userInfoService";
 import { useToast } from "@/hooks/useToast";
-import { userGrantedPermissionService } from "@/api/userGrantedPermissionService";
+import { userGrantedPermissionService } from "@/api/auth";
 import { UserPermissionCard } from "@/components/UserPermissionCard";
 const fetchDailyCheck = async (id: string) => {
     const data = await dailycheckService.getDailyCheck(id);

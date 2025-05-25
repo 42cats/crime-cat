@@ -4,19 +4,32 @@ import com.crimecat.backend.coupon.dto.CouponRedeemRequestDto;
 import com.crimecat.backend.coupon.dto.MessageDto;
 import com.crimecat.backend.coupon.dto.WebCouponRequestDto;
 import com.crimecat.backend.coupon.service.CouponService;
+import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.user.dto.UserGrantedPermissionDto;
 import com.crimecat.backend.user.service.UserService;
-import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.dto.FindUserInfo;
+import com.crimecat.backend.webUser.dto.NicknameCheckResponseDto;
+import com.crimecat.backend.webUser.dto.NotificationSettingsRequestDto;
+import com.crimecat.backend.webUser.dto.NotificationSettingsResponseDto;
+import com.crimecat.backend.webUser.dto.NotificationToggleRequest;
+import com.crimecat.backend.webUser.dto.UserPostNotificationSettingsDto;
+import com.crimecat.backend.webUser.dto.UserProfileInfoResponseDto;
+import com.crimecat.backend.webUser.dto.WebUserProfileEditRequestDto;
+import com.crimecat.backend.webUser.enums.AlarmType;
+import com.crimecat.backend.webUser.enums.UserRole;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import com.crimecat.backend.webUser.service.WebUserService;
-
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -55,4 +68,79 @@ public class WebUserController {
     return userService.getAllUserPermissionsForWeb(webUser.getDiscordUserSnowflake());
   }
 
+  @PutMapping(
+      path = "{user_id}/profile",
+      consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+  )
+  public ResponseEntity<Void> editUserProfile(
+      @RequestPart(name = "avatar", required = false) MultipartFile file,
+      @RequestPart(name = "data") WebUserProfileEditRequestDto webUserProfileEditRequestDto,
+      @PathVariable("user_id") String userId
+  ){
+    //유저인증
+    AuthenticationUtil.validateCurrentUserMatches(UUID.fromString(userId));
+    webUserProfileEditRequestDto.setUserId(userId);
+    webUserService.userProfileSet(file,webUserProfileEditRequestDto);
+    return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+  }
+
+  /**
+   * 닉네임 중복 체크 API
+   *
+   * @param nickname 중복 체크할 닉네임
+   * @return 사용 가능 여부 및 메시지
+   */
+  @GetMapping("/check-nickname")
+  public ResponseEntity<NicknameCheckResponseDto> checkNickname(@RequestParam String nickname) {
+    NicknameCheckResponseDto response = webUserService.checkNicknameDuplicate(nickname);
+    return ResponseEntity.ok(response);
+  }
+
+  @GetMapping("/profile/{user_id}")
+  public ResponseEntity<UserProfileInfoResponseDto> getUserInfo(@PathVariable("user_id") String userId){
+    AuthenticationUtil.validateCurrentUserMatches(UUID.fromString(userId));
+    UserProfileInfoResponseDto userInfo = webUserService.getUserInfo(userId);
+    return ResponseEntity.ok().body(userInfo);
+  }
+
+  @GetMapping("/{user_id}/notifications/settings")
+  public ResponseEntity<NotificationSettingsResponseDto> getNotificationSettings(@PathVariable("user_id") String userId){
+    AuthenticationUtil.validateCurrentUserMatches(UUID.fromString(userId));
+    NotificationSettingsResponseDto userNotificationSettings = webUserService.getUserNotificationSettings(
+        userId);
+    return ResponseEntity.ok().body(userNotificationSettings);
+  }
+
+  @PutMapping("/{user_id}/notifications/{type}")
+  public ResponseEntity<NotificationSettingsResponseDto> setAllNotificationSetting(
+      @PathVariable("user_id") String userId,
+      @RequestBody NotificationSettingsRequestDto body,
+      @PathVariable("type") AlarmType alarmType
+      ){
+    AuthenticationUtil.validateCurrentUserMatches(UUID.fromString(userId));
+    NotificationSettingsResponseDto notificationSettingsResponseDto = webUserService.setAllNotificationSetting(
+        userId, body, alarmType);
+    return ResponseEntity.ok().body(notificationSettingsResponseDto);
+  }
+  
+  /**
+   * 사용자 검색 API
+   * @param keyword 검색 키워드 (닉네임 또는 Discord Snowflake)
+   * @param searchType 검색 타입("nickname", "discord" 또는 "auto") - 자동 판별 기본값
+   * @param page 페이지 번호 (기본값: 0)
+   * @param size 페이지 크기 (기본값: 10)
+   * @return 검색 결과 및 페이지 정보
+   */
+  // 과거 버전에서는 여기에 권한 관련 메서드가 있었으나, 지금은 WebUserPermissionController로 이동하였습니다.
+  @GetMapping("/find/users")
+  public ResponseEntity<FindUserInfo> findUser (
+      @RequestParam(required = false) String keyword,
+      @RequestParam(defaultValue = "auto") String searchType,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size
+  ) {
+    AuthenticationUtil.validateUserHasAuthority(UserRole.USER);
+    FindUserInfo result = webUserService.findUsers(keyword, searchType, page, size);
+    return ResponseEntity.ok(result);
+  }
 }

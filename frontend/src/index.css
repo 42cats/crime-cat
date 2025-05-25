@@ -137,6 +137,17 @@
 	}
   
 	.twinkle-badge-blue {
-	  @apply bg-blue-100 text-blue-600 hover:bg-blue-100 hover:text-blue-600;
+	@apply bg-blue-100 text-blue-600 hover:bg-blue-100 hover:text-blue-600;
 	}
+
+  .animate-fade-slide-in {
+    @apply animate-in slide-in-from-top duration-200;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
   }

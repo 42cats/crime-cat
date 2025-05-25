@@ -23,7 +23,7 @@ public interface GuildRepository extends JpaRepository<Guild, UUID> {
     Optional<Guild> findGuildByGuildSnowflake(@Param("snowflake") String guildSnowflake);
     @Query("SELECT g FROM Guild g WHERE g.ownerSnowflake = :ownerSnowflake AND g.isWithdraw = false")
     List<Guild> findActiveGuildsByOwner(@Param("ownerSnowflake") String ownerSnowflake);
-    @Query("SELECT g FROM Guild g WHERE g.isWithdraw = false")
+    @Query("SELECT g FROM Guild g WHERE g.isWithdraw = false AND g.isPublic = true")
     List<Guild> findAllActiveGuilds();
 
     boolean existsBySnowflakeAndOwnerSnowflake(String guildSnowflake, String ownerSnowflake);
@@ -33,12 +33,8 @@ public interface GuildRepository extends JpaRepository<Guild, UUID> {
     long countAllActiveGuilds();
 
     // 2. 유니크한 오너 수
-    @Query("SELECT COUNT(DISTINCT g.ownerSnowflake) FROM Guild g WHERE g.isWithdraw = false")
+    @Query("SELECT COUNT(DISTINCT g.user.id) FROM Guild g WHERE g.isWithdraw = false")
     long countUniqueGuildOwners();
-
-    //hibernate pass
-    @Query(value = "SELECT COUNT(DISTINCT owner_snowflake) FROM guilds WHERE is_withdraw = false", nativeQuery = true)
-    long countUniqueGuildOwnersNative();
 
     List<Guild> findBySnowflakeAndOwnerSnowflake(String snowflake, String ownerSnowflake);
 }

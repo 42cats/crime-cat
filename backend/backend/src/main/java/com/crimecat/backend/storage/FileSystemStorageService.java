@@ -1,10 +1,10 @@
 package com.crimecat.backend.storage;
 
 import com.crimecat.backend.utils.FileUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,10 +14,12 @@ import java.net.MalformedURLException;
 import java.nio.file.*;
 import java.util.stream.Stream;
 
+@Slf4j
 @Service
 public class FileSystemStorageService implements StorageService {
 
     private final Path rootLocation;
+    private final int rootIndex;
 
     @Autowired
     public FileSystemStorageService(StorageProperties properties) {
@@ -27,30 +29,41 @@ public class FileSystemStorageService implements StorageService {
         }
 
         this.rootLocation = Paths.get(properties.getLocation());
+        this.rootIndex = this.rootLocation.getNameCount();
     }
 
-    @Override
-    public String store(MultipartFile file) {
-        return this.storeAt(file, null, file.getOriginalFilename());
-    }
+//    @Override
+//    public String store(MultipartFile file) {
+//        return this.storeAt(file, null, file.getOriginalFilename());
+//    }
 
     @Override
-    public String storeAt(MultipartFile file, String location, String filename) {
+    public String storeAt(StorageFileType type, MultipartFile file, String filename) {
+        if (type == null) {
+            throw new RuntimeException("Storage file type cannot be null");
+        }
+        
+        if (type.getUploadDir() == null) {
+            throw new RuntimeException("Upload directory for " + type.name() + " is not configured");
+        }
+        
         Path savePath = this.rootLocation;
+        savePath = savePath.resolve(type.getUploadDir());
         try {
-            if (location != null) {
-                Files.createDirectories(this.rootLocation.resolve(location));
-                savePath = savePath.resolve(location);
+            if (Files.notExists(savePath)) {
+                log.info("Creating directory: {}", savePath.toAbsolutePath());
+                Files.createDirectories(savePath);
             }
             savePath = savePath.resolve(filename + FileUtil.getExtension(file.getOriginalFilename()));
             if (file.isEmpty()) {
                 throw new RuntimeException("Failed to store empty file " + file.getOriginalFilename());
             }
+            log.info("Storing file at: {}", savePath.toAbsolutePath());
             Files.copy(file.getInputStream(), savePath, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new RuntimeException("Failed to store file " + file.getOriginalFilename(), e);
         }
-        return savePath.subpath(1, savePath.getNameCount()).toString();
+        return type.getBaseUrl() + filename + FileUtil.getExtension(file.getOriginalFilename());
     }
 
     @Override
@@ -94,12 +107,51 @@ public class FileSystemStorageService implements StorageService {
 
     @Override
     public void init() {
+        log.debug("Initializing storage:: {}", rootLocation.toAbsolutePath());
         try {
             if (!Files.exists(rootLocation)) {
-                Files.createDirectory(rootLocation);
+                log.info("Creating root directory: {}", rootLocation.toAbsolutePath());
+                Files.createDirectories(rootLocation);
+            }
+            
+            // 추가: 모든 파일 유형의 디렉토리 초기화
+            for (StorageFileType type : StorageFileType.values()) {
+                if (type.getUploadDir() != null) {
+                    Path typeDir = rootLocation.resolve(type.getUploadDir());
+                    if (!Files.exists(typeDir)) {
+                        log.info("Creating directory for {}: {}", type.name(), typeDir.toAbsolutePath());
+                        Files.createDirectories(typeDir);
+                    }
+                } else {
+                    log.warn("Upload directory for {} is not configured", type.name());
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException("Could not initialize storage", e);
         }
     }
+
+    /**
+     * 저장된 이미지를 타입, 파일 id(이름) 기반으로 실제 파일을 삭제합니다.
+     */
+    @Override
+    public void delete(StorageFileType type, String filename) {
+        try {
+            Path filePath = rootLocation
+                    .resolve(type.getUploadDir())
+                    .resolve(filename);
+
+            if (Files.exists(filePath)) {
+                Files.delete(filePath);
+                log.info("Deleted file: {}", filePath.toAbsolutePath());
+            } else {
+                log.warn("File not found: {}", filePath.toAbsolutePath());
+            }
+
+        } catch (IOException e) {
+            log.error("Failed to delete file: {}", filename, e);
+        }
+    }
+
+
 }

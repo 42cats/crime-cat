@@ -22,7 +22,7 @@ import {
     Trash2,
 } from "lucide-react";
 import { Draggable } from "@/components/draggable";
-import { fetchChannels } from "@/api/messageButtonService";
+import { fetchChannels } from '@/api/misc';
 
 interface ButtonProps {
     data: ButtonData;

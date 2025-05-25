@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Megaphone, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { noticesService } from "@/api/noticesService";
+import { noticesService } from '@/api/content';
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { isWithinDays } from "@/utils/highlight";

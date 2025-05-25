@@ -9,3 +9,5 @@ FLUSH PRIVILEGES;
 
 SET GLOBAL innodb_lock_wait_timeout = 120;
 SET SESSION innodb_lock_wait_timeout = 120;
+
+

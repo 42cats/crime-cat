@@ -36,7 +36,7 @@ public class WebStatsInfoService {
     result.put(
         "totalServers",
         getOrCache(
-            RedisDbType.MAKER_COUNT, () -> String.valueOf(guildRepository.countAllActiveGuilds())));
+            RedisDbType.ALL_DISCORD_SERVER, () -> String.valueOf(guildRepository.countAllActiveGuilds())));
 
     result.put(
         "totalUsers",

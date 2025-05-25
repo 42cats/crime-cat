@@ -1,7 +1,7 @@
 package com.crimecat.backend.gameHistory.domain;
 
 import com.crimecat.backend.guild.domain.Guild;
-import com.crimecat.backend.user.domain.DiscordUser;
+import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.gametheme.domain.GameTheme;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -40,15 +40,15 @@ public class GameHistory {
     @Column(name = "CHARACTER_NAME")
     private String characterName;
 
-    @JoinColumn(name = "USER_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false, updatable = false)
+    @JoinColumn(name = "USER_ID", referencedColumnName = "ID", nullable = false, updatable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    private DiscordUser discordUser;
+    private User user;
 
     @JoinColumn(name = "GAME_THEME_ID", referencedColumnName = "ID", nullable = true)
     @ManyToOne(fetch = FetchType.LAZY)
     private GameTheme gameTheme;
 
-    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = false, updatable = false)
+    @JoinColumn(name = "GUILD_SNOWFLAKE", referencedColumnName = "SNOWFLAKE", nullable = true, updatable = true)
     @ManyToOne(fetch = FetchType.LAZY)
     private Guild guild;
     
@@ -58,11 +58,11 @@ public class GameHistory {
     @Column(name = "OWNER_MEMO", length = 1000)
     private String ownerMemo;
 
-    public GameHistory(boolean isWin, LocalDateTime createdAt, String characterName, DiscordUser discordUser, Guild guild, GameTheme gameTheme) {
+    public GameHistory(boolean isWin, LocalDateTime createdAt, String characterName, User user, Guild guild, GameTheme gameTheme) {
         this.isWin = isWin;
         this.createdAt = createdAt;
         this.characterName = characterName;
-        this.discordUser = discordUser;
+        this.user = user;
         this.guild = guild;
         if(gameTheme != null)
             this.gameTheme = gameTheme;
@@ -99,4 +99,9 @@ public class GameHistory {
         this.createdAt = dateTime;
     }
 
+    public void setGameTheme(GameTheme gameTheme) {
+        if(gameTheme == null)
+            return;
+        this.gameTheme = gameTheme;
+    }
 }

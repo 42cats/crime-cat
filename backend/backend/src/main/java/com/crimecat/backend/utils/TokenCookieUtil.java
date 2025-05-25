@@ -1,30 +1,44 @@
 package com.crimecat.backend.utils;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
 @Component
 public class TokenCookieUtil {
+
+    private final Environment env;
+    private static boolean isProd;
     private static String appDomain;
     private static int accessTokenExpireMinutes;
-    private static int refreshTokenExpireDay;
+    private static int refreshTokenExpireDays;
 
-    @Autowired
     public TokenCookieUtil(
+        Environment env,
         @Value("${spring.domain}") String domain,
         @Value("${spring.oauth.access-token-expire-minutes}") int accessExpire,
-        @Value("${spring.oauth.refresh-token-expire-days}") int refreshExpire) {
+        @Value("${spring.oauth.refresh-token-expire-days}") int refreshExpire
+    ) {
+        this.env = env;
         appDomain = domain;
         accessTokenExpireMinutes = accessExpire;
-        refreshTokenExpireDay = refreshExpire;
+        refreshTokenExpireDays = refreshExpire;
     }
-    // ✅ 쿠키에서 특정 이름의 값 꺼내기
+
+    @PostConstruct
+    private void init() {
+        isProd = Arrays.asList(env.getActiveProfiles()).contains("prod");
+    }
+
+    // 쿠키에서 특정 이름의 값 꺼내기
     public static String getCookieValue(HttpServletRequest request, String name) {
         if (request.getCookies() == null) return null;
         for (Cookie cookie : request.getCookies()) {
@@ -35,46 +49,61 @@ public class TokenCookieUtil {
         return null;
     }
 
-    // ✅ 쿠키 삭제
+    // 쿠키 삭제
     public static void clearCookie(HttpServletResponse response, String name) {
-        Cookie cookie = new Cookie(name, null);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(name, "")
+            .path("/")
+            .maxAge(0);
+
+        if (isProd) {
+            builder
+                .domain(appDomain)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict");
+        }
+
+        response.addHeader(HttpHeaders.SET_COOKIE, builder.build().toString());
     }
 
-    // ✅ 인증 관련 쿠키 전부 제거
+    // Access 토큰 쿠키 생성
+    public static String createAccessCookie(String accessToken) {
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from("Authorization", accessToken)
+            .path("/")
+            .maxAge(Duration.ofMinutes(accessTokenExpireMinutes));
+
+        if (isProd) {
+            builder
+                .httpOnly(true)
+                .secure(true)
+                .domain(appDomain)
+                .sameSite("Strict");
+        }
+
+        return builder.build().toString();
+    }
+
+    // Refresh 토큰 쿠키 생성
+    public static String createRefreshCookie(String refreshToken) {
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from("RefreshToken", refreshToken)
+            .path("/")
+            .maxAge(Duration.ofDays(refreshTokenExpireDays));
+
+        if (isProd) {
+            builder
+                .httpOnly(true)
+                .secure(true)
+                .domain(appDomain)
+                .sameSite("Strict");
+        }
+
+        return builder.build().toString();
+    }
+
+    // Authorization 관련 모든 쿠키 삭제
     public static void clearAuthCookies(HttpServletResponse response) {
         clearCookie(response, "Authorization");
         clearCookie(response, "RefreshToken");
+        clearCookie(response, "XSRF-TOKEN");
     }
-
-    // ✅ Access 토큰 쿠키 생성
-    public static String createAccessCookie(String accessToken) {
-        ResponseCookie cookie = ResponseCookie.from("Authorization", accessToken)
-            .httpOnly(true)
-            .secure(true)
-            .path("/")
-            .maxAge(Duration.ofMinutes(accessTokenExpireMinutes))
-            .domain(appDomain) /// 개발시 제외 서비스시 활성
-            .sameSite("Strict")  // 또는 "Lax", "Lax"
-            .build();
-        return cookie.toString();
-    }
-
-    // ✅ Refresh 토큰 쿠키 생성
-    public static String createRefreshCookie(String refreshToken) {
-        ResponseCookie cookie = ResponseCookie.from("RefreshToken", refreshToken)
-                .httpOnly(true)
-                .secure(true)
-                .path("/")
-                .maxAge(Duration.ofDays(refreshTokenExpireDay))
-                .domain(appDomain)/// 개발시 제외 서비스시 활성
-                .sameSite("Strict")  // 또는 "Lax", "None"
-                .build();
-        return cookie.toString();
-    }
-
 }

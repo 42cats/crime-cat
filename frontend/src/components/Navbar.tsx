@@ -3,21 +3,37 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, LogOut } from "lucide-react";
+import {
+    Menu,
+    X,
+    User,
+    LogOut,
+    Home,
+    Search,
+    PlusSquare,
+    Heart,
+    BookmarkIcon,
+    Camera,
+} from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NotificationIcon } from "@/components/NotificationIcon";
+import { useTheme } from "@/hooks/useTheme";
 
 const Navbar: React.FC = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isThemeOpen, setIsThemeOpen] = useState(false);
-    const [showSubnav, setShowSubnav] = useState(false);
+    const [isCommunityOpen, setIsCommunityOpen] = useState(false);
+    const [isSnsOpen, setIsSnsOpen] = useState(false);
+    const [activeSubnav, setActiveSubnav] = useState<string | null>(null);
     const location = useLocation();
+    const { theme } = useTheme(); // theme === "light" | "dark" | "system"
 
     useEffect(() => {
         const handleScroll = () => {
@@ -30,14 +46,18 @@ const Navbar: React.FC = () => {
     useEffect(() => {
         setIsMobileMenuOpen(false);
         setIsThemeOpen(false);
-        setShowSubnav(false);
+        setIsCommunityOpen(false);
+        setIsSnsOpen(false);
+        setActiveSubnav(null);
     }, [location.pathname]);
 
     const navItems = [
         { name: "홈", path: "/" },
         { name: "공지사항", path: "/notices" },
         { name: "명령어", path: "/commands" },
-        // { name: '테마' }, // path 없음
+        { name: "테마" }, // path 없음
+        { name: "커뮤니티" }, // path 없음
+        { name: "SNS" }, // path 없음
     ];
 
     const themeSubItems = [
@@ -47,11 +67,35 @@ const Navbar: React.FC = () => {
         { name: "리얼월드", path: "/themes/realworld" },
     ];
 
+    const communitySubItems = [
+        { name: "질문게시판", path: "/community/question" },
+        { name: "자유게시판", path: "/community/chat" },
+        { name: "제작자게시판", path: "/community/creator" },
+    ];
+
+    const snsSubItems = [
+        {
+            name: "SNS 피드",
+            path: "/sns/feed",
+            icon: <Home className="w-4 h-4 mr-1" />,
+        },
+        {
+            name: "탐색",
+            path: "/sns/explore",
+            icon: <Search className="w-4 h-4 mr-1" />,
+        },
+        {
+            name: "포스트 작성",
+            path: "/sns/create",
+            icon: <PlusSquare className="w-4 h-4 mr-1" />,
+        },
+    ];
+
     const isActive = (path: string) => location.pathname === path;
 
     return (
         <div
-            onMouseLeave={() => setShowSubnav(false)}
+            onMouseLeave={() => setActiveSubnav(null)}
             className={`w-full z-50 transition-all duration-300 border-b ${
                 isScrolled ? "glass shadow-sm" : "bg-transparent"
             }`}
@@ -60,14 +104,28 @@ const Navbar: React.FC = () => {
                 <div className="flex justify-between items-center">
                     {/* 로고 */}
                     <Link to="/" className="flex items-center space-x-2">
-                        <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                        <div className="relative w-10 h-10 overflow-hidden">
                             <img
-                                src="/content/image/icon.png"
-                                alt="짭냥이 로고"
+                                src={
+                                    theme === "dark"
+                                        ? "/content/image/logo_dark.png"
+                                        : "/content/image/logo_light.png"
+                                }
+                                alt="미스터리 플레이스 로고"
                                 className="w-full h-full object-cover"
                             />
                         </div>
-                        <span className="text-xl font-semibold">짭냥이</span>
+                        <div className="relative w-20 h-15 overflow-hidden">
+                            <img
+                                src={
+                                    theme === "dark"
+                                        ? "/content/image/mystery_place_dark.png"
+                                        : "/content/image/mystery_place_light.png"
+                                }
+                                alt="미스터리 플레이스 latter"
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
                     </Link>
 
                     {/* 데스크탑 메뉴 */}
@@ -75,9 +133,15 @@ const Navbar: React.FC = () => {
                         {navItems.map((item) => (
                             <div
                                 key={item.name}
-                                onMouseEnter={() =>
-                                    item.name === "테마" && setShowSubnav(true)
-                                }
+                                onMouseEnter={() => {
+                                    if (
+                                        item.name === "테마" ||
+                                        item.name === "커뮤니티" ||
+                                        item.name === "SNS"
+                                    ) {
+                                        setActiveSubnav(item.name);
+                                    }
+                                }}
                             >
                                 {item.path ? (
                                     <Link
@@ -105,6 +169,7 @@ const Navbar: React.FC = () => {
                     {/* 사용자 메뉴 */}
                     <div className="hidden md:flex items-center space-x-2">
                         <ThemeToggle />
+                        {isAuthenticated && <NotificationIcon />}
                         {isAuthenticated ? (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -147,6 +212,7 @@ const Navbar: React.FC = () => {
                     {/* 모바일 메뉴 토글 */}
                     <div className="md:hidden flex items-center space-x-2">
                         <ThemeToggle />
+                        {isAuthenticated && <NotificationIcon />}
                         <Button
                             variant="ghost"
                             size="icon"
@@ -163,18 +229,40 @@ const Navbar: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 데스크탑 테마 서브 메뉴 */}
-                {showSubnav && (
+                {/* 데스크탑 서브 메뉴 */}
+                {activeSubnav && (
                     <div className="mt-4 flex justify-center gap-8 animate-fade-slide-in">
-                        {themeSubItems.map((sub) => (
-                            <Link
-                                key={sub.name}
-                                to={sub.path}
-                                className="text-sm text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
-                            >
-                                {sub.name}
-                            </Link>
-                        ))}
+                        {activeSubnav === "테마" &&
+                            themeSubItems.map((sub) => (
+                                <Link
+                                    key={sub.name}
+                                    to={sub.path}
+                                    className="text-sm text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
+                                >
+                                    {sub.name}
+                                </Link>
+                            ))}
+                        {activeSubnav === "커뮤니티" &&
+                            communitySubItems.map((sub) => (
+                                <Link
+                                    key={sub.name}
+                                    to={sub.path}
+                                    className="text-sm text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
+                                >
+                                    {sub.name}
+                                </Link>
+                            ))}
+                        {activeSubnav === "SNS" &&
+                            snsSubItems.map((sub) => (
+                                <Link
+                                    key={sub.name}
+                                    to={sub.path}
+                                    className="text-sm text-muted-foreground hover:text-primary transition-colors whitespace-nowrap flex items-center"
+                                >
+                                    {sub.icon}
+                                    {sub.name}
+                                </Link>
+                            ))}
                     </div>
                 )}
             </div>
@@ -201,14 +289,31 @@ const Navbar: React.FC = () => {
                                     </Link>
                                 ) : (
                                     <button
-                                        onClick={() =>
-                                            setIsThemeOpen(!isThemeOpen)
-                                        }
+                                        onClick={() => {
+                                            if (item.name === "테마") {
+                                                setIsThemeOpen(!isThemeOpen);
+                                                setIsCommunityOpen(false);
+                                                setIsSnsOpen(false);
+                                            } else if (
+                                                item.name === "커뮤니티"
+                                            ) {
+                                                setIsCommunityOpen(
+                                                    !isCommunityOpen
+                                                );
+                                                setIsThemeOpen(false);
+                                                setIsSnsOpen(false);
+                                            } else if (item.name === "SNS") {
+                                                setIsSnsOpen(!isSnsOpen);
+                                                setIsThemeOpen(false);
+                                                setIsCommunityOpen(false);
+                                            }
+                                        }}
                                         className="block py-2 text-sm font-medium text-foreground/80 w-full text-left"
                                     >
                                         {item.name}
                                     </button>
                                 )}
+                                {/* 테마 서브메뉴 */}
                                 {item.name === "테마" && isThemeOpen && (
                                     <div className="ml-4 pl-2 border-l border-border/30 space-y-2">
                                         {themeSubItems.map((sub) => (
@@ -220,6 +325,44 @@ const Navbar: React.FC = () => {
                                                     setIsMobileMenuOpen(false)
                                                 }
                                             >
+                                                {sub.name}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+                                {/* 커뮤니티 서브메뉴 */}
+                                {item.name === "커뮤니티" &&
+                                    isCommunityOpen && (
+                                        <div className="ml-4 pl-2 border-l border-border/30 space-y-2">
+                                            {communitySubItems.map((sub) => (
+                                                <Link
+                                                    key={sub.path}
+                                                    to={sub.path}
+                                                    className="block py-1 text-sm text-muted-foreground hover:text-primary"
+                                                    onClick={() =>
+                                                        setIsMobileMenuOpen(
+                                                            false
+                                                        )
+                                                    }
+                                                >
+                                                    {sub.name}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    )}
+                                {/* SNS 서브메뉴 */}
+                                {item.name === "SNS" && isSnsOpen && (
+                                    <div className="ml-4 pl-2 border-l border-border/30 space-y-2">
+                                        {snsSubItems.map((sub) => (
+                                            <Link
+                                                key={sub.path}
+                                                to={sub.path}
+                                                className="block py-1 text-sm text-muted-foreground hover:text-primary flex items-center"
+                                                onClick={() =>
+                                                    setIsMobileMenuOpen(false)
+                                                }
+                                            >
+                                                {sub.icon}
                                                 {sub.name}
                                             </Link>
                                         ))}

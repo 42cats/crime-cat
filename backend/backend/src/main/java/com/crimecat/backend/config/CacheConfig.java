@@ -12,9 +12,11 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableCaching
+@org.springframework.context.annotation.Profile("!optimization")  // optimization이 아닐 때만 활성화
 public class CacheConfig {
 
   @Bean
+  @org.springframework.context.annotation.Primary
   public CacheManager cacheManager() {
     // Caffeine 설정 빌더
     Caffeine<Object, Object> caffeine = Caffeine.newBuilder()

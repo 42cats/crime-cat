@@ -1,16 +1,20 @@
 package com.crimecat.backend.auth.controller;
 
+import com.crimecat.backend.admin.dto.BlockInfoResponse;
 import com.crimecat.backend.auth.jwt.JwtTokenProvider;
 import com.crimecat.backend.auth.service.JwtBlacklistService;
 import com.crimecat.backend.auth.service.RefreshTokenService;
-import com.crimecat.backend.utils.TokenCookieUtil;
 import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.utils.AuthenticationUtil;
+import com.crimecat.backend.utils.TokenCookieUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
+import com.crimecat.backend.webUser.service.WebUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -35,17 +39,17 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final JwtBlacklistService jwtBlacklistService;
     private final WebUserRepository webUserRepository;
+    private final WebUserService webUserService;
 
     @GetMapping("/login-success")
     public ResponseEntity<?> redirectLoginSuccess(HttpServletResponse response, Principal principal) throws IOException {
-        String webUserId = principal.getName();
-        log.info("🔐 [OAuth 로그인 성공] 사용자 ID: {}", webUserId);
+        String webUserId = AuthenticationUtil.getCurrentWebUserId().toString();
 
-        WebUser webUser = webUserRepository.findById(UUID.fromString(webUserId))
+        WebUser foundWebUser = webUserRepository.findById(UUID.fromString(webUserId))
                 .orElseThrow(() -> new IllegalArgumentException("해당 유저 없음"));
-        log.info("🔍 [유저 확인 완료] 닉네임: {}", webUser.getNickname());
+        log.info("🔍 [유저 확인 완료] 닉네임: {}", foundWebUser.getNickname());
         
-        String accessToken = jwtTokenProvider.createAccessToken(webUserId, webUser.getNickname(),webUser.getDiscordUserSnowflake());
+        String accessToken = jwtTokenProvider.createAccessToken(webUserId, foundWebUser.getNickname(),foundWebUser.getDiscordUserSnowflake());
         String refreshToken = jwtTokenProvider.createRefreshToken(webUserId);
         log.info("✅ [토큰 발급 완료]");
 
@@ -56,21 +60,20 @@ public class AuthController {
         response.addHeader(HttpHeaders.SET_COOKIE,TokenCookieUtil.createRefreshCookie(refreshToken));
         log.info("🍪 [쿠키 설정 완료]");
         return ResponseEntity.ok(Map.of(
-                "nickname", webUser.getNickname(),
+                "nickname", foundWebUser.getNickname(),
                 "message", "로그인 성공"
         ));
     }
 
     @PostMapping("/login-success")
     public ResponseEntity<?> issueToken(HttpServletResponse response, Principal principal) {
-        String webUserId = principal.getName();
-        log.info("🔐 [토큰 요청] 사용자 ID: {}", principal.getName());
+        String webUserId = AuthenticationUtil.getCurrentWebUserId().toString();
 
-        WebUser webUser = webUserRepository.findById(UUID.fromString(webUserId))
+        WebUser foundWebUser = webUserRepository.findById(UUID.fromString(webUserId))
                 .orElseThrow(() -> new IllegalArgumentException("해당 유저 없음"));
-        log.info("🔍 [유저 확인 완료] 닉네임: {}", webUser.getNickname());
+        log.info("🔍 [유저 확인 완료] 닉네임: {}", foundWebUser.getNickname());
 
-        String accessToken = jwtTokenProvider.createAccessToken(webUserId, webUser.getNickname(),webUser.getDiscordUserSnowflake());
+        String accessToken = jwtTokenProvider.createAccessToken(webUserId, foundWebUser.getNickname(),foundWebUser.getDiscordUserSnowflake());
         String refreshToken = jwtTokenProvider.createRefreshToken(webUserId);
         log.info("✅ [토큰 발급 완료]");
 
@@ -82,7 +85,7 @@ public class AuthController {
         log.info("🍪 [쿠키 설정 완료]");
 
         return ResponseEntity.ok(Map.of(
-                "nickname", webUser.getNickname(),
+                "nickname", foundWebUser.getNickname(),
                 "message", "토큰 발급 완료"
         ));
     }
@@ -99,6 +102,32 @@ public class AuthController {
         String userId = jwtTokenProvider.getUserIdFromToken(accessToken);
         WebUser user = webUserRepository.findById(UUID.fromString(userId))
                 .orElseThrow(ErrorStatus.USER_NOT_FOUND::asControllerException);
+
+        // 차단 상태 확인
+        log.info("🔍 /me endpoint - User: {} (ID: {}), isBanned: {}, blockReason: {}, blockExpiresAt: {}",
+                 user.getNickname(), user.getId(), user.getIsBanned(),
+                 user.getBlockReason(), user.getBlockExpiresAt());
+
+        if (user.getIsBanned()) {
+            // 차단 기간이 만료된 경우 자동 해제
+            if (user.getBlockExpiresAt() != null &&
+                LocalDateTime.now().isAfter(user.getBlockExpiresAt())) {
+
+                webUserService.unblockUser(user.getId());
+                log.info("✅ User {} block has expired and been automatically removed at /me endpoint.", user.getNickname());
+            } else {
+                // 여전히 차단된 상태
+                String reason = user.getBlockReason() != null ? user.getBlockReason() : "관리자에 의한 차단";
+                log.warn("🚫 Blocked user {} attempted to access /me endpoint.", user.getNickname());
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                    "error", "ACCOUNT_BLOCKED",
+                    "message", "계정이 차단되었습니다: " + reason,
+                    "blockReason", reason,
+                    "blockedAt", user.getBlockedAt() != null ? user.getBlockedAt().toString() : "",
+                    "blockExpiresAt", user.getBlockExpiresAt() != null ? user.getBlockExpiresAt().toString() : ""
+                ));
+            }
+        }
 
         Map<String, String> UserAuthInfo = getStringStringMap(user);
 
@@ -162,6 +191,7 @@ public class AuthController {
         }
 
         TokenCookieUtil.clearAuthCookies(response);
+
         log.info("🧹 [쿠키 제거 완료]");
 
         return ResponseEntity.ok(Map.of(
@@ -169,23 +199,39 @@ public class AuthController {
                 "message", "로그아웃 성공"
         ));
     }
+
+    /**
+     * 현재 사용자의 차단 상태를 확인합니다.
+     * 인증되지 않은 사용자도 접근 가능한 공개 API입니다.
+     */
+    @GetMapping("/block-status")
+    public ResponseEntity<BlockInfoResponse> getBlockStatus(HttpServletRequest request) {
+        try {
+            String accessToken = TokenCookieUtil.getCookieValue(request, "Authorization");
+
+            if (accessToken == null || !jwtTokenProvider.validateToken(accessToken)) {
+                return ResponseEntity.ok(BlockInfoResponse.notBlocked());
+            }
+
+            String userId = jwtTokenProvider.getUserIdFromToken(accessToken);
+            BlockInfoResponse blockInfo = webUserService.getBlockInfo(UUID.fromString(userId));
+            return ResponseEntity.ok(blockInfo);
+        } catch (Exception e) {
+            return ResponseEntity.ok(BlockInfoResponse.notBlocked());
+        }
+    }
     private static Map<String, String> getStringStringMap(WebUser user) {
         Map<String,String> resp  = new HashMap<>();
         // 필수 값
         resp.put("id", user.getId().toString());
         resp.put("nickname", user.getNickname());
         resp.put("profile_image_path", user.getProfileImagePath());
-        resp.put("setting", user.getSettings());
         resp.put("bio", user.getBio());
         resp.put("role", user.getRole().name());
         resp.put("is_active", user.getIsActive().toString());
         resp.put("last_login_at",user.getLastLoginAt().toString());
         resp.put("snowflake", user.getDiscordUserSnowflake());
         resp.put("point", user.getPoint().toString());
-        // Optional 값은 null 체크 후에만 put
-        if (user.getSocialLinks() != null) {
-            resp.put("social_links", user.getSocialLinks());
-        }
         return resp;
         }
 }
