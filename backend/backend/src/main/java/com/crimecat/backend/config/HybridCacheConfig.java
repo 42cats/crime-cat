@@ -5,8 +5,10 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.cache.support.CompositeCacheManager;
+import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -18,7 +20,9 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -32,6 +36,12 @@ import java.util.concurrent.TimeUnit;
  */
 @Configuration
 @EnableCaching
+@org.springframework.context.annotation.Profile("optimization")  // Only active when optimization profile is active
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+    name = "spring.cache.type",
+    havingValue = "hybrid",
+    matchIfMissing = false
+)
 public class HybridCacheConfig {
 
     /**
@@ -42,44 +52,71 @@ public class HybridCacheConfig {
     public CaffeineCacheManager caffeineCacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager();
         
+        // 캐시 이름들을 미리 설정
+        cacheManager.setCacheNames(java.util.Arrays.asList(
+            CacheType.VIEW_COUNT,
+            "board:post:list",
+            "comment:list",
+            "comment:public",
+            "notification:unread",
+            "search:users"
+        ));
+        
         // 기본 Caffeine 설정
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 .expireAfterWrite(10, TimeUnit.MINUTES)
                 .maximumSize(1000)
                 .recordStats());
         
-        // 캐시별 개별 설정
-        Map<String, Caffeine<Object, Object>> cacheSpecs = new HashMap<>();
+        return cacheManager;
+    }
+    
+    /**
+     * 캐시별 개별 설정을 위한 커스텀 캐시 매니저
+     */
+    @Bean("customCaffeineCacheManager") 
+    public CacheManager customCaffeineCacheManager() {
+        SimpleCacheManager cacheManager = new SimpleCacheManager();
+        
+        List<CaffeineCache> caches = new ArrayList<>();
         
         // VIEW_COUNT - 짧은 TTL
-        cacheSpecs.put(CacheType.VIEW_COUNT, Caffeine.newBuilder()
+        caches.add(buildCache(CacheType.VIEW_COUNT, 
+            Caffeine.newBuilder()
                 .expireAfterWrite(1, TimeUnit.MINUTES)
-                .maximumSize(10000));
+                .maximumSize(10000)));
         
         // 게시판/댓글 목록 - 2분 캐시
-        cacheSpecs.put("board:post:list", Caffeine.newBuilder()
+        caches.add(buildCache("board:post:list",
+            Caffeine.newBuilder()
                 .expireAfterWrite(2, TimeUnit.MINUTES)
-                .maximumSize(500));
+                .maximumSize(500)));
         
-        cacheSpecs.put("comment:list", Caffeine.newBuilder()
+        caches.add(buildCache("comment:list",
+            Caffeine.newBuilder()
                 .expireAfterWrite(2, TimeUnit.MINUTES)
-                .maximumSize(1000));
+                .maximumSize(1000)));
         
         // 알림 카운트 - 30초 캐시
-        cacheSpecs.put("notification:unread", Caffeine.newBuilder()
+        caches.add(buildCache("notification:unread",
+            Caffeine.newBuilder()
                 .expireAfterWrite(30, TimeUnit.SECONDS)
-                .maximumSize(10000));
+                .maximumSize(10000)));
         
-        cacheManager.setCacheSpecifications(cacheSpecs);
+        cacheManager.setCaches(caches);
         return cacheManager;
+    }
+    
+    private CaffeineCache buildCache(String name, Caffeine<Object, Object> caffeine) {
+        return new CaffeineCache(name, caffeine.build());
     }
 
     /**
      * Redis 캐시 매니저 - 분산 캐시용
      * 긴 TTL, 공유가 필요한 데이터
      */
-    @Bean("redisCacheManager")
-    public RedisCacheManager redisCacheManager(
+    @Bean("optimizedRedisCacheManager")
+    public RedisCacheManager optimizedRedisCacheManager(
             RedisConnectionFactory redisConnectionFactory,
             @Qualifier("redisObjectMapper") com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
         
@@ -140,11 +177,11 @@ public class HybridCacheConfig {
     @Primary
     public CacheManager cacheManager(
             @Qualifier("caffeineCacheManager") CaffeineCacheManager caffeineCacheManager,
-            @Qualifier("redisCacheManager") RedisCacheManager redisCacheManager) {
+            @Qualifier("optimizedRedisCacheManager") RedisCacheManager redisCacheManager) {
         
         CompositeCacheManager compositeCacheManager = new CompositeCacheManager();
         // 순서 중요: Caffeine 먼저, Redis 나중
-        compositeCacheManager.setCacheManagers(caffeineCacheManager, redisCacheManager);
+        compositeCacheManager.setCacheManagers(java.util.Arrays.asList(caffeineCacheManager, redisCacheManager));
         compositeCacheManager.setFallbackToNoOpCache(false);
         
         return compositeCacheManager;

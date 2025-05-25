@@ -25,6 +25,12 @@ import java.util.concurrent.TimeUnit;
 @Service
 @EnableAsync
 @RequiredArgsConstructor
+@org.springframework.context.annotation.Profile("optimization")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+    name = "cache.warmup.enabled",
+    havingValue = "true",
+    matchIfMissing = false
+)
 public class CacheWarmupService {
 
     private final PermissionService permissionService;
@@ -36,6 +42,14 @@ public class CacheWarmupService {
     @EventListener(ApplicationReadyEvent.class)
     @Async
     public void warmupCacheOnStartup() {
+        // Delay cache warmup to ensure all beans are fully initialized
+        try {
+            Thread.sleep(5000); // 5 second delay
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
+        
         log.info("캐시 예열 시작...");
         
         CompletableFuture<Void> permissionWarmup = warmupPermissions();

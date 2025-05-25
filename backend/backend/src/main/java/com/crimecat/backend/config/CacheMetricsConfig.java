@@ -7,7 +7,9 @@ import io.micrometer.core.instrument.Tags;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.actuate.metrics.cache.CacheMetricsRegistrar;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.cache.CacheManager;
+import org.springframework.context.event.EventListener;
 import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCache;
@@ -15,7 +17,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
-import javax.annotation.PostConstruct;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -27,23 +28,37 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @EnableScheduling
 @RequiredArgsConstructor
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+    name = "management.metrics.cache.enabled",
+    havingValue = "true",
+    matchIfMissing = false
+)
 public class CacheMetricsConfig {
-
     private final CacheManager cacheManager;
     private final MeterRegistry meterRegistry;
     private final RedisTemplate<String, String> redisTemplate;
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void registerCacheMetrics() {
         log.info("캐시 메트릭스 등록 시작");
         
-        // Caffeine 캐시 메트릭스 등록
-        cacheManager.getCacheNames().forEach(cacheName -> {
-            var cache = cacheManager.getCache(cacheName);
-            if (cache instanceof CaffeineCache) {
-                registerCaffeineMetrics(cacheName, ((CaffeineCache) cache).getNativeCache());
-            }
-        });
+        // Null check and defensive programming
+        if (cacheManager == null) {
+            log.warn("CacheManager is null, skipping metrics registration");
+            return;
+        }
+        
+        try {
+            // Caffeine 캐시 메트릭스 등록
+            cacheManager.getCacheNames().forEach(cacheName -> {
+                var cache = cacheManager.getCache(cacheName);
+                if (cache instanceof CaffeineCache) {
+                    registerCaffeineMetrics(cacheName, ((CaffeineCache) cache).getNativeCache());
+                }
+            });
+        } catch (Exception e) {
+            log.error("Failed to register cache metrics", e);
+        }
     }
 
     private void registerCaffeineMetrics(String cacheName, Cache<Object, Object> cache) {

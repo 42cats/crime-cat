@@ -32,12 +32,13 @@ public class DatabasePerformanceConfig {
 
     /**
      * LazyConnectionDataSourceProxy를 사용하여 불필요한 커넥션 획득 방지
+     * 순환 의존성 방지를 위해 비활성화
      */
-    @Bean
-    @ConditionalOnProperty(name = "spring.datasource.lazy", havingValue = "true", matchIfMissing = true)
-    public DataSource lazyDataSource(DataSource dataSource) {
-        return new LazyConnectionDataSourceProxy(dataSource);
-    }
+    // @Bean
+    // @ConditionalOnProperty(name = "spring.datasource.lazy", havingValue = "true", matchIfMissing = true)
+    // public DataSource lazyDataSource(DataSource dataSource) {
+    //     return new LazyConnectionDataSourceProxy(dataSource);
+    // }
 
     /**
      * 읽기 전용 트랜잭션 모니터링
@@ -71,7 +72,7 @@ public class DatabasePerformanceConfig {
         // HikariCP를 사용한다고 가정
         try {
             var dataSource = getHikariDataSource();
-            if (dataSource != null) {
+            if (dataSource != null && dataSource.getHikariPoolMXBean() != null) {
                 var pool = dataSource.getHikariPoolMXBean();
                 
                 log.info("=== 커넥션 풀 상태 ===");
@@ -84,6 +85,8 @@ public class DatabasePerformanceConfig {
                 if (pool.getActiveConnections() > pool.getTotalConnections() * 0.8) {
                     log.warn("커넥션 풀 사용률이 80%를 초과했습니다!");
                 }
+            } else {
+                log.trace("HikariCP datasource not available for monitoring");
             }
         } catch (Exception e) {
             log.debug("커넥션 풀 모니터링 중 오류", e);
