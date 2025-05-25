@@ -46,7 +46,18 @@ public class BoardPostService {
             PostType postType
     ) {
         Pageable pageable = PageRequest.of(page, size, sortType);
-        Page<BoardPost> posts = boardPostRepository.findAllByKeywordAndTypeAndIsDeletedFalse(kw, boardType, postType, pageable);
+        
+        // 동적 쿼리를 사용하는 방법
+        Page<BoardPost> posts;
+        
+        // postType이 GENERAL인 경우 postType 필터링을 하지 않음
+        if (postType == PostType.GENERAL) {
+            // postType 필터링 없이 boardType만으로 조회
+            posts = boardPostRepository.findAllByKeywordAndBoardTypeAndIsDeletedFalse(kw, boardType, pageable);
+        } else {
+            // 특정 postType이 지정된 경우에만 postType 필터링 적용
+            posts = boardPostRepository.findAllByKeywordAndTypeAndIsDeletedFalse(kw, boardType, postType, pageable);
+        }
 
         return posts.map(BoardPostResponse::from);
     }
