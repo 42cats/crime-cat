@@ -2,7 +2,10 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Gamepad, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { themeAdsService, ThemeAdvertisement } from "@/api/admin/themeAdsService";
+import {
+    themeAdsService,
+    ThemeAdvertisement,
+} from "@/api/admin/themeAdsService";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
@@ -22,6 +25,41 @@ const ThemeCardComponents = {
     ESCAPE_ROOM: EscapeRoomThemeCard,
     MURDER_MYSTERY: null, // 추후 구현
     REALWORLD: null, // 추후 구현
+};
+
+// 카드 크기 설정 상수
+const CARD_SIZE_CONFIG = {
+    // 카드 최소/최대 크기
+    minWidth: "180px", // 최소 너비
+    maxWidth: "200px", // 최대 너비
+    height: "260px", // 고정 높이 (auto로 설정하면 컨텐츠에 맞춤)
+
+    // 로딩 스켈레톤 높이
+    skeletonHeight: "h-64", // Tailwind 클래스 (h-64 = 256px)
+
+    // 반응형 슬라이드 개수 및 간격
+    responsive: {
+        mobile: {
+            slidesPerView: 2, // 360px 화면에서 2개 (180px * 2)
+            spaceBetween: 12, // 작은 카드니까 간격도 줄임
+        },
+        tablet: {
+            slidesPerView: 3, // 768px 화면에서 3개
+            spaceBetween: 16,
+        },
+        desktop: {
+            slidesPerView: 5, // 1024px 화면에서 5개
+            spaceBetween: 20,
+        },
+        wide: {
+            slidesPerView: 6, // 1536px 화면에서 6개
+            spaceBetween: 24,
+        },
+        ultrawide: {
+            slidesPerView: 8, // 1920px 화면에서 8개
+            spaceBetween: 24,
+        },
+    },
 };
 
 const container = {
@@ -48,11 +86,15 @@ const GameAdsCarousel: React.FC = () => {
                         <Gamepad className="h-5 w-5 mr-2 text-primary" />
                         추천 게임 테마
                     </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {[1, 2, 3].map((i) => (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
                             <div
                                 key={i}
-                                className="h-64 bg-muted rounded-lg animate-pulse"
+                                className={`${CARD_SIZE_CONFIG.skeletonHeight} bg-muted rounded-lg animate-pulse`}
+                                style={{
+                                    minWidth: CARD_SIZE_CONFIG.minWidth,
+                                    maxWidth: CARD_SIZE_CONFIG.maxWidth,
+                                }}
                             />
                         ))}
                     </div>
@@ -66,7 +108,9 @@ const GameAdsCarousel: React.FC = () => {
     }
 
     // displayOrder로 정렬
-    const sortedAds = [...advertisements].sort((a, b) => a.displayOrder - b.displayOrder);
+    const sortedAds = [...advertisements].sort(
+        (a, b) => a.displayOrder - b.displayOrder
+    );
 
     return (
         <section className="py-8 px-4">
@@ -88,8 +132,12 @@ const GameAdsCarousel: React.FC = () => {
                             if (swiper) swiperRef.current = swiper.swiper;
                         }}
                         modules={[Navigation, Pagination, Autoplay]}
-                        spaceBetween={16}
-                        slidesPerView={1}
+                        spaceBetween={
+                            CARD_SIZE_CONFIG.responsive.mobile.spaceBetween
+                        }
+                        slidesPerView={
+                            CARD_SIZE_CONFIG.responsive.mobile.slidesPerView
+                        }
                         navigation={{
                             prevEl: ".swiper-button-prev-custom",
                             nextEl: ".swiper-button-next-custom",
@@ -104,31 +152,88 @@ const GameAdsCarousel: React.FC = () => {
                             pauseOnMouseEnter: true,
                         }}
                         breakpoints={{
-                            640: {
-                                slidesPerView: 1,
-                                spaceBetween: 16,
+                            360: {
+                                slidesPerView:
+                                    CARD_SIZE_CONFIG.responsive.mobile
+                                        .slidesPerView,
+                                spaceBetween:
+                                    CARD_SIZE_CONFIG.responsive.mobile
+                                        .spaceBetween,
                             },
                             768: {
-                                slidesPerView: 2,
-                                spaceBetween: 20,
+                                slidesPerView:
+                                    CARD_SIZE_CONFIG.responsive.tablet
+                                        .slidesPerView,
+                                spaceBetween:
+                                    CARD_SIZE_CONFIG.responsive.tablet
+                                        .spaceBetween,
                             },
                             1024: {
-                                slidesPerView: 3,
-                                spaceBetween: 24,
+                                slidesPerView:
+                                    CARD_SIZE_CONFIG.responsive.desktop
+                                        .slidesPerView,
+                                spaceBetween:
+                                    CARD_SIZE_CONFIG.responsive.desktop
+                                        .spaceBetween,
+                            },
+                            1536: {
+                                slidesPerView:
+                                    CARD_SIZE_CONFIG.responsive.wide
+                                        .slidesPerView,
+                                spaceBetween:
+                                    CARD_SIZE_CONFIG.responsive.wide
+                                        .spaceBetween,
+                            },
+                            1920: {
+                                slidesPerView:
+                                    CARD_SIZE_CONFIG.responsive.ultrawide
+                                        .slidesPerView,
+                                spaceBetween:
+                                    CARD_SIZE_CONFIG.responsive.ultrawide
+                                        .spaceBetween,
                             },
                         }}
                         className="pb-12"
                     >
                         {sortedAds.map((ad) => {
-                            const CardComponent = ThemeCardComponents[ad.themeType];
-                            
-                            if (!CardComponent || !ad.theme) {
+                            const CardComponent =
+                                ThemeCardComponents[ad.themeType];
+
+                            // theme 및 theme.type 존재 여부 확인
+                            if (!CardComponent || !ad.theme || !ad.theme.type) {
+                                console.warn(
+                                    `Invalid advertisement data for ad ${ad.id}:`,
+                                    {
+                                        hasTheme: !!ad.theme,
+                                        hasType: !!ad.theme?.type,
+                                        themeType: ad.themeType,
+                                    }
+                                );
                                 return null;
                             }
 
                             return (
-                                <SwiperSlide key={ad.id}>
-                                    <CardComponent theme={ad.theme} />
+                                <SwiperSlide key={ad.id} className="h-full">
+                                    <div
+                                        className="h-full"
+                                        style={{
+                                            minWidth: CARD_SIZE_CONFIG.minWidth,
+                                            maxWidth: CARD_SIZE_CONFIG.maxWidth,
+                                            height:
+                                                CARD_SIZE_CONFIG.height ===
+                                                "auto"
+                                                    ? "auto"
+                                                    : CARD_SIZE_CONFIG.height,
+                                            margin: "0 auto",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                        }}
+                                    >
+                                        <CardComponent
+                                            theme={ad.theme}
+                                            index={0}
+                                        />
+                                    </div>
                                 </SwiperSlide>
                             );
                         })}
@@ -150,21 +255,24 @@ const GameAdsCarousel: React.FC = () => {
                 </motion.div>
             </div>
 
-            <style jsx global>{`
-                .swiper-pagination-bullet {
-                    background-color: hsl(var(--muted-foreground));
-                    opacity: 0.3;
-                }
-                
-                .swiper-pagination-bullet-active {
-                    background-color: hsl(var(--primary));
-                    opacity: 1;
-                }
-                
-                .swiper-slide {
-                    height: auto;
-                }
-            `}</style>
+            {/* Swiper 커스텀 스타일 */}
+            <style>
+                {`
+                    .swiper-pagination-bullet {
+                        background-color: hsl(var(--muted-foreground));
+                        opacity: 0.3;
+                    }
+                    
+                    .swiper-pagination-bullet-active {
+                        background-color: hsl(var(--primary));
+                        opacity: 1;
+                    }
+                    
+                    .swiper-slide {
+                        height: auto;
+                    }
+                `}
+            </style>
         </section>
     );
 };
