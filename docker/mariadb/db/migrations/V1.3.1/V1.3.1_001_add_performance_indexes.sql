@@ -32,15 +32,15 @@ CREATE INDEX IF NOT EXISTS `idx_board_posts_type_deleted_created`
 CREATE INDEX IF NOT EXISTS `idx_user_posts_private_created` 
     ON `user_posts` (`is_private`, `is_followers_only`, `created_at` DESC);
 
--- 6) Add index for user_granted_permissions table
--- Optimizes permission lookups by user_id
-CREATE INDEX IF NOT EXISTS `idx_user_granted_permissions_user` 
-    ON `user_granted_permissions` (`user_id`, `permission_id`);
+-- 6) Add index for user_permissions table
+-- Optimizes permission lookups by user_snowflake
+CREATE INDEX IF NOT EXISTS `idx_user_permissions_user` 
+    ON `user_permissions` (`user_snowflake`, `permission_id`);
 
 -- 7) Add index for game_themes table
--- Optimizes queries filtering by theme_type and is_public
+-- Optimizes queries filtering by type and is_public
 CREATE INDEX IF NOT EXISTS `idx_game_themes_type_public` 
-    ON `game_themes` (`theme_type`, `is_public`);
+    ON `game_themes` (`type`, `is_public`);
 
 -- 8) Add index for escape_room_histories table
 -- Optimizes queries by web_user_id and created_at
