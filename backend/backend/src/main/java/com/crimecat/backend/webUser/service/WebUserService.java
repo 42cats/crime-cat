@@ -2,6 +2,8 @@ package com.crimecat.backend.webUser.service;
 
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
+import com.crimecat.backend.gametheme.domain.MakerTeam;
+import com.crimecat.backend.gametheme.repository.MakerTeamRepository;
 import com.crimecat.backend.permission.service.PermissionService;
 import com.crimecat.backend.point.service.PointHistoryService;
 import com.crimecat.backend.storage.StorageFileType;
@@ -49,6 +51,7 @@ public class WebUserService {
     private final UserPermissionService userPermissionService;
     private final StorageService storageService;
     private final GameHistoryRepository gameHistoryRepository;
+    private final MakerTeamRepository makerTeamRepository;
 
 
     public ResponseEntity<Map<String, Object>> isDailyCheck(String userId) {
@@ -98,9 +101,24 @@ public class WebUserService {
                 }
             }
         }
-        webUser.updateProfile(webUserProfileEditRequestDto);
+        if(webUserProfileEditRequestDto.getNickName() != null){
+        Optional<MakerTeam> opt = makerTeamRepository
+                .findByNameAndIndividualNative(webUser.getNickname(), true)
+                // 팀 멤버 중에 webUser가 있는지 확인
+                .filter(team -> team.getMembers().stream()
+                        .anyMatch(member ->
+                                member.getWebUser().getId().equals(webUser.getId())
+                        )
+                );
 
-        //프로필파일 저장
+        opt.ifPresent(team -> {
+            // 조건이 만족되면 팀 이름을 웹유저 닉네임으로 변경
+            team.setName(webUserProfileEditRequestDto.getNickName());
+            // 변경된 엔티티를 저장 (영속성 컨텍스트 범위 내라면 save() 없어도 반영되지만, 명시적으로 호출해도 무방)
+            makerTeamRepository.save(team);
+        });        //프로필파일 저장
+        }
+        webUser.updateProfile(webUserProfileEditRequestDto);
         if(file != null && !file.isEmpty()){
             try{
             String path = storageService.storeAt(StorageFileType.AVATAR, file, webUser.getId().toString());

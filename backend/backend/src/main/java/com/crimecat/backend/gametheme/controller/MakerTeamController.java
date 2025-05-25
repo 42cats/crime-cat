@@ -2,6 +2,8 @@ package com.crimecat.backend.gametheme.controller;
 
 import com.crimecat.backend.gametheme.dto.*;
 import com.crimecat.backend.gametheme.service.MakerTeamService;
+import com.crimecat.backend.utils.AuthenticationUtil;
+import com.crimecat.backend.webUser.enums.UserRole;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,7 @@ public class MakerTeamController {
     @PostMapping
     public void createTeam(@Valid @RequestBody CreateTeamRequest createTeamRequest) {
         // TODO: 만들 때 권한 확인 / 제한 두기
+        AuthenticationUtil.validateUserHasAuthority(UserRole.USER);
         makerTeamService.create(createTeamRequest.getName());
     }
 

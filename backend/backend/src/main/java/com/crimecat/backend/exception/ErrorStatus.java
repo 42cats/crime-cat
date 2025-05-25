@@ -30,6 +30,7 @@ public enum ErrorStatus {
 
     // ❌ 중복/충돌
     USER_ALREADY_EXISTS("이미 존재하는 사용자입니다.", HttpStatus.CONFLICT),         // 409
+    TEAM_NAME_ALREADY_EXISTS("이미 존재하는 팀이름 입니다.", HttpStatus.CONFLICT),         // 409
     GUILD_ALREADY_EXISTS("이미 존재하는 길드입니다.", HttpStatus.CONFLICT),          // 409
     GROUP_ALREADY_EXISTS("이미 존재하는 그룹 이름입니다.", HttpStatus.CONFLICT),      // 409
     EMAIL_ALREADY_REGISTERED("이미 등록된 이메일입니다.", HttpStatus.CONFLICT),      // 409

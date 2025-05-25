@@ -31,4 +31,8 @@ public class MakerTeam {
     @Setter
     @Column(name = "IS_INDIVIDUAL")
     private boolean isIndividual;
+
+    public void setName(String name){
+        this.name = name;
+    }
 }
