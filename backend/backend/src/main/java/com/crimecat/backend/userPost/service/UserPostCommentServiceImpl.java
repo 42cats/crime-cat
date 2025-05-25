@@ -88,7 +88,8 @@ public class UserPostCommentServiceImpl implements UserPostCommentService {
                             parentComment.getId(),
                             post.getId(),
                             author.getUser().getId(), // User ID 사용
-                            author.getNickname()
+                            author.getNickname(),
+                            null // UserPost는 boardType이 없음
                         );
                         notificationEventPublisher.publishEvent(event);
                     }
@@ -106,7 +107,8 @@ public class UserPostCommentServiceImpl implements UserPostCommentService {
                             comment.getContent(),
                             post.getId(),
                             author.getUser().getId(), // User ID 사용
-                            author.getNickname()
+                            author.getNickname(),
+                            null // UserPost는 boardType이 없음
                         );
                         notificationEventPublisher.publishEvent(event);
                     }

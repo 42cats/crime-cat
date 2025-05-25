@@ -51,7 +51,11 @@ public class UserPostCommentBuilder extends NotificationBuilder<UserPostCommentB
         data("postId", postId);
         data("commenterId", commenterId);
         data("notificationType", "USER_POST_COMMENT");
-        data("linkUrl", "/sns/post/" + postId);
+        
+        // linkUrl이 이미 설정되어 있지 않은 경우에만 기본값 설정
+        if (!data.containsKey("linkUrl")) {
+            data("linkUrl", "/sns/post/" + postId);
+        }
     }
     
     /**

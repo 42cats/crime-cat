@@ -139,6 +139,97 @@ public class NotificationEventPublisher {
     }
     
     /**
+     * 유저 포스트 댓글 이벤트 발행
+     */
+    public CompletableFuture<Void> publishUserPostCommented(Object source, UUID postAuthorId, UUID commentId, 
+                                                           String commentContent, UUID postId, UUID commenterId, 
+                                                           String commenterNickname) {
+        return CompletableFuture.runAsync(() -> {
+            UserPostCommentedEvent event = UserPostCommentedEvent.of(source, postAuthorId, commentId, 
+                                                                    commentContent, postId, commenterId, commenterNickname, null);
+            eventPublisher.publishEvent(event);
+            log.debug("Published UserPostCommentedEvent: {}", event.getEventId());
+        });
+    }
+    
+    /**
+     * 유저 포스트 댓글 이벤트 발행 (BoardType 포함)
+     */
+    public CompletableFuture<Void> publishUserPostCommented(Object source, UUID postAuthorId, UUID commentId, 
+                                                           String commentContent, UUID postId, UUID commenterId, 
+                                                           String commenterNickname, String boardType) {
+        return CompletableFuture.runAsync(() -> {
+            UserPostCommentedEvent event = UserPostCommentedEvent.of(source, postAuthorId, commentId, 
+                                                                    commentContent, postId, commenterId, 
+                                                                    commenterNickname, boardType);
+            eventPublisher.publishEvent(event);
+            log.debug("Published UserPostCommentedEvent with boardType: {}", event.getEventId());
+        });
+    }
+    
+    /**
+     * 유저 포스트 댓글 답글 이벤트 발행
+     */
+    public CompletableFuture<Void> publishUserPostCommentReplied(Object source, UUID parentCommentAuthorId, 
+                                                                UUID replyId, String replyContent, UUID parentCommentId, 
+                                                                UUID postId, UUID replierId, String replierNickname) {
+        return CompletableFuture.runAsync(() -> {
+            UserPostCommentRepliedEvent event = UserPostCommentRepliedEvent.of(source, parentCommentAuthorId, 
+                                                                              replyId, replyContent, parentCommentId, 
+                                                                              postId, replierId, replierNickname, null);
+            eventPublisher.publishEvent(event);
+            log.debug("Published UserPostCommentRepliedEvent: {}", event.getEventId());
+        });
+    }
+    
+    /**
+     * 유저 포스트 댓글 답글 이벤트 발행 (BoardType 포함)
+     */
+    public CompletableFuture<Void> publishUserPostCommentReplied(Object source, UUID parentCommentAuthorId, 
+                                                                UUID replyId, String replyContent, UUID parentCommentId, 
+                                                                UUID postId, UUID replierId, String replierNickname, String boardType) {
+        return CompletableFuture.runAsync(() -> {
+            UserPostCommentRepliedEvent event = UserPostCommentRepliedEvent.of(source, parentCommentAuthorId, 
+                                                                              replyId, replyContent, parentCommentId, 
+                                                                              postId, replierId, replierNickname, boardType);
+            eventPublisher.publishEvent(event);
+            log.debug("Published UserPostCommentRepliedEvent with boardType: {}", event.getEventId());
+        });
+    }
+    
+    /**
+     * 게임 테마 댓글 이벤트 발행 (다중 수신자)
+     */
+    public CompletableFuture<Void> publishGameThemeCommented(Object source, List<UUID> targetUserIds, UUID themeId,
+                                                            String themeTitle, String themeType, UUID commentId,
+                                                            String commentContent, UUID commenterId, String commenterNickname) {
+        return CompletableFuture.runAsync(() -> {
+            GameThemeCommentedEvent event = GameThemeCommentedEvent.of(source, targetUserIds, themeId, themeTitle,
+                                                                      themeType, commentId, commentContent,
+                                                                      commenterId, commenterNickname);
+            eventPublisher.publishEvent(event);
+            log.debug("Published GameThemeCommentedEvent for {} users: {}", targetUserIds.size(), event.getEventId());
+        });
+    }
+    
+    /**
+     * 게임 테마 댓글 답글 이벤트 발행
+     */
+    public CompletableFuture<Void> publishGameThemeCommentReplied(Object source, UUID parentCommentAuthorId,
+                                                                 UUID themeId, String themeTitle, String themeType,
+                                                                 UUID replyId, String replyContent, UUID parentCommentId,
+                                                                 UUID replierId, String replierNickname) {
+        return CompletableFuture.runAsync(() -> {
+            GameThemeCommentRepliedEvent event = GameThemeCommentRepliedEvent.of(source, parentCommentAuthorId,
+                                                                                themeId, themeTitle, themeType,
+                                                                                replyId, replyContent, parentCommentId,
+                                                                                replierId, replierNickname);
+            eventPublisher.publishEvent(event);
+            log.debug("Published GameThemeCommentRepliedEvent: {}", event.getEventId());
+        });
+    }
+    
+    /**
      * 이벤트 발행 (제네릭)
      * 커스텀 이벤트나 특별한 처리가 필요한 경우 사용
      */

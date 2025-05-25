@@ -247,6 +247,80 @@ public class NotificationEventListener {
     }
     
     /**
+     * 게임 테마 댓글 이벤트 처리
+     * 크라임신의 경우 다중 사용자에게 알림 발송
+     */
+    @EventListener
+    @Async
+    public CompletableFuture<Void> handleGameThemeCommented(GameThemeCommentedEvent event) {
+        log.info("Processing GameThemeCommentedEvent: {} for {} users", 
+                 event.getEventId(), event.getTargetUserIds().size());
+        
+        try {
+            // 각 대상 사용자에게 알림 발송
+            event.getTargetUserIds().parallelStream().forEach(userId -> {
+                try {
+                    // 게임 테마를 위해 userPostComment 빌더를 사용하되, linkUrl을 덮어쓰기
+                    builders.userPostComment(event.getThemeId(), event.getCommenterId())
+                        .to(userId)
+                        .title(event.getTitle())
+                        .message(event.getMessage())
+                        .data("themeId", event.getThemeId())
+                        .data("themeTitle", event.getThemeTitle())
+                        .data("themeType", event.getThemeType())
+                        .data("commentId", event.getCommentId())
+                        .data("commentContent", event.getCommentContent())
+                        .data("commenterNickname", event.getCommenterNickname())
+                        .data("linkUrl", event.getData().get("linkUrl")) // 이벤트에서 제공한 linkUrl로 덮어쓰기
+                        .send();
+                } catch (Exception e) {
+                    log.error("Error sending game theme comment notification to user {}: {}", userId, e.getMessage());
+                }
+            });
+            
+            log.debug("Successfully processed GameThemeCommentedEvent: {}", event.getEventId());
+        } catch (Exception e) {
+            log.error("Error processing GameThemeCommentedEvent: {}", event.getEventId(), e);
+            throw e;
+        }
+        
+        return CompletableFuture.completedFuture(null);
+    }
+    
+    /**
+     * 게임 테마 댓글 답글 이벤트 처리
+     * 부모 댓글 작성자에게 알림 발송
+     */
+    @EventListener
+    @Async
+    public CompletableFuture<Void> handleGameThemeCommentReplied(GameThemeCommentRepliedEvent event) {
+        log.info("Processing GameThemeCommentRepliedEvent: {}", event.getEventId());
+        
+        try {
+            builders.userPostCommentReply(event.getParentCommentId(), event.getReplierId())
+                .to(event.getReceiverId())
+                .title(event.getTitle())
+                .message(event.getMessage())
+                .data("themeId", event.getThemeId())
+                .data("themeTitle", event.getThemeTitle())
+                .data("themeType", event.getThemeType())
+                .data("replyId", event.getReplyId())
+                .data("replyContent", event.getReplyContent())
+                .data("parentCommentId", event.getParentCommentId())
+                .data("replierNickname", event.getReplierNickname())
+                .data("linkUrl", event.getData().get("linkUrl"))
+                .send();
+            
+            log.debug("Successfully processed GameThemeCommentRepliedEvent: {}", event.getEventId());
+        } catch (Exception e) {
+            log.error("Error processing GameThemeCommentRepliedEvent: {}", event.getEventId(), e);
+            throw e;
+        }
+        
+        return CompletableFuture.completedFuture(null);
+    }
+    
+    /**
      * 모든 알림 이벤트에 대한 공통 처리
      * 로깅, 메트릭 수집 등의 작업 수행
      */

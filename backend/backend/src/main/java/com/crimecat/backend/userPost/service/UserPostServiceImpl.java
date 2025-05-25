@@ -99,7 +99,7 @@ public class UserPostServiceImpl implements UserPostService {
                             this,
                             post.getId(),
                             content,
-                            user.getUser().getId(), // WebUser가 아닌 User ID 사용
+                            user.getUser().getId(), // User ID 사용 (올바름)
                             user.getNickname(),
                             followerUserIds
                         );
