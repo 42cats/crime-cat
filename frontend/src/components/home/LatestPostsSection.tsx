@@ -86,7 +86,7 @@ const BoardSection = ({
                 ) : (
                     <div className="flex items-center justify-center h-full">
                         <p className="text-sm text-muted-foreground text-center py-4">
-                            {category === "CRIMESCENE"
+                            {category === "CRIMESCENE" || category === "ESCAPE_ROOM"
                                 ? "게시글이 없습니다."
                                 : "준비 중입니다. 조금만 기다려주세요."}
                         </p>
