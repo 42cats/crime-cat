@@ -350,7 +350,7 @@ public class WebUserService {
       return value.matches("^\\d+$");
     }
 
-    @Cacheable(value = "user:profile", key = "'detail:' + #userId")
+    @Cacheable(value = "user:profile", key = "'detail:' + #userId.toString()")
     public ProfileDetailDto getUserProfileDetail(UUID userId) {
       boolean authenticated = AuthenticationUtil.isAuthenticated();
       WebUser webUser = webUserRepository.findById(userId)

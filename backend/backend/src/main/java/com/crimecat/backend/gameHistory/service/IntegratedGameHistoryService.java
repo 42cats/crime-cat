@@ -271,7 +271,7 @@ public class IntegratedGameHistoryService {
     /**
      * 통계 정보 생성 (캐싱)
      */
-    @Cacheable(value = CacheType.USER_STATISTICS, key = "#userId")
+    @Cacheable(value = CacheType.USER_STATISTICS, key = "#userId.toString()")
     public IntegratedGameHistoryResponse.GameStatistics createStatistics(UUID userId) {
         log.info("통계 정보 생성 (캐시 미스) - userId: {}", userId);
         // 크라임씬 통계 (중복 플레이 불가능)
