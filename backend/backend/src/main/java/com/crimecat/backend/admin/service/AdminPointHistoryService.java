@@ -275,30 +275,154 @@ public class AdminPointHistoryService {
     }
 
     private List<SuspiciousActivityResponse> detectRapidEarning(LocalDateTime since) {
-        // 1시간 내 5회 이상 포인트 획득한 사용자 찾기
+        List<Object[]> results = pointHistoryRepository.findRapidEarningUsers(since);
+        Map<String, SuspiciousActivityResponse.SuspiciousActivityResponseBuilder> builderMap = new HashMap<>();
+        Map<String, List<SuspiciousActivityResponse.TransactionDetail>> transactionMap = new HashMap<>();
+
+        for (Object[] row : results) {
+            String userId = row[0].toString();
+            
+            // 사용자별 빌더 생성 (처음 한 번만)
+            if (!builderMap.containsKey(userId)) {
+                builderMap.put(userId, SuspiciousActivityResponse.builder()
+                        .userId(UUID.fromString(userId))
+                        .userNickname((String) row[1])
+                        .userEmail((String) row[2])
+                        .suspiciousType("RAPID_EARNING")
+                        .transactionCount(((Number) row[3]).intValue())
+                        .totalAmount(((Number) row[4]).intValue())
+                        .detectedAt(LocalDateTime.now())
+                        .description(String.format("1시간 내 %d회 포인트 획득 (총 %,d포인트)",
+                                ((Number) row[3]).intValue(),
+                                ((Number) row[4]).intValue()))
+                );
+                transactionMap.put(userId, new ArrayList<>());
+            }
+            
+            // 거래 내역 추가
+            if (row[7] != null) {  // transaction_id가 있으면
+                transactionMap.get(userId).add(
+                        SuspiciousActivityResponse.TransactionDetail.builder()
+                                .transactionId(UUID.fromString(row[7].toString()))
+                                .type(TransactionType.valueOf((String) row[8]))
+                                .amount(((Number) row[9]).intValue())
+                                .usedAt(((java.sql.Timestamp) row[10]).toLocalDateTime())
+                                .memo((String) row[11])
+                                .relatedUserNickname((String) row[12])
+                                .build()
+                );
+            }
+        }
+
+        // 빌더에서 최종 객체 생성
         List<SuspiciousActivityResponse> activities = new ArrayList<>();
-        
-        // TODO: 실제 구현시 Native Query 또는 QueryDSL 사용 권장
-        // 여기서는 간단한 로직으로 구현
-        
+        for (Map.Entry<String, SuspiciousActivityResponse.SuspiciousActivityResponseBuilder> entry : builderMap.entrySet()) {
+            String userId = entry.getKey();
+            activities.add(entry.getValue()
+                    .recentTransactions(transactionMap.get(userId))
+                    .build());
+        }
+
         return activities;
     }
 
     private List<SuspiciousActivityResponse> detectLargeAmountEarning(LocalDateTime since) {
-        // 24시간 내 10만 포인트 이상 획득한 사용자 찾기
+        List<Object[]> results = pointHistoryRepository.findLargeAmountEarningUsers(since.minusHours(24));
+        Map<String, SuspiciousActivityResponse.SuspiciousActivityResponseBuilder> builderMap = new HashMap<>();
+        Map<String, List<SuspiciousActivityResponse.TransactionDetail>> transactionMap = new HashMap<>();
+
+        for (Object[] row : results) {
+            String userId = row[0].toString();
+            
+            if (!builderMap.containsKey(userId)) {
+                builderMap.put(userId, SuspiciousActivityResponse.builder()
+                        .userId(UUID.fromString(userId))
+                        .userNickname((String) row[1])
+                        .userEmail((String) row[2])
+                        .suspiciousType("LARGE_AMOUNT")
+                        .transactionCount(((Number) row[3]).intValue())
+                        .totalAmount(((Number) row[4]).intValue())
+                        .detectedAt(LocalDateTime.now())
+                        .description(String.format("24시간 내 %,d포인트 획득 (%d건의 거래)",
+                                ((Number) row[4]).intValue(),
+                                ((Number) row[3]).intValue()))
+                );
+                transactionMap.put(userId, new ArrayList<>());
+            }
+            
+            if (row[5] != null && transactionMap.get(userId).size() < 10) {  // 최근 10건만
+                transactionMap.get(userId).add(
+                        SuspiciousActivityResponse.TransactionDetail.builder()
+                                .transactionId(UUID.fromString(row[5].toString()))
+                                .type(TransactionType.valueOf((String) row[6]))
+                                .amount(((Number) row[7]).intValue())
+                                .usedAt(((java.sql.Timestamp) row[8]).toLocalDateTime())
+                                .memo((String) row[9])
+                                .relatedUserNickname((String) row[10])
+                                .build()
+                );
+            }
+        }
+
         List<SuspiciousActivityResponse> activities = new ArrayList<>();
-        
-        // TODO: 실제 구현시 Native Query 또는 QueryDSL 사용 권장
-        
+        for (Map.Entry<String, SuspiciousActivityResponse.SuspiciousActivityResponseBuilder> entry : builderMap.entrySet()) {
+            String userId = entry.getKey();
+            activities.add(entry.getValue()
+                    .recentTransactions(transactionMap.get(userId))
+                    .build());
+        }
+
         return activities;
     }
 
     private List<SuspiciousActivityResponse> detectRepeatedTransfers(LocalDateTime since) {
-        // 동일 사용자 간 반복적인 거래 찾기
+        List<Object[]> results = pointHistoryRepository.findRepeatedTransferUsers(since);
+        Map<String, SuspiciousActivityResponse.SuspiciousActivityResponseBuilder> builderMap = new HashMap<>();
+        Map<String, List<SuspiciousActivityResponse.TransactionDetail>> transactionMap = new HashMap<>();
+
+        for (Object[] row : results) {
+            String userId = row[0].toString();
+            String relatedNickname = (String) row[10];
+            
+            if (!builderMap.containsKey(userId)) {
+                builderMap.put(userId, SuspiciousActivityResponse.builder()
+                        .userId(UUID.fromString(userId))
+                        .userNickname((String) row[1])
+                        .userEmail((String) row[2])
+                        .suspiciousType("REPEATED_TRANSFER")
+                        .transactionCount(((Number) row[3]).intValue())
+                        .totalAmount(((Number) row[4]).intValue())
+                        .detectedAt(LocalDateTime.now())
+                        .description(String.format("%s님과 %d회 반복 거래 (총 %,d포인트)",
+                                relatedNickname,
+                                ((Number) row[3]).intValue(),
+                                ((Number) row[4]).intValue()))
+                );
+                transactionMap.put(userId, new ArrayList<>());
+            }
+            
+            if (row[5] != null) {
+                transactionMap.get(userId).add(
+                        SuspiciousActivityResponse.TransactionDetail.builder()
+                                .transactionId(UUID.fromString(row[5].toString()))
+                                .type(TransactionType.valueOf((String) row[6]))
+                                .amount(((Number) row[7]).intValue())
+                                .usedAt(((java.sql.Timestamp) row[8]).toLocalDateTime())
+                                .memo((String) row[9])
+                                .relatedUserNickname(relatedNickname)
+                                .build()
+                );
+            }
+        }
+
         List<SuspiciousActivityResponse> activities = new ArrayList<>();
-        
-        // TODO: 실제 구현시 Native Query 또는 QueryDSL 사용 권장
-        
+        for (Map.Entry<String, SuspiciousActivityResponse.SuspiciousActivityResponseBuilder> entry : builderMap.entrySet()) {
+            String userId = entry.getKey();
+            activities.add(entry.getValue()
+                    .recentTransactions(transactionMap.get(userId))
+                    .build());
+        }
+
         return activities;
     }
 }
