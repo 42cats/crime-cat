@@ -21,9 +21,16 @@ import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.location.service.LocationMappingService;
+import com.crimecat.backend.user.repository.UserRepository;
+import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.point.service.PointHistoryService;
+import com.crimecat.backend.notification.service.NotificationService;
+import com.crimecat.backend.notification.enums.NotificationType;
 import jakarta.transaction.Transactional;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -49,6 +56,9 @@ public class GameThemeService {
     private final GameHistoryRepository gameHistoryRepository;
     private final CrimesceneThemeRepository crimesceneThemeRepository;
     private final LocationMappingService locationMappingService;
+    private final UserRepository userRepository;
+    private final PointHistoryService pointHistoryService;
+    private final NotificationService notificationService;
 
     @Transactional
     public void addGameTheme(MultipartFile file, AddGameThemeRequest request) {
@@ -76,6 +86,9 @@ public class GameThemeService {
         
         // 최종 저장 (한 번만 저장)
         themeRepository.save(gameTheme);
+        
+        // 포인트 지급 및 알림 발송
+        rewardPointsForThemeCreation(gameTheme, webUser);
     }
     
     /**
@@ -330,5 +343,56 @@ public class GameThemeService {
         
         // 리스트 DTO로 변환하여 반환
         return CrimesceneThemeSummeryListDto.from(themeDtos);
+    }
+    
+    /**
+     * 테마 작성에 대한 포인트 지급 및 알림 발송
+     * @param gameTheme 작성된 테마
+     * @param webUser 작성자
+     */
+    private void rewardPointsForThemeCreation(GameTheme gameTheme, WebUser webUser) {
+        // User 엔티티 조회
+        User user = userRepository.findByWebUserId(webUser.getId())
+                .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+        
+        // 테마 타입에 따른 포인트 결정
+        int rewardPoints;
+        String themeTypeName;
+        
+        if (gameTheme.getDiscriminator().equals(ThemeType.Values.ESCAPE_ROOM)) {
+            rewardPoints = 100;
+            themeTypeName = "방탈출";
+        } else if (gameTheme.getDiscriminator().equals(ThemeType.Values.CRIMESCENE)) {
+            rewardPoints = 500;
+            themeTypeName = "크라임신";
+        } else {
+            // 기타 테마 타입은 포인트 지급 없음
+            return;
+        }
+        
+        // 포인트 지급
+        pointHistoryService.rewardThemeWriting(
+            user, 
+            rewardPoints, 
+            gameTheme.getId(), 
+            gameTheme.getTitle()
+        );
+        
+        // 알림 발송
+        Map<String, Object> notificationData = new HashMap<>();
+        notificationData.put("themeId", gameTheme.getId().toString());
+        notificationData.put("themeName", gameTheme.getTitle());
+        notificationData.put("themeType", themeTypeName);
+        notificationData.put("points", rewardPoints);
+        
+        notificationService.createAndSendNotification(
+            NotificationType.THEME_POINT_REWARD,
+            user.getId(),
+            null, // 시스템 알림이므로 발신자 없음
+            themeTypeName + " 테마 작성 포인트 지급",
+            String.format("%s 테마 '%s' 작성으로 %d포인트가 지급되었습니다!", 
+                themeTypeName, gameTheme.getTitle(), rewardPoints),
+            notificationData
+        );
     }
 }

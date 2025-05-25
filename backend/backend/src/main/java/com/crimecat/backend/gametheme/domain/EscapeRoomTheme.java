@@ -201,6 +201,10 @@ public class EscapeRoomTheme extends GameTheme {
     }
 
 
+    @Override
+    public String getDiscriminator() {
+        return "ESCAPE_ROOM";
+    }
 
     /**
      * 홈페이지 URL 반환

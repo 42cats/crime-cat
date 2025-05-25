@@ -132,6 +132,8 @@ public abstract class GameTheme {
         throw new IllegalArgumentException("Unknown theme type for request: " + request.getClass().getName());
     }
 
+    public abstract String getDiscriminator();
+
     public void setIsDelete(Boolean isDeleted) {
         if (isDeleted == null) {
             return;
