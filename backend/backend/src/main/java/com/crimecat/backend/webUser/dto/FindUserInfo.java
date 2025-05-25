@@ -1,14 +1,18 @@
 package com.crimecat.backend.webUser.dto;
 
 import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
 
 /**
  * 사용자 검색 결과를 담는 DTO 클래스
  */
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class FindUserInfo {
     private List<UserSearchResponseDto> content;

@@ -118,7 +118,7 @@ public class HybridCacheConfig {
     @Bean("optimizedRedisCacheManager")
     public RedisCacheManager optimizedRedisCacheManager(
             RedisConnectionFactory redisConnectionFactory,
-            @Qualifier("redisObjectMapper") com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+            @Qualifier("objectMapper") com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
         
         // 기본 Redis 캐시 설정
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
