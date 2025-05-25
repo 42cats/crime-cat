@@ -29,15 +29,7 @@ public class BoardPostController {
 
     private final BoardPostService boardPostService;
 
-    @GetMapping("/{id}")
-    public ResponseEntity<BoardPostDetailResponse> getPostDetail(
-            @PathVariable("id") UUID postId
-    ) {
-        WebUser currentWebUser = AuthenticationUtil.getCurrentWebUser();
-        return ResponseEntity.ok().body(
-                boardPostService.getBoardPostDetail(postId, currentWebUser.getId())
-        );
-    }
+
 
     @PostMapping
     public ResponseEntity<BoardPostDetailResponse> createBoardPost(

@@ -30,7 +30,7 @@ interface FormData {
     subject: string;
     content: string;
     postType: string;
-    secret: boolean;
+    isSecret: boolean;
 }
 
 interface BoardWriteProps {
@@ -130,7 +130,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
             subject: "",
             content: "",
             postType: getDefaultPostType(),
-            secret: false,
+            isSecret: false,
         },
     });
 
@@ -141,7 +141,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                 subject: existingPost.subject || existingPost.title || "",
                 content: existingPost.content || "",
                 postType: existingPost.postType || getDefaultPostType(),
-                secret: existingPost.isSecret || false,
+                isSecret: existingPost.isSecret || false,
             });
             setMarkdownContent(existingPost.content || "");
         }
@@ -187,7 +187,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                     content: markdownContent,
                     boardType: boardType,
                     postType: data.postType,
-                    secret: data.secret,
+                    isSecret: data.isSecret,
                 });
 
                 toast({
@@ -201,7 +201,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                     content: markdownContent,
                     boardType: boardType,
                     postType: data.postType,
-                    secret: data.secret,
+                    isSecret: data.isSecret,
                 });
 
                 toast({
@@ -333,14 +333,14 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                         {/* 비밀글 설정 */}
                         <div className="flex items-center space-x-2">
                             <Switch
-                                id="secret"
-                                checked={watch("secret")}
+                                id="isSecret"
+                                checked={watch("isSecret")}
                                 onCheckedChange={(checked) =>
-                                    setValue("secret", checked)
+                                    setValue("isSecret", checked)
                                 }
                             />
                             <Label
-                                htmlFor="secret"
+                                htmlFor="isSecret"
                                 className="text-sm font-medium"
                             >
                                 비밀글로 설정

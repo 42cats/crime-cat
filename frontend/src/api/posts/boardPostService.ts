@@ -66,10 +66,10 @@ export const boardPostService = {
         }
     },
 
-    // 게시글 상세 조회 (추후 필요시 구현)
+    // 게시글 상세 조회
     async getBoardPostById(id: string) {
         try {
-            return await apiClient.get(`/posts/${id}`);
+            return await apiClient.get(`/public/posts/${id}`);
         } catch (error) {
             return handleApiError(error);
         }
@@ -81,7 +81,7 @@ export const boardPostService = {
         content: string;
         boardType: BoardType;
         postType: string;
-        secret: boolean;
+        isSecret: boolean;
     }) {
         try {
             return await apiClient.post("/posts", postData);
