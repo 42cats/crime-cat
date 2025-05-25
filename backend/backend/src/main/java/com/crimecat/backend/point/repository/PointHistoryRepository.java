@@ -11,10 +11,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface PointHistoryRepository extends JpaRepository<PointHistory, UUID> {
+public interface PointHistoryRepository extends JpaRepository<PointHistory, UUID>, JpaSpecificationExecutor<PointHistory> {
 
     Page<PointHistory> findByUserOrderByUsedAtDesc(User user, Pageable pageable);
 

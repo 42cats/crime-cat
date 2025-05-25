@@ -323,6 +323,12 @@ const SidebarInner = React.memo(() => {
                                                 icon: MapPin,
                                                 roles: ["ADMIN", "MANAGER"],
                                             },
+                                            {
+                                                name: "포인트 모니터링",
+                                                path: "/dashboard/admin/point-monitoring",
+                                                icon: Coins,
+                                                roles: ["ADMIN", "MANAGER"],
+                                            },
                                         ]
                                             .filter((item) =>
                                                 item.roles.includes(
