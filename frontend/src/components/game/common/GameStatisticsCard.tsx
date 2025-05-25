@@ -181,7 +181,7 @@ export const GameStatisticsCard: React.FC<GameStatisticsCardProps> = ({
                             <div className="text-xs text-gray-500 bg-gray-50 rounded p-2">
                                 평균{" "}
                                 {(
-                                    escapeRoomStats.total /
+                                    escapeRoomStats.playCount /
                                     escapeRoomStats.unique
                                 ).toFixed(1)}
                                 회 재플레이

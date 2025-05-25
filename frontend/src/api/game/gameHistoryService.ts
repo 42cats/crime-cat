@@ -3,6 +3,7 @@ import {
     CheckPlayResponseDto,
     GameRecordRequest,
     GameRecordResponse,
+    GameHistoryUpdateRequest,
 } from "@/types/gameHistory";
 
 /**
@@ -43,6 +44,27 @@ export const gameHistoryService = {
             return response;
         } catch (error) {
             console.error("게임 기록 요청 중 오류:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * 크라임씬 게임 기록 수정 (테마 ID 기반)
+     * @param themeId 테마 ID
+     * @param data 수정할 데이터
+     * @returns Promise<void>
+     */
+    updateCrimeSceneHistory: async (
+        themeId: string,
+        data: GameHistoryUpdateRequest
+    ): Promise<void> => {
+        try {
+            await apiClient.patch(
+                `/histories/crime_scene/theme/${themeId}`,
+                data
+            );
+        } catch (error) {
+            console.error("게임 기록 수정 중 오류:", error);
             throw error;
         }
     },

@@ -162,11 +162,28 @@ export interface UserGameHistoryDto {
     createdAt: string;
     updatedAt: string;
     isAuthor?: boolean;
+    themeThumbnail?: string;
+    characterName?: string;
+}
+
+export interface UserGameHistoryToUserDto {
+    id: string; // UUID (Java UUID → string)
+    guildSnowflake: string;
+    userSnowflake: string;
+    guildName: string;
+    playerName: string;
+    isWin: boolean;
+    createdAt: string; // ISO-8601 포맷 문자열 (예: '2025-05-25T14:00:00')
+    characterName: string;
+    memo: string;
+    themeId: string;
+    themeName: string;
+    themeThumbnail: string;
 }
 
 // 통합 게임 기록 응답
 export interface IntegratedGameHistoryResponse {
-    crimeSceneHistories: UserGameHistoryDto[];
+    crimeSceneHistories: UserGameHistoryToUserDto[];
     escapeRoomHistories: EscapeRoomHistoryDetailResponse[];
     statistics: GameStatistics;
     pageInfo: PageInfo;
