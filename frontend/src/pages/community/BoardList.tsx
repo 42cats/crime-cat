@@ -64,13 +64,23 @@ const BoardList: React.FC<BoardListProps> = ({ boardType }) => {
         queryKey: ["boardPosts", boardType, page, searchKeyword, sortType],
         queryFn: async () => {
             try {
-                return await boardPostService.getBoardPosts({
+                console.log("게시글 조회 요청:", {
                     page,
                     size: 20,
                     kw: searchKeyword,
                     boardType,
                     sort: [sortType],
                 });
+                // 현재 boardType에 맞는 데이터 조회
+                const result = await boardPostService.getBoardPosts({
+                    page,
+                    size: 20,
+                    kw: searchKeyword,
+                    boardType: boardType, // 원래대로 복구
+                    sort: [sortType],
+                });
+                console.log("게시글 조회 결과:", result);
+                return result;
             } catch (error) {
                 console.error("게시글 로딩 오류:", error);
                 // 빈 응답 객체 반환
@@ -171,13 +181,13 @@ const BoardList: React.FC<BoardListProps> = ({ boardType }) => {
                                             onClick={() => {
                                                 const boardPath =
                                                     boardType === BoardType.CHAT
-                                                        ? "free"
+                                                        ? "chat"
                                                         : boardType ===
                                                           BoardType.QUESTION
-                                                        ? "questions"
+                                                        ? "question"
                                                         : boardType ===
                                                           BoardType.CREATOR
-                                                        ? "creators"
+                                                        ? "creator"
                                                         : "";
                                                 navigate(
                                                     `/community/${boardPath}/new`

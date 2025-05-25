@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
 import {
     Card,
     CardContent,
@@ -85,8 +86,10 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
 }) => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { id } = useParams<{ id: string }>();
     const { toast } = useToast();
     const [markdownContent, setMarkdownContent] = useState("");
+    const isEditMode = !!id;
 
     // URL에서 boardType 파라미터 읽기
     const query = new URLSearchParams(location.search);
@@ -96,6 +99,13 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
     const boardType =
         propsBoardType ||
         (urlBoardType ? (urlBoardType as BoardType) : BoardType.CHAT);
+
+    // 수정 모드일 때 기존 게시글 데이터 가져오기
+    const { data: existingPost, isLoading: isLoadingPost } = useQuery({
+        queryKey: ["boardPost", id],
+        queryFn: () => boardPostService.getBoardPostById(id!),
+        enabled: isEditMode,
+    });
 
     // 게시판 유형에 따른 기본 게시글 유형 선택
     const getDefaultPostType = () => {
@@ -113,6 +123,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
         handleSubmit,
         setValue,
         watch,
+        reset,
         formState: { errors, isSubmitting },
     } = useForm<FormData>({
         defaultValues: {
@@ -122,6 +133,19 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
             secret: false,
         },
     });
+
+    // 수정 모드에서 기존 데이터 로드
+    useEffect(() => {
+        if (isEditMode && existingPost) {
+            reset({
+                subject: existingPost.subject || existingPost.title || "",
+                content: existingPost.content || "",
+                postType: existingPost.postType || getDefaultPostType(),
+                secret: existingPost.isSecret || false,
+            });
+            setMarkdownContent(existingPost.content || "");
+        }
+    }, [isEditMode, existingPost, reset]);
 
     // 게시판 유형에 따른 타이틀 설정
     const getBoardTitle = () => {
@@ -156,34 +180,53 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                 return;
             }
 
-            await boardPostService.createBoardPost({
-                subject: data.subject,
-                content: markdownContent,
-                boardType: boardType,
-                postType: data.postType,
-                secret: data.secret,
-            });
+            if (isEditMode) {
+                // 수정 모드
+                await boardPostService.updateBoardPost(id!, {
+                    subject: data.subject,
+                    content: markdownContent,
+                    boardType: boardType,
+                    postType: data.postType,
+                    secret: data.secret,
+                });
 
-            toast({
-                title: "성공",
-                description: "게시글이 성공적으로 등록되었습니다.",
-            });
+                toast({
+                    title: "성공",
+                    description: "게시글이 성공적으로 수정되었습니다.",
+                });
+            } else {
+                // 작성 모드
+                await boardPostService.createBoardPost({
+                    subject: data.subject,
+                    content: markdownContent,
+                    boardType: boardType,
+                    postType: data.postType,
+                    secret: data.secret,
+                });
+
+                toast({
+                    title: "성공",
+                    description: "게시글이 성공적으로 등록되었습니다.",
+                });
+            }
 
             // 게시글 목록 페이지로 이동
             const boardPath =
                 boardType === BoardType.CHAT
-                    ? "free"
+                    ? "chat"
                     : boardType === BoardType.QUESTION
-                    ? "questions"
+                    ? "question"
                     : boardType === BoardType.CREATOR
-                    ? "creators"
+                    ? "creator"
                     : "";
             navigate(`/community/${boardPath}`);
         } catch (error) {
-            console.error("게시글 등록 오류:", error);
+            console.error("게시글 처리 오류:", error);
             toast({
                 title: "오류",
-                description: "게시글 등록 중 오류가 발생했습니다.",
+                description: isEditMode
+                    ? "게시글 수정 중 오류가 발생했습니다."
+                    : "게시글 등록 중 오류가 발생했습니다.",
                 variant: "destructive",
             });
         }
@@ -197,11 +240,11 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
         ) {
             const boardPath =
                 boardType === BoardType.CHAT
-                    ? "free"
+                    ? "chat"
                     : boardType === BoardType.QUESTION
-                    ? "questions"
+                    ? "question"
                     : boardType === BoardType.CREATOR
-                    ? "creators"
+                    ? "creator"
                     : "";
             navigate(`/community/${boardPath}`);
         }
@@ -211,16 +254,20 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
         <div className="container mx-auto py-6 px-4">
             <div className="mb-6">
                 <h1 className="text-2xl md:text-3xl font-bold">
-                    {getBoardTitle()} 글쓰기
+                    {getBoardTitle()} {isEditMode ? "글 수정" : "글쓰기"}
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                    새로운 게시글을 작성합니다.
+                    {isEditMode
+                        ? "게시글을 수정합니다."
+                        : "새로운 게시글을 작성합니다."}
                 </p>
             </div>
 
             <Card className="border-gray-200 dark:border-gray-800 shadow-sm">
                 <CardHeader className="p-6">
-                    <CardTitle>게시글 작성</CardTitle>
+                    <CardTitle>
+                        {isEditMode ? "게시글 수정" : "게시글 작성"}
+                    </CardTitle>
                     <CardDescription>
                         제목과 내용을 입력하고 게시글 유형을 선택해주세요.
                     </CardDescription>
@@ -335,6 +382,8 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                                     <span className="mr-2">저장 중...</span>
                                     <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white"></div>
                                 </>
+                            ) : isEditMode ? (
+                                "수정하기"
                             ) : (
                                 "등록하기"
                             )}

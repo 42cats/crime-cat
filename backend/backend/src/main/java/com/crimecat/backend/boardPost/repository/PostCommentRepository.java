@@ -1,8 +1,11 @@
 package com.crimecat.backend.boardPost.repository;
 
+import com.crimecat.backend.boardPost.domain.BoardPost;
 import com.crimecat.backend.boardPost.domain.PostComment;
 import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.domain.Limit;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -22,5 +25,7 @@ public interface PostCommentRepository extends JpaRepository<PostComment, UUID> 
     List<PostComment> findAllByParentId(UUID commentId, Sort sort);
 
     Optional<PostComment> findByIdAndIsDeletedFalse(UUID commentId);
+    
+    Page<PostComment> findAllByBoardPostAndParentIdIsNullAndIsDeletedFalse(BoardPost boardPost, Pageable pageable);
 
 }

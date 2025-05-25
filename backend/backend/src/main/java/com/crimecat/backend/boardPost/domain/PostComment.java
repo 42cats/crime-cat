@@ -86,6 +86,13 @@ public class PostComment {
         this.updatedAt = LocalDateTime.now();
         this.isDeleted = true;
     }
+    
+    public void incrementLikes(){
+        this.likes++;
+    }
+    public void decrementLikes(){
+        this.likes--;
+    }
 
     public static PostComment from(BoardPost boardPost, WebUser author, PostComment parent, PostCommentRequest request){
         UUID parentId = null;

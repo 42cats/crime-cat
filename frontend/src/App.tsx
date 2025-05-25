@@ -198,7 +198,7 @@ const App = () => (
                                 {/* 커뮤니티 게시판 라우트 - 순서가 중요합니다! 더 구체적인 경로가 먼저 와야 합니다 */}
                                 {/* 질문게시판 */}
                                 <Route
-                                    path="/community/questions/new"
+                                    path="/community/question/new"
                                     element={
                                         <BoardWrite
                                             boardType={BoardType.QUESTION}
@@ -206,17 +206,25 @@ const App = () => (
                                     }
                                 />
                                 <Route
-                                    path="/community/questions/:id"
+                                    path="/community/question/edit/:id"
+                                    element={
+                                        <BoardWrite
+                                            boardType={BoardType.QUESTION}
+                                        />
+                                    }
+                                />
+                                <Route
+                                    path="/community/question/:id"
                                     element={<QuestionPostDetail />}
                                 />
                                 <Route
-                                    path="/community/questions"
+                                    path="/community/question"
                                     element={<QuestionBoard />}
                                 />
 
                                 {/* 자유게시판 */}
                                 <Route
-                                    path="/community/free/new"
+                                    path="/community/chat/new"
                                     element={
                                         <BoardWrite
                                             boardType={BoardType.CHAT}
@@ -224,17 +232,25 @@ const App = () => (
                                     }
                                 />
                                 <Route
-                                    path="/community/free/:id"
+                                    path="/community/chat/edit/:id"
+                                    element={
+                                        <BoardWrite
+                                            boardType={BoardType.CHAT}
+                                        />
+                                    }
+                                />
+                                <Route
+                                    path="/community/chat/:id"
                                     element={<FreePostDetail />}
                                 />
                                 <Route
-                                    path="/community/free"
+                                    path="/community/chat"
                                     element={<FreeBoard />}
                                 />
 
                                 {/* 제작자게시판 */}
                                 <Route
-                                    path="/community/creators/new"
+                                    path="/community/creator/new"
                                     element={
                                         <BoardWrite
                                             boardType={BoardType.CREATOR}
@@ -242,11 +258,19 @@ const App = () => (
                                     }
                                 />
                                 <Route
-                                    path="/community/creators/:id"
+                                    path="/community/creator/edit/:id"
+                                    element={
+                                        <BoardWrite
+                                            boardType={BoardType.CREATOR}
+                                        />
+                                    }
+                                />
+                                <Route
+                                    path="/community/creator/:id"
                                     element={<CreatorPostDetail />}
                                 />
                                 <Route
-                                    path="/community/creators"
+                                    path="/community/creator"
                                     element={<CreatorBoard />}
                                 />
 

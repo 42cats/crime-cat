@@ -23,7 +23,7 @@ export enum DetailedPostType {
     CRIME_SCENE = "CRIME_SCENE", // 크라임씬
     MURDER_MYSTERY = "MURDER_MYSTERY", // 머더미스터리
     ESCAPE_ROOM = "ESCAPE_ROOM", // 방탈출
-    REAL_WORLD = "REAL_WORLD" // 리얼월드
+    REAL_WORLD = "REAL_WORLD", // 리얼월드
 }
 
 export enum BoardPostSortType {
@@ -36,19 +36,26 @@ export enum BoardPostSortType {
 // 게시글 인터페이스
 export interface BoardPost {
     id: string;
-    title: string;
-    content: string;
-    authorId: string;
+    number?: number;
+    subject: string; // 백엔드와 일치시킴
+    title?: string; // 하위 호환성을 위해 유지
+    content?: string;
+    authorId?: string;
     authorName: string;
     authorProfileImagePath?: string;
-    boardType: BoardType;
-    postType: PostType;
+    authorProfileImage?: string; // 백엔드 필드명
+    boardType?: BoardType;
+    postType?: PostType;
     createdAt: string;
-    updatedAt: string;
-    viewCount: number;
-    likeCount: number;
-    commentCount: number;
-    hasImage: boolean;
+    updatedAt?: string;
+    views: number; // viewCount 대신 views
+    likes: number; // likeCount 대신 likes
+    comments: number; // commentCount 대신 comments
+    isSecret?: boolean;
+    isPinned?: boolean;
+    hasImage?: boolean;
+    isOwnPost?: boolean; // 본인 글 여부
+    isLikedByCurrentUser?: boolean; // 현재 사용자의 좋아요 여부
 }
 
 // 게시판 응답 페이지 인터페이스

@@ -68,9 +68,9 @@ const Navbar: React.FC = () => {
     ];
 
     const communitySubItems = [
-        { name: "질문게시판", path: "/community/questions" },
-        { name: "자유게시판", path: "/community/free" },
-        { name: "제작자게시판", path: "/community/creators" },
+        { name: "질문게시판", path: "/community/question" },
+        { name: "자유게시판", path: "/community/chat" },
+        { name: "제작자게시판", path: "/community/creator" },
     ];
 
     const snsSubItems = [

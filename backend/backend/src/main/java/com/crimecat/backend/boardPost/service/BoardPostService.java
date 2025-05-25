@@ -5,12 +5,11 @@ import com.crimecat.backend.boardPost.domain.BoardPostLike;
 import com.crimecat.backend.boardPost.dto.BoardPostDetailResponse;
 import com.crimecat.backend.boardPost.dto.BoardPostRequest;
 import com.crimecat.backend.boardPost.dto.BoardPostResponse;
-import com.crimecat.backend.boardPost.dto.PostCommentRequest;
 import com.crimecat.backend.boardPost.enums.BoardType;
 import com.crimecat.backend.boardPost.enums.PostType;
 import com.crimecat.backend.boardPost.repository.BoardPostLikeRepository;
 import com.crimecat.backend.boardPost.repository.BoardPostRepository;
-import com.crimecat.backend.boardPost.repository.PostCommentRepository;
+import com.crimecat.backend.gametheme.service.ViewCountService;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -23,8 +22,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.time.Duration;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -35,6 +36,7 @@ public class BoardPostService {
     private final BoardPostLikeRepository boardPostLikeRepository;
     private final RedisTemplate<String, String> redisTemplate;
     private final WebUserRepository webUserRepository;
+    private final ViewCountService viewCountService;
 
     @Transactional(readOnly = true)
     public Page<BoardPostResponse> getBoardPage(
@@ -67,16 +69,15 @@ public class BoardPostService {
             UUID postId,
             UUID userId
     ) {
-        // redis를 통해 30분 동안 한번만 조회수가 올라가도록 설정
-        String redisKey = "views:" + postId + ":" + userId;
-
-        Boolean exists = redisTemplate.hasKey(redisKey);
-        if (!Boolean.TRUE.equals(exists)) {
-            boardPostRepository.incrementViews(postId);
-            redisTemplate.opsForValue().set(redisKey, String.valueOf(1), Duration.ofMinutes(30));
-        }
-
         BoardPost boardPost = boardPostRepository.findByIdAndIsDeletedFalse(postId).orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
+        
+        // IP 기반 조회수 증가
+        String clientIp = (String) ((ServletRequestAttributes) Objects.requireNonNull(
+            RequestContextHolder.getRequestAttributes()))
+            .getRequest()
+            .getAttribute("clientIp");
+        viewCountService.boardIncrement(boardPost, clientIp);
+        
         boolean isLiked = boardPostLikeRepository.existsByUserIdAndPostId(userId, postId);
         boolean isOwnPost = boardPost.getAuthorId().equals(userId);
         return BoardPostDetailResponse.from(boardPost, isOwnPost, isLiked);
@@ -104,9 +105,11 @@ public class BoardPostService {
         boolean isLikedByCurrentUser = false;
         if (boardPostLikeRepository.existsByUserIdAndPostId(user.getId(), postId)) {
             boardPostLikeRepository.deleteByPostIdAndUserId(postId, user.getId());
+            boardPost.dislike();
         } else {
             BoardPostLike boardPostLike = BoardPostLike.from(boardPost, user);
             boardPostLikeRepository.save(boardPostLike);
+            boardPost.like();
             isLikedByCurrentUser = true;
         }
 
