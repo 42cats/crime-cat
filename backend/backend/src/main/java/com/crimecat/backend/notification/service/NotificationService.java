@@ -37,7 +37,7 @@ public class NotificationService {
     /**
      * 알림 생성 및 저장 (다른 서비스에서 호출)
      */
-    @CacheEvict(value = "notification:unread", key = "#recipientId")
+    @CacheEvict(value = "notification:unread", key = "#recipientId.toString()")
     public UUID createAndSendNotification(
         NotificationType type,
         UUID recipientId,       // 받는 사람
@@ -132,7 +132,6 @@ public class NotificationService {
     /**
      * 알림 읽음 처리
      */
-    @CacheEvict(value = "notification:unread", key = "#notification.receiverId")
     public void markAsRead(UUID notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
             .orElseThrow(ErrorStatus.NOTIFICATION_NOT_FOUND::asServiceException);
@@ -146,14 +145,21 @@ public class NotificationService {
             notification.setStatus(NotificationStatus.READ);
             notification.setUpdatedAt(LocalDateTime.now());
             notificationRepository.save(notification);
+            // 캐시 무효화
+            evictUnreadCache(notification.getReceiverId());
         }
+    }
+    
+    @CacheEvict(value = "notification:unread", key = "#receiverId.toString()")
+    public void evictUnreadCache(UUID receiverId) {
+        // 캐시 무효화 전용 메서드
     }
     
     /**
      * 미읽은 알림 개수 조회
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = "notification:unread", key = "#userId")
+    @Cacheable(value = "notification:unread", key = "#userId.toString()")
     public long getUnreadCount(UUID userId) {
         return notificationRepository.countByUserIdAndStatus(userId, NotificationStatus.UNREAD);
     }
