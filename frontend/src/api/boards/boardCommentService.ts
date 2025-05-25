@@ -46,7 +46,7 @@ export const boardCommentService = {
         size: number = 20
     ): Promise<BoardCommentListResponse> => {
         const response = await apiClient.get(
-            `/post_comments/${postId}?page=${page}&size=${size}`
+            `/public/post_comments/${postId}?page=${page}&size=${size}`
         );
 
         // Spring Page 형식 그대로 반환
@@ -92,7 +92,7 @@ export const boardCommentService = {
         });
         return response;
     },
-    
+
     // 댓글 좋아요 토글
     toggleCommentLike: async (commentId: string): Promise<void> => {
         await apiClient.post(`/post_comments/${commentId}/like`);
