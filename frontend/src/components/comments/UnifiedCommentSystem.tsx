@@ -179,7 +179,10 @@ export const UnifiedCommentSystem: React.FC<CommentSystemConfig> = ({
                                         ? "bg-primary/10 text-primary"
                                         : "text-muted-foreground hover:text-foreground"
                                 }`}
-                                onClick={() => setSortType(type)}
+                                onClick={() => {
+                                    setSortType(type);
+                                    loadComments(0, type);
+                                }}
                             >
                                 {label}
                             </button>

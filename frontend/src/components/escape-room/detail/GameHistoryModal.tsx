@@ -234,7 +234,7 @@ const GameHistoryModal: React.FC<GameHistoryModalProps> = ({
                                     min="1"
                                     max="180"
                                     placeholder="60"
-                                    value={formData.clearTime}
+                                    value={formData.clearTime || ''}
                                     onChange={(e) => 
                                         setFormData({ ...formData, clearTime: parseInt(e.target.value) || undefined })
                                     }
@@ -252,7 +252,7 @@ const GameHistoryModal: React.FC<GameHistoryModalProps> = ({
                             min="0"
                             max="20"
                             placeholder="0"
-                            value={formData.hintCount}
+                            value={formData.hintCount ?? ''}
                             onChange={(e) => 
                                 setFormData({ ...formData, hintCount: parseInt(e.target.value) || 0 })
                             }
@@ -284,7 +284,7 @@ const GameHistoryModal: React.FC<GameHistoryModalProps> = ({
                         <Label>메모</Label>
                         <Textarea
                             placeholder="플레이 경험을 공유해주세요"
-                            value={formData.memo}
+                            value={formData.memo || ''}
                             onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
                             rows={3}
                             maxLength={1000}

@@ -51,7 +51,7 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
     );
     const [hasGameHistory, setHasGameHistory] = useState(false);
     const [checkingHistory, setCheckingHistory] = useState(true);
-    const [showLoginDialog, setShowLoginDialog] = useState(false);
+    const [showLoginDialog, setShowLoginDialog] = useState<false | 'like' | 'history'>(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [likeCount, setLikeCount] = useState(theme.recommendations || 0);
     const { toast } = useToast();
@@ -202,7 +202,7 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
     // 좋아요 토글
     const handleToggleLike = () => {
         if (!user?.id) {
-            setShowLoginDialog(true);
+            setShowLoginDialog('like');
             return;
         }
 
@@ -361,7 +361,7 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                                 }}
                                 api={{
                                     fetchComments: (page, sort) => 
-                                        escapeRoomCommentService.getCommentsByTheme(theme.id, page, 20),
+                                        escapeRoomCommentService.getCommentsByTheme(theme.id, page, 20, sort),
                                     createComment: (data) => 
                                         escapeRoomCommentService.createComment({
                                             escapeRoomThemeId: theme.id,
@@ -449,7 +449,13 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                     {theme.allowGameHistory && onAddGameHistory && (
                         <div className="fixed bottom-6 right-6 z-50 md:hidden">
                             <Button
-                                onClick={onAddGameHistory}
+                                onClick={() => {
+                                    if (!user?.id) {
+                                        setShowLoginDialog('history');
+                                        return;
+                                    }
+                                    onAddGameHistory();
+                                }}
                                 className="rounded-full shadow-lg"
                                 size="lg"
                             >
@@ -461,7 +467,16 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                     {/* 데스크톱에서는 상단에 버튼 표시 */}
                     {theme.allowGameHistory && onAddGameHistory && (
                         <div className="hidden md:flex justify-end">
-                            <Button onClick={onAddGameHistory} size="lg">
+                            <Button 
+                                onClick={() => {
+                                    if (!user?.id) {
+                                        setShowLoginDialog('history');
+                                        return;
+                                    }
+                                    onAddGameHistory();
+                                }}
+                                size="lg"
+                            >
                                 <Trophy className="w-4 h-4 mr-2" />
                                 플레이 기록 추가
                             </Button>
@@ -472,15 +487,17 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
 
             {/* 로그인 안내 다이얼로그 */}
             <AlertDialog
-                open={showLoginDialog}
-                onOpenChange={setShowLoginDialog}
+                open={!!showLoginDialog}
+                onOpenChange={(open) => !open && setShowLoginDialog(false)}
             >
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
                         <AlertDialogDescription>
-                            좋아요 기능을 사용하려면 로그인이 필요합니다. 로그인
-                            페이지로 이동하시겠습니까?
+                            {showLoginDialog === 'like' 
+                                ? '좋아요 기능을 사용하려면 로그인이 필요합니다.'
+                                : '플레이 기록을 추가하려면 로그인이 필요합니다.'
+                            }
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

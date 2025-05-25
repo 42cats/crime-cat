@@ -93,14 +93,17 @@ export const escapeRoomCommentService = {
         themeId: string,
         page: number = 0,
         size: number = 20,
+        sort: string = "LATEST",
         spoilerOnly?: boolean
     ): Promise<PageResponseDto<CommentResponse>> => {
         try {
             const params = new URLSearchParams({
                 page: page.toString(),
                 size: size.toString(),
-                sort: "createdAt,desc",
             });
+            
+            // sortType 파라미터로 전달 (백엔드에서 CommentSortType enum으로 처리)
+            params.append("sortType", sort);
 
             if (spoilerOnly !== undefined) {
                 params.append("spoilerOnly", spoilerOnly.toString());
