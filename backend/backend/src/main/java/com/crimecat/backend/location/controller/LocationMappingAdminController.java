@@ -27,9 +27,11 @@ public class LocationMappingAdminController {
     
     @GetMapping
     public ResponseEntity<LocationMappingResponse> getMappings(
-            @PageableDefault(size = 20, sort = "keyword") Pageable pageable) {
-        log.info("지역 매핑 목록 조회 요청 - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
-        return ResponseEntity.ok(locationMappingService.getMappings(pageable));
+            @PageableDefault(size = 20, sort = "keyword") Pageable pageable,
+            @RequestParam(required = false) String search) {
+        log.info("지역 매핑 목록 조회 요청 - page: {}, size: {}, search: {}", 
+                pageable.getPageNumber(), pageable.getPageSize(), search);
+        return ResponseEntity.ok(locationMappingService.getMappings(pageable, search));
     }
     
     @GetMapping("/{id}")

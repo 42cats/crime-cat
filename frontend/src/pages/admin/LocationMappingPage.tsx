@@ -30,7 +30,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Loader2, Plus, Edit, Trash2, Search } from 'lucide-react';
-import { Pagination } from '@/components/ui/pagination';
+import Pagination from '@/components/themes/Pagination';
+import { useDebounce } from '@/hooks/useDebounce';
 
 const LocationMappingPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -40,6 +41,9 @@ const LocationMappingPage: React.FC = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedMapping, setSelectedMapping] = useState<LocationMapping | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
+  // Debounced search term
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   // Form state
   const [formData, setFormData] = useState<LocationMappingRequest>({
@@ -54,10 +58,15 @@ const LocationMappingPage: React.FC = () => {
   const [relatedKeywordsInput, setRelatedKeywordsInput] = useState('');
   const [typoVariantsInput, setTypoVariantsInput] = useState('');
 
+  // Reset page when search term changes
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [debouncedSearchTerm]);
+
   // Query for fetching mappings
   const { data, isLoading } = useQuery({
-    queryKey: ['locationMappings', currentPage],
-    queryFn: () => locationMappingService.getMappings(currentPage, 20),
+    queryKey: ['locationMappings', currentPage, debouncedSearchTerm],
+    queryFn: () => locationMappingService.getMappings(currentPage, 20, debouncedSearchTerm || undefined),
   });
 
   // Mutations
@@ -154,12 +163,6 @@ const LocationMappingPage: React.FC = () => {
     }
   };
 
-  const filteredMappings = data?.mappings.filter(
-    (mapping) =>
-      mapping.keyword.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mapping.normalized.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
     <div className="container mx-auto p-6">
       <Card>
@@ -183,6 +186,11 @@ const LocationMappingPage: React.FC = () => {
                 className="pl-10"
               />
             </div>
+            {debouncedSearchTerm && (
+              <p className="text-sm text-muted-foreground mt-2">
+                "{debouncedSearchTerm}"에 대한 검색 결과
+              </p>
+            )}
           </div>
 
           {isLoading ? (
@@ -202,48 +210,56 @@ const LocationMappingPage: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredMappings?.map((mapping) => (
-                    <TableRow key={mapping.id}>
-                      <TableCell className="font-medium">{mapping.keyword}</TableCell>
-                      <TableCell>{mapping.normalized}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {mapping.relatedKeywords.slice(0, 3).map((keyword, idx) => (
-                            <Badge key={idx} variant="secondary" className="text-xs">
-                              {keyword}
-                            </Badge>
-                          ))}
-                          {mapping.relatedKeywords.length > 3 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{mapping.relatedKeywords.length - 3}
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={mapping.isActive ? 'default' : 'secondary'}>
-                          {mapping.isActive ? '활성' : '비활성'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(mapping)}
-                          className="mr-2"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(mapping)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                  {data?.mappings.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        {debouncedSearchTerm ? '검색 결과가 없습니다.' : '등록된 지역 매핑이 없습니다.'}
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    data?.mappings.map((mapping) => (
+                      <TableRow key={mapping.id}>
+                        <TableCell className="font-medium">{mapping.keyword}</TableCell>
+                        <TableCell>{mapping.normalized}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {mapping.relatedKeywords.slice(0, 3).map((keyword, idx) => (
+                              <Badge key={idx} variant="secondary" className="text-xs">
+                                {keyword}
+                              </Badge>
+                            ))}
+                            {mapping.relatedKeywords.length > 3 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{mapping.relatedKeywords.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={mapping.isActive ? 'default' : 'secondary'}>
+                            {mapping.isActive ? '활성' : '비활성'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(mapping)}
+                            className="mr-2"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(mapping)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
 
@@ -252,8 +268,17 @@ const LocationMappingPage: React.FC = () => {
                   <Pagination
                     currentPage={currentPage}
                     totalPages={data.totalPages}
+                    hasPrevious={currentPage > 0}
+                    hasNext={currentPage < data.totalPages - 1}
                     onPageChange={setCurrentPage}
                   />
+                </div>
+              )}
+
+              {data && (
+                <div className="mt-4 text-sm text-muted-foreground">
+                  전체 {data.totalElements}개 중 {data.currentPage * data.pageSize + 1}-
+                  {Math.min((data.currentPage + 1) * data.pageSize, data.totalElements)}개 표시
                 </div>
               )}
             </>
