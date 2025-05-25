@@ -17,7 +17,8 @@ import { Button } from "@/components/ui/button";
 import { EscapeRoomThemeDetailType } from "@/lib/types";
 import ThemeHeader from "./ThemeHeader";
 import ThemeInfo from "./ThemeInfo";
-import { EscapeRoomCommentList } from "./EscapeRoomCommentList";
+import { UnifiedCommentSystem } from "@/components/comments/UnifiedCommentSystem";
+import { escapeRoomCommentService } from "@/api/comment/escapeRoomCommentService";
 import GameHistorySection from "./GameHistorySection";
 import { escapeRoomHistoryService } from "@/api/game/escapeRoomHistoryService";
 import { themesService } from "@/api/content";
@@ -65,9 +66,16 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
 
     useEffect(() => {
         checkUserGameHistory();
-    }, [theme.id]);
+    }, [theme.id, user]);
 
     const checkUserGameHistory = async () => {
+        // 로그인하지 않은 사용자는 게임 기록 확인하지 않음
+        if (!user?.id) {
+            setCheckingHistory(false);
+            setHasGameHistory(false);
+            return;
+        }
+        
         try {
             setCheckingHistory(true);
             const hasPlayed = await escapeRoomHistoryService.hasPlayedTheme(
@@ -76,6 +84,7 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
             setHasGameHistory(hasPlayed);
         } catch (error) {
             console.error("게임 기록 확인 실패:", error);
+            setHasGameHistory(false);
         } finally {
             setCheckingHistory(false);
         }
@@ -339,10 +348,42 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                         </TabsContent>
 
                         <TabsContent value="comments">
-                            <EscapeRoomCommentList
-                                themeId={theme.id}
-                                hasGameHistory={hasGameHistory}
-                                allowComments={theme.commentEnabled}
+                            <UnifiedCommentSystem
+                                entityType="escape-room"
+                                entityId={theme.id}
+                                features={{
+                                    spoiler: true,
+                                    gameHistoryRequired: true,
+                                    nestedReplies: true,
+                                    maxDepth: 2,
+                                    sorting: true,
+                                    infiniteScroll: true,
+                                }}
+                                api={{
+                                    fetchComments: (page, sort) => 
+                                        escapeRoomCommentService.getCommentsByTheme(theme.id, page, 20),
+                                    createComment: (data) => 
+                                        escapeRoomCommentService.createComment({
+                                            escapeRoomThemeId: theme.id,
+                                            content: data.content,
+                                            hasSpoiler: data.isSpoiler || false,
+                                            parentCommentId: data.parentId,
+                                        }),
+                                    updateComment: (id, data) =>
+                                        escapeRoomCommentService.updateComment(id, {
+                                            content: data.content,
+                                            hasSpoiler: data.isSpoiler,
+                                        }),
+                                    deleteComment: (id) =>
+                                        escapeRoomCommentService.deleteComment(id),
+                                    likeComment: (id) =>
+                                        escapeRoomCommentService.likeComment(id),
+                                    unlikeComment: (id) =>
+                                        escapeRoomCommentService.unlikeComment(id),
+                                }}
+                                userInfo={{
+                                    hasPlayedGame: hasGameHistory,
+                                }}
                             />
                         </TabsContent>
 
