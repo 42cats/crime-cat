@@ -9,6 +9,7 @@ import { FollowDto } from "@/lib/api/followApi";
 import { useQueryClient } from "@tanstack/react-query";
 import { followApi } from "@/lib/api/followApi";
 import { UseMutationResult } from "@tanstack/react-query";
+import ProfileDetailModal from "@/components/profile/ProfileDetailModal";
 
 interface UserCardProps {
   follow: FollowDto;
@@ -49,6 +50,9 @@ export const UserCard: React.FC<UserCardProps> = ({
     (follow as any).isFollowingUser !== undefined ? (follow as any).isFollowingUser : null
   );
 
+  // 프로필 모달 상태 관리
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
   useEffect(() => {
     // 이미 속성이 있는 경우 사용
     if ((follow as any).isFollowingUser !== undefined) {
@@ -88,10 +92,14 @@ export const UserCard: React.FC<UserCardProps> = ({
   }, [userToDisplay.id, isFollowing, isMyProfile, follow, queryClient]);
 
   return (
+    <>
     <Card className="mb-3">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <div 
+            className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setShowProfileModal(true)}
+          >
             <Avatar className="h-12 w-12">
               <AvatarImage
                 src={userToDisplay.profileImage}
@@ -152,6 +160,24 @@ export const UserCard: React.FC<UserCardProps> = ({
         </div>
       </CardContent>
     </Card>
+
+    {/* 프로필 상세 모달 */}
+    {showProfileModal && (
+      <ProfileDetailModal
+        userId={userToDisplay.id}
+        open={showProfileModal}
+        onOpenChange={setShowProfileModal}
+        onFollowChange={() => {
+          // 팔로우 상태가 변경되면 현재 카드의 팔로잉 상태도 업데이트
+          if (!isFollowing && !isMyProfile) {
+            followApi.isFollowing(userToDisplay.id)
+              .then(response => setIsFollowingUser(response.isFollowing))
+              .catch(console.error);
+          }
+        }}
+      />
+    )}
+    </>
   );
 };
 

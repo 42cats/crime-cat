@@ -51,6 +51,7 @@ const transactionTypeLabels = {
     EXPIRE: "만료",
     COUPON: "쿠폰",
     DAILY: "출석",
+    THEME_REWARD: "테마 작성",
 };
 
 const sortOptions: SortOption[] = [
@@ -84,6 +85,7 @@ const getTransactionIcon = (type: PointHistory["type"]) => {
         case "DAILY":
         case "COUPON":
         case "RECEIVE":
+        case "THEME_REWARD":
             return <TrendingUp className="w-4 h-4 text-green-500" />;
         case "USE":
         case "EXPIRE":
@@ -328,6 +330,7 @@ const PointHistoryPage: React.FC = () => {
                                                         "COUPON",
                                                         "RECEIVE",
                                                         "REFUND",
+                                                        "THEME_REWARD",
                                                     ].includes(item.type)
                                                         ? "text-green-600"
                                                         : "text-red-600"
@@ -339,6 +342,7 @@ const PointHistoryPage: React.FC = () => {
                                                     "COUPON",
                                                     "RECEIVE",
                                                     "REFUND",
+                                                    "THEME_REWARD",
                                                 ].includes(item.type)
                                                     ? "+"
                                                     : "-"}
@@ -464,6 +468,7 @@ const PointHistoryPage: React.FC = () => {
                                                             "COUPON",
                                                             "RECEIVE",
                                                             "REFUND",
+                                                            "THEME_REWARD",
                                                         ].includes(item.type)
                                                             ? "text-green-600"
                                                             : "text-red-600"
@@ -475,6 +480,7 @@ const PointHistoryPage: React.FC = () => {
                                                         "COUPON",
                                                         "RECEIVE",
                                                         "REFUND",
+                                                        "THEME_REWARD",
                                                     ].includes(item.type)
                                                         ? "+"
                                                         : "-"}

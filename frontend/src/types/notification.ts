@@ -8,6 +8,7 @@ export enum NotificationType {
   USER_POST_NEW = 'USER_POST_NEW',
   USER_POST_COMMENT = 'USER_POST_COMMENT',
   USER_POST_COMMENT_REPLY = 'USER_POST_COMMENT_REPLY',
+  THEME_POINT_REWARD = 'THEME_POINT_REWARD',
 }
 
 export enum NotificationStatus {
@@ -27,6 +28,7 @@ export interface Notification {
   senderId?: string;
   senderName?: string;
   metadata?: Record<string, any>;
+  data?: Record<string, any>;
   // 하위 호환성을 위한 필드들
   userId?: string;
   read?: boolean;
