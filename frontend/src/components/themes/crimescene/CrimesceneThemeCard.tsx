@@ -43,9 +43,12 @@ const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
             ? `${theme.playersMin}인`
             : `${theme.playersMin}~${theme.playersMax}인`;
 
+    // type이 없을 경우 기본값 설정
+    const themeType = theme.type?.toLowerCase() || 'crimescene';
+
     return (
         <Link
-            to={`/themes/${theme.type.toLowerCase()}/${theme.id}`}
+            to={`/themes/${themeType}/${theme.id}`}
             className="block h-full"
         >
             <Card className="h-full hover:shadow-lg transition-all duration-300 hover:scale-[1.02] rounded-xl overflow-hidden flex flex-col">

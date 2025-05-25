@@ -1,7 +1,25 @@
 import { apiClient } from "@/lib/api";
 import { Theme } from "@/lib/types";
 
-// 광고 관련 타입 정의
+// 백엔드 응답 타입
+export interface ThemeAdvertisementResponse {
+    id: string;
+    themeId: string;
+    themeType: "CRIMESCENE" | "ESCAPE_ROOM" | "MURDER_MYSTERY" | "REALWORLD";
+    displayOrder: number;
+    startDate: string;
+    endDate: string;
+    isActive: boolean;
+    createdAt: string;
+    createdBy: string;
+    updatedAt?: string;
+    updatedBy?: string;
+    theme?: {
+        theme: Theme;
+    };
+}
+
+// 프론트엔드용 타입
 export interface ThemeAdvertisement {
     id: string;
     themeId: string;
@@ -45,7 +63,12 @@ export const themeAdsService = {
      */
     getActiveAdvertisements: async (): Promise<ThemeAdvertisement[]> => {
         try {
-            return await apiClient.get<ThemeAdvertisement[]>(`${publicBaseURI}/active`);
+            const response = await apiClient.get<ThemeAdvertisementResponse[]>(`${publicBaseURI}/active`);
+            // 백엔드 응답 변환: GetGameThemeResponse 구조에서 실제 theme 추출
+            return response.map(ad => ({
+                ...ad,
+                theme: ad.theme?.theme // theme.theme에서 실제 Theme 객체 추출
+            }));
         } catch (error) {
             console.error("활성 광고 목록 불러오기 실패:", error);
             throw error;
@@ -61,7 +84,12 @@ export const themeAdsService = {
      */
     getAllAdvertisements: async (): Promise<ThemeAdvertisement[]> => {
         try {
-            return await apiClient.get<ThemeAdvertisement[]>(adminBaseURI);
+            const response = await apiClient.get<ThemeAdvertisementResponse[]>(adminBaseURI);
+            // 백엔드 응답 변환: GetGameThemeResponse 구조에서 실제 theme 추출
+            return response.map(ad => ({
+                ...ad,
+                theme: ad.theme?.theme // theme.theme에서 실제 Theme 객체 추출
+            }));
         } catch (error) {
             console.error("전체 광고 목록 불러오기 실패:", error);
             throw error;
@@ -73,7 +101,11 @@ export const themeAdsService = {
      */
     createAdvertisement: async (data: CreateThemeAdvertisementRequest): Promise<ThemeAdvertisement> => {
         try {
-            return await apiClient.post<ThemeAdvertisement>(adminBaseURI, data);
+            const response = await apiClient.post<ThemeAdvertisementResponse>(adminBaseURI, data);
+            return {
+                ...response,
+                theme: response.theme?.theme
+            };
         } catch (error) {
             console.error("광고 생성 실패:", error);
             throw error;
@@ -85,7 +117,11 @@ export const themeAdsService = {
      */
     updateAdvertisement: async (id: string, data: UpdateThemeAdvertisementRequest): Promise<ThemeAdvertisement> => {
         try {
-            return await apiClient.put<ThemeAdvertisement>(`${adminBaseURI}/${id}`, data);
+            const response = await apiClient.put<ThemeAdvertisementResponse>(`${adminBaseURI}/${id}`, data);
+            return {
+                ...response,
+                theme: response.theme?.theme
+            };
         } catch (error) {
             console.error("광고 수정 실패:", error);
             throw error;

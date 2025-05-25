@@ -76,7 +76,9 @@ const ThemeAdRow: React.FC<ThemeAdRowProps> = ({
                     </p>
                     {advertisement.theme?.author && (
                         <p className="text-sm text-muted-foreground">
-                            제작: {advertisement.theme.author}
+                            제작: {typeof advertisement.theme.author === 'object' 
+                                ? advertisement.theme.author.nickname 
+                                : advertisement.theme.author}
                         </p>
                     )}
                 </div>
