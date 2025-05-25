@@ -193,7 +193,7 @@ public class IntegratedGameHistoryService {
     return crimeSceneHistoryRepository.findByUser_WebUser_IdOrderByCreatedAtDesc(userId, pageable)
        .getContent()
 				.stream()
-				.map(gameHistory -> UserGameHistoryDto.from(gameHistory))
+				.map(UserGameHistoryDto::from)
 				.collect(Collectors.toList());
 	}
     
