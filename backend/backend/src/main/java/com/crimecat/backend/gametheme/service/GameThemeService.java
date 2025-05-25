@@ -20,6 +20,7 @@ import com.crimecat.backend.storage.StorageFileType;
 import com.crimecat.backend.storage.StorageService;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.location.service.LocationMappingService;
 import jakarta.transaction.Transactional;
 import java.util.HashSet;
 import java.util.List;
@@ -47,6 +48,7 @@ public class GameThemeService {
     private final ViewCountService viewCountService;
     private final GameHistoryRepository gameHistoryRepository;
     private final CrimesceneThemeRepository crimesceneThemeRepository;
+    private final LocationMappingService locationMappingService;
 
     @Transactional
     public void addGameTheme(MultipartFile file, AddGameThemeRequest request) {
@@ -267,7 +269,7 @@ public class GameThemeService {
             spec = spec.and(GameThemeSpecification.equalCategory(filter.getCategory()));
         }
         if (filter.getKeyword() != null) {
-            spec = spec.and(GameThemeSpecification.findKeyword(filter.getKeyword(), filter.getCategory()));
+            spec = spec.and(GameThemeSpecification.findKeyword(filter.getKeyword(), filter.getCategory(), locationMappingService));
         }
         for (RangeFilter range : filter.getRanges()) {
             spec = spec.and(GameThemeSpecification.findIntRange(range));

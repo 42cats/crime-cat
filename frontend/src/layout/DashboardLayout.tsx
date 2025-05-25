@@ -22,6 +22,7 @@ import {
     Ticket,
     ImageIcon,
     GitCompare,
+    MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -314,6 +315,12 @@ const SidebarInner = React.memo(() => {
                                                 name: "광고 관리",
                                                 path: "/dashboard/admin/advertisements",
                                                 icon: ImageIcon,
+                                                roles: ["ADMIN", "MANAGER"],
+                                            },
+                                            {
+                                                name: "지역 매핑 관리",
+                                                path: "/dashboard/admin/location-mappings",
+                                                icon: MapPin,
                                                 roles: ["ADMIN", "MANAGER"],
                                             },
                                         ]

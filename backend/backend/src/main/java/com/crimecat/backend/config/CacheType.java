@@ -12,6 +12,11 @@ public class CacheType {
   public static final String THEME_PLAY_COUNTS = "themePlayCounts";
   public static final String UNPLAYED_THEMES = "unplayedThemes";
   
+  // 위치 매핑 관련 캐시 타입
+  public static final String LOCATION_MAPPING = "locationMapping";
+  public static final String LOCATION_SEARCH = "locationSearch";
+  public static final String LOCATION_ALL_MAPPINGS = "locationAllMappings";
+  
   public static final String [] CACHE_TYPE = {
       PERSONAL_DASHBOARD_INFO,
       VIEW_COUNT,
@@ -19,6 +24,9 @@ public class CacheType {
       INTEGRATED_HISTORIES,
       USER_STATISTICS,
       THEME_PLAY_COUNTS,
-      UNPLAYED_THEMES
+      UNPLAYED_THEMES,
+      LOCATION_MAPPING,
+      LOCATION_SEARCH,
+      LOCATION_ALL_MAPPINGS
   };
 }
