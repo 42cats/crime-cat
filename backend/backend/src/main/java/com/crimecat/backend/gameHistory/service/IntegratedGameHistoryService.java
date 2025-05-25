@@ -200,6 +200,7 @@ public class IntegratedGameHistoryService {
     return crimeSceneHistoryRepository.findByUser_WebUser_IdOrderByCreatedAtDesc(userId, pageable)
        .getContent()
 				.stream()
+                .filter(history -> history.getGameTheme() != null)
 				.map(UserGameHistoryToUserDto::from)
 				.collect(Collectors.toList());
 	}
