@@ -41,7 +41,7 @@ export const UnifiedGameFilters: React.FC<UnifiedGameFiltersProps> = ({
     showGameTypeSelector = false,
 }) => {
     const [showDetailFilters, setShowDetailFilters] = React.useState(false);
-    
+
     const updateFilter = (
         updates: Partial<IntegratedGameHistoryFilterRequest>
     ) => {
@@ -61,26 +61,46 @@ export const UnifiedGameFilters: React.FC<UnifiedGameFiltersProps> = ({
     const isCrimeScene =
         gameType === GameType.CRIMESCENE ||
         filter.gameType === GameType.CRIMESCENE;
-        
+
     // 활성화된 필터 개수 계산
     const activeFilterCount = React.useMemo(() => {
         let count = 0;
         if (filter.keyword) count++;
         if (filter.startDate || filter.endDate) count++;
         if (filter.isWin !== undefined) count++;
-        if (filter.successStatus && filter.successStatus !== SuccessStatusFilter.ALL) count++;
+        if (
+            filter.successStatus &&
+            filter.successStatus !== SuccessStatusFilter.ALL
+        )
+            count++;
         if (filter.hasTheme) count++;
         if (filter.sortBy !== SortOption.CREATED_AT) count++;
         if (filter.sortDirection !== SortDirection.DESC) count++;
         // 방탈출 상세 필터
         if (isEscapeRoom) {
-            if (filter.minClearTime !== undefined || filter.maxClearTime !== undefined) count++;
-            if (filter.minDifficulty !== undefined && filter.minDifficulty > 1) count++;
-            if (filter.maxDifficulty !== undefined && filter.maxDifficulty < 5) count++;
-            if (filter.minFunRating !== undefined && filter.minFunRating > 1) count++;
-            if (filter.maxFunRating !== undefined && filter.maxFunRating < 5) count++;
-            if (filter.minStoryRating !== undefined && filter.minStoryRating > 1) count++;
-            if (filter.maxStoryRating !== undefined && filter.maxStoryRating < 5) count++;
+            if (
+                filter.minClearTime !== undefined ||
+                filter.maxClearTime !== undefined
+            )
+                count++;
+            if (filter.minDifficulty !== undefined && filter.minDifficulty > 1)
+                count++;
+            if (filter.maxDifficulty !== undefined && filter.maxDifficulty < 5)
+                count++;
+            if (filter.minFunRating !== undefined && filter.minFunRating > 1)
+                count++;
+            if (filter.maxFunRating !== undefined && filter.maxFunRating < 5)
+                count++;
+            if (
+                filter.minStoryRating !== undefined &&
+                filter.minStoryRating > 1
+            )
+                count++;
+            if (
+                filter.maxStoryRating !== undefined &&
+                filter.maxStoryRating < 5
+            )
+                count++;
         }
         return count;
     }, [filter, isEscapeRoom]);
@@ -99,13 +119,13 @@ export const UnifiedGameFilters: React.FC<UnifiedGameFiltersProps> = ({
                         </Badge>
                     )}
                 </div>
-                <Button 
-                    variant="ghost" 
-                    size="sm" 
+                <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={onReset}
                     className={cn(
-                        activeFilterCount > 0 
-                            ? "text-destructive hover:text-destructive" 
+                        activeFilterCount > 0
+                            ? "text-destructive hover:text-destructive"
                             : ""
                     )}
                 >
@@ -339,22 +359,34 @@ export const UnifiedGameFilters: React.FC<UnifiedGameFiltersProps> = ({
             </div>
 
             {/* 방탈출 전용 상세 필터 */}
-            {isEscapeRoom && (
-                <div className="border-t pt-4 mt-4">
+            {/*isEscapeRoom && (
+                <div className="border-t pt-6 mt-6">
                     <button
+                        type="button"
                         onClick={() => setShowDetailFilters(!showDetailFilters)}
-                        className="w-full flex items-center justify-between py-2 text-left hover:text-primary transition-colors"
+                        className="w-full flex items-center justify-between py-3 text-left hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md"
+                        aria-expanded={showDetailFilters}
+                        aria-controls="escape-room-detail-filters"
                     >
                         <span className="text-sm font-semibold">방탈출 상세 필터</span>
                         {showDetailFilters ? (
-                            <ChevronUp className="w-4 h-4" />
+                            <ChevronUp className="w-4 h-4 transition-transform" />
                         ) : (
-                            <ChevronDown className="w-4 h-4" />
+                            <ChevronDown className="w-4 h-4 transition-transform" />
                         )}
                     </button>
                     
                     {showDetailFilters && (
-                        <div className="mt-4">
+                        <div 
+                            id="escape-room-detail-filters"
+                            className={cn(
+                                "mt-6 transition-all duration-200 ease-out",
+                                "transform origin-top",
+                                showDetailFilters 
+                                    ? "opacity-100 scale-y-100" 
+                                    : "opacity-0 scale-y-0"
+                            )}
+                        >
                             <EscapeRoomDetailFilters
                                 filter={filter}
                                 onFilterChange={updateFilter}
@@ -362,7 +394,7 @@ export const UnifiedGameFilters: React.FC<UnifiedGameFiltersProps> = ({
                         </div>
                     )}
                 </div>
-            )}
+            )*/}
 
             {/* 검색 버튼 */}
             <div className="flex justify-end pt-4">
