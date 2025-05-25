@@ -12,6 +12,7 @@ public class UserGameHistoryDto {
 
 	private UUID uuid;
 	private String guildSnowflake;
+	private String userSnowflake;
 	private String playerName;
 	private boolean isWin;
 	private LocalDateTime createdAt;
@@ -19,6 +20,7 @@ public class UserGameHistoryDto {
 	private String memo;
 	private String themeId;
 	private String themeName;
+	private String guildName;
 
 	static public UserGameHistoryDto from(GameHistory gameHistory){
 		String gameThemeId = "";
@@ -36,13 +38,15 @@ public class UserGameHistoryDto {
 		return new UserGameHistoryDto(
 				gameHistory.getId(),
 				gameHistory.getGuild().getSnowflake(),
+				gameHistory.getUser().getDiscordSnowflake(),
 				gameHistory.getUser().getName(),
 				gameHistory.isWin(),
 				gameHistory.getCreatedAt(),
 				gameHistory.getCharacterName(),
 				gameHistory.getMemo(),
 				gameThemeId,
-				gameThemeName
+				gameThemeName,
+				gameHistory.getGuild().getName()
 		);
 	}
 }

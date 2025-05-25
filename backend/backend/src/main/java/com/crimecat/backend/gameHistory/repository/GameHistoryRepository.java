@@ -5,6 +5,7 @@ import com.crimecat.backend.gameHistory.dto.IGameHistoryRankingDto;
 import com.crimecat.backend.user.domain.User;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -207,4 +208,11 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 * 특정 웹유저의 게임 기록을 생성일 내림차순으로 조회
 	 */
 	Page<GameHistory> findByUser_WebUser_IdOrderByCreatedAtDesc(UUID webUserId, Pageable pageable);
+
+	/**
+	 * 웹유저가 플레이한 고유 테마 ID 목록 조회 (크라임씬은 중복 플레이 불가)
+	 */
+	@Query("SELECT DISTINCT gh.gameTheme.id FROM GameHistory gh " +
+		   "WHERE gh.user.webUser.id = :webUserId AND gh.gameTheme IS NOT NULL")
+	Set<UUID> findDistinctThemeIdsByUserId(@Param("webUserId") UUID webUserId);
 }
