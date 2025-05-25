@@ -27,7 +27,7 @@ export const EscapeRoomTab: React.FC<EscapeRoomTabProps> = ({ initialFilter }) =
     gameType: GameType.ESCAPE_ROOM,
     page: 0,
     size: 20,
-    sortBy: SortOption.PLAY_DATE,
+    sortBy: SortOption.CREATED_AT,  // PLAY_DATE 대신 CREATED_AT 사용 (백엔드 버그 회피)
     sortDirection: SortDirection.DESC,
     ...initialFilter,
   });
@@ -51,7 +51,7 @@ export const EscapeRoomTab: React.FC<EscapeRoomTabProps> = ({ initialFilter }) =
       gameType: GameType.ESCAPE_ROOM,
       page: 0,
       size: 20,
-      sortBy: SortOption.PLAY_DATE,
+      sortBy: SortOption.CREATED_AT,  // PLAY_DATE 대신 CREATED_AT 사용 (백엔드 버그 회피)
       sortDirection: SortDirection.DESC,
     });
   };
