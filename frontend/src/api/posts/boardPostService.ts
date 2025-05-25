@@ -52,7 +52,7 @@ export const boardPostService = {
             searchParams.append("size", size.toString());
             if (kw) searchParams.append("kw", kw);
             if (boardType !== BoardType.NONE) searchParams.append("boardType", boardType);
-            if (postType !== PostType.GENERAL) searchParams.append("postType", postType);
+            // postType 파라미터를 아예 보내지 않아서 백엔드 기본값(GENERAL) 사용
             sort.forEach((sortOption) => {
                 searchParams.append("sort", sortOption);
             });

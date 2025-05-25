@@ -148,7 +148,7 @@ public class GameThemeService {
                 .getRequestAttributes()))
             .getRequest()
             .getAttribute("clientIp");
-        viewCountService.increment(gameTheme, clientIp);
+        viewCountService.themeIncrement(gameTheme, clientIp);
         return GetGameThemeResponse.builder()
                 .theme(GameThemeDetailDto.of(gameTheme))
                 .build();

@@ -2,6 +2,7 @@ package com.crimecat.backend.boardPost.service;
 
 import com.crimecat.backend.boardPost.domain.BoardPost;
 import com.crimecat.backend.boardPost.domain.PostComment;
+import com.crimecat.backend.boardPost.domain.PostCommentLike;
 import com.crimecat.backend.boardPost.dto.PostCommentRequest;
 import com.crimecat.backend.boardPost.dto.PostCommentResponse;
 import com.crimecat.backend.boardPost.repository.BoardPostRepository;
@@ -11,11 +12,15 @@ import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -55,6 +60,41 @@ public class PostCommentService {
 
     }
 
+    @Transactional(readOnly = true)
+    public Page<PostCommentResponse> getCommentResponsesPage(
+            UUID postId,
+            UUID userId,
+            int page,
+            int size
+    ) {
+        Sort sort = Sort.by(Sort.Direction.ASC, "createdAt");
+        PageRequest pageRequest = PageRequest.of(page, size, sort);
+        
+        // 게시글 존재 여부 확인
+        BoardPost boardPost = boardPostRepository.findByIdAndIsDeletedFalse(postId)
+            .orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
+        
+        // 루트 댓글만 페이지네이션으로 조회
+        Page<PostComment> commentPage = postCommentRepository.findAllByBoardPostAndParentIdIsNullAndIsDeletedFalse(boardPost, pageRequest);
+        
+        // 현재 사용자가 게시글 작성자인지 확인
+        boolean isOwnPost = userId != null && boardPost.getAuthorId().equals(userId);
+        
+        // 각 댓글을 PostCommentResponse로 변환
+        List<PostCommentResponse> content = commentPage.getContent().stream()
+            .map(comment -> {
+                boolean isLikedComment = userId != null && postCommentLikeRepository.existsByCommentIdAndUserId(comment.getId(), userId);
+                boolean isOwnComment = userId != null && comment.getAuthorId().equals(userId);
+                boolean canViewSecret = (isOwnComment || isOwnPost);
+                List<PostCommentResponse> replies = getCommentReplies(comment.getId(), userId, sort, isOwnComment);
+                
+                return PostCommentResponse.from(comment, isLikedComment, isOwnComment, canViewSecret, replies);
+            })
+            .collect(Collectors.toList());
+        
+        return new PageImpl<>(content, pageRequest, commentPage.getTotalElements());
+    }
+
     public List<PostCommentResponse> getCommentReplies(UUID commentId, UUID userId, Sort sort, boolean isOwnParent) {
         List<PostComment> replies = postCommentRepository.findAllByParentId(commentId, sort);
         List<PostCommentResponse> replyResponses = new ArrayList<>();
@@ -71,7 +111,7 @@ public class PostCommentService {
     }
 
     @Transactional
-    public List<PostCommentResponse> createPostComment(
+    public PostCommentResponse createPostComment(
             UUID postId,
             WebUser user,
             PostCommentRequest postCommentRequest
@@ -82,14 +122,21 @@ public class PostCommentService {
             parent = postCommentRepository.findById(postCommentRequest.getParentId()).get();
         }
         PostComment postComment = PostComment.from(boardPost, user, parent, postCommentRequest);
-        postCommentRepository.save(postComment);
+        PostComment savedComment = postCommentRepository.save(postComment);
         postCommentRepository.flush();
         boardPostRepository.updateComments(postId, postCommentRepository.countAllByPostIdAndIsDeletedFalse(postId));
-        return getCommentResponses(postId, user.getId());
+        
+        // 저장된 댓글을 PostCommentResponse로 변환하여 반환
+        boolean isOwnPost = boardPost.getAuthorId().equals(user.getId());
+        boolean isOwnComment = true; // 방금 작성한 댓글이므로 항상 true
+        boolean canViewSecret = true; // 자신이 작성한 댓글이므로 항상 true
+        List<PostCommentResponse> replies = new ArrayList<>(); // 새 댓글은 답글이 없음
+        
+        return PostCommentResponse.from(savedComment, false, isOwnComment, canViewSecret, replies);
     }
 
     @Transactional
-    public List<PostCommentResponse> updatePostComment(
+    public PostCommentResponse updatePostComment(
             UUID commentId,
             UUID userId,
             PostCommentRequest postCommentRequest
@@ -99,12 +146,22 @@ public class PostCommentService {
             throw new AccessDeniedException("댓글을 수정할 권한이 없습니다");
         }
         postComment.update(postCommentRequest);
-        postCommentRepository.save(postComment);
-        return getCommentResponses(postComment.getPostId(), userId);
+        PostComment updatedComment = postCommentRepository.save(postComment);
+        
+        // 수정된 댓글을 PostCommentResponse로 변환하여 반환
+        BoardPost boardPost = updatedComment.getBoardPost();
+        boolean isOwnPost = boardPost.getAuthorId().equals(userId);
+        boolean isOwnComment = true; // 자신이 수정한 댓글이므로 항상 true
+        boolean canViewSecret = true; // 자신이 수정한 댓글이므로 항상 true
+        boolean isLiked = postCommentLikeRepository.existsByCommentIdAndUserId(updatedComment.getId(), userId);
+        Sort sort = Sort.by(Sort.Direction.ASC, "createdAt");
+        List<PostCommentResponse> replies = getCommentReplies(updatedComment.getId(), userId, sort, isOwnComment);
+        
+        return PostCommentResponse.from(updatedComment, isLiked, isOwnComment, canViewSecret, replies);
     }
 
     @Transactional
-    public List<PostCommentResponse> deletePostComment(
+    public void deletePostComment(
             UUID commentId,
             UUID userId
     ) {
@@ -116,6 +173,30 @@ public class PostCommentService {
         postCommentRepository.save(postComment);
         postCommentRepository.flush();
         boardPostRepository.updateComments(postComment.getPostId(), postCommentRepository.countAllByPostIdAndIsDeletedFalse(postComment.getPostId()));
-        return getCommentResponses(postComment.getPostId(), userId);
+    }
+    
+    @Transactional
+    public void toggleCommentLike(UUID commentId, UUID userId) {
+        PostComment comment = postCommentRepository.findByIdAndIsDeletedFalse(commentId)
+            .orElseThrow(() -> new EntityNotFoundException("댓글을 찾을 수 없습니다."));
+        
+        Optional<PostCommentLike> existingLike = postCommentLikeRepository.findByCommentIdAndUserId(commentId, userId);
+        
+        if (existingLike.isPresent()) {
+            // 좋아요 취소
+            postCommentLikeRepository.delete(existingLike.get());
+            comment.decrementLikes();
+        } else {
+            // 좋아요 추가
+            PostCommentLike newLike = PostCommentLike.builder()
+                .userId(userId)
+                .commentId(commentId)
+                .createdAt(LocalDateTime.now())
+                .build();
+            postCommentLikeRepository.save(newLike);
+            comment.incrementLikes();
+        }
+        
+        postCommentRepository.save(comment);
     }
 }

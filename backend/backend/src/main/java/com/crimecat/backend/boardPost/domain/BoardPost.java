@@ -123,4 +123,14 @@ public class BoardPost {
         return boardPost;
     }
 
+    public void viewed() {
+        this.views++;
+    }
+    public void like() {
+        this.likes++;
+    }
+    public void dislike() {
+        this.likes--;
+    }
+
 }
