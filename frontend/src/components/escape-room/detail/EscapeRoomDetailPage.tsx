@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { EscapeRoomThemeDetailType } from "@/lib/types";
 import ThemeHeader from "./ThemeHeader";
 import ThemeInfo from "./ThemeInfo";
-import CommentTabs from "./CommentTabs";
+import { EscapeRoomCommentList } from "./EscapeRoomCommentList";
 import GameHistorySection from "./GameHistorySection";
 import { escapeRoomHistoryService } from "@/api/game/escapeRoomHistoryService";
 import { themesService } from "@/api/content";
@@ -339,7 +339,7 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                         </TabsContent>
 
                         <TabsContent value="comments">
-                            <CommentTabs
+                            <EscapeRoomCommentList
                                 themeId={theme.id}
                                 hasGameHistory={hasGameHistory}
                                 allowComments={theme.commentEnabled}
