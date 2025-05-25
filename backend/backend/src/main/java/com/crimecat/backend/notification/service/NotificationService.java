@@ -10,6 +10,8 @@ import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.enums.UserRole;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,7 @@ public class NotificationService {
     /**
      * 알림 생성 및 저장 (다른 서비스에서 호출)
      */
+    @CacheEvict(value = "notification:unread", key = "#recipientId")
     public UUID createAndSendNotification(
         NotificationType type,
         UUID recipientId,       // 받는 사람
@@ -129,6 +132,7 @@ public class NotificationService {
     /**
      * 알림 읽음 처리
      */
+    @CacheEvict(value = "notification:unread", key = "#notification.receiverId")
     public void markAsRead(UUID notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
             .orElseThrow(ErrorStatus.NOTIFICATION_NOT_FOUND::asServiceException);
@@ -149,6 +153,7 @@ public class NotificationService {
      * 미읽은 알림 개수 조회
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = "notification:unread", key = "#userId")
     public long getUnreadCount(UUID userId) {
         return notificationRepository.countByUserIdAndStatus(userId, NotificationStatus.UNREAD);
     }

@@ -6,6 +6,7 @@ import com.crimecat.backend.boardPost.enums.PostType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -22,7 +23,7 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID>, Jpa
     @Query("select "
             + "distinct p "
             + "from BoardPost p "
-            + "left outer join WebUser u1 on p.author=u1 "
+            + "left join fetch p.author u1 "
             + "left outer join PostComment c on c.boardPost=p "
             + "left outer join WebUser u2 on c.author=u2 "
             + "where ("
@@ -44,7 +45,7 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID>, Jpa
     @Query("select "
             + "distinct p "
             + "from BoardPost p "
-            + "left outer join WebUser u1 on p.author=u1 "
+            + "left join fetch p.author u1 "
             + "left outer join PostComment c on c.boardPost=p "
             + "left outer join WebUser u2 on c.author=u2 "
             + "where ("
@@ -65,6 +66,7 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID>, Jpa
             Pageable pageable
     );
 
+    @EntityGraph(attributePaths = {"author"})
     Optional<BoardPost> findByIdAndIsDeletedFalse(UUID id);
 
     @Modifying(clearAutomatically = true)

@@ -15,6 +15,8 @@ import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +42,8 @@ public class BoardPostService {
     private final ViewCountService viewCountService;
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "board:post:list", 
+               key = "'board:' + #boardType + ':type:' + #postType + ':page:' + #page + ':size:' + #size + ':kw:' + #kw + ':sort:' + #sortType.toString()")
     public Page<BoardPostResponse> getBoardPage(
             int page,
             int size,
@@ -91,6 +95,7 @@ public class BoardPostService {
     }
 
     @Transactional
+    @CacheEvict(value = "board:post:list", allEntries = true)
     public BoardPostDetailResponse createBoardPost(
             BoardPostRequest boardPostRequest,
             UUID userId
@@ -124,6 +129,7 @@ public class BoardPostService {
     }
 
     @Transactional
+    @CacheEvict(value = "board:post:list", allEntries = true)
     public BoardPostDetailResponse updateBoardPost(
             BoardPostRequest boardPostRequest,
             UUID postId,
@@ -142,6 +148,7 @@ public class BoardPostService {
     }
 
     @Transactional
+    @CacheEvict(value = "board:post:list", allEntries = true)
     public void deleteBoardPost(
             UUID postId,
             UUID userId

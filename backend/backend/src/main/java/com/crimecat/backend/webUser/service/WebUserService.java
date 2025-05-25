@@ -28,6 +28,8 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -85,6 +87,7 @@ public class WebUserService {
 
 
     @Transactional
+    @CacheEvict(value = {"user:profile", "search:users"}, allEntries = true)
     public void userProfileSet(MultipartFile file, WebUserProfileEditRequestDto webUserProfileEditRequestDto){
         WebUser webUser = webUserRepository.findById(
                 UUID.fromString(webUserProfileEditRequestDto.getUserId()))
@@ -248,6 +251,7 @@ public class WebUserService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "user:profile", key = "#userId")
     public UserProfileInfoResponseDto getUserInfo(String userId) {
         WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
             .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
@@ -279,6 +283,7 @@ public class WebUserService {
      * @return 검색 결과를 담은 FindUserInfo 객체
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = "search:users", key = "'search:' + #searchType + ':kw:' + #keyword + ':page:' + #page + ':size:' + #size")
     public FindUserInfo findUsers(String keyword, String searchType, int page, int size) {
       Pageable pageable = PageRequest.of(page, size);
       Page<UserSearchResponseDto> resultPage;
@@ -345,6 +350,7 @@ public class WebUserService {
       return value.matches("^\\d+$");
     }
 
+    @Cacheable(value = "user:profile", key = "'detail:' + #userId")
     public ProfileDetailDto getUserProfileDetail(UUID userId) {
       boolean authenticated = AuthenticationUtil.isAuthenticated();
       WebUser webUser = webUserRepository.findById(userId)
