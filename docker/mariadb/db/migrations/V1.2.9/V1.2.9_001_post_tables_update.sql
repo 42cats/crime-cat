@@ -1,14 +1,17 @@
--- Migration: V1.2.6_001_post_tables_update.sql
--- Created: 2025-05-23 10:44:42
+-- Migration: V1.2.9_001_post_tables_update.sql
+-- Created: 2025-05-25 
+-- Update post tables structure
 
-USE ${DB_DISCORD};
+USE discord;
 
--- 여기에 마이그레이션 SQL을 작성하세요
+-- Start transaction for atomic changes
+START TRANSACTION;
 
-DROP TABLE IF EXISTS board_post_likes
-DROP TABLE IF EXISTS post_comment_likes
-DROP TABLE IF EXISTS board_posts
-DROP TABLE IF EXISTS post_comments
+-- Drop tables in correct order (child tables first)
+DROP TABLE IF EXISTS post_comment_likes;
+DROP TABLE IF EXISTS board_post_likes;
+DROP TABLE IF EXISTS post_comments;
+DROP TABLE IF EXISTS board_posts;
 
 -- 1) board_posts 테이블
 CREATE TABLE IF NOT EXISTS `board_posts` (
@@ -114,8 +117,10 @@ CREATE TABLE IF NOT EXISTS `post_comment_likes` (
     DEFAULT CHARSET=utf8mb4
     COLLATE=utf8mb4_unicode_ci;
 
--- 4) post_likes 인덱스
+-- 4) post_comment_likes 인덱스
 ALTER TABLE `post_comment_likes`
     ADD INDEX IF NOT EXISTS `idx_post_comment_likes_user`     (`user_id`),
     ADD INDEX IF NOT EXISTS `idx_post_comment_likes_comment`  (`comment_id`);
 
+-- Commit transaction
+COMMIT;
