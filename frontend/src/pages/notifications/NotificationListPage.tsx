@@ -4,6 +4,7 @@ import { notificationService } from '@/api/social/notifications';
 import { NotificationItem } from "@/components/NotificationItem";
 import { SystemNotificationItem } from "@/components/notification/SystemNotificationItem";
 import { GameRecordNotificationItem } from "@/components/notification/GameRecordNotificationItem";
+import { ThemePointRewardNotificationItem } from "@/components/notification/ThemePointRewardNotificationItem";
 import { useProcessedNotifications } from "@/hooks/useProcessedNotifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -170,6 +171,13 @@ const NotificationListPage: React.FC = () => {
                         isLoading={processActionMutation.isPending}
                     />
                 );
+            case NotificationType.THEME_POINT_REWARD:
+                return (
+                    <ThemePointRewardNotificationItem
+                        key={notification.id}
+                        {...commonProps}
+                    />
+                );
             default:
                 return (
                     <NotificationItem key={notification.id} {...commonProps} />
@@ -283,6 +291,9 @@ const NotificationListPage: React.FC = () => {
                                 </SelectItem>
                                 <SelectItem value="NEW_THEME">
                                     새 테마
+                                </SelectItem>
+                                <SelectItem value="THEME_POINT_REWARD">
+                                    포인트 지급
                                 </SelectItem>
                             </SelectContent>
                         </Select>

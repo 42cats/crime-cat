@@ -45,7 +45,7 @@ import ProfilePage from "@/pages/profile/ProfilePage";
 import PostsPage from "@/pages/posts/PostsPage";
 import PostDetailPage from "@/pages/posts/PostDetailPage";
 import PostEditorPage from "@/pages/posts/PostEditorPage";
-import FollowsPage from "@/pages/follows/FollowsPage";
+import FollowsPage from "@/pages/dashboard/follows/FollowsPage";
 
 // Community Pages
 import QuestionBoard from "@/pages/community/QuestionBoard";
