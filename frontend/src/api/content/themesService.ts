@@ -17,6 +17,32 @@ export const themesService = {
     // 공통 조회 기능
     // ================================
     
+    // 크라임씬 테마 전체 목록 조회 (광고용)
+    getCrimesceneThemes: async (): Promise<Theme[]> => {
+        try {
+            const response = await apiClient.get<ThemePage>(
+                `${publicBaseURI}/crimescene?limit=100&sort=LATEST`
+            );
+            return response.themes;
+        } catch (error) {
+            console.error("크라임씬 테마 목록 불러오기 실패:", error);
+            throw error;
+        }
+    },
+    
+    // 방탈출 테마 전체 목록 조회 (광고용)
+    getEscapeRoomThemesSimple: async (): Promise<Theme[]> => {
+        try {
+            const response = await apiClient.get<ThemePage>(
+                `${publicBaseURI}/escape-room?limit=100&sort=LATEST`
+            );
+            return response.themes;
+        } catch (error) {
+            console.error("방탈출 테마 목록 불러오기 실패:", error);
+            throw error;
+        }
+    },
+    
     // 방탈출 테마 상세 조회
     getEscapeRoomTheme: async (id: string): Promise<EscapeRoomThemeDetailType> => {
         try {

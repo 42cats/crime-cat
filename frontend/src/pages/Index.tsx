@@ -3,7 +3,7 @@ import PageTransition from "@/components/PageTransition";
 import BotStatsSection from "@/components/home/StatsSection";
 import AnnouncementSection from "@/components/home/AnnouncementSection";
 import LatestPostsSection from "@/components/home/LatestPostsSection";
-import GameAdsSection from "@/components/home/GameAdsSection";
+import GameAdsCarousel from "@/components/home/GameAdsCarousel";
 import CurrentGamesSection from "@/components/home/CurrentGamesSection";
 import BotAddSection from "@/components/home/BotAddSection";
 
@@ -14,7 +14,7 @@ const Index: React.FC = () => {
                 <BotAddSection />
                 {/* <BotStatsSection /> */}
                 <AnnouncementSection />
-                <GameAdsSection />
+                <GameAdsCarousel />
                 <LatestPostsSection />
                 {/* <GameAdsSection />
                 <CurrentGamesSection /> */}
