@@ -37,11 +37,11 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @EnableCaching
 @org.springframework.context.annotation.Profile("optimization")  // Only active when optimization profile is active
-@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
-    name = "spring.cache.type",
-    havingValue = "hybrid",
-    matchIfMissing = false
-)
+// @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+//     name = "spring.cache.type",
+//     havingValue = "hybrid", 
+//     matchIfMissing = false
+// )  // 일단 비활성화하여 기본 동작하도록 함
 public class HybridCacheConfig {
 
     /**

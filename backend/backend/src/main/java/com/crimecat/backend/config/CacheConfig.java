@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableCaching
+@org.springframework.context.annotation.Profile("!optimization")  // optimization이 아닐 때만 활성화
 public class CacheConfig {
 
   @Bean
