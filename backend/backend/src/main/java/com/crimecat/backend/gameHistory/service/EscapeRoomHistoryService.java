@@ -41,11 +41,9 @@ public class EscapeRoomHistoryService {
         WebUser webUser = AuthenticationUtil.getCurrentWebUserOptional().orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
         EscapeRoomTheme theme = escapeRoomThemeRepository.findById(request.getEscapeRoomThemeId())
                 .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        
-        // 중복 기록 체크 (선택적)
-        List<EscapeRoomHistory> existingHistories = escapeRoomHistoryRepository
-                .findByWebUserIdAndEscapeRoomThemeIdAndDeletedAtIsNull(webUser.getId(), theme.getId());
-        
+
+        List<EscapeRoomHistory> byWebUserIdAndEscapeRoomThemeIdAndDeletedAtIsNull = escapeRoomHistoryRepository.findByWebUserIdAndEscapeRoomThemeIdAndDeletedAtIsNull(webUser.getId(), theme.getId());
+
         EscapeRoomHistory history = EscapeRoomHistory.builder()
                 .escapeRoomTheme(theme)
                 .escapeRoomLocationId(request.getEscapeRoomLocationId())
@@ -74,7 +72,7 @@ public class EscapeRoomHistoryService {
      */
     @Transactional
     public EscapeRoomHistoryResponse updateHistory(UUID historyId, EscapeRoomHistoryRequest request) {
-        UUID currentUserId = AuthenticationUtil.getCurrentUserIdOptional().orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+        UUID currentUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
         EscapeRoomHistory history = escapeRoomHistoryRepository.findByIdAndDeletedAtIsNull(historyId)
                 .orElseThrow(ErrorStatus.GAME_HISTORY_NOT_FOUND::asServiceException);
         
@@ -107,7 +105,7 @@ public class EscapeRoomHistoryService {
      */
     @Transactional
     public void deleteHistory(UUID historyId) {
-        UUID currentUserId = AuthenticationUtil.getCurrentUserIdOptional().orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);;
+        UUID currentUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
         
         EscapeRoomHistory history = escapeRoomHistoryRepository.findByIdAndDeletedAtIsNull(historyId)
                 .orElseThrow(ErrorStatus.GAME_HISTORY_NOT_FOUND::asServiceException);
