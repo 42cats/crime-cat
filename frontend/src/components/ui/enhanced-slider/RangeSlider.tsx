@@ -51,10 +51,10 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
         </div>
       )}
       
-      <div className="relative pt-6 pb-4">
+      <div className="relative pt-8 pb-8">
         {/* Value labels on thumbs */}
         <div
-          className="absolute -top-1 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md whitespace-nowrap"
+          className="absolute -top-1 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md whitespace-nowrap z-20 pointer-events-none"
           style={{ left: `${percentage.min}%` }}
         >
           {showStars ? (
@@ -66,7 +66,7 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
           )}
         </div>
         <div
-          className="absolute -top-1 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md whitespace-nowrap"
+          className="absolute -top-1 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md whitespace-nowrap z-20 pointer-events-none"
           style={{ left: `${percentage.max}%` }}
         >
           {showStars ? (
@@ -89,12 +89,12 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
           <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
             <SliderPrimitive.Range className="absolute h-full bg-primary" />
           </SliderPrimitive.Track>
-          <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full border-2 border-primary bg-background shadow-md ring-offset-background transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
-          <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full border-2 border-primary bg-background shadow-md ring-offset-background transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
+          <SliderPrimitive.Thumb className="relative z-10 block h-5 w-5 rounded-full border-2 border-primary bg-background shadow-md ring-offset-background transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-grab active:cursor-grabbing" />
+          <SliderPrimitive.Thumb className="relative z-10 block h-5 w-5 rounded-full border-2 border-primary bg-background shadow-md ring-offset-background transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-grab active:cursor-grabbing" />
         </SliderPrimitive.Root>
 
         {/* Scale marks */}
-        <div className="absolute w-full flex justify-between -bottom-1">
+        <div className="absolute w-full flex justify-between bottom-5">
           {(customMarks || (showAllMarks ? Array.from({ length: max - min + 1 }, (_, i) => min + i) : [min, max])).map((val) => (
             <div
               key={val}

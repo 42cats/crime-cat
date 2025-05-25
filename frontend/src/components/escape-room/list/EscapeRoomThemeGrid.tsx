@@ -36,12 +36,12 @@ const EscapeRoomThemeGrid: React.FC<EscapeRoomThemeGridProps> = ({
                     <AlertTriangle className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-700 mb-2">
-                    등록된 방탈출 테마가 없습니다
+                    검색 결과가 없습니다.
                 </h3>
                 <p className="text-sm text-gray-500 mb-6 max-w-md">
-                    아직 등록된 방탈출 테마가 없습니다.
+                    해당 검색 조건의 방탈출이 아직 등록되지 않았습니다.
                     {canCreateTheme
-                        ? " 첫 번째 테마를 등록해보세요!"
+                        ? " 테마를 등록해보세요!"
                         : " 곧 다양한 테마들이 추가될 예정입니다."}
                 </p>
                 {canCreateTheme && onCreateTheme && (
@@ -49,7 +49,8 @@ const EscapeRoomThemeGrid: React.FC<EscapeRoomThemeGridProps> = ({
                         onClick={onCreateTheme}
                         className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                        <Plus className="w-4 h-4" />첫 번째 테마 등록하기
+                        <Plus className="w-4 h-4" />
+                        테마 등록하기
                     </button>
                 )}
             </div>

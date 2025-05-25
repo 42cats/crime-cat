@@ -69,14 +69,14 @@ export const TimeRangeSlider: React.FC<TimeRangeSliderProps> = ({
   );
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-6", className)}>
       <div className="flex items-center gap-2">
         <Clock className="w-4 h-4 text-muted-foreground" />
         <span className="text-sm font-medium">{label}</span>
       </div>
 
       {/* Slider */}
-      <div className="px-3">
+      <div className="px-4">
         <RangeSlider
           min={min}
           max={max}
@@ -117,7 +117,12 @@ export const TimeRangeSlider: React.FC<TimeRangeSliderProps> = ({
       {/* Quick select buttons */}
       <div className="flex flex-wrap gap-2">
         <button
-          onClick={() => onValueChange([undefined, 30])}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onValueChange([undefined, 30]);
+          }}
           className={cn(
             "px-3 py-1 text-xs rounded-full border transition-colors",
             value[0] === undefined && value[1] === 30
@@ -128,7 +133,12 @@ export const TimeRangeSlider: React.FC<TimeRangeSliderProps> = ({
           30분 이내
         </button>
         <button
-          onClick={() => onValueChange([30, 60])}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onValueChange([30, 60]);
+          }}
           className={cn(
             "px-3 py-1 text-xs rounded-full border transition-colors",
             value[0] === 30 && value[1] === 60
@@ -139,7 +149,12 @@ export const TimeRangeSlider: React.FC<TimeRangeSliderProps> = ({
           30분-1시간
         </button>
         <button
-          onClick={() => onValueChange([60, 120])}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onValueChange([60, 120]);
+          }}
           className={cn(
             "px-3 py-1 text-xs rounded-full border transition-colors",
             value[0] === 60 && value[1] === 120
@@ -150,7 +165,12 @@ export const TimeRangeSlider: React.FC<TimeRangeSliderProps> = ({
           1-2시간
         </button>
         <button
-          onClick={() => onValueChange([120, 180])}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onValueChange([120, 180]);
+          }}
           className={cn(
             "px-3 py-1 text-xs rounded-full border transition-colors",
             value[0] === 120 && value[1] === 180
@@ -161,7 +181,12 @@ export const TimeRangeSlider: React.FC<TimeRangeSliderProps> = ({
           2-3시간
         </button>
         <button
-          onClick={() => onValueChange([180, undefined])}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onValueChange([180, undefined]);
+          }}
           className={cn(
             "px-3 py-1 text-xs rounded-full border transition-colors",
             value[0] === 180 && value[1] === undefined

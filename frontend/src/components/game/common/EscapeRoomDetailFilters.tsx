@@ -64,9 +64,9 @@ export const EscapeRoomDetailFilters: React.FC<EscapeRoomDetailFiltersProps> = (
       </div>
 
       {/* Filters Grid */}
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Clear Time Filter */}
-        <div className="bg-muted/30 rounded-lg p-4">
+        <div className="bg-muted/30 rounded-lg p-6">
           <TimeRangeSlider
             min={0}
             max={600}
@@ -82,10 +82,10 @@ export const EscapeRoomDetailFilters: React.FC<EscapeRoomDetailFiltersProps> = (
         </div>
 
         {/* Rating Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Difficulty */}
           <div className={cn(
-            "rounded-lg p-4 transition-colors",
+            "rounded-lg p-6 transition-colors",
             (filter.minDifficulty !== undefined && filter.minDifficulty > 1) || 
             (filter.maxDifficulty !== undefined && filter.maxDifficulty < 5)
               ? "bg-primary/5 border border-primary/20"
@@ -112,7 +112,7 @@ export const EscapeRoomDetailFilters: React.FC<EscapeRoomDetailFiltersProps> = (
 
           {/* Fun Rating */}
           <div className={cn(
-            "rounded-lg p-4 transition-colors",
+            "rounded-lg p-6 transition-colors",
             (filter.minFunRating !== undefined && filter.minFunRating > 1) || 
             (filter.maxFunRating !== undefined && filter.maxFunRating < 5)
               ? "bg-primary/5 border border-primary/20"
@@ -139,7 +139,7 @@ export const EscapeRoomDetailFilters: React.FC<EscapeRoomDetailFiltersProps> = (
 
           {/* Story Rating */}
           <div className={cn(
-            "rounded-lg p-4 transition-colors",
+            "rounded-lg p-6 transition-colors",
             (filter.minStoryRating !== undefined && filter.minStoryRating > 1) || 
             (filter.maxStoryRating !== undefined && filter.maxStoryRating < 5)
               ? "bg-primary/5 border border-primary/20"
