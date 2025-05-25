@@ -1,0 +1,26 @@
+# 미스터리 플레이스 robots.txt
+# https://crimecat.org
+
+# 모든 검색 엔진 허용
+User-agent: *
+Allow: /
+
+# 관리자 페이지 크롤링 차단
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /login
+Disallow: /oauth2/
+
+# 임시 파일 차단
+Disallow: /*.json$
+Disallow: /*.xml$
+Disallow: /*?*sort=
+Disallow: /*?*page=
+Disallow: /*?*filter=
+
+# 크롤링 속도 제한 (선택사항)
+Crawl-delay: 1
+
+# 사이트맵 위치
+Sitemap: https://crimecat.org/sitemap.xml

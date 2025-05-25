@@ -7,6 +7,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { RecoilRoot } from "recoil";
+import { SEOProvider } from "@/components/seo";
 
 // Types
 import { BoardType } from "@/lib/types/board";
@@ -86,12 +87,13 @@ import GameComparisonPage from "@/pages/GameComparisonPage";
 const App = () => (
     <RecoilRoot>
         <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                    <AuthInitializer />
-                    <AnimatePresence mode="wait">
+            <SEOProvider>
+                <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter>
+                        <AuthInitializer />
+                        <AnimatePresence mode="wait">
                         <Routes>
                             {/* Main Layout Routes */}
                             <Route element={<MainLayout />}>
@@ -416,9 +418,10 @@ const App = () => (
                                 element={<Unauthorized />}
                             />
                         </Routes>
-                    </AnimatePresence>
-                </BrowserRouter>
-            </TooltipProvider>
+                        </AnimatePresence>
+                    </BrowserRouter>
+                </TooltipProvider>
+            </SEOProvider>
         </QueryClientProvider>
     </RecoilRoot>
 );
