@@ -153,8 +153,16 @@ class GuildURLManager {
                     this.stopped = false;
                     return;
                 }
-                if (this.playlistManager.playMode !== ONCE && newState === AudioPlayerStatus.Idle) {
-                    await this.playlistManager.next(this.play.bind(this));
+                if (newState === AudioPlayerStatus.Idle) {
+                    // 재생 모드에 따른 처리
+                    if (this.playlistManager.playMode === REPEATONE) {
+                        // 한곡 반복: 현재 인덱스 그대로 재생
+                        await this.play(this.playlistManager.currentIndex);
+                    } else if (this.playlistManager.playMode !== ONCE) {
+                        // 순차 재생 또는 셔플: 다음 곡으로
+                        await this.playlistManager.next(this.play.bind(this));
+                    }
+                    // ONCE 모드는 아무것도 하지 않음 (정지)
                 }
             });
             if (this.interactionMsg) {
@@ -321,14 +329,24 @@ class GuildURLManager {
         return [paginationRow];
     }
 
-    // 임베드 생성
+    // 임베드 생성 (조건부 렌더링 최적화)
     embedmaker() {
         const currentData = this.playlistManager.getCurrent();
+        const embedHash = `${currentData?.title}-${this.audioPlayerManager.volume}-${this.playlistManager.playMode}-${this.playlistManager.sort}`;
+
+        // 변경사항이 없으면 기존 embed 반환
+        if (this._lastEmbedHash === embedHash && this.embed) {
+            return this.embed;
+        }
+
+        this._lastEmbedHash = embedHash;
+
         let nextSongTitle = 'N/A';
         const nextData = this.playlistManager.nextInfo();
         if (nextData) {
             nextSongTitle = nextData.title;
         }
+        
         this.embed = new EmbedBuilder()
             .setColor(0x0099FF)
             .setTitle(`🎵 : ${currentData?.title || 'N/A'}`)
@@ -379,12 +397,15 @@ class GuildURLManager {
 
     // 최종 메시지 구성
     async reply() {
-        const componentData = await this.requestComponent();
-        let extraComponents = [];
-        if (this.playlistManager.playlist.length > 15) {
-            extraComponents = this.getPaginationButtons();
-        }
-        const primeumRow = await this.getPermissionButton();
+        // 병렬 처리로 성능 개선
+        const [componentData, extraComponents, primeumRow] = await Promise.all([
+            this.requestComponent(),
+            this.playlistManager.playlist.length > 15 
+                ? Promise.resolve(this.getPaginationButtons())
+                : Promise.resolve([]),
+            this.getPermissionButton()
+        ]);
+
         return {
             embeds: [this.embedmaker()],
             components: [...this.buttons, componentData, ...extraComponents, ...primeumRow]
@@ -392,22 +413,33 @@ class GuildURLManager {
     }
 
     // 모든 리소스 정리
-    // 모든 리소스 정리
     destroy() {
+        // 관리자 정리
         this.audioPlayerManager.destroy();
         this.playlistManager.destroy();
+        
+        // UI 요소 정리
         this.buttons = [];
+        this.embed = null;
+        this._lastEmbedHash = null;
+        
+        // 메시지 삭제
         if (this.interactionMsg) {
             // 시스템 메시지 확인 추가
             if (this.interactionMsg.deletable && !this.interactionMsg.system) {
                 this.interactionMsg.delete().catch(err => console.error('메시지 삭제 오류:', err));
-                return true;
             } else {
                 console.log("시스템 메시지이거나 삭제할 수 없는 메시지입니다.");
-                return false;
             }
+            this.interactionMsg = null;
         }
-        return false;
+        
+        // 참조 해제
+        this.operator = null;
+        this.youtubeEmoji = null;
+        
+        console.log('GuildURLManager 리소스 정리 완료.');
+        return true;
     }
 }
 

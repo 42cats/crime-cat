@@ -35,6 +35,16 @@ class PlaylistManager {
 		this.pageSize = pageSize;
 		this.currentPage = 0;
 		this.maxPage = 0;
+
+		// 정렬된 리스트 캐싱
+		this._sortedCache = {
+			[ABC]: null,
+			[DATE]: null,
+			lastUpdate: 0
+		};
+
+		// 페이지 캐싱
+		this._pageCache = new Map();
 	}
 	toString() {
 		return `재생모드 = ${this.playMode},\n 정렬상태 = ${this.sort}\n 재생목록 타이틀 = ${this.playlist.map(v => v.title)},\n 셔플 인덱스 어레이 = ${this.shuffledIndices},\n셔플 인덱스 길이 = ${this.shuffledIndices.length}  현재곡 인덱스 = ${this.currentIndex}`;
@@ -81,6 +91,11 @@ class PlaylistManager {
 
 	// 플레이리스트 로드 (DB 조회)
 	async refresh() {
+		// 캐시 무효화
+		this._sortedCache[ABC] = null;
+		this._sortedCache[DATE] = null;
+		this._pageCache.clear();
+
 		try {
 			if (this.parent.local) {
 				// Define the directory containing local audio files
@@ -143,13 +158,22 @@ class PlaylistManager {
 		}
 	}
 
-	// 셔플 실행
+	// 셔플 실행 (Fisher-Yates 알고리즘)
 	shufflePlaylist() {
 		if (this.playlist.length <= 0) return;
-		this.shuffledIndices = Array.from({ length: this.playlist.length }, (_, i) => i)
-			.sort(() => Math.random() - 0.5);
-		while (this.shuffledIndices[this.currentIndex] !== this.currentIndex) {
-			this.shuffledIndices.sort(() => Math.random() - 0.5);
+
+		this.shuffledIndices = Array.from({ length: this.playlist.length }, (_, i) => i);
+
+		// 현재 재생 중인 곡을 첫 번째로 고정
+		const currentIdx = this.currentIndex;
+		[this.shuffledIndices[0], this.shuffledIndices[currentIdx]] = 
+			[this.shuffledIndices[currentIdx], this.shuffledIndices[0]];
+
+		// Fisher-Yates 셔플 (더 효율적)
+		for (let i = this.shuffledIndices.length - 1; i > 1; i--) {
+			const j = Math.floor(Math.random() * i) + 1;
+			[this.shuffledIndices[i], this.shuffledIndices[j]] = 
+				[this.shuffledIndices[j], this.shuffledIndices[i]];
 		}
 	}
 
@@ -202,21 +226,50 @@ class PlaylistManager {
 		await playCallback(this.currentIndex);
 	}
 	getSortedList() {
+		// 캐시 확인 (5초간 유효)
+		if (this._sortedCache[this.sort] && 
+			Date.now() - this._sortedCache.lastUpdate < 5000) {
+			return this._sortedCache[this.sort];
+		}
+
+		// 정렬 수행 및 캐싱
+		let sorted;
 		if (this.sort === ABC) {
-			return [...this.playlist].sort((a, b) => a.title.localeCompare(b.title));
+			sorted = [...this.playlist].sort((a, b) => a.title.localeCompare(b.title));
+		} else if (this.sort === DATE) {
+			sorted = [...this.playlist].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+		} else {
+			sorted = [...this.playlist];
 		}
-		if (this.sort === DATE) {
-			return [...this.playlist].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-		}
-		return [...this.playlist];
+
+		this._sortedCache[this.sort] = sorted;
+		this._sortedCache.lastUpdate = Date.now();
+
+		return sorted;
 	}
 
 	// 현재 페이지 계산
 	getCurrentPage() {
+		const cacheKey = `${this.currentPage}-${this.sort}`;
+
+		// 페이지 캐시 확인
+		if (this._pageCache.has(cacheKey)) {
+			return this._pageCache.get(cacheKey);
+		}
+
 		const sorted = this.getSortedList();
 		const start = this.currentPage * this.pageSize;
 		const end = start + this.pageSize;
-		return sorted.slice(start, end);
+		const page = sorted.slice(start, end);
+
+		// 캐시 저장 (최대 10페이지)
+		if (this._pageCache.size > 10) {
+			const firstKey = this._pageCache.keys().next().value;
+			this._pageCache.delete(firstKey);
+		}
+		this._pageCache.set(cacheKey, page);
+
+		return page;
 	}
 
 
@@ -238,11 +291,21 @@ class PlaylistManager {
 
 	// 모든 리소스 정리
 	destroy() {
+		// 캐시 정리
+		this._sortedCache = null;
+		this._pageCache?.clear();
+		this._pageCache = null;
+
+		// 배열 정리
 		this.playlist = [];
 		this.shuffledIndices = [];
 		this.currentIndex = 0;
 		this.currentPage = 0;
 		this.maxPage = 0;
+
+		// 참조 해제
+		this.parent = null;
+
 		console.log('PlaylistManager 리소스 정리 완료.');
 	}
 }
