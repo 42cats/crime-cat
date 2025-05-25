@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,7 @@ import java.util.UUID;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -122,8 +124,7 @@ public class EscapeRoomCommentService {
     /**
      * 특정 테마의 댓글 목록 조회 (계층 구조로 변환)
      */
-    public Page<EscapeRoomCommentResponseDto> getCommentsByTheme(UUID themeId, Pageable pageable) {
-        UUID currentUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
+    public Page<EscapeRoomCommentResponseDto> getCommentsByTheme(UUID themeId, UUID currentUserId, Pageable pageable, Boolean spoilerOnly) {
         // 테마 존재 확인
         if (!escapeRoomThemeRepository.existsById(themeId)) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
@@ -138,6 +139,13 @@ public class EscapeRoomCommentService {
         // 테마의 모든 댓글 조회
         List<EscapeRoomComment> allComments = escapeRoomCommentRepository
                 .findAllByEscapeRoomThemeId(themeId);
+        
+        // 스포일러 필터링
+        if (spoilerOnly != null && spoilerOnly) {
+            allComments = allComments.stream()
+                    .filter(EscapeRoomComment::getIsSpoiler)
+                    .collect(Collectors.toList());
+        }
 
         // 현재 사용자가 좋아요한 댓글 ID 목록 조회
         Set<UUID> likedCommentIds = Set.of();
@@ -155,6 +163,35 @@ public class EscapeRoomCommentService {
 
         // 좋아요 정보 설정
         hierarchicalComments = setLikedStatus(hierarchicalComments, likedCommentIds);
+        
+        // 정렬 적용 (최상위 댓글에만 적용)
+        if (pageable.getSort().isSorted()) {
+            Sort.Order order = pageable.getSort().iterator().next();
+            String property = order.getProperty();
+            boolean isAscending = order.isAscending();
+            
+            Comparator<EscapeRoomCommentResponseDto> comparator = null;
+            
+            switch (property) {
+                case "createdAt":
+                    comparator = Comparator.comparing(EscapeRoomCommentResponseDto::getCreatedAt);
+                    break;
+                case "likes":
+                    comparator = Comparator.comparing(EscapeRoomCommentResponseDto::getLikes)
+                            .thenComparing(EscapeRoomCommentResponseDto::getCreatedAt, Comparator.reverseOrder());
+                    break;
+                default:
+                    comparator = Comparator.comparing(EscapeRoomCommentResponseDto::getCreatedAt);
+            }
+            
+            if (!isAscending && comparator != null) {
+                comparator = comparator.reversed();
+            }
+            
+            if (comparator != null) {
+                hierarchicalComments.sort(comparator);
+            }
+        }
 
         // 페이징 처리
         int start = (int) pageable.getOffset();
