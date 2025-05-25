@@ -5,6 +5,7 @@ import com.crimecat.backend.gameHistory.dto.IGameHistoryRankingDto;
 import com.crimecat.backend.user.domain.User;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -233,4 +234,12 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	@Query("SELECT COUNT(g) FROM GameHistory g WHERE g.user.webUser.id = :webUserId AND g.isWin = true")
 	long countWinsByWebUserId(@Param("webUserId") UUID webUserId);
 
+	/**
+	 * 특정 유저와 테마로 게임 기록 조회
+	 */
+	Optional<GameHistory> findByUser_DiscordUserSnowflakeAndGameTheme_Id(String discordUserSnowflake, UUID themeId);
+
+	List<GameHistory> findAllByUser(User user);
+
+	Optional<GameHistory> findByUserAndGameTheme_Id(User user, UUID gameThemeId);
 }

@@ -21,6 +21,7 @@ public class UserGameHistoryToUserDto {
 	private String Memo;
 	private String themeId;
 	private String themeName;
+	private String themeThumbnail;
 
 
 	static public UserGameHistoryToUserDto from(GameHistory gameHistory){
@@ -46,7 +47,8 @@ public class UserGameHistoryToUserDto {
 				gameHistory.getCharacterName(),
 				gameHistory.getMemo(),
 				gameThemeId,
-				gameThemeName
+				gameThemeName,
+				gameHistory.getGameTheme().getThumbnail()
 		);
 	}
 	
@@ -76,7 +78,8 @@ public class UserGameHistoryToUserDto {
 				gameHistory.getCharacterName(),
 				null, // 메모는 공개하지 않음
 				gameThemeId,
-				gameThemeName
+				gameThemeName,
+				gameHistory.getGameTheme().getThumbnail()
 		);
 	}
 }
