@@ -1,6 +1,7 @@
 package com.crimecat.backend.gametheme.repository;
 
 import com.crimecat.backend.gametheme.domain.MakerTeamMember;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,6 +17,7 @@ public interface MakerTeamMemberRepository extends JpaRepository<MakerTeamMember
     /**
      * 특정 팀의 모든 멤버 조회
      */
+    @EntityGraph(attributePaths = {"webUser"})
     List<MakerTeamMember> findByTeamId(UUID teamId);
     
     /**

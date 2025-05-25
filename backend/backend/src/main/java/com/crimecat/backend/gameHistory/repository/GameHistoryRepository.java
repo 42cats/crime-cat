@@ -24,7 +24,7 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 * - WHERE user.snowflake = :userSnowflake
 	 * - 성능 고려: user.snowflake에 인덱스 필요
 	 */
-	@Query("SELECT gh FROM GameHistory gh JOIN gh.user u JOIN gh.guild g WHERE u.discordSnowflake = :discordSnowflake")
+	@Query("SELECT gh FROM GameHistory gh JOIN FETCH gh.user u JOIN FETCH gh.guild g WHERE u.discordSnowflake = :discordSnowflake")
 	List<GameHistory> getGameHistoryByUserSnowflake(@Param("discordSnowflake") String discordSnowflake);
 
 	/**
@@ -52,7 +52,7 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 * - 로그인 사용자에게 관전 버튼/배지 표시 여부 판단 등에 활용
 	 * - user.discordSnowflake + guild_snowflake 복합 인덱스 강력 권장
 	 */
-	@Query("SELECT gh FROM GameHistory gh JOIN gh.user u WHERE u.discordSnowflake = :discordSnowflake AND gh.guild.snowflake = :guildSnowflake")
+	@Query("SELECT gh FROM GameHistory gh JOIN FETCH gh.user u JOIN FETCH gh.guild g WHERE u.discordSnowflake = :discordSnowflake AND g.snowflake = :guildSnowflake")
 	GameHistory findGameHistoryByUserSnowFlakeAndGuildSnowflake(@Param("discordSnowflake") String discordSnowflake, @Param("guildSnowflake") String guildSnowflake);
 
 	/**
@@ -99,7 +99,7 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	/**
 	 * 특정 길드의 모든 게임 기록을 조회 (정렬 포함)
 	 */
-	@Query("SELECT gh FROM GameHistory gh JOIN gh.user u LEFT JOIN u.webUser wu WHERE gh.guild.snowflake = :guildSnowflake")
+	@Query("SELECT gh FROM GameHistory gh JOIN FETCH gh.user u LEFT JOIN FETCH u.webUser wu JOIN FETCH gh.guild g LEFT JOIN FETCH gh.gameTheme gt WHERE g.snowflake = :guildSnowflake")
 	Page<GameHistory> findByGuild_Snowflake(
 			@Param("guildSnowflake") String guildSnowflake,
 			Pageable pageable

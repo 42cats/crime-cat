@@ -6,6 +6,7 @@ import com.crimecat.backend.notification.enums.NotificationType;
 import com.crimecat.backend.user.domain.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -22,6 +23,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     /**
      * 특정 사용자의 읽지 않은 알림 조회 (User 객체 사용)
      */
+    @EntityGraph(attributePaths = {"receiver", "sender"})
     List<Notification> findByReceiverAndStatusOrderByCreatedAtDesc(User user, NotificationStatus status);
     /**
      * 특정 사용자의 읽지 않은 알림 조회 (UUID 사용 - 하위 호환성)
@@ -32,6 +34,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     /**
      * 특정 사용자의 모든 알림 페이징 조회 (User 객체 사용)
      */
+    @EntityGraph(attributePaths = {"receiver", "sender"})
     Page<Notification> findByReceiverIdOrderByCreatedAtDesc(UUID receiverId, Pageable pageable);
 
     /**
@@ -49,6 +52,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     /**
      * 특정 사용자의 특정 타입 알림 페이징 조회
      */
+    @EntityGraph(attributePaths = {"receiver", "sender"})
     Page<Notification> findByReceiverIdAndType(UUID receiverId, NotificationType type, Pageable pageable);
     /**
      * 특정 사용자의 특정 타입 알림 조회 (User 객체 사용)
