@@ -36,7 +36,7 @@ const UserGameHistoryPageV2: React.FC = () => {
   const [filter, setFilter] = useState<IntegratedGameHistoryFilterRequest>({
     page: pageParam ? parseInt(pageParam) : 0,
     size: PAGE_SIZE,
-    sortBy: SortOption.PLAY_DATE,
+    sortBy: SortOption.CREATED_AT,  // PLAY_DATE 대신 CREATED_AT 사용 (백엔드 버그 회피)
     sortDirection: SortDirection.DESC,
   });
 
@@ -102,7 +102,7 @@ const UserGameHistoryPageV2: React.FC = () => {
     setFilter({
       page: 0,
       size: PAGE_SIZE,
-      sortBy: SortOption.PLAY_DATE,
+      sortBy: SortOption.CREATED_AT,  // PLAY_DATE 대신 CREATED_AT 사용 (백엔드 버그 회피)
       sortDirection: SortDirection.DESC,
       gameType: activeTab === 'crimescene' ? GameType.CRIMESCENE : 
                 activeTab === 'escaperoom' ? GameType.ESCAPE_ROOM : undefined,

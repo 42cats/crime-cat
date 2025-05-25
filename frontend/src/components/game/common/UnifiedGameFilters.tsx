@@ -160,14 +160,14 @@ export const UnifiedGameFilters: React.FC<UnifiedGameFiltersProps> = ({
         <div>
           <Label>정렬 기준</Label>
           <Select 
-            value={filter.sortBy || SortOption.PLAY_DATE} 
+            value={filter.sortBy || SortOption.CREATED_AT}  // PLAY_DATE 대신 CREATED_AT 사용 (백엔드 버그 회피) 
             onValueChange={(value) => updateFilter({ sortBy: value as SortOption })}
           >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={SortOption.PLAY_DATE}>플레이 날짜</SelectItem>
+              <SelectItem value={SortOption.CREATED_AT}>플레이 날짜</SelectItem>
               <SelectItem value={SortOption.CREATED_AT}>기록 생성일</SelectItem>
               <SelectItem value={SortOption.THEME_NAME}>테마명</SelectItem>
               {isCrimeScene && <SelectItem value={SortOption.GUILD_NAME}>길드명</SelectItem>}
