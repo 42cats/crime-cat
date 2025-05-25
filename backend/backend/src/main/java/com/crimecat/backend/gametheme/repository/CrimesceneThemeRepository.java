@@ -18,19 +18,20 @@ public interface CrimesceneThemeRepository extends JpaRepository<CrimesceneTheme
   Optional<CrimesceneTheme> findByGuildSnowflake(String guildSnowflake);
 
   List<CrimesceneTheme> findByTeamId(UUID teamId);
-  
+
   /**
    * 플레이하지 않은 크라임씬 테마 조회 (필터 적용)
    */
   @Query("SELECT ct FROM CrimesceneTheme ct " +
-         "WHERE ct.id NOT IN :playedThemeIds " +
-         "AND (:minPrice IS NULL OR ct.price >= :minPrice) " +
-         "AND (:maxPrice IS NULL OR ct.price <= :maxPrice) " +
-         "AND (:minPlayers IS NULL OR ct.playerMin >= :minPlayers) " +
-         "AND (:maxPlayers IS NULL OR ct.playerMax <= :maxPlayers) " +
-         "AND (:minDifficulty IS NULL OR ct.difficulty >= :minDifficulty) " +
-         "AND (:maxDifficulty IS NULL OR ct.difficulty <= :maxDifficulty) " +
-         "AND ct.publicStatus = true")
+          "WHERE ct.id NOT IN :playedThemeIds " +
+          "AND (:minPrice IS NULL OR ct.price >= :minPrice) " +
+          "AND (:maxPrice IS NULL OR ct.price <= :maxPrice) " +
+          "AND (:minPlayers IS NULL OR ct.playerMin >= :minPlayers) " +
+          "AND (:maxPlayers IS NULL OR ct.playerMax <= :maxPlayers) " +
+          "AND (:minDifficulty IS NULL OR ct.difficulty >= :minDifficulty) " +
+          "AND (:maxDifficulty IS NULL OR ct.difficulty <= :maxDifficulty) " +
+          "AND ct.publicStatus = true " +
+          "AND ct.isDeleted = false")
   Page<CrimesceneTheme> findUnplayedThemes(@Param("playedThemeIds") Set<UUID> playedThemeIds,
                                            @Param("minPrice") Integer minPrice,
                                            @Param("maxPrice") Integer maxPrice,

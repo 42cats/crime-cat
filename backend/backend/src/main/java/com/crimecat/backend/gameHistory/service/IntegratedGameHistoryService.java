@@ -11,6 +11,7 @@ import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
 import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
 import com.crimecat.backend.gametheme.repository.CrimesceneThemeRepository;
 import com.crimecat.backend.gametheme.repository.EscapeRoomThemeRepository;
+import com.crimecat.backend.guild.repository.GuildRepository;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,7 @@ public class IntegratedGameHistoryService {
     private final CrimesceneThemeRepository crimeSceneThemeRepository;
     private final EscapeRoomThemeRepository escapeRoomThemeRepository;
     private final WebUserRepository webUserRepository;
+    private final GuildRepository guildRepository;
     
     /**
      * 사용자의 통합 게임 기록 조회 (최적화 버전)
@@ -268,20 +270,22 @@ public class IntegratedGameHistoryService {
     public IntegratedGameHistoryResponse.GameStatistics createStatistics(UUID userId) {
         log.info("통계 정보 생성 (캐시 미스) - userId: {}", userId);
         // 크라임씬 통계 (중복 플레이 불가능)
-        long crimeSceneTotal = crimeSceneHistoryRepository.countByUser_WebUser_Id(userId);
-        long crimeSceneWins = crimeSceneHistoryRepository.countByUser_WebUser_Id(userId); // TODO: 승리 필터 추가 필요
-        
+        long crimeSceneTotal = guildRepository.count();
+        long crimeSceneWins = crimeSceneHistoryRepository.countWinsByWebUserId(userId);
+        long crimeScenePlay = crimeSceneHistoryRepository.countByUser_WebUser_Id(userId);
         // 방탈출 통계 (중복 플레이 가능)
-        long escapeRoomTotal = escapeRoomHistoryRepository.countByWebUserIdAndDeletedAtIsNull(userId);
+        long escapeRoomTotal = escapeRoomThemeRepository.count();
         long escapeRoomUnique = escapeRoomHistoryRepository.countDistinctThemesByUserId(userId);
         long escapeRoomSuccess = escapeRoomHistoryRepository.countByWebUserIdAndSuccessStatus(userId, SuccessStatus.SUCCESS);
-        
+        long escapeRoomPlay = escapeRoomHistoryRepository.countByWebUserIdAndDeletedAtIsNull(userId);
+
         IntegratedGameHistoryResponse.GameTypeStats crimeSceneStats = 
                 IntegratedGameHistoryResponse.GameTypeStats.builder()
                         .total((int) crimeSceneTotal)
                         .unique((int) crimeSceneTotal) // 크라임씬은 중복 플레이 불가
                         .winCount((int) crimeSceneWins)
-                        .winRate(crimeSceneTotal > 0 ? (double) crimeSceneWins / crimeSceneTotal * 100 : 0)
+                        .playCount((int) crimeScenePlay)
+                        .winRate(crimeSceneTotal > 0 ? (double) crimeSceneWins / crimeScenePlay * 100 : 0)
                         .build();
         
         IntegratedGameHistoryResponse.GameTypeStats escapeRoomStats = 
@@ -289,7 +293,8 @@ public class IntegratedGameHistoryService {
                         .total((int) escapeRoomTotal)
                         .unique((int) escapeRoomUnique)
                         .winCount((int) escapeRoomSuccess)
-                        .winRate(escapeRoomTotal > 0 ? (double) escapeRoomSuccess / escapeRoomTotal * 100 : 0)
+                        .playCount((int) escapeRoomPlay)
+                        .winRate(escapeRoomTotal > 0 ? (double) escapeRoomSuccess / escapeRoomPlay * 100 : 0)
                         .build();
         
         return IntegratedGameHistoryResponse.GameStatistics.builder()
