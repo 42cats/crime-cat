@@ -308,4 +308,38 @@ public class WebGameHistoryService {
             return Page.empty(pageable);
         }
     }
+
+    @Transactional
+    public void updateGameHistoryByThemeId(WebUser webUser, UUID themeId, GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
+        User user = webUser.getUser();
+        if (user == null) {
+            throw ErrorStatus.USER_NOT_FOUND.asServiceException();
+        }
+
+        // 해당 테마의 게임 기록 찾기
+        GameHistory gameHistory = gameHistoryRepository.findByUserAndGameTheme_Id(user, themeId)
+				.orElseThrow(ErrorStatus.GAME_HISTORY_NOT_FOUND::asServiceException);
+
+        // 권한 확인 - 본인 기록만 수정 가능
+        if (!gameHistory.getUser().getId().equals(user.getId())) {
+            throw ErrorStatus.INVALID_ACCESS.asServiceException();
+        }
+
+        // 기록 업데이트
+        if (gameHistoryUpdateRequestDto.getCharacterName() != null) {
+            gameHistory.setCharacterName(gameHistoryUpdateRequestDto.getCharacterName());
+        }
+        if (gameHistoryUpdateRequestDto.getWin() != null) {
+            gameHistory.setIsWin(gameHistoryUpdateRequestDto.getWin());
+        }
+        if (gameHistoryUpdateRequestDto.getMemo() != null) {
+            gameHistory.setMemo(gameHistoryUpdateRequestDto.getMemo());
+        }
+        if (gameHistoryUpdateRequestDto.getCreatedAt() != null) {
+            gameHistory.setCreatedAt(gameHistoryUpdateRequestDto.getCreatedAt());
+        }
+
+        gameHistoryRepository.save(gameHistory);
+        log.info("게임 기록이 업데이트되었습니다. themeId: {}, userId: {}", themeId, user.getId());
+    }
 }

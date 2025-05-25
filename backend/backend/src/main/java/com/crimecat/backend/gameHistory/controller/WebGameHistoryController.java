@@ -127,6 +127,14 @@ public class WebGameHistoryController {
 	return new MessageDto<>("History updated successfully");
 	}
 
+	@PatchMapping("/crime_scene/theme/{theme_id}")
+	public MessageDto<?> updateUserGameHistoryByThemeId(@PathVariable("theme_id") UUID themeId,
+	@RequestBody GameHistoryUpdateRequestDto gameHistoryUpdateRequestDto) {
+	WebUser webUser = AuthenticationUtil.getCurrentWebUser();
+	webGameHistoryService.updateGameHistoryByThemeId(webUser, themeId, gameHistoryUpdateRequestDto);
+	return new MessageDto<>("History updated successfully");
+	}
+
 	@GetMapping("/crime_scene/owner/{guild_id}")
 	public ResponseEntity<Page<UserGameHistoryToOwnerDto>> crimeSceneGuildHistory(
 			@PathVariable("guild_id") String guidId,
