@@ -38,6 +38,7 @@ export const useCommentSystem = ({
             setHasMore(!result.last);
             setTotalComments(result.totalElements);
             setCurrentPage(page);
+            setSortType(sort); // 정렬 타입 업데이트
         } catch (error) {
             toast({
                 title: "오류",

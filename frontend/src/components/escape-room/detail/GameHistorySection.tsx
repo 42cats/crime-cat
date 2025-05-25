@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/ui/pagination';
 import { useToast } from '@/hooks/useToast';
+import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { escapeRoomHistoryService, EscapeRoomHistoryResponse } from '@/api/game/escapeRoomHistoryService';
 import { escapeRoomCommentService, CommentResponse } from '@/api/comment/escapeRoomCommentService';
@@ -14,6 +15,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ProfileDetailModal from '@/components/profile/ProfileDetailModal';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useNavigate } from 'react-router-dom';
 
 interface GameHistorySectionProps {
     themeId: string;
@@ -33,6 +45,8 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
     onEditGameHistory
 }) => {
     const { toast } = useToast();
+    const { user } = useAuth();
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [currentPage, setCurrentPage] = useState(0);
     const [deletingHistoryId, setDeletingHistoryId] = useState<string | null>(null);
@@ -43,6 +57,7 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
     const [editingComment, setEditingComment] = useState<string | null>(null);
     const [editContent, setEditContent] = useState('');
     const [historyComments, setHistoryComments] = useState<Map<string, CommentResponse[]>>(new Map());
+    const [showLoginDialog, setShowLoginDialog] = useState(false);
     const pageSize = 10;
 
     // 기록 목록 조회
@@ -404,7 +419,17 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
                 <div className="flex items-center justify-between">
                     <h3 className="font-medium text-lg">플레이 기록</h3>
                     {onAddGameHistory && (
-                        <Button onClick={onAddGameHistory} variant="outline" size="sm">
+                        <Button 
+                            onClick={() => {
+                                if (!user?.id) {
+                                    setShowLoginDialog(true);
+                                    return;
+                                }
+                                onAddGameHistory();
+                            }}
+                            variant="outline" 
+                            size="sm"
+                        >
                             <Trophy className="w-4 h-4 mr-2" />
                             기록 추가
                         </Button>
@@ -416,7 +441,15 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
                         <Trophy className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                         <p className="text-gray-500 mb-4">아직 플레이 기록이 없습니다.</p>
                         {onAddGameHistory && (
-                            <Button onClick={onAddGameHistory}>
+                            <Button 
+                                onClick={() => {
+                                    if (!user?.id) {
+                                        setShowLoginDialog(true);
+                                        return;
+                                    }
+                                    onAddGameHistory();
+                                }}
+                            >
                                 <Trophy className="w-4 h-4 mr-2" />
                                 첫 플레이 기록 추가
                             </Button>
@@ -616,6 +649,24 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
                 open={isProfileModalOpen}
                 onOpenChange={setIsProfileModalOpen}
             />
+            
+            {/* 로그인 필요 다이얼로그 */}
+            <AlertDialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            플레이 기록을 추가하려면 로그인이 필요합니다.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>취소</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => navigate("/login")}>
+                            로그인 하러 가기
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

@@ -221,14 +221,19 @@ export const UnifiedCommentItem: React.FC<UnifiedCommentItemProps> = ({
                                                 </div>
                                             ) : (
                                                 <div 
-                                                    className="flex items-center gap-2 p-3 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
+                                                    className="flex flex-col gap-2 p-3 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
                                                     onClick={() => setShowSpoiler(true)}
                                                 >
-                                                    <Shield className="w-4 h-4 text-orange-600" />
-                                                    <span className="text-sm text-gray-600">
+                                                    <div className="flex items-center gap-2">
+                                                        <Shield className="w-4 h-4 text-orange-600" />
+                                                        <span className="text-sm text-gray-600 font-medium">
+                                                            [스포일러]
+                                                        </span>
+                                                        <Eye className="w-4 h-4 text-gray-500 ml-auto" />
+                                                    </div>
+                                                    <span className="text-xs text-gray-500">
                                                         스포일러가 포함된 댓글입니다. 클릭하여 표시
                                                     </span>
-                                                    <Eye className="w-4 h-4 text-gray-500 ml-auto" />
                                                 </div>
                                             )}
                                         </div>
