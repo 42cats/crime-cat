@@ -11,7 +11,8 @@ public enum NotificationType {
     GAME_RECORD_REQUEST("게임 기록 등록 요청"),
     USER_POST_NEW("새 게시글"),
     USER_POST_COMMENT("게시글 댓글"),
-    USER_POST_COMMENT_REPLY("댓글 답글");
+    USER_POST_COMMENT_REPLY("댓글 답글"),
+    THEME_POINT_REWARD("테마 작성 포인트");
     
     private final String displayName;
     

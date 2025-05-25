@@ -54,6 +54,7 @@ public class PointHistory {
     @Column(name = "ITEM_TYPE")
     private ItemType itemType;
 
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "ITEM_ID", columnDefinition = "BINARY(16)")
     private UUID itemId;
     

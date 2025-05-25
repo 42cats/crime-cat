@@ -55,6 +55,12 @@ public class PointHistoryService {
 		pointHistoryQueryService.logCouponTransaction(user,coupon);
 	}
 
+	@Transactional
+	public void rewardThemeWriting(User user, int amount, UUID themeId, String themeName) {
+		user.addPoint(amount);
+		pointHistoryQueryService.logThemeRewardTransaction(user, amount, themeId, themeName);
+	}
+
 	public Page<PointHistory> getUserPointHistory(String userId, TransactionType type, Pageable pageable) {
 		User user = userRepository.findByWebUserId(UUID.fromString(userId))
 				.orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);

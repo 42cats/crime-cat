@@ -10,6 +10,8 @@ import com.crimecat.backend.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class PointHistoryQueryService {
@@ -74,6 +76,19 @@ public class PointHistoryQueryService {
 				.memo("쿠폰 등록으로 "+ coupon.getPoint() + "포인트 충전됨")
 				.build();
 		pointHistoryRepository.save(couponHistory);
+	}
+
+	public void logThemeRewardTransaction(User user, int amount, UUID themeId, String themeName) {
+		PointHistory history = PointHistory.builder()
+				.user(user)
+				.type(TransactionType.THEME_REWARD)
+				.amount(amount)
+				.balanceAfter(user.getPoint())
+				.itemType(ItemType.THEME_WRITING)
+				.itemId(themeId)
+				.memo("테마 작성 보상: " + themeName)
+				.build();
+		pointHistoryRepository.save(history);
 	}
 }
 

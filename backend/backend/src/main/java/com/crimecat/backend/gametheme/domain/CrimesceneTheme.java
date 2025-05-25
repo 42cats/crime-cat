@@ -69,4 +69,9 @@ public class CrimesceneTheme extends GameTheme {
         .extra(request.getExtra())
         .build();
     }
+
+    @Override
+    public String getDiscriminator() {
+        return "CRIMESCENE";
+    }
 }
