@@ -3,6 +3,7 @@ package com.crimecat.backend.gameHistory.service;
 import com.crimecat.backend.config.CacheType;
 import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryDto;
+import com.crimecat.backend.gameHistory.dto.UserGameHistoryToUserDto;
 import com.crimecat.backend.gameHistory.dto.integrated.*;
 import com.crimecat.backend.gameHistory.enums.SuccessStatus;
 import com.crimecat.backend.gameHistory.repository.EscapeRoomHistoryRepository;
@@ -65,7 +66,7 @@ public class IntegratedGameHistoryService {
         Pageable pageable = createPageable(filter);
         
         // 게임 타입별 기록 조회
-        List<UserGameHistoryDto> crimeSceneHistories = new ArrayList<>();
+        List<UserGameHistoryToUserDto> crimeSceneHistories = new ArrayList<>();
         List<EscapeRoomHistoryDetailResponse> escapeRoomHistories = new ArrayList<>();
         
         if (filter.getGameType() == null || filter.getGameType() == IntegratedGameHistoryFilterRequest.GameType.CRIMESCENE) {
@@ -194,12 +195,12 @@ public class IntegratedGameHistoryService {
     
     // === Private Helper Methods ===
     
-    private List<UserGameHistoryDto> getCrimeSceneHistories(UUID userId, IntegratedGameHistoryFilterRequest filter, Pageable pageable) {
+    private List<UserGameHistoryToUserDto> getCrimeSceneHistories(UUID userId, IntegratedGameHistoryFilterRequest filter, Pageable pageable) {
     // 크라임씬 기록 조회 (필터 적용)
     return crimeSceneHistoryRepository.findByUser_WebUser_IdOrderByCreatedAtDesc(userId, pageable)
        .getContent()
 				.stream()
-				.map(UserGameHistoryDto::from)
+				.map(UserGameHistoryToUserDto::from)
 				.collect(Collectors.toList());
 	}
     

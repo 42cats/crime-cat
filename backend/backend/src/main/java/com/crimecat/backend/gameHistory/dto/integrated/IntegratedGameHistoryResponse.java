@@ -2,6 +2,7 @@ package com.crimecat.backend.gameHistory.dto.integrated;
 
 import com.crimecat.backend.gameHistory.dto.EscapeRoomHistoryResponse;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryDto;
+import com.crimecat.backend.gameHistory.dto.UserGameHistoryToUserDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,7 +23,7 @@ public class IntegratedGameHistoryResponse {
     /**
      * 크라임씬 게임 기록 목록
      */
-    private List<UserGameHistoryDto> crimeSceneHistories;
+    private List<UserGameHistoryToUserDto> crimeSceneHistories;
     
     /**
      * 방탈출 게임 기록 목록 (상세 정보 포함)
