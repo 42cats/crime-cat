@@ -26,22 +26,6 @@ public class PostCommentController {
 
     private final PostCommentService postCommentService;
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Page<PostCommentResponse>> getCommentResponses(
-            @PathVariable("id") UUID postId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "LATEST") String sortType
-    ) {
-        WebUser currentWebUser = AuthenticationUtil.getCurrentWebUserOptional()
-            .orElse(null);
-        UUID currentWebUserId = (currentWebUser != null) ? currentWebUser.getId() : null;
-        
-        return ResponseEntity.ok().body(
-                postCommentService.getCommentResponsesPage(postId, currentWebUserId, page, size)
-        );
-    }
-
     @PostMapping("{id}")
     public ResponseEntity<PostCommentResponse> createComment(
             @PathVariable("id") UUID postId,
