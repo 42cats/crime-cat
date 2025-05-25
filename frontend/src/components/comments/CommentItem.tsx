@@ -229,51 +229,65 @@ export function CommentItem({
                             </div>
 
                             {/* 댓글 내용 (스포일러 처리) */}
-                            <div className="whitespace-pre-wrap break-words text-foreground text-sm mt-2 mb-2">
-                                {/* 스포일러가 아니거나 게임을 플레이한 경우 - 그냥 내용 표시 */}
-                                {!isSpoiler || hasPlayedGame ? (
-                                    <>
-                                        {/* 게임을 플레이했더라도 스포일러면 경고 표시 */}
-                                        {isSpoiler && hasPlayedGame && (
-                                            <SpoilerWarning
-                                                isOwnComment={isOwnComment}
-                                            />
-                                        )}
-                                        <div>{comment.content}</div>
-                                    </>
-                                ) : (
-                                    /* 스포일러인 경우 */
-                                    <>
-                                        {/* 내가 쓴 스포일러 - 블러 없이 표시하고 경고 문구만 */}
-                                        {isOwnComment ? (
-                                            <>
+                            {!isEditing ? (
+                                <div className="whitespace-pre-wrap break-words text-foreground text-sm mt-2 mb-2">
+                                    {/* 스포일러가 아니거나 게임을 플레이한 경우 - 그냥 내용 표시 */}
+                                    {!isSpoiler || hasPlayedGame ? (
+                                        <>
+                                            {/* 게임을 플레이했더라도 스포일러면 경고 표시 */}
+                                            {isSpoiler && hasPlayedGame && (
                                                 <SpoilerWarning
-                                                    isOwnComment={true}
+                                                    isOwnComment={isOwnComment}
                                                 />
-                                                <div>{comment.content}</div>
-                                            </>
-                                        ) : (
-                                            /* 다른 사람의 스포일러 - 블러 처리 및 경고 문구 */
-                                            <div className="relative cursor-pointer group">
-                                                <div
-                                                    className="blur-[12px] select-none group-hover:blur-none transition-all duration-200 p-2"
-                                                    onClick={handleSpoilerClick}
-                                                >
-                                                    {comment.content}
+                                            )}
+                                            <div>{comment.content}</div>
+                                        </>
+                                    ) : (
+                                        /* 스포일러인 경우 */
+                                        <>
+                                            {/* 내가 쓴 스포일러 - 블러 없이 표시하고 경고 문구만 */}
+                                            {isOwnComment ? (
+                                                <>
+                                                    <SpoilerWarning
+                                                        isOwnComment={true}
+                                                    />
+                                                    <div>{comment.content}</div>
+                                                </>
+                                            ) : (
+                                                /* 다른 사람의 스포일러 - 블러 처리 및 경고 문구 */
+                                                <div className="relative cursor-pointer group">
+                                                    <div
+                                                        className="blur-[12px] select-none group-hover:blur-none transition-all duration-200 p-2"
+                                                        onClick={handleSpoilerClick}
+                                                    >
+                                                        {comment.content}
+                                                    </div>
+                                                    <div className="absolute inset-0 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity duration-200 text-amber-500 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-900/30 backdrop-blur-sm p-2 rounded">
+                                                        <AlertTriangle className="h-4 w-4 mr-1" />
+                                                        <span>
+                                                            스포일러 내용입니다.
+                                                            게임을 플레이한 후
+                                                            확인하세요.
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <div className="absolute inset-0 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity duration-200 text-amber-500 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-900/30 backdrop-blur-sm p-2 rounded">
-                                                    <AlertTriangle className="h-4 w-4 mr-1" />
-                                                    <span>
-                                                        스포일러 내용입니다.
-                                                        게임을 플레이한 후
-                                                        확인하세요.
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-                            </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="mt-2 mb-2">
+                                    <CommentForm
+                                        onSubmit={handleUpdateSubmit}
+                                        initialData={{
+                                            content: comment.content,
+                                            isSpoiler: comment.isSpoiler,
+                                        }}
+                                        isEditing
+                                        onCancel={() => setIsEditing(false)}
+                                    />
+                                </div>
+                            )}
 
                             <div className="flex items-center gap-4">
                                 <button
@@ -336,17 +350,6 @@ export function CommentItem({
                         )}
                     </div>
 
-                    {isEditing ? (
-                        <CommentForm
-                            onSubmit={handleUpdateSubmit}
-                            initialData={{
-                                content: comment.content,
-                                isSpoiler: comment.isSpoiler,
-                            }}
-                            isEditing
-                            onCancel={() => setIsEditing(false)}
-                        />
-                    ) : null}
 
                     {/* 답글 작성 폼 */}
                     {isReplying && (

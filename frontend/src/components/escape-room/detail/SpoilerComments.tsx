@@ -74,8 +74,8 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
             setIsLoading(true);
             const response = await escapeRoomCommentService.getCommentsByTheme(themeId, 0, 20, true);
             setComments(response.content.filter(comment => comment.isSpoiler));
-            // 초기에는 모든 스포일러 댓글을 숨김 처리
-            setHiddenComments(new Set(response.content.map(c => c.id)));
+            // 스포일러 섹션에 접근했으므로 모든 댓글 바로 표시
+            setHiddenComments(new Set());
         } catch (error) {
             console.error('스포일러 댓글 목록 조회 실패:', error);
             toast({
@@ -160,14 +160,45 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
     };
 
     const handleLikeComment = async (comment: CommentResponse) => {
+        // Optimistic update
+        const updatedComments = comments.map(c => {
+            if (c.id === comment.id) {
+                return {
+                    ...c,
+                    isLikedByCurrentUser: !c.isLikedByCurrentUser,
+                    likes: c.isLikedByCurrentUser ? c.likes - 1 : c.likes + 1
+                };
+            }
+            // 대댓글도 처리
+            if (c.replies) {
+                return {
+                    ...c,
+                    replies: c.replies.map(reply => {
+                        if (reply.id === comment.id) {
+                            return {
+                                ...reply,
+                                isLikedByCurrentUser: !reply.isLikedByCurrentUser,
+                                likes: reply.isLikedByCurrentUser ? reply.likes - 1 : reply.likes + 1
+                            };
+                        }
+                        return reply;
+                    })
+                };
+            }
+            return c;
+        });
+        
+        setComments(updatedComments);
+        
         try {
             if (comment.isLikedByCurrentUser) {
                 await escapeRoomCommentService.unlikeComment(comment.id);
             } else {
                 await escapeRoomCommentService.likeComment(comment.id);
             }
-            await fetchComments();
         } catch (error) {
+            // 실패한 경우 원상태로 되돌리기
+            setComments(comments);
             console.error('좋아요 실패:', error);
             toast({
                 title: "좋아요 실패",
@@ -284,79 +315,51 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
                         </div>
                         
                         <div className="relative">
-                            {isHidden ? (
-                                <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-md p-4 text-center">
-                                    <Shield className="w-6 h-6 text-gray-400 mx-auto mb-2" />
-                                    <p className="text-sm text-gray-500 mb-2">스포일러가 포함된 댓글입니다</p>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => onToggleVisibility(comment.id)}
-                                        className="gap-2"
-                                    >
-                                        <Eye className="w-4 h-4" />
-                                        내용 보기
-                                    </Button>
-                                </div>
-                            ) : (
-                                <>
-                                    {editingComment === comment.id ? (
-                                        <div className="space-y-2">
-                                            <Textarea
-                                                value={editContent}
-                                                onChange={(e) => setEditContent(e.target.value)}
-                                                className="min-h-[80px]"
-                                            />
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => handleEditComment(comment.id)}
-                                                    disabled={!editContent.trim()}
-                                                >
-                                                    수정 완료
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => {
-                                                        setEditingComment(null);
-                                                        setEditContent('');
-                                                    }}
-                                                >
-                                                    취소
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm text-gray-700 leading-relaxed bg-red-50 border border-red-200 rounded-md p-3">
-                                            {comment.content}
-                                        </p>
-                                    )}
-                                    {!showSpoilers && (
+                            {editingComment === comment.id ? (
+                                <div className="space-y-2">
+                                    <Textarea
+                                        value={editContent}
+                                        onChange={(e) => setEditContent(e.target.value)}
+                                        className="min-h-[80px]"
+                                        autoFocus
+                                    />
+                                    <div className="flex gap-2">
                                         <Button
                                             size="sm"
-                                            variant="ghost"
-                                            onClick={() => onToggleVisibility(comment.id)}
-                                            className="absolute top-1 right-1 h-auto p-1"
+                                            onClick={() => handleEditComment(comment.id)}
+                                            disabled={!editContent.trim()}
                                         >
-                                            <EyeOff className="w-4 h-4" />
+                                            수정 완료
                                         </Button>
-                                    )}
-                                </>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                                setEditingComment(null);
+                                                setEditContent('');
+                                            }}
+                                        >
+                                            취소
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-gray-700 leading-relaxed bg-red-50 border border-red-200 rounded-md p-3">
+                                    {comment.content}
+                                </p>
                             )}
                         </div>
                         
-                        {!isHidden && (
-                            <div className="flex items-center gap-3">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => onLike(comment)}
-                                    className={`h-auto p-1 gap-1 ${comment.isLikedByCurrentUser ? 'text-red-500' : 'text-gray-500'}`}
-                                >
-                                    <Heart className="w-3 h-3" fill={comment.isLikedByCurrentUser ? 'currentColor' : 'none'} />
-                                    <span className="text-xs">{comment.likes}</span>
-                                </Button>
+                        <div className="flex items-center gap-3">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onLike(comment)}
+                                className={`h-auto p-1 gap-1 ${comment.isLikedByCurrentUser ? 'text-red-500' : 'text-gray-500'}`}
+                            >
+                                <Heart className="w-3 h-3" fill={comment.isLikedByCurrentUser ? 'currentColor' : 'none'} />
+                                <span className="text-xs">{comment.likes}</span>
+                            </Button>
                                 
                                 {!isReply && (
                                     <Button
@@ -435,7 +438,7 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
                                         key={reply.id}
                                         comment={reply}
                                         isReply={true}
-                                        isHidden={hiddenComments.has(reply.id) && !showSpoilers}
+                                        isHidden={false}
                                         showSpoilers={showSpoilers}
                                         onToggleVisibility={onToggleVisibility}
                                         onLike={onLike}
@@ -577,7 +580,7 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
                             <CardContent className="pt-4">
                                 <CommentItem
                                     comment={comment}
-                                    isHidden={hiddenComments.has(comment.id) && !showSpoilers}
+                                    isHidden={false}
                                     showSpoilers={showSpoilers}
                                     onToggleVisibility={toggleCommentVisibility}
                                     onLike={handleLikeComment}
