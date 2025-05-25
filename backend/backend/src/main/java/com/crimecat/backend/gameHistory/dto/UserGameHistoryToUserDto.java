@@ -10,23 +10,24 @@ import lombok.Getter;
 @Getter
 public class UserGameHistoryToUserDto {
 
-	private UUID uuid;
-	private String guildSnowflake;
-	private String userSnowflake;
-	private String guildName;
-	private String playerName;
-	private boolean isWin;
-	private LocalDateTime createdAt;
-	private String characterName;
-	private String Memo;
-	private String themeId;
-	private String themeName;
-	private String themeThumbnail;
+		private UUID uuid;
+		private String guildSnowflake;
+		private String userSnowflake;
+		private String guildName;
+		private String playerName;
+		private boolean isWin;
+		private LocalDateTime createdAt;
+		private String characterName;
+		private String Memo;
+		private String themeId;
+		private String themeName;
+		private String themeThumbnail;
 
 
-	static public UserGameHistoryToUserDto from(GameHistory gameHistory){
+		static public UserGameHistoryToUserDto from(GameHistory gameHistory){
 		String gameThemeId = "";
 		String gameThemeName = "등록되지 않음";
+		String gameThemeThumbnail = "/content/image/default_image.jpg";
 
 		if (gameHistory.getGameTheme() != null) {
 			if (gameHistory.getGameTheme().getId() != null) {
@@ -34,6 +35,9 @@ public class UserGameHistoryToUserDto {
 			}
 			if (gameHistory.getGameTheme().getTitle() != null && !gameHistory.getGameTheme().getTitle().isBlank()) {
 				gameThemeName = gameHistory.getGameTheme().getTitle();
+			}
+			if (gameHistory.getGameTheme().getThumbnail() != null) {
+				gameThemeThumbnail = gameHistory.getGameTheme().getThumbnail();
 			}
 		}
 		return new UserGameHistoryToUserDto(
@@ -48,7 +52,7 @@ public class UserGameHistoryToUserDto {
 				gameHistory.getMemo(),
 				gameThemeId,
 				gameThemeName,
-				gameHistory.getGameTheme().getThumbnail()
+				gameThemeThumbnail
 		);
 	}
 	
@@ -58,6 +62,7 @@ public class UserGameHistoryToUserDto {
 	static public UserGameHistoryToUserDto fromPublic(GameHistory gameHistory){
 		String gameThemeId = "";
 		String gameThemeName = "등록되지 않음";
+		String gameThemeThumbnail = "/content/image/default_image.jpg";
 
 		if (gameHistory.getGameTheme() != null) {
 			if (gameHistory.getGameTheme().getId() != null) {
@@ -65,6 +70,9 @@ public class UserGameHistoryToUserDto {
 			}
 			if (gameHistory.getGameTheme().getTitle() != null && !gameHistory.getGameTheme().getTitle().isBlank()) {
 				gameThemeName = gameHistory.getGameTheme().getTitle();
+			}
+			if (gameHistory.getGameTheme().getThumbnail() != null) {
+				gameThemeThumbnail = gameHistory.getGameTheme().getThumbnail();
 			}
 		}
 		return new UserGameHistoryToUserDto(
@@ -79,7 +87,7 @@ public class UserGameHistoryToUserDto {
 				null, // 메모는 공개하지 않음
 				gameThemeId,
 				gameThemeName,
-				gameHistory.getGameTheme().getThumbnail()
+				gameThemeThumbnail
 		);
 	}
 }

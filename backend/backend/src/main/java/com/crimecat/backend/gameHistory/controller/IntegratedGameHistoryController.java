@@ -5,11 +5,14 @@ import com.crimecat.backend.gameHistory.dto.integrated.GameComparisonResponse;
 import com.crimecat.backend.gameHistory.dto.integrated.IntegratedGameHistoryFilterRequest;
 import com.crimecat.backend.gameHistory.dto.integrated.IntegratedGameHistoryResponse;
 import com.crimecat.backend.gameHistory.service.IntegratedGameHistoryService;
+import com.crimecat.backend.utils.AuthenticationUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 /**
  * 통합 게임 기록 컨트롤러
@@ -29,12 +32,12 @@ public class IntegratedGameHistoryController {
      */
     @GetMapping("/user/{userId}/integrated")
     public ResponseEntity<IntegratedGameHistoryResponse> getUserGameHistories(
-            @PathVariable String userId,
+            @PathVariable UUID userId,
             @ModelAttribute @Valid IntegratedGameHistoryFilterRequest filter) {
         
         log.info("통합 게임 기록 조회 요청 - userId: {}, filter: {}", userId, filter);
-        
-        IntegratedGameHistoryResponse response = integratedGameHistoryService.getUserGameHistories(userId, filter);
+        AuthenticationUtil.validateAdminOrSameUser(userId);
+        IntegratedGameHistoryResponse response = integratedGameHistoryService.getUserGameHistories(userId.toString(), filter);
         
         return ResponseEntity.ok(response);
     }
