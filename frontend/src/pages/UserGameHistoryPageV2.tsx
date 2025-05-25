@@ -131,6 +131,7 @@ const UserGameHistoryPageV2: React.FC = () => {
             <p className="text-muted-foreground mt-2">
               플레이한 모든 게임의 기록을 한 곳에서 확인하세요
             </p>
+            <p >크라임씬 기록은 봇으로 기록된 기록과 등록된 테마와 연동이 </p>
           </div>
           <Button onClick={handleCompareClick} variant="outline" className="gap-2">
             <Users className="w-4 h-4" />
@@ -150,124 +151,11 @@ const UserGameHistoryPageV2: React.FC = () => {
         {/* 전체 기록 탭 */}
         <TabsContent value="all" className="space-y-6">
           {data && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <UnifiedGameFilters
-                  filter={filter}
-                  onFilterChange={handleFilterChange}
-                  onSearch={handleSearch}
-                  onReset={handleReset}
-                  showGameTypeSelector
-                />
-              </div>
+            <div className="grid gap-6">
               <div className="lg:col-span-1">
                 <GameStatisticsCard statistics={data.statistics} />
               </div>
             </div>
-          )}
-
-          {isLoading ? (
-            <Card>
-              <CardContent className="py-20">
-                <div className="flex flex-col items-center justify-center">
-                  <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                  <p className="text-muted-foreground">게임 기록을 불러오는 중...</p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : error ? (
-            <Card>
-              <CardContent className="py-20">
-                <div className="flex flex-col items-center justify-center">
-                  <p className="text-destructive mb-4">데이터를 불러오는 중 오류가 발생했습니다.</p>
-                  <Button onClick={() => refetch()}>다시 시도</Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : data && (
-            <>
-              {/* 결과 요약 */}
-              <div className="flex justify-between items-center mb-4">
-                <p className="text-sm text-muted-foreground">
-                  총 {data.pageInfo.totalElements}개의 기록
-                </p>
-              </div>
-
-              {/* 기록 목록 */}
-              <div className="space-y-4">
-                {/* 크라임씬 기록 */}
-                {data.crimeSceneHistories.length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Trophy className="w-5 h-5" />
-                      크라임씬
-                    </h3>
-                    {data.crimeSceneHistories.map((history) => (
-                      <GameHistoryItem
-                        key={history.id}
-                        history={{
-                          uuid: history.id,
-                          guildSnowflake: history.guildId || '',
-                          userSnowflake: history.userId,
-                          playerName: history.userNickname,
-                          win: history.isWin,
-                          createdAt: history.playDate,
-                          characterName: '',
-                          memo: history.memo || '',
-                          themeId: history.crimesceneThemeId || null,
-                          themeName: history.crimesceneThemeTitle || null,
-                          guildName: history.guildName || '',
-                        }}
-                        onEdit={() => {}}
-                        isMobile={false}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* 방탈출 기록 */}
-                {data.escapeRoomHistories.length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Target className="w-5 h-5" />
-                      방탈출
-                    </h3>
-                    {data.escapeRoomHistories.map((history) => (
-                      <EscapeRoomHistoryCard
-                        key={history.id}
-                        history={history}
-                        onClick={() => navigate(`/escape-room/history/${history.id}`)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* 페이지네이션 */}
-              {data.pageInfo.totalPages > 1 && (
-                <div className="mt-8 flex justify-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => handlePageChange(filter.page! - 1)}
-                    disabled={!data.pageInfo.hasPrevious}
-                  >
-                    이전
-                  </Button>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">
-                      {data.pageInfo.currentPage + 1} / {data.pageInfo.totalPages}
-                    </span>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => handlePageChange(filter.page! + 1)}
-                    disabled={!data.pageInfo.hasNext}
-                  >
-                    다음
-                  </Button>
-                </div>
-              )}
-            </>
           )}
         </TabsContent>
 
