@@ -28,9 +28,9 @@ CREATE INDEX IF NOT EXISTS `idx_board_posts_type_deleted_created`
     ON `board_posts` (`board_type`, `post_type`, `is_deleted`, `created_at` DESC);
 
 -- 5) Add index for user_posts table
--- Optimizes queries filtering by privacy and ordering by created_at
-CREATE INDEX IF NOT EXISTS `idx_user_posts_privacy_created` 
-    ON `user_posts` (`privacy`, `created_at` DESC);
+-- Optimizes queries filtering by privacy settings and ordering by created_at
+CREATE INDEX IF NOT EXISTS `idx_user_posts_private_created` 
+    ON `user_posts` (`is_private`, `is_followers_only`, `created_at` DESC);
 
 -- 6) Add index for user_granted_permissions table
 -- Optimizes permission lookups by user_id
