@@ -51,7 +51,9 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
     );
     const [hasGameHistory, setHasGameHistory] = useState(false);
     const [checkingHistory, setCheckingHistory] = useState(true);
-    const [showLoginDialog, setShowLoginDialog] = useState<false | 'like' | 'history'>(false);
+    const [showLoginDialog, setShowLoginDialog] = useState<
+        false | "like" | "history"
+    >(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [likeCount, setLikeCount] = useState(theme.recommendations || 0);
     const { toast } = useToast();
@@ -75,7 +77,7 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
             setHasGameHistory(false);
             return;
         }
-        
+
         try {
             setCheckingHistory(true);
             const hasPlayed = await escapeRoomHistoryService.hasPlayedTheme(
@@ -202,7 +204,7 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
     // 좋아요 토글
     const handleToggleLike = () => {
         if (!user?.id) {
-            setShowLoginDialog('like');
+            setShowLoginDialog("like");
             return;
         }
 
@@ -265,13 +267,13 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
     };
 
     const handleEdit = () => {
-        navigate(`/themes/edit/${theme.id}`, { 
-            state: { 
+        navigate(`/themes/edit/${theme.id}`, {
+            state: {
                 theme: {
                     ...theme,
-                    type: theme.type // 원본 타입 유지
-                }
-            } 
+                    type: theme.type, // 원본 타입 유지
+                },
+            },
         });
     };
 
@@ -360,9 +362,14 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                                     infiniteScroll: true,
                                 }}
                                 api={{
-                                    fetchComments: (page, sort) => 
-                                        escapeRoomCommentService.getCommentsByTheme(theme.id, page, 20, sort),
-                                    createComment: (data) => 
+                                    fetchComments: (page, sort) =>
+                                        escapeRoomCommentService.getCommentsByTheme(
+                                            theme.id,
+                                            page,
+                                            20,
+                                            sort
+                                        ),
+                                    createComment: (data) =>
                                         escapeRoomCommentService.createComment({
                                             escapeRoomThemeId: theme.id,
                                             content: data.content,
@@ -370,16 +377,25 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                                             parentCommentId: data.parentId,
                                         }),
                                     updateComment: (id, data) =>
-                                        escapeRoomCommentService.updateComment(id, {
-                                            content: data.content,
-                                            hasSpoiler: data.isSpoiler,
-                                        }),
+                                        escapeRoomCommentService.updateComment(
+                                            id,
+                                            {
+                                                content: data.content,
+                                                hasSpoiler: data.isSpoiler,
+                                            }
+                                        ),
                                     deleteComment: (id) =>
-                                        escapeRoomCommentService.deleteComment(id),
+                                        escapeRoomCommentService.deleteComment(
+                                            id
+                                        ),
                                     likeComment: (id) =>
-                                        escapeRoomCommentService.likeComment(id),
+                                        escapeRoomCommentService.likeComment(
+                                            id
+                                        ),
                                     unlikeComment: (id) =>
-                                        escapeRoomCommentService.unlikeComment(id),
+                                        escapeRoomCommentService.unlikeComment(
+                                            id
+                                        ),
                                 }}
                                 userInfo={{
                                     hasPlayedGame: hasGameHistory,
@@ -451,7 +467,7 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                             <Button
                                 onClick={() => {
                                     if (!user?.id) {
-                                        setShowLoginDialog('history');
+                                        setShowLoginDialog("history");
                                         return;
                                     }
                                     onAddGameHistory();
@@ -460,25 +476,6 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                                 size="lg"
                             >
                                 <Trophy className="w-5 h-5" />
-                            </Button>
-                        </div>
-                    )}
-
-                    {/* 데스크톱에서는 상단에 버튼 표시 */}
-                    {theme.allowGameHistory && onAddGameHistory && (
-                        <div className="hidden md:flex justify-end">
-                            <Button 
-                                onClick={() => {
-                                    if (!user?.id) {
-                                        setShowLoginDialog('history');
-                                        return;
-                                    }
-                                    onAddGameHistory();
-                                }}
-                                size="lg"
-                            >
-                                <Trophy className="w-4 h-4 mr-2" />
-                                플레이 기록 추가
                             </Button>
                         </div>
                     )}
@@ -494,10 +491,9 @@ const EscapeRoomDetailPage: React.FC<EscapeRoomDetailPageProps> = ({
                     <AlertDialogHeader>
                         <AlertDialogTitle>로그인이 필요합니다</AlertDialogTitle>
                         <AlertDialogDescription>
-                            {showLoginDialog === 'like' 
-                                ? '좋아요 기능을 사용하려면 로그인이 필요합니다.'
-                                : '플레이 기록을 추가하려면 로그인이 필요합니다.'
-                            }
+                            {showLoginDialog === "like"
+                                ? "좋아요 기능을 사용하려면 로그인이 필요합니다."
+                                : "플레이 기록을 추가하려면 로그인이 필요합니다."}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

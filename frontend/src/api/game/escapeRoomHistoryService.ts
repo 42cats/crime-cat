@@ -132,9 +132,15 @@ export const escapeRoomHistoryService = {
         historyId: string
     ): Promise<EscapeRoomHistoryResponse> => {
         try {
-            return await apiClient.get<EscapeRoomHistoryResponse>(
+            const response = await apiClient.get<EscapeRoomHistoryResponse>(
                 `${baseURI}/${historyId}`
             );
+            
+            // isAuthor를 isOwn으로 매핑
+            return {
+                ...response,
+                isOwn: response.isAuthor
+            };
         } catch (error) {
             console.error("방탈출 기록 조회 실패:", error);
             throw error;
@@ -152,9 +158,18 @@ export const escapeRoomHistoryService = {
                 size: size.toString(),
                 sort: "playDate,desc",
             });
-            return await apiClient.get<PageResponse<EscapeRoomHistoryResponse>>(
+            const response = await apiClient.get<PageResponse<EscapeRoomHistoryResponse>>(
                 `${baseURI}/my?${params}`
             );
+            
+            // isAuthor를 isOwn으로 매핑 (내 기록이므로 모두 true)
+            return {
+                ...response,
+                content: response.content.map(item => ({
+                    ...item,
+                    isOwn: true
+                }))
+            };
         } catch (error) {
             console.error("내 방탈출 기록 목록 조회 실패:", error);
             throw error;
@@ -173,9 +188,18 @@ export const escapeRoomHistoryService = {
                 size: size.toString(),
                 sort: "playDate,desc",
             });
-            return await apiClient.get<PageResponse<EscapeRoomHistoryResponse>>(
+            const response = await apiClient.get<PageResponse<EscapeRoomHistoryResponse>>(
                 `${publicBaseURI}/theme/${themeId}?${params}`
             );
+            
+            // isAuthor를 isOwn으로 매핑
+            return {
+                ...response,
+                content: response.content.map(item => ({
+                    ...item,
+                    isOwn: item.isAuthor
+                }))
+            };
         } catch (error) {
             console.error("테마별 방탈출 기록 목록 조회 실패:", error);
             throw error;
