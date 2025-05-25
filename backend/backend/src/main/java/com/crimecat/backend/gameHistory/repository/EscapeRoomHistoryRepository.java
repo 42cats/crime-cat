@@ -1,6 +1,7 @@
 package com.crimecat.backend.gameHistory.repository;
 
 import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
+import com.crimecat.backend.gameHistory.dto.integrated.ThemePlayCountDto;
 import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -186,4 +188,54 @@ public interface EscapeRoomHistoryRepository extends JpaRepository<EscapeRoomHis
         Long getSuccessCount();
         Double getAvgClearTime();
     }
+    
+    /**
+     * 사용자의 모든 방탈출 기록 조회 (삭제되지 않은 것만)
+     */
+    Page<EscapeRoomHistory> findByWebUserIdAndDeletedAtIsNull(UUID userId, Pageable pageable);
+    
+    /**
+     * 사용자가 플레이한 고유 테마 ID 목록 조회
+     */
+    @Query("SELECT DISTINCT erh.escapeRoomTheme.id FROM EscapeRoomHistory erh " +
+           "WHERE erh.webUser.id = :userId AND erh.deletedAt IS NULL")
+    Set<UUID> findDistinctThemeIdsByUserId(@Param("userId") UUID userId);
+    
+    /**
+     * 사용자가 플레이한 고유 테마 수 조회
+     */
+    @Query("SELECT COUNT(DISTINCT erh.escapeRoomTheme.id) FROM EscapeRoomHistory erh " +
+           "WHERE erh.webUser.id = :userId AND erh.deletedAt IS NULL")
+    long countDistinctThemesByUserId(@Param("userId") UUID userId);
+    
+    /**
+     * 사용자의 특정 테마 플레이 횟수 조회
+     */
+    @Query("SELECT COUNT(erh) FROM EscapeRoomHistory erh " +
+           "WHERE erh.webUser.id = :userId " +
+           "AND erh.escapeRoomTheme.id = :themeId " +
+           "AND erh.deletedAt IS NULL")
+    int countByWebUserIdAndEscapeRoomThemeId(@Param("userId") UUID userId, @Param("themeId") UUID themeId);
+    
+    /**
+     * 사용자의 성공 상태별 기록 수 조회
+     */
+    @Query("SELECT COUNT(erh) FROM EscapeRoomHistory erh " +
+           "WHERE erh.webUser.id = :userId " +
+           "AND erh.successStatus = :status " +
+           "AND erh.deletedAt IS NULL")
+    long countByWebUserIdAndSuccessStatus(@Param("userId") UUID userId, @Param("status") String status);
+    
+    /**
+     * 사용자의 테마별 플레이 횟수를 한 번에 조회 (N+1 방지)
+     */
+    @Query("SELECT new com.crimecat.backend.gameHistory.dto.integrated.ThemePlayCountDto(" +
+           "erh.escapeRoomTheme.id, COUNT(erh)) " +
+           "FROM EscapeRoomHistory erh " +
+           "WHERE erh.webUser.id = :userId " +
+           "AND erh.escapeRoomTheme.id IN :themeIds " +
+           "AND erh.deletedAt IS NULL " +
+           "GROUP BY erh.escapeRoomTheme.id")
+    List<ThemePlayCountDto> findPlayCountsByUserAndThemes(@Param("userId") UUID userId, 
+                                                          @Param("themeIds") List<UUID> themeIds);
 }
