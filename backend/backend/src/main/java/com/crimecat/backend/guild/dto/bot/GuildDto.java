@@ -3,6 +3,7 @@ package com.crimecat.backend.guild.dto.bot;
 import com.crimecat.backend.guild.domain.Guild;
 import lombok.*;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Getter
@@ -10,7 +11,8 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @Builder
-public class GuildDto {
+public class GuildDto implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String snowflake;
     private String name;
     private String ownerSnowflake;

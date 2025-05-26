@@ -11,6 +11,9 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -22,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommandService {
   private final CommandRepository commandRepository;
 
+  @Transactional(readOnly = true)
+  @Cacheable(value = "command:list")
   public List<CommandSummaryDto> getCommandsList() {
     List<Command> allCommands =
         commandRepository.findAll(
@@ -42,6 +47,8 @@ public class CommandService {
         .toList();
   }
 
+  @Transactional(readOnly = true)
+  @Cacheable(value = "command", key = "#commandId")
   public CommandDto getCommand(String commandId) {
     Command command =
         commandRepository
@@ -61,6 +68,7 @@ public class CommandService {
   }
 
   @Transactional
+  @CacheEvict(value = "command:list", allEntries = true)
   public void createCommand(CommandRequestDto requestDto) {
     try {
       Command newCommand =
@@ -83,6 +91,10 @@ public class CommandService {
   }
 
   @Transactional
+  @Caching(evict = {
+    @CacheEvict(value = "command", key = "#commandId"),
+    @CacheEvict(value = "command:list", allEntries = true)
+  })
   public void updateCommand(String commandId, CommandRequestDto requestDto) {
     try {
       // 1) 기존 엔티티 조회 (없으면 404)
@@ -112,6 +124,10 @@ public class CommandService {
   }
 
   @Transactional
+  @Caching(evict = {
+    @CacheEvict(value = "command", key = "#commandId"),
+    @CacheEvict(value = "command:list", allEntries = true)
+  })
   public void deleteCommand(String commandId) {
     try {
       UUID id = UUID.fromString(commandId);

@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Set;
@@ -17,7 +18,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
-public class GameThemeDetailDto {
+public class GameThemeDetailDto implements Serializable {
+    private static final long serialVersionUID = 1L;
     private UUID id;
     private String title;
     private String thumbnail;

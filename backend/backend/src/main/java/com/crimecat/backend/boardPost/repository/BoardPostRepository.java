@@ -20,6 +20,31 @@ import java.util.UUID;
 @Repository
 public interface BoardPostRepository extends JpaRepository<BoardPost, UUID>, JpaSpecificationExecutor<BoardPost> {
 
+    /**
+     * 캐시용 게시물 목록 조회 - author만 페치 (성능 최적화)
+     */
+    @Query(value = "SELECT DISTINCT p FROM BoardPost p " +
+            "JOIN FETCH p.author " +
+            "WHERE p.boardType = :boardType " +
+            "AND p.isDeleted = false",
+            countQuery = "SELECT COUNT(p) FROM BoardPost p WHERE p.boardType = :boardType AND p.isDeleted = false")
+    Page<BoardPost> findByBoardTypeWithAuthor(@Param("boardType") BoardType boardType, Pageable pageable);
+    
+    /**
+     * 캐시용 게시물 목록 조회 (타입별) - author만 페치
+     */
+    @Query(value = "SELECT DISTINCT p FROM BoardPost p " +
+            "JOIN FETCH p.author " +
+            "WHERE p.boardType = :boardType " +
+            "AND p.postType = :postType " +
+            "AND p.isDeleted = false",
+            countQuery = "SELECT COUNT(p) FROM BoardPost p WHERE p.boardType = :boardType AND p.postType = :postType AND p.isDeleted = false")
+    Page<BoardPost> findByBoardTypeAndPostTypeWithAuthor(
+            @Param("boardType") BoardType boardType,
+            @Param("postType") PostType postType,
+            Pageable pageable
+    );
+
     @Query("select "
             + "distinct p "
             + "from BoardPost p "

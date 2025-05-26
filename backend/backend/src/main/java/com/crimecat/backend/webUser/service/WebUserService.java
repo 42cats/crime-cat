@@ -30,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -88,7 +89,10 @@ public class WebUserService {
 
 
     @Transactional
-    //@cacheEvict(value = {"user:profile", "search:users"}, allEntries = true)
+    @Caching(evict = {
+        @CacheEvict(value = "user:profile", key = "#webUserProfileEditRequestDto.userId"),
+        @CacheEvict(value = "search:users", allEntries = true)
+    })
     public void userProfileSet(MultipartFile file, WebUserProfileEditRequestDto webUserProfileEditRequestDto){
         WebUser webUser = webUserRepository.findById(
                 UUID.fromString(webUserProfileEditRequestDto.getUserId()))
@@ -252,7 +256,7 @@ public class WebUserService {
     }
 
     @Transactional(readOnly = true)
-    //@cacheable(value = "user:profile", key = "#webUserId")
+    @Cacheable(value = "user:profile", key = "#webUserId")
     public UserProfileInfoResponseDto getUserInfo(String webUserId) {
         WebUser webUser = webUserRepository.findById(UUID.fromString(webUserId))
             .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
@@ -284,7 +288,7 @@ public class WebUserService {
      * @return 검색 결과를 담은 FindUserInfo 객체
      */
     @Transactional(readOnly = true)
-    //@cacheable(value = "search:users", key = "'search:' + #searchType + ':kw:' + #keyword + ':page:' + #page + ':size:' + #size")
+    @Cacheable(value = "search:users", key = "'search:' + #searchType + ':kw:' + #keyword + ':page:' + #page + ':size:' + #size")
     public FindUserInfo findUsers(String keyword, String searchType, int page, int size) {
       Pageable pageable = PageRequest.of(page, size);
       Page<UserSearchResponseDto> resultPage;

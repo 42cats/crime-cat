@@ -8,10 +8,12 @@ import com.crimecat.backend.notice.dto.PageResultDto;
 import com.crimecat.backend.notice.repository.NoticeRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +23,8 @@ public class NoticeService {
 
 
 
+  @Transactional(readOnly = true)
+  @Cacheable(value = "notice:list", key = "'page:' + #page + ':limit:' + #limit")
   public PageResultDto<NoticeSummaryResponseDto> getNotice(Integer limit, Integer page){
     Pageable pageable = PageRequest.of(page,limit);
     Page<Notice> noticePage = noticeRepository.findAllNoticesOrdered(pageable);
@@ -28,6 +32,8 @@ public class NoticeService {
     return PageResultDto.from(dtoPage);
   }
 
+  @Transactional(readOnly = true)
+  @Cacheable(value = "notice", key = "#id")
   public NoticeResponseDto getNoticeDetail(String id) {
       UUID uuid;
       try {

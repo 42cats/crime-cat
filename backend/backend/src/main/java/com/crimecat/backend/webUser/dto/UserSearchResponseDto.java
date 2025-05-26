@@ -3,10 +3,12 @@ package com.crimecat.backend.webUser.dto;
 import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.Builder;
 import lombok.Getter;
+import java.io.Serializable;
 
 @Getter
 @Builder
-public class UserSearchResponseDto {
+public class UserSearchResponseDto implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String id;
     private String nickname;
     private String discordUserSnowflake;

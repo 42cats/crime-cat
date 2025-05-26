@@ -1,9 +1,11 @@
 package com.crimecat.backend.notice.dto;
 
+import java.io.Serializable;
 import java.util.List;
 import org.springframework.data.domain.Page;
 
-public class PageResultDto<T> {
+public class PageResultDto<T> implements Serializable {
+  private static final long serialVersionUID = 1L;
   private List<T> content;
   private int page;
   private int size;

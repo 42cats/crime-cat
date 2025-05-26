@@ -1,10 +1,12 @@
 package com.crimecat.backend.gametheme.repository;
 
 import com.crimecat.backend.gametheme.domain.GameTheme;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -13,6 +15,14 @@ import org.springframework.data.repository.query.Param;
 public interface GameThemeRepository extends JpaRepository<GameTheme, UUID>, JpaSpecificationExecutor<GameTheme> {
 
   Page<GameTheme> findAll(Specification<GameTheme> spec, Pageable page);
+  
+  /**
+   * 캐시용 테마 상세 조회 - author 정보만 페치 (성능 최적화)
+   */
+  @Query("SELECT gt FROM GameTheme gt " +
+         "JOIN FETCH gt.author " +
+         "WHERE gt.id = :id")
+  Optional<GameTheme> findByIdWithAuthor(@Param("id") UUID id);
   
   /**
    * 특정 웹유저가 메이커 팀 멤버로 참여한 테마 수 조회

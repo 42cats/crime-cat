@@ -1,6 +1,7 @@
 package com.crimecat.backend.webUser.dto;
 
 import com.crimecat.backend.webUser.domain.WebUser;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -12,7 +13,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserProfileInfoResponseDto {
+public class UserProfileInfoResponseDto implements Serializable {
+  private static final long serialVersionUID = 1L;
   private String id;
   private String nickName;
   private String bio;

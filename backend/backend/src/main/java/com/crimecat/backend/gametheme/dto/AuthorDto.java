@@ -5,12 +5,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
 @Builder
-public class AuthorDto {
+public class AuthorDto implements Serializable {
+    private static final long serialVersionUID = 1L;
     private UUID id;
     private String nickname;
     private String avatarUrl;

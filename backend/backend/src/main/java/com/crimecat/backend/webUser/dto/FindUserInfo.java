@@ -1,5 +1,6 @@
 package com.crimecat.backend.webUser.dto;
 
+import java.io.Serializable;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,7 +11,8 @@ import org.springframework.data.domain.Page;
  */
 @Getter
 @Builder
-public class FindUserInfo {
+public class FindUserInfo implements Serializable {
+    private static final long serialVersionUID = 1L;
     private List<UserSearchResponseDto> content;
     private int page;
     private int size;

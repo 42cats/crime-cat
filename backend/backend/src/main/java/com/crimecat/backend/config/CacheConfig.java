@@ -1,35 +1,76 @@
 package com.crimecat.backend.config;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * 캐시 설정 클래스
+ * Redis를 사용한 캐싱 구성
+ */
 @Configuration
 @EnableCaching
-@org.springframework.context.annotation.Profile("!optimization")  // optimization이 아닐 때만 활성화
 public class CacheConfig {
 
-  @Bean
-  @org.springframework.context.annotation.Primary
-  public CacheManager cacheManager() {
-    // Caffeine 설정 빌더
-    Caffeine<Object, Object> caffeine = Caffeine.newBuilder()
-        .expireAfterWrite(10, TimeUnit.MINUTES) // 10분간 캐시 유지
-        .maximumSize(1000)                     // 최대 항목 수 제한
-        .recordStats();
+    @Bean
+    public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(10)) // 기본 TTL 10분
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()))
+                .disableCachingNullValues();
 
-    List<String> cacheNames = Arrays.asList(CacheType.CACHE_TYPE);
+        // 캐시별 개별 설정
+        Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
+        
+        // 게임 테마 캐시 (1시간)
+        cacheConfigurations.put("game:theme", defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put("game:theme:list", defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put("game:theme:like", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        
+        // 게시판 캐시 (10분)
+        cacheConfigurations.put("board:post:list", defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        cacheConfigurations.put("board:post:detail", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        
+        // 사용자 프로필 캐시 (30분)
+        cacheConfigurations.put("user:profile", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("user:profile:detail", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        
+        // 검색 결과 캐시 (5분)
+        cacheConfigurations.put("search:users", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigurations.put("search:posts", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigurations.put("search:themes", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        
+        // 통계 캐시 (1시간)
+        cacheConfigurations.put("stats:main", defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put("stats:game", defaultConfig.entryTtl(Duration.ofHours(1)));
+        
+        // 공지사항 캐시 (1시간)
+        cacheConfigurations.put("notice:list", defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put("notice:pinned", defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put("notice:detail", defaultConfig.entryTtl(Duration.ofHours(1)));
+        
+        // 명령어 캐시 (2시간)
+        cacheConfigurations.put("command:list", defaultConfig.entryTtl(Duration.ofHours(2)));
+        cacheConfigurations.put("command:detail", defaultConfig.entryTtl(Duration.ofHours(2)));
+        
+        // 해시태그 캐시 (30분)
+        cacheConfigurations.put("hashtag:popular", defaultConfig.entryTtl(Duration.ofMinutes(30)));
 
-    // CaffeineCacheManager 생성
-    CaffeineCacheManager cacheManager = new CaffeineCacheManager();
-    cacheManager.setCaffeine(caffeine);
-    cacheManager.setCacheNames(cacheNames);
-    return cacheManager;
-  }
+        return RedisCacheManager.builder(redisConnectionFactory)
+                .cacheDefaults(defaultConfig)
+                .withInitialCacheConfigurations(cacheConfigurations)
+                .build();
+    }
 }

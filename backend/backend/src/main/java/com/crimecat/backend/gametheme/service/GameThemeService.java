@@ -26,6 +26,9 @@ import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.point.service.PointHistoryService;
 import com.crimecat.backend.notification.service.NotificationService;
 import com.crimecat.backend.notification.enums.NotificationType;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,8 +38,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -129,7 +130,10 @@ public class GameThemeService {
     }
 
     @Transactional
-    //@cacheEvict(value = {"game:theme", "game:theme:list"}, key = "#themeId.toString()")
+    @Caching(evict = {
+        @CacheEvict(value = "game:theme", key = "#themeId.toString()"),
+        @CacheEvict(value = "game:theme:list", allEntries = true)
+    })
     public void deleteGameTheme(UUID themeId) {
         GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
         if (gameTheme.isDeleted()) {
@@ -141,9 +145,10 @@ public class GameThemeService {
     }
 
     @Transactional
-    //@cacheable(value = "game:theme", key = "#themeId.toString()")
+    @Cacheable(value = "game:theme", key = "#themeId.toString()")
     public GetGameThemeResponse getGameTheme(UUID themeId) {
-        GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        GameTheme gameTheme = themeRepository.findByIdWithAuthor(themeId)
+            .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
         UUID webUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
         if (gameTheme.isDeleted() || (!gameTheme.isPublicStatus() && !gameTheme.isAuthor(webUserId))) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
@@ -164,7 +169,10 @@ public class GameThemeService {
     // ================================
     
     @Transactional
-    //@cacheEvict(value = {"game:theme", "game:theme:list"}, key = "#themeId.toString()")
+    @Caching(evict = {
+        @CacheEvict(value = "game:theme", key = "#themeId.toString()"),
+        @CacheEvict(value = "game:theme:list", allEntries = true)
+    })
     public void updateCrimesceneTheme(UUID themeId, MultipartFile file, UpdateCrimesceneThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
         
@@ -192,7 +200,10 @@ public class GameThemeService {
     // ================================
     
     @Transactional
-    //@cacheEvict(value = {"game:theme", "game:theme:list"}, key = "#themeId.toString()")
+    @Caching(evict = {
+        @CacheEvict(value = "game:theme", key = "#themeId.toString()"),
+        @CacheEvict(value = "game:theme:list", allEntries = true)
+    })
     public void updateEscapeRoomTheme(UUID themeId, MultipartFile file, UpdateEscapeRoomThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
         
@@ -208,6 +219,10 @@ public class GameThemeService {
     // ================================
     
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "game:theme", key = "#themeId.toString()"),
+        @CacheEvict(value = "game:theme:list", allEntries = true)
+    })
     public void updateMurderMysteryTheme(UUID themeId, MultipartFile file, UpdateGameThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
         
@@ -223,6 +238,10 @@ public class GameThemeService {
     // ================================
     
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "game:theme", key = "#themeId.toString()"),
+        @CacheEvict(value = "game:theme:list", allEntries = true)
+    })
     public void updateRealWorldTheme(UUID themeId, MultipartFile file, UpdateGameThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
         
@@ -262,6 +281,10 @@ public class GameThemeService {
     
     @Transactional
     @Deprecated
+    @Caching(evict = {
+        @CacheEvict(value = "game:theme", key = "#themeId.toString()"),
+        @CacheEvict(value = "game:theme:list", allEntries = true)
+    })
     public void updateGameTheme(UUID themeId, MultipartFile file, UpdateGameThemeRequest request) {
         // 타입에 따라 적절한 메서드로 분기
         GameTheme gameTheme = getThemeForUpdate(themeId);
