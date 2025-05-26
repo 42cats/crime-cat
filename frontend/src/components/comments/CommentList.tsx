@@ -52,32 +52,6 @@ export function CommentList({
     const loaderRef = useRef<HTMLDivElement>(null);
     const pageSize = 10; // 한 번에 로드할 댓글 수
 
-    // 무한 스크롤을 위한 Intersection Observer 설정
-    useEffect(() => {
-        const options = {
-            root: null,
-            rootMargin: "20px",
-            threshold: 1.0,
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            const [entry] = entries;
-            if (entry.isIntersecting && hasMore && !isLoading) {
-                fetchMoreComments();
-            }
-        }, options);
-
-        if (loaderRef.current) {
-            observer.observe(loaderRef.current);
-        }
-
-        return () => {
-            if (loaderRef.current) {
-                observer.unobserve(loaderRef.current);
-            }
-        };
-    }, [hasMore, isLoading, currentPage, fetchMoreComments]); // eslint-disable-line react-hooks/exhaustive-deps
-
     // 초기 댓글 로드
     const fetchComments = async (
         page = 0,
@@ -111,7 +85,7 @@ export function CommentList({
     };
 
     // 추가 댓글 로드 (무한 스크롤)
-    const fetchMoreComments = async () => {
+    const fetchMoreComments = useCallback(async () => {
         if (!gameThemeId || isLoading || !hasMore) return;
 
         setIsLoading(true);
@@ -136,7 +110,33 @@ export function CommentList({
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [gameThemeId, isLoading, hasMore, currentPage, pageSize, sortType]);
+
+    // 무한 스크롤을 위한 Intersection Observer 설정
+    useEffect(() => {
+        const options = {
+            root: null,
+            rootMargin: "20px",
+            threshold: 1.0,
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            const [entry] = entries;
+            if (entry.isIntersecting && hasMore && !isLoading) {
+                fetchMoreComments();
+            }
+        }, options);
+
+        if (loaderRef.current) {
+            observer.observe(loaderRef.current);
+        }
+
+        return () => {
+            if (loaderRef.current) {
+                observer.unobserve(loaderRef.current);
+            }
+        };
+    }, [hasMore, isLoading, fetchMoreComments]);
 
     useEffect(() => {
         fetchComments(0, sortType, pageSize);
