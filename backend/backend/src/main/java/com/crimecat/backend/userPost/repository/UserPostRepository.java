@@ -43,9 +43,9 @@ public interface UserPostRepository extends JpaRepository<UserPost, UUID> {
     @Query(value = "SELECT DISTINCT p FROM UserPost p " +
             "LEFT JOIN FETCH p.user " +
             "LEFT JOIN FETCH p.images " +
-            "WHERE p.user = :user",
-            countQuery = "SELECT COUNT(p) FROM UserPost p WHERE p.user = :user")
-    Page<UserPost> findByUserWithImages(com.crimecat.backend.webUser.domain.WebUser user, Pageable pageable);
+            "WHERE p.user = :webUser",
+            countQuery = "SELECT COUNT(p) FROM UserPost p WHERE p.user = :webUser")
+    Page<UserPost> findByUserWithImages(@Param("webUser") com.crimecat.backend.webUser.domain.WebUser webUser, Pageable pageable);
     
     /**
      * 공개 게시글 및 특정 사용자가 접근 가능한 게시글 목록 조회 (이미지 포함)
@@ -87,16 +87,27 @@ public interface UserPostRepository extends JpaRepository<UserPost, UUID> {
     /**
      * 공개 게시물 중에서 특정 ID 목록에 해당하는 게시물만 조회
      */
-    @Query("SELECT p FROM UserPost p WHERE p.id IN :postIds AND p.isPrivate = false AND p.isFollowersOnly = false")
+    @Query(value = "SELECT DISTINCT p FROM UserPost p " +
+            "LEFT JOIN FETCH p.user " +
+            "LEFT JOIN FETCH p.images " +
+            "WHERE p.id IN :postIds AND p.isPrivate = false AND p.isFollowersOnly = false",
+            countQuery = "SELECT COUNT(p) FROM UserPost p WHERE p.id IN :postIds AND p.isPrivate = false AND p.isFollowersOnly = false")
     Page<UserPost> findPublicPostsByIds(@Param("postIds") List<UUID> postIds, Pageable pageable);
 
     /**
      * 접근 가능한 게시물 중에서 특정 ID 목록에 해당하는 게시물만 조회
      */
-    @Query("SELECT p FROM UserPost p WHERE p.id IN :postIds AND " +
+    @Query(value = "SELECT DISTINCT p FROM UserPost p " +
+            "LEFT JOIN FETCH p.user " +
+            "LEFT JOIN FETCH p.images " +
+            "WHERE p.id IN :postIds AND " +
             "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
             "p.user.id = :userId OR " +
-            "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id)))")
+            "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id)))",
+            countQuery = "SELECT COUNT(p) FROM UserPost p WHERE p.id IN :postIds AND " +
+                    "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
+                    "p.user.id = :userId OR " +
+                    "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id)))")
     Page<UserPost> findAccessiblePostsByIds(@Param("postIds") List<UUID> postIds, @Param("userId") UUID userId, Pageable pageable);
 
     /**
@@ -156,63 +167,106 @@ public interface UserPostRepository extends JpaRepository<UserPost, UUID> {
     /**
      * 키워드로 공개 게시물 검색
      */
-    @Query("SELECT p FROM UserPost p WHERE p.isPrivate = false AND p.isFollowersOnly = false AND LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY p.createdAt DESC")
+    @Query(value = "SELECT DISTINCT p FROM UserPost p " +
+            "LEFT JOIN FETCH p.user " +
+            "LEFT JOIN FETCH p.images " +
+            "WHERE p.isPrivate = false AND p.isFollowersOnly = false AND LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "ORDER BY p.createdAt DESC",
+            countQuery = "SELECT COUNT(p) FROM UserPost p WHERE p.isPrivate = false AND p.isFollowersOnly = false AND LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<UserPost> findPublicPostsByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
     /**
      * 키워드로 접근 가능한 게시물 검색
      */
-    @Query("SELECT p FROM UserPost p WHERE " +
-            "LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) AND " +
+    @Query(value = "SELECT DISTINCT p FROM UserPost p " +
+            "LEFT JOIN FETCH p.user " +
+            "LEFT JOIN FETCH p.images " +
+            "WHERE LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) AND " +
             "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
             "p.user.id = :userId OR " +
             "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id))) " +
-            "ORDER BY p.createdAt DESC")
+            "ORDER BY p.createdAt DESC",
+            countQuery = "SELECT COUNT(p) FROM UserPost p WHERE " +
+                    "LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) AND " +
+                    "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
+                    "p.user.id = :userId OR " +
+                    "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id)))")
     Page<UserPost> findAccessiblePostsByKeyword(@Param("keyword") String keyword, @Param("userId") UUID userId, Pageable pageable);
 
     /**
      * 키워드와 해시태그 ID 목록으로 공개 게시물 검색
      */
-    @Query("SELECT DISTINCT p FROM UserPost p WHERE p.id IN :postIds AND " +
+    @Query(value = "SELECT DISTINCT p FROM UserPost p " +
+            "LEFT JOIN FETCH p.user " +
+            "LEFT JOIN FETCH p.images " +
+            "WHERE p.id IN :postIds AND " +
             "LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) AND " +
             "p.isPrivate = false AND p.isFollowersOnly = false " +
-            "ORDER BY p.createdAt DESC")
+            "ORDER BY p.createdAt DESC",
+            countQuery = "SELECT COUNT(DISTINCT p) FROM UserPost p WHERE p.id IN :postIds AND " +
+                    "LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) AND " +
+                    "p.isPrivate = false AND p.isFollowersOnly = false")
     Page<UserPost> findPublicPostsByKeywordAndIds(@Param("keyword") String keyword, @Param("postIds") List<UUID> postIds, Pageable pageable);
 
     /**
      * 키워드와 해시태그 ID 목록으로 접근 가능한 게시물 검색
      */
-    @Query("SELECT DISTINCT p FROM UserPost p WHERE p.id IN :postIds AND " +
+    @Query(value = "SELECT DISTINCT p FROM UserPost p " +
+            "LEFT JOIN FETCH p.user " +
+            "LEFT JOIN FETCH p.images " +
+            "WHERE p.id IN :postIds AND " +
             "LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) AND " +
             "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
             "p.user.id = :userId OR " +
             "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id))) " +
-            "ORDER BY p.createdAt DESC")
+            "ORDER BY p.createdAt DESC",
+            countQuery = "SELECT COUNT(DISTINCT p) FROM UserPost p WHERE p.id IN :postIds AND " +
+                    "LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) AND " +
+                    "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
+                    "p.user.id = :userId OR " +
+                    "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id)))")
     Page<UserPost> findAccessiblePostsByKeywordAndIds(@Param("keyword") String keyword, @Param("postIds") List<UUID> postIds, @Param("userId") UUID userId, Pageable pageable);
     
     /**
      * 특정 사용자의 게시물 중 컨텐츠에 키워드가 포함된 게시물 검색
      */
-    @Query("SELECT p FROM UserPost p WHERE p.user = :user AND LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY p.createdAt DESC")
-    Page<UserPost> findByUserAndContentContaining(@Param("user") com.crimecat.backend.webUser.domain.WebUser user, @Param("keyword") String keyword, Pageable pageable);
+    @Query(value = "SELECT DISTINCT p FROM UserPost p " +
+            "LEFT JOIN FETCH p.user webUser " +
+            "LEFT JOIN FETCH p.images " +
+            "WHERE p.user = :webUser AND LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "ORDER BY p.createdAt DESC",
+            countQuery = "SELECT COUNT(p) FROM UserPost p WHERE p.user = :webUser AND LOWER(p.content) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<UserPost> findByUserAndContentContaining(@Param("webUser") com.crimecat.backend.webUser.domain.WebUser webUser, @Param("keyword") String keyword, Pageable pageable);
     
     /**
      * 키워드 또는 작성자 이름으로 공개 게시물 검색 (통합 검색)
      */
-    @Query("SELECT p FROM UserPost p WHERE p.isPrivate = false AND p.isFollowersOnly = false AND " +
+    @Query(value = "SELECT DISTINCT p FROM UserPost p " +
+            "LEFT JOIN FETCH p.user " +
+            "LEFT JOIN FETCH p.images " +
+            "WHERE p.isPrivate = false AND p.isFollowersOnly = false AND " +
             "(LOWER(p.content) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.user.nickname) LIKE LOWER(CONCAT('%', :query, '%'))) " +
-            "ORDER BY p.createdAt DESC")
+            "ORDER BY p.createdAt DESC",
+            countQuery = "SELECT COUNT(p) FROM UserPost p WHERE p.isPrivate = false AND p.isFollowersOnly = false AND " +
+                    "(LOWER(p.content) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.user.nickname) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<UserPost> findPublicPostsByKeywordOrAuthor(@Param("query") String query, Pageable pageable);
     
     /**
      * 키워드 또는 작성자 이름으로 접근 가능한 게시물 검색 (통합 검색)
      */
-    @Query("SELECT p FROM UserPost p WHERE " +
-            "(LOWER(p.content) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.user.nickname) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
+    @Query(value = "SELECT DISTINCT p FROM UserPost p " +
+            "LEFT JOIN FETCH p.user " +
+            "LEFT JOIN FETCH p.images " +
+            "WHERE (LOWER(p.content) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.user.nickname) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
             "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
             "p.user.id = :userId OR " +
             "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id))) " +
-            "ORDER BY p.createdAt DESC")
+            "ORDER BY p.createdAt DESC",
+            countQuery = "SELECT COUNT(p) FROM UserPost p WHERE " +
+                    "(LOWER(p.content) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.user.nickname) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
+                    "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
+                    "p.user.id = :userId OR " +
+                    "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id)))")
     Page<UserPost> findAccessiblePostsByKeywordOrAuthor(@Param("query") String query, @Param("userId") UUID userId, Pageable pageable);
     
     /**

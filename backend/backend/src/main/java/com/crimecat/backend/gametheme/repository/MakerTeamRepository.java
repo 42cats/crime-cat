@@ -10,7 +10,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface MakerTeamRepository extends JpaRepository<MakerTeam, UUID> {
-    List<MakerTeam> findByName(String name);
+    @Query("SELECT DISTINCT mt FROM MakerTeam mt " +
+           "LEFT JOIN FETCH mt.members " +
+           "WHERE mt.name = :name")
+    List<MakerTeam> findByName(@Param("name") String name);
 
     /**
      * 네이티브 쿼리로 NAME, IS_INDIVIDUAL 컬럼을 기준으로 팀 조회

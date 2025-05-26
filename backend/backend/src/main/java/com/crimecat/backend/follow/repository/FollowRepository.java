@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -19,23 +20,41 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
     boolean existsByFollowerIdAndFollowingId(UUID followerId, UUID followingId);
     
     // 특정 사용자가 팔로우하고 있는 사용자 목록 조회
-    @Query("SELECT f.following FROM Follow f WHERE f.follower.id = :userId")
-    List<WebUser> findFollowingsByUserId(UUID userId);
+    @Query("SELECT DISTINCT f.following FROM Follow f " +
+           "JOIN FETCH f.following wu " +
+           "LEFT JOIN FETCH wu.discordUser " +
+           "WHERE f.follower.id = :webUserId")
+    List<WebUser> findFollowingsByUserId(@Param("webUserId") UUID webUserId);
     
     // 특정 사용자를 팔로우하고 있는 사용자 목록 조회
-    @Query("SELECT f.follower FROM Follow f WHERE f.following.id = :userId")
-    List<WebUser> findFollowersByUserId(UUID userId);
+    @Query("SELECT DISTINCT f.follower FROM Follow f " +
+           "JOIN FETCH f.follower wu " +
+           "LEFT JOIN FETCH wu.discordUser " +
+           "WHERE f.following.id = :webUserId")
+    List<WebUser> findFollowersByUserId(@Param("webUserId") UUID webUserId);
     
     // 특정 사용자가 팔로우하고 있는 사용자 목록 페이징 조회
-    @Query("SELECT f.following FROM Follow f WHERE f.follower.id = :userId")
-    Page<WebUser> findFollowingsByUserId(UUID userId, Pageable pageable);
+    @Query(value = "SELECT DISTINCT f.following FROM Follow f " +
+           "JOIN FETCH f.following wu " +
+           "LEFT JOIN FETCH wu.discordUser " +
+           "WHERE f.follower.id = :webUserId",
+           countQuery = "SELECT COUNT(f) FROM Follow f WHERE f.follower.id = :webUserId")
+    Page<WebUser> findFollowingsByUserId(@Param("webUserId") UUID webUserId, Pageable pageable);
     
     // 특정 사용자를 팔로우하고 있는 사용자 목록 페이징 조회
-    @Query("SELECT f.follower FROM Follow f WHERE f.following.id = :userId")
-    Page<WebUser> findFollowersByUserId(UUID userId, Pageable pageable);
+    @Query(value = "SELECT DISTINCT f.follower FROM Follow f " +
+           "JOIN FETCH f.follower wu " +
+           "LEFT JOIN FETCH wu.discordUser " +
+           "WHERE f.following.id = :webUserId",
+           countQuery = "SELECT COUNT(f) FROM Follow f WHERE f.following.id = :webUserId")
+    Page<WebUser> findFollowersByUserId(@Param("webUserId") UUID webUserId, Pageable pageable);
     
     // 특정 팔로우 관계 조회
-    Optional<Follow> findByFollowerIdAndFollowingId(UUID followerId, UUID followingId);
+    @Query("SELECT f FROM Follow f " +
+           "JOIN FETCH f.follower " +
+           "JOIN FETCH f.following " +
+           "WHERE f.follower.id = :followerId AND f.following.id = :followingId")
+    Optional<Follow> findByFollowerIdAndFollowingId(@Param("followerId") UUID followerId, @Param("followingId") UUID followingId);
     
     // 특정 사용자가 팔로우하고 있는 사용자 수 조회
     long countByFollowerId(UUID followerId);
@@ -44,6 +63,6 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
     long countByFollowingId(UUID followingId);
     
     // 특정 사용자가 팔로우 관계를 맺고 있는 사용자 ID 목록 조회 (쿼리 최적화용)
-    @Query("SELECT f.following.id FROM Follow f WHERE f.follower.id = :userId")
-    List<UUID> findFollowingIdsByUserId(UUID userId);
+    @Query("SELECT f.following.id FROM Follow f WHERE f.follower.id = :webUserId")
+    List<UUID> findFollowingIdsByUserId(@Param("webUserId") UUID webUserId);
 }

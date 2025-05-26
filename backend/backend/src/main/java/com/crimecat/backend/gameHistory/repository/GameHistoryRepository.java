@@ -106,20 +106,50 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	);
 
 	//pageable 이 인자로 들어가는 것은 네이티브 쿼리로 보낼것.
-	Page<GameHistory> searchByGuild_Snowflake(String guildSnowflake, Pageable pageable);
+	@Query(value = "SELECT gh FROM GameHistory gh " +
+			"JOIN FETCH gh.user u " +
+			"LEFT JOIN FETCH u.webUser " +
+			"JOIN FETCH gh.guild g " +
+			"LEFT JOIN FETCH gh.gameTheme gt " +
+			"WHERE g.snowflake = :guildSnowflake",
+			countQuery = "SELECT COUNT(gh) FROM GameHistory gh WHERE gh.guild.snowflake = :guildSnowflake")
+	Page<GameHistory> searchByGuild_Snowflake(@Param("guildSnowflake") String guildSnowflake, Pageable pageable);
 
-	Page<GameHistory> searchByUser_DiscordSnowflake(String discordUserSnowflake, Pageable pageable);
+	@Query(value = "SELECT gh FROM GameHistory gh " +
+			"JOIN FETCH gh.user u " +
+			"LEFT JOIN FETCH u.webUser " +
+			"JOIN FETCH gh.guild g " +
+			"LEFT JOIN FETCH gh.gameTheme gt " +
+			"WHERE u.discordSnowflake = :discordUserSnowflake",
+			countQuery = "SELECT COUNT(gh) FROM GameHistory gh JOIN gh.user u WHERE u.discordSnowflake = :discordUserSnowflake")
+	Page<GameHistory> searchByUser_DiscordSnowflake(@Param("discordUserSnowflake") String discordUserSnowflake, Pageable pageable);
 
-	Page<GameHistory> findByUser_DiscordSnowflake(String discordUserSnowflake, Pageable pageable);
+	@Query(value = "SELECT gh FROM GameHistory gh " +
+			"JOIN FETCH gh.user u " +
+			"LEFT JOIN FETCH u.webUser " +
+			"JOIN FETCH gh.guild g " +
+			"LEFT JOIN FETCH gh.gameTheme gt " +
+			"WHERE u.discordSnowflake = :discordUserSnowflake",
+			countQuery = "SELECT COUNT(gh) FROM GameHistory gh JOIN gh.user u WHERE u.discordSnowflake = :discordUserSnowflake")
+	Page<GameHistory> findByUser_DiscordSnowflake(@Param("discordUserSnowflake") String discordUserSnowflake, Pageable pageable);
 
 	/**
 	 * 사용자의 게임 기록을 키워드로 검색 (이름, 제목 등)
 	 */
-	@Query("SELECT gh FROM GameHistory gh JOIN gh.user u JOIN gh.guild g LEFT JOIN gh.gameTheme gt " +
+	@Query(value = "SELECT gh FROM GameHistory gh " +
+			"JOIN FETCH gh.user u " +
+			"LEFT JOIN FETCH u.webUser " +
+			"JOIN FETCH gh.guild g " +
+			"LEFT JOIN FETCH gh.gameTheme gt " +
 			"WHERE u.discordSnowflake = :discordUserSnowflake AND " +
 			"(:keyword IS NULL OR :keyword = '' OR " +
 			"LOWER(g.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-			"LOWER(gt.title) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+			"LOWER(gt.title) LIKE LOWER(CONCAT('%', :keyword, '%')))",
+			countQuery = "SELECT COUNT(gh) FROM GameHistory gh JOIN gh.user u JOIN gh.guild g LEFT JOIN gh.gameTheme gt " +
+					"WHERE u.discordSnowflake = :discordUserSnowflake AND " +
+					"(:keyword IS NULL OR :keyword = '' OR " +
+					"LOWER(g.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+					"LOWER(gt.title) LIKE LOWER(CONCAT('%', :keyword, '%')))")
 	Page<GameHistory> findByUserSnowflakeAndKeyword(
 			@Param("discordUserSnowflake") String discordUserSnowflake,
 			@Param("keyword") String keyword,
@@ -129,11 +159,20 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	/**
 	 * 특정 길드의 게임 기록을 플레이어 이름 또는 캐릭터 이름으로 검색 (특수문자 이스케이프 처리 추가)
 	 */
-	@Query("SELECT gh FROM GameHistory gh JOIN gh.user u LEFT JOIN u.webUser wu " +
+	@Query(value = "SELECT gh FROM GameHistory gh " +
+			"JOIN FETCH gh.user u " +
+			"LEFT JOIN FETCH u.webUser wu " +
+			"JOIN FETCH gh.guild g " +
+			"LEFT JOIN FETCH gh.gameTheme gt " +
 			"WHERE gh.guild.snowflake = :guildSnowflake AND " +
 			"(:keyword IS NULL OR :keyword = '' OR " +
 			"gh.characterName LIKE CONCAT('%', :keyword, '%') OR " +
-			"wu.nickname LIKE CONCAT('%', :keyword, '%'))")
+			"wu.nickname LIKE CONCAT('%', :keyword, '%'))",
+			countQuery = "SELECT COUNT(gh) FROM GameHistory gh JOIN gh.user u LEFT JOIN u.webUser wu " +
+					"WHERE gh.guild.snowflake = :guildSnowflake AND " +
+					"(:keyword IS NULL OR :keyword = '' OR " +
+					"gh.characterName LIKE CONCAT('%', :keyword, '%') OR " +
+					"wu.nickname LIKE CONCAT('%', :keyword, '%'))")
 	Page<GameHistory> findByGuildSnowflakeAndKeyword(
 			@Param("guildSnowflake") String guildSnowflake,
 			@Param("keyword") String keyword,
@@ -141,7 +180,13 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	);
 
 
-	List<GameHistory> findByGuild_Id(UUID guildId);
+	@Query("SELECT gh FROM GameHistory gh " +
+			"JOIN FETCH gh.user u " +
+			"LEFT JOIN FETCH u.webUser " +
+			"JOIN FETCH gh.guild g " +
+			"LEFT JOIN FETCH gh.gameTheme gt " +
+			"WHERE g.id = :guildId")
+	List<GameHistory> findByGuild_Id(@Param("guildId") UUID guildId);
 
 	boolean existsByUser_WebUser_IdAndGameTheme_Id(UUID userWebUserId, UUID gameThemeId);
 
@@ -152,7 +197,11 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	/**
 	 * 사용자의 게임 기록을 다양한 필터 조건으로 검색
 	 */
-	@Query("SELECT gh FROM GameHistory gh JOIN gh.user u JOIN gh.guild g LEFT JOIN gh.gameTheme gt " +
+	@Query(value = "SELECT gh FROM GameHistory gh " +
+			"JOIN FETCH gh.user u " +
+			"LEFT JOIN FETCH u.webUser " +
+			"JOIN FETCH gh.guild g " +
+			"LEFT JOIN FETCH gh.gameTheme gt " +
 			"WHERE u.discordSnowflake = :discordUserSnowflake AND " +
 			"(:keyword IS NULL OR :keyword = '' OR " +
 			"LOWER(g.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
@@ -163,7 +212,19 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 			"(:startDate IS NULL OR gh.createdAt >= :startDate) AND " +
 			"(:endDate IS NULL OR gh.createdAt <= :endDate) AND " +
 			"(:hasTheme IS NULL OR (:hasTheme = true AND gh.gameTheme IS NOT NULL) OR " +
-			"(:hasTheme = false AND gh.gameTheme IS NULL))")
+			"(:hasTheme = false AND gh.gameTheme IS NULL))",
+			countQuery = "SELECT COUNT(gh) FROM GameHistory gh JOIN gh.user u JOIN gh.guild g LEFT JOIN gh.gameTheme gt " +
+					"WHERE u.discordSnowflake = :discordUserSnowflake AND " +
+					"(:keyword IS NULL OR :keyword = '' OR " +
+					"LOWER(g.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+					"LOWER(gt.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+					"LOWER(gh.characterName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+					"LOWER(gh.memo) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
+					"(:winFilter IS NULL OR gh.isWin = :winFilter) AND " +
+					"(:startDate IS NULL OR gh.createdAt >= :startDate) AND " +
+					"(:endDate IS NULL OR gh.createdAt <= :endDate) AND " +
+					"(:hasTheme IS NULL OR (:hasTheme = true AND gh.gameTheme IS NOT NULL) OR " +
+					"(:hasTheme = false AND gh.gameTheme IS NULL))")
 	Page<GameHistory> findByUserSnowflakeWithFilters(
 			@Param("discordUserSnowflake") String discordUserSnowflake,
 			@Param("keyword") String keyword,
@@ -177,7 +238,11 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	/**
 	 * 길드의 게임 기록을 다양한 필터 조건으로 검색
 	 */
-	@Query("SELECT gh FROM GameHistory gh JOIN gh.user u LEFT JOIN u.webUser wu LEFT JOIN gh.gameTheme gt " +
+	@Query(value = "SELECT gh FROM GameHistory gh " +
+			"JOIN FETCH gh.user u " +
+			"LEFT JOIN FETCH u.webUser wu " +
+			"JOIN FETCH gh.guild g " +
+			"LEFT JOIN FETCH gh.gameTheme gt " +
 			"WHERE gh.guild.snowflake = :guildSnowflake AND " +
 			"(:keyword IS NULL OR :keyword = '' OR " +
 			"gh.characterName LIKE CONCAT('%', :keyword, '%') OR " +
@@ -188,7 +253,19 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 			"(:startDate IS NULL OR gh.createdAt >= :startDate) AND " +
 			"(:endDate IS NULL OR gh.createdAt <= :endDate) AND " +
 			"(:hasTheme IS NULL OR (:hasTheme = true AND gh.gameTheme IS NOT NULL) OR " +
-			"(:hasTheme = false AND gh.gameTheme IS NULL))")
+			"(:hasTheme = false AND gh.gameTheme IS NULL))",
+			countQuery = "SELECT COUNT(gh) FROM GameHistory gh JOIN gh.user u LEFT JOIN u.webUser wu LEFT JOIN gh.gameTheme gt " +
+					"WHERE gh.guild.snowflake = :guildSnowflake AND " +
+					"(:keyword IS NULL OR :keyword = '' OR " +
+					"gh.characterName LIKE CONCAT('%', :keyword, '%') OR " +
+					"wu.nickname LIKE CONCAT('%', :keyword, '%') OR " +
+					"gt.title LIKE CONCAT('%', :keyword, '%') OR " +
+					"gh.memo LIKE CONCAT('%', :keyword, '%')) AND " +
+					"(:winFilter IS NULL OR gh.isWin = :winFilter) AND " +
+					"(:startDate IS NULL OR gh.createdAt >= :startDate) AND " +
+					"(:endDate IS NULL OR gh.createdAt <= :endDate) AND " +
+					"(:hasTheme IS NULL OR (:hasTheme = true AND gh.gameTheme IS NOT NULL) OR " +
+					"(:hasTheme = false AND gh.gameTheme IS NULL))")
 	Page<GameHistory> findByGuildSnowflakeWithFilters(
 			@Param("guildSnowflake") String guildSnowflake,
 			@Param("keyword") String keyword,
@@ -239,7 +316,19 @@ public interface GameHistoryRepository extends JpaRepository<GameHistory, UUID> 
 	 */
 	Optional<GameHistory> findByUser_DiscordUserSnowflakeAndGameTheme_Id(String discordUserSnowflake, UUID themeId);
 
-	List<GameHistory> findAllByUser(User user);
+	@Query("SELECT gh FROM GameHistory gh " +
+			"JOIN FETCH gh.user u " +
+			"LEFT JOIN FETCH u.webUser " +
+			"JOIN FETCH gh.guild g " +
+			"LEFT JOIN FETCH gh.gameTheme gt " +
+			"WHERE gh.user = :user")
+	List<GameHistory> findAllByUser(@Param("user") User user);
 
-	Optional<GameHistory> findByUserAndGameTheme_Id(User user, UUID gameThemeId);
+	@Query("SELECT gh FROM GameHistory gh " +
+			"JOIN FETCH gh.user u " +
+			"LEFT JOIN FETCH u.webUser " +
+			"JOIN FETCH gh.guild g " +
+			"LEFT JOIN FETCH gh.gameTheme gt " +
+			"WHERE gh.user = :user AND gh.gameTheme.id = :gameThemeId")
+	Optional<GameHistory> findByUserAndGameTheme_Id(@Param("user") User user, @Param("gameThemeId") UUID gameThemeId);
 }

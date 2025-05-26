@@ -60,34 +60,40 @@ public class FollowService {
     }
     
     // 팔로우 여부 확인
+    @Transactional(readOnly = true)
     public boolean isFollowing(UUID followerId, UUID followingId) {
         return followRepository.existsByFollowerIdAndFollowingId(followerId, followingId);
     }
     
     // 팔로워 목록 조회
-    public Page<FollowDto> getFollowers(UUID userId, Pageable pageable) {
-        Page<WebUser> followers = followRepository.findFollowersByUserId(userId, pageable);
+    @Transactional(readOnly = true)
+    public Page<FollowDto> getFollowers(UUID webUserId, Pageable pageable) {
+        Page<WebUser> followers = followRepository.findFollowersByUserId(webUserId, pageable);
         return followers.map(FollowDto::fromFollower);
     }
     
     // 팔로잉 목록 조회
-    public Page<FollowDto> getFollowings(UUID userId, Pageable pageable) {
-        Page<WebUser> followings = followRepository.findFollowingsByUserId(userId, pageable);
+    @Transactional(readOnly = true)
+    public Page<FollowDto> getFollowings(UUID webUserId, Pageable pageable) {
+        Page<WebUser> followings = followRepository.findFollowingsByUserId(webUserId, pageable);
         return followings.map(FollowDto::fromFollowing);
     }
     
     // 팔로워 수 조회
-    public long getFollowerCount(UUID userId) {
-        return followRepository.countByFollowingId(userId);
+    @Transactional(readOnly = true)
+    public long getFollowerCount(UUID webUserId) {
+        return followRepository.countByFollowingId(webUserId);
     }
     
     // 팔로잉 수 조회
-    public long getFollowingCount(UUID userId) {
-        return followRepository.countByFollowerId(userId);
+    @Transactional(readOnly = true)
+    public long getFollowingCount(UUID webUserId) {
+        return followRepository.countByFollowerId(webUserId);
     }
     
     // 팔로우 ID 목록 조회 (UserPost 권한 검사용)
-    public List<UUID> getFollowingIds(UUID userId) {
-        return followRepository.findFollowingIdsByUserId(userId);
+    @Transactional(readOnly = true)
+    public List<UUID> getFollowingIds(UUID webUserId) {
+        return followRepository.findFollowingIdsByUserId(webUserId);
     }
 }

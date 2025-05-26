@@ -56,10 +56,11 @@ public class WebUserService {
     private final MakerTeamRepository makerTeamRepository;
 
 
-    public ResponseEntity<Map<String, Object>> isDailyCheck(String userId) {
-        webUserRepository.findById(UUID.fromString(userId))
+    @Transactional(readOnly = true)
+    public ResponseEntity<Map<String, Object>> isDailyCheck(String webUserId) {
+        webUserRepository.findById(UUID.fromString(webUserId))
                 .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
-        Optional<LocalDateTime> existing = userDailyCheckUtil.load(userId);
+        Optional<LocalDateTime> existing = userDailyCheckUtil.load(webUserId);
 
         Map<String, Object> response = new HashMap<>();
 
@@ -69,14 +70,14 @@ public class WebUserService {
     }
 
     @Transactional
-    public ResponseEntity<Map<String, Object>> userDailyCheck(String userId) {
-        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
+    public ResponseEntity<Map<String, Object>> userDailyCheck(String webUserId) {
+        WebUser webUser = webUserRepository.findById(UUID.fromString(webUserId))
             .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
-        Optional<LocalDateTime> existing = userDailyCheckUtil.load(userId);
+        Optional<LocalDateTime> existing = userDailyCheckUtil.load(webUserId);
 
         Map<String, Object> response = new HashMap<>();
         if (existing.isEmpty()) {
-            userDailyCheckUtil.save(userId);
+            userDailyCheckUtil.save(webUserId);
             pointHistoryService.dailyCheckPoint(webUser.getUser(),100);
             response.put("isComplete", true);
             response.put("checkTime", LocalDateTime.now()); // 현재 시간 기준으로 출석 시각 반환
@@ -251,24 +252,24 @@ public class WebUserService {
     }
 
     @Transactional(readOnly = true)
-    //@cacheable(value = "user:profile", key = "#userId")
-    public UserProfileInfoResponseDto getUserInfo(String userId) {
-        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
+    //@cacheable(value = "user:profile", key = "#webUserId")
+    public UserProfileInfoResponseDto getUserInfo(String webUserId) {
+        WebUser webUser = webUserRepository.findById(UUID.fromString(webUserId))
             .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
         return UserProfileInfoResponseDto.from(webUser);
     }
 
     @Transactional(readOnly = true)
-    public NotificationSettingsResponseDto getUserNotificationSettings(String userId) {
-        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
+    public NotificationSettingsResponseDto getUserNotificationSettings(String webUserId) {
+        WebUser webUser = webUserRepository.findById(UUID.fromString(webUserId))
             .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
         return NotificationSettingsResponseDto.from(webUser);
     }
 
     @Transactional
-    public NotificationSettingsResponseDto setAllNotificationSetting(String userId, NotificationSettingsRequestDto body, AlarmType alarmType) {
+    public NotificationSettingsResponseDto setAllNotificationSetting(String webUserId, NotificationSettingsRequestDto body, AlarmType alarmType) {
 
-        WebUser webUser = webUserRepository.findById(UUID.fromString(userId))
+        WebUser webUser = webUserRepository.findById(UUID.fromString(webUserId))
             .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
         alarmType.apply(webUser,body);
         return NotificationSettingsResponseDto.from(webUser);
@@ -350,10 +351,10 @@ public class WebUserService {
       return value.matches("^\\d+$");
     }
 
-    //@cacheable(value = "user:profile", key = "'detail:' + #userId.toString()")
-    public ProfileDetailDto getUserProfileDetail(UUID userId) {
+    //@cacheable(value = "user:profile", key = "'detail:' + #webUserId.toString()")
+    public ProfileDetailDto getUserProfileDetail(UUID webUserId) {
       boolean authenticated = AuthenticationUtil.isAuthenticated();
-      WebUser webUser = webUserRepository.findById(userId)
+      WebUser webUser = webUserRepository.findById(webUserId)
           .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
       Integer playCount = gameHistoryRepository.countGameHistoriesByUser(webUser.getUser());
       if(authenticated){
@@ -399,8 +400,8 @@ public class WebUserService {
      * 특정 사용자의 역할을 변경합니다. 관리자만 가능합니다.
      */
     @Transactional
-    public WebUserResponse changeUserRole(UUID userId, UserRole newRole) {
-        WebUser webUser = webUserRepository.findById(userId)
+    public WebUserResponse changeUserRole(UUID webUserId, UserRole newRole) {
+        WebUser webUser = webUserRepository.findById(webUserId)
                 .orElseThrow(() -> ErrorStatus.USER_NOT_FOUND.asException());
         
         webUser.setRole(newRole);
@@ -413,8 +414,8 @@ public class WebUserService {
      * 사용자를 차단합니다. 관리자만 가능합니다.
      */
     @Transactional
-    public WebUserResponse blockUser(UUID userId) {
-        WebUser webUser = webUserRepository.findById(userId)
+    public WebUserResponse blockUser(UUID webUserId) {
+        WebUser webUser = webUserRepository.findById(webUserId)
                 .orElseThrow(() -> ErrorStatus.USER_NOT_FOUND.asException());
         
         webUser.setIsBanned(true);
@@ -448,8 +449,8 @@ public class WebUserService {
      * 사용자의 차단 정보를 조회합니다.
      */
     @Transactional(readOnly = true)
-    public BlockInfoResponse getBlockInfo(UUID userId) {
-        WebUser webUser = webUserRepository.findById(userId)
+    public BlockInfoResponse getBlockInfo(UUID webUserId) {
+        WebUser webUser = webUserRepository.findById(webUserId)
                 .orElseThrow(() -> ErrorStatus.USER_NOT_FOUND.asException());
         
         return BlockInfoResponse.from(webUser);
@@ -459,8 +460,8 @@ public class WebUserService {
      * 사용자의 차단을 해제합니다. 관리자만 가능합니다.
      */
     @Transactional
-    public WebUserResponse unblockUser(UUID userId) {
-        WebUser webUser = webUserRepository.findById(userId)
+    public WebUserResponse unblockUser(UUID webUserId) {
+        WebUser webUser = webUserRepository.findById(webUserId)
                 .orElseThrow(() -> ErrorStatus.USER_NOT_FOUND.asException());
         
         webUser.setIsBanned(false);

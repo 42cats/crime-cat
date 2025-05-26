@@ -128,6 +128,7 @@ public class GameThemeService {
         }
     }
 
+    @Transactional
     //@cacheEvict(value = {"game:theme", "game:theme:list"}, key = "#themeId.toString()")
     public void deleteGameTheme(UUID themeId) {
         GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
