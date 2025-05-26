@@ -4,7 +4,7 @@ import { authService } from '@/api/auth';
 import { isUser } from "@/utils/guard";
 import { UserRole } from "@/lib/types";
 import { BlockInfo } from "@/types/user";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 export const useAuth = () => {
     const [user, setUser] = useRecoilState(userState);
@@ -12,7 +12,7 @@ export const useAuth = () => {
     const [blockInfo, setBlockInfo] = useState<BlockInfo | null>(null);
     const [isBlocked, setIsBlocked] = useState(false);
 
-    const getCurrentUser = async () => {
+    const getCurrentUser = useCallback(async () => {
         setIsLoading(true);
         try {
             const user = await authService.getCurrentUser();
@@ -46,7 +46,7 @@ export const useAuth = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [setUser, setIsLoading]);
 
     const hasRole = (roles: string[]) => {
         return user != null && roles.includes(user.role);

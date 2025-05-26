@@ -13,10 +13,9 @@ const AuthInitializer = () => {
     registerSetUser(setUser);
 
     useEffect(() => {
-        if (!user) {
-            getCurrentUser();
-        }
-    }, [user, getCurrentUser]);
+        // 최초 한 번만 사용자 정보를 가져오도록 수정
+        getCurrentUser();
+    }, []); // 빈 의존성 배열로 변경
 
     useEffect(() => {
         if (isBlocked && blockInfo && user) {

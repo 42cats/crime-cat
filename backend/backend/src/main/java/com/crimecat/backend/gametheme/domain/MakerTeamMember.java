@@ -12,7 +12,7 @@ import org.hibernate.type.SqlTypes;
 import java.util.UUID;
 
 @Entity
-@Table(name = "MAKER_TEAM_MEMBERS")
+@Table(name = "maker_team_members")
 @NoArgsConstructor
 @Getter
 @Builder

@@ -71,7 +71,14 @@ instance.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
+        // 특정 URL들은 재시도하지 않음
         if (originalRequest.url?.includes("/auth/reissue")) {
+            return Promise.reject(error);
+        }
+
+        // /auth/me에 대한 401은 즉시 반환 (재시도 안함)
+        if (originalRequest.url?.includes("/auth/me") && error.response?.status === 401) {
+            console.log("/auth/me 401 에러 - 재시도하지 않고 즉시 반환");
             return Promise.reject(error);
         }
 
@@ -80,7 +87,6 @@ instance.interceptors.response.use(
         if (
             status === 401 &&
             !originalRequest._retry &&
-            !originalRequest.url?.includes("/auth/me") &&
             !originalRequest.url?.includes("/public/")
         ) {
             originalRequest._retry = true;
