@@ -1,6 +1,6 @@
 package com.crimecat.backend.gametheme.dto;
 
-import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,23 +17,14 @@ public class AuthorDto {
     private String nickname;
     private String avatarUrl;
 
-    public static AuthorDto from(User user) {
+    public static AuthorDto from(WebUser user) {
         if (user == null) {
             return null;
         }
-        
-        if (user.getWebUser() == null) {
-            return AuthorDto.builder()
-                .id(user.getId())
-                .nickname(user.getName())
-                .avatarUrl(null)
-                .build();
-        }
-        
-        return AuthorDto.builder()
-            .id(user.getWebUser().getId())
-            .nickname(user.getWebUser().getNickname())
-            .avatarUrl(user.getWebUser().getProfileImagePath())
-            .build();
+    return AuthorDto.builder()
+        .id(user.getId())
+        .nickname(user.getNickname())
+        .avatarUrl(user.getProfileImagePath())
+        .build();
     }
 }

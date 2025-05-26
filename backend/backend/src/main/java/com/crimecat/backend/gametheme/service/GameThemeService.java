@@ -134,10 +134,7 @@ public class GameThemeService {
         if (gameTheme.isDeleted()) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
-        User currentUser = AuthenticationUtil.getCurrentUser();
-        if (!currentUser.getId().equals(gameTheme.getAuthorId())) {
-            throw ErrorStatus.FORBIDDEN.asServiceException();
-        }
+        AuthenticationUtil.validateCurrentUserMatches(gameTheme.getAuthorId());
         gameTheme.setIsDelete(true);
         themeRepository.save(gameTheme);
     }
@@ -146,8 +143,8 @@ public class GameThemeService {
     //@Cacheable(value = "game:theme", key = "#themeId.toString()")
     public GetGameThemeResponse getGameTheme(UUID themeId) {
         GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        UUID userId = AuthenticationUtil.getCurrentUserIdOptional().orElse(null);
-        if (gameTheme.isDeleted() || (!gameTheme.isPublicStatus() && !gameTheme.isAuthor(userId))) {
+        UUID webUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
+        if (gameTheme.isDeleted() || (!gameTheme.isPublicStatus() && !gameTheme.isAuthor(webUserId))) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
         String clientIp = (String) ((ServletRequestAttributes) Objects.requireNonNull(
@@ -247,10 +244,7 @@ public class GameThemeService {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
 
-        User currentUser = AuthenticationUtil.getCurrentUser();
-        if (!currentUser.getId().equals(gameTheme.getAuthorId())) {
-            throw ErrorStatus.FORBIDDEN.asServiceException();
-        }
+        AuthenticationUtil.validateCurrentUserMatches(gameTheme.getAuthorId());
         return gameTheme;
     }
 
