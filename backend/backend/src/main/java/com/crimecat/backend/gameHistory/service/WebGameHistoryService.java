@@ -230,7 +230,7 @@ public class WebGameHistoryService {
 		if (gameTheme instanceof CrimesceneTheme crimesceneTheme) {
 			// 스트림 API를 사용하여 제작팀 멤버 확인
 			boolean isMember = crimesceneTheme.getTeam().getMembers().stream()
-					.anyMatch(member -> member.getWebUserId().equals(currentWebUser.getId()));
+					.anyMatch(member -> member.getWebUser().getId().equals(currentWebUser.getId()));
 			
 			if (isMember) {
 				return CheckPlayResponseDto.from(true);

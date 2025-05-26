@@ -25,14 +25,14 @@ public class MemberDto {
                 .id(member.getId())
                 .name(member.getName())
                 .isLeader(member.isLeader())
-                .userId(member.getWebUserId())
+                .userId(member.getWebUser().getId())
                 .build();
     }
     
     public static MemberDto fromWithAvatar(MakerTeamMember member, WebUserRepository webUserRepository) {
         String avatarUrl = null;
-        if (member.getWebUserId() != null) {
-            Optional<WebUser> webUserOpt = webUserRepository.findById(member.getWebUserId());
+        if (member.getWebUser().getId() != null) {
+            Optional<WebUser> webUserOpt = webUserRepository.findById(member.getWebUser().getId());
             if (webUserOpt.isPresent()) {
                 avatarUrl = webUserOpt.get().getProfileImagePath();
             }
@@ -42,7 +42,7 @@ public class MemberDto {
                 .id(member.getId())
                 .name(member.getName())
                 .isLeader(member.isLeader())
-                .userId(member.getWebUserId())
+                .userId(member.getWebUser().getId())
                 .avatarUrl(avatarUrl)
                 .build();
     }

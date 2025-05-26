@@ -12,9 +12,6 @@ import org.springframework.data.repository.query.Param;
 import com.crimecat.backend.webUser.domain.WebUser;
 
 public interface WebUserRepository extends JpaRepository<WebUser, UUID> {
-    @Override
-    Optional<WebUser> findById(UUID uuid);
-
     Optional<WebUser> findWebUserByDiscordUserSnowflake(String discordUserId);
 
     Optional<WebUser> findWebUserByEmail(String email);

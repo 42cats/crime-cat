@@ -36,7 +36,7 @@ public class MakerTeamService {
                 .isIndividual(isIndividual)
                 .build());
         teamMemberRepository.save(MakerTeamMember.builder()
-                .webUserId(leader.getId())
+                .webUser(leader)
                 .name(leader.getUsername())
                 .team(team)
                 .isLeader(true)
@@ -93,13 +93,13 @@ public class MakerTeamService {
             // TODO: 리스트 추가 시 에러 > exception 던질지 나머지는 처리할지
             WebUser webUser = webUserRepository.findById(member.getUserId())
                     .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
-            builder.webUserId(webUser.getId());
+            builder.webUser(webUser);
             // 팀 멤버 이름 명시하지 않았고, 유저 존재할 때 유저 정보에서 이름 가져오기
             if (name == null) {
                 name = webUser.getNickname();
             }
             // webUserId로 중복 유저 확인
-            if (team.getMembers().stream().anyMatch(v -> webUser.getId().equals(v.getWebUserId()))) {
+            if (team.getMembers().stream().anyMatch(v -> webUser.getId().equals(v.getWebUser().getId()))) {
                 // TODO: 리스트 추가 시 에러 > exception 던질지 나머지는 처리할지
                 throw ErrorStatus.TEAM_MEMBER_ALREADY_REGISTERED.asServiceException();
             }
@@ -191,8 +191,8 @@ public class MakerTeamService {
         );
     }
     @Transactional(readOnly = true)
-    public List<UUID> getTargetTeams(UUID userId) {
-        return teamMemberRepository.findByWebUserId(userId).stream()
+    public List<UUID> getTargetTeams(UUID webUserId) {
+        return teamMemberRepository.findByWebUserId(webUserId).stream()
                 .map(v-> v.getTeam().getId())
                 .toList();
     }
@@ -201,11 +201,11 @@ public class MakerTeamService {
         MakerTeam team = teamRepository.findById(teamId).orElseThrow(ErrorStatus.TEAM_NOT_FOUND::asServiceException);
         MakerTeamMember member = teamMemberRepository.findById(memberId).orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
         if (!isTeamLeader(teamId)) {
-            AuthenticationUtil.validateCurrentUserMatches(member.getWebUserId());
+            AuthenticationUtil.validateCurrentUserMatches(member.getWebUser().getUser().getId());
             member.setName(updateInfo.getName());
             return;
         }
-        if (member.getWebUserId().equals(AuthenticationUtil.getCurrentWebUserId()) && !updateInfo.isLeader()) {
+        if (member.getWebUser().getId().equals(AuthenticationUtil.getCurrentWebUserId()) && !updateInfo.isLeader()) {
             long leaderCount = team.getMembers().stream().filter(MakerTeamMember::isLeader).count();
             if (leaderCount == 1) {
                 throw ErrorStatus.INVALID_INPUT.asServiceException();
