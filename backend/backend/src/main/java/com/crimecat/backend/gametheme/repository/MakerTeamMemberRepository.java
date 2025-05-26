@@ -24,8 +24,7 @@ public interface MakerTeamMemberRepository extends JpaRepository<MakerTeamMember
      * 특정 팀의 멤버 중 댓글 알림을 받는 멤버들의 WebUser ID 조회
      * WebUser의 postComment 설정이 true인 멤버만 조회
      */
-    @Query("SELECT m.webUserId FROM MakerTeamMember m " +
-           "JOIN m.webUser w " +
+    @Query("SELECT m.webUser w FROM MakerTeamMember m " +
            "WHERE m.team.id = :teamId " +
            "AND w.postComment = true")
     List<UUID> findWebUserIdsWithCommentNotificationByTeamId(@Param("teamId") UUID teamId);

@@ -22,7 +22,7 @@ public interface GameThemeRepository extends JpaRepository<GameTheme, UUID>, Jpa
          "JOIN CrimesceneTheme ct ON gt.id = ct.id " +
          "JOIN ct.team t " +
          "JOIN t.members m " +
-         "WHERE m.webUserId = :webUserId " +
+         "WHERE m.webUser.id = :webUserId " +
          "AND gt.isDeleted = false")
   Long countByMakerTeamMember_WebUserId(@Param("webUserId") UUID webUserId);
 
