@@ -7,7 +7,7 @@ export interface UserSetting {
 export interface AuthorDto {
     id: string;
     nickname: string;
-    avatarUrl: string | null;
+    avatarUrl?: string | null;
 }
 
 export interface TeamDto {
@@ -39,7 +39,7 @@ export interface ThemeDetailType {
     recommendations: number;
     views: number;
     playCount: number;
-    author: AuthorDto | null;
+    author?: AuthorDto | null;
     playersMin: number;
     playersMax: number;
     playTimeMin: number;

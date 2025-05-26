@@ -57,7 +57,7 @@ export const updateUserProfile = async (
             `/web_user/${userId}/profile`,
             formData
         );
-        return response.data;
+        return response;
     } catch (error) {
         console.error("프로필 정보 업데이트 실패:", error);
         throw error;
@@ -87,7 +87,7 @@ export const updateProfileImage = async (
                 },
             }
         );
-        return response.data;
+        return response;
     } catch (error) {
         console.error("프로필 이미지 업데이트 실패:", error);
         throw error;

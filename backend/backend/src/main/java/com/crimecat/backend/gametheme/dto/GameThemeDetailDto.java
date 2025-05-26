@@ -55,7 +55,7 @@ public class GameThemeDetailDto {
                 .recommendations(theme.getRecommendations())
                 .views(theme.getViews())
                 .playCount(theme.getPlayCount())
-                .author(AuthorDto.from(theme.getAuthor()))
+                .author(buildAuthorDto(theme))
                 .playersMin(theme.getPlayerMin())
                 .playersMax(theme.getPlayerMax())
                 .playTimeMin(theme.getPlayTimeMin())
@@ -70,5 +70,17 @@ public class GameThemeDetailDto {
                 .recommendationEnabled(theme.isRecommendationEnabled())
                 .commentEnabled(theme.isCommentEnabled())
                 .build();
+    }
+    
+    private static AuthorDto buildAuthorDto(GameTheme theme) {
+        try {
+            if (theme.getAuthor() != null) {
+                return AuthorDto.from(theme.getAuthor());
+            }
+        } catch (Exception e) {
+            // Lazy loading 실패 시 처리
+            return null;
+        }
+        return null;
     }
 }

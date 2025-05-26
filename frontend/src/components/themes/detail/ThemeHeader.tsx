@@ -62,29 +62,33 @@ const ThemeHeader: React.FC<ThemeHeaderProps> = ({
           {/* 작성자 + 시간 (제목 아래, 우측 정렬) */}
           <div className="flex justify-end text-muted-foreground text-sm">
             <div className="flex flex-col items-end">
-              <button
-                className="hover:text-primary transition-colors font-medium flex items-center gap-2 justify-end mb-1"
-                onClick={() => onProfileClick(theme.author.id)}
-              >
-                {theme.author.avatarUrl ? (
+              {theme.author ? (
+                <button
+                  className="hover:text-primary transition-colors font-medium flex items-center gap-2 justify-end mb-1"
+                  onClick={() => theme.author?.id && onProfileClick(theme.author.id)}
+                >
+                {theme.author && theme.author.avatarUrl ? (
                   <Avatar className="h-5 w-5 border border-border">
                     <AvatarImage
                       src={theme.author.avatarUrl}
                       alt={theme.author.nickname}
                     />
                     <AvatarFallback className="bg-muted text-xs text-primary font-bold">
-                      {theme.author.nickname.charAt(0).toUpperCase()}
+                      {theme.author.nickname?.charAt(0).toUpperCase() || '?'}
                     </AvatarFallback>
                   </Avatar>
                 ) : (
                   <Avatar className="h-5 w-5 border border-border">
                     <AvatarFallback className="bg-muted text-xs text-primary font-bold">
-                      {theme.author.nickname.charAt(0).toUpperCase()}
+                      {theme.author?.nickname?.charAt(0).toUpperCase() || '?'}
                     </AvatarFallback>
                   </Avatar>
                 )}
-                {theme.author.nickname}
-              </button>
+                {theme.author?.nickname || '알 수 없음'}
+                </button>
+              ) : (
+                <span className="text-muted-foreground">작성자 정보 없음</span>
+              )}
               <span><UTCToKST date={theme.createdAt} /></span>
             </div>
           </div>

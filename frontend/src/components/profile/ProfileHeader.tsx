@@ -109,7 +109,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
                 {/* 프로필 이미지 */}
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-2 border-blue-100 p-1 bg-white shadow-sm overflow-hidden">
-                    {profile?.avatarImage ? (
+                    {profile && profile.avatarImage ? (
                         <img
                             src={profile.avatarImage}
                             alt={`${profile.userNickname}의 프로필`}

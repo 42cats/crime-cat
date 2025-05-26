@@ -116,7 +116,7 @@ export const useProfileAPI = () => {
         description: '프로필 이미지가 성공적으로 업데이트되었습니다.',
       });
       
-      return result.avatarUrl;
+      return result?.avatarUrl || null;
     } catch (err: any) {
       setError(err.message || '프로필 이미지 업데이트 중 오류가 발생했습니다.');
       toast({
