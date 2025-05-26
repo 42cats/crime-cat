@@ -23,20 +23,25 @@ public class PermissionQueryService {
 	}
 
 	@Transactional
-	@CacheEvict(value = {"permission:name", "permission:all"}, allEntries = true)
+	@CacheEvict(value = "permission:name", allEntries = true)
 	public void savePermission(String name, Integer price, Integer duration, String info) {
 		permissionRepository.save(new Permission(name, price, duration, info));
 	}
 
 	@Transactional
-	@CacheEvict(value = {"permission:name", "permission:all"}, allEntries = true)
+	@CacheEvict(value = "permission:name", allEntries = true)
 	public void deletePermission(Permission permission) {
 		permissionRepository.delete(permission);
 	}
 
 	@Transactional(readOnly = true)
-	@Cacheable(value = "permission:all")
 	public List<Permission> findAll(){
 		return permissionRepository.findAll();
+	}
+
+	@Transactional
+	@CacheEvict(value = "permission:name", allEntries = true)
+	public void save(Permission permission) {
+		permissionRepository.save(permission);
 	}
 }
