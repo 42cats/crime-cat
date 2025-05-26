@@ -15,22 +15,22 @@ public class PermissionQueryService {
 
 	private final PermissionRepository permissionRepository;
 
-	@Cacheable(value = "permission:name", key = "#permissionName")
+	//@cacheable(value = "permission:name", key = "#permissionName")
 	public Permission findPermissionByPermissionName(String permissionName) {
 		return permissionRepository.findByPermissionName(permissionName).orElse(null);
 	}
 
-	@CacheEvict(value = {"permission:name", "permission:all"}, allEntries = true)
+	//@cacheEvict(value = {"permission:name", "permission:all"}, allEntries = true)
 	public void savePermission(String name, Integer price, Integer duration, String info) {
 		permissionRepository.save(new Permission(name, price, duration, info));
 	}
 
-	@CacheEvict(value = {"permission:name", "permission:all"}, allEntries = true)
+	//@cacheEvict(value = {"permission:name", "permission:all"}, allEntries = true)
 	public void deletePermission(Permission permission) {
 		permissionRepository.delete(permission);
 	}
 
-	@Cacheable(value = "permission:all")
+	//@cacheable(value = "permission:all")
 	public List<Permission> findAll(){
 		return permissionRepository.findAll();
 	}

@@ -9,10 +9,14 @@ import com.crimecat.backend.gametheme.repository.MakerTeamRepository;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
-import jakarta.transaction.Transactional;
-import java.util.*;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -55,7 +59,8 @@ public class MakerTeamService {
                         .toList())
                 .build();
     }
-    
+
+    @Transactional
     public GetTeamResponse getWithAvatars(UUID teamId) {
         MakerTeam team = teamRepository.findById(teamId).orElseThrow(ErrorStatus.TEAM_NOT_FOUND::asServiceException);
         return GetTeamResponse.builder()
@@ -185,6 +190,7 @@ public class MakerTeamService {
                         .toList()
         );
     }
+    @Transactional(readOnly = true)
     public List<UUID> getTargetTeams(UUID userId) {
         return teamMemberRepository.findByWebUserId(userId).stream()
                 .map(v-> v.getTeam().getId())

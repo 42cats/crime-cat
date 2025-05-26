@@ -103,8 +103,8 @@ public class GameThemePublicController {
     // ================================
     
     @GetMapping("/creator/{user_id}")
-    public ResponseEntity<CrimesceneThemeSummeryListDto> getSpecificUserTheme(@PathVariable("user_id") UUID userId){
-        return ResponseEntity.ok(gameThemeService.getGameThemeSummery(userId));
+    public ResponseEntity<CrimesceneThemeSummeryListDto> getSpecificUserTheme(@PathVariable("user_id") UUID webUserId){
+        return ResponseEntity.ok(gameThemeService.getGameThemeSummery(webUserId));
     }
 
     @GetMapping("/crimescene/creator/{user_id}")

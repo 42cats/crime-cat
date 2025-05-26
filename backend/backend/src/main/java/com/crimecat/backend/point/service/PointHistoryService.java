@@ -9,7 +9,7 @@ import com.crimecat.backend.point.dto.PointHistorySummaryDto;
 import com.crimecat.backend.point.repository.PointHistoryRepository;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.repository.UserRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;

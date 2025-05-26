@@ -5,7 +5,7 @@ import com.crimecat.backend.guild.dto.bot.GuildMusicDto;
 import com.crimecat.backend.guild.dto.bot.GuildMusicListResponseDto;
 import com.crimecat.backend.guild.dto.bot.GuildMusicRequestDto;
 import com.crimecat.backend.guild.repository.GuildMusicRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

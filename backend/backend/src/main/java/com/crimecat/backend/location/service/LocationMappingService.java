@@ -30,7 +30,7 @@ public class LocationMappingService {
     /**
      * 키워드로 정규화된 주소 조회
      */
-    @Cacheable(value = CacheType.LOCATION_MAPPING, key = "#keyword")
+    //@cacheable(value = CacheType.LOCATION_MAPPING, key = "#keyword")
     public Optional<LocationMappingDto> findByKeyword(String keyword) {
         return locationMappingRepository.findByKeywordAndIsActiveTrue(keyword)
                 .map(LocationMappingDto::from);
@@ -39,7 +39,7 @@ public class LocationMappingService {
     /**
      * 검색어로 관련된 모든 정규화된 주소 조회
      */
-    @Cacheable(value = CacheType.LOCATION_SEARCH, key = "#searchTerm")
+    //@cacheable(value = CacheType.LOCATION_SEARCH, key = "#searchTerm")
     public List<String> getNormalizedAddresses(String searchTerm) {
         if (searchTerm == null || searchTerm.trim().isEmpty()) {
             return Collections.emptyList();
@@ -99,7 +99,7 @@ public class LocationMappingService {
     /**
      * 모든 활성 매핑 조회
      */
-    @Cacheable(value = CacheType.LOCATION_ALL_MAPPINGS)
+    //@cacheable(value = CacheType.LOCATION_ALL_MAPPINGS)
     public List<LocationMappingDto> getAllActiveMappings() {
         return locationMappingRepository.findAllByIsActiveTrue().stream()
                 .map(LocationMappingDto::from)
@@ -135,7 +135,7 @@ public class LocationMappingService {
      * 매핑 생성
      */
     @Transactional
-    @CacheEvict(value = {CacheType.LOCATION_MAPPING, CacheType.LOCATION_SEARCH, CacheType.LOCATION_ALL_MAPPINGS}, allEntries = true)
+    //@cacheEvict(value = {CacheType.LOCATION_MAPPING, CacheType.LOCATION_SEARCH, CacheType.LOCATION_ALL_MAPPINGS}, allEntries = true)
     public LocationMappingDto createMapping(LocationMappingRequest request) {
         // 중복 체크
         if (locationMappingRepository.existsByKeyword(request.getKeyword())) {
@@ -161,7 +161,7 @@ public class LocationMappingService {
      * 매핑 수정
      */
     @Transactional
-    @CacheEvict(value = {CacheType.LOCATION_MAPPING, CacheType.LOCATION_SEARCH, CacheType.LOCATION_ALL_MAPPINGS}, allEntries = true)
+    //@cacheEvict(value = {CacheType.LOCATION_MAPPING, CacheType.LOCATION_SEARCH, CacheType.LOCATION_ALL_MAPPINGS}, allEntries = true)
     public LocationMappingDto updateMapping(UUID id, LocationMappingRequest request) {
         LocationMapping mapping = locationMappingRepository.findById(id)
                 .orElseThrow(ErrorStatus.LOCATION_MAPPING_NOT_FOUND::asServiceException);
@@ -189,7 +189,7 @@ public class LocationMappingService {
      * 매핑 삭제
      */
     @Transactional
-    @CacheEvict(value = {CacheType.LOCATION_MAPPING, CacheType.LOCATION_SEARCH, CacheType.LOCATION_ALL_MAPPINGS}, allEntries = true)
+    //@cacheEvict(value = {CacheType.LOCATION_MAPPING, CacheType.LOCATION_SEARCH, CacheType.LOCATION_ALL_MAPPINGS}, allEntries = true)
     public void deleteMapping(UUID id) {
         LocationMapping mapping = locationMappingRepository.findById(id)
                 .orElseThrow(ErrorStatus.LOCATION_MAPPING_NOT_FOUND::asServiceException);

@@ -11,7 +11,7 @@ import com.crimecat.backend.userPost.dto.UserPostCommentRequest;
 import com.crimecat.backend.userPost.repository.UserPostCommentRepository;
 import com.crimecat.backend.userPost.repository.UserPostRepository;
 import com.crimecat.backend.webUser.domain.WebUser;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;

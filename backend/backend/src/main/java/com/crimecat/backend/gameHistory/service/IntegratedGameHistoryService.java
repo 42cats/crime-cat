@@ -53,7 +53,7 @@ public class IntegratedGameHistoryService {
     /**
      * 사용자의 통합 게임 기록 조회 (최적화 버전)
      */
-    @Cacheable(value = CacheType.INTEGRATED_HISTORIES, key = "#userId + '_' + #filter.gameType + '_' + #filter.page")
+    //@cacheable(value = CacheType.INTEGRATED_HISTORIES, key = "#userId + '_' + #filter.gameType + '_' + #filter.page")
     public IntegratedGameHistoryResponse getUserGameHistories(
             String userId, 
             IntegratedGameHistoryFilterRequest filter) {
@@ -271,7 +271,7 @@ public class IntegratedGameHistoryService {
     /**
      * 통계 정보 생성 (캐싱)
      */
-    @Cacheable(value = CacheType.USER_STATISTICS, key = "#userId.toString()")
+    //@cacheable(value = CacheType.USER_STATISTICS, key = "#userId.toString()")
     public IntegratedGameHistoryResponse.GameStatistics createStatistics(UUID userId) {
         log.info("통계 정보 생성 (캐시 미스) - userId: {}", userId);
         // 크라임씬 통계 (중복 플레이 불가능)
@@ -377,8 +377,8 @@ public class IntegratedGameHistoryService {
      * - 기존에 저장된 캐시 데이터가 오래된 데이터가 되므로
      * - 해당 사용자의 캐시를 삭제하여 다음 조회 시 최신 데이터를 가져오도록 함
      */
-    @CacheEvict(value = {CacheType.INTEGRATED_HISTORIES, CacheType.USER_STATISTICS, CacheType.THEME_PLAY_COUNTS}, 
-                key = "#userId")
+    //@cacheEvict(value = {CacheType.INTEGRATED_HISTORIES, CacheType.USER_STATISTICS, CacheType.THEME_PLAY_COUNTS}, 
+//                key = "#userId")
     public void invalidateUserCache(String userId) {
         log.info("사용자 캐시 무효화 - userId: {}", userId);
     }

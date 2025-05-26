@@ -5,7 +5,7 @@ import com.crimecat.backend.guild.dto.bot.ChannelRecordDto;
 import com.crimecat.backend.guild.dto.bot.ChannelRecordListResponseDto;
 import com.crimecat.backend.guild.dto.bot.ChannelRecordRequestDto;
 import com.crimecat.backend.guild.repository.ChannelRecordRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

@@ -26,7 +26,7 @@ public class WebStatsInfoServiceProxy {
   private final UserRepository userRepository;
 
   @Transactional(readOnly = true)
-  @Cacheable(value = CacheType.PERSONAL_DASHBOARD_INFO, key = "#user.id.toString()")
+  //@cacheable(value = CacheType.PERSONAL_DASHBOARD_INFO, key = "#user.id.toString()")
   public Map<String, String> getUserPersonalGameInfo(User user) {
     Map<String, String> tempMap = new HashMap<>();
 

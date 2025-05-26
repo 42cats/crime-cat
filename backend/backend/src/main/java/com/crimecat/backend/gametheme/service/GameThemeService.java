@@ -26,7 +26,7 @@ import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.point.service.PointHistoryService;
 import com.crimecat.backend.notification.service.NotificationService;
 import com.crimecat.backend.notification.enums.NotificationType;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -128,7 +128,7 @@ public class GameThemeService {
         }
     }
 
-    @CacheEvict(value = {"game:theme", "game:theme:list"}, key = "#themeId.toString()")
+    //@cacheEvict(value = {"game:theme", "game:theme:list"}, key = "#themeId.toString()")
     public void deleteGameTheme(UUID themeId) {
         GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
         if (gameTheme.isDeleted()) {
@@ -140,7 +140,7 @@ public class GameThemeService {
     }
 
     @Transactional
-    @Cacheable(value = "game:theme", key = "#themeId.toString()")
+    //@cacheable(value = "game:theme", key = "#themeId.toString()")
     public GetGameThemeResponse getGameTheme(UUID themeId) {
         GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
         UUID webUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
@@ -163,7 +163,7 @@ public class GameThemeService {
     // ================================
     
     @Transactional
-    @CacheEvict(value = {"game:theme", "game:theme:list"}, key = "#themeId.toString()")
+    //@cacheEvict(value = {"game:theme", "game:theme:list"}, key = "#themeId.toString()")
     public void updateCrimesceneTheme(UUID themeId, MultipartFile file, UpdateCrimesceneThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
         
@@ -191,7 +191,7 @@ public class GameThemeService {
     // ================================
     
     @Transactional
-    @CacheEvict(value = {"game:theme", "game:theme:list"}, key = "#themeId.toString()")
+    //@cacheEvict(value = {"game:theme", "game:theme:list"}, key = "#themeId.toString()")
     public void updateEscapeRoomTheme(UUID themeId, MultipartFile file, UpdateEscapeRoomThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
         
@@ -235,7 +235,7 @@ public class GameThemeService {
     // ================================
     // 공통 헬퍼 메서드들
     // ================================
-    
+
     private GameTheme getThemeForUpdate(UUID themeId) {
         GameTheme gameTheme = themeRepository.findById(themeId)
             .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
@@ -247,7 +247,7 @@ public class GameThemeService {
         AuthenticationUtil.validateCurrentUserMatches(gameTheme.getAuthorId());
         return gameTheme;
     }
-    
+
     private void updateThumbnailIfProvided(GameTheme gameTheme, MultipartFile file) {
         if (file != null && !file.isEmpty()) {
             String path = storageService.storeAt(StorageFileType.GAME_THEME, file, gameTheme.getId().toString());
@@ -278,7 +278,7 @@ public class GameThemeService {
     }
 
     @Transactional
-    @Cacheable(value = "game:theme:list", key = "#filter.hashCode()")
+    //@cacheable(value = "game:theme:list", key = "#filter.hashCode()")
     public GetGameThemesResponse getGameThemes(GetGameThemesFilter filter) {
         UUID webUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
         Sort sort = GameThemeSortType.valueOf(filter.getSort()).getSort();
@@ -303,7 +303,7 @@ public class GameThemeService {
     }
 
     @Transactional
-    @CacheEvict(value = "game:theme:like", key = "#themeId.toString() + ':' + T(com.crimecat.backend.utils.AuthenticationUtil).getCurrentWebUserId()")
+    //@cacheEvict(value = "game:theme:like", key = "#themeId.toString() + ':' + T(com.crimecat.backend.utils.AuthenticationUtil).getCurrentWebUserId()")
     public void like(UUID themeId) {
         GameTheme theme = themeRepository.findById(themeId)
                 .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
@@ -314,7 +314,7 @@ public class GameThemeService {
     }
 
     @Transactional
-    @CacheEvict(value = "game:theme:like", key = "#themeId.toString() + ':' + T(com.crimecat.backend.utils.AuthenticationUtil).getCurrentWebUserId()")
+    //@cacheEvict(value = "game:theme:like", key = "#themeId.toString() + ':' + T(com.crimecat.backend.utils.AuthenticationUtil).getCurrentWebUserId()")
     public void cancleLike(UUID themeId) {
         GameTheme theme = themeRepository.findById(themeId)
                 .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
@@ -326,7 +326,8 @@ public class GameThemeService {
         themeRepository.save(theme);
     }
 
-    @Cacheable(value = "game:theme:like", key = "#themeId.toString() + ':' + T(com.crimecat.backend.utils.AuthenticationUtil).getCurrentWebUserId()")
+    //@cacheable(value = "game:theme:like", key = "#themeId.toString() + ':' + T(com.crimecat.backend.utils.AuthenticationUtil).getCurrentWebUserId()")
+    @Transactional
     public boolean getLikeStatus(UUID themeId) {
         themeRepository.findById(themeId)
                 .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
@@ -334,9 +335,10 @@ public class GameThemeService {
         return themeRecommendationRepository.findByWebUserIdAndThemeId(webUserId, themeId).isPresent();
     }
 
-    public CrimesceneThemeSummeryListDto getGameThemeSummery(UUID userId) {
+    @Transactional(readOnly = true)
+    public CrimesceneThemeSummeryListDto getGameThemeSummery(UUID webUserId) {
         // 사용자가 속한 팀 ID 목록 가져오기
-        List<UUID> teamIds = teamService.getTargetTeams(userId);
+        List<UUID> teamIds = teamService.getTargetTeams(webUserId);
         
         // 각 팀이 만든 크라임씬 테마를 중복 없이 Set으로 모으기
         Set<CrimesceneTheme> themesSet = new HashSet<>();

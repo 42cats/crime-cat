@@ -15,13 +15,13 @@ public class ViewCountService {
   private final GameThemeRepository themeRepository;
   private final BoardPostRepository boardPostRepository;
 
-  @Cacheable(value = CacheType.VIEW_COUNT, key = "#theme.id + ':' + #ip")
+  //@cacheable(value = CacheType.VIEW_COUNT, key = "#theme.id + ':' + #ip")
   public boolean themeIncrement(GameTheme theme, String ip) {
     theme.viewed();
     themeRepository.save(theme);
     return true;
   }
-  @Cacheable(value = CacheType.VIEW_COUNT, key = "#board.id + ':' + #ip")
+  //@cacheable(value = CacheType.VIEW_COUNT, key = "#board.id + ':' + #ip")
   public boolean boardIncrement(BoardPost board, String ip) {
     board.viewed();
     boardPostRepository.save(board);

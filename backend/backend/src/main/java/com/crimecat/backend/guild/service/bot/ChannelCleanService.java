@@ -4,7 +4,7 @@ import com.crimecat.backend.guild.domain.Clean;
 import com.crimecat.backend.guild.dto.bot.ChannelCleanDto;
 import com.crimecat.backend.guild.dto.bot.ChannelCleanListDto;
 import com.crimecat.backend.guild.repository.ChannelCleanRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

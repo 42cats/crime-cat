@@ -36,7 +36,7 @@ public class UserProfileStatsService {
     /**
      * 특정 사용자의 프로필 통계 정보를 한 번에 조회 (조회하는 사용자 ID 포함)
      */
-    @Cacheable(value = "user:profile:stats", key = "#userId + ':viewer:' + #viewerId")
+    //@cacheable(value = "user:profile:stats", key = "#userId + ':viewer:' + #viewerId")
     public UserProfileStatsResponse getUserProfileStats(String userId, String viewerId) {
         try {
             UUID userUuid = UUID.fromString(userId);

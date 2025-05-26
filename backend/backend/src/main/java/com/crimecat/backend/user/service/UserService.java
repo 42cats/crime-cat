@@ -64,7 +64,7 @@ public class UserService {
 	private final EntityManager entityManager;
 
 	@Transactional(readOnly = true)
-	@Cacheable(value = "user:discord", key = "'snowflake:' + #userSnowflake")
+	//@cacheable(value = "user:discord", key = "'snowflake:' + #userSnowflake")
 	public DiscordUser findUserBySnowflake(String userSnowflake) {
 		return discordUserQueryService.findByUserSnowflake(userSnowflake);
 	}
@@ -224,7 +224,7 @@ public class UserService {
 	 * @return
 	 */
 	@Transactional(readOnly = true)
-	@Cacheable(value = "user:permissions", key = "'all:' + #userSnowflake")
+	//@cacheable(value = "user:permissions", key = "'all:' + #userSnowflake")
 	public UserGrantedPermissionResponseDto getAllUserPermissions(String userSnowflake) {
 		if (StringUtils.isBlank(userSnowflake)) {
 			return new UserGrantedPermissionResponseDto("Invalid request format", null);
@@ -278,7 +278,7 @@ public class UserService {
 	 * @return
 	 */
 	@Transactional(readOnly = true)
-	@Cacheable(value = "user:ranking", key = "#userSnowflake")
+	//@cacheable(value = "user:ranking", key = "#userSnowflake")
 	public UserRankingResponseDto getUserRanking(String userSnowflake) {
 		if (StringUtils.isBlank(userSnowflake)) {
 			return new UserRankingFailedResponseDto("Invalid request format");
@@ -312,7 +312,7 @@ public class UserService {
 	}
 
 	@Transactional(readOnly = true)
-	@Cacheable(value = "user:ranking", key = "'total:' + #sortingCondition + ':page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize")
+	//@cacheable(value = "user:ranking", key = "'total:' + #sortingCondition + ':page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize")
 	public TotalUserRankingResponseDto getTotalUserRankingByParamCondition(Pageable pageable,
 			String sortingCondition) {
 		if (StringUtils.isBlank(sortingCondition)) {

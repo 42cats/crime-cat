@@ -220,6 +220,7 @@ public class WebGameHistoryService {
 	 * @param currentWebUser 현재 사용자
 	 * @return 플레이 여부 혹은 제작팀 멤버 여부
 	 */
+	@Transactional(readOnly = true)
 	public CheckPlayResponseDto checkHasPlayed(UUID gameThemeId, WebUser currentWebUser) {
 		// 1. 게임 테마 조회
 		GameTheme gameTheme = gameThemeRepository.findById(gameThemeId)
