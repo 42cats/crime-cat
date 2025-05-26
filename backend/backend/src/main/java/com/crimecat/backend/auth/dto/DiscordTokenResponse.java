@@ -1,11 +1,15 @@
 package com.crimecat.backend.auth.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class DiscordTokenResponse {
 
     @JsonProperty("access_token")

@@ -3,10 +3,12 @@ package com.crimecat.backend.gametheme.dto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.UUID;
 
+@NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Builder

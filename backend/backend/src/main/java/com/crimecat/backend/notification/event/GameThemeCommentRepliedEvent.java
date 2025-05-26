@@ -9,6 +9,7 @@ import java.util.UUID;
  * 사용자가 게임 테마 댓글에 답글을 작성할 때 부모 댓글 작성자에게 알림
  */
 @Getter
+
 public class GameThemeCommentRepliedEvent extends NotificationEvent {
     
     // 게임 테마 정보

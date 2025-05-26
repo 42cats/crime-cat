@@ -5,12 +5,14 @@ import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
 import com.crimecat.backend.gametheme.domain.GameTheme;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.openapitools.jackson.nullable.JsonNullable;
 
 import java.util.Map;
 import java.util.UUID;
 
 @Getter
+@NoArgsConstructor
 @AllArgsConstructor
 public class UpdateCrimesceneThemeRequest extends UpdateGameThemeRequest{
     private JsonNullable<UUID> makerTeamsId;

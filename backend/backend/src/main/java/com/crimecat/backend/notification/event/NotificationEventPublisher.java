@@ -1,5 +1,7 @@
 package com.crimecat.backend.notification.event;
 
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -15,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
  */
 @Component
 @RequiredArgsConstructor
+@AllArgsConstructor
 @Slf4j
 public class NotificationEventPublisher {
     

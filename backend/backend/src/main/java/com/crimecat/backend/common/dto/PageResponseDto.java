@@ -1,5 +1,6 @@
 package com.crimecat.backend.common.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -13,6 +14,7 @@ import java.util.List;
  */
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
 public class PageResponseDto<T> {
     
     private List<T> content;

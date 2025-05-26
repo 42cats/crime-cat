@@ -1,12 +1,16 @@
 package com.crimecat.backend.gametheme.dto;
 
 import com.crimecat.backend.exception.ErrorStatus;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.Objects;
 import java.util.UUID;
 
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class MemberRequestDto {
     private UUID userId;
     private String name;

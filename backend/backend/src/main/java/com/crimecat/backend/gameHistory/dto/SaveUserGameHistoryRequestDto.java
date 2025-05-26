@@ -3,7 +3,9 @@ package com.crimecat.backend.gameHistory.dto;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor
 @AllArgsConstructor
 @Getter
 public class SaveUserGameHistoryRequestDto {

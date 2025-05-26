@@ -1,8 +1,12 @@
 package com.crimecat.backend.notice.dto;
 
 import java.util.List;
+
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
 
+@NoArgsConstructor
 public class PageResultDto<T> {
   private List<T> content;
   private int page;

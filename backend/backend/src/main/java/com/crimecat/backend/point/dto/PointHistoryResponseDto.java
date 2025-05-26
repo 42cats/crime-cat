@@ -3,14 +3,18 @@ package com.crimecat.backend.point.dto;
 import com.crimecat.backend.point.domain.ItemType;
 import com.crimecat.backend.point.domain.PointHistory;
 import com.crimecat.backend.point.domain.TransactionType;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PointHistoryResponseDto {
 
     private UUID id;

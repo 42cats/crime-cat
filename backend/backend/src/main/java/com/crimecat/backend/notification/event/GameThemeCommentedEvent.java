@@ -10,6 +10,7 @@ import java.util.UUID;
  * 사용자가 게임 테마에 댓글을 작성할 때 테마 작성자/팀원들에게 알림
  */
 @Getter
+
 public class GameThemeCommentedEvent extends NotificationEvent {
     
     // 게임 테마 정보

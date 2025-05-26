@@ -9,6 +9,7 @@ import java.util.UUID;
  * 게임 기록 요청에 대한 처리 결과를 알리는 이벤트
  */
 @Getter
+
 public class GameRecordResponseEvent extends NotificationEvent {
     
     // 원본 요청 정보

@@ -4,9 +4,11 @@ import com.crimecat.backend.gametheme.domain.GameTheme;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Builder
 @Getter
+@NoArgsConstructor
 @AllArgsConstructor
 public class CrimesceneThemeSummeryDto {
   private String themeId;

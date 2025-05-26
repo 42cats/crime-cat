@@ -4,6 +4,7 @@ import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
 import com.crimecat.backend.gametheme.enums.ThemeType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
@@ -12,6 +13,7 @@ import java.util.Set;
 
 @SuperBuilder
 @Getter
+@NoArgsConstructor
 @AllArgsConstructor
 public class EscapeRoomThemeDto extends GameThemeDto {
     private Integer horrorLevel;

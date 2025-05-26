@@ -1,11 +1,15 @@
 package com.crimecat.backend.webUser.dto;
 
 import com.crimecat.backend.webUser.domain.WebUser;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserSearchResponseDto {
     private String id;
     private String nickname;

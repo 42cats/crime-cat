@@ -11,7 +11,9 @@ import java.util.Set;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Range;
 
 @JsonTypeInfo(
@@ -24,6 +26,8 @@ import org.hibernate.validator.constraints.Range;
         @JsonSubTypes.Type(value = AddEscapeRoomThemeRequest.class, name = ThemeType.Values.ESCAPE_ROOM),
 })
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @MinMaxCheck(min = "playerMin", max = "playerMax", message = "인원수 최소값이 최대값보다 큽니다.")
 @MinMaxCheck(min = "playtimeMin", max = "playtimeMax", message = "플레이 시간 최소값이 최대값보다 큽니다.")
 public class AddGameThemeRequest {
