@@ -38,7 +38,6 @@ public interface MakerTeamMemberRepository extends JpaRepository<MakerTeamMember
     SELECT * FROM maker_team_members
     WHERE web_user_id = :webUserId
     AND is_leader = :isLeader
-    LIMIT 1
     """, nativeQuery = true)
     List<MakerTeamMember> findByWebUserIdAndIsLeader(
             @Param("webUserId") UUID webUserId,
