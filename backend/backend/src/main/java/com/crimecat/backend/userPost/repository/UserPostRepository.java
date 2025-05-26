@@ -100,37 +100,57 @@ public interface UserPostRepository extends JpaRepository<UserPost, UUID> {
     Page<UserPost> findAccessiblePostsByIds(@Param("postIds") List<UUID> postIds, @Param("userId") UUID userId, Pageable pageable);
 
     /**
-     * 인기도 점수 기준으로 정렬된 공개 게시물 조회
+     * 인기도 점수 기준으로 정렬된 공개 게시물 조회 (이미지 포함)
      */
-    @Query("SELECT p FROM UserPost p WHERE p.isPrivate = false AND p.isFollowersOnly = false ORDER BY p.popularityScore DESC")
+    @Query(value = "SELECT DISTINCT p FROM UserPost p " +
+            "LEFT JOIN FETCH p.user " +
+            "LEFT JOIN FETCH p.images " +
+            "WHERE p.isPrivate = false AND p.isFollowersOnly = false " +
+            "ORDER BY p.popularityScore DESC",
+            countQuery = "SELECT COUNT(p) FROM UserPost p WHERE p.isPrivate = false AND p.isFollowersOnly = false")
     Page<UserPost> findPublicPostsByPopularityScore(Pageable pageable);
 
     /**
-     * 인기도 점수 기준으로 정렬된 접근 가능한 게시물 조회
+     * 인기도 점수 기준으로 정렬된 접근 가능한 게시물 조회 (이미지 포함)
      */
-    @Query("SELECT p FROM UserPost p WHERE " +
-            "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
+    @Query(value = "SELECT DISTINCT p FROM UserPost p " +
+            "LEFT JOIN FETCH p.user " +
+            "LEFT JOIN FETCH p.images " +
+            "WHERE (p.isPrivate = false AND p.isFollowersOnly = false OR " +
             "p.user.id = :userId OR " +
             "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id))) " +
-            "ORDER BY p.popularityScore DESC")
+            "ORDER BY p.popularityScore DESC",
+            countQuery = "SELECT COUNT(p) FROM UserPost p WHERE " +
+                    "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
+                    "p.user.id = :userId OR " +
+                    "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id)))")
     Page<UserPost> findAccessiblePostsByPopularityScore(@Param("userId") UUID userId, Pageable pageable);
 
     /**
-     * 무작위로 공개 게시물 조회
+     * 무작위로 공개 게시물 조회 (이미지 포함)
      */
-    @Query(value = "SELECT * FROM user_posts p WHERE p.is_private = false AND p.is_followers_only = false ORDER BY RANDOM() LIMIT :limit",
-            nativeQuery = true)
-    Page<UserPost> findRandomPublicPosts(Pageable pageable, @Param("limit") int limit);
+    @Query(value = "SELECT DISTINCT p FROM UserPost p " +
+            "LEFT JOIN FETCH p.user " +
+            "LEFT JOIN FETCH p.images " +
+            "WHERE p.isPrivate = false AND p.isFollowersOnly = false " +
+            "ORDER BY FUNCTION('RAND')",
+            countQuery = "SELECT COUNT(p) FROM UserPost p WHERE p.isPrivate = false AND p.isFollowersOnly = false")
+    Page<UserPost> findRandomPublicPosts(Pageable pageable);
 
     /**
-     * 무작위로 접근 가능한 게시물 조회
+     * 무작위로 접근 가능한 게시물 조회 (이미지 포함)
      */
-    @Query(value = "SELECT * FROM user_posts p WHERE " +
-            "(p.is_private = false AND p.is_followers_only = false OR " +
-            "p.user_id = :userId OR " +
-            "(p.is_followers_only = true AND EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = :userId AND f.following_id = p.user_id))) " +
-            "ORDER BY RAND()",
-            nativeQuery = true)
+    @Query(value = "SELECT DISTINCT p FROM UserPost p " +
+            "LEFT JOIN FETCH p.user " +
+            "LEFT JOIN FETCH p.images " +
+            "WHERE (p.isPrivate = false AND p.isFollowersOnly = false OR " +
+            "p.user.id = :userId OR " +
+            "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id))) " +
+            "ORDER BY FUNCTION('RAND')",
+            countQuery = "SELECT COUNT(p) FROM UserPost p WHERE " +
+                    "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
+                    "p.user.id = :userId OR " +
+                    "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :userId AND f.following.id = p.user.id)))")
     Page<UserPost> findRandomAccessiblePosts(@Param("userId") UUID userId, Pageable pageable);
 
     /**

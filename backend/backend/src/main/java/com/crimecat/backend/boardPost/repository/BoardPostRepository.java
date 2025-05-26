@@ -23,9 +23,9 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID>, Jpa
     @Query("select "
             + "distinct p "
             + "from BoardPost p "
-            + "left join fetch p.author u1 "
+            + "left join p.author u1 "
             + "left outer join PostComment c on c.boardPost=p "
-            + "left outer join WebUser u2 on c.author=u2 "
+            + "left outer join c.author u2 "
             + "where ("
             + "   p.subject like %:kw% "
             + "   or p.content like %:kw% "
@@ -34,8 +34,7 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID>, Jpa
             + "   or u2.nickname like %:kw% "
             + ") "
             + " and p.boardType = :boardType "
-            + " and p.isDeleted = false "
-            + " ORDER BY p.isPinned DESC, p.createdAt DESC ")
+            + " and p.isDeleted = false ")
     Page<BoardPost> findAllByKeywordAndBoardTypeAndIsDeletedFalse(
             @Param("kw") String kw,
             @Param("boardType") BoardType boardType,
@@ -45,9 +44,9 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID>, Jpa
     @Query("select "
             + "distinct p "
             + "from BoardPost p "
-            + "left join fetch p.author u1 "
+            + "left join p.author u1 "
             + "left outer join PostComment c on c.boardPost=p "
-            + "left outer join WebUser u2 on c.author=u2 "
+            + "left outer join c.author u2 "
             + "where ("
             + "   p.subject like %:kw% "
             + "   or p.content like %:kw% "
@@ -57,8 +56,7 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID>, Jpa
             + ") "
             + " and p.boardType = :boardType "
             + " and p.postType = :postType "
-            + " and p.isDeleted = false "
-            + " ORDER BY p.isPinned DESC, p.createdAt DESC ")
+            + " and p.isDeleted = false ")
     Page<BoardPost> findAllByKeywordAndTypeAndIsDeletedFalse(
             @Param("kw") String kw,
             @Param("boardType") BoardType boardType,
