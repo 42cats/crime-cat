@@ -1,4 +1,3 @@
-const logger = require('../../utility/logger');
 // Commands/api/messageMacro/messageMacro.js
 
 /**
@@ -13,7 +12,7 @@ dotenv.config();
 const BEARER_TOKEN = process.env.DISCORD_CLIENT_SECRET;
 const API_PREFIX = '/bot/v1';
 const API_TIMEOUT = 8000; // 8초
-
+const API_BASE_URL = process.env.BASE_URL
 /**
  * 안전한 API 요청 전송 유틸리티 함수
  * @param {Object} options 요청 옵션
@@ -59,8 +58,6 @@ async function safeApiRequest(options) {
 		return response.data;
 	} catch (error) {
 		// 오류 처리 및 분류
-		logger.error(`❌ API 요청 실패: ${options.method} ${options.endpoint}`, formatApiError(error));
-
 		// 오류 내용에 따라 적절한 오류 메시지 생성
 		if (error.code === 'ECONNREFUSED' || error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
 			throw new Error(`서버 연결 실패: ${error.message}`);
@@ -136,8 +133,6 @@ async function getContents(buttonId) {
 		return validContents;
 	} catch (error) {
 		// 오류 로그 및 재전파
-		logger.error(`❌ 버튼 콘텐츠 조회 실패 (버튼 ID: ${buttonId}):`, error);
-
 		// 더 명확한 오류 메시지로 래핑
 		const errorMessage = error.message || '콘텐츠 조회 중 오류가 발생했습니다.';
 		throw new Error(`버튼 콘텐츠 조회 실패: ${errorMessage}`);
@@ -248,7 +243,6 @@ async function getButtons(guildId, groupName) {
 		return response;
 	} catch (error) {
 		// 오류 로그 및 재전파
-		logger.error(`❌ 버튼 그룹 조회 실패 (길드 ID: ${guildId}, 그룹: ${groupName}):`, error);
 
 		// 더 명확한 오류 메시지로 래핑
 		const errorMessage = error.message || '버튼 그룹 조회 중 오류가 발생했습니다.';
