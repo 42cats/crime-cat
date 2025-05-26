@@ -31,7 +31,9 @@ const BoardSection = ({
                     variant="ghost"
                     size="sm"
                     className="text-xs h-7 px-2"
-                    onClick={() => navigate(`/themes/${category}`)}
+                    onClick={() =>
+                        navigate(`/themes/${category.toLowerCase()}`)
+                    }
                 >
                     더보기 <ArrowRight className="ml-1 h-3 w-3" />
                 </Button>
@@ -61,7 +63,9 @@ const BoardSection = ({
                                     className="text-left w-full hover:text-primary transition-colors"
                                     onClick={() =>
                                         navigate(
-                                            `/themes/${category}/${post.id}`
+                                            `/themes/${category.toLowerCase()}/${
+                                                post.id
+                                            }`
                                         )
                                     }
                                 >
@@ -86,7 +90,8 @@ const BoardSection = ({
                 ) : (
                     <div className="flex items-center justify-center h-full">
                         <p className="text-sm text-muted-foreground text-center py-4">
-                            {category === "CRIMESCENE" || category === "ESCAPE_ROOM"
+                            {category === "CRIMESCENE" ||
+                            category === "ESCAPE_ROOM"
                                 ? "게시글이 없습니다."
                                 : "준비 중입니다. 조금만 기다려주세요."}
                         </p>
@@ -116,4 +121,4 @@ const LatestPostsSection: React.FC = () => {
     );
 };
 
-export default LatestPostsSection
+export default LatestPostsSection;

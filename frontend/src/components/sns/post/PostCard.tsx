@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { UserPostDto, userPostService } from '@/api/posts';
+import { UserPostDto, userPostService } from "@/api/posts";
 import {
     Heart,
     MessageCircle,
@@ -35,7 +35,11 @@ interface PostCardProps {
     onPostClick?: (post: UserPostDto) => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange, onPostClick }) => {
+const PostCard: React.FC<PostCardProps> = ({
+    post,
+    onLikeChange,
+    onPostClick,
+}) => {
     const { isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const [liked, setLiked] = useState(post.liked);
@@ -147,7 +151,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange, onPostClick }) 
     });
 
     return (
-        <div 
+        <div
             className="bg-card border border-border rounded-md overflow-hidden mb-6 cursor-pointer"
             onClick={() => onPostClick?.(post)}
         >
@@ -179,7 +183,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange, onPostClick }) 
                     </div>
                 </Link>
 
-                <Button
+                {/* <Button
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
@@ -189,7 +193,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange, onPostClick }) 
                     }}
                 >
                     <MoreHorizontal className="h-5 w-5" />
-                </Button>
+                </Button> */}
             </div>
 
             {/* 포스트 이미지 */}
@@ -214,9 +218,9 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange, onPostClick }) 
                             }`}
                         />
                     </Button>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         className="h-9 w-9"
                         onClick={(e) => {
                             e.stopPropagation();
@@ -225,16 +229,16 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange, onPostClick }) 
                     >
                         <MessageCircle className="h-6 w-6" />
                     </Button>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
+                    {/* <Button
+                        variant="ghost"
+                        size="icon"
                         className="h-9 w-9"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <Share2 className="h-6 w-6" />
-                    </Button>
+                    </Button> */}
                 </div>
-
+                {/* 
                 <Button
                     variant="ghost"
                     size="icon"
@@ -250,7 +254,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange, onPostClick }) 
                     }}
                 >
                     <Bookmark className="h-6 w-6" />
-                </Button>
+                </Button> */}
             </div>
 
             {/* 포스트 정보 */}
@@ -288,9 +292,14 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLikeChange, onPostClick }) 
                 open={showLoginDialog}
                 onOpenChange={setShowLoginDialog}
             >
-                <AlertDialogContent aria-labelledby="login-dialog-title" aria-describedby="login-dialog-description">
+                <AlertDialogContent
+                    aria-labelledby="login-dialog-title"
+                    aria-describedby="login-dialog-description"
+                >
                     <AlertDialogHeader>
-                        <AlertDialogTitle id="login-dialog-title">로그인이 필요합니다</AlertDialogTitle>
+                        <AlertDialogTitle id="login-dialog-title">
+                            로그인이 필요합니다
+                        </AlertDialogTitle>
                         <AlertDialogDescription id="login-dialog-description">
                             이 기능을 사용하려면 로그인이 필요합니다. 로그인
                             페이지로 이동하시겠습니까?

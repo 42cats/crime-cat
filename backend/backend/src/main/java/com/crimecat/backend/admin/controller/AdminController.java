@@ -13,6 +13,7 @@ import com.crimecat.backend.permission.service.PermissionService;
 import com.crimecat.backend.user.domain.DiscordUser;
 import com.crimecat.backend.user.domain.UserPermission;
 import com.crimecat.backend.user.dto.UserGrantedPermissionDto;
+import com.crimecat.backend.user.repository.UserRepository;
 import com.crimecat.backend.user.service.DiscordUserQueryService;
 import com.crimecat.backend.user.service.UserPermissionQueryService;
 import com.crimecat.backend.user.service.UserPermissionService;
@@ -47,6 +48,7 @@ public class AdminController {
     private final UserPermissionService userPermissionService;
     private final UserPermissionQueryService userPermissionQueryService;
     private final DiscordUserQueryService discordUserQueryService;
+    private final UserRepository userRepository;
     
     /**
      * 모든 사용자 목록을 조회합니다. 관리자만 가능합니다.
@@ -196,17 +198,18 @@ public class AdminController {
     /**
      * 사용자에게 권한을 부여합니다. 관리자만 가능합니다.
      */
+    @Transactional()
     @PostMapping("/users/permissions/grant")
     public ResponseEntity<UserPermissionResponse> grantPermission(@Valid @RequestBody GrantPermissionRequest request) {
         // 관리자 권한 확인
         AuthenticationUtil.validateUserHasMinimumRole(UserRole.ADMIN);
         
         // 사용자 확인
-        User user = userService.getUserById(request.getUserId());
+        User user = userRepository.findByWebUserId(request.getUserId()).orElseThrow(ErrorStatus.USER_NOT_FOUND::asControllerException);
         if (user.getDiscordUser() == null) {
             throw ErrorStatus.USER_NOT_FOUND.asControllerException();
         }
-        
+
         DiscordUser discordUser = user.getDiscordUser();
         
         // 권한 확인
@@ -249,13 +252,14 @@ public class AdminController {
     /**
      * 사용자의 권한을 해제합니다. 관리자만 가능합니다.
      */
+    @Transactional()
     @PostMapping("/users/permissions/revoke")
     public ResponseEntity<UserPermissionResponse> revokePermission(@Valid @RequestBody RevokePermissionRequest request) {
         // 관리자 권한 확인
         AuthenticationUtil.validateUserHasMinimumRole(UserRole.ADMIN);
         
         // 사용자 확인
-        User user = userService.getUserById(request.getUserId());
+        User user = userRepository.findByWebUserId(request.getUserId()).orElseThrow(ErrorStatus.USER_NOT_FOUND::asControllerException);
         if (user.getDiscordUser() == null) {
             throw ErrorStatus.USER_NOT_FOUND.asControllerException();
         }
@@ -290,13 +294,13 @@ public class AdminController {
      * 사용자의 모든 권한을 조회합니다. 관리자만 가능합니다.
      */
     @Transactional(readOnly = true)
-    @GetMapping("/users/{userId}/permissions")
-    public ResponseEntity<List<UserGrantedPermissionDto>> getUserPermissions(@PathVariable UUID userId) {
+    @GetMapping("/users/{webUserId}/permissions")
+    public ResponseEntity<List<UserGrantedPermissionDto>> getUserPermissions(@PathVariable UUID webUserId) {
         // 관리자 권한 확인
         AuthenticationUtil.validateUserHasMinimumRole(UserRole.ADMIN);
         
         // 사용자 확인
-        User user = userService.getUserById(userId);
+        User user = userRepository.findByWebUserId(webUserId).orElseThrow(ErrorStatus.USER_NOT_FOUND::asControllerException);
         if (user.getDiscordUser() == null) {
             throw ErrorStatus.USER_NOT_FOUND.asControllerException();
         }
