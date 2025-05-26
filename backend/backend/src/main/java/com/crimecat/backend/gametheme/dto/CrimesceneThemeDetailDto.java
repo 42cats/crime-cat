@@ -1,6 +1,7 @@
 package com.crimecat.backend.gametheme.dto;
 
 import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
+import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.enums.ThemeType;
 import com.crimecat.backend.guild.dto.bot.GuildDto;
 import lombok.AllArgsConstructor;

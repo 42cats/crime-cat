@@ -1,6 +1,7 @@
 package com.crimecat.backend.gametheme.dto;
 
 import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
+import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.enums.ThemeType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
