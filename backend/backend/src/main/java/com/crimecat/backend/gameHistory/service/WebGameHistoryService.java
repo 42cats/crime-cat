@@ -272,7 +272,7 @@ public class WebGameHistoryService {
             gameThemeId,
             gameTheme.getTitle(),
             user.getId(),
-            gameTheme.getAuthor().getUser().getId(),
+            gameTheme.getAuthor().getId(),
             dto.getMessage(),
 						user.getName()
         );
