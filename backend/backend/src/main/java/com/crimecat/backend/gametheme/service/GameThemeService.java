@@ -144,7 +144,7 @@ public class GameThemeService {
     //@Cacheable(value = "game:theme", key = "#themeId.toString()")
     public GetGameThemeResponse getGameTheme(UUID themeId) {
         // 먼저 기본 테마 정보를 가져와서 타입 확인
-        GameTheme gameTheme = themeRepository.findByIdWithAuthor(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
         
         // Author는 이미 JOIN FETCH로 로드됨 (author가 없으면 테마 자체가 조회되지 않음)
         
