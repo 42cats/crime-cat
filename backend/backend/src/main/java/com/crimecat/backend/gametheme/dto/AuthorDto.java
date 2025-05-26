@@ -4,11 +4,13 @@ import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
 public class AuthorDto {
     private UUID id;

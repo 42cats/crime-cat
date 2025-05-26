@@ -2,11 +2,16 @@ package com.crimecat.backend.notice.dto;
 
 import com.crimecat.backend.notice.domain.NoticeType;
 import java.time.LocalDateTime;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class NoticeResponseDto {
   private String id;
   private String title;

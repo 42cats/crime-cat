@@ -3,8 +3,10 @@ package com.crimecat.backend.guild.dto.bot;
 import com.crimecat.backend.guild.domain.Record;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @AllArgsConstructor
+@NoArgsConstructor
 @Getter
 public class ChannelRecordDto {
     private String channelSnowflake;

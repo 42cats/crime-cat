@@ -1,5 +1,6 @@
 package com.crimecat.backend.common.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -12,6 +13,7 @@ import java.util.List;
  * @param <T> 페이징 데이터 타입
  */
 @Getter
+@AllArgsConstructor
 @NoArgsConstructor
 public class PageResponseDto<T> {
     

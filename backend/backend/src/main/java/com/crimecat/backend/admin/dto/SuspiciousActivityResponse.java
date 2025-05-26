@@ -4,11 +4,16 @@ import com.crimecat.backend.point.domain.TransactionType;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class SuspiciousActivityResponse {
     private UUID userId;
     private String userNickname;
@@ -22,6 +27,8 @@ public class SuspiciousActivityResponse {
     
     @Getter
     @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class TransactionDetail {
         private UUID transactionId;
         private TransactionType type;

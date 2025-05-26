@@ -2,6 +2,7 @@ package com.crimecat.backend.gameHistory.dto.integrated;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
@@ -10,6 +11,7 @@ import java.util.UUID;
  */
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 public class ThemePlayCountDto {
     private UUID themeId;
     private Long playCount;

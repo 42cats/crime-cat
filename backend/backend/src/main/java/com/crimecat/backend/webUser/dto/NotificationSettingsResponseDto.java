@@ -3,11 +3,16 @@ package com.crimecat.backend.webUser.dto;
 import com.crimecat.backend.user.domain.DiscordUser;
 import com.crimecat.backend.webUser.domain.WebUser;
 import java.util.Optional;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Builder
 @Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public class NotificationSettingsResponseDto {
   private Boolean email;
   private Boolean discord;

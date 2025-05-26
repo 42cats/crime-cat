@@ -2,15 +2,14 @@ package com.crimecat.backend.webUser.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+
+import lombok.*;
 
 @Getter
 @Builder
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class WebUserProfileEditRequestDto {
   private String userId;
   @JsonProperty("nickname")

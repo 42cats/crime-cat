@@ -4,11 +4,13 @@ import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
 import com.crimecat.backend.gametheme.enums.ThemeType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 public class CrimesceneThemeDto extends GameThemeDto {
     private String teamName;
 

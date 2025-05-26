@@ -2,10 +2,12 @@ package com.crimecat.backend.guild.dto.bot;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @AllArgsConstructor
+@NoArgsConstructor
 @Getter
 public class GuildMusicDto {
     private String title;

@@ -5,6 +5,7 @@ import com.crimecat.backend.gametheme.enums.ThemeType;
 import com.crimecat.backend.guild.dto.bot.GuildDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.ZoneOffset;
@@ -12,6 +13,7 @@ import java.util.Map;
 
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 @SuperBuilder
 public class CrimesceneThemeDetailDto extends GameThemeDetailDto {
     private TeamDto team;

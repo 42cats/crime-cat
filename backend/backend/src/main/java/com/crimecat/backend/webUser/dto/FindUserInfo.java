@@ -1,8 +1,11 @@
 package com.crimecat.backend.webUser.dto;
 
 import java.util.List;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
 
 /**
@@ -10,6 +13,8 @@ import org.springframework.data.domain.Page;
  */
 @Getter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class FindUserInfo {
     private List<UserSearchResponseDto> content;
     private int page;

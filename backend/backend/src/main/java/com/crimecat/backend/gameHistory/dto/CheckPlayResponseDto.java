@@ -1,12 +1,12 @@
 package com.crimecat.backend.gameHistory.dto;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class CheckPlayResponseDto {
   private Boolean hasPlayed;
 

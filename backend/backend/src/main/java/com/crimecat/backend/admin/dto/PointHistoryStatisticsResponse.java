@@ -3,11 +3,16 @@ package com.crimecat.backend.admin.dto;
 import com.crimecat.backend.point.domain.TransactionType;
 import java.time.LocalDateTime;
 import java.util.Map;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class PointHistoryStatisticsResponse {
     private LocalDateTime startDate;
     private LocalDateTime endDate;

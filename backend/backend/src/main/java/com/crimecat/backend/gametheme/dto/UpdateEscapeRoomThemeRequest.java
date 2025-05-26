@@ -4,7 +4,9 @@ import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
 import com.crimecat.backend.gametheme.domain.GameTheme;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
@@ -18,6 +20,8 @@ import java.util.Set;
  */
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class UpdateEscapeRoomThemeRequest extends UpdateGameThemeRequest {
 
 

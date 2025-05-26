@@ -6,6 +6,7 @@ import com.crimecat.backend.webUser.repository.WebUserRepository;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 import java.util.Optional;
@@ -13,6 +14,7 @@ import java.util.Optional;
 @Getter
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 public class MemberDto {
     private UUID id;
     private UUID userId;
