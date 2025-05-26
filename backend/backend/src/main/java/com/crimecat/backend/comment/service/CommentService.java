@@ -48,7 +48,7 @@ public class CommentService {
     
     // 댓글 작성
     @Transactional
-    @CacheEvict(value = {"comment:list", "comment:public"}, allEntries = true)
+    //@CacheEvict(value = {"comment:list", "comment:public"}, allEntries = true)
     public CommentResponse createComment(UUID gameThemeId, UUID userId, CommentRequest request) {
     GameTheme gameTheme = gameThemeRepository.findById(gameThemeId)
     .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
@@ -160,7 +160,7 @@ public class CommentService {
     
     // 댓글 수정
     @Transactional
-    @CacheEvict(value = {"comment:list", "comment:public"}, allEntries = true)
+    //@CacheEvict(value = {"comment:list", "comment:public"}, allEntries = true)
     public CommentResponse updateComment(UUID commentId, UUID userId, CommentRequest request) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("댓글을 찾을 수 없습니다"));
@@ -187,7 +187,7 @@ public class CommentService {
     
     // 댓글 삭제
     @Transactional
-    @CacheEvict(value = {"comment:list", "comment:public"}, allEntries = true)
+    //@CacheEvict(value = {"comment:list", "comment:public"}, allEntries = true)
     public void deleteComment(UUID commentId, UUID userId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(ErrorStatus.NOT_FOUND_COMMENT::asServiceException);
@@ -212,7 +212,7 @@ public class CommentService {
     
     // 댓글 목록 조회 (SortType을 통한 정렬 옵션 적용)
     @Transactional(readOnly = true)
-    @Cacheable(value = "comment:list", key = "'theme:' + #gameThemeId + ':page:' + #page + ':size:' + #size + ':sort:' + #sortType")
+    //@Cacheable(value = "comment:list", key = "'theme:' + #gameThemeId + ':page:' + #page + ':size:' + #size + ':sort:' + #sortType")
     public Page<CommentResponse> getComments(UUID gameThemeId, UUID userId, int page, int size, CommentSortType sortType) {
         Pageable pageable = PageRequest.of(page, size, sortType.getSort());
         Page<Comment> comments = commentRepository.findByGameThemeIdAndParentIdIsNull(
@@ -231,7 +231,7 @@ public class CommentService {
     
     // 비로그인 사용자를 위한 댓글 목록 조회 (스포일러 아닌 댓글만 표시)
     @Transactional(readOnly = true)
-    @Cacheable(value = "comment:public", key = "'theme:' + #gameThemeId + ':page:' + #page + ':size:' + #size + ':sort:' + #sortType")
+    //@Cacheable(value = "comment:public", key = "'theme:' + #gameThemeId + ':page:' + #page + ':size:' + #size + ':sort:' + #sortType")
     public Page<CommentResponse> getPublicComments(UUID gameThemeId, int page, int size, CommentSortType sortType) {
         Pageable pageable = PageRequest.of(page, size, sortType.getSort());
         Page<Comment> comments = commentRepository.findByGameThemeIdAndParentIdIsNull(

@@ -17,19 +17,19 @@ public class PermissionQueryService {
 	private final PermissionRepository permissionRepository;
 
 	@Transactional(readOnly = true)
-	@Cacheable(value = "permission:name", key = "#permissionName")
+	////@Cacheable(value = "permission:name", key = "#permissionName")
 	public Permission findPermissionByPermissionName(String permissionName) {
 		return permissionRepository.findByPermissionName(permissionName).orElse(null);
 	}
 
 	@Transactional
-	@CacheEvict(value = "permission:name", allEntries = true)
+	////@CacheEvict(value = "permission:name", allEntries = true)
 	public void savePermission(String name, Integer price, Integer duration, String info) {
 		permissionRepository.save(new Permission(name, price, duration, info));
 	}
 
 	@Transactional
-	@CacheEvict(value = "permission:name", allEntries = true)
+	////@CacheEvict(value = "permission:name", allEntries = true)
 	public void deletePermission(Permission permission) {
 		permissionRepository.delete(permission);
 	}
@@ -40,7 +40,7 @@ public class PermissionQueryService {
 	}
 
 	@Transactional
-	@CacheEvict(value = "permission:name", allEntries = true)
+	////@CacheEvict(value = "permission:name", allEntries = true)
 	public void save(Permission permission) {
 		permissionRepository.save(permission);
 	}

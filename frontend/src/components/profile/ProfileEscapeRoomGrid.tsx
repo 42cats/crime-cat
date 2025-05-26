@@ -55,7 +55,7 @@ const ProfileEscapeRoomGrid: React.FC<ProfileEscapeRoomGridProps> = ({ userId })
         } finally {
             setLoading(false);
         }
-    }, [userId, page, hasMore, loading]);
+    }, [userId, page, hasMore]);
 
     // 데이터 초기화 및 첫 페이지 로드
     useEffect(() => {

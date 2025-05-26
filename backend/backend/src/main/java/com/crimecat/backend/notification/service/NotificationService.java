@@ -37,7 +37,7 @@ public class NotificationService {
     /**
      * 알림 생성 및 저장 (다른 서비스에서 호출)
      */
-    @CacheEvict(value = "notification:unread", key = "#recipientId.toString()")
+    ////@CacheEvict(value = "notification:unread", key = "#recipientId.toString()")
     public UUID createAndSendNotification(
         NotificationType type,
         UUID recipientId,       // 받는 사람
@@ -150,7 +150,7 @@ public class NotificationService {
         }
     }
     
-    @CacheEvict(value = "notification:unread", key = "#receiverId.toString()")
+    ////@CacheEvict(value = "notification:unread", key = "#receiverId.toString()")
     public void evictUnreadCache(UUID receiverId) {
         // 캐시 무효화 전용 메서드
     }

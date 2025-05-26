@@ -94,7 +94,7 @@ public class BoardPostService {
     }
 
     @Transactional
-    @CacheEvict(value = "board:post:list", allEntries = true)
+    //@CacheEvict(value = "board:post:list", allEntries = true)
     public BoardPostDetailResponse createBoardPost(
             BoardPostRequest boardPostRequest,
             UUID userId
@@ -128,7 +128,7 @@ public class BoardPostService {
     }
 
     @Transactional
-    @CacheEvict(value = "board:post:list", allEntries = true)
+    //@CacheEvict(value = "board:post:list", allEntries = true)
     public BoardPostDetailResponse updateBoardPost(
             BoardPostRequest boardPostRequest,
             UUID postId,
@@ -147,7 +147,7 @@ public class BoardPostService {
     }
 
     @Transactional
-    @CacheEvict(value = "board:post:list", allEntries = true)
+    //@CacheEvict(value = "board:post:list", allEntries = true)
     public void deleteBoardPost(
             UUID postId,
             UUID userId
