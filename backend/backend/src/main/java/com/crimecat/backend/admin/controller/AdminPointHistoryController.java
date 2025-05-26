@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -85,6 +86,7 @@ public class AdminPointHistoryController {
      * 특정 사용자의 포인트 내역을 조회합니다. 관리자 또는 매니저만 가능합니다.
      */
     @GetMapping("/user/{userId}")
+    @Transactional(readOnly = true)
     public ResponseEntity<Page<PointHistoryResponseDto>> getUserPointHistory(
             @PathVariable UUID userId,
             @RequestParam(defaultValue = "0") int page,
@@ -105,6 +107,7 @@ public class AdminPointHistoryController {
     /**
      * 특정 사용자의 포인트 요약 정보를 조회합니다. 관리자 또는 매니저만 가능합니다.
      */
+    @Transactional(readOnly = true)
     @GetMapping("/user/{userId}/summary")
     public ResponseEntity<UserPointSummaryResponse> getUserPointSummary(@PathVariable UUID userId) {
         // 관리자 또는 매니저 권한 확인
@@ -117,6 +120,7 @@ public class AdminPointHistoryController {
     /**
      * 포인트 통계를 조회합니다. 관리자 또는 매니저만 가능합니다.
      */
+    @Transactional(readOnly = true)
     @GetMapping("/statistics")
     public ResponseEntity<PointHistoryStatisticsResponse> getPointStatistics(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -133,6 +137,7 @@ public class AdminPointHistoryController {
     /**
      * 포인트 많이 보유한 상위 사용자를 조회합니다. 관리자 또는 매니저만 가능합니다.
      */
+    @Transactional(readOnly = true)
     @GetMapping("/top-holders")
     public ResponseEntity<List<UserPointSummaryResponse>> getTopPointHolders(
             @RequestParam(defaultValue = "10") int limit
