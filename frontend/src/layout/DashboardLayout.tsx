@@ -235,13 +235,13 @@ const SidebarInner = React.memo(() => {
                                             roles: ["ADMIN", "MANAGER", "USER"],
                                         },
                                         {
-                                            name: "프로필",
+                                            name: "프로필 설정",
                                             path: "/dashboard/profile",
                                             icon: UserRoundPen,
                                             roles: ["ADMIN", "MANAGER", "USER"],
                                         },
                                         {
-                                            name: "팀",
+                                            name: "합작팀",
                                             path: "/dashboard/teams",
                                             icon: Users,
                                             roles: ["ADMIN", "MANAGER", "USER"],
