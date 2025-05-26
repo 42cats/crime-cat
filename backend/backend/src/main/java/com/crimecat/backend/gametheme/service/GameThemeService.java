@@ -142,7 +142,14 @@ public class GameThemeService {
     @Transactional
     //@Cacheable(value = "game:theme", key = "#themeId.toString()")
     public GetGameThemeResponse getGameTheme(UUID themeId) {
-        GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        // 먼저 기본 테마 정보를 가져와서 타입 확인
+        GameTheme gameTheme = themeRepository.findByIdWithAllRelations(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        
+        // CrimesceneTheme인 경우 추가 관계를 로드
+        if (gameTheme instanceof CrimesceneTheme) {
+            gameTheme = crimesceneThemeRepository.findByIdWithAllRelations(themeId)
+                .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        }
         UUID webUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
         if (gameTheme.isDeleted() || (!gameTheme.isPublicStatus() && !gameTheme.isAuthor(webUserId))) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();

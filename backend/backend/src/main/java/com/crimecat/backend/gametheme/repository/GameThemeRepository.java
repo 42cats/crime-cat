@@ -1,6 +1,7 @@
 package com.crimecat.backend.gametheme.repository;
 
 import com.crimecat.backend.gametheme.domain.GameTheme;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,6 +12,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface GameThemeRepository extends JpaRepository<GameTheme, UUID>, JpaSpecificationExecutor<GameTheme> {
+
+  @Query("SELECT DISTINCT gt FROM GameTheme gt " +
+         "LEFT JOIN FETCH gt.author " +
+         "WHERE gt.id = :id")
+  Optional<GameTheme> findByIdWithAllRelations(@Param("id") UUID id);
 
   Page<GameTheme> findAll(Specification<GameTheme> spec, Pageable page);
 
