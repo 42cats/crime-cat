@@ -18,7 +18,7 @@ public interface CrimesceneThemeRepository extends JpaRepository<CrimesceneTheme
   Optional<CrimesceneTheme> findByIdWithTeamAndMembers(@Param("id") UUID id);
   
   @Query("SELECT DISTINCT ct FROM CrimesceneTheme ct " +
-         "LEFT JOIN FETCH ct.author " +
+         "JOIN FETCH ct.author " +
          "LEFT JOIN FETCH ct.team t " +
          "LEFT JOIN FETCH t.members " +
          "LEFT JOIN FETCH ct.guild " +

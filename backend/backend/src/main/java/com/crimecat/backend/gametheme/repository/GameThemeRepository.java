@@ -15,7 +15,7 @@ import org.springframework.data.repository.query.Param;
 public interface GameThemeRepository extends JpaRepository<GameTheme, UUID>, JpaSpecificationExecutor<GameTheme> {
 
   @Query("SELECT gt FROM GameTheme gt " +
-         "LEFT JOIN FETCH gt.author " +
+         "JOIN FETCH gt.author " +
          "WHERE gt.id = :id")
   Optional<GameTheme> findByIdWithAuthor(@Param("id") UUID id);
   

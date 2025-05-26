@@ -191,11 +191,13 @@ const ThemeModals: React.FC<ThemeModalsProps> = ({
                 </DialogContent>
             </Dialog>
 
-            <ContactUserModal
-                open={showContactModal}
-                userId={theme.author.id}
-                onOpenChange={setShowContactModal}
-            />
+            {theme.author?.id && (
+                <ContactUserModal
+                    open={showContactModal}
+                    userId={theme.author.id}
+                    onOpenChange={setShowContactModal}
+                />
+            )}
 
             {/* 프로필 상세 모달 */}
             {selectedPost && (

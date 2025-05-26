@@ -61,7 +61,7 @@ const ThemeActions: React.FC<ThemeActionsProps> = ({
                 </Button>
             )}
 
-            {(user?.id === theme.author.id ||
+            {(user?.id === theme.author?.id ||
                 hasRole(["ADMIN", "MANAGER"])) && (
                 <>
                     <Button

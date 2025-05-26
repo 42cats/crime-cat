@@ -17,14 +17,19 @@ public class AuthorDto {
     private String nickname;
     private String avatarUrl;
 
-    public static AuthorDto from(WebUser user) {
-        if (user == null) {
+    public static AuthorDto from(WebUser webUser) {
+        if (webUser == null) {
             return null;
         }
-    return AuthorDto.builder()
-        .id(user.getId())
-        .nickname(user.getNickname())
-        .avatarUrl(user.getProfileImagePath())
-        .build();
+        try {
+            return AuthorDto.builder()
+                .id(webUser.getId())
+                .nickname(webUser.getNickname())
+                .avatarUrl(webUser.getProfileImagePath())
+                .build();
+        } catch (Exception e) {
+            // WebUser가 데이터베이스에 없는 경우 처리
+            return null;
+        }
     }
 }

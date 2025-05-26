@@ -146,10 +146,7 @@ public class GameThemeService {
         // 먼저 기본 테마 정보를 가져와서 타입 확인
         GameTheme gameTheme = themeRepository.findByIdWithAuthor(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
         
-        // Author를 명시적으로 초기화
-        if (gameTheme.getAuthor() != null) {
-            org.hibernate.Hibernate.initialize(gameTheme.getAuthor());
-        }
+        // Author는 이미 JOIN FETCH로 로드됨 (author가 없으면 테마 자체가 조회되지 않음)
         
         // CrimesceneTheme인 경우 추가 관계를 로드
         if (gameTheme instanceof CrimesceneTheme) {
