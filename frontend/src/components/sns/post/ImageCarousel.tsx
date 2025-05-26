@@ -19,11 +19,17 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
   
   if (images.length === 1) {
     return (
-      <div onClick={() => setIsViewerOpen(true)} className="cursor-pointer">
+      <div onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsViewerOpen(true);
+      }} className="cursor-pointer">
         <LazyImage src={images[0]} alt="게시물 이미지" aspectRatio="4/5" />
         <ImageViewerModal 
           isOpen={isViewerOpen} 
-          onClose={() => setIsViewerOpen(false)} 
+          onClose={() => {
+            setIsViewerOpen(false);
+          }} 
           images={images} 
           initialIndex={0} 
         />
@@ -53,6 +59,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
               className="w-full h-full flex-shrink-0 cursor-pointer"
               style={{ scrollSnapAlign: 'start' }}
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 setIsViewerOpen(true);
               }}
@@ -70,7 +77,9 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({ images }) => {
       {/* 이미지 뷰어 모달 */}
       <ImageViewerModal 
         isOpen={isViewerOpen} 
-        onClose={() => setIsViewerOpen(false)} 
+        onClose={() => {
+          setIsViewerOpen(false);
+        }} 
         images={images} 
         initialIndex={currentIndex} 
       />

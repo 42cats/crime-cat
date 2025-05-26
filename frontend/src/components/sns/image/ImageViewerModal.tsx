@@ -206,7 +206,11 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
   }, [scale]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        onClose();
+      }
+    }}>
       <DialogContent
         className="max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh] p-0 bg-transparent border-0 shadow-none"
         aria-labelledby="image-viewer-title"
@@ -224,7 +228,11 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
             variant="ghost"
             size="icon"
             className="absolute top-2 right-2 z-50 text-white bg-black/30 hover:bg-black/50"
-            onClick={onClose}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
           >
             <X className="h-6 w-6" />
           </Button>
@@ -297,6 +305,7 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
                 size="icon"
                 className="absolute left-2 top-1/2 transform -translate-y-1/2 z-50 text-white bg-black/30 hover:bg-black/50 rounded-full h-10 w-10"
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   handlePrevImage();
                 }}
@@ -309,6 +318,7 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({
                 size="icon"
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 z-50 text-white bg-black/30 hover:bg-black/50 rounded-full h-10 w-10"
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   handleNextImage();
                 }}
