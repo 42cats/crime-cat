@@ -27,8 +27,9 @@ import {
 } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, AlertCircle, CheckCircle, Ban, Clock, Shield } from "lucide-react";
+import { ShieldCheck, AlertCircle, CheckCircle, Ban, Clock, Shield, Key } from "lucide-react";
 import BlockUserModal from "@/components/admin/BlockUserModal";
+import UserPermissionModal from "@/components/admin/UserPermissionModal";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -52,6 +53,8 @@ const UserRoleManagementPage: React.FC = () => {
     const [blockLoading, setBlockLoading] = useState(false);
     const [unblockDialogOpen, setUnblockDialogOpen] = useState(false);
     const [userToUnblock, setUserToUnblock] = useState<any>(null);
+    const [permissionModalOpen, setPermissionModalOpen] = useState(false);
+    const [selectedUserForPermission, setSelectedUserForPermission] = useState<any>(null);
 
     // 사용자 목록 가져오기
     const fetchUsers = async (page = 0) => {
@@ -136,6 +139,12 @@ const UserRoleManagementPage: React.FC = () => {
     const handleUnblockDialogOpen = (user: any) => {
         setUserToUnblock(user);
         setUnblockDialogOpen(true);
+    };
+    
+    // 권한 관리 모달 열기
+    const handleOpenPermissionModal = (user: any) => {
+        setSelectedUserForPermission(user);
+        setPermissionModalOpen(true);
     };
     
     // 사용자 차단 해제 확인
@@ -263,6 +272,7 @@ const UserRoleManagementPage: React.FC = () => {
                                     <TableHead className="w-80">차단 상태 및 관리</TableHead>
                                     <TableHead>포인트 지급</TableHead>
                                     <TableHead>가입일</TableHead>
+                                    <TableHead>권한 관리</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -409,6 +419,17 @@ const UserRoleManagementPage: React.FC = () => {
                                         <TableCell>
                                             {new Date(user.createdAt).toLocaleDateString()}
                                         </TableCell>
+                                        <TableCell>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleOpenPermissionModal(user)}
+                                                className="bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-400"
+                                            >
+                                                <Key className="h-4 w-4 mr-1" />
+                                                권한 관리
+                                            </Button>
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -502,6 +523,16 @@ const UserRoleManagementPage: React.FC = () => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            
+            <UserPermissionModal
+                isOpen={permissionModalOpen}
+                onClose={() => {
+                    setPermissionModalOpen(false);
+                    setSelectedUserForPermission(null);
+                }}
+                userId={selectedUserForPermission?.id || ""}
+                userNickname={selectedUserForPermission?.nickname || ""}
+            />
         </div>
     );
 };

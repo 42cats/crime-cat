@@ -106,7 +106,7 @@ const TermsPage: React.FC = () => {
                 </h2>
                 <p>
                     이름: 변상훈 <br />
-                    이메일: hoone0802@mystery-place.com
+                    이메일: byunsanghoon@mystery-place.com
                 </p>
             </section>
 

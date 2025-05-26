@@ -79,4 +79,26 @@ export const userManagementApi = {
     getCurrentUserBlockStatus: () => {
         return apiClient.get("/auth/block-status");
     },
+
+    // 사용자 권한 관리
+    getUserPermissions: (userId: string) => {
+        return apiClient.get(`/admin/users/${userId}/permissions`);
+    },
+
+    // 사용자에게 권한 부여
+    grantPermission: (userId: string, permissionName: string, expiresAt?: string) => {
+        return apiClient.post("/admin/users/permissions/grant", {
+            userId,
+            permissionName,
+            expiresAt,
+        });
+    },
+
+    // 사용자 권한 해제
+    revokePermission: (userId: string, permissionName: string) => {
+        return apiClient.post("/admin/users/permissions/revoke", {
+            userId,
+            permissionName,
+        });
+    },
 };
