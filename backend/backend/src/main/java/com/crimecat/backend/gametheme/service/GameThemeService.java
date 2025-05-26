@@ -26,7 +26,6 @@ import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.point.service.PointHistoryService;
 import com.crimecat.backend.notification.service.NotificationService;
 import com.crimecat.backend.notification.enums.NotificationType;
-import jakarta.transaction.Transactional;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -43,6 +42,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
@@ -140,28 +140,20 @@ public class GameThemeService {
         themeRepository.save(gameTheme);
     }
 
-    @Transactional
+
     //@Cacheable(value = "game:theme", key = "#themeId.toString()")
+    @Transactional(readOnly = true)
     public GetGameThemeResponse getGameTheme(UUID themeId) {
-        // 먼저 기본 테마 정보를 가져와서 타입 확인
         GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        
-        // Author는 이미 JOIN FETCH로 로드됨 (author가 없으면 테마 자체가 조회되지 않음)
-        
-        // CrimesceneTheme인 경우 추가 관계를 로드
-        if (gameTheme instanceof CrimesceneTheme) {
-            gameTheme = crimesceneThemeRepository.findByIdWithAllRelations(themeId)
-                .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
-        }
         UUID webUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
         if (gameTheme.isDeleted() || (!gameTheme.isPublicStatus() && !gameTheme.isAuthor(webUserId))) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
         String clientIp = (String) ((ServletRequestAttributes) Objects.requireNonNull(
-            RequestContextHolder
-                .getRequestAttributes()))
-            .getRequest()
-            .getAttribute("clientIp");
+                RequestContextHolder
+                        .getRequestAttributes()))
+                .getRequest()
+                .getAttribute("clientIp");
         viewCountService.themeIncrement(gameTheme, clientIp);
         return GetGameThemeResponse.builder()
                 .theme(GameThemeDetailDto.of(gameTheme))
