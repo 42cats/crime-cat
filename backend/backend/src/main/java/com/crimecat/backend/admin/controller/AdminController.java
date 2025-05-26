@@ -33,6 +33,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -50,6 +51,7 @@ public class AdminController {
     /**
      * 모든 사용자 목록을 조회합니다. 관리자만 가능합니다.
      */
+    @Transactional(readOnly = true)
     @GetMapping("/users")
     public ResponseEntity<Page<WebUserResponse>> getAllUsers(@PageableDefault Pageable pageable) {
         // 관리자 권한 확인
@@ -287,6 +289,7 @@ public class AdminController {
     /**
      * 사용자의 모든 권한을 조회합니다. 관리자만 가능합니다.
      */
+    @Transactional(readOnly = true)
     @GetMapping("/users/{userId}/permissions")
     public ResponseEntity<List<UserGrantedPermissionDto>> getUserPermissions(@PathVariable UUID userId) {
         // 관리자 권한 확인

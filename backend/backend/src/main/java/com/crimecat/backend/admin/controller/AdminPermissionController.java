@@ -13,6 +13,7 @@ import com.crimecat.backend.webUser.enums.UserRole;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,6 +31,7 @@ public class AdminPermissionController {
      * 모든 권한 목록을 조회합니다. 관리자만 가능합니다.
      */
     @GetMapping
+    @Transactional(readOnly = true)
     public ResponseEntity<PermissionsListResponse> getAllPermissions() {
         // 관리자 권한 확인
         AuthenticationUtil.validateUserHasMinimumRole(UserRole.ADMIN);
