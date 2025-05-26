@@ -30,6 +30,7 @@ import com.crimecat.backend.user.service.UserService;
 import com.crimecat.backend.webUser.domain.WebUser;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -220,19 +221,26 @@ public class WebGameHistoryService {
 	 * @param currentWebUser 현재 사용자
 	 * @return 플레이 여부 혹은 제작팀 멤버 여부
 	 */
+	@Transactional(readOnly = true)
 	public CheckPlayResponseDto checkHasPlayed(UUID gameThemeId, WebUser currentWebUser) {
 		// 1. 게임 테마 조회
 		GameTheme gameTheme = gameThemeRepository.findById(gameThemeId)
 				.orElseThrow(ErrorStatus.INVALID_ACCESS::asServiceException);
 		
 		// 2. 범죄현장 테마인 경우 제작팀 멤버 여부 확인
-		if (gameTheme instanceof CrimesceneTheme crimesceneTheme) {
-			// 스트림 API를 사용하여 제작팀 멤버 확인
-			boolean isMember = crimesceneTheme.getTeam().getMembers().stream()
-					.anyMatch(member -> member.getWebUserId().equals(currentWebUser.getId()));
-			
-			if (isMember) {
-				return CheckPlayResponseDto.from(true);
+		if (gameTheme instanceof CrimesceneTheme) {
+			// JOIN FETCH로 팀과 멤버를 함께 조회
+			Optional<CrimesceneTheme> crimesceneThemeOpt = crimesceneThemeRepository.findByIdWithTeamAndMembers(gameThemeId);
+			if (crimesceneThemeOpt.isPresent()) {
+				CrimesceneTheme crimesceneTheme = crimesceneThemeOpt.get();
+				if (crimesceneTheme.getTeam() != null && crimesceneTheme.getTeam().getMembers() != null) {
+					boolean isMember = crimesceneTheme.getTeam().getMembers().stream()
+							.anyMatch(member -> member.getWebUserId().equals(currentWebUser.getId()));
+					
+					if (isMember) {
+						return CheckPlayResponseDto.from(true);
+					}
+				}
 			}
 		}
 		

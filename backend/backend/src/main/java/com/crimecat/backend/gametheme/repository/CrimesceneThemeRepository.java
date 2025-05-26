@@ -14,6 +14,9 @@ import org.springframework.data.repository.query.Param;
 
 public interface CrimesceneThemeRepository extends JpaRepository<CrimesceneTheme, UUID>, JpaSpecificationExecutor<CrimesceneTheme> {
 
+  @Query("SELECT c FROM CrimesceneTheme c LEFT JOIN FETCH c.team t LEFT JOIN FETCH t.members WHERE c.id = :id")
+  Optional<CrimesceneTheme> findByIdWithTeamAndMembers(@Param("id") UUID id);
+
   @Query("SELECT c FROM CrimesceneTheme c WHERE c.guildSnowflake = :guildSnowflake")
   Optional<CrimesceneTheme> findByGuildSnowflake(String guildSnowflake);
 
