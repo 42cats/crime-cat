@@ -5,6 +5,17 @@ import com.crimecat.backend.admin.dto.BlockInfoResponse;
 import com.crimecat.backend.admin.dto.BlockUserRequest;
 import com.crimecat.backend.admin.dto.ChangeUserRoleRequest;
 import com.crimecat.backend.admin.dto.SubtractUserPointsRequest;
+import com.crimecat.backend.admin.dto.permission.GrantPermissionRequest;
+import com.crimecat.backend.admin.dto.permission.RevokePermissionRequest;
+import com.crimecat.backend.admin.dto.permission.UserPermissionResponse;
+import com.crimecat.backend.permission.domain.Permission;
+import com.crimecat.backend.permission.service.PermissionService;
+import com.crimecat.backend.user.domain.DiscordUser;
+import com.crimecat.backend.user.domain.UserPermission;
+import com.crimecat.backend.user.dto.UserGrantedPermissionDto;
+import com.crimecat.backend.user.service.DiscordUserQueryService;
+import com.crimecat.backend.user.service.UserPermissionQueryService;
+import com.crimecat.backend.user.service.UserPermissionService;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.service.UserService;
@@ -14,6 +25,8 @@ import com.crimecat.backend.webUser.dto.WebUserResponse;
 import com.crimecat.backend.webUser.enums.UserRole;
 import com.crimecat.backend.webUser.service.WebUserService;
 import jakarta.validation.Valid;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +42,10 @@ public class AdminController {
     
     private final WebUserService webUserService;
     private final UserService userService;
+    private final PermissionService permissionService;
+    private final UserPermissionService userPermissionService;
+    private final UserPermissionQueryService userPermissionQueryService;
+    private final DiscordUserQueryService discordUserQueryService;
     
     /**
      * 모든 사용자 목록을 조회합니다. 관리자만 가능합니다.
@@ -172,5 +189,120 @@ public class AdminController {
             // 인증되지 않은 사용자의 경우 차단되지 않은 상태로 반환
             return ResponseEntity.ok(BlockInfoResponse.notBlocked());
         }
+    }
+    
+    /**
+     * 사용자에게 권한을 부여합니다. 관리자만 가능합니다.
+     */
+    @PostMapping("/users/permissions/grant")
+    public ResponseEntity<UserPermissionResponse> grantPermission(@Valid @RequestBody GrantPermissionRequest request) {
+        // 관리자 권한 확인
+        AuthenticationUtil.validateUserHasMinimumRole(UserRole.ADMIN);
+        
+        // 사용자 확인
+        User user = userService.getUserById(request.getUserId());
+        if (user.getDiscordUser() == null) {
+            throw ErrorStatus.USER_NOT_FOUND.asControllerException();
+        }
+        
+        DiscordUser discordUser = user.getDiscordUser();
+        
+        // 권한 확인
+        Permission permission = permissionService.findPermissionByPermissionName(request.getPermissionName());
+        if (permission == null) {
+            throw ErrorStatus.RESOURCE_NOT_FOUND.asControllerException();
+        }
+        
+        // 기존 권한 확인
+        UserPermission existingPermission = userPermissionService.getUserPermissionByPermissionId(
+                discordUser, permission.getId());
+        
+        if (existingPermission != null) {
+            // 이미 권한이 있는 경우 만료일 업데이트
+            if (request.getExpiresAt() != null) {
+                existingPermission.setExpiredAt(request.getExpiresAt());
+            } else {
+                existingPermission.extendPermissionPeriod(permission.getDuration());
+            }
+            userPermissionQueryService.save(existingPermission);
+        } else {
+            // 새로운 권한 부여
+            UserPermission newPermission = new UserPermission(discordUser, permission);
+            if (request.getExpiresAt() != null) {
+                newPermission.setExpiredAt(request.getExpiresAt());
+            }
+            userPermissionQueryService.save(newPermission);
+        }
+        
+        UserPermissionResponse response = new UserPermissionResponse();
+        response.setPermissionId(permission.getId().toString());
+        response.setPermissionName(permission.getName());
+        response.setExpiredAt(request.getExpiresAt() != null ? request.getExpiresAt() : 
+                LocalDateTime.now().plusDays(permission.getDuration()));
+        response.setMessage("권한이 성공적으로 부여되었습니다.");
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * 사용자의 권한을 해제합니다. 관리자만 가능합니다.
+     */
+    @PostMapping("/users/permissions/revoke")
+    public ResponseEntity<UserPermissionResponse> revokePermission(@Valid @RequestBody RevokePermissionRequest request) {
+        // 관리자 권한 확인
+        AuthenticationUtil.validateUserHasMinimumRole(UserRole.ADMIN);
+        
+        // 사용자 확인
+        User user = userService.getUserById(request.getUserId());
+        if (user.getDiscordUser() == null) {
+            throw ErrorStatus.USER_NOT_FOUND.asControllerException();
+        }
+        
+        DiscordUser discordUser = user.getDiscordUser();
+        
+        // 권한 확인
+        Permission permission = permissionService.findPermissionByPermissionName(request.getPermissionName());
+        if (permission == null) {
+            throw ErrorStatus.RESOURCE_NOT_FOUND.asControllerException();
+        }
+        
+        // 기존 권한 확인 및 삭제
+        UserPermission existingPermission = userPermissionService.getUserPermissionByPermissionId(
+                discordUser, permission.getId());
+        
+        if (existingPermission != null) {
+            userPermissionQueryService.delete(existingPermission);
+            
+            UserPermissionResponse response = new UserPermissionResponse();
+            response.setPermissionId(permission.getId().toString());
+            response.setPermissionName(permission.getName());
+            response.setMessage("권한이 성공적으로 해제되었습니다.");
+            
+            return ResponseEntity.ok(response);
+        } else {
+            throw ErrorStatus.RESOURCE_NOT_FOUND.asControllerException();
+        }
+    }
+    
+    /**
+     * 사용자의 모든 권한을 조회합니다. 관리자만 가능합니다.
+     */
+    @GetMapping("/users/{userId}/permissions")
+    public ResponseEntity<List<UserGrantedPermissionDto>> getUserPermissions(@PathVariable UUID userId) {
+        // 관리자 권한 확인
+        AuthenticationUtil.validateUserHasMinimumRole(UserRole.ADMIN);
+        
+        // 사용자 확인
+        User user = userService.getUserById(userId);
+        if (user.getDiscordUser() == null) {
+            throw ErrorStatus.USER_NOT_FOUND.asControllerException();
+        }
+        
+        List<UserGrantedPermissionDto> permissions = userPermissionService.getActiveUserPermissions(user.getDiscordUser())
+                .stream()
+                .map(UserGrantedPermissionDto::of)
+                .toList();
+        
+        return ResponseEntity.ok(permissions);
     }
 }

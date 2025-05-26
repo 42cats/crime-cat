@@ -44,4 +44,22 @@ public class UserPermissionQueryService {
 		userPermission.setExpiredAt(newExpiredDate);
 		userPermissionRepository.save(userPermission);
 	}
+
+	/**
+	 * 사용자 권한 저장
+	 * @param userPermission 저장할 사용자 권한
+	 */
+	@Transactional
+	public void save(UserPermission userPermission) {
+		userPermissionRepository.save(userPermission);
+	}
+
+	/**
+	 * 사용자 권한 삭제
+	 * @param userPermission 삭제할 사용자 권한
+	 */
+	@Transactional
+	public void delete(UserPermission userPermission) {
+		userPermissionRepository.delete(userPermission);
+	}
 }

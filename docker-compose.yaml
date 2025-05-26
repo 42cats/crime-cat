@@ -1,0 +1,63 @@
+services:
+  db:
+    init: false
+    container_name: cat_db
+    env_file:
+      - .env
+    environment:
+      - MYSQL_USER=mysql
+      - PUID=100
+      - PGID=101
+      - TEMP_DIR=/tmp/migration_temp
+    pull_policy: missing
+    image: db
+    build:
+      context: .
+      dockerfile: docker/mariadb/Dockerfile
+    networks:
+      - discord-network
+    user: "100:101"  # mysql:mysql
+    security_opt:
+      - no-new-privileges:true
+    privileged: false
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./docker/mariadb/db/migrations:/var/lib/dbinit/migrations:ro
+    tmpfs:
+      - /tmp:rw,size=100m,uid=100,gid=101
+      - /var/tmp:rw,size=50m,uid=100,gid=101
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    container_name: dev_redis
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    depends_on:
+      db:
+        condition: service_healthy
+
+networks:
+  discord-network:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+  image_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/images

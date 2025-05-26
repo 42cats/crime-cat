@@ -203,6 +203,16 @@ public class UserService {
 			throw ErrorStatus.USER_NOT_FOUND.asServiceException();
 		}
 
+		// "고마운분" 권한 체크 - 모든 권한을 프리패스
+		Permission gratefulPermission = permissionService.findPermissionByPermissionName("고마운분");
+		if (gratefulPermission != null) {
+			UserPermission gratefulUserPermission = userPermissionService.getUserPermissionByPermissionId(
+					user, gratefulPermission.getId());
+			if (gratefulUserPermission != null && LocalDateTime.now().isBefore(gratefulUserPermission.getExpiredAt())) {
+				return new UserHasPermissionResponseDto("Permission has");
+			}
+		}
+
 		Permission permission = permissionService.findPermissionByPermissionName(permissionName);
 		if (permission == null) {
 			throw ErrorStatus.RESOURCE_NOT_FOUND.asServiceException();
