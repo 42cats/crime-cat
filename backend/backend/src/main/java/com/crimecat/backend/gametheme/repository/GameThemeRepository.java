@@ -7,16 +7,20 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface GameThemeRepository extends JpaRepository<GameTheme, UUID>, JpaSpecificationExecutor<GameTheme> {
 
-  @Query("SELECT DISTINCT gt FROM GameTheme gt " +
+  @Query("SELECT gt FROM GameTheme gt " +
          "LEFT JOIN FETCH gt.author " +
          "WHERE gt.id = :id")
-  Optional<GameTheme> findByIdWithAllRelations(@Param("id") UUID id);
+  Optional<GameTheme> findByIdWithAuthor(@Param("id") UUID id);
+  
+  @EntityGraph(attributePaths = {"author"})
+  Optional<GameTheme> findWithAuthorById(UUID id);
 
   Page<GameTheme> findAll(Specification<GameTheme> spec, Pageable page);
 

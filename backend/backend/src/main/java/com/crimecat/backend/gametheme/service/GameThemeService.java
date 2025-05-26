@@ -143,7 +143,7 @@ public class GameThemeService {
     //@Cacheable(value = "game:theme", key = "#themeId.toString()")
     public GetGameThemeResponse getGameTheme(UUID themeId) {
         // 먼저 기본 테마 정보를 가져와서 타입 확인
-        GameTheme gameTheme = themeRepository.findByIdWithAllRelations(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        GameTheme gameTheme = themeRepository.findByIdWithAuthor(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
         
         // CrimesceneTheme인 경우 추가 관계를 로드
         if (gameTheme instanceof CrimesceneTheme) {
