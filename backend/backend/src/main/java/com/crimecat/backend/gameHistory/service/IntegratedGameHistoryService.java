@@ -378,7 +378,7 @@ public class IntegratedGameHistoryService {
      * - 해당 사용자의 캐시를 삭제하여 다음 조회 시 최신 데이터를 가져오도록 함
      */
     //@CacheEvict(value = {CacheType.INTEGRATED_HISTORIES, CacheType.USER_STATISTICS, CacheType.THEME_PLAY_COUNTS}, 
-                key = "#userId")
+//                key = "#userId")
     public void invalidateUserCache(String userId) {
         log.info("사용자 캐시 무효화 - userId: {}", userId);
     }
