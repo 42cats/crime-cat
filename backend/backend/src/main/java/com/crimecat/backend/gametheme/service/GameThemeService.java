@@ -66,7 +66,7 @@ public class GameThemeService {
     public void addGameTheme(MultipartFile file, AddGameThemeRequest request) {
         GameTheme gameTheme = GameTheme.from(request);
         WebUser webUser = AuthenticationUtil.getCurrentWebUser();
-        gameTheme.setAuthorId(webUser.getId());
+        gameTheme.setAuthorId(webUser.getUser().getId());
 
         if (gameTheme instanceof CrimesceneTheme) {
             checkTeam((CrimesceneTheme) gameTheme, webUser);
