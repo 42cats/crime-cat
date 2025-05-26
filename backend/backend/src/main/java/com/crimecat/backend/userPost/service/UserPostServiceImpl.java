@@ -22,12 +22,13 @@ import com.crimecat.backend.userPost.repository.UserPostLikeRepository;
 import com.crimecat.backend.userPost.repository.UserPostRepository;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
-import jakarta.transaction.Transactional;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -568,8 +569,8 @@ public class UserPostServiceImpl implements UserPostService {
 
         return convertToGalleryDtos(posts);
     }
-
     @Override
+    @Transactional(readOnly = true)
     public Page<UserPostGalleryPageDto> getPostsByAllHashTags(List<String> tagNames, WebUser currentUser, Pageable pageable) {
         if (tagNames == null || tagNames.isEmpty()) {
             return Page.empty(pageable);
@@ -594,6 +595,7 @@ public class UserPostServiceImpl implements UserPostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<UserPostGalleryPageDto> getPopularPosts(WebUser currentUser, Pageable pageable) {
         // 인기도 점수 기준으로 정렬된 게시물 조회
         Page<UserPost> posts;
@@ -607,6 +609,7 @@ public class UserPostServiceImpl implements UserPostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<UserPostGalleryPageDto> getRandomPosts(WebUser currentUser, Pageable pageable) {
         // 무작위 게시물 조회
         Page<UserPost> posts;
@@ -620,6 +623,7 @@ public class UserPostServiceImpl implements UserPostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<UserPostGalleryPageDto> searchPostsByKeyword(String keyword, WebUser currentUser, Pageable pageable) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return Page.empty(pageable);
@@ -656,6 +660,7 @@ public class UserPostServiceImpl implements UserPostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<UserPostGalleryPageDto> searchPostsByKeywordAndHashtags(String keyword, List<String> hashtags, WebUser currentUser, Pageable pageable) {
         if ((keyword == null || keyword.trim().isEmpty()) && (hashtags == null || hashtags.isEmpty())) {
             return Page.empty(pageable);
@@ -725,6 +730,7 @@ public class UserPostServiceImpl implements UserPostService {
     }
     
     @Override
+    @Transactional(readOnly = true)
     public Page<UserPostGalleryPageDto> searchMyUserPosts(WebUser currentUser, String keyword, Pageable pageable) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return getMyUserPostGalleryPage(currentUser, pageable);
@@ -737,6 +743,7 @@ public class UserPostServiceImpl implements UserPostService {
     }
     
     @Override
+    @Transactional(readOnly = true)
     public Page<UserPostGalleryPageDto> searchPostsWithAuthor(String query, WebUser currentUser, Pageable pageable) {
         if (query == null || query.trim().isEmpty()) {
             return Page.empty(pageable);

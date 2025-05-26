@@ -117,7 +117,7 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
 
         // 게임 플레이 여부 확인
         const checkGamePlayed = async () => {
-            if (isOpen && theme.themeId && isAuthenticated) {
+            if (isOpen && theme.themeId && theme.themeId !== 'undefined' && isAuthenticated) {
                 try {
                     const played = await gameHistoryService.checkPlayTheme(
                         theme.themeId
@@ -186,6 +186,11 @@ const ThemeDetailModal: React.FC<ThemeDetailModalProps> = ({
     const handleRequestGame = async () => {
         if (!requestMessage.trim()) {
             toast.error("메시지를 입력해주세요");
+            return;
+        }
+
+        if (!theme.themeId || theme.themeId === 'undefined') {
+            toast.error("유효하지 않은 테마입니다");
             return;
         }
 

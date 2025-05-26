@@ -28,6 +28,8 @@ public class GetGameThemesResponse {
                 .page(page.getPageable().getPageNumber())
                 .totalPages(page.getTotalPages())
                 .totalElements(page.getTotalElements())
+                .hasNext(page.hasNext())
+                .hasPrevious(page.hasPrevious())
                 .build();
     }
 }

@@ -84,7 +84,7 @@ const ThemeDetail: React.FC = () => {
     // 초기 데이터 로드 및 설정
     useEffect(() => {
         const checkGamePlayed = async () => {
-            if (user?.id && id) {
+            if (user?.id && id && id !== 'undefined') {
                 try {
                     const played = await gameHistoryService.checkPlayTheme(id);
                     setHasPlayedGame(played);
@@ -218,10 +218,19 @@ const ThemeDetail: React.FC = () => {
             return;
         }
 
+        if (!id || id === 'undefined') {
+            toast({
+                title: "유효하지 않은 테마입니다",
+                description: "테마 정보를 확인할 수 없습니다.",
+                variant: "destructive",
+            });
+            return;
+        }
+
         setIsSubmittingRequest(true);
         try {
             const result = await gameHistoryService.requestGameRecord({
-                gameThemeId: id!,
+                gameThemeId: id,
                 message: requestMessage,
             });
 

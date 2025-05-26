@@ -159,7 +159,6 @@ public class NotificationService {
      * 미읽은 알림 개수 조회
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = "notification:unread", key = "#userId.toString()")
     public long getUnreadCount(UUID userId) {
         return notificationRepository.countByUserIdAndStatus(userId, NotificationStatus.UNREAD);
     }

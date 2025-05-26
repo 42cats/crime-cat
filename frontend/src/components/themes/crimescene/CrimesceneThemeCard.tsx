@@ -31,7 +31,8 @@ const formatPlayTime = (min: number, max: number): string => {
         : `${toHourText(min)} ~ ${toHourText(max)}`;
 };
 
-const formatCount = (num: number): string => {
+const formatCount = (num: number | undefined): string => {
+    if (num === undefined || num === null) return "0";
     return num >= 1000
         ? (num / 1000).toFixed(1).replace(/\.0$/, "") + "k"
         : num.toString();
@@ -40,8 +41,8 @@ const formatCount = (num: number): string => {
 const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
     const playerText =
         theme.playersMin === theme.playersMax
-            ? `${theme.playersMin}인`
-            : `${theme.playersMin}~${theme.playersMax}인`;
+            ? `${theme.playersMin || 0}인`
+            : `${theme.playersMin || 0}~${theme.playersMax || 0}인`;
 
     // type이 없을 경우 기본값 설정
     const themeType = theme.type?.toLowerCase() || 'crimescene';
@@ -79,14 +80,14 @@ const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
                         <div className="flex items-center bg-black/60 text-white rounded-full px-2 py-1 shadow-md">
                             <Eye className="w-3 h-3 mr-1" />
                             <span className="text-xs">
-                                {formatCount(theme.views)}
+                                {formatCount(theme.views || 0)}
                             </span>
                         </div>
                         {theme.recommendationEnabled && (
                             <div className="flex items-center bg-black/60 text-white rounded-full px-2 py-1 shadow-md">
                                 <Heart className="w-3 h-3 text-red-500 fill-current mr-1" />
                                 <span className="text-xs">
-                                    {formatCount(theme.recommendations)}
+                                    {formatCount(theme.recommendations || 0)}
                                 </span>
                             </div>
                         )}
@@ -96,10 +97,10 @@ const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
                 {/* 내용 */}
                 <CardContent className="p-4 flex-grow flex flex-col">
                     <h2 className="text-lg font-bold line-clamp-1">
-                        {theme.title}
+                        {theme.title || "제목 없음"}
                     </h2>
                     <p className="text-sm text-muted-foreground line-clamp-2 mt-1 mb-2 flex-grow">
-                        {theme.summary}
+                        {theme.summary || "설명이 없습니다."}
                     </p>
 
                     <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs mt-auto text-muted-foreground">
@@ -110,15 +111,15 @@ const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
                         <div className="flex items-center gap-1">
                             <Coins className="w-3 h-3 flex-shrink-0" />
                             <span className="truncate">
-                                {theme.price.toLocaleString()}원
+                                {(theme.price || 0).toLocaleString()}원
                             </span>
                         </div>
                         <div className="flex items-center gap-1">
                             <Clock className="w-3 h-3 flex-shrink-0" />
                             <span className="truncate">
                                 {formatPlayTime(
-                                    theme.playTimeMin,
-                                    theme.playTimeMax
+                                    theme.playTimeMin || 0,
+                                    theme.playTimeMax || 0
                                 )}
                             </span>
                         </div>
@@ -129,7 +130,7 @@ const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
                                     <Star
                                         key={star}
                                         className={`w-3 h-3 ${
-                                            star <= theme.difficulty
+                                            star <= (theme.difficulty || 0)
                                                 ? "text-yellow-500 fill-current"
                                                 : "text-gray-300"
                                         }`}
@@ -139,7 +140,7 @@ const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
                         </div>
                     </div>
 
-                    {theme.tags.length > 0 && (
+                    {theme.tags && theme.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
                             {theme.tags.slice(0, 3).map((tag, idx) => (
                                 <span

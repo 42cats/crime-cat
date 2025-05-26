@@ -42,8 +42,7 @@ public class BoardPostService {
     private final ViewCountService viewCountService;
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "board:post:list", 
-               key = "'board:' + #boardType + ':type:' + #postType + ':page:' + #page + ':size:' + #size + ':kw:' + #kw + ':sort:' + #sortType.toString()")
+    // Page 객체는 Redis 직렬화가 복잡하므로 캐시하지 않음
     public Page<BoardPostResponse> getBoardPage(
             int page,
             int size,

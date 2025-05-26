@@ -66,10 +66,21 @@ instance.interceptors.request.use(async (config) => {
     return config;
 });
 
+// 재시도 횟수 추적을 위한 Map
+const retryCountMap = new Map<string, number>();
+const MAX_RETRY_COUNT = 2;
+
+// 5분마다 재시도 카운트 클리어
+setInterval(() => {
+    retryCountMap.clear();
+    console.log("재시도 카운트 맵 클리어");
+}, 5 * 60 * 1000);
+
 instance.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
+        const requestKey = `${originalRequest.method}:${originalRequest.url}`;
 
         // 특정 URL들은 재시도하지 않음
         if (originalRequest.url?.includes("/auth/reissue")) {
@@ -89,7 +100,17 @@ instance.interceptors.response.use(
             !originalRequest._retry &&
             !originalRequest.url?.includes("/public/")
         ) {
+            // 재시도 횟수 확인
+            const currentRetryCount = retryCountMap.get(requestKey) || 0;
+            
+            if (currentRetryCount >= MAX_RETRY_COUNT) {
+                console.log(`재시도 횟수 초과: ${requestKey}`);
+                retryCountMap.delete(requestKey);
+                return Promise.reject(error);
+            }
+
             originalRequest._retry = true;
+            retryCountMap.set(requestKey, currentRetryCount + 1);
 
             if (isRefreshingToken) {
                 return new Promise((resolve, reject) => {
@@ -105,9 +126,12 @@ instance.interceptors.response.use(
             try {
                 await instance.post("/auth/reissue");
                 processQueue(failedAuthQueue);
+                // 성공 시 재시도 카운트 리셋
+                retryCountMap.delete(requestKey);
                 return instance(originalRequest);
             } catch (err) {
                 processQueue(failedAuthQueue, err);
+                retryCountMap.clear(); // 모든 재시도 카운트 클리어
                 resetUserState();
                 window.location.href = "/login";
                 return Promise.reject(err);

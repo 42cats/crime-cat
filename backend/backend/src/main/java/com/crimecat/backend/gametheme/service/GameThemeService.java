@@ -278,7 +278,7 @@ public class GameThemeService {
     }
 
     @Transactional
-    @Cacheable(value = "game:theme:list", key = "#filter.hashCode()")
+    // Redis 캐시 직렬화 문제로 인해 캐시 비활성화
     public GetGameThemesResponse getGameThemes(GetGameThemesFilter filter) {
         UUID webUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
         Sort sort = GameThemeSortType.valueOf(filter.getSort()).getSort();
