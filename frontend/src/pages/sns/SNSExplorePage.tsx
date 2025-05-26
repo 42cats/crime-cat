@@ -6,7 +6,6 @@ import { exploreService } from "@/api/explore/exploreService";
 import { searchService } from "@/api/search/searchService";
 import SnsBottomNavigation from "@/components/sns/SnsBottomNavigation";
 import {
-    SearchForm,
     PopularHashtags,
     SearchStatus,
     ExploreTabs,
@@ -46,36 +45,23 @@ const SNSExplorePage: React.FC = () => {
         try {
             let postsData;
 
-            console.log("Loading posts:", {
-                searchQuery,
-                activeTab,
-                isSearching,
-                currentPage,
-                resetPage,
-            });
-
             if (isSearching) {
-                console.log("Using search service for:", searchQuery);
                 postsData = await searchService.searchPosts(
                     searchQuery,
                     currentPage,
                     12
                 );
             } else if (activeTab === "popular") {
-                console.log("Using explore service for popular posts");
                 postsData = await exploreService.getPopularPosts(
                     currentPage,
                     12
                 );
             } else {
-                console.log("Using explore service for random posts");
                 postsData = await exploreService.getRandomPosts(
                     currentPage,
                     12
                 );
             }
-
-            console.log("Posts data received:", postsData);
 
             if (resetPage || currentPage === 0) {
                 setPosts(postsData.content || []);
@@ -87,7 +73,6 @@ const SNSExplorePage: React.FC = () => {
 
             setHasMore(!postsData.last && (postsData.content?.length || 0) > 0);
         } catch (error) {
-            console.error("게시물 로드 실패:", error);
             if (resetPage) {
                 setPosts([]);
                 setHasMore(false);
@@ -113,7 +98,8 @@ const SNSExplorePage: React.FC = () => {
 
     // URL 변경 감지 및 데이터 리로드 (핵심 로직)
     useEffect(() => {
-        console.log("Key changed:", { prevKey: prevKey.current, currentKey });
+        let mounted = true;
+        let loadingTimeout: NodeJS.Timeout | null = null;
 
         // 키가 변경되었을 때만 데이터 리로드
         if (prevKey.current !== currentKey) {
@@ -124,16 +110,28 @@ const SNSExplorePage: React.FC = () => {
             setPage(0);
             setHasMore(true);
 
-            // 데이터 로드
-            loadPosts(true);
+            // 약간의 딜레이를 주어 중복 호출 방지
+            loadingTimeout = setTimeout(() => {
+                if (mounted) {
+                    // 데이터 로드
+                    loadPosts(true);
 
-            // 해시태그 로드 (검색 중이 아닐 때만)
-            if (!isSearching) {
-                loadPopularHashtags();
-            } else {
-                setPopularHashtags([]);
-            }
+                    // 해시태그 로드 (검색 중이 아닐 때만)
+                    if (!isSearching) {
+                        loadPopularHashtags();
+                    } else {
+                        setPopularHashtags([]);
+                    }
+                }
+            }, 50);
         }
+
+        return () => {
+            mounted = false;
+            if (loadingTimeout) {
+                clearTimeout(loadingTimeout);
+            }
+        };
     }, [currentKey]); // currentKey만 의존성으로 사용
 
     // 무한 스크롤
@@ -142,12 +140,17 @@ const SNSExplorePage: React.FC = () => {
             if (isLoading) return;
             if (observer.current) observer.current.disconnect();
 
-            observer.current = new IntersectionObserver((entries) => {
-                if (entries[0].isIntersecting && hasMore && !isLoading) {
-                    console.log("Loading more posts...");
-                    loadPosts(false);
+            observer.current = new IntersectionObserver(
+                (entries) => {
+                    if (entries[0].isIntersecting && hasMore && !isLoading) {
+                        loadPosts(false);
+                    }
+                },
+                {
+                    rootMargin: "100px",
+                    threshold: 0.1,
                 }
-            });
+            );
 
             if (node) observer.current.observe(node);
         },
@@ -160,8 +163,6 @@ const SNSExplorePage: React.FC = () => {
         const formData = new FormData(e.target as HTMLFormElement);
         const query = (formData.get("search") as string)?.trim();
 
-        console.log("handleSearch called:", { query });
-
         if (query) {
             setSearchParams({ search: query });
         } else {
@@ -171,20 +172,17 @@ const SNSExplorePage: React.FC = () => {
 
     // 검색 취소
     const handleClearSearch = () => {
-        console.log("Clearing search");
         setSearchParams({});
     };
 
     // 해시태그 클릭
     const handleHashtagClick = (tag: string) => {
         const hashtagQuery = `#${tag}`;
-        console.log("Hashtag clicked:", { tag, hashtagQuery });
         setSearchParams({ search: hashtagQuery });
     };
 
     // 탭 변경
     const handleTabChange = (tab: string) => {
-        console.log("Tab change:", { tab });
         setSearchParams({ tab });
     };
 

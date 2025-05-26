@@ -50,6 +50,8 @@ class ExploreService {
 
   // 무작위 게시물 조회
   async getRandomPosts(page: number = 0, size: number = 12): Promise<ExplorePostsResponse> {
+    console.log("[ExploreService] getRandomPosts called:", { page, size });
+    console.trace(); // 호출 스택 추적
     try {
       return await apiClient.get<ExplorePostsResponse>(`/public/posts/explore/random`, {
         params: {
@@ -71,7 +73,7 @@ class ExploreService {
   // 최신 게시물 조회 (팔로우 중인 사용자 + 인기 게시물)
   async getFeedPosts(page: number = 0, size: number = 10): Promise<ExplorePostsResponse> {
     try {
-      return await apiClient.get<ExplorePostsResponse>(`/posts/feed`, {
+      return await apiClient.get<ExplorePostsResponse>(`/posts/random`, {
         params: {
           page,
           size
