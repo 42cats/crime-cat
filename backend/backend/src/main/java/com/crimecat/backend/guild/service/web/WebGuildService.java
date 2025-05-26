@@ -35,7 +35,7 @@ public class WebGuildService {
     public GuildResponseDto guildBotInfoDTOS(WebUser webUser) {
         String discordUserSnowflake = webUser.getDiscordUserSnowflake();
         List<Guild> guildList = guildRepository.findActiveGuildsByOwner(discordUserSnowflake);
-        log.info("🎯 사용자 {}의 길드 목록: {}", discordUserSnowflake, guildList);
+        log.info("🎯 사용자 {}의 길드 개수: {}", discordUserSnowflake, guildList.size());
 
         Map<String, GuildBotInfoDto> resultMap = new HashMap<>();
 

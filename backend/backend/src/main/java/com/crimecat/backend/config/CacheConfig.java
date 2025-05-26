@@ -4,6 +4,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -24,6 +25,7 @@ import java.util.Map;
 public class CacheConfig {
 
     @Bean
+    @Primary
     public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(10)) // 기본 TTL 10분
@@ -41,7 +43,7 @@ public class CacheConfig {
         
         // 게시판 캐시 (10분)
         cacheConfigurations.put("board:post:list", defaultConfig.entryTtl(Duration.ofMinutes(10)));
-        cacheConfigurations.put("board:post:detail", defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigurations.put("board:post", defaultConfig.entryTtl(Duration.ofMinutes(30)));
         
         // 사용자 프로필 캐시 (30분)
         cacheConfigurations.put("user:profile", defaultConfig.entryTtl(Duration.ofMinutes(30)));
@@ -58,12 +60,11 @@ public class CacheConfig {
         
         // 공지사항 캐시 (1시간)
         cacheConfigurations.put("notice:list", defaultConfig.entryTtl(Duration.ofHours(1)));
-        cacheConfigurations.put("notice:pinned", defaultConfig.entryTtl(Duration.ofHours(1)));
-        cacheConfigurations.put("notice:detail", defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put("notice", defaultConfig.entryTtl(Duration.ofHours(1)));
         
         // 명령어 캐시 (2시간)
         cacheConfigurations.put("command:list", defaultConfig.entryTtl(Duration.ofHours(2)));
-        cacheConfigurations.put("command:detail", defaultConfig.entryTtl(Duration.ofHours(2)));
+        cacheConfigurations.put("command", defaultConfig.entryTtl(Duration.ofHours(2)));
         
         // 해시태그 캐시 (30분)
         cacheConfigurations.put("hashtag:popular", defaultConfig.entryTtl(Duration.ofMinutes(30)));

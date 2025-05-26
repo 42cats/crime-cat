@@ -14,7 +14,6 @@ const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080';
 const BEARER_TOKEN = process.env.DISCORD_CLIENT_SECRET;
 const API_PREFIX = '/bot/v1';
 const API_TIMEOUT = 8000; // 8초
-
 /**
  * 안전한 API 요청 전송 유틸리티 함수
  * @param {Object} options 요청 옵션

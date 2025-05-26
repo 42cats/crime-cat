@@ -173,9 +173,8 @@ public class HybridCacheConfig {
      * 복합 캐시 매니저 - Caffeine과 Redis를 함께 사용
      * 먼저 Caffeine에서 찾고, 없으면 Redis에서 찾음
      */
-    @Bean
-    @Primary
-    public CacheManager cacheManager(
+    @Bean("hybridCacheManager")
+    public CacheManager hybridCacheManager(
             @Qualifier("caffeineCacheManager") CaffeineCacheManager caffeineCacheManager,
             @Qualifier("optimizedRedisCacheManager") RedisCacheManager redisCacheManager) {
         

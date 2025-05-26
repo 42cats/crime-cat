@@ -21,38 +21,28 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
     
     // 특정 사용자가 팔로우하고 있는 사용자 목록 조회
     @Query("SELECT DISTINCT f.following FROM Follow f " +
-           "JOIN FETCH f.following wu " +
-           "LEFT JOIN FETCH wu.discordUser " +
            "WHERE f.follower.id = :webUserId")
     List<WebUser> findFollowingsByUserId(@Param("webUserId") UUID webUserId);
     
     // 특정 사용자를 팔로우하고 있는 사용자 목록 조회
     @Query("SELECT DISTINCT f.follower FROM Follow f " +
-           "JOIN FETCH f.follower wu " +
-           "LEFT JOIN FETCH wu.discordUser " +
            "WHERE f.following.id = :webUserId")
     List<WebUser> findFollowersByUserId(@Param("webUserId") UUID webUserId);
     
     // 특정 사용자가 팔로우하고 있는 사용자 목록 페이징 조회
     @Query(value = "SELECT DISTINCT f.following FROM Follow f " +
-           "JOIN FETCH f.following wu " +
-           "LEFT JOIN FETCH wu.discordUser " +
            "WHERE f.follower.id = :webUserId",
-           countQuery = "SELECT COUNT(f) FROM Follow f WHERE f.follower.id = :webUserId")
+           countQuery = "SELECT COUNT(DISTINCT f.following) FROM Follow f WHERE f.follower.id = :webUserId")
     Page<WebUser> findFollowingsByUserId(@Param("webUserId") UUID webUserId, Pageable pageable);
     
     // 특정 사용자를 팔로우하고 있는 사용자 목록 페이징 조회
     @Query(value = "SELECT DISTINCT f.follower FROM Follow f " +
-           "JOIN FETCH f.follower wu " +
-           "LEFT JOIN FETCH wu.discordUser " +
            "WHERE f.following.id = :webUserId",
-           countQuery = "SELECT COUNT(f) FROM Follow f WHERE f.following.id = :webUserId")
+           countQuery = "SELECT COUNT(DISTINCT f.follower) FROM Follow f WHERE f.following.id = :webUserId")
     Page<WebUser> findFollowersByUserId(@Param("webUserId") UUID webUserId, Pageable pageable);
     
     // 특정 팔로우 관계 조회
     @Query("SELECT f FROM Follow f " +
-           "JOIN FETCH f.follower " +
-           "JOIN FETCH f.following " +
            "WHERE f.follower.id = :followerId AND f.following.id = :followingId")
     Optional<Follow> findByFollowerIdAndFollowingId(@Param("followerId") UUID followerId, @Param("followingId") UUID followingId);
     
