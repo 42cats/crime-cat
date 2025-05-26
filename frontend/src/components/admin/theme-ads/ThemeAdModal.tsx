@@ -54,21 +54,26 @@ const ThemeAdModal: React.FC<ThemeAdModalProps> = ({
             toast.success("광고가 생성되었습니다.");
             onSuccess();
         },
-        onError: (error: any) => {
-            toast.error(error.message || "광고 생성에 실패했습니다.");
+        onError: (error) => {
+            toast.error((error as Error).message || "광고 생성에 실패했습니다.");
         },
     });
 
     // 광고 수정 mutation
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }: { id: string; data: any }) =>
+        mutationFn: ({ id, data }: { id: string; data: {
+            startDate: string;
+            endDate: string;
+            displayOrder?: number;
+            isActive?: boolean;
+        } }) =>
             themeAdsService.updateAdvertisement(id, data),
         onSuccess: () => {
             toast.success("광고가 수정되었습니다.");
             onSuccess();
         },
-        onError: (error: any) => {
-            toast.error(error.message || "광고 수정에 실패했습니다.");
+        onError: (error) => {
+            toast.error((error as Error).message || "광고 수정에 실패했습니다.");
         },
     });
 

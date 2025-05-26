@@ -16,7 +16,7 @@ const AuthInitializer = () => {
         if (!user) {
             getCurrentUser();
         }
-    }, []);
+    }, [user, getCurrentUser]);
 
     useEffect(() => {
         if (isBlocked && blockInfo && user) {

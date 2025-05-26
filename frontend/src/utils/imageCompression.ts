@@ -196,7 +196,7 @@ export const compressImage = (
             }
             
             // 파일명에서 확장자 변경
-            const fileName = file.name.replace(/\.[^\/\.]+$/, '') + '.jpg';
+            const fileName = file.name.replace(/\.[^/.]+$/, '') + '.jpg';
             
             // 새 File 객체 생성
             const compressedFile = new File([blob], fileName, {

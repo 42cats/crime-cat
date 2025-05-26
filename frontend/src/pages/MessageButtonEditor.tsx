@@ -366,7 +366,7 @@ const MessageButtonEditor: React.FC = () => {
             const contentId = uuidv4();
 
             // 새 버튼 이름 생성 (중복 방지)
-            let baseName = "새버튼";
+            const baseName = "새버튼";
             let newButtonName = baseName;
             let counter = 1;
 

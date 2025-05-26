@@ -4,7 +4,7 @@ import { apiClient } from "@/lib/api";
 const mockChannels: Channel[] = [{ id: "none", name: "현재채널" }];
 
 // 채널 리스트 가져오기
-export async function fetchChannels(guildId?: string): Promise<any> {
+export async function fetchChannels(guildId?: string): Promise<Channel[]> {
     try {
         const endpoint = `auth/guilds/channels/${guildId}`;
         const data = await apiClient.get<Channel[]>(endpoint);

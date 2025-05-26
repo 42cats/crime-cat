@@ -103,13 +103,13 @@ export const updateProfileImage = async (
 export const updateSocialLinks = async (
     userId: string,
     socialLinks: { instagram?: string; x?: string; openkakao?: string }
-): Promise<any> => {
+): Promise<{ success: boolean; socialLinks: { instagram?: string; x?: string; openkakao?: string } }> => {
     try {
-        const response = await apiClient.put(
+        const response = await apiClient.put<{ success: boolean; socialLinks: { instagram?: string; x?: string; openkakao?: string } }>(
             `/web_user/${userId}/profile/social-links`,
             { socialLinks }
         );
-        return response.data;
+        return response;
     } catch (error) {
         console.error("소셜 링크 업데이트 실패:", error);
         throw error;

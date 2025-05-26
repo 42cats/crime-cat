@@ -27,10 +27,27 @@ import {
 import { CommentForm } from "./CommentForm";
 import { Button } from "@/components/ui/button";
 
+interface CommentData {
+    id: string;
+    content: string;
+    authorId: string;
+    authorName: string;
+    authorAvatar?: string;
+    createdAt: string;
+    updatedAt?: string;
+    isDeleted?: boolean;
+    isSpoiler?: boolean;
+    hasSpoiler?: boolean;
+    isLikedByCurrentUser?: boolean;
+    isOwnComment?: boolean;
+    likeCount?: number;
+    replies?: CommentData[];
+}
+
 interface UnifiedCommentItemProps {
-    comment: any;
-    onReply: (commentId: string, data: any) => Promise<void>;
-    onUpdate: (commentId: string, data: any) => Promise<void>;
+    comment: CommentData;
+    onReply: (commentId: string, data: { content: string; isSpoiler?: boolean }) => Promise<void>;
+    onUpdate: (commentId: string, data: { content: string; isSpoiler?: boolean }) => Promise<void>;
     onDelete: (commentId: string) => Promise<void>;
     onLike: (commentId: string, isLiked: boolean) => Promise<void>;
     depth: number;

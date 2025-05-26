@@ -61,11 +61,12 @@ export const BoardCommentList: React.FC<BoardCommentListProps> = ({
                 variant: "default",
             });
         },
-        onError: (error: any) => {
+        onError: (error) => {
+            const axiosError = error as { response?: { data?: { message?: string } } };
             toast({
                 title: "댓글 작성에 실패했습니다.",
                 description:
-                    error.response?.data?.message || "오류가 발생했습니다.",
+                    axiosError.response?.data?.message || "오류가 발생했습니다.",
                 variant: "destructive",
             });
         },
@@ -89,11 +90,12 @@ export const BoardCommentList: React.FC<BoardCommentListProps> = ({
                 variant: "default",
             });
         },
-        onError: (error: any) => {
+        onError: (error) => {
+            const axiosError = error as { response?: { data?: { message?: string } } };
             toast({
                 title: "댓글 수정에 실패했습니다.",
                 description:
-                    error.response?.data?.message || "오류가 발생했습니다.",
+                    axiosError.response?.data?.message || "오류가 발생했습니다.",
                 variant: "destructive",
             });
         },
@@ -112,11 +114,12 @@ export const BoardCommentList: React.FC<BoardCommentListProps> = ({
                 variant: "default",
             });
         },
-        onError: (error: any) => {
+        onError: (error) => {
+            const axiosError = error as { response?: { data?: { message?: string } } };
             toast({
                 title: "댓글 삭제에 실패했습니다.",
                 description:
-                    error.response?.data?.message || "오류가 발생했습니다.",
+                    axiosError.response?.data?.message || "오류가 발생했습니다.",
                 variant: "destructive",
             });
         },
@@ -131,11 +134,12 @@ export const BoardCommentList: React.FC<BoardCommentListProps> = ({
                 queryKey: ["boardComments", postId],
             });
         },
-        onError: (error: any) => {
+        onError: (error) => {
+            const axiosError = error as { response?: { data?: { message?: string } } };
             toast({
                 title: "좋아요 처리에 실패했습니다.",
                 description:
-                    error.response?.data?.message || "오류가 발생했습니다.",
+                    axiosError.response?.data?.message || "오류가 발생했습니다.",
                 variant: "destructive",
             });
         },
@@ -165,11 +169,12 @@ export const BoardCommentList: React.FC<BoardCommentListProps> = ({
                 variant: "default",
             });
         },
-        onError: (error: any) => {
+        onError: (error) => {
+            const axiosError = error as { response?: { data?: { message?: string } } };
             toast({
                 title: "답글 작성에 실패했습니다.",
                 description:
-                    error.response?.data?.message || "오류가 발생했습니다.",
+                    axiosError.response?.data?.message || "오류가 발생했습니다.",
                 variant: "destructive",
             });
         },
@@ -216,7 +221,7 @@ export const BoardCommentList: React.FC<BoardCommentListProps> = ({
             <Alert className="mb-6">
                 <AlertDescription>
                     댓글을 불러오는 중 오류가 발생했습니다:{" "}
-                    {(error as any)?.message}
+                    {error instanceof Error ? error.message : '알 수 없는 오류'}
                 </AlertDescription>
             </Alert>
         );

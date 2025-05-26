@@ -34,7 +34,7 @@ const ThemeDetailRouter: React.FC = () => {
             return <CrimesceneThemeDetail />;
             
         case 'escape-room':
-        case 'escape_room':
+        case 'escape_room': {
             if (escapeRoomLoading) {
                 return (
                     <div className="container mx-auto py-8">
@@ -112,6 +112,7 @@ const ThemeDetailRouter: React.FC = () => {
                     />
                 </>
             );
+        }
             
         case 'murder-mystery':
             // TODO: 머더미스터리 상세 페이지 구현

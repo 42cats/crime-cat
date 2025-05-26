@@ -133,7 +133,7 @@ export const notificationService = {
     processAction: async (
         id: string,
         action: string,
-        data?: any
+        data?: unknown
     ): Promise<void> => {
         try {
             await apiClient.post(`${baseURI}/${id}/${action}`, data);

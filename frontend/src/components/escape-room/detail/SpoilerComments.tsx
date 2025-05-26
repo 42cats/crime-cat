@@ -393,7 +393,6 @@ const SpoilerComments: React.FC<SpoilerCommentsProps> = ({
                                     </div>
                                 )}
                             </div>
-                        )}
                         
                         {replyingTo === comment.id && (
                             <div className="mt-3 space-y-2">

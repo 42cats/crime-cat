@@ -16,7 +16,7 @@ export const handleNotificationRouting = {
     console.log("  - Full notification:", notification);
     
     // 메타데이터 파싱 처리
-    let parsedMetadata: any = {};
+    let parsedMetadata: Record<string, unknown> = {};
     if (notification.metadata) {
       try {
         if (typeof notification.metadata === 'string') {
@@ -44,7 +44,7 @@ export const handleNotificationRouting = {
         // 별도 페이지 이동 없음
         break;
         
-      case NotificationType.COMMENT_ALERT:
+      case NotificationType.COMMENT_ALERT: {
         // 댓글 알림의 경우 해당 게시물로 이동
         const postId = notification.metadata?.postId;
         const commentId = notification.metadata?.commentId;
@@ -52,16 +52,18 @@ export const handleNotificationRouting = {
           navigate(`/posts/${postId}${commentId ? `#comment-${commentId}` : ''}`);
         }
         break;
+      }
         
-      case NotificationType.FRIEND_REQUEST:
+      case NotificationType.FRIEND_REQUEST: {
         // 친구 요청은 프로필 페이지로 이동
         const friendId = notification.senderId;
         if (friendId) {
           navigate(`/profile/${friendId}`);
         }
         break;
+      }
       
-      case NotificationType.NEW_THEME:
+      case NotificationType.NEW_THEME: {
         // 새 테마 알림의 경우 테마 상세 페이지로 이동
         const themeId = notification.metadata?.themeId;
         const category = notification.metadata?.category;
@@ -69,16 +71,18 @@ export const handleNotificationRouting = {
           navigate(`/themes/${category}/${themeId}`);
         }
         break;
+      }
         
-      case NotificationType.GAME_NOTICE:
+      case NotificationType.GAME_NOTICE: {
         // 게임 알림의 경우 해당 게임 페이지로 이동
         const gameId = notification.metadata?.gameId;
         if (gameId) {
           navigate(`/games/${gameId}`);
         }
         break;
+      }
         
-      case NotificationType.USER_POST_NEW:
+      case NotificationType.USER_POST_NEW: {
         // linkUrl 우선 사용, 없으면 기존 로직
         const newPostLinkUrl = parsedMetadata?.linkUrl;
         const newPostId = parsedMetadata?.postId;
@@ -96,8 +100,9 @@ export const handleNotificationRouting = {
           console.log("  ❌ No routing data available");
         }
         break;
+      }
         
-      case NotificationType.USER_POST_COMMENT:
+      case NotificationType.USER_POST_COMMENT: {
         // linkUrl 우선 사용, 댓글 해시 추가
         const commentLinkUrl = parsedMetadata?.linkUrl;
         const postWithCommentId = parsedMetadata?.postId;
@@ -121,8 +126,9 @@ export const handleNotificationRouting = {
           navigate('/dashboard');
         }
         break;
+      }
         
-      case NotificationType.USER_POST_COMMENT_REPLY:
+      case NotificationType.USER_POST_COMMENT_REPLY: {
         // linkUrl 우선 사용, 답글 해시 추가
         const replyLinkUrl = parsedMetadata?.linkUrl;
         const postWithReplyId = parsedMetadata?.postId;
@@ -150,6 +156,7 @@ export const handleNotificationRouting = {
           console.log("  ❌ No routing data available");
         }
         break;
+      }
         
       default:
         // 기본적으로는 알림 리스트 페이지로 이동

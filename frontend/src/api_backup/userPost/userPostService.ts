@@ -34,7 +34,13 @@ export interface UserPostDto {
     locationId?: string; // 위치 ID 추가
     latitude?: number; // 위도 추가
     longitude?: number; // 경도 추가
-    comments?: any[]; // 댓글 목록
+    comments?: Array<{
+        id: string;
+        content: string;
+        authorId: string;
+        authorNickname: string;
+        createdAt: string;
+    }>; // 댓글 목록
 }
 
 export interface UserPostGalleryPageDto {
@@ -137,7 +143,7 @@ class UserPostService {
         search?: string
     ): Promise<UserPostGalleryPageDto> {
         try {
-            const params: any = {
+            const params: Record<string, string | number> = {
                 page,
                 size,
                 sort: "LATEST",

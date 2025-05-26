@@ -76,7 +76,7 @@ export function CommentList({
                 observer.unobserve(loaderRef.current);
             }
         };
-    }, [hasMore, isLoading, currentPage]);
+    }, [hasMore, isLoading, currentPage, fetchMoreComments]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // 초기 댓글 로드
     const fetchComments = async (
@@ -140,7 +140,7 @@ export function CommentList({
 
     useEffect(() => {
         fetchComments(0, sortType, pageSize);
-    }, [gameThemeId, sortType]);
+    }, [gameThemeId, sortType]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSortChange = (value: CommentSortType) => {
         if (value !== sortType) {

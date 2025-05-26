@@ -41,7 +41,7 @@ import { UTCToKST } from "@/lib/dateFormat";
 import { Loader2, ChevronRight, Search, SortAsc, Filter } from "lucide-react";
 import GameHistoryFilter from "@/components/game/GameHistoryFilter";
 import GameHistoryItem from "@/components/game/GameHistoryItem";
-
+import GamePagination from "@/components/game/GamePagination";
 export interface UserGameHistoryDto {
     uuid: string;
     guildSnowflake: string;

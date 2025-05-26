@@ -113,7 +113,7 @@ const ThemeAdForm: React.FC<ThemeAdFormProps> = ({
                 <RadioGroup
                     value={formData.themeType}
                     onValueChange={(value) => 
-                        setFormData(prev => ({ ...prev, themeType: value as any }))
+                        setFormData(prev => ({ ...prev, themeType: value as ThemeType }))
                     }
                     disabled={isEditing}
                 >

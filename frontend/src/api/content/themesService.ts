@@ -75,7 +75,7 @@ export const themesService = {
         page: number,
         sort: string,
         keyword: string,
-        filters?: any
+        filters?: Record<string, string | string[]>
     ): Promise<ThemePage> => {
         try {
             const themeEndpoint = THEME_TYPE_MAPPING[category];
@@ -167,7 +167,7 @@ export const themesService = {
         size: number;
         sort: string;
         keyword?: string;
-        filters?: any;
+        filters?: Record<string, string | number | boolean>;
     }): Promise<ThemePage> => {
         try {
             const queryParams = new URLSearchParams();

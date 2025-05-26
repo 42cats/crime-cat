@@ -1,6 +1,32 @@
+import React, { useMemo, useRef, useCallback } from 'react';
+import { formatDistanceToNow } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { useVirtual } from '@tanstack/react-virtual';
+
 /**
  * 알림 시스템 성능 최적화 가이드
  */
+
+// Notification 타입 정의
+interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  status: 'UNREAD' | 'READ';
+  createdAt: string;
+  expiresAt?: string;
+  [key: string]: unknown;
+}
+
+// NotificationItem 컴포넌트 임시 정의 (실제 컴포넌트는 다른 파일에 있을 것으로 가정)
+interface NotificationItemProps {
+  notification: Notification;
+}
+
+const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => {
+  return <div>{notification.title}</div>;
+};
 
 // 1. React.memo를 활용한 불필요한 리렌더링 방지
 export const OptimizedNotificationItem = React.memo(NotificationItem, (prevProps, nextProps) => {

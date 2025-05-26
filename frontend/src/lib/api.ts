@@ -19,12 +19,12 @@ const instance = axios.create({
 let isRefreshingToken = false;
 let isRefreshingCsrf = false;
 
-let failedAuthQueue: {
+const failedAuthQueue: {
     resolve: () => void;
     reject: (reason?: any) => void;
 }[] = [];
 
-let failedCsrfQueue: {
+const failedCsrfQueue: {
     resolve: () => void;
     reject: (reason?: any) => void;
 }[] = [];

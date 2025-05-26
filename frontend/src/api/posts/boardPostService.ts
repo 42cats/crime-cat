@@ -16,18 +16,22 @@ interface GetBoardPostsParams {
 }
 
 // API 예외 처리를 위한 헬퍼 함수
-const handleApiError = (error: any) => {
+const handleApiError = (error: unknown) => {
     console.error("API 오류:", error);
 
     // 오류 로깅 및 실패 디버깅을 위한 추가 작업
-    if (error.response) {
+    if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status: number; data: unknown }; request?: unknown; message?: string };
         // 서버가 응답을 보낸 경우
-        console.error("HTTP 상태 코드:", error.response.status);
-        console.error("응답 데이터:", error.response.data);
-    } else if (error.request) {
+        if (axiosError.response) {
+            console.error("HTTP 상태 코드:", axiosError.response.status);
+            console.error("응답 데이터:", axiosError.response.data);
+        }
+    } else if (error && typeof error === 'object' && 'request' in error) {
+        const axiosError = error as { request: unknown };
         // 요청은 보냈지만 응답이 없는 경우
-        console.error("응답 없음:", error.request);
-    } else {
+        console.error("응답 없음:", axiosError.request);
+    } else if (error instanceof Error) {
         // 요청 설정 중 오류가 발생한 경우
         console.error("오류 메시지:", error.message);
     }
@@ -91,7 +95,13 @@ export const boardPostService = {
     },
 
     // 게시글 수정 (추후 필요시 구현)
-    async updateBoardPost(id: string, postData: any) {
+    async updateBoardPost(id: string, postData: {
+        subject?: string;
+        content?: string;
+        boardType?: BoardType;
+        postType?: string;
+        isSecret?: boolean;
+    }) {
         try {
             return await apiClient.put(`/posts/${id}`, postData);
         } catch (error) {

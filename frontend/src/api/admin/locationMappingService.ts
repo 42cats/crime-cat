@@ -32,7 +32,7 @@ export interface LocationMappingResponse {
 export const locationMappingService = {
   // 지역 매핑 목록 조회
   getMappings: async (page: number = 0, size: number = 20, search?: string) => {
-    const params: any = { page, size };
+    const params: Record<string, string | number> = { page, size };
     if (search && search.trim()) {
       params.search = search.trim();
     }

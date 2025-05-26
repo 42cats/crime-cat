@@ -27,7 +27,7 @@ const BoardPagination: React.FC<BoardPaginationProps> = ({
     
     // 시작 페이지와 끝 페이지 계산
     let startPage = Math.max(0, currentPage - Math.floor(maxPagesToShow / 2));
-    let endPage = Math.min(totalPages - 1, startPage + maxPagesToShow - 1);
+    const endPage = Math.min(totalPages - 1, startPage + maxPagesToShow - 1);
     
     // 시작 페이지 재조정 (끝 페이지가 최대치보다 작을 경우)
     if (endPage - startPage + 1 < maxPagesToShow) {

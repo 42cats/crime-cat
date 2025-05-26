@@ -1,3 +1,5 @@
+import React, { Component, ReactNode, ErrorInfo } from 'react';
+
 /**
  * 알림 시스템 디버깅용 유틸리티
  */
@@ -26,7 +28,7 @@ export const debugNotifications = {
   },
   
   // API 호출 로그
-  logApiCall: (endpoint: string, method: string, data?: any) => {
+  logApiCall: (endpoint: string, method: string, data?: unknown) => {
     if (process.env.NODE_ENV === 'development') {
       console.log(`API 호출: ${method} ${endpoint}`, data);
     }
@@ -34,17 +36,25 @@ export const debugNotifications = {
 };
 
 // 에러 바운더리 컴포넌트
-export class NotificationErrorBoundary extends React.Component {
-  constructor(props) {
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+export class NotificationErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
   }
   
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(_error: Error): ErrorBoundaryState {
     return { hasError: true };
   }
   
-  componentDidCatch(error, errorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('알림 시스템 에러:', error, errorInfo);
   }
   

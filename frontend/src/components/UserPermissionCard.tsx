@@ -66,11 +66,12 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
                 await permissionService.getAllPermissionsWithStatus(userId);
             setPermissions(response.permissions);
             setError(null);
-        } catch (error: any) {
+        } catch (error) {
             console.error("권한 목록 조회 실패:", error);
+            const axiosError = error as { response?: { status: number; data?: { message?: string } } };
             if (
-                error?.response?.status === 404 &&
-                error?.response?.data?.message ===
+                axiosError?.response?.status === 404 &&
+                axiosError?.response?.data?.message ===
                     "연결된 디스코드 사용자를 찾을 수 없습니다."
             ) {
                 setPermissions([]);
@@ -90,7 +91,7 @@ export const UserPermissionCard: React.FC<UserPermissionCardProps> = ({
 
     useEffect(() => {
         fetchPermissions();
-    }, [userId]);
+    }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handlePurchase = async () => {
         if (!selectedPermission) return;

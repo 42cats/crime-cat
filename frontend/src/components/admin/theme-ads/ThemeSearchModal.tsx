@@ -105,7 +105,7 @@ const ThemeSearchModal: React.FC<ThemeSearchModalProps> = ({
                     </div>
 
                     {/* 테마 타입 탭 */}
-                    <Tabs value={selectedType} onValueChange={(v) => setSelectedType(v as any)}>
+                    <Tabs value={selectedType} onValueChange={(v) => setSelectedType(v as "CRIMESCENE" | "ESCAPE_ROOM" | "MURDER_MYSTERY" | "REALWORLD")}>
                         <TabsList className="grid w-full grid-cols-4">
                             {Object.entries(themeTypeLabels).map(([value, label]) => (
                                 <TabsTrigger 

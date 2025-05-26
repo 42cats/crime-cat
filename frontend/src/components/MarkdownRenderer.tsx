@@ -16,6 +16,102 @@ interface MarkdownRendererProps {
     className?: string;
 }
 
+// Separate component for code blocks
+interface CodeBlockProps {
+    inline?: boolean;
+    className?: string;
+    children?: React.ReactNode;
+    isDarkMode: boolean;
+    [key: string]: any;
+}
+
+const CodeBlock: React.FC<CodeBlockProps> = ({ inline, className, children, isDarkMode, ...props }) => {
+    const [copied, setCopied] = useState(false);
+    
+    // 인라인 코드
+    if (inline) {
+        return (
+            <code
+                className="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-gray-800 dark:text-gray-100"
+                {...props}
+            >
+                {children}
+            </code>
+        );
+    }
+
+    // 코드 블록 처리
+    const codeContent = String(children).replace(/\n$/, "");
+
+    // 마크다운에서 언어 추출
+    const match = /language-(\w+)/.exec(className || "");
+    const language = match ? match[1] : "";
+
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(codeContent);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error("Failed to copy text: ", err);
+        }
+    };
+
+    // 백틱 관련 문제를 해결하기 위한 정규식 추가
+    const cleanCode = () => {
+        // 백틱 이슈 수정을 위한 추가 처리
+        let code = codeContent;
+
+        // 첫 번째와 마지막 줄에서 백틱만 있는 줄 제거
+        code = code
+            .replace(/^`+\s*\n/, "")
+            .replace(/\n\s*`+$/, "");
+
+        // 첫 번째 줄에서 ```language 제거
+        code = code.replace(/^```\w*\s*\n/, "");
+
+        // 마지막 줄에서 ``` 제거
+        code = code.replace(/\n\s*```$/, "");
+
+        return code;
+    };
+
+    return (
+        <div className="relative bg-gray-100 dark:bg-gray-800 rounded-md my-2 group overflow-hidden">
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <button
+                    onClick={handleCopy}
+                    className="bg-gray-200 dark:bg-gray-700 p-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors shadow-md"
+                    title="코드 복사"
+                >
+                    {copied ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                        <Copy className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+                    )}
+                </button>
+            </div>
+            <SyntaxHighlighter
+                style={isDarkMode ? vscDarkPlus : vs}
+                language={language || "javascript"}
+                customStyle={{
+                    margin: 0,
+                    padding: "12px",
+                    borderRadius: "6px",
+                    backgroundColor: isDarkMode ? "#1e293b" : "#f3f4f6",
+                    fontSize: "1.0rem",
+                }}
+                codeTagProps={{
+                    className: "text-gray-800 dark:text-gray-100 font-mono",
+                }}
+                showLineNumbers={false}
+            >
+                {cleanCode()}
+            </SyntaxHighlighter>
+        </div>
+    );
+};
+
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     content,
     className,
@@ -34,95 +130,8 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                 rehypePlugins={[rehypeRaw]}
                 components={{
                     // 인라인 코드 처리
-                    code({ node, inline, className, children, ...props }) {
-                        // 인라인 코드
-                        if (inline) {
-                            return (
-                                <code
-                                    className="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-gray-800 dark:text-gray-100"
-                                    {...props}
-                                >
-                                    {children}
-                                </code>
-                            );
-                        }
-
-                        // 코드 블록 처리
-                        const [copied, setCopied] = useState(false);
-                        const codeContent = String(children).replace(/\n$/, "");
-
-                        // 마크다운에서 언어 추출
-                        const match = /language-(\w+)/.exec(className || "");
-                        const language = match ? match[1] : "";
-
-                        const handleCopy = async () => {
-                            try {
-                                await navigator.clipboard.writeText(
-                                    codeContent
-                                );
-                                setCopied(true);
-                                setTimeout(() => setCopied(false), 2000);
-                            } catch (err) {
-                                console.error("Failed to copy text: ", err);
-                            }
-                        };
-
-                        // 백틱 관련 문제를 해결하기 위한 정규식 추가
-                        const cleanCode = () => {
-                            // 백틱 이슈 수정을 위한 추가 처리
-                            let code = codeContent;
-
-                            // 첫 번째와 마지막 줄에서 백틱만 있는 줄 제거
-                            code = code
-                                .replace(/^`+\s*\n/, "")
-                                .replace(/\n\s*`+$/, "");
-
-                            // 첫 번째 줄에서 ```language 제거
-                            code = code.replace(/^```\w*\s*\n/, "");
-
-                            // 마지막 줄에서 ``` 제거
-                            code = code.replace(/\n\s*```$/, "");
-
-                            return code;
-                        };
-
-                        return (
-                            <div className="relative bg-gray-100 dark:bg-gray-800 rounded-md my-2 group overflow-hidden">
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                    <button
-                                        onClick={handleCopy}
-                                        className="bg-gray-200 dark:bg-gray-700 p-2 rounded hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors shadow-md"
-                                        title="코드 복사"
-                                    >
-                                        {copied ? (
-                                            <Check className="h-4 w-4 text-green-500" />
-                                        ) : (
-                                            <Copy className="h-4 w-4 text-gray-700 dark:text-gray-300" />
-                                        )}
-                                    </button>
-                                </div>
-                                <SyntaxHighlighter
-                                    style={isDarkMode ? vscDarkPlus : vs}
-                                    language={language || "javascript"}
-                                    customStyle={{
-                                        margin: 0,
-                                        padding: "12px",
-                                        borderRadius: "6px",
-                                        backgroundColor: isDarkMode
-                                            ? "#1e293b"
-                                            : "#f3f4f6", // 배경색 설정
-                                        fontSize: "1.0rem", // 텍스트 크기 두 배로 키움
-                                    }}
-                                    codeTagProps={{
-                                        className:
-                                            "text-gray-800 dark:text-gray-100 font-mono",
-                                    }}
-                                    showLineNumbers={false}
-                                >
-                                    {cleanCode()}
-                                </SyntaxHighlighter>
-                            </div>
-                        );
+                    code(props) {
+                        return <CodeBlock {...props} isDarkMode={isDarkMode} />;
                     },
                     // 굵기
                     strong({ children }) {

@@ -432,7 +432,7 @@ export interface Team {
     id: string;
     name: string;
     members?: TeamMember[];
-    count: Number;
+    count: number;
 }
 
 export interface Teams {

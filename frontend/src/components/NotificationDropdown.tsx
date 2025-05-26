@@ -35,7 +35,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         }: {
             id: string;
             action: string;
-            data?: any;
+            data?: unknown;
         }) => notificationService.processAction(id, action, data),
         onMutate: async ({ id }) => {
             // mutate 함수 호출 즉시 표시 (서버 응답 전)
