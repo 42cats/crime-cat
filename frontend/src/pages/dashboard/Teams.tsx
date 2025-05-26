@@ -26,9 +26,10 @@ const DashboardTeams: React.FC = () => {
 
   useEffect(() => {
     if (user?.id) {
+      console.log("팀 목록 조회 시작, userId:", user.id);
       fetchTeams();
     }
-  }, [user?.id]);
+  }, [user?.id]); // fetchTeams는 제외 (무한 루프 방지)
 
   const handleCreateTeam = async (teamName: string) => {
     await createTeam(teamName);

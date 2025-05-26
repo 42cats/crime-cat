@@ -118,9 +118,9 @@ public interface UserPostRepository extends JpaRepository<UserPost, UUID> {
     /**
      * 무작위로 공개 게시물 조회
      */
-    @Query(value = "SELECT * FROM user_posts p WHERE p.is_private = false AND p.is_followers_only = false ORDER BY RANDOM() LIMIT :limit",
+    @Query(value = "SELECT * FROM user_posts p WHERE p.is_private = false AND p.is_followers_only = false ORDER BY RANDOM() LIMIT :limits",
             nativeQuery = true)
-    Page<UserPost> findRandomPublicPosts(Pageable pageable, @Param("limit") int limit);
+    Page<UserPost> findRandomPublicPosts(Pageable pageable, @Param("limit") int limits);
 
     /**
      * 무작위로 접근 가능한 게시물 조회
@@ -205,4 +205,31 @@ public interface UserPostRepository extends JpaRepository<UserPost, UUID> {
             "       OR (p.isFollowersOnly = true AND EXISTS " +  // 팔로워 공개이고 조회자가 팔로워인 게시글
             "           (SELECT f FROM Follow f WHERE f.following.id = :authorId AND f.follower.id = :viewerId)))")
     Long countAccessiblePostsByUserIdForViewer(@Param("authorId") UUID authorId, @Param("viewerId") UUID viewerId);
+    
+    /**
+     * 팔로우한 사용자들의 게시물 조회 (최신순)
+     */
+    @Query("SELECT p FROM UserPost p WHERE p.user.id IN :userIds AND " +
+            "(p.isPrivate = false AND p.isFollowersOnly = false OR " +
+            "p.user.id = :currentUserId OR " +
+            "(p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :currentUserId AND f.following.id = p.user.id))) " +
+            "ORDER BY p.createdAt DESC")
+    Page<UserPost> findPostsByFollowingUsers(@Param("userIds") List<UUID> userIds, @Param("currentUserId") UUID currentUserId, Pageable pageable);
+    
+    /**
+     * 피드용 혼합 게시물 조회 (팔로우한 사용자 + 인기 게시물)
+     * 최신 순으로 정렬
+     */
+    @Query("SELECT p FROM UserPost p WHERE " +
+            "((p.user.id IN :followingIds AND " +
+            "  (p.isPrivate = false AND p.isFollowersOnly = false OR " +
+            "   p.user.id = :currentUserId OR " +
+            "   (p.isFollowersOnly = true AND EXISTS (SELECT f FROM Follow f WHERE f.follower.id = :currentUserId AND f.following.id = p.user.id)))) " +
+            " OR " +
+            " (p.isPrivate = false AND p.isFollowersOnly = false AND p.popularityScore > :minPopularityScore)) " +
+            "ORDER BY p.createdAt DESC")
+    Page<UserPost> findFeedPosts(@Param("followingIds") List<UUID> followingIds, 
+                                  @Param("currentUserId") UUID currentUserId, 
+                                  @Param("minPopularityScore") Double minPopularityScore, 
+                                  Pageable pageable);
 }

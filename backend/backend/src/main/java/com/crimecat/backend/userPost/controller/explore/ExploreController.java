@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/public/posts/explore")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class ExploreController {
 
     private final UserPostService userPostService;
 
-    @GetMapping("/popular")
+    @GetMapping("/public/posts/explore/popular")
     public ResponseEntity<PageResponseDto<UserPostGalleryPageDto>> getPopularPosts(
             @PageableDefault(size = 20) Pageable pageable) {
 
@@ -32,7 +32,7 @@ public class ExploreController {
         return ResponseEntity.ok(new PageResponseDto<>(posts));
     }
 
-    @GetMapping("/random")
+    @GetMapping("/public/posts/explore/random")
     public ResponseEntity<PageResponseDto<UserPostGalleryPageDto>> getRandomPosts(
             @PageableDefault(size = 20) Pageable pageable) {
 
@@ -41,7 +41,7 @@ public class ExploreController {
         return ResponseEntity.ok(new PageResponseDto<>(posts));
     }
 
-    @GetMapping("/search")
+    @GetMapping("/public/posts/explore/search")
     public ResponseEntity<PageResponseDto<UserPostGalleryPageDto>> searchPosts(
             @RequestParam String query,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -51,4 +51,14 @@ public class ExploreController {
         Page<UserPostGalleryPageDto> posts = userPostService.searchPostsWithAuthor(query, currentUser, pageable);
         return ResponseEntity.ok(new PageResponseDto<>(posts));
     }
+    
+    @GetMapping("/public/posts/feed")
+    public ResponseEntity<PageResponseDto<UserPostGalleryPageDto>> getFeedPosts(
+            @PageableDefault(size = 10) Pageable pageable) {
+        
+        WebUser currentUser = AuthenticationUtil.getCurrentWebUserOptional().orElse(null);
+        Page<UserPostGalleryPageDto> posts = userPostService.getFeedPosts(currentUser, pageable);
+        return ResponseEntity.ok(new PageResponseDto<>(posts));
+    }
+
 }

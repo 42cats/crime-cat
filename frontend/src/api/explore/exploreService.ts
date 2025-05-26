@@ -86,7 +86,7 @@ class ExploreService {
         size: number = 10
     ): Promise<ExplorePostsResponse> {
         try {
-            return await apiClient.get<ExplorePostsResponse>(`/posts/feed`, {
+            return await apiClient.get<ExplorePostsResponse>(`/public/posts/feed`, {
                 params: {
                     page,
                     size,

@@ -262,4 +262,12 @@ public interface UserPostService {
      * @return 통합 검색 결과
      */
     Page<UserPostGalleryPageDto> searchPostsWithAuthor(String query, WebUser currentUser, Pageable pageable);
+    
+    /**
+     * 피드 게시물 조회 (팔로우한 사용자 + 인기 게시물)
+     * @param currentUser 현재 사용자
+     * @param pageable 페이징 정보
+     * @return 피드 게시물 목록
+     */
+    Page<UserPostGalleryPageDto> getFeedPosts(WebUser currentUser, Pageable pageable);
 }

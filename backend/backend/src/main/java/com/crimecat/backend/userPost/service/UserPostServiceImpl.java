@@ -2,6 +2,7 @@ package com.crimecat.backend.userPost.service;
 
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.follow.repository.FollowRepository;
+import com.crimecat.backend.follow.service.FollowService;
 import com.crimecat.backend.hashtag.domain.HashTag;
 import com.crimecat.backend.hashtag.domain.PostHashTag;
 import com.crimecat.backend.hashtag.service.HashTagService;
@@ -48,6 +49,7 @@ public class UserPostServiceImpl implements UserPostService {
     private final StorageService storageService;
     private final WebUserRepository webUserRepository;
     private final FollowRepository followRepository;
+    private final FollowService followService;
     private final HashTagService hashTagService;
     private final NotificationEventPublisher notificationEventPublisher;
 
@@ -765,6 +767,31 @@ public class UserPostServiceImpl implements UserPostService {
             posts = userPostRepository.findAccessiblePostsByKeywordOrAuthor(trimmedQuery, currentUser.getId(), pageable);
         }
 
+        return convertToGalleryDtos(posts);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UserPostGalleryPageDto> getFeedPosts(WebUser currentUser, Pageable pageable) {
+        if (currentUser == null) {
+            // 로그인하지 않은 사용자는 인기 게시물만 조회
+            return getPopularPosts(null, pageable);
+        }
+        
+        // 팔로우한 사용자 목록 조회
+        List<UUID> followingIds = followService.getFollowingIds(currentUser.getId());
+        
+        Page<UserPost> posts;
+        if (followingIds.isEmpty()) {
+            // 팔로우한 사용자가 없으면 인기 게시물만 조회
+            posts = userPostRepository.findAccessiblePostsByPopularityScore(currentUser.getId(), pageable);
+        } else {
+            // 팔로우한 사용자의 게시물 + 인기 게시물 혼합
+            // popularityScore 임계값 (상위 20% 정도의 인기 게시물)
+            Double minPopularityScore = 0.6;
+            posts = userPostRepository.findFeedPosts(followingIds, currentUser.getId(), minPopularityScore, pageable);
+        }
+        
         return convertToGalleryDtos(posts);
     }
 }

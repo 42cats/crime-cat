@@ -1,5 +1,6 @@
 package com.crimecat.backend.gametheme.controller;
 
+import com.crimecat.backend.gametheme.domain.MakerTeam;
 import com.crimecat.backend.gametheme.dto.*;
 import com.crimecat.backend.gametheme.service.MakerTeamService;
 import com.crimecat.backend.utils.AuthenticationUtil;
@@ -16,10 +17,13 @@ public class MakerTeamController {
     private final MakerTeamService makerTeamService;
 
     @PostMapping
-    public void createTeam(@Valid @RequestBody CreateTeamRequest createTeamRequest) {
+    public TeamDto createTeam(@Valid @RequestBody CreateTeamRequest createTeamRequest) {
         // TODO: 만들 때 권한 확인 / 제한 두기
-        AuthenticationUtil.validateUserHasAuthority(UserRole.USER);
-        makerTeamService.create(createTeamRequest.getName());
+        AuthenticationUtil.validateUserHasMinimumRole(UserRole.USER);
+        UUID teamId = makerTeamService.create(createTeamRequest.getName());
+        // 생성된 팀 정보 반환
+        MakerTeam team = makerTeamService.getTeamById(teamId);
+        return TeamDto.from(team);
     }
 
     @GetMapping("/{teamId}")
@@ -51,6 +55,7 @@ public class MakerTeamController {
 
     @GetMapping("/me")
     public GetTeamsResponse getMyTeams() {
-        return makerTeamService.getMyTeams();
+        GetTeamsResponse myTeams = makerTeamService.getMyTeams();
+                return myTeams;
     }
 }

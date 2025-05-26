@@ -7,8 +7,10 @@ const baseURI = "/teams";
 export const teamsService = {
     getMyTeams: async (): Promise<Team[]> => {
         try {
-            const response = await apiClient.get<Teams>(`${baseURI}/me`);
-            return response.teams;
+            const response = await apiClient.get<{ teams: Team[] }>(`${baseURI}/me`);
+            console.log("내 팀 목록 조회 응답:", response); // 디버깅용 로그
+            // 백엔드가 { teams: [...] } 형태로 반환하므로 teams 배열을 추출
+            return response.teams || [];
         } catch (error) {
             console.error("내 팀 목록 조회 오류:", error);
             throw error;
@@ -47,9 +49,11 @@ export const teamsService = {
         }
     },
 
-    createTeam: async (data: Omit<Team, "id" | "members">): Promise<void> => {
+    createTeam: async (data: Omit<Team, "id" | "members">): Promise<Team> => {
         try {
-            await apiClient.post<void>(`${baseURI}`, data);
+            const response = await apiClient.post<Team>(`${baseURI}`, data);
+            console.log("팀 생성 응답:", response); // 디버깅용 로그
+            return response;
         } catch (error) {
             console.error("팀 생성 실패:", error);
             throw error;

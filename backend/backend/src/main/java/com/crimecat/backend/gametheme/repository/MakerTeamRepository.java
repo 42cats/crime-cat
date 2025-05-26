@@ -23,4 +23,16 @@ public interface MakerTeamRepository extends JpaRepository<MakerTeam, UUID> {
             @Param("name") String name,
             @Param("individual") boolean individual
     );
+    
+    /**
+     * 팀과 멤버를 함께 로드
+     */
+    @Query("SELECT t FROM MakerTeam t LEFT JOIN FETCH t.members WHERE t.id = :teamId")
+    Optional<MakerTeam> findByIdWithMembers(@Param("teamId") UUID teamId);
+    
+    /**
+     * 모든 팀과 멤버를 함께 로드
+     */
+    @Query("SELECT DISTINCT t FROM MakerTeam t LEFT JOIN FETCH t.members")
+    List<MakerTeam> findAllWithMembers();
 }

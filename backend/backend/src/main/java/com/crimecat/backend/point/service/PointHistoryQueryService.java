@@ -9,6 +9,7 @@ import com.crimecat.backend.point.repository.PointHistoryRepository;
 import com.crimecat.backend.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -18,6 +19,7 @@ public class PointHistoryQueryService {
 
 	private final PointHistoryRepository pointHistoryRepository;
 
+	@Transactional
 	public void  logPermissionPurchase(User user, TransactionType type, Permission permission) {
 		PointHistory history = PointHistory.builder()
 				.user(user)
@@ -32,6 +34,7 @@ public class PointHistoryQueryService {
 		pointHistoryRepository.save(history);
 	}
 
+	@Transactional
 	public void logPointTransaction(User user, TransactionType type, int amount, String memo) {
 		PointHistory history = PointHistory.builder()
 				.user(user)
@@ -44,6 +47,7 @@ public class PointHistoryQueryService {
 		pointHistoryRepository.save(history);
 	}
 
+	@Transactional
 	public void logGiftTransaction(User fromUser, User toUser, int amount) {
 		PointHistory senderHistory = PointHistory.builder()
 				.user(fromUser)
@@ -67,6 +71,7 @@ public class PointHistoryQueryService {
 		pointHistoryRepository.save(receiverHistory);
 	}
 
+	@Transactional
 	public void logCouponTransaction(User user, Coupon coupon) {
 		PointHistory couponHistory = PointHistory.builder()
 				.user(user)
@@ -78,6 +83,7 @@ public class PointHistoryQueryService {
 		pointHistoryRepository.save(couponHistory);
 	}
 
+	@Transactional
 	public void logThemeRewardTransaction(User user, int amount, UUID themeId, String themeName) {
 		PointHistory history = PointHistory.builder()
 				.user(user)

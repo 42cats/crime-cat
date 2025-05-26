@@ -71,7 +71,7 @@ class ExploreService {
   // 최신 게시물 조회 (팔로우 중인 사용자 + 인기 게시물)
   async getFeedPosts(page: number = 0, size: number = 10): Promise<ExplorePostsResponse> {
     try {
-      return await apiClient.get<ExplorePostsResponse>(`/posts/feed`, {
+      return await apiClient.get<ExplorePostsResponse>(`/public/posts/feed`, {
         params: {
           page,
           size

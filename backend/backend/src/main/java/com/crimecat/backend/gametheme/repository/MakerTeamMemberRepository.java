@@ -43,22 +43,23 @@ public interface MakerTeamMemberRepository extends JpaRepository<MakerTeamMember
         """, nativeQuery = true)
     List<MakerTeamMember> findByWebUserIdAndIsLeader(@Param("webUserId") UUID webUserId, @Param("isLeader") boolean isLeader);
 
-    @Query(value = """
-    SELECT * FROM maker_team_members 
-    WHERE WEB_USER_ID = :webUserId 
-    AND TEAM_ID = :teamId
-    LIMIT 1
-    """, nativeQuery = true)
-    Optional<MakerTeamMember> findByWebUserIdAndTeamId(
-            @Param("webUserId") UUID webUserId,
-            @Param("teamId") UUID teamId
-    );
+    @Query("SELECT m FROM MakerTeamMember m WHERE m.webUserId = :webUserId AND m.team.id = :teamId")
+    Optional<MakerTeamMember> findByWebUserIdAndTeamId(@Param("webUserId") UUID webUserId, @Param("teamId") UUID teamId);
 
     @Query(value = """
     SELECT * FROM maker_team_members 
     WHERE WEB_USER_ID = :webUserId
     """, nativeQuery = true)
     List<MakerTeamMember> findByWebUserId(@Param("webUserId") UUID webUserId);
+
+    /**
+     * 특정 사용자의 팀 멤버십을 팀 정보와 함께 조회 (Fetch Join)
+     */
+    @Query("SELECT DISTINCT m FROM MakerTeamMember m " +
+           "JOIN FETCH m.team t " +
+           "LEFT JOIN FETCH t.members " +
+           "WHERE m.webUserId = :webUserId")
+    List<MakerTeamMember> findByWebUserIdWithTeam(@Param("webUserId") UUID webUserId);
 
 
 }

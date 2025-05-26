@@ -25,6 +25,14 @@ const SNSFeedPage: React.FC = () => {
         setIsLoading(true);
         try {
             const feedData = await exploreService.getFeedPosts(page);
+            
+            // 빈 배열이 반환되면 더 이상 데이터가 없음
+            if (!feedData.content || feedData.content.length === 0) {
+                setHasMore(false);
+                setIsLoading(false);
+                return;
+            }
+            
             const newPosts = feedData.content.map((post) => ({
                 postId: post.postId.toString(),
                 authorId: post.authorId || "", // authorId 추가
@@ -52,13 +60,27 @@ const SNSFeedPage: React.FC = () => {
             }
 
             // 더 불러올 데이터가 있는지 확인
-            setHasMore(
-                !feedData.pageable ||
-                    feedData.pageable.pageNumber < feedData.totalPages - 1
-            );
+            // 1. pageable 정보가 있는 경우
+            if (feedData.pageable && feedData.totalPages !== undefined) {
+                setHasMore(feedData.pageable.pageNumber < feedData.totalPages - 1);
+            } 
+            // 2. last 속성이 있는 경우
+            else if (feedData.last !== undefined) {
+                setHasMore(!feedData.last);
+            }
+            // 3. 페이지 크기보다 적은 데이터가 반환된 경우
+            else if (feedData.size && feedData.content.length < feedData.size) {
+                setHasMore(false);
+            }
+            // 4. 기본값: 반환된 데이터가 있으면 더 있을 수 있다고 가정
+            else {
+                setHasMore(feedData.content.length > 0);
+            }
+            
             setPage((prev) => prev + 1);
         } catch (error) {
             console.error("피드 로드 실패:", error);
+            setHasMore(false); // 에러 발생 시 로딩 중단
         } finally {
             setIsLoading(false);
         }
@@ -74,27 +96,31 @@ const SNSFeedPage: React.FC = () => {
                 setIsLoading(true);
                 try {
                     const popularData = await exploreService.getPopularPosts(0);
-                    const popularPosts = popularData.content.map((post) => ({
-                        postId: post.postId.toString(),
-                        authorId: post.authorId || "", // authorId 추가
-                        authorNickname: post.authorNickname,
-                        authorAvatarUrl: "", // 백엔드에서 제공되지 않는 정보
-                        content: post.content,
-                        imageUrls: post.thumbnailUrl ? [post.thumbnailUrl] : [],
-                        likeCount: post.likeCount,
-                        liked: post.liked,
-                        createdAt: post.createdAt || new Date().toISOString(),
-                        updatedAt: post.updatedAt, // updatedAt 추가
-                        private: post.private || false, // private 속성 추가
-                        followersOnly: post.followersOnly || false, // followersOnly 속성 추가
-                        hashtags: post.hashtags || [], // hashtags 추가
-                        locationName: post.locationName || "", // locationName 추가
-                        latitude: post.latitude, // latitude 추가
-                        longitude: post.longitude, // longitude 추가
-                        comments: [], // comments 배열 초기화
-                    }));
+                    
+                    if (popularData.content && popularData.content.length > 0) {
+                        const popularPosts = popularData.content.map((post) => ({
+                            postId: post.postId.toString(),
+                            authorId: post.authorId || "", // authorId 추가
+                            authorNickname: post.authorNickname,
+                            authorAvatarUrl: "", // 백엔드에서 제공되지 않는 정보
+                            content: post.content,
+                            imageUrls: post.thumbnailUrl ? [post.thumbnailUrl] : [],
+                            likeCount: post.likeCount,
+                            liked: post.liked,
+                            createdAt: post.createdAt || new Date().toISOString(),
+                            updatedAt: post.updatedAt, // updatedAt 추가
+                            private: post.private || false, // private 속성 추가
+                            followersOnly: post.followersOnly || false, // followersOnly 속성 추가
+                            hashtags: post.hashtags || [], // hashtags 추가
+                            locationName: post.locationName || "", // locationName 추가
+                            latitude: post.latitude, // latitude 추가
+                            longitude: post.longitude, // longitude 추가
+                            comments: [], // comments 배열 초기화
+                        }));
 
-                    setPosts(popularPosts);
+                        setPosts(popularPosts);
+                    }
+                    
                     setHasMore(false); // 로그인 전에는 무한 스크롤 비활성화
                 } catch (error) {
                     console.error("인기 게시물 로드 실패:", error);
@@ -210,9 +236,10 @@ const SNSFeedPage: React.FC = () => {
                         </div>
                     )}
 
-                    {!hasMore && posts.length > 0 && (
-                        <div className="text-center py-4 text-muted-foreground">
-                            모든 게시물을 불러왔습니다.
+                    {!hasMore && posts.length > 0 && !isLoading && (
+                        <div className="text-center py-8 text-muted-foreground border-t border-border pt-8">
+                            <p className="text-lg mb-2">🎉 모든 게시물을 확인했습니다!</p>
+                            <p className="text-sm">더 이상 불러올 포스트가 없습니다.</p>
                         </div>
                     )}
 

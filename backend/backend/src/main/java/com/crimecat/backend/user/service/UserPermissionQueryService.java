@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -17,15 +18,18 @@ public class UserPermissionQueryService {
 
 	private final UserPermissionRepository userPermissionRepository;
 
+	@Transactional(readOnly = true)
 	public Optional<UserPermission> findUserPermissionByPermissionId(DiscordUser user, UUID permissionId) {
 		return userPermissionRepository.findUserPermissionByPermissionId(user.getSnowflake(),
 				permissionId);
 	}
 
+	@Transactional
 	public void purchasePermission(DiscordUser user, Permission permission) {
 		userPermissionRepository.save(new UserPermission(user, permission));
 	}
 
+	@Transactional(readOnly = true)
 	public List<UserPermission> getActiveUserPermissions(DiscordUser user) {
 		return userPermissionRepository.getActiveUserPermissions(user.getSnowflake(), LocalDateTime.now());
 	}
@@ -35,6 +39,7 @@ public class UserPermissionQueryService {
 	 * @param userPermission 연장할 사용자 권한
 	 * @param newExpiredDate 새로운 만료일
 	 */
+	@Transactional
 	public void extendPermission(UserPermission userPermission, LocalDateTime newExpiredDate) {
 		userPermission.setExpiredAt(newExpiredDate);
 		userPermissionRepository.save(userPermission);

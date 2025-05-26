@@ -38,7 +38,8 @@ public class UserPostCommentedEvent extends NotificationEvent {
             .withData("postId", postId)
             .withData("commenterId", commenterId)
             .withData("commenterNickname", commenterNickname)
-            .withData("linkUrl", "/posts/" + postId + "#comment-" + commentId);
+            .withData("linkUrl", "/sns/post//" + postId + "#comment-" + commentId);
+
     }
     
     /**
@@ -73,7 +74,7 @@ public class UserPostCommentedEvent extends NotificationEvent {
      */
     private String generateBoardUrl(String boardType, UUID postId, UUID commentId) {
         if (boardType == null) {
-            return "/posts/" + postId + "#comment-" + commentId;
+            return "/sns/post/" + postId + "#comment-" + commentId;
         }
         
         String basePath;
@@ -88,7 +89,7 @@ public class UserPostCommentedEvent extends NotificationEvent {
                 basePath = "/community/creator/";
                 break;
             default:
-                basePath = "/posts/";
+                basePath = "/sns/post/";
         }
         
         return basePath + postId + "#comment-" + commentId;

@@ -9,7 +9,7 @@ import com.crimecat.backend.gametheme.repository.MakerTeamRepository;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,8 +21,8 @@ public class MakerTeamService {
     private final MakerTeamMemberRepository teamMemberRepository;
     private final WebUserRepository webUserRepository;
 
-    public void create(String name) {
-        create(name, AuthenticationUtil.getCurrentWebUser(), false);
+    public UUID create(String name) {
+        return create(name, AuthenticationUtil.getCurrentWebUser(), false);
     }
 
     @Transactional
@@ -40,13 +40,16 @@ public class MakerTeamService {
         return team.getId();
     }
 
+    @Transactional(readOnly = true)
     public GetTeamsResponse get() {
-        return new GetTeamsResponse(teamRepository.findAll().stream()
+        return new GetTeamsResponse(teamRepository.findAllWithMembers().stream()
                 .map(TeamDto::from).toList());
     }
 
+    @Transactional(readOnly = true)
     public GetTeamResponse get(UUID teamId) {
-        MakerTeam team = teamRepository.findById(teamId).orElseThrow(ErrorStatus.TEAM_NOT_FOUND::asServiceException);
+        MakerTeam team = teamRepository.findByIdWithMembers(teamId)
+                .orElseThrow(ErrorStatus.TEAM_NOT_FOUND::asServiceException);
         return GetTeamResponse.builder()
                 .id(teamId)
                 .name(team.getName())
@@ -55,9 +58,17 @@ public class MakerTeamService {
                         .toList())
                 .build();
     }
+    
+    @Transactional(readOnly = true)
+    public MakerTeam getTeamById(UUID teamId) {
+        return teamRepository.findByIdWithMembers(teamId)
+                .orElseThrow(ErrorStatus.TEAM_NOT_FOUND::asServiceException);
+    }
 
+    @Transactional(readOnly = true)
     public GetTeamResponse getWithAvatars(UUID teamId) {
-        MakerTeam team = teamRepository.findById(teamId).orElseThrow(ErrorStatus.TEAM_NOT_FOUND::asServiceException);
+        MakerTeam team = teamRepository.findByIdWithMembers(teamId)
+                .orElseThrow(ErrorStatus.TEAM_NOT_FOUND::asServiceException);
         return GetTeamResponse.builder()
                 .id(teamId)
                 .name(team.getName())
@@ -169,21 +180,30 @@ public class MakerTeamService {
         }
     }
 
-    private boolean isTeamLeader(UUID teamId) {
+    @Transactional(readOnly = true)
+    public boolean isTeamLeader(UUID teamId) {
         UUID webUserId = AuthenticationUtil.getCurrentWebUserId();
         MakerTeamMember makerTeamMember = teamMemberRepository.findByWebUserIdAndTeamId(webUserId, teamId)
                 .orElseThrow(ErrorStatus.FORBIDDEN::asServiceException);
         return makerTeamMember.isLeader();
     }
 
+    @Transactional(readOnly = true)
     public GetTeamsResponse getMyTeams() {
         UUID webUserId = AuthenticationUtil.getCurrentWebUserId();
-        return new GetTeamsResponse(
-                teamMemberRepository.findByWebUserId(webUserId).stream()
-                        .filter(v -> !v.getTeam().isIndividual()) // 개인 팀은 제외하고 조회
-                        .map(v -> TeamDto.from(v.getTeam()))
-                        .toList()
-        );
+        
+        // Fetch Join을 사용하여 팀 정보와 멤버 정보를 함께 로드
+        List<MakerTeamMember> membershipList = teamMemberRepository.findByWebUserIdWithTeam(webUserId);
+        
+        // 중복 제거 및 개인 팀 필터링
+        List<TeamDto> teams = membershipList.stream()
+                .map(MakerTeamMember::getTeam)
+                .distinct() // 중복 팀 제거
+                .filter(team -> !team.isIndividual()) // 개인 팀 제외
+                .map(TeamDto::from)
+                .toList();
+        
+        return new GetTeamsResponse(teams);
     }
     public List<UUID> getTargetTeams(UUID userId) {
         return teamMemberRepository.findByWebUserId(userId).stream()

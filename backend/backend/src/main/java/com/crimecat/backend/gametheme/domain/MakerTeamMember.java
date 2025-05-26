@@ -33,7 +33,7 @@ public class MakerTeamMember {
     @JoinColumn(name = "WEB_USER_ID", insertable = false, updatable = false)
     private WebUser webUser;
 
-    @Column(name = "WEB_USER_ID")
+    @Column(name = "WEB_USER_ID", columnDefinition = "BINARY(16)")
     @JdbcTypeCode(SqlTypes.BINARY)
     private UUID webUserId;
 

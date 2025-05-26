@@ -139,7 +139,7 @@ public class WebUserController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size
   ) {
-    AuthenticationUtil.validateUserHasAuthority(UserRole.USER);
+    AuthenticationUtil.validateUserHasMinimumRole(UserRole.USER);
     FindUserInfo result = webUserService.findUsers(keyword, searchType, page, size);
     return ResponseEntity.ok(result);
   }
