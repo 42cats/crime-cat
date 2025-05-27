@@ -121,12 +121,15 @@ export function CommentItem({
         return (
             <div className="py-3 border-b border-border/50 last:border-0 transition-colors duration-200">
                 <div className="flex gap-3">
-                    <Avatar 
+                    <Avatar
                         className="h-8 w-8 rounded-full border bg-muted/20 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
                         onClick={() => setIsProfileModalOpen(true)}
                     >
                         <AvatarImage
-                            src={comment.authorProfileImage ?? "/content/image/default_profile_image.png"}
+                            src={
+                                comment.authorProfileImage ||
+                                "/content/image/default_profile_image.png"
+                            }
                             alt={comment.authorName}
                         />
                         <AvatarFallback className="text-xs bg-primary/10 text-primary">
@@ -138,12 +141,14 @@ export function CommentItem({
                         <div className="flex items-start justify-between">
                             <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                    <span 
-                                    className="font-medium text-foreground text-sm cursor-pointer hover:text-primary transition-colors"
-                                        onClick={() => setIsProfileModalOpen(true)}
-                                >
-                                    {comment.authorName}
-                                </span>
+                                    <span
+                                        className="font-medium text-foreground text-sm cursor-pointer hover:text-primary transition-colors"
+                                        onClick={() =>
+                                            setIsProfileModalOpen(true)
+                                        }
+                                    >
+                                        {comment.authorName}
+                                    </span>
                                     <span className="text-xs text-muted-foreground">
                                         <UTCToKST date={comment.createdAt} />
                                     </span>
@@ -200,12 +205,15 @@ export function CommentItem({
         <div className="py-3 border-b border-border/50 last:border-0 transition-colors duration-200">
             {/* 댓글 내용 */}
             <div className="flex gap-3">
-                <Avatar 
-                    className="h-8 w-8 rounded-full border bg-muted/20 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" 
+                <Avatar
+                    className="h-8 w-8 rounded-full border bg-muted/20 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
                     onClick={() => setIsProfileModalOpen(true)}
                 >
                     <AvatarImage
-                        src={comment.authorProfileImage ?? "/content/image/default_profile_image.png"}
+                        src={
+                            comment.authorProfileImage ||
+                            "/content/image/default_profile_image.png"
+                        }
                         alt={comment.authorName}
                     />
                     <AvatarFallback className="text-xs bg-primary/10 text-primary">
@@ -217,7 +225,7 @@ export function CommentItem({
                     <div className="flex items-start justify-between">
                         <div className="flex-1">
                             <div className="flex items-center gap-2">
-                                <span 
+                                <span
                                     className="font-medium text-foreground text-sm cursor-pointer hover:text-primary transition-colors"
                                     onClick={() => setIsProfileModalOpen(true)}
                                 >
@@ -258,7 +266,9 @@ export function CommentItem({
                                                 <div className="relative cursor-pointer group">
                                                     <div
                                                         className="blur-[12px] select-none group-hover:blur-none transition-all duration-200 p-2"
-                                                        onClick={handleSpoilerClick}
+                                                        onClick={
+                                                            handleSpoilerClick
+                                                        }
                                                     >
                                                         {comment.content}
                                                     </div>
@@ -349,7 +359,6 @@ export function CommentItem({
                             </div>
                         )}
                     </div>
-
 
                     {/* 답글 작성 폼 */}
                     {isReplying && (

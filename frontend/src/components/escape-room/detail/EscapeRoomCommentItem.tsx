@@ -13,7 +13,7 @@ import {
     Eye,
     EyeOff,
     Trash2,
-    Edit2
+    Edit2,
 } from "lucide-react";
 import {
     AlertDialog,
@@ -48,7 +48,7 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
     onUpdate,
     onDelete,
     onLike,
-    depth = 0
+    depth = 0,
 }) => {
     const [isReplying, setIsReplying] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -71,13 +71,13 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
         const days = Math.floor(hours / 24);
 
         if (days > 7) {
-            return format(date, 'yyyy년 MM월 dd일', { locale: ko });
+            return format(date, "yyyy년 MM월 dd일", { locale: ko });
         } else if (days > 0) {
             return `${days}일 전`;
         } else if (hours > 0) {
             return `${hours}시간 전`;
         } else {
-            return '방금 전';
+            return "방금 전";
         }
     };
 
@@ -105,18 +105,26 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
         return (
             <div className="py-3 border-b border-border/50 last:border-0 transition-colors duration-200">
                 <div className="flex gap-3">
-                    <Avatar 
-                        className="h-8 w-8 rounded-full border bg-muted/20 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" 
+                    <Avatar
+                        className="h-8 w-8 rounded-full border bg-muted/20 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
                         onClick={() => setIsProfileModalOpen(true)}
                     >
-                        <AvatarImage src={comment.authorProfileImage ?? "/content/image/default_profile_image.png"} alt={comment.authorName} />
+                        <AvatarImage
+                            src={
+                                comment.authorProfileImage ||
+                                "/content/image/default_profile_image.png"
+                            }
+                            alt={comment.authorName}
+                        />
                         <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                            {comment.authorName?.substring(0, 2).toUpperCase() || "?"}
+                            {comment.authorName
+                                ?.substring(0, 2)
+                                .toUpperCase() || "?"}
                         </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 overflow-hidden">
                         <div className="flex items-center gap-2 flex-wrap mb-2">
-                            <span 
+                            <span
                                 className="font-medium text-foreground text-sm cursor-pointer hover:text-primary transition-colors"
                                 onClick={() => setIsProfileModalOpen(true)}
                             >
@@ -129,7 +137,7 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                         <div className="text-muted-foreground text-sm italic">
                             삭제된 댓글입니다.
                         </div>
-                        
+
                         {/* 답글이 있는 경우 표시 */}
                         {comment.replies && comment.replies.length > 0 && (
                             <div className="mt-3 space-y-3">
@@ -150,7 +158,7 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                         )}
                     </div>
                 </div>
-                
+
                 {/* 프로필 모달 */}
                 <ProfileDetailModal
                     userId={comment.authorId}
@@ -164,11 +172,17 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
     return (
         <div className="py-3 border-b border-border/50 last:border-0 transition-colors duration-200">
             <div className="flex gap-3">
-                <Avatar 
-                    className="h-8 w-8 rounded-full border bg-muted/20 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" 
+                <Avatar
+                    className="h-8 w-8 rounded-full border bg-muted/20 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
                     onClick={() => setIsProfileModalOpen(true)}
                 >
-                    <AvatarImage src={comment.authorProfileImage ?? "/content/image/default_profile_image.png"} alt={comment.authorName} />
+                    <AvatarImage
+                        src={
+                            comment.authorProfileImage ||
+                            "/content/image/default_profile_image.png"
+                        }
+                        alt={comment.authorName}
+                    />
                     <AvatarFallback className="text-xs bg-primary/10 text-primary">
                         {comment.authorName.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
@@ -178,7 +192,7 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                     <div className="flex items-start justify-between">
                         <div className="flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                                <span 
+                                <span
                                     className="font-medium text-foreground text-sm cursor-pointer hover:text-primary transition-colors"
                                     onClick={() => setIsProfileModalOpen(true)}
                                 >
@@ -188,13 +202,19 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                                     {formatDate(comment.createdAt)}
                                 </span>
                                 {isSpoiler && (
-                                    <Badge variant="destructive" className="text-xs">
+                                    <Badge
+                                        variant="destructive"
+                                        className="text-xs"
+                                    >
                                         <AlertTriangle className="w-3 h-3 mr-1" />
                                         스포일러
                                     </Badge>
                                 )}
                                 {comment.isGameHistoryComment && (
-                                    <Badge variant="outline" className="text-xs">
+                                    <Badge
+                                        variant="outline"
+                                        className="text-xs"
+                                    >
                                         게임 기록
                                     </Badge>
                                 )}
@@ -213,29 +233,41 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        onClick={() => setShowSpoiler(false)}
+                                                        onClick={() =>
+                                                            setShowSpoiler(
+                                                                false
+                                                            )
+                                                        }
                                                         className="absolute top-1 right-1 h-auto p-1"
                                                     >
                                                         <EyeOff className="w-4 h-4" />
                                                     </Button>
                                                 </div>
                                             ) : (
-                                                <div 
+                                                <div
                                                     className="flex items-center gap-2 p-3 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
-                                                    onClick={() => setShowSpoiler(true)}
+                                                    onClick={() =>
+                                                        setShowSpoiler(true)
+                                                    }
                                                 >
                                                     <Shield className="w-4 h-4 text-orange-600" />
                                                     <span className="text-sm text-gray-600">
-                                                        스포일러가 포함된 댓글입니다. 클릭하여 표시
+                                                        스포일러가 포함된
+                                                        댓글입니다. 클릭하여
+                                                        표시
                                                     </span>
                                                     <Eye className="w-4 h-4 text-gray-500 ml-auto" />
                                                 </div>
                                             )}
                                         </div>
                                     ) : (
-                                        <p className={`text-sm text-foreground whitespace-pre-wrap break-words ${
-                                            isSpoiler ? 'bg-orange-50 border border-orange-200 rounded-md p-3' : ''
-                                        }`}>
+                                        <p
+                                            className={`text-sm text-foreground whitespace-pre-wrap break-words ${
+                                                isSpoiler
+                                                    ? "bg-orange-50 border border-orange-200 rounded-md p-3"
+                                                    : ""
+                                            }`}
+                                        >
                                             {comment.content}
                                         </p>
                                     )}
@@ -258,23 +290,38 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                             <div className="flex items-center gap-4 mt-2">
                                 <button
                                     className={`text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors ${
-                                        isLiked ? "text-blue-500 dark:text-blue-400" : ""
+                                        isLiked
+                                            ? "text-blue-500 dark:text-blue-400"
+                                            : ""
                                     }`}
                                     onClick={handleLike}
                                 >
-                                    <ThumbsUp className={`h-3.5 w-3.5 ${isLiked ? "fill-current" : ""}`} />
+                                    <ThumbsUp
+                                        className={`h-3.5 w-3.5 ${
+                                            isLiked ? "fill-current" : ""
+                                        }`}
+                                    />
                                     <span>
-                                        좋아요 {comment.likes > 0 && <span className="ml-0.5 font-medium">({comment.likes})</span>}
+                                        좋아요{" "}
+                                        {comment.likes > 0 && (
+                                            <span className="ml-0.5 font-medium">
+                                                ({comment.likes})
+                                            </span>
+                                        )}
                                     </span>
                                 </button>
 
                                 {depth < 2 && (
                                     <button
                                         className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-                                        onClick={() => setIsReplying(!isReplying)}
+                                        onClick={() =>
+                                            setIsReplying(!isReplying)
+                                        }
                                     >
                                         <MessageSquare className="h-3.5 w-3.5" />
-                                        <span>답글{isReplying ? " 취소" : ""}</span>
+                                        <span>
+                                            답글{isReplying ? " 취소" : ""}
+                                        </span>
                                     </button>
                                 )}
 
@@ -289,7 +336,9 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                                         </button>
                                         <button
                                             className="text-xs text-muted-foreground hover:text-destructive transition-colors"
-                                            onClick={() => setIsDeleteDialogOpen(true)}
+                                            onClick={() =>
+                                                setIsDeleteDialogOpen(true)
+                                            }
                                         >
                                             <Trash2 className="h-3.5 w-3.5 inline mr-1" />
                                             삭제
@@ -315,9 +364,13 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                                     {depth === 0 && (
                                         <button
                                             className="text-xs text-muted-foreground hover:text-foreground transition-colors mb-2"
-                                            onClick={() => setShowReplies(!showReplies)}
+                                            onClick={() =>
+                                                setShowReplies(!showReplies)
+                                            }
                                         >
-                                            {showReplies ? "답글 숨기기" : `답글 ${comment.replies.length}개 보기`}
+                                            {showReplies
+                                                ? "답글 숨기기"
+                                                : `답글 ${comment.replies.length}개 보기`}
                                         </button>
                                     )}
 
@@ -328,7 +381,9 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                                                     key={reply.id}
                                                     comment={reply}
                                                     themeId={themeId}
-                                                    hasPlayedGame={hasPlayedGame}
+                                                    hasPlayedGame={
+                                                        hasPlayedGame
+                                                    }
                                                     onReply={onReply}
                                                     onUpdate={onUpdate}
                                                     onDelete={onDelete}
@@ -346,7 +401,10 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
             </div>
 
             {/* 삭제 확인 다이얼로그 */}
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+            >
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>댓글 삭제</AlertDialogTitle>

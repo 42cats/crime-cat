@@ -164,7 +164,10 @@ const PostCard: React.FC<PostCardProps> = ({
                 >
                     <Avatar className="w-8 h-8">
                         <AvatarImage
-                            src={post.authorAvatarUrl ?? "/content/image/default_profile_image.png"}
+                            src={
+                                post.authorAvatarUrl ||
+                                "/content/image/default_profile_image.png"
+                            }
                             alt={post.authorNickname}
                         />
                         <AvatarFallback>

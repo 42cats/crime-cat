@@ -305,7 +305,12 @@ export const EscapeRoomHistoryCard: React.FC<EscapeRoomHistoryCardProps> = ({
                     <div className="flex justify-between items-center mt-3 pt-3 border-t">
                         <div className="flex items-center gap-2">
                             <Avatar className="w-6 h-6">
-                                <AvatarImage src={history.userAvatarUrl ?? "/content/image/default_profile_image.png"} />
+                                <AvatarImage
+                                    src={
+                                        history.userAvatarUrl ||
+                                        "/content/image/default_profile_image.png"
+                                    }
+                                />
                                 <AvatarFallback>
                                     {history.userNickname?.[0]}
                                 </AvatarFallback>

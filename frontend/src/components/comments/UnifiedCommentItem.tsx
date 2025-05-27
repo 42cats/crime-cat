@@ -136,7 +136,7 @@ export const UnifiedCommentItem: React.FC<UnifiedCommentItemProps> = ({
                     >
                         <AvatarImage
                             src={
-                                comment.authorProfileImage ??
+                                comment.authorProfileImage ||
                                 "/content/image/default_profile_image.png"
                             }
                             alt={comment.authorName}
@@ -201,7 +201,10 @@ export const UnifiedCommentItem: React.FC<UnifiedCommentItemProps> = ({
                     onClick={() => setIsProfileModalOpen(true)}
                 >
                     <AvatarImage
-                        src={comment.authorProfileImage ?? "/content/image/default_profile_image.png"}
+                        src={
+                            comment.authorProfileImage ||
+                            "/content/image/default_profile_image.png"
+                        }
                         alt={comment.authorName}
                     />
                     <AvatarFallback className="text-xs bg-primary/10 text-primary">

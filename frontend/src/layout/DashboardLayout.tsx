@@ -368,7 +368,10 @@ const SidebarInner = React.memo(() => {
                             <div className="px-3 py-2">
                                 <div className="flex items-center gap-x-3">
                                     <img
-                                        src={user?.profile_image_path ?? "/content/image/default_profile_image.png"}
+                                        src={
+                                            user?.profile_image_path ||
+                                            "/content/image/default_profile_image.png"
+                                        }
                                         alt={user?.nickname}
                                         className="h-8 w-8 rounded-full"
                                     />

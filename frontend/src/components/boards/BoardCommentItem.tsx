@@ -68,7 +68,7 @@ export const BoardCommentItem: React.FC<BoardCommentItemProps> = ({
                     <Avatar className="h-8 w-8 rounded-full border bg-muted/20 shrink-0">
                         <AvatarImage
                             src={
-                                comment.authorProfileImage ??
+                                comment.authorProfileImage ||
                                 "/content/image/default_profile_image.png"
                             }
                         />

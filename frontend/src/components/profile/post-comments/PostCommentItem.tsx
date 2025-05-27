@@ -115,7 +115,7 @@ const PostCommentItem: React.FC<PostCommentItemProps> = ({
     }
 
     return (
-        <div 
+        <div
             id={`comment-${comment.id}`}
             className="py-3 border-t border-gray-100 first:border-t-0 transition-all duration-300"
         >
@@ -139,7 +139,10 @@ const PostCommentItem: React.FC<PostCommentItemProps> = ({
                         >
                             <Avatar className="h-7 w-7">
                                 <AvatarImage
-                                    src={comment.authorAvatarUrl ?? "/content/image/default_profile_image.png"}
+                                    src={
+                                        comment.authorAvatarUrl ||
+                                        "/content/image/default_profile_image.png"
+                                    }
                                     alt={comment.authorNickname}
                                 />
                                 <AvatarFallback>

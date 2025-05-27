@@ -129,7 +129,10 @@ export const DashboardProfileCard: React.FC<Props> = ({
                     {user.profile_image_path && (
                         <div className="w-24 h-24 rounded-full overflow-hidden mx-auto">
                             <img
-                                src={user.profile_image_path ?? "/content/image/default_profile_image.png"}
+                                src={
+                                    user.profile_image_path ||
+                                    "/content/image/default_profile_image.png"
+                                }
                                 alt="프로필 이미지"
                                 className="w-full h-full object-cover"
                             />

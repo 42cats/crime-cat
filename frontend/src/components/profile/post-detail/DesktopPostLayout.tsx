@@ -3,8 +3,8 @@ import { Heart, MessageSquare, Share2, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostCommentList } from "../post-comments";
-import { UserPostDto } from '@/api/posts';
-import { ProfileDetailDto } from '@/api/profile';
+import { UserPostDto } from "@/api/posts";
+import { ProfileDetailDto } from "@/api/profile";
 import PostInfoContent from "./PostInfoContent";
 import PostImageSection from "./PostImageSection";
 
@@ -62,8 +62,8 @@ const DesktopPostLayout: React.FC<DesktopPostLayoutProps> = ({
                     <div className="flex items-center gap-3">
                         <img
                             src={
-                                post.authorAvatarUrl 
-                                ?? "/content/image/default_profile_image.png"
+                                post.authorAvatarUrl ||
+                                "/content/image/default_profile_image.png"
                             }
                             alt={post.authorNickname}
                             className="w-10 h-10 rounded-full object-cover"

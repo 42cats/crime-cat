@@ -295,7 +295,10 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                                 }
                             >
                                 <AvatarImage
-                                    src={post.authorProfileImagePath ?? "/content/image/default_profile_image.png"}
+                                    src={
+                                        post.authorProfileImagePath ||
+                                        "/content/image/default_profile_image.png"
+                                    }
                                     alt={post.authorName}
                                 />
                                 <AvatarFallback>
