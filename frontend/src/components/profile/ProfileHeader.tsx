@@ -5,6 +5,7 @@ import {
     GamepadIcon,
     UserIcon,
     UsersIcon,
+    X,
     Instagram,
     Twitter,
     MessageCircle,
@@ -295,18 +296,20 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                     aria-label="X(트위터) 프로필 열기"
                     disabled={!profile?.socialLinks?.x}
                 >
-                    <Twitter size={14} />
+                    <X size={14} />
                 </button>
 
                 <button
-                    onClick={() => openSocialLink(profile?.socialLinks?.kakao)}
+                    onClick={() =>
+                        openSocialLink(profile?.socialLinks?.openkakao)
+                    }
                     className={`p-2 rounded-full ${
-                        profile?.socialLinks?.kakao
+                        profile?.socialLinks?.openkakao
                             ? "bg-yellow-400 text-white"
                             : "bg-gray-200 text-gray-400"
                     } hover:opacity-90 transition-all`}
                     aria-label="카카오톡 오픈프로필 열기"
-                    disabled={!profile?.socialLinks?.kakao}
+                    disabled={!profile?.socialLinks?.openkakao}
                 >
                     <MessageCircle size={14} />
                 </button>

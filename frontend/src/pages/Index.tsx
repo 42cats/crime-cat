@@ -13,15 +13,12 @@ const Index: React.FC = () => {
     const organizationData = {
         "@context": "https://schema.org",
         "@type": "Organization",
-        "name": "미스터리 플레이스",
-        "alternateName": "CrimeCat",
-        "url": "https://crimecat.org",
-        "logo": "https://crimecat.org/images/logo.png",
-        "description": "크라임씬, 방탈출, 머더미스터리 게임 정보를 제공하는 커뮤니티",
-        "sameAs": [
-            "https://twitter.com/crimecat",
-            "https://www.instagram.com/crimecat"
-        ]
+        name: "미스터리 플레이스",
+        alternateName: "CrimeCat",
+        url: "https://mystery-place.com/",
+        logo: "https://mystery-place.com/images/logo.png",
+        description:
+            "크라임씬, 방탈출, 머더미스터리 게임 정보를 제공하는 커뮤니티",
     };
 
     return (

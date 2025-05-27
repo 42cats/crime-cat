@@ -1,5 +1,5 @@
 # 미스터리 플레이스 robots.txt
-# https://crimecat.org
+# https://mystery-place.com/
 
 # 모든 검색 엔진 허용
 User-agent: *
@@ -23,4 +23,4 @@ Disallow: /*?*filter=
 Crawl-delay: 1
 
 # 사이트맵 위치
-Sitemap: https://crimecat.org/sitemap.xml
+Sitemap: https://mystery-place.com//sitemap.xml
