@@ -1,31 +1,25 @@
 # docker/frontend/Dockerfile
-FROM node:20-alpine
-RUN mkdir -p /app
+# 빌드 전용 Docker 이미지
+FROM node:20-alpine AS builder
+
+# 빌드에 필요한 도구들 설치
+RUN apk add --no-cache \
+    file \
+    bash \
+    grep \
+    sed \
+    findutils \
+    dos2unix \
+    coreutils
+
 WORKDIR /app
+
+# 빌드 스크립트들 복사
+COPY ./docker/frontend/pre-build-check.sh /pre-build-check.sh
 COPY ./docker/frontend/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
+# 실행 권한 부여
+RUN chmod +x /pre-build-check.sh /entrypoint.sh
+
+# 빌드 스크립트 실행
 ENTRYPOINT ["/entrypoint.sh"]
-
-
-
-
-
-## Prod type
-# # 실행 단계
-# FROM node:18-alpine
-# WORKDIR /app
-
-# # 빌드 결과물만 복사
-# COPY --from=build /app/dist ./dist
-# COPY --from=build /app/node_modules ./node_modules
-# COPY --from=build /app/package.json ./
-
-# # vite가 devDependencies에 있으면 직접 설치 필요
-# RUN npm install -g serve
-
-# # 포트 노출 (vite preview 기본 4173 or serve는 3000)
-# EXPOSE 3000
-
-# # 정적 서버 실행
-# CMD ["serve", "-s", "dist", "-l", "3000"]
