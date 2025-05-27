@@ -62,7 +62,7 @@ public class GameThemeCommentRepliedEvent extends NotificationEvent {
         if ("CRIMESCENE".equals(themeType)) {
             return String.format("/themes/crimescene/%s#comment-%s", themeId, commentId);
         } else if ("ESCAPE_ROOM".equals(themeType)) {
-            return String.format("/themes/escape-room/%s#comment-%s", themeId, commentId);
+            return String.format("/themes/escape_room/%s#comment-%s", themeId, commentId);
         }
         return String.format("/themes/%s#comment-%s", themeId, commentId);
     }
