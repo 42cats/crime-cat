@@ -213,6 +213,16 @@ public class UserService {
 			}
 		}
 
+		// "올패스" 권한 체크 - 모든 권한을 프리패스
+		Permission allPassPermission = permissionService.findPermissionByPermissionName("올패스");
+		if (allPassPermission != null) {
+			UserPermission allPassUserPermission = userPermissionService.getUserPermissionByPermissionId(
+					user, allPassPermission.getId());
+			if (allPassUserPermission != null && LocalDateTime.now().isBefore(allPassUserPermission.getExpiredAt())) {
+				return new UserHasPermissionResponseDto("Permission has");
+			}
+		}
+
 		Permission permission = permissionService.findPermissionByPermissionName(permissionName);
 		if (permission == null) {
 			throw ErrorStatus.RESOURCE_NOT_FOUND.asServiceException();
