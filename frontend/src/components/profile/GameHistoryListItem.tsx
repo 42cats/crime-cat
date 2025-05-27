@@ -6,8 +6,8 @@ interface GameHistoryListItemProps {
     themeName: string;
     thumbnailUrl?: string;
     playDate: string;
-    gameType: 'crimescene' | 'escape-room';
-    successStatus?: 'SUCCESS' | 'FAIL' | 'PARTIAL' | boolean;
+    gameType: "crimescene" | "escape-room";
+    successStatus?: "SUCCESS" | "FAIL" | "PARTIAL" | boolean;
     className?: string;
 }
 
@@ -23,7 +23,8 @@ const GameHistoryListItem: React.FC<GameHistoryListItemProps> = ({
     const navigate = useNavigate();
 
     const handleClick = () => {
-        if (gameType === 'crimescene') {
+        if (themeId.trim().length === 0) return;
+        if (gameType === "crimescene") {
             navigate(`/themes/crimescene/${themeId}`);
         } else {
             navigate(`/themes/escape-room/${themeId}`);
@@ -33,31 +34,43 @@ const GameHistoryListItem: React.FC<GameHistoryListItemProps> = ({
     // 성공 상태 표시
     const getStatusDisplay = () => {
         if (successStatus === undefined || successStatus === null) return null;
-        
-        if (typeof successStatus === 'boolean') {
+
+        if (typeof successStatus === "boolean") {
             // 크라임씬의 경우 boolean (isWin)
             return (
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                    successStatus 
-                        ? 'bg-green-100 text-green-600' 
-                        : 'bg-red-100 text-red-600'
-                }`}>
-                    {successStatus ? '승리' : '패배'}
+                <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                        successStatus
+                            ? "bg-green-100 text-green-600"
+                            : "bg-red-100 text-red-600"
+                    }`}
+                >
+                    {successStatus ? "승리" : "패배"}
                 </span>
             );
         } else {
             // 방탈출의 경우 SUCCESS/FAIL/PARTIAL
             const statusConfig = {
-                'SUCCESS': { bg: 'bg-green-100', text: 'text-green-600', label: '성공' },
-                'FAIL': { bg: 'bg-red-100', text: 'text-red-600', label: '실패' },
-                'PARTIAL': { bg: 'bg-yellow-100', text: 'text-yellow-600', label: '부분성공' },
+                SUCCESS: {
+                    bg: "bg-green-100",
+                    text: "text-green-600",
+                    label: "성공",
+                },
+                FAIL: { bg: "bg-red-100", text: "text-red-600", label: "실패" },
+                PARTIAL: {
+                    bg: "bg-yellow-100",
+                    text: "text-yellow-600",
+                    label: "부분성공",
+                },
             };
-            
+
             const config = statusConfig[successStatus];
             if (!config) return null;
-            
+
             return (
-                <span className={`text-xs px-2 py-1 rounded-full ${config.bg} ${config.text}`}>
+                <span
+                    className={`text-xs px-2 py-1 rounded-full ${config.bg} ${config.text}`}
+                >
                     {config.label}
                 </span>
             );
@@ -67,15 +80,15 @@ const GameHistoryListItem: React.FC<GameHistoryListItemProps> = ({
     // 날짜 포맷팅
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString('ko-KR', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
+        return date.toLocaleDateString("ko-KR", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
         });
     };
 
     return (
-        <div 
+        <div
             className={`flex items-center justify-between p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${className}`}
             onClick={handleClick}
         >
@@ -99,15 +112,17 @@ const GameHistoryListItem: React.FC<GameHistoryListItemProps> = ({
 
                 {/* 테마 정보 */}
                 <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-800 truncate">{themeName}</p>
-                    <p className="text-sm text-gray-500">{formatDate(playDate)}</p>
+                    <p className="font-medium text-gray-800 truncate">
+                        {themeName}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                        {formatDate(playDate)}
+                    </p>
                 </div>
             </div>
 
             {/* 성공 상태 */}
-            <div className="flex-shrink-0">
-                {getStatusDisplay()}
-            </div>
+            <div className="flex-shrink-0">{getStatusDisplay()}</div>
         </div>
     );
 };
