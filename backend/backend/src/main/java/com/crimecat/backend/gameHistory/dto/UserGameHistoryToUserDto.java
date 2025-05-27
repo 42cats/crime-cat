@@ -28,7 +28,7 @@ public class UserGameHistoryToUserDto {
 
 		static public UserGameHistoryToUserDto from(GameHistory gameHistory){
 		String gameThemeId = "";
-		String gameThemeName = "등록되지 않음";
+		String gameThemeName = gameHistory.getGuild().getName();
 		String gameThemeThumbnail = "/content/image/default_image.jpg";
 
 		if (gameHistory.getGameTheme() != null) {
@@ -63,7 +63,7 @@ public class UserGameHistoryToUserDto {
 	 */
 	static public UserGameHistoryToUserDto fromPublic(GameHistory gameHistory){
 		String gameThemeId = "";
-		String gameThemeName = "등록되지 않음";
+		String gameThemeName = gameHistory.getGuild().getName();
 		String gameThemeThumbnail = "/content/image/default_image.jpg";
 
 		if (gameHistory.getGameTheme() != null) {
