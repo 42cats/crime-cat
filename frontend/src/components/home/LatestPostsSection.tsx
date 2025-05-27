@@ -11,7 +11,7 @@ const BoardSection = ({
     category,
 }: {
     title: string;
-    category: "CRIMESCENE" | "ESCAPE_ROOM" | "MURDER_MYSTERY" | "REALWORLD";
+    category: "CRIMESCENE" | "ESCAPE-ROOM" | "MURDER-MYSTERY" | "REALWORLD";
 }) => {
     const navigate = useNavigate();
     const {
@@ -40,7 +40,13 @@ const BoardSection = ({
             </div>
 
             <div className="glass p-4 rounded-lg min-h-[180px] flex-grow">
-                {isLoading ? (
+                {category === "MURDER_MYSTERY" || category === "REALWORLD" ? (
+                    <div className="flex items-center justify-center h-full">
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                            준비 중입니다. 조금만 기다려주세요.
+                        </p>
+                    </div>
+                ) : isLoading ? (
                     <div className="flex items-center justify-center h-full">
                         <p className="text-sm text-muted-foreground">
                             불러오는 중...
@@ -90,10 +96,7 @@ const BoardSection = ({
                 ) : (
                     <div className="flex items-center justify-center h-full">
                         <p className="text-sm text-muted-foreground text-center py-4">
-                            {category === "CRIMESCENE" ||
-                            category === "ESCAPE_ROOM"
-                                ? "게시글이 없습니다."
-                                : "준비 중입니다. 조금만 기다려주세요."}
+                            게시글이 없습니다.
                         </p>
                     </div>
                 )}
