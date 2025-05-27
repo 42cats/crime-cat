@@ -2,6 +2,7 @@ package com.crimecat.backend.user.controller;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -101,6 +102,7 @@ public class UserController {
 	 * @param permissionName
 	 * @return
 	 */
+	@Transactional(readOnly = true)
 	@GetMapping("/{user_snowflake}/permission")
 	public UserHasPermissionResponseDto hasPermission(@PathVariable("user_snowflake") String userSnowflake, @RequestParam("permission_name") String permissionName) {
 		return userService.checkUserHasPermissionByPermissionName(userSnowflake, permissionName);
