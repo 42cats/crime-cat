@@ -60,7 +60,7 @@ const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
                     <img
                         src={
                             theme?.thumbnail ||
-                            "/content/image/default_bar2.png"
+                            "/content/image/default_crime_scene_image.png"
                         }
                         alt={theme.title}
                         className="absolute inset-0 w-full h-full object-cover object-center"

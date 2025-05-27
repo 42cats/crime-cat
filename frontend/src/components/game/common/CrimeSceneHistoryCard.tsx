@@ -83,7 +83,7 @@ export const CrimeSceneHistoryCard: React.FC<CrimeSceneHistoryCardProps> = ({
                 <div className="relative w-48 h-36 flex-shrink-0 overflow-hidden">
                     {history.themeThumbnail ? (
                         <img
-                            src={history.themeThumbnail}
+                            src={history.themeThumbnail ?? "/content/image/default_crime_scene_image.png"}
                             alt={history.themeName}
                             className="w-full h-full object-cover"
                         />

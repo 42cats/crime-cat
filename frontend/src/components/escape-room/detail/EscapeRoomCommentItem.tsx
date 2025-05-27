@@ -109,7 +109,7 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                         className="h-8 w-8 rounded-full border bg-muted/20 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" 
                         onClick={() => setIsProfileModalOpen(true)}
                     >
-                        <AvatarImage src={comment.authorProfileImage} alt={comment.authorName} />
+                        <AvatarImage src={comment.authorProfileImage ?? "/content/image/default_profile_image.png"} alt={comment.authorName} />
                         <AvatarFallback className="text-xs bg-primary/10 text-primary">
                             {comment.authorName?.substring(0, 2).toUpperCase() || "?"}
                         </AvatarFallback>
@@ -168,7 +168,7 @@ const EscapeRoomCommentItem: React.FC<EscapeRoomCommentItemProps> = ({
                     className="h-8 w-8 rounded-full border bg-muted/20 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" 
                     onClick={() => setIsProfileModalOpen(true)}
                 >
-                    <AvatarImage src={comment.authorProfileImage} alt={comment.authorName} />
+                    <AvatarImage src={comment.authorProfileImage ?? "/content/image/default_profile_image.png"} alt={comment.authorName} />
                     <AvatarFallback className="text-xs bg-primary/10 text-primary">
                         {comment.authorName.substring(0, 2).toUpperCase()}
                     </AvatarFallback>

@@ -69,7 +69,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
                         {member.avatarUrl ? (
-                          <AvatarImage src={member.avatarUrl} alt={member.name} />
+                          <AvatarImage src={member.avatarUrl ?? "/content/image/default_profile_image.png"} alt={member.name} />
                         ) : (
                           <AvatarFallback>
                             <User className="h-4 w-4" />

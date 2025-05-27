@@ -33,7 +33,7 @@ const ContactUserModal: React.FC<ContactUserModalProps> = ({ open, onOpenChange,
         {user && (
           <div className="flex flex-col items-center text-center space-y-4">
             <Avatar className="w-20 h-20">
-              <AvatarImage src={user.avatar} alt={user.nickName} />
+              <AvatarImage src={user.avatar ?? "/content/image/default_profile_image.png"} alt={user.nickName} />
             </Avatar>
             <div>
               <p className="text-xl font-bold">{user.nickName}</p>

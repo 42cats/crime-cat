@@ -150,7 +150,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
             <div className="flex gap-2">
                 <Avatar className="h-8 w-8 rounded-full border shrink-0">
                     <AvatarImage
-                        src={comment.authorProfileImage}
+                        src={comment.authorProfileImage ?? "/content/image/default_profile_image.png"}
                         alt={comment.authorName}
                     />
                     <AvatarFallback className="text-xs">

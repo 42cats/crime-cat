@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import TagInputField from "@/components/sns/input/TagInputField";
 import ContentTextArea from "@/components/sns/input/ContentTextArea";
 import LocationPicker from "@/components/sns/location/LocationPicker";
-import { Location } from '@/api/posts';
+import { Location } from "@/api/posts";
 import { userPostService } from "@/api/posts";
 import PrivacySettingsComponent, {
     PrivacySettings,
@@ -34,7 +34,9 @@ const SNSCreatePageContent: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // 이미지 선택 처리
-    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = async (
+        e: React.ChangeEvent<HTMLInputElement>
+    ) => {
         e.preventDefault();
 
         const files = Array.from(e.target.files || []);
@@ -58,7 +60,7 @@ const SNSCreatePageContent: React.FC = () => {
 
         try {
             setIsCompressing(true);
-            
+
             // 각 이미지 압축 처리
             const compressedResults = await Promise.all(
                 validFiles.map(async (file) => {
@@ -70,7 +72,7 @@ const SNSCreatePageContent: React.FC = () => {
                     try {
                         return await compressImageOnly(file, {
                             maxSizeMB: 1, // 최대 1MB
-                            quality: 0.7 // 70% 품질
+                            quality: 0.7, // 70% 품질
                         });
                     } catch (err) {
                         console.error(`이미지 압축 실패: ${file.name}`, err);
@@ -81,8 +83,8 @@ const SNSCreatePageContent: React.FC = () => {
 
             // null 값 필터링 및 압축된 파일 추출
             const compressedFiles = compressedResults
-                .filter(result => result !== null)
-                .map(result => result!.file);
+                .filter((result) => result !== null)
+                .map((result) => result!.file);
 
             if (compressedFiles.length === 0) {
                 toast.error("이미지 처리 중 오류가 발생했습니다.");
@@ -102,7 +104,7 @@ const SNSCreatePageContent: React.FC = () => {
             toast.error("이미지 처리 중 오류가 발생했습니다.");
         } finally {
             setIsCompressing(false);
-            
+
             // 파일 입력 초기화 (동일 파일 재선택 가능하게)
             if (fileInputRef.current) {
                 fileInputRef.current.value = "";
@@ -205,12 +207,16 @@ const SNSCreatePageContent: React.FC = () => {
                                         {isCompressing ? (
                                             <>
                                                 <Loader2 className="h-8 w-8 mb-2 animate-spin" />
-                                                <span className="text-sm">압축 중...</span>
+                                                <span className="text-sm">
+                                                    압축 중...
+                                                </span>
                                             </>
                                         ) : (
                                             <>
                                                 <Plus className="h-8 w-8 mb-2" />
-                                                <span className="text-sm">추가</span>
+                                                <span className="text-sm">
+                                                    추가
+                                                </span>
                                             </>
                                         )}
                                     </button>
@@ -226,13 +232,19 @@ const SNSCreatePageContent: React.FC = () => {
                                 {isCompressing ? (
                                     <>
                                         <Loader2 className="h-12 w-12 mb-2 animate-spin" />
-                                        <span className="font-medium">이미지 압축 중...</span>
-                                        <span className="text-sm mt-1">잠시만 기다려주세요</span>
+                                        <span className="font-medium">
+                                            이미지 압축 중...
+                                        </span>
+                                        <span className="text-sm mt-1">
+                                            잠시만 기다려주세요
+                                        </span>
                                     </>
                                 ) : (
                                     <>
                                         <Image className="h-12 w-12 mb-2" />
-                                        <span className="font-medium">이미지 추가</span>
+                                        <span className="font-medium">
+                                            이미지 추가
+                                        </span>
                                         <span className="text-sm mt-1">
                                             최대 5개까지 업로드 가능
                                         </span>
@@ -296,7 +308,8 @@ const SNSCreatePageContent: React.FC = () => {
                         <Button
                             type="submit"
                             disabled={
-                                isLoading || isCompressing ||
+                                isLoading ||
+                                isCompressing ||
                                 (!content.trim() && images.length === 0)
                             }
                         >

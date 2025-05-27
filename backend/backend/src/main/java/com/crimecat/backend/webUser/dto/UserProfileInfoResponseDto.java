@@ -29,7 +29,7 @@ public class UserProfileInfoResponseDto {
     alertSetting.put("email", webUser.getEmailAlarm());
     String avatarUrl = webUser.getProfileImagePath();
     if(avatarUrl == null){
-      avatarUrl = "https://cdn.discordapp.com/embed/avatars/1.png";
+      avatarUrl = "/content/image/default_profile_image.png";
     }
     return UserProfileInfoResponseDto.builder()
             .id(webUser.getId().toString())

@@ -268,7 +268,7 @@ const GeneralComments: React.FC<GeneralCommentsProps> = ({
                         className="w-8 h-8 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
                         onClick={() => setIsProfileModalOpen(true)}
                     >
-                        <AvatarImage src={comment.authorProfileImage} />
+                        <AvatarImage src={comment.authorProfileImage ?? "/content/image/default_profile_image.png"} />
                         <AvatarFallback>{comment.authorName && comment.authorName[0]}</AvatarFallback>
                     </Avatar>
                 

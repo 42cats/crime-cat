@@ -112,7 +112,7 @@ const ProfileThemeGrid: React.FC<ProfileThemeGridProps> = ({ userId, onThemesLoa
           >
             <div className="aspect-square overflow-hidden">
               <img
-                src={theme.thumbNail || "/content/image/default_image2.png"}
+                src={theme.thumbNail ?? "/content/image/default_profile_image.png"}
                 alt={theme.themeTitle}
                 className="w-full h-full object-cover"
               />

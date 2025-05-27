@@ -1,6 +1,6 @@
 import { useRecoilState } from "recoil";
 import { userState, isLoadingState } from "@/atoms/auth";
-import { authService } from '@/api/auth';
+import { authService } from "@/api/auth";
 import { isUser } from "@/utils/guard";
 import { UserRole } from "@/lib/types";
 import { BlockInfo } from "@/types/user";
@@ -19,7 +19,7 @@ export const useAuth = () => {
             if (isUser(user)) {
                 if (!user?.profile_image_path) {
                     user.profile_image_path =
-                        "https://cdn.discordapp.com/embed/avatars/1.png";
+                        "/content/image/default_profile_image.png";
                 }
                 if (!user?.snowflake) {
                     user.snowflake = ""; // 없으면 빈 문자열로 초기화
@@ -27,12 +27,16 @@ export const useAuth = () => {
                 setUser(user);
             }
         } catch (error: any) {
-            if (error?.response?.status === 403 && error?.response?.data?.error === 'ACCOUNT_BLOCKED') {
+            if (
+                error?.response?.status === 403 &&
+                error?.response?.data?.error === "ACCOUNT_BLOCKED"
+            ) {
                 // 차단된 계정 처리
                 const blockData = error.response.data;
                 setBlockInfo({
                     isBlocked: true,
-                    blockReason: blockData.blockReason || '사유를 알 수 없습니다.',
+                    blockReason:
+                        blockData.blockReason || "사유를 알 수 없습니다.",
                     blockedAt: blockData.blockedAt || undefined,
                     blockExpiresAt: blockData.blockExpiresAt || undefined,
                     isPermanent: !blockData.blockExpiresAt,

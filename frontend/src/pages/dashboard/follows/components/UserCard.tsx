@@ -102,7 +102,7 @@ export const UserCard: React.FC<UserCardProps> = ({
           >
             <Avatar className="h-12 w-12">
               <AvatarImage
-                src={userToDisplay.profileImage}
+                src={userToDisplay.profileImage ?? "/content/image/default_profile_image.png"}
                 alt={userToDisplay.nickname}
               />
               <AvatarFallback>

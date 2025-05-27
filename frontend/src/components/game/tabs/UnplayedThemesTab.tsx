@@ -305,7 +305,7 @@ export const UnplayedThemesTab: React.FC = () => {
                                             <img
                                                 src={
                                                     theme.thumbnail ||
-                                                    "/content/image/default_image.png"
+                                                    "/content/image/default_crime_scene_image.png"
                                                 }
                                                 alt={theme.title}
                                                 className="w-24 h-24 object-cover rounded-lg"
@@ -545,7 +545,7 @@ export const UnplayedThemesTab: React.FC = () => {
                                             <img
                                                 src={
                                                     theme.thumbnail ||
-                                                    "/images/escape-room-default.jpg"
+                                                    "/content/image/default_crime_scene_image.png"
                                                 }
                                                 alt={theme.title}
                                                 className="w-24 h-24 object-cover rounded-lg"

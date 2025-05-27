@@ -69,7 +69,7 @@ const GameAdsSection: React.FC = () => {
                         >
                             <div className="h-40 flex items-center justify-center overflow-hidden bg-muted">
                                 <img
-                                    src={ad.image}
+                                    src={ad.image ?? "/content/image/default_crime_scene_image.png"}
                                     alt={ad.title}
                                     className="max-h-full object-contain"
                                 />

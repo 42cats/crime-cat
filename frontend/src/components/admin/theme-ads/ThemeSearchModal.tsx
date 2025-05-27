@@ -20,7 +20,11 @@ interface ThemeSearchModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSelect: (theme: Theme) => void;
-    selectedThemeType?: "CRIMESCENE" | "ESCAPE_ROOM" | "MURDER_MYSTERY" | "REALWORLD";
+    selectedThemeType?:
+        | "CRIMESCENE"
+        | "ESCAPE_ROOM"
+        | "MURDER_MYSTERY"
+        | "REALWORLD";
 }
 
 const ThemeSearchModal: React.FC<ThemeSearchModalProps> = ({
@@ -48,19 +52,26 @@ const ThemeSearchModal: React.FC<ThemeSearchModalProps> = ({
             if (!apiFunction) {
                 return [];
             }
-            
+
             const allThemes = await apiFunction();
-            
+
             // 검색어로 필터링
             if (debouncedSearchQuery) {
                 return allThemes.filter(
                     (theme: Theme) =>
-                        theme.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-                        theme.id.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-                        (theme.author && theme.author.toLowerCase().includes(debouncedSearchQuery.toLowerCase()))
+                        theme.title
+                            .toLowerCase()
+                            .includes(debouncedSearchQuery.toLowerCase()) ||
+                        theme.id
+                            .toLowerCase()
+                            .includes(debouncedSearchQuery.toLowerCase()) ||
+                        (theme.author &&
+                            theme.author
+                                .toLowerCase()
+                                .includes(debouncedSearchQuery.toLowerCase()))
                 );
             }
-            
+
             return allThemes;
         },
         enabled: isOpen && !!themeAPIs[selectedType],
@@ -105,22 +116,44 @@ const ThemeSearchModal: React.FC<ThemeSearchModalProps> = ({
                     </div>
 
                     {/* 테마 타입 탭 */}
-                    <Tabs value={selectedType} onValueChange={(v) => setSelectedType(v as "CRIMESCENE" | "ESCAPE_ROOM" | "MURDER_MYSTERY" | "REALWORLD")}>
+                    <Tabs
+                        value={selectedType}
+                        onValueChange={(v) =>
+                            setSelectedType(
+                                v as
+                                    | "CRIMESCENE"
+                                    | "ESCAPE_ROOM"
+                                    | "MURDER_MYSTERY"
+                                    | "REALWORLD"
+                            )
+                        }
+                    >
                         <TabsList className="grid w-full grid-cols-4">
-                            {Object.entries(themeTypeLabels).map(([value, label]) => (
-                                <TabsTrigger 
-                                    key={value} 
-                                    value={value}
-                                    disabled={!themeAPIs[value as keyof typeof themeAPIs]}
-                                >
-                                    {label}
-                                    {!themeAPIs[value as keyof typeof themeAPIs] && (
-                                        <Badge variant="outline" className="ml-2 text-xs">
-                                            준비중
-                                        </Badge>
-                                    )}
-                                </TabsTrigger>
-                            ))}
+                            {Object.entries(themeTypeLabels).map(
+                                ([value, label]) => (
+                                    <TabsTrigger
+                                        key={value}
+                                        value={value}
+                                        disabled={
+                                            !themeAPIs[
+                                                value as keyof typeof themeAPIs
+                                            ]
+                                        }
+                                    >
+                                        {label}
+                                        {!themeAPIs[
+                                            value as keyof typeof themeAPIs
+                                        ] && (
+                                            <Badge
+                                                variant="outline"
+                                                className="ml-2 text-xs"
+                                            >
+                                                준비중
+                                            </Badge>
+                                        )}
+                                    </TabsTrigger>
+                                )
+                            )}
                         </TabsList>
 
                         <TabsContent value={selectedType} className="mt-4">
@@ -141,36 +174,57 @@ const ThemeSearchModal: React.FC<ThemeSearchModalProps> = ({
                                             <div
                                                 key={theme.id}
                                                 className="p-4 border rounded-lg hover:bg-muted cursor-pointer transition-colors"
-                                                onClick={() => handleThemeSelect(theme)}
+                                                onClick={() =>
+                                                    handleThemeSelect(theme)
+                                                }
                                             >
                                                 <div className="flex justify-between items-start">
                                                     <div className="flex-1">
-                                                        <h4 className="font-medium">{theme.title}</h4>
+                                                        <h4 className="font-medium">
+                                                            {theme.title}
+                                                        </h4>
                                                         <div className="mt-1 space-y-1">
                                                             <p className="text-sm text-muted-foreground">
-                                                                제작: {theme.author}
+                                                                제작:{" "}
+                                                                {theme.author}
                                                             </p>
                                                             <p className="text-xs text-muted-foreground">
                                                                 ID: {theme.id}
                                                             </p>
                                                         </div>
                                                         <div className="mt-2 flex gap-2 flex-wrap">
-                                                            <Badge variant="outline" className="text-xs">
-                                                                {theme.players}명
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="text-xs"
+                                                            >
+                                                                {theme.players}
+                                                                명
                                                             </Badge>
-                                                            <Badge variant="outline" className="text-xs">
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="text-xs"
+                                                            >
                                                                 {theme.playtime}
                                                             </Badge>
                                                             {theme.price && (
-                                                                <Badge variant="outline" className="text-xs">
-                                                                    {theme.price}원
+                                                                <Badge
+                                                                    variant="outline"
+                                                                    className="text-xs"
+                                                                >
+                                                                    {
+                                                                        theme.price
+                                                                    }
+                                                                    원
                                                                 </Badge>
                                                             )}
                                                         </div>
                                                     </div>
                                                     {theme.thumbnail && (
                                                         <img
-                                                            src={theme.thumbnail}
+                                                            src={
+                                                                theme.thumbnail ??
+                                                                "/content/image/default_crime_scene_image.png"
+                                                            }
                                                             alt={theme.title}
                                                             className="w-20 h-20 object-cover rounded ml-4"
                                                         />

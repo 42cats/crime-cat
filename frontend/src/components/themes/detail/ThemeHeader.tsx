@@ -36,7 +36,7 @@ const ThemeHeader: React.FC<ThemeHeaderProps> = ({
       <div className="mb-8">
         <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-6">
           <img
-            src={`${theme?.thumbnail || "/content/image/default_image2.png"}`}
+            src={`${theme?.thumbnail || "/content/image/default_crime_scene_image.png"}`}
             alt={theme.title}
             className="w-full h-full object-cover cursor-pointer"
             onClick={() => setIsImageViewerOpen(true)}
@@ -70,7 +70,7 @@ const ThemeHeader: React.FC<ThemeHeaderProps> = ({
                 {theme.author && theme.author.avatarUrl ? (
                   <Avatar className="h-5 w-5 border border-border">
                     <AvatarImage
-                      src={theme.author.avatarUrl}
+                      src={theme.author.avatarUrl ?? "/content/image/default_profile_image.png"}
                       alt={theme.author.nickname}
                     />
                     <AvatarFallback className="bg-muted text-xs text-primary font-bold">

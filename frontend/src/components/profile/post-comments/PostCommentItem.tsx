@@ -139,7 +139,7 @@ const PostCommentItem: React.FC<PostCommentItemProps> = ({
                         >
                             <Avatar className="h-7 w-7">
                                 <AvatarImage
-                                    src={comment.authorAvatarUrl || undefined}
+                                    src={comment.authorAvatarUrl ?? "/content/image/default_profile_image.png"}
                                     alt={comment.authorNickname}
                                 />
                                 <AvatarFallback>

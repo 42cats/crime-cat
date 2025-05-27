@@ -106,7 +106,7 @@ const GameHistoryListItem: React.FC<GameHistoryListItemProps> = ({
                 <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200 flex-shrink-0">
                     {thumbnailUrl ? (
                         <img
-                            src={thumbnailUrl}
+                            src={thumbnailUrl ?? "/content/image/default_crime_scene_image.png"}
                             alt={`${themeName} 썸네일`}
                             className="w-full h-full object-cover"
                         />

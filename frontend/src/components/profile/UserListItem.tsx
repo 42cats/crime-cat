@@ -23,7 +23,7 @@ const UserListItem: React.FC<UserListItemProps> = ({
         <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200">
           {profileImage ? (
             <img
-              src={profileImage}
+              src={profileImage ?? "/content/image/default_profile_image.png"}
               alt={`${nickname}의 프로필`}
               className="w-full h-full object-cover"
             />

@@ -24,7 +24,7 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
       <div className="relative">
         <Avatar className="w-24 h-24 border-4 border-background">
           <AvatarImage
-            src={croppedImageUrl || "/default-profile.jpg"}
+            src={croppedImageUrl ?? "/content/image/default_profile_image.png"}
             alt="Profile"
             className="object-cover"
           />

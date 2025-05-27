@@ -110,11 +110,11 @@ const ThemeTeamInfo: React.FC<ThemeTeamInfoProps> = ({
                                                 <AvatarImage
                                                     src={
                                                         teamData.members[0]
-                                                            .avatarUrl || ""
+                                                            .avatarUrl || "/content/image/default_profile_image.png"
                                                     }
                                                     alt={
                                                         teamData.members[0]
-                                                            .name || ""
+                                                            .name || "avartar"
                                                     }
                                                 />
                                                 <AvatarFallback className="bg-muted text-primary font-medium text-lg">
@@ -182,7 +182,7 @@ const ThemeTeamInfo: React.FC<ThemeTeamInfoProps> = ({
                                                         <AvatarImage
                                                             src={
                                                                 member.avatarUrl ||
-                                                                ""
+                                                                "/content/image/default_profile_image.png"
                                                             }
                                                             alt={
                                                                 member.name ||

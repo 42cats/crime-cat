@@ -39,7 +39,7 @@ const PostAuthorInfo: React.FC<PostAuthorInfoProps> = ({
         <div className={`flex items-center gap-2 ${className}`}>
             {showAvatar && (
                 <Avatar className={avatarSize}>
-                    <AvatarImage src={authorAvatarUrl} alt={authorNickname} />
+                    <AvatarImage src={authorAvatarUrl ?? "/content/image/default_profile_image.png"} alt={authorNickname} />
                     <AvatarFallback className={textSize}>
                         {authorNickname.substring(0, 2)}
                     </AvatarFallback>

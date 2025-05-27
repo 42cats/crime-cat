@@ -143,7 +143,7 @@ const GameComparisonPage: React.FC = () => {
             {/* 현재 사용자 */}
             <div className="flex items-center gap-2 bg-primary/10 px-3 py-2 rounded-lg">
               <Avatar className="w-8 h-8">
-                <AvatarImage src={user?.profileImage} />
+                <AvatarImage src={user?.profileImage ?? "/content/image/default_profile_image.png"} />
                 <AvatarFallback>{user?.nickname?.[0]}</AvatarFallback>
               </Avatar>
               <span className="font-medium">{user?.nickname}</span>
@@ -154,7 +154,7 @@ const GameComparisonPage: React.FC = () => {
             {selectedUsers.map((selectedUser) => (
               <div key={selectedUser.id} className="flex items-center gap-2 bg-secondary/50 px-3 py-2 rounded-lg">
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={selectedUser.avatar} />
+                  <AvatarImage src={selectedUser.avatar ?? "/content/image/default_profile_image.png"} />
                   <AvatarFallback>{selectedUser.nickname?.[0]}</AvatarFallback>
                 </Avatar>
                 <span>{selectedUser.nickname}</span>
@@ -316,7 +316,7 @@ const GameComparisonPage: React.FC = () => {
                   >
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarImage src={searchUser.profileImage} />
+                        <AvatarImage src={searchUser.profileImage ?? "/content/image/default_profile_image.png"} />
                         <AvatarFallback>{searchUser.nickname?.[0]}</AvatarFallback>
                       </Avatar>
                       <span>{searchUser.nickname}</span>
@@ -396,7 +396,7 @@ const ComparisonResults: React.FC<{
               <CardContent className="p-4">
                 <div className="flex gap-4">
                   <img
-                    src={theme.thumbnail || '/images/theme-default.jpg'}
+                    src={theme.thumbnail || '/content/image/default_crime_scene_image.png'}
                     alt={theme.title}
                     className="w-24 h-24 object-cover rounded-lg"
                   />

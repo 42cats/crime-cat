@@ -32,7 +32,7 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
           <div className="flex items-center space-x-3">
             <Avatar className="h-12 w-12">
               <AvatarImage
-                src={searchUser.profileImagePath}
+                src={searchUser.profileImagePath ?? "/content/image/default_profile_image.png"}
                 alt={searchUser.nickname}
               />
               <AvatarFallback>

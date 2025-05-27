@@ -33,7 +33,7 @@ public class ProfileDetailDto {
   static public ProfileDetailDto from(WebUser user,  Integer playCount){
     String avatarUrl = user.getProfileImagePath();
     if(avatarUrl == null){
-      avatarUrl = "https://cdn.discordapp.com/embed/avatars/1.png";
+      avatarUrl = "/content/image/default_profile_image.png";
     }
     return ProfileDetailDto.builder()
         .avatarImage(avatarUrl)

@@ -94,7 +94,7 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
                 <div className="relative w-full h-48 overflow-hidden">
                     <img
                         src={
-                            theme.thumbnail || "/content/image/default_bar2.png"
+                            theme.thumbnail || "/content/image/default_escape_room_image.png"
                         }
                         alt={theme.title}
                         className="absolute inset-0 w-full h-full object-cover object-center"

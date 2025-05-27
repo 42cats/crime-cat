@@ -73,7 +73,7 @@ const ThemeGuildInfo: React.FC<ThemeGuildInfoProps> = ({ theme }) => {
                         <AvatarImage
                             src={
                                 guild?.guildIcon ||
-                                "https://cdn.discordapp.com/embed/avatars/1.png"
+                                "/content/image/default_profile_image.png"
                             }
                             alt={guild?.guildName || theme.guild.name}
                         />

@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostCommentList } from "../post-comments";
-import { UserPostDto } from '@/api/posts';
-import { ProfileDetailDto } from '@/api/profile';
+import { UserPostDto } from "@/api/posts";
+import { ProfileDetailDto } from "@/api/profile";
 import PostInfoContent from "./PostInfoContent";
 
 interface MobilePostLayoutProps {
@@ -70,7 +70,7 @@ const MobilePostLayout: React.FC<MobilePostLayoutProps> = ({
                             <img
                                 src={
                                     post.authorAvatarUrl ||
-                                    "https://cdn.discordapp.com/embed/avatars/1.png"
+                                    "/content/image/default_profile_image.png"
                                 }
                                 alt={post.authorNickname}
                                 className="w-10 h-10 rounded-full object-cover"

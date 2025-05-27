@@ -596,6 +596,7 @@ const GameHistorySection: React.FC<GameHistorySectionProps> = ({
                                                         <AvatarImage
                                                             src={
                                                                 history.userAvatarUrl
+                                                                ?? "/content/image/default_profile_image.png"
                                                             }
                                                         />
                                                         <AvatarFallback className="text-xs">

@@ -69,7 +69,7 @@ const ThemeHeader: React.FC<ThemeHeaderProps> = ({
                 {theme.thumbnail && (
                     <div className="w-full h-64 md:h-96 rounded-lg overflow-hidden bg-gray-100">
                         <img
-                            src={theme.thumbnail}
+                            src={theme.thumbnail  ?? "/content/image/default_crime_scene_image.png"}
                             alt={theme.title}
                             className="w-full h-full object-cover"
                             onError={(e) => {

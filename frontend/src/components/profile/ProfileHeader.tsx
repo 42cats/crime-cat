@@ -111,7 +111,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-2 border-blue-100 p-1 bg-white shadow-sm overflow-hidden">
                     {profile && profile.avatarImage ? (
                         <img
-                            src={profile.avatarImage}
+                            src={profile.avatarImage ?? "/content/image/default_profile_image.png"}
                             alt={`${profile.userNickname}의 프로필`}
                             className="w-full h-full object-cover rounded-full"
                         />

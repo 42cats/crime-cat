@@ -126,7 +126,7 @@ export function CommentItem({
                         onClick={() => setIsProfileModalOpen(true)}
                     >
                         <AvatarImage
-                            src={comment.authorProfileImage}
+                            src={comment.authorProfileImage ?? "/content/image/default_profile_image.png"}
                             alt={comment.authorName}
                         />
                         <AvatarFallback className="text-xs bg-primary/10 text-primary">
@@ -205,7 +205,7 @@ export function CommentItem({
                     onClick={() => setIsProfileModalOpen(true)}
                 >
                     <AvatarImage
-                        src={comment.authorProfileImage}
+                        src={comment.authorProfileImage ?? "/content/image/default_profile_image.png"}
                         alt={comment.authorName}
                     />
                     <AvatarFallback className="text-xs bg-primary/10 text-primary">
