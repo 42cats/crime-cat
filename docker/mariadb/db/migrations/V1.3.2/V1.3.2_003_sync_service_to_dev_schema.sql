@@ -7,7 +7,14 @@
 USE ${DB_DISCORD};
 
 -- 1. game_themes 테이블: author 외래키 제약조건 추가
--- 기존 fk_author 제약조건이 있는지 확인하고 없으면 추가
+-- 먼저 데이터 무결성 체크
+SELECT 'Checking game_themes author references...' as status;
+SELECT COUNT(*) as invalid_authors
+FROM game_themes gt
+LEFT JOIN web_users wu ON gt.author = wu.id
+WHERE wu.id IS NULL AND gt.author IS NOT NULL;
+
+-- 기존 fk_author 제약조건이 있는지 확인
 SET @constraint_exists = (
     SELECT COUNT(*)
     FROM information_schema.TABLE_CONSTRAINTS
@@ -17,19 +24,32 @@ SET @constraint_exists = (
     AND CONSTRAINT_TYPE = 'FOREIGN KEY'
 );
 
--- 외래키 추가 전에 데이터 무결성 체크
+-- fk_game_themes_author 제약조건이 있는지도 확인 (중복 체크)
+SET @new_constraint_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'game_themes'
+    AND CONSTRAINT_NAME = 'fk_game_themes_author'
+    AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+);
+
+-- 외래키 추가 (둘 다 없고 데이터가 유효한 경우만)
 SET @invalid_authors = (
     SELECT COUNT(*)
     FROM game_themes gt
     LEFT JOIN web_users wu ON gt.author = wu.id
-    WHERE wu.id IS NULL
+    WHERE wu.id IS NULL AND gt.author IS NOT NULL
 );
 
-SET @sql = IF(@constraint_exists = 0 AND @invalid_authors = 0,
+SET @sql = IF(@constraint_exists = 0 AND @new_constraint_exists = 0 AND @invalid_authors = 0,
     'ALTER TABLE `game_themes` ADD CONSTRAINT `fk_author` FOREIGN KEY (`author`) REFERENCES `web_users` (`id`) ON DELETE CASCADE',
     IF(@invalid_authors > 0,
-        'SELECT CONCAT("Cannot add foreign key: ", @invalid_authors, " invalid author references exist") as message',
-        'SELECT "fk_author constraint already exists" as message'
+        CONCAT('SELECT "Cannot add foreign key: ', @invalid_authors, ' invalid author references exist. Run V1.3.2_001_fix_game_themes_data_integrity.sql first" as message'),
+        IF(@constraint_exists > 0,
+            'SELECT "fk_author constraint already exists" as message',
+            'SELECT "fk_game_themes_author constraint already exists" as message'
+        )
     )
 );
 
@@ -134,9 +154,18 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- 새로운 제약조건 추가 (CASCADE 없이)
-SET @sql = IF(@fk_web_user_exists > 0 OR @fk_web_user_exists = 0,
+SET @fk_web_user_new = (
+    SELECT COUNT(*)
+    FROM information_schema.TABLE_CONSTRAINTS
+    WHERE CONSTRAINT_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'maker_team_members'
+    AND CONSTRAINT_NAME = 'fk_web_user_id'
+    AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+);
+
+SET @sql = IF(@fk_web_user_new = 0,
     'ALTER TABLE `maker_team_members` ADD CONSTRAINT `fk_web_user_id` FOREIGN KEY (`web_user_id`) REFERENCES `web_users` (`id`)',
-    'SELECT "fk_web_user_id constraint update skipped" as message'
+    'SELECT "fk_web_user_id already exists" as message'
 );
 
 PREPARE stmt FROM @sql;
