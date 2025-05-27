@@ -23,7 +23,9 @@ const GameHistoryListItem: React.FC<GameHistoryListItemProps> = ({
     const navigate = useNavigate();
 
     const handleClick = () => {
-        if (themeId.trim().length === 0) return;
+        // themeId가 빈 문자열이거나 공백만 있으면 클릭 이벤트 중단
+        if (!themeId || themeId.trim().length === 0) return;
+        
         if (gameType === "crimescene") {
             navigate(`/themes/crimescene/${themeId}`);
         } else {
@@ -87,9 +89,16 @@ const GameHistoryListItem: React.FC<GameHistoryListItemProps> = ({
         });
     };
 
+    // themeId가 없으면 클릭 불가능한 스타일 적용
+    const isClickable = themeId && themeId.trim().length > 0;
+
     return (
         <div
-            className={`flex items-center justify-between p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${className}`}
+            className={`flex items-center justify-between p-3 border-b border-gray-100 transition-colors ${
+                isClickable 
+                    ? "hover:bg-gray-50 cursor-pointer" 
+                    : "cursor-default opacity-75"
+            } ${className}`}
             onClick={handleClick}
         >
             <div className="flex items-center gap-3 flex-1">
