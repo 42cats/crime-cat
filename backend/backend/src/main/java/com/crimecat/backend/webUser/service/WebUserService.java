@@ -3,6 +3,7 @@ package com.crimecat.backend.webUser.service;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.gametheme.domain.MakerTeam;
+import com.crimecat.backend.gametheme.domain.MakerTeamMember;
 import com.crimecat.backend.gametheme.repository.MakerTeamRepository;
 import com.crimecat.backend.permission.service.PermissionService;
 import com.crimecat.backend.point.service.PointHistoryService;
@@ -22,10 +23,8 @@ import com.crimecat.backend.webUser.enums.AlarmType;
 import com.crimecat.backend.webUser.enums.UserRole;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -117,6 +116,8 @@ public class WebUserService {
         opt.ifPresent(team -> {
             // 조건이 만족되면 팀 이름을 웹유저 닉네임으로 변경
             team.setName(webUserProfileEditRequestDto.getNickName());
+            List<MakerTeamMember> members = team.getMembers();
+            members.getFirst().setName(webUserProfileEditRequestDto.getNickName());
             // 변경된 엔티티를 저장 (영속성 컨텍스트 범위 내라면 save() 없어도 반영되지만, 명시적으로 호출해도 무방)
             makerTeamRepository.save(team);
         });        //프로필파일 저장

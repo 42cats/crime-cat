@@ -16,6 +16,12 @@ import java.util.UUID;
 public interface EscapeRoomThemeRepository extends JpaRepository<EscapeRoomTheme, UUID>, JpaSpecificationExecutor<EscapeRoomTheme> {
     
     /**
+     * 활성화된 방탈출 테마 개수 조회
+     */
+    @Query("SELECT COUNT(et) FROM EscapeRoomTheme et WHERE et.isDeleted = false")
+    long countActiveThemes();
+    
+    /**
      * 운영 중인 테마 수 조회
      */
     long countByIsOperating(boolean isOperating);

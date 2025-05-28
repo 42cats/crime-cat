@@ -14,6 +14,8 @@ import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -64,6 +66,9 @@ public class EscapeRoomHistoryService {
         log.info("방탈출 기록 생성 완료 - userId: {}, themeId: {}, historyId: {}", 
                 webUser.getId(), theme.getId(), savedHistory.getId());
         
+        // 캐시 무효화
+        invalidateHistoryCaches(webUser.getId().toString(), theme.getId().toString());
+        
         return EscapeRoomHistoryResponse.from(savedHistory, webUser.getId());
     }
     
@@ -97,6 +102,9 @@ public class EscapeRoomHistoryService {
         EscapeRoomHistory updatedHistory = escapeRoomHistoryRepository.save(history);
         log.info("방탈출 기록 수정 완료 - historyId: {}", historyId);
         
+        // 캐시 무효화
+        invalidateHistoryCaches(currentUserId.toString(), history.getEscapeRoomTheme().getId().toString());
+        
         return EscapeRoomHistoryResponse.from(updatedHistory, currentUserId);
     }
     
@@ -118,6 +126,9 @@ public class EscapeRoomHistoryService {
         // 소프트 삭제 처리
         history.softDelete();
         escapeRoomHistoryRepository.save(history);
+        
+        // 캐시 무효화
+        invalidateHistoryCaches(currentUserId.toString(), history.getEscapeRoomTheme().getId().toString());
         
         log.info("방탈출 기록 삭제 완료 - historyId: {}", historyId);
     }
@@ -217,7 +228,7 @@ public class EscapeRoomHistoryService {
     /**
      * 특정 테마의 통계 정보 조회
      */
-    //@Cacheable(value = CacheType.ESCAPE_ROOM_THEME_STATS, key = "#themeId.toString()")
+    @Cacheable(cacheNames = "escapeRoomThemeStats", key = "#themeId.toString()")
     public EscapeRoomHistoryStatsResponse getThemeStatistics(UUID themeId) {
         // 테마 존재 여부 확인
         escapeRoomThemeRepository.findById(themeId)
@@ -249,6 +260,19 @@ public class EscapeRoomHistoryService {
                 stats.getMinClearTime(),
                 stats.getMaxClearTime()
         );
+    }
+    
+    /**
+     * 캐시 무효화 메서드
+     */
+    @Caching(evict = {
+        @CacheEvict(cacheNames = "integratedGameHistory", allEntries = true),
+        @CacheEvict(cacheNames = "userGameStatistics", key = "#userId"),
+        @CacheEvict(cacheNames = "userProfileStats", allEntries = true),
+        @CacheEvict(cacheNames = "escapeRoomThemeStats", key = "#themeId")
+    })
+    public void invalidateHistoryCaches(String userId, String themeId) {
+        log.info("방탈출 기록 캐시 무효화 - userId: {}, themeId: {}", userId, themeId);
     }
     
     /**

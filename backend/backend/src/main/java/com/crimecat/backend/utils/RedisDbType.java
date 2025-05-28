@@ -8,6 +8,8 @@ public enum RedisDbType {
   ALL_USER_COUNT(Duration.ofMinutes(10)),
   ALL_DISCORD_SERVER(Duration.ofHours(2)),
   PLAYED_USER_COUNT(Duration.ofHours(2)),
+  CRIMESCENE_THEME_COUNT(Duration.ofHours(1)),
+  ESCAPE_ROOM_THEME_COUNT(Duration.ofHours(1)),
   
   // 사용자 관련 캐시
   USER_PERMISSIONS(Duration.ofMinutes(15)),
