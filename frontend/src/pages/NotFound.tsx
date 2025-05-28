@@ -3,6 +3,7 @@ import { useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 import PageTransition from "@/components/PageTransition";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 const NotFound: React.FC = () => {
     const location = useLocation();
@@ -18,9 +19,10 @@ const NotFound: React.FC = () => {
         <PageTransition>
             <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 text-center">
                 {/* 404 이미지 */}
-                <img
+                <OptimizedImage
                     src="/content/image/404.png"
                     alt="페이지를 찾을 수 없습니다"
+                    priority={true}
                     className="w-full max-w-md mx-auto mb-8 drop-shadow-lg"
                 />
 

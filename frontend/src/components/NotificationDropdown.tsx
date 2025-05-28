@@ -13,6 +13,7 @@ import { Notification, NotificationType } from "@/types/notification";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { notificationService } from '@/api/social/notifications';
 import { toast } from "sonner";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 interface NotificationDropdownProps {
     onClose?: () => void;
@@ -173,7 +174,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                     </div>
                 ) : (
                     <div className="p-8 text-center">
-                        <img
+                        <OptimizedImage
                             src="/content/image/emptyNotice.png"
                             alt="알림 없음"
                             className="w-24 h-24 mx-auto mb-4"

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import LazyImage from '../common/LazyImage';
+import { LazyImage } from '@/components/ui/optimized-image';
 import ImageViewerModal from '../image/ImageViewerModal';
 
 interface ImageCarouselProps {

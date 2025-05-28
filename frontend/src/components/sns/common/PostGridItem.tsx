@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { UserPostGalleryDto } from "@/api/posts";
-import LazyImage from "./LazyImage";
+import { LazyImage } from "@/components/ui/optimized-image";
 import PostPrivacyBadge from "./PostPrivacyBadge";
 import PostAuthorInfo from "./PostAuthorInfo";
 import PostContentPreview from "./PostContentPreview";
