@@ -28,7 +28,11 @@ public interface CrimesceneThemeRepository extends JpaRepository<CrimesceneTheme
   @Query("SELECT c FROM CrimesceneTheme c WHERE c.guildSnowflake = :guildSnowflake")
   Optional<CrimesceneTheme> findByGuildSnowflake(String guildSnowflake);
 
-  List<CrimesceneTheme> findByTeamId(UUID teamId);
+  @Query("SELECT ct FROM CrimesceneTheme ct " +
+         "LEFT JOIN FETCH ct.team t " +
+         "LEFT JOIN FETCH ct.author " +
+         "WHERE ct.team.id = :teamId")
+  List<CrimesceneTheme> findByTeamId(@Param("teamId") UUID teamId);
 
   /**
    * 여러 팀의 크라임씬 테마를 한 번에 조회 (삭제되지 않은 것만)
