@@ -112,7 +112,7 @@ export const CrimeSceneEditDialog: React.FC<CrimeSceneEditDialogProps> = ({
                                     characterName: e.target.value,
                                 })
                             }
-                            placeholder="캐릭터 이름을 입력하세요"
+                            placeholder="캐릭터 이름을 입력하세요(비공개시 공란으로 두세요)"
                         />
                     </div>
 
