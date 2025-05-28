@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.annotation.EnableCaching;
@@ -50,10 +51,9 @@ public class UnifiedRedisConfig {
     }
 
     /**
-     * Redis 직렬화 전용 ObjectMapper - 단순 JSON 직렬화
+     * Redis 직렬화 전용 ObjectMapper - 타입 정보 포함 (캐시 내부용)
      */
-    @Bean
-    @Primary
+    @Bean("redisObjectMapper")
     public ObjectMapper redisObjectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
         
@@ -66,6 +66,40 @@ public class UnifiedRedisConfig {
         
         // 빈 객체 직렬화 허용
         objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        
+        // 타입 정보 활성화 (Redis 캐시 내부에서만 사용)
+        objectMapper.activateDefaultTyping(
+            objectMapper.getPolymorphicTypeValidator(),
+            ObjectMapper.DefaultTyping.NON_FINAL,
+            com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY
+        );
+        
+        // 모든 속성 접근 가능
+        objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        
+        return objectMapper;
+    }
+
+    /**
+     * API 응답용 ObjectMapper - 타입 정보 제외 (프론트엔드용)
+     */
+    @Bean
+    @Primary
+    public ObjectMapper objectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        
+        // Java 8 Time 모듈 등록
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        
+        // 알 수 없는 속성 무시
+        objectMapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        
+        // 빈 객체 직렬화 허용
+        objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        
+        // 타입 정보 비활성화 (API 응답에서 @class 제거)
+        objectMapper.deactivateDefaultTyping();
         
         return objectMapper;
     }
@@ -91,7 +125,7 @@ public class UnifiedRedisConfig {
     @Bean
     public RedisTemplate<String, Object> redisObjectTemplate(
             RedisConnectionFactory connectionFactory,
-            ObjectMapper redisObjectMapper) {
+            @Qualifier("redisObjectMapper") ObjectMapper redisObjectMapper) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
         
@@ -116,7 +150,7 @@ public class UnifiedRedisConfig {
     @Primary
     public RedisCacheManager redisCacheManager(
             RedisConnectionFactory connectionFactory,
-            ObjectMapper redisObjectMapper) {
+            @Qualifier("redisObjectMapper") ObjectMapper redisObjectMapper) {
         
         Jackson2JsonRedisSerializer<Object> serializer = 
                 new Jackson2JsonRedisSerializer<>(redisObjectMapper, Object.class);
