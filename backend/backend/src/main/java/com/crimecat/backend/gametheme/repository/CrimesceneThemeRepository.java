@@ -31,6 +31,17 @@ public interface CrimesceneThemeRepository extends JpaRepository<CrimesceneTheme
   List<CrimesceneTheme> findByTeamId(UUID teamId);
 
   /**
+   * 여러 팀의 크라임씬 테마를 한 번에 조회 (삭제되지 않은 것만)
+   */
+  @Query("SELECT DISTINCT ct FROM CrimesceneTheme ct " +
+          "LEFT JOIN FETCH ct.team t " +
+          "LEFT JOIN FETCH ct.author " +
+          "WHERE t.id IN :teamIds " +
+          "AND ct.isDeleted = false " +
+          "ORDER BY ct.createdAt DESC")
+  List<CrimesceneTheme> findByTeamIdsAndNotDeleted(@Param("teamIds") List<UUID> teamIds);
+
+  /**
    * 플레이하지 않은 크라임씬 테마 조회 (필터 적용)
    */
   @Query("SELECT ct FROM CrimesceneTheme ct " +

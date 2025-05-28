@@ -26,6 +26,9 @@ import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.point.service.PointHistoryService;
 import com.crimecat.backend.notification.service.NotificationService;
 import com.crimecat.backend.notification.enums.NotificationType;
+import com.crimecat.backend.config.CacheType;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -336,26 +339,47 @@ public class GameThemeService {
         return themeRecommendationRepository.findByWebUserIdAndThemeId(webUserId, themeId).isPresent();
     }
 
+    @Cacheable(value = CacheType.USER_THEME_SUMMARY, key = "#webUserId")
     @Transactional(readOnly = true)
-    public CrimesceneThemeSummeryListDto getGameThemeSummery(UUID WebUserId) {
+    public CrimesceneThemeSummeryListDto getGameThemeSummery(UUID webUserId) {
         // 사용자가 속한 팀 ID 목록 가져오기
-        List<UUID> teamIds = teamService.getTargetTeams(WebUserId);
+        List<UUID> teamIds = teamService.getTargetTeams(webUserId);
 
-        // 각 팀이 만든 크라임씬 테마를 중복 없이 Set으로 모으기
-        Set<CrimesceneTheme> themesSet = new HashSet<>();
-        for (UUID teamId : teamIds) {
-            List<CrimesceneTheme> themes = crimesceneThemeRepository.findByTeamId(teamId);
-            themesSet.addAll(themes);
+        // 팀이 없는 경우 빈 리스트 반환
+        if (teamIds.isEmpty()) {
+            return CrimesceneThemeSummeryListDto.from(List.of());
         }
 
+        // 최적화된 쿼리로 모든 팀의 테마를 한 번에 조회
+        List<CrimesceneTheme> themes = crimesceneThemeRepository.findByTeamIdsAndNotDeleted(teamIds);
+
         // 각 테마를 DTO로 변환하여 리스트로 만들기
-        List<CrimesceneThemeSummeryDto> themeDtos = themesSet.stream()
-            .filter(GameTheme::isDeleted) // 삭제된 테마 필터링
+        List<CrimesceneThemeSummeryDto> themeDtos = themes.stream()
             .map(CrimesceneThemeSummeryDto::from)
             .toList();
 
         // 리스트 DTO로 변환하여 반환
         return CrimesceneThemeSummeryListDto.from(themeDtos);
+    }
+
+    /**
+     * 사용자의 테마 요약 캐시를 무효화
+     * @param webUserId 사용자 ID
+     */
+    @CacheEvict(value = CacheType.USER_THEME_SUMMARY, key = "#webUserId")
+    public void evictUserThemeSummaryCache(UUID webUserId) {
+        // 캐시 무효화만 수행
+    }
+
+    /**
+     * 팀에 속한 모든 사용자의 테마 요약 캐시를 무효화
+     * @param teamId 팀 ID
+     */
+    public void evictTeamMembersThemeSummaryCache(UUID teamId) {
+        List<MakerTeamMember> members = teamService.getTeamMembers(teamId);
+        for (MakerTeamMember member : members) {
+            evictUserThemeSummaryCache(member.getWebUser().getId());
+        }
     }
 
     /**
