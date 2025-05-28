@@ -211,7 +211,7 @@ public class GameThemeService {
         // 캐시 무효화 - CrimesceneTheme인 경우 팀 멤버들의 캐시 무효화
         if (gameTheme instanceof CrimesceneTheme crimesceneTheme) {
             if (crimesceneTheme.getTeam() != null) {
-                evictTeamMembersThemeSummaryCache(crimesceneTheme.getTeam().getId());
+                themeCacheService.evictTeamMembersThemeSummaryCache(crimesceneTheme.getTeam().getId());
             }
         }
     }

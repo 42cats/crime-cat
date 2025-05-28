@@ -2,6 +2,7 @@ package com.crimecat.backend.api.naver.controller;
 
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.api.naver.api.NaverMapApi;
+import com.crimecat.backend.api.naver.service.CachedNaverMapService;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class NaverMapController {
 
       private final NaverMapApi naverMapApi;
+      private final CachedNaverMapService cachedNaverMapService;
 
       @GetMapping("/local-search")
       public Map localSearch (@RequestParam("query") String query, @RequestParam(value = "display", defaultValue = "10") String display){
@@ -27,6 +29,6 @@ public class NaverMapController {
         } catch (NumberFormatException e) {
           throw ErrorStatus.INVALID_PARAMETER.asControllerException();
         }
-          return naverMapApi.searchLocal(query, displayValue).block();
+          return cachedNaverMapService.searchLocal(query, displayValue);
       }
 }

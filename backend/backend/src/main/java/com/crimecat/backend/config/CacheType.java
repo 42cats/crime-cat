@@ -49,6 +49,11 @@ public class CacheType {
   // 검색 관련 캐시 타입
   public static final String SEARCH_USERS = "search:users";
   
+  // 외부 API 캐시 타입
+  public static final String DISCORD_GUILD_INFO = "discord:guild:info";
+  public static final String DISCORD_GUILD_CHANNELS = "discord:guild:channels";
+  public static final String NAVER_LOCAL_SEARCH = "naver:local:search";
+  
   public static final String [] CACHE_TYPE = {
       PERSONAL_DASHBOARD_INFO,
       VIEW_COUNT,
@@ -75,6 +80,9 @@ public class CacheType {
       USER_PROFILE_STATS,
       PERMISSION_ALL,
       PERMISSION_BY_NAME,
-      SEARCH_USERS
+      SEARCH_USERS,
+      DISCORD_GUILD_INFO,
+      DISCORD_GUILD_CHANNELS,
+      NAVER_LOCAL_SEARCH
   };
 }

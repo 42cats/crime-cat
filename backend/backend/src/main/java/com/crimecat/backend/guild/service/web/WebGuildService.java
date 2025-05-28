@@ -7,6 +7,7 @@ import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.dto.web.GuildInfoResponseDto;
 import com.crimecat.backend.guild.repository.GuildRepository;
 import com.crimecat.backend.api.discord.DiscordBotApi;
+import com.crimecat.backend.api.discord.CachedDiscordBotService;
 import com.crimecat.backend.guild.dto.web.ApiGetGuildInfoDto;
 import com.crimecat.backend.guild.dto.web.ChannelDto;
 import com.crimecat.backend.guild.dto.web.GuildBotInfoDto;
@@ -31,6 +32,7 @@ public class WebGuildService {
 
     private final GuildRepository guildRepository;
     private final DiscordBotApi discordBotApi;
+    private final CachedDiscordBotService cachedDiscordBotService;
     private final GameHistoryRepository gameHistoryRepository;
 
     public GuildResponseDto guildBotInfoDTOS(WebUser webUser) {
@@ -44,8 +46,8 @@ public class WebGuildService {
             String guildId = guild.getSnowflake();
 
             try {
-                // ✅ 봇 토큰 인덱스 없이 단일 API 클라이언트 사용
-                ApiGetGuildInfoDto apiGuildInfo = discordBotApi.getGuildInfo(guildId).block(); // WebClient Mono → block()
+                // ✅ 캐싱 서비스를 통한 Discord API 호출
+                ApiGetGuildInfoDto apiGuildInfo = cachedDiscordBotService.getGuildInfo(guildId);
 
                 log.info("🌐 [응답] guildId={} → {}", guildId, apiGuildInfo);
 
@@ -68,7 +70,7 @@ public class WebGuildService {
 
     public List<ChannelDto> getGuildChannels(String guildSnowflake) {
         try {
-            List<ChannelDto> result = discordBotApi.getGuildChannels(guildSnowflake); // botIndex 제거
+            List<ChannelDto> result = cachedDiscordBotService.getGuildChannels(guildSnowflake); // 캐싱 서비스 사용
             if (result != null && !result.isEmpty()) {
                 log.info("✅ [채널 정보 획득 성공] guildId={}", guildSnowflake);
                 return result;
@@ -174,12 +176,10 @@ public class WebGuildService {
       UUID guildUuid = guild.getId();
       String guildId = guild.getId().toString();
 
-      // 3. Discord API 호출 (예외 처리 추가)
+      // 3. Discord API 호출 (캐싱 서비스 사용)
       ApiGetGuildInfoDto apiGuildInfo;
       try {
-          apiGuildInfo = discordBotApi.getGuildInfo(guild.getSnowflake())
-              .timeout(Duration.ofSeconds(5))  // 5초 타임아웃 설정
-              .block();
+          apiGuildInfo = cachedDiscordBotService.getGuildInfo(guild.getSnowflake());
           
           if (apiGuildInfo == null) {
             throw ErrorStatus.INTERNAL_ERROR.asServiceException();
