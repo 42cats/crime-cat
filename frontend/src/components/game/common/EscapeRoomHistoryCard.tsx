@@ -21,6 +21,7 @@ import {
     SuccessStatus,
 } from "@/types/integratedGameHistory";
 import { cn } from "@/lib/utils";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 interface EscapeRoomHistoryCardProps {
     history: EscapeRoomHistoryDetailResponse;
@@ -88,12 +89,11 @@ export const EscapeRoomHistoryCard: React.FC<EscapeRoomHistoryCardProps> = ({
             <div className="flex">
                 {/* 썸네일 영역 */}
                 <div className="relative w-48 h-36 flex-shrink-0">
-                    <img
-                        src={
-                            history.themeThumbnail ||
-                            "/content/image/default_image.png"
-                        }
+                    <OptimizedImage
+                        src={history.themeThumbnail || "/content/image/default_escape_room_image.png"}
                         alt={history.escapeRoomThemeTitle}
+                        fallback="/content/image/default_escape_room_image.png"
+                        placeholder="blur"
                         className="w-full h-full object-cover"
                     />
                     {/* 성공 상태 오버레이 */}

@@ -13,6 +13,7 @@ import {
 import { AlertTriangle, Clock, Shield } from "lucide-react";
 import BlockedUserModal from "@/components/auth/BlockedUserModal";
 import { BlockInfo } from "@/types/user";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 const LoginError: React.FC = () => {
     const navigate = useNavigate();
@@ -95,9 +96,10 @@ const LoginError: React.FC = () => {
                 <Card className="w-full max-w-md">
                     <CardHeader className="space-y-1 flex flex-col items-center">
                         {/* ✅ 이미지 추가 */}
-                        <img
-                            src={"/content/image/LoginError.png"}
+                        <OptimizedImage
+                            src="/content/image/LoginError.png"
                             alt="에러 고양이 이미지"
+                            priority={true}
                             className="w-50 h-70 mb-4"
                         />
                         <CardTitle className="text-2xl font-bold text-center">

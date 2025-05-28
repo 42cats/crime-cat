@@ -6,6 +6,7 @@ import PageTransition from "@/components/PageTransition";
 import { LoaderCircle } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
 import { Label } from "@/components/ui/label";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import {
     Card,
     CardContent,
@@ -85,9 +86,10 @@ const Login: React.FC = () => {
                 <Card className="w-full max-w-md">
                     <CardHeader className="space-y-1 flex flex-col items-center">
                         <div className="w-50 h-70 mb-4 flex items-center justify-center">
-                            <img
+                            <OptimizedImage
                                 src="/content/image/Login.png"
                                 alt="Crime Cat Logo"
+                                priority={true}
                                 className="max-w-full max-h-full object-contain"
                             />
                         </div>

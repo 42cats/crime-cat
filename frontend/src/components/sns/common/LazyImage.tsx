@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 
+/**
+ * @deprecated Use LazyImage from @/components/ui/optimized-image instead
+ * This component will be removed in a future version
+ */
 interface LazyImageProps {
     src: string;
     alt: string;

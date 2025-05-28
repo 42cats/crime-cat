@@ -18,6 +18,7 @@ import { format, isValid, parseISO } from "date-fns";
 import { ko } from "date-fns/locale";
 import { UserGameHistoryToUserDto } from "@/types/integratedGameHistory";
 import { cn } from "@/lib/utils";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 interface CrimeSceneHistoryCardProps {
     history: UserGameHistoryToUserDto;
@@ -82,9 +83,11 @@ export const CrimeSceneHistoryCard: React.FC<CrimeSceneHistoryCardProps> = ({
                 {/* 썸네일 영역 */}
                 <div className="relative w-48 h-36 flex-shrink-0 overflow-hidden">
                     {history.themeThumbnail ? (
-                        <img
+                        <OptimizedImage
                             src={history.themeThumbnail ?? "/content/image/default_crime_scene_image.png"}
                             alt={history.themeName}
+                            fallback="/content/image/default_crime_scene_image.png"
+                            placeholder="blur"
                             className="w-full h-full object-cover"
                         />
                     ) : (

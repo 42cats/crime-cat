@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import LazyImage from "../common/LazyImage";
+import { LazyImage } from "@/components/ui/optimized-image";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import ImageCarousel from "./ImageCarousel";

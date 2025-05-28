@@ -2,6 +2,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { UTCToKST } from "@/lib/dateFormat";
 import type { UserProfile } from "@/types/profile";
+import { AvatarImage } from "@/components/ui/optimized-image";
 
 interface ProfileInfoProps {
     user: UserProfile;
@@ -11,14 +12,11 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user }) => {
     return (
         <div className="space-y-4">
             {user.profile_image_path && (
-                <div className="w-24 h-24 rounded-full overflow-hidden mx-auto">
-                    <img
-                        src={
-                            user.profile_image_path ||
-                            "/content/image/default_profile_image.png"
-                        }
+                <div className="mx-auto">
+                    <AvatarImage
+                        src={user.profile_image_path}
                         alt="프로필 이미지"
-                        className="w-full h-full object-cover"
+                        size="xl"
                     />
                 </div>
             )}

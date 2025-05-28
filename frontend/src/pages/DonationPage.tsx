@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 const DonationPage: React.FC = () => {
     return (
@@ -29,7 +30,7 @@ const DonationPage: React.FC = () => {
                 <div className="mb-4">
                     ✅ <strong>PC QR 코드</strong>
                     <br />
-                    <img
+                    <OptimizedImage
                         src="/content/image/donation.JPG"
                         alt="카카오페이 QR 코드"
                         className="w-60 mt-2 rounded shadow-md"
