@@ -27,7 +27,7 @@ public class AddEscapeRoomThemeRequest extends AddGameThemeRequest {
      * 공포도 (1-10, 별 5개 표시용)
      * null 허용 (공포 요소가 없는 경우)
      */
-    @Min(value = 1, message = "공포도는 1 이상이어야 합니다.")
+    @Min(value = 0, message = "공포도는 0 이상이어야 합니다.")
     @Max(value = 10, message = "공포도는 10 이하여야 합니다.")
     private Integer horrorLevel;
 
@@ -35,7 +35,7 @@ public class AddEscapeRoomThemeRequest extends AddGameThemeRequest {
      * 장치비중 (1-10, 별 5개 표시용)
      * null 허용
      */
-    @Min(value = 1, message = "장치비중은 1 이상이어야 합니다.")
+    @Min(value = 0, message = "장치비중은 0 이상이어야 합니다.")
     @Max(value = 10, message = "장치비중은 10 이하여야 합니다.")
     private Integer deviceRatio;
 
@@ -43,7 +43,7 @@ public class AddEscapeRoomThemeRequest extends AddGameThemeRequest {
      * 활동도 (1-10, 별 5개 표시용)
      * null 허용
      */
-    @Min(value = 1, message = "활동도는 1 이상이어야 합니다.")
+    @Min(value = 0, message = "활동도는 0 이상이어야 합니다.")
     @Max(value = 10, message = "활동도는 10 이하여야 합니다.")
     private Integer activityLevel;
 

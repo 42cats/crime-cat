@@ -1,16 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import {
-    Users,
-    Coins,
-    Clock,
-    Gauge,
-    Heart,
-    Eye,
-} from "lucide-react";
+import { Users, Coins, Clock, Gauge, Heart, Eye } from "lucide-react";
 import { Theme } from "@/lib/types";
-import { OptimizedImage } from "@/components/ui/optimized-image";
 import StarRating from "@/components/ui/star-rating";
 
 interface ThemeCardProps {
@@ -48,25 +40,28 @@ const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
 
     return (
         <Link to={`/themes/${themeType}/${theme.id}`} className="block h-full">
-            <Card className="h-80 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] rounded-xl overflow-hidden relative group">
+            <Card className="h-80 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] rounded-xl overflow-hidden relative group bg-transparent border-0">
                 {/* 배경 이미지 */}
                 <div className="absolute inset-0 w-full h-full">
-                    <OptimizedImage
+                    <img
                         src={
                             theme?.thumbnail ||
                             "/content/image/default_crime_scene_image.png"
                         }
                         alt={theme.title}
-                        fallback="/content/image/default_crime_scene_image.png"
-                        placeholder="blur"
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src =
+                                "/content/image/default_crime_scene_image.png";
+                        }}
                     />
                     {/* 그라디언트 오버레이 */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20"></div>
                 </div>
 
                 {/* 콘텐츠 오버레이 */}
-                <div className="relative z-10 p-4 h-full flex flex-col justify-between">
+                <div className="relative z-10 p-3 h-full flex flex-col">
                     {/* 상단 정보 */}
                     <div className="flex justify-between items-start">
                         {/* 타입 뱃지 */}
@@ -79,7 +74,7 @@ const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
                                 ? "머더미스터리"
                                 : "리얼월드"}
                         </div>
-                        
+
                         {/* 조회수 + 추천수 */}
                         <div className="flex gap-2">
                             <div className="flex items-center bg-black/60 text-white rounded-full px-2 py-1 shadow-md">
@@ -92,7 +87,9 @@ const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
                                 <div className="flex items-center bg-black/60 text-white rounded-full px-2 py-1 shadow-md">
                                     <Heart className="w-3 h-3 text-red-500 fill-current mr-1" />
                                     <span className="text-xs">
-                                        {formatCount(theme.recommendations || 0)}
+                                        {formatCount(
+                                            theme.recommendations || 0
+                                        )}
                                     </span>
                                 </div>
                             )}
@@ -100,7 +97,7 @@ const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
                     </div>
 
                     {/* 하단 정보 */}
-                    <div className="space-y-3">
+                    <div className="mt-auto space-y-2">
                         {/* 제목과 설명 */}
                         <div>
                             <h2 className="text-lg font-bold text-white line-clamp-1 mb-1">
@@ -112,16 +109,18 @@ const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
                         </div>
 
                         {/* 게임 정보 */}
-                        <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-white/90">
-                            <div className="flex items-center gap-1">
-                                <Users className="w-3 h-3 flex-shrink-0" />
-                                <span className="truncate">{playerText}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <Coins className="w-3 h-3 flex-shrink-0" />
-                                <span className="truncate">
-                                    {(theme.price || 0).toLocaleString()}원
-                                </span>
+                        <div className="space-y-1.5 text-xs text-white/90">
+                            <div className="grid grid-cols-2 gap-x-3">
+                                <div className="flex items-center gap-1">
+                                    <Users className="w-3 h-3 flex-shrink-0" />
+                                    <span className="truncate">{playerText}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <Coins className="w-3 h-3 flex-shrink-0" />
+                                    <span className="truncate">
+                                        {(theme.price || 0).toLocaleString()}원
+                                    </span>
+                                </div>
                             </div>
                             <div className="flex items-center gap-1">
                                 <Clock className="w-3 h-3 flex-shrink-0" />
@@ -134,27 +133,28 @@ const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
                             </div>
                             <div className="flex items-center gap-1">
                                 <Gauge className="w-3 h-3 flex-shrink-0" />
-                                <StarRating 
+                                <StarRating
                                     rating={theme.difficulty || 0}
                                     size="sm"
                                     readOnly
+                                    isOneToTen={true}
                                 />
                             </div>
                         </div>
 
                         {/* 태그 */}
                         {theme.tags && theme.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
+                            <div className="flex gap-1 overflow-hidden">
                                 {theme.tags.slice(0, 3).map((tag, idx) => (
                                     <span
                                         key={idx}
-                                        className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full backdrop-blur-sm"
+                                        className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full backdrop-blur-sm whitespace-nowrap flex-shrink-0"
                                     >
                                         {tag}
                                     </span>
                                 ))}
                                 {theme.tags.length > 3 && (
-                                    <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">
+                                    <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full backdrop-blur-sm whitespace-nowrap flex-shrink-0">
                                         +{theme.tags.length - 3}
                                     </span>
                                 )}
