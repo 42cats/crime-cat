@@ -230,7 +230,8 @@ export interface Stats {
     totalServers: number;
     totalPlayers: number;
     totalCreators: number;
-    totalThemes: number;
+    crimeThemes: number;
+    escapeThemes: number;
 }
 
 export type NoticeType = "SYSTEM" | "EVENT" | "UPDATE";
