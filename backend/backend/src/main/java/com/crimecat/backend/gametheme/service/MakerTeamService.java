@@ -9,6 +9,7 @@ import com.crimecat.backend.gametheme.repository.MakerTeamRepository;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,8 @@ public class MakerTeamService {
     private final MakerTeamRepository teamRepository;
     private final MakerTeamMemberRepository teamMemberRepository;
     private final WebUserRepository webUserRepository;
+    @Lazy
+    private final ThemeCacheService themeCacheService;
 
     public UUID create(String name) {
         return create(name, AuthenticationUtil.getCurrentWebUser(), false);
@@ -128,6 +131,9 @@ public class MakerTeamService {
             addMember(team, m);
         }
         teamRepository.save(team);
+        
+        // 팀 멤버 추가 시 팀의 모든 멤버의 캐시 무효화
+        themeCacheService.evictTeamMembersThemeSummaryCache(teamId);
     }
 
     /**
@@ -171,6 +177,10 @@ public class MakerTeamService {
                 }
             }
         }
+        
+        // 팀 멤버 삭제 시 팀의 모든 멤버의 캐시 무효화
+        themeCacheService.evictTeamMembersThemeSummaryCache(teamId);
+        
         return deletedMembers;
     }
 
