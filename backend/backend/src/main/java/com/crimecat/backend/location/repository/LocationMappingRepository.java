@@ -38,7 +38,7 @@ public interface LocationMappingRepository extends JpaRepository<LocationMapping
            "ORDER BY lm.keyword ASC")
     Page<LocationMapping> searchByKeywordOrNormalized(@Param("searchTerm") String searchTerm, Pageable pageable);
     
-    // 관련 키워드나 오타 변형에서 검색
+    // 관련 키워드나 오타 변형에서 검색 (JSON 타입이므로 네이티브 쿼리 사용)
     @Query(value = "SELECT * FROM location_mappings WHERE is_active = true AND " +
            "(JSON_SEARCH(related_keywords, 'one', :searchTerm) IS NOT NULL OR " +
            "JSON_SEARCH(typo_variants, 'one', :searchTerm) IS NOT NULL)", 

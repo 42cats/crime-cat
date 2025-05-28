@@ -35,21 +35,15 @@ public interface MakerTeamMemberRepository extends JpaRepository<MakerTeamMember
      */
     boolean existsByTeamIdAndWebUserId(UUID teamId, UUID webUserId);
 
-    @Query(value = """
-        SELECT * FROM maker_team_members 
-        WHERE WEB_USER_ID = :webUserId 
-        AND IS_LEADER = :isLeader
-        LIMIT 1
-        """, nativeQuery = true)
+    @Query("SELECT m FROM MakerTeamMember m " +
+           "WHERE m.webUserId = :webUserId " +
+           "AND m.isLeader = :isLeader")
     List<MakerTeamMember> findByWebUserIdAndIsLeader(@Param("webUserId") UUID webUserId, @Param("isLeader") boolean isLeader);
 
     @Query("SELECT m FROM MakerTeamMember m WHERE m.webUserId = :webUserId AND m.team.id = :teamId")
     Optional<MakerTeamMember> findByWebUserIdAndTeamId(@Param("webUserId") UUID webUserId, @Param("teamId") UUID teamId);
 
-    @Query(value = """
-    SELECT * FROM maker_team_members 
-    WHERE WEB_USER_ID = :webUserId
-    """, nativeQuery = true)
+    @Query("SELECT m FROM MakerTeamMember m WHERE m.webUserId = :webUserId")
     List<MakerTeamMember> findByWebUserId(@Param("webUserId") UUID webUserId);
 
     /**

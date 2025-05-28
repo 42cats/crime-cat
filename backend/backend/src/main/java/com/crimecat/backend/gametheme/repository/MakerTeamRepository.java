@@ -13,13 +13,10 @@ public interface MakerTeamRepository extends JpaRepository<MakerTeam, UUID> {
     List<MakerTeam> findByName(String name);
 
     /**
-     * 네이티브 쿼리로 NAME, IS_INDIVIDUAL 컬럼을 기준으로 팀 조회
+     * JPQL로 NAME, IS_INDIVIDUAL 컬럼을 기준으로 팀 조회
      */
-    @Query(
-            value = "SELECT * FROM maker_teams WHERE NAME = :name AND IS_INDIVIDUAL = :individual",
-            nativeQuery = true
-    )
-    Optional<MakerTeam> findByNameAndIndividualNative(
+    @Query("SELECT t FROM MakerTeam t WHERE t.name = :name AND t.isIndividual = :individual")
+    Optional<MakerTeam> findByNameAndIndividual(
             @Param("name") String name,
             @Param("individual") boolean individual
     );

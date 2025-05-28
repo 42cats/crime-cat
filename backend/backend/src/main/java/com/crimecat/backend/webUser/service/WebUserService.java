@@ -106,7 +106,7 @@ public class WebUserService {
         }
         if(webUserProfileEditRequestDto.getNickName() != null){
         Optional<MakerTeam> opt = makerTeamRepository
-                .findByNameAndIndividualNative(webUser.getNickname(), true)
+                .findByNameAndIndividual(webUser.getNickname(), true)
                 // 팀 멤버 중에 webUser가 있는지 확인
                 .filter(team -> team.getMembers().stream()
                         .anyMatch(member ->

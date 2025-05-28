@@ -45,11 +45,9 @@ public interface HashTagRepository extends JpaRepository<HashTag, UUID> {
     /**
      * 특정 해시태그들이 모두 포함된 게시물 ID 목록 조회
      */
-    @Query(value = "SELECT p.post_id FROM post_hashtags p " +
-            "JOIN hashtags h ON p.hashtag_id = h.id " +
-            "WHERE LOWER(h.name) IN :tagNames " +
-            "GROUP BY p.post_id " +
-            "HAVING COUNT(DISTINCT h.id) = :tagCount", 
-            nativeQuery = true)
+    @Query("SELECT p.post.id FROM PostHashTag p " +
+           "WHERE LOWER(p.hashTag.name) IN :tagNames " +
+           "GROUP BY p.post.id " +
+           "HAVING COUNT(DISTINCT p.hashTag.id) = :tagCount")
     List<UUID> findPostIdsWithAllHashTags(@Param("tagNames") List<String> tagNames, @Param("tagCount") long tagCount);
 }
