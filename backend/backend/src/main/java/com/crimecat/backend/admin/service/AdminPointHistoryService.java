@@ -114,19 +114,95 @@ public class AdminPointHistoryService {
                 .findByUserOrderByUsedAtDesc(user, PageRequest.of(0, 1))
                 .getContent().stream().findFirst().orElse(null);
 
-        return UserPointSummaryResponse.builder()
-                .userId(user.getWebUser().getId())
-                .nickname(user.getWebUser().getNickname())
-                .email(user.getWebUser().getEmail())
-                .profileImagePath(user.getWebUser().getProfileImagePath())
-                .currentBalance(user.getPoint())
-                .totalEarned(totalEarned)
-                .totalSpent(totalSpent)
-                .totalReceived(totalReceived)
-                .totalGifted(totalGifted)
-                .lastTransactionAt(lastTransaction != null ? lastTransaction.getUsedAt() : null)
-                .accountCreatedAt(user.getWebUser().getCreatedAt())
-                .build();
+        // WebUser가 null인 경우 DiscordUser 정보 사용
+        if (user.getWebUser() != null) {
+            return UserPointSummaryResponse.builder()
+                    .userId(user.getWebUser().getId())
+                    .nickname(user.getWebUser().getNickname())
+                    .email(user.getWebUser().getEmail())
+                    .profileImagePath(user.getWebUser().getProfileImagePath())
+                    .currentBalance(user.getPoint())
+                    .totalEarned(totalEarned)
+                    .totalSpent(totalSpent)
+                    .totalReceived(totalReceived)
+                    .totalGifted(totalGifted)
+                    .lastTransactionAt(lastTransaction != null ? lastTransaction.getUsedAt() : null)
+                    .accountCreatedAt(user.getWebUser().getCreatedAt())
+                    .build();
+        } else {
+            // DiscordUser 정보로 fallback
+            return UserPointSummaryResponse.builder()
+                    .userId(user.getDiscordUser().getId())
+                    .nickname(user.getDiscordUser().getName())
+                    .email(null) // DiscordUser에는 email 필드가 없음
+                    .profileImagePath(user.getDiscordUser().getAvatar())
+                    .currentBalance(user.getPoint())
+                    .totalEarned(totalEarned)
+                    .totalSpent(totalSpent)
+                    .totalReceived(totalReceived)
+                    .totalGifted(totalGifted)
+                    .lastTransactionAt(lastTransaction != null ? lastTransaction.getUsedAt() : null)
+                    .accountCreatedAt(user.getDiscordUser().getCreatedAt())
+                    .build();
+        }
+    }
+
+    /**
+     * User 객체로부터 직접 포인트 요약 정보 생성
+     */
+    private UserPointSummaryResponse getUserPointSummaryFromUser(User user) {
+        Integer totalEarned = pointHistoryRepository.sumAmountByUserAndTypes(
+                user, List.of(TransactionType.CHARGE, TransactionType.DAILY, 
+                        TransactionType.RECEIVE, TransactionType.COUPON, TransactionType.THEME_REWARD)
+        ).orElse(0);
+
+        Integer totalSpent = pointHistoryRepository.sumAmountByUserAndTypes(
+                user, List.of(TransactionType.USE, TransactionType.GIFT)
+        ).orElse(0);
+
+        Integer totalReceived = pointHistoryRepository.sumAmountByUserAndTypes(
+                user, List.of(TransactionType.RECEIVE)
+        ).orElse(0);
+
+        Integer totalGifted = pointHistoryRepository.sumAmountByUserAndTypes(
+                user, List.of(TransactionType.GIFT)
+        ).orElse(0);
+
+        PointHistory lastTransaction = pointHistoryRepository
+                .findByUserOrderByUsedAtDesc(user, PageRequest.of(0, 1))
+                .getContent().stream().findFirst().orElse(null);
+
+        // WebUser가 null인 경우 DiscordUser 정보 사용
+        if (user.getWebUser() != null) {
+            return UserPointSummaryResponse.builder()
+                    .userId(user.getWebUser().getId())
+                    .nickname(user.getWebUser().getNickname())
+                    .email(user.getWebUser().getEmail())
+                    .profileImagePath(user.getWebUser().getProfileImagePath())
+                    .currentBalance(user.getPoint())
+                    .totalEarned(totalEarned)
+                    .totalSpent(totalSpent)
+                    .totalReceived(totalReceived)
+                    .totalGifted(totalGifted)
+                    .lastTransactionAt(lastTransaction != null ? lastTransaction.getUsedAt() : null)
+                    .accountCreatedAt(user.getWebUser().getCreatedAt())
+                    .build();
+        } else {
+            // DiscordUser 정보로 fallback
+            return UserPointSummaryResponse.builder()
+                    .userId(user.getDiscordUser().getId())
+                    .nickname(user.getDiscordUser().getName())
+                    .email(null) // DiscordUser에는 email 필드가 없음
+                    .profileImagePath(user.getDiscordUser().getAvatar())
+                    .currentBalance(user.getPoint())
+                    .totalEarned(totalEarned)
+                    .totalSpent(totalSpent)
+                    .totalReceived(totalReceived)
+                    .totalGifted(totalGifted)
+                    .lastTransactionAt(lastTransaction != null ? lastTransaction.getUsedAt() : null)
+                    .accountCreatedAt(user.getDiscordUser().getCreatedAt())
+                    .build();
+        }
     }
 
     /**
@@ -201,7 +277,7 @@ public class AdminPointHistoryService {
         ).getContent();
 
         return topHolders.stream()
-                .map(user -> getUserPointSummary(user.getWebUser().getId()))
+                .map(this::getUserPointSummaryFromUser)
                 .collect(Collectors.toList());
     }
 
@@ -257,6 +333,23 @@ public class AdminPointHistoryService {
     }
 
     private PointHistoryResponseDto convertToResponseDto(PointHistory pointHistory) {
+        // 사용자 정보 (WebUser 우선, null이면 DiscordUser 사용)
+        String userNickname = pointHistory.getUser().getWebUser() != null ?
+                pointHistory.getUser().getWebUser().getNickname() :
+                pointHistory.getUser().getDiscordUser().getName();
+        
+        UUID userId = pointHistory.getUser().getWebUser() != null ?
+                pointHistory.getUser().getWebUser().getId() :
+                pointHistory.getUser().getDiscordUser().getId();
+        
+        // 연관 사용자 정보 (있는 경우)
+        String relatedNickname = null;
+        if (pointHistory.getRelatedUserId() != null) {
+            relatedNickname = pointHistory.getRelatedUserId().getWebUser() != null ?
+                    pointHistory.getRelatedUserId().getWebUser().getNickname() :
+                    pointHistory.getRelatedUserId().getDiscordUser().getName();
+        }
+        
         return PointHistoryResponseDto.builder()
                 .id(pointHistory.getId())
                 .type(pointHistory.getType())
@@ -265,12 +358,11 @@ public class AdminPointHistoryService {
                 .itemType(pointHistory.getItemType())
                 .permissionName(pointHistory.getPermission() != null ? 
                         pointHistory.getPermission().getName() : null)
-                .relatedNickname(pointHistory.getRelatedUserId() != null ? 
-                        pointHistory.getRelatedUserId().getWebUser().getNickname() : null)
+                .relatedNickname(relatedNickname)
                 .memo(pointHistory.getMemo())
                 .usedAt(pointHistory.getUsedAt())
-                .userNickname(pointHistory.getUser().getWebUser().getNickname())
-                .userId(pointHistory.getUser().getWebUser().getId())
+                .userNickname(userNickname)
+                .userId(userId)
                 .build();
     }
 
