@@ -22,6 +22,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -160,6 +161,7 @@ public class WebGuildService {
    * @return 길드 정보가 포함된 GuildInfoResponseDto 객체
    * @throws com.crimecat.backend.exception.CrimeCatException 길드를 찾을 수 없거나, API 호출 실패, 또는 매개변수 형식이 잘못된 경우
    */
+  @Transactional(readOnly = true)
   public GuildInfoResponseDto getGuildPublicInfo(String guildSnowFlake) {
       // 1. guildId 유효성 검사
       // 2. Guild 조회
