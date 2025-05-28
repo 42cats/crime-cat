@@ -1,9 +1,10 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserCircle, Camera, Loader2 } from "lucide-react";
+import { AvatarImage } from "@/components/ui/optimized-image";
 
 interface ProfileAvatarProps {
     croppedImageUrl: string | null;
@@ -24,12 +25,10 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
             <div className="relative">
                 <Avatar className="w-24 h-24 border-4 border-background">
                     <AvatarImage
-                        src={
-                            croppedImageUrl ||
-                            "/content/image/default_profile_image.png"
-                        }
+                        src={croppedImageUrl}
                         alt="Profile"
-                        className="object-cover"
+                        size="xl"
+                        className="w-full h-full"
                     />
                     <AvatarFallback>
                         <UserCircle className="w-full h-full" />
