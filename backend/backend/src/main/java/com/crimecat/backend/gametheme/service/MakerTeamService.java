@@ -205,8 +205,8 @@ public class MakerTeamService {
         
         return new GetTeamsResponse(teams);
     }
-    public List<UUID> getTargetTeams(UUID userId) {
-        return teamMemberRepository.findByWebUserId(userId).stream()
+    public List<UUID> getTargetTeams(UUID webUserId) {
+        return teamMemberRepository.findByWebUserId(webUserId).stream()
                 .map(v-> v.getTeam().getId())
                 .toList();
     }
