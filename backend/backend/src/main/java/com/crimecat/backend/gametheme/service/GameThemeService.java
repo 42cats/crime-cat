@@ -65,6 +65,7 @@ public class GameThemeService {
     private final PointHistoryService pointHistoryService;
     private final NotificationService notificationService;
     private final com.crimecat.backend.webUser.repository.WebUserRepository webUserRepository;
+    private final ThemeCacheService themeCacheService;
 
     @Transactional
     public void addGameTheme(MultipartFile file, AddGameThemeRequest request) {
@@ -95,6 +96,14 @@ public class GameThemeService {
 
         // 포인트 지급 및 알림 발송
         rewardPointsForThemeCreation(gameTheme, webUser);
+        
+        // 캐시 무효화 - CrimesceneTheme인 경우 팀 멤버들의 캐시 무효화
+        if (gameTheme instanceof CrimesceneTheme) {
+            CrimesceneTheme crimesceneTheme = (CrimesceneTheme) gameTheme;
+            if (crimesceneTheme.getTeam() != null) {
+                themeCacheService.evictTeamMembersThemeSummaryCache(crimesceneTheme.getTeam().getId());
+            }
+        }
     }
 
     /**
@@ -132,7 +141,8 @@ public class GameThemeService {
         }
     }
 
-    //@CacheEvict(value = {"game:theme", "game:theme:list"}, key = "#themeId.toString()")
+    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
+    @Transactional
     public void deleteGameTheme(UUID themeId) {
         GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
         if (gameTheme.isDeleted()) {
@@ -141,6 +151,14 @@ public class GameThemeService {
         AuthenticationUtil.validateCurrentUserMatches(gameTheme.getAuthorId());
         gameTheme.setIsDelete(true);
         themeRepository.save(gameTheme);
+        
+        // 캐시 무효화 - CrimesceneTheme인 경우 팀 멤버들의 캐시 무효화
+        if (gameTheme instanceof CrimesceneTheme) {
+            CrimesceneTheme crimesceneTheme = (CrimesceneTheme) gameTheme;
+            if (crimesceneTheme.getTeam() != null) {
+                themeCacheService.evictTeamMembersThemeSummaryCache(crimesceneTheme.getTeam().getId());
+            }
+        }
     }
 
 
@@ -168,7 +186,7 @@ public class GameThemeService {
     // ================================
 
     @Transactional
-    //@CacheEvict(value = {"game:theme", "game:theme:list"}, key = "#themeId.toString()")
+    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
     public void updateCrimesceneTheme(UUID themeId, MultipartFile file, UpdateCrimesceneThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
 
@@ -189,6 +207,13 @@ public class GameThemeService {
 
         updateThumbnailIfProvided(gameTheme, file);
         themeRepository.save(gameTheme);
+        
+        // 캐시 무효화 - CrimesceneTheme인 경우 팀 멤버들의 캐시 무효화
+        if (gameTheme instanceof CrimesceneTheme crimesceneTheme) {
+            if (crimesceneTheme.getTeam() != null) {
+                evictTeamMembersThemeSummaryCache(crimesceneTheme.getTeam().getId());
+            }
+        }
     }
 
     // ================================
@@ -196,7 +221,7 @@ public class GameThemeService {
     // ================================
 
     @Transactional
-    //@CacheEvict(value = {"game:theme", "game:theme:list"}, key = "#themeId.toString()")
+    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
     public void updateEscapeRoomTheme(UUID themeId, MultipartFile file, UpdateEscapeRoomThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
 
@@ -212,6 +237,7 @@ public class GameThemeService {
     // ================================
 
     @Transactional
+    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
     public void updateMurderMysteryTheme(UUID themeId, MultipartFile file, UpdateGameThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
 
@@ -227,6 +253,7 @@ public class GameThemeService {
     // ================================
 
     @Transactional
+    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
     public void updateRealWorldTheme(UUID themeId, MultipartFile file, UpdateGameThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
 
@@ -362,25 +389,6 @@ public class GameThemeService {
         return CrimesceneThemeSummeryListDto.from(themeDtos);
     }
 
-    /**
-     * 사용자의 테마 요약 캐시를 무효화
-     * @param webUserId 사용자 ID
-     */
-    @CacheEvict(value = CacheType.USER_THEME_SUMMARY, key = "#webUserId")
-    public void evictUserThemeSummaryCache(UUID webUserId) {
-        // 캐시 무효화만 수행
-    }
-
-    /**
-     * 팀에 속한 모든 사용자의 테마 요약 캐시를 무효화
-     * @param teamId 팀 ID
-     */
-    public void evictTeamMembersThemeSummaryCache(UUID teamId) {
-        List<MakerTeamMember> members = teamService.getTeamMembers(teamId);
-        for (MakerTeamMember member : members) {
-            evictUserThemeSummaryCache(member.getWebUser().getId());
-        }
-    }
 
     /**
      * 테마 작성에 대한 포인트 지급 및 알림 발송
