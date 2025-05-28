@@ -58,8 +58,8 @@ const ProfileThemeGrid: React.FC<ProfileThemeGridProps> = ({
 
     if (loading) {
         return (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 min-h-[150px] md:min-h-[200px]">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 md:gap-3 min-h-[120px] md:min-h-[150px]">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                     <div
                         key={i}
                         className="aspect-square bg-gray-100 animate-pulse rounded"
@@ -71,7 +71,7 @@ const ProfileThemeGrid: React.FC<ProfileThemeGridProps> = ({
 
     if (!themes.length) {
         return (
-            <div className="flex flex-col items-center justify-center py-8 text-gray-400 bg-gray-50 rounded-md min-h-[150px] md:min-h-[200px]">
+            <div className="flex flex-col items-center justify-center py-8 text-gray-400 bg-gray-50 rounded-md min-h-[120px] md:min-h-[150px]">
                 <PackageIcon size={40} className="mb-3" />
                 <p className="text-sm">제작한 테마가 없습니다.</p>
             </div>
@@ -113,7 +113,7 @@ const ProfileThemeGrid: React.FC<ProfileThemeGridProps> = ({
 
     return (
         <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3 min-h-[150px] md:min-h-[200px]">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 md:gap-3 min-h-[120px] md:min-h-[150px]">
                 {themes.map((theme) => (
                     <div
                         key={theme.themeId}
@@ -130,26 +130,26 @@ const ProfileThemeGrid: React.FC<ProfileThemeGridProps> = ({
                                 className="w-full h-full object-cover"
                             />
                         </div>
-                        <div className="p-3 flex flex-col gap-1.5">
-                            <div className="text-sm font-bold line-clamp-1">
+                        <div className="p-2 flex flex-col gap-1">
+                            <div className="text-xs font-bold line-clamp-1">
                                 {theme.themeTitle}
                             </div>
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-0.5">
                                 <div className="flex justify-between items-center">
-                                    <div className="text-xs text-gray-600">
+                                    <div className="text-[10px] text-gray-600">
                                         가격
                                     </div>
-                                    <div className="text-sm font-semibold">
+                                    <div className="text-xs font-semibold">
                                         {theme.themePrice?.toLocaleString() ||
                                             "0"}
                                         원
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <div className="text-xs text-gray-600">
+                                    <div className="text-[10px] text-gray-600">
                                         인원
                                     </div>
-                                    <div className="text-sm font-semibold">
+                                    <div className="text-xs font-semibold">
                                         {theme.themeMinPlayer ===
                                         theme.themeMaxPlayer
                                             ? `${theme.themeMinPlayer}인`
@@ -157,7 +157,7 @@ const ProfileThemeGrid: React.FC<ProfileThemeGridProps> = ({
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center justify-between mt-1">
                                 <div className="flex items-center space-x-2">
                                     <button
                                         onClick={(e) => {
@@ -171,7 +171,7 @@ const ProfileThemeGrid: React.FC<ProfileThemeGridProps> = ({
                                                 : "text-gray-500 hover:text-red-500"
                                         } transition-colors`}
                                     >
-                                        <Heart size={16} />
+                                        <Heart size={12} />
                                     </button>
                                     <button
                                         onClick={(e) => {
@@ -184,7 +184,7 @@ const ProfileThemeGrid: React.FC<ProfileThemeGridProps> = ({
                                         }}
                                         className="text-gray-500 hover:text-blue-500 transition-colors"
                                     >
-                                        <MessageSquare size={16} />
+                                        <MessageSquare size={12} />
                                     </button>
                                 </div>
                                 <button
@@ -193,7 +193,7 @@ const ProfileThemeGrid: React.FC<ProfileThemeGridProps> = ({
                                     }
                                     className="text-gray-500 hover:text-green-500 transition-colors"
                                 >
-                                    <Share2 size={16} />
+                                    <Share2 size={12} />
                                 </button>
                             </div>
                         </div>
