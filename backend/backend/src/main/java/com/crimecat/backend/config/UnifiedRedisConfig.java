@@ -173,6 +173,18 @@ public class UnifiedRedisConfig {
         cacheConfigurations.put(CacheType.VIEW_COUNT, 
                 defaultConfig.entryTtl(Duration.ofMinutes(1)));
         
+        // Discord API 캐시 - 길드 정보 30분
+        cacheConfigurations.put(CacheType.DISCORD_GUILD_INFO, 
+                defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        
+        // Discord API 캐시 - 채널 목록 15분
+        cacheConfigurations.put(CacheType.DISCORD_GUILD_CHANNELS, 
+                defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        
+        // 네이버 API 캐시 - 지역 검색 1시간
+        cacheConfigurations.put(CacheType.NAVER_LOCAL_SEARCH, 
+                defaultConfig.entryTtl(Duration.ofHours(1)));
+        
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)

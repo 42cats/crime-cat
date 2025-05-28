@@ -1,0 +1,76 @@
+package com.crimecat.backend.api.discord;
+
+import com.crimecat.backend.config.CacheType;
+import com.crimecat.backend.guild.dto.web.ApiGetGuildInfoDto;
+import com.crimecat.backend.guild.dto.web.ChannelDto;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * Discord API 호출을 캐싱하는 서비스
+ * 실제 API 호출을 최소화하여 성능 향상 및 Rate Limit 방지
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class CachedDiscordBotService {
+    
+    private final DiscordBotApi discordBotApi;
+    
+    /**
+     * 길드 정보 조회 (캐시 적용)
+     * TTL: 30분
+     * @param guildSnowflake 길드 ID
+     * @return 길드 정보
+     */
+    @Cacheable(value = CacheType.DISCORD_GUILD_INFO, key = "#guildSnowflake")
+    public ApiGetGuildInfoDto getGuildInfo(String guildSnowflake) {
+        log.info("Discord API 호출 - 길드 정보 조회: {}", guildSnowflake);
+        try {
+            return discordBotApi.getGuildInfo(guildSnowflake).block();
+        } catch (Exception e) {
+            log.error("Discord API 호출 실패 - 길드 정보: {}", guildSnowflake, e);
+            throw new RuntimeException("Discord API 호출 실패", e);
+        }
+    }
+    
+    /**
+     * 길드 채널 목록 조회 (캐시 적용)
+     * TTL: 15분
+     * @param guildSnowflake 길드 ID
+     * @return 채널 목록
+     */
+    @Cacheable(value = CacheType.DISCORD_GUILD_CHANNELS, key = "#guildSnowflake")
+    public List<ChannelDto> getGuildChannels(String guildSnowflake) {
+        log.info("Discord API 호출 - 채널 목록 조회: {}", guildSnowflake);
+        try {
+            return discordBotApi.getGuildChannels(guildSnowflake);
+        } catch (Exception e) {
+            log.error("Discord API 호출 실패 - 채널 목록: {}", guildSnowflake, e);
+            throw new RuntimeException("Discord API 호출 실패", e);
+        }
+    }
+    
+    /**
+     * 특정 길드의 캐시 무효화
+     * @param guildSnowflake 길드 ID
+     */
+    @CacheEvict(value = {CacheType.DISCORD_GUILD_INFO, CacheType.DISCORD_GUILD_CHANNELS}, key = "#guildSnowflake")
+    public void evictGuildCache(String guildSnowflake) {
+        log.info("Discord 캐시 무효화 - 길드: {}", guildSnowflake);
+    }
+    
+    /**
+     * 모든 Discord 캐시 무효화
+     */
+    @CacheEvict(value = {CacheType.DISCORD_GUILD_INFO, CacheType.DISCORD_GUILD_CHANNELS}, allEntries = true)
+    public void evictAllDiscordCache() {
+        log.info("Discord 캐시 전체 무효화");
+    }
+}

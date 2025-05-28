@@ -67,6 +67,12 @@ public class MakerTeamService {
         return teamRepository.findByIdWithMembers(teamId)
                 .orElseThrow(ErrorStatus.TEAM_NOT_FOUND::asServiceException);
     }
+    
+    @Transactional(readOnly = true)
+    public List<MakerTeamMember> getTeamMembers(UUID teamId) {
+        MakerTeam team = getTeamById(teamId);
+        return team.getMembers();
+    }
 
     @Transactional(readOnly = true)
     public GetTeamResponse getWithAvatars(UUID teamId) {

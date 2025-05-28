@@ -1,10 +1,14 @@
 package com.crimecat.backend.gametheme.service;
 
 import com.crimecat.backend.config.CacheType;
+import com.crimecat.backend.gametheme.domain.MakerTeam;
 import com.crimecat.backend.gametheme.domain.MakerTeamMember;
+import com.crimecat.backend.gametheme.repository.MakerTeamRepository;
+import com.crimecat.backend.exception.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,7 +21,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ThemeCacheService {
     
-    private final MakerTeamService teamService;
+    private final MakerTeamRepository teamRepository;
     
     /**
      * 사용자의 테마 요약 캐시를 무효화
@@ -32,8 +36,12 @@ public class ThemeCacheService {
      * 팀에 속한 모든 사용자의 테마 요약 캐시를 무효화
      * @param teamId 팀 ID
      */
+    @Transactional(readOnly = true)
     public void evictTeamMembersThemeSummaryCache(UUID teamId) {
-        List<MakerTeamMember> members = teamService.getTeamMembers(teamId);
+        MakerTeam team = teamRepository.findByIdWithMembers(teamId)
+                .orElseThrow(ErrorStatus.TEAM_NOT_FOUND::asServiceException);
+        
+        List<MakerTeamMember> members = team.getMembers();
         for (MakerTeamMember member : members) {
             if (member.getWebUserId() != null) {
                 evictUserThemeSummaryCache(member.getWebUserId());
