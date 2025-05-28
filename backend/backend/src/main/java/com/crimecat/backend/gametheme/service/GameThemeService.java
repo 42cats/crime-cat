@@ -336,9 +336,10 @@ public class GameThemeService {
         return themeRecommendationRepository.findByWebUserIdAndThemeId(webUserId, themeId).isPresent();
     }
 
-    public CrimesceneThemeSummeryListDto getGameThemeSummery(UUID userId) {
+    @Transactional(readOnly = true)
+    public CrimesceneThemeSummeryListDto getGameThemeSummery(UUID WebUserId) {
         // 사용자가 속한 팀 ID 목록 가져오기
-        List<UUID> teamIds = teamService.getTargetTeams(userId);
+        List<UUID> teamIds = teamService.getTargetTeams(WebUserId);
 
         // 각 팀이 만든 크라임씬 테마를 중복 없이 Set으로 모으기
         Set<CrimesceneTheme> themesSet = new HashSet<>();
@@ -349,7 +350,7 @@ public class GameThemeService {
 
         // 각 테마를 DTO로 변환하여 리스트로 만들기
         List<CrimesceneThemeSummeryDto> themeDtos = themesSet.stream()
-            .filter(theme -> !theme.isDeleted()) // 삭제된 테마 필터링
+            .filter(GameTheme::isDeleted) // 삭제된 테마 필터링
             .map(CrimesceneThemeSummeryDto::from)
             .toList();
 
