@@ -87,7 +87,7 @@ public class WebUserService {
 
 
     @Transactional
-    //@CacheEvict(value = {"user:profile", "search:users"}, allEntries = true)
+    @CacheEvict(value = {"user:profile", "search:users"}, allEntries = true)
     public void userProfileSet(MultipartFile file, WebUserProfileEditRequestDto webUserProfileEditRequestDto){
         WebUser webUser = webUserRepository.findById(
                 UUID.fromString(webUserProfileEditRequestDto.getUserId()))
