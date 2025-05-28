@@ -80,7 +80,8 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
     // WebP 지원 시 확장자 변경 시도
     if (supportsWebP && originalSrc.includes('/content/image/')) {
-      const webpSrc = originalSrc.replace(/\.(png|jpg|jpeg)$/, '.webp');
+      // JPG 확장자도 처리 (대소문자 구분 없이)
+      const webpSrc = originalSrc.replace(/\.(png|jpg|jpeg|JPG|PNG|JPEG)$/i, '.webp');
       return webpSrc;
     }
 
