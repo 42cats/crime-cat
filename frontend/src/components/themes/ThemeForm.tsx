@@ -385,6 +385,69 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
         setImageStats(null);
     }, []);
 
+    // 기존 이미지를 새로운 resizeMode로 재압축하는 함수
+    const recompressImage = useCallback(async (newResizeMode: ResizeMode) => {
+        if (!thumbnailFile || !imageOptions?.width || !imageOptions?.height) {
+            return;
+        }
+
+        try {
+            setIsCompressing(true);
+
+            toast({
+                title: "이미지 재처리 중",
+                description: "표시 방식 변경에 따라 이미지를 다시 처리하고 있습니다.",
+            });
+
+            // 압축 및 리사이징 옵션 설정
+            const compressionOptions = {
+                maxSizeMB: 1.9,
+                quality: imageOptions?.quality || 0.8,
+                targetWidth: imageOptions.width,
+                targetHeight: imageOptions.height,
+                resizeMode: newResizeMode,
+                backgroundColor: imageOptions.backgroundColor || "#FFFFFF",
+            };
+
+            // 이미지 재압축 실행
+            const compressionResult = await compressImage(
+                thumbnailFile,
+                compressionOptions
+            );
+
+            // 압축 결과 저장
+            setImageStats({
+                originalSize: compressionResult.originalSize,
+                compressedSize: compressionResult.compressedSize,
+                compressionRate: compressionResult.compressionRate,
+            });
+
+            // 기존 미리보기 URL 정리
+            if (form.thumbnail && form.thumbnail.startsWith('blob:')) {
+                URL.revokeObjectURL(form.thumbnail);
+            }
+
+            // 새로운 압축된 이미지 사용
+            const previewURL = URL.createObjectURL(compressionResult.file);
+            setThumbnailFile(compressionResult.file);
+            setForm((prev) => ({ ...prev, thumbnail: previewURL }));
+
+            toast({
+                title: "이미지 재처리 완료",
+                description: `${newResizeMode === 'fit' ? '전체 이미지 표시' : '꽉 채워 표시'} 방식으로 변경되었습니다.`,
+            });
+        } catch (error) {
+            console.error("이미지 재처리 중 오류:", error);
+            toast({
+                title: "이미지 재처리 실패",
+                description: "이미지를 재처리하는 중 오류가 발생했습니다.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsCompressing(false);
+        }
+    }, [thumbnailFile, imageOptions, form.thumbnail, toast]);
+
     const handleImageChange = async (
         e: React.ChangeEvent<HTMLInputElement>
     ) => {
@@ -637,9 +700,12 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                             </Label>
                             <RadioGroup
                                 value={resizeMode}
-                                onValueChange={(value) =>
-                                    setResizeMode(value as ResizeMode)
-                                }
+                                onValueChange={async (value) => {
+                                    const newMode = value as ResizeMode;
+                                    setResizeMode(newMode);
+                                    // 기존 이미지가 있으면 새로운 모드로 재압축
+                                    await recompressImage(newMode);
+                                }}
                                 className="flex gap-6"
                             >
                                 <div className="flex flex-col items-center gap-2">
