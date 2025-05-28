@@ -46,6 +46,12 @@ public interface CrimesceneThemeRepository extends JpaRepository<CrimesceneTheme
   List<CrimesceneTheme> findByTeamIdsAndNotDeleted(@Param("teamIds") List<UUID> teamIds);
 
   /**
+   * 활성화된 크라임씬 테마 개수 조회
+   */
+  @Query("SELECT COUNT(ct) FROM CrimesceneTheme ct WHERE ct.isDeleted = false")
+  long countActiveThemes();
+
+  /**
    * 플레이하지 않은 크라임씬 테마 조회 (필터 적용)
    */
   @Query("SELECT ct FROM CrimesceneTheme ct " +

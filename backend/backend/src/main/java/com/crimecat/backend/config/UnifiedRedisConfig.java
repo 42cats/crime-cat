@@ -219,6 +219,30 @@ public class UnifiedRedisConfig {
         cacheConfigurations.put(CacheType.NAVER_LOCAL_SEARCH, 
                 defaultConfig.entryTtl(Duration.ofHours(1)));
         
+        // Stats API 캐시 설정
+        cacheConfigurations.put("totalServers", 
+                defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put("totalUsers", 
+                defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put("totalPlayers", 
+                defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put("totalCreators", 
+                defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put("crimeThemes", 
+                defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigurations.put("escapeThemes", 
+                defaultConfig.entryTtl(Duration.ofHours(1)));
+        
+        // 게임 히스토리 캐시 설정
+        cacheConfigurations.put("integratedGameHistory", 
+                defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        cacheConfigurations.put("userGameStatistics", 
+                defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        cacheConfigurations.put("userProfileStats", 
+                defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        cacheConfigurations.put("escapeRoomThemeStats", 
+                defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)

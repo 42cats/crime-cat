@@ -34,6 +34,8 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -91,6 +93,11 @@ public class WebGameHistoryService {
 				user,
 				guild,
 				byGuildSnowflake);
+
+		// 캐시 무효화 - WebUser가 있는 경우에만
+		if (user.getWebUser() != null) {
+			invalidateCrimeSceneHistoryCaches(user.getWebUser().getId().toString());
+		}
 
 		return new SaveUserHistoryResponseDto("History recorded successfully");
 	}
@@ -349,5 +356,20 @@ public class WebGameHistoryService {
 
         gameHistoryRepository.save(gameHistory);
         log.info("게임 기록이 업데이트되었습니다. themeId: {}, userId: {}", themeId, user.getId());
+        
+        // 캐시 무효화
+        invalidateCrimeSceneHistoryCaches(webUser.getId().toString());
+    }
+    
+    /**
+     * 크라임씬 기록 캐시 무효화
+     */
+    @Caching(evict = {
+        @CacheEvict(cacheNames = "integratedGameHistory", allEntries = true),
+        @CacheEvict(cacheNames = "userGameStatistics", key = "#userId"),
+        @CacheEvict(cacheNames = "userProfileStats", allEntries = true)
+    })
+    public void invalidateCrimeSceneHistoryCaches(String userId) {
+        log.info("크라임씬 기록 캐시 무효화 - userId: {}", userId);
     }
 }

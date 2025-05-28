@@ -32,4 +32,11 @@ public class RedisInfoDb {
     return Optional.ofNullable(string);
   }
 
+  /**
+   * Redis에서 특정 타입의 캐시 제거
+   */
+  public void remove(RedisDbType type) {
+    redisTemplate.delete(type.toString());
+  }
+
 }

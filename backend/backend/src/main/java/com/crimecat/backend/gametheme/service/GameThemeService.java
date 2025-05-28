@@ -3,10 +3,7 @@ package com.crimecat.backend.gametheme.service;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gameHistory.domain.GameHistory;
 import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
-import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
-import com.crimecat.backend.gametheme.domain.GameTheme;
-import com.crimecat.backend.gametheme.domain.GameThemeRecommendation;
-import com.crimecat.backend.gametheme.domain.MakerTeamMember;
+import com.crimecat.backend.gametheme.domain.*;
 import com.crimecat.backend.gametheme.dto.*;
 import com.crimecat.backend.gametheme.dto.filter.GetGameThemesFilter;
 import com.crimecat.backend.gametheme.dto.filter.RangeFilter;
@@ -14,6 +11,7 @@ import com.crimecat.backend.gametheme.enums.ThemeType;
 import com.crimecat.backend.gametheme.repository.CrimesceneThemeRepository;
 import com.crimecat.backend.gametheme.repository.GameThemeRecommendationRepository;
 import com.crimecat.backend.gametheme.repository.GameThemeRepository;
+import com.crimecat.backend.gametheme.repository.MakerTeamRepository;
 import com.crimecat.backend.gametheme.sort.GameThemeSortType;
 import com.crimecat.backend.gametheme.specification.GameThemeSpecification;
 import com.crimecat.backend.storage.StorageFileType;
@@ -27,15 +25,10 @@ import com.crimecat.backend.point.service.PointHistoryService;
 import com.crimecat.backend.notification.service.NotificationService;
 import com.crimecat.backend.notification.enums.NotificationType;
 import com.crimecat.backend.config.CacheType;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.CacheEvict;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import org.springframework.cache.annotation.*;
+
+import java.util.*;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -66,6 +59,7 @@ public class GameThemeService {
     private final NotificationService notificationService;
     private final com.crimecat.backend.webUser.repository.WebUserRepository webUserRepository;
     private final ThemeCacheService themeCacheService;
+    private final MakerTeamRepository makerTeamRepository;
 
     @Transactional
     public void addGameTheme(MultipartFile file, AddGameThemeRequest request) {
@@ -93,6 +87,9 @@ public class GameThemeService {
 
         // 최종 저장 (한 번만 저장)
         themeRepository.save(gameTheme);
+        
+        // 캐시 무효화
+        invalidateThemeCountCacheByDiscriminator(gameTheme);
 
         // 포인트 지급 및 알림 발송
         rewardPointsForThemeCreation(gameTheme, webUser);
@@ -129,14 +126,21 @@ public class GameThemeService {
     private void checkTeam(CrimesceneTheme gameTheme, WebUser webUser) {
         if (gameTheme.getTeamId() == null || gameTheme.getTeamId().toString().isEmpty()) {
             // 팀 ID가 null이거나 빈 문자열인 경우 개인 팀 처리
-            List<MakerTeamMember> teams = teamService.getIndividualTeams(webUser.getId());
+            Optional<MakerTeam> teams = makerTeamRepository
+                    .findByNameAndIndividual(webUser.getNickname(), true)
+                    // 팀 멤버 중에 webUser가 있는지 확인
+                    .filter(team -> team.getMembers().stream()
+                            .anyMatch(member ->
+                                    member.getWebUser().getId().equals(webUser.getId())
+                            )
+                    );
             if (teams.isEmpty()) {
                 // 개인 팀이 없는 경우 생성
                 UUID teamId = teamService.create(webUser.getNickname(), webUser, true);
                 gameTheme.setTeamId(teamId);
             } else {
                 // 기존 개인 팀 사용
-                gameTheme.setTeamId(teams.getFirst().getTeam().getId());
+                gameTheme.setTeamId(teams.get().getId());
             }
         }
     }
@@ -151,6 +155,9 @@ public class GameThemeService {
         AuthenticationUtil.validateCurrentUserMatches(gameTheme.getAuthorId());
         gameTheme.setIsDelete(true);
         themeRepository.save(gameTheme);
+        
+        // 캐시 무효화
+        invalidateThemeCountCacheByDiscriminator(gameTheme);
         
         // 캐시 무효화 - CrimesceneTheme인 경우 팀 멤버들의 캐시 무효화
         if (gameTheme instanceof CrimesceneTheme) {
@@ -214,6 +221,9 @@ public class GameThemeService {
                 themeCacheService.evictTeamMembersThemeSummaryCache(crimesceneTheme.getTeam().getId());
             }
         }
+        
+        // 테마 개수 캐시 무효화
+        invalidateThemeCountCacheByDiscriminator(gameTheme);
     }
 
     // ================================
@@ -230,6 +240,9 @@ public class GameThemeService {
 
         updateThumbnailIfProvided(gameTheme, file);
         themeRepository.save(gameTheme);
+        
+        // 테마 개수 캐시 무효화
+        invalidateThemeCountCacheByDiscriminator(gameTheme);
     }
 
     // ================================
@@ -439,5 +452,29 @@ public class GameThemeService {
                 themeTypeName, gameTheme.getTitle(), rewardPoints),
             notificationData
         );
+    }
+    
+    /**
+     * 테마 개수 캐시 무효화
+     * @param themeType 테마 타입
+     */
+    @Caching(evict = {
+        @CacheEvict(cacheNames = "crimeThemes", condition = "#themeType == T(com.crimecat.backend.gametheme.domain.ThemeType).CRIMESCENE"),
+        @CacheEvict(cacheNames = "escapeThemes", condition = "#themeType == T(com.crimecat.backend.gametheme.domain.ThemeType).ESCAPE_ROOM")
+    })
+    public void invalidateThemeCountCache(ThemeType themeType) {
+        // Spring Cache가 처리
+    }
+    
+    /**
+     * GameTheme의 discriminator로부터 ThemeType 추출
+     * @param gameTheme 게임 테마
+     */
+    @Caching(evict = {
+        @CacheEvict(cacheNames = "crimeThemes", condition = "#gameTheme.discriminator == T(com.crimecat.backend.gametheme.domain.ThemeType$Values).CRIMESCENE"),
+        @CacheEvict(cacheNames = "escapeThemes", condition = "#gameTheme.discriminator == T(com.crimecat.backend.gametheme.domain.ThemeType$Values).ESCAPE_ROOM")
+    })
+    public void invalidateThemeCountCacheByDiscriminator(GameTheme gameTheme) {
+        // Spring Cache가 처리
     }
 }
