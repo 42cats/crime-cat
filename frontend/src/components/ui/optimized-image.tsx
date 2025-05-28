@@ -32,6 +32,13 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   const [imageSrc, setImageSrc] = useState(src);
   const [isInView, setIsInView] = useState(!useIntersectionObserver);
   
+  // src가 변경되면 상태 리셋
+  useEffect(() => {
+    setImageSrc(src);
+    setIsLoaded(false);
+    setHasError(false);
+  }, [src]);
+  
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   // WebP 지원 확인
@@ -94,9 +101,10 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   };
 
   const handleError = () => {
-    if (!hasError) {
+    if (!hasError && imageSrc !== fallback) {
       setHasError(true);
       setImageSrc(fallback);
+      setIsLoaded(false); // Reset loaded state for fallback image
     }
   };
 
@@ -275,7 +283,8 @@ export const AvatarImage: React.FC<AvatarImageProps> = ({
       alt={alt}
       fallback="/content/image/default_profile_image.png"
       placeholder="blur"
-      className={cn(sizes[size], 'rounded-full', className)}
+      aspectRatio="square"
+      className={cn(sizes[size], 'rounded-full object-cover flex-shrink-0', className)}
     />
   );
 };

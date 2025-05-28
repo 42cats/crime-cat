@@ -15,12 +15,7 @@ module.exports = (client, messege, currentIndex) => {
 		const ownerSet = new Set();
 		messege = [];
 		client.guilds.valueOf().map(v => ownerSet.add(v.ownerId));
-		messege.push(`내 플레이기록 확인하고싶다면?`);
-		messege.push(`crimecat.org 플레이기록`);
-		messege.push(`편하게 진행하고 싶다면?`);
-		messege.push(`crimecat.org 메시지 매크로`);
-		messege.push(`내 테마 플레이 기록 확인하고싶다면?`);
-		messege.push(`crimecat.org 메시지 매크로`);
+		messege.push(`mystery-place.com`);
 		const gameData = await client.redis?.getAllHashFields("players") || {}; // gameData가 null이면 빈 객체 할당
 
 		// 🔹 gameData가 존재하는지 확인 후 객체 → 배열 변환 후 map() 사용
