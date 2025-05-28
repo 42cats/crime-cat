@@ -145,6 +145,10 @@ public class UnifiedRedisConfig {
         cacheConfigurations.put("game:theme:like", 
                 defaultConfig.entryTtl(Duration.ofMinutes(10)));
         
+        // 사용자별 테마 요약 - 15분
+        cacheConfigurations.put("user:theme:summary", 
+                defaultConfig.entryTtl(Duration.ofMinutes(15)));
+        
         // 사용자 프로필 - 10분
         cacheConfigurations.put("user:profile", 
                 defaultConfig.entryTtl(Duration.ofMinutes(10)));
