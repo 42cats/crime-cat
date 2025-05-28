@@ -19,6 +19,7 @@ import {
     Heart,
 } from "lucide-react";
 import { EscapeRoomTheme as EscapeRoomThemeType } from "@/lib/types";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 interface EscapeRoomThemeCardProps {
     theme: EscapeRoomThemeType;
@@ -92,12 +93,11 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
             <Card className="h-full hover:shadow-lg transition-all duration-300 hover:scale-[1.02] rounded-xl overflow-hidden flex flex-col">
                 {/* 썸네일 */}
                 <div className="relative w-full h-48 overflow-hidden">
-                    <img
-                        src={
-                            theme.thumbnail ||
-                            "/content/image/default_escape_room_image.png"
-                        }
+                    <OptimizedImage
+                        src={theme.thumbnail || "/content/image/default_escape_room_image.png"}
                         alt={theme.title}
+                        fallback="/content/image/default_escape_room_image.png"
+                        placeholder="blur"
                         className="absolute inset-0 w-full h-full object-cover object-center"
                     />
 

@@ -2,7 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { statsService } from '@/api/stats';
-import { Skeleton } from "@/components/ui/skeleton";
+import { ImageSkeleton } from "@/components/ui/image-skeleton";
 
 const container = {
     hidden: { opacity: 0 },
@@ -50,9 +50,12 @@ const StatsSection: React.FC = () => {
         <section className="py-8 px-4 bg-gradient-to-b from-transparent to-slate-50/5">
             <div className="container mx-auto">
                 {isLoading ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                        {Array.from({ length: 5 }).map((_, idx) => (
-                            <Skeleton key={idx} className="h-24 rounded-lg" />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                        {Array.from({ length: 6 }).map((_, idx) => (
+                            <div key={idx} className="glass p-6 rounded-lg text-center">
+                                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded mb-2 animate-pulse" />
+                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto animate-pulse" />
+                            </div>
                         ))}
                     </div>
                 ) : (

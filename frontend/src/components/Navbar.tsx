@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NotificationIcon } from "@/components/NotificationIcon";
 import { useTheme } from "@/hooks/useTheme";
+import { Logo, TextLogo } from "@/components/ui/optimized-image";
 
 const Navbar: React.FC = () => {
     const { user, isAuthenticated, logout } = useAuth();
@@ -104,28 +105,13 @@ const Navbar: React.FC = () => {
                 <div className="flex justify-between items-center">
                     {/* 로고 */}
                     <Link to="/" className="flex items-center space-x-2">
-                        <div className="relative w-10 h-10 overflow-hidden">
-                            <img
-                                src={
-                                    theme === "dark"
-                                        ? "/content/image/logo_dark.png"
-                                        : "/content/image/logo_light.png"
-                                }
-                                alt="미스터리 플레이스 로고"
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
-                        <div className="relative w-20 h-15 overflow-hidden">
-                            <img
-                                src={
-                                    theme === "dark"
-                                        ? "/content/image/mystery_place_dark.png"
-                                        : "/content/image/mystery_place_light.png"
-                                }
-                                alt="미스터리 플레이스 latter"
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
+                        <Logo 
+                            theme={theme === "dark" ? "dark" : "light"} 
+                            size="md"
+                        />
+                        <TextLogo 
+                            theme={theme === "dark" ? "dark" : "light"}
+                        />
                     </Link>
 
                     {/* 데스크탑 메뉴 */}

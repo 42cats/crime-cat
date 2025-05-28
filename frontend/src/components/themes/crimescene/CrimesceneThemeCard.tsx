@@ -13,6 +13,7 @@ import {
     Star,
 } from "lucide-react";
 import { Theme } from "@/lib/types";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 interface ThemeCardProps {
     theme: Theme;
@@ -55,14 +56,11 @@ const CrimesceneThemeCard: React.FC<ThemeCardProps> = ({ theme }) => {
             <Card className="h-full hover:shadow-lg transition-all duration-300 hover:scale-[1.02] rounded-xl overflow-hidden flex flex-col">
                 {/* 썸네일 */}
                 <div className="relative w-full h-48 overflow-hidden">
-                    {" "}
-                    {/* 고정 높이, 좌우 잘림 허용 */}
-                    <img
-                        src={
-                            theme?.thumbnail ||
-                            "/content/image/default_crime_scene_image.png"
-                        }
+                    <OptimizedImage
+                        src={theme?.thumbnail || "/content/image/default_crime_scene_image.png"}
                         alt={theme.title}
+                        fallback="/content/image/default_crime_scene_image.png"
+                        placeholder="blur"
                         className="absolute inset-0 w-full h-full object-cover object-center"
                     />
                     {/* 타입 뱃지 */}

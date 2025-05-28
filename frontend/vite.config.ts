@@ -12,6 +12,9 @@ const __dirname = path.dirname(__filename);
 const imagesDir = path.resolve(__dirname, "..", "images");
 
 export default defineConfig({
+    // 이미지 최적화 설정
+    assetsInlineLimit: 4096, // 4KB 이하 파일은 base64로 인라인화
+    
     server: {
         host: "::",
         port: 5173,
@@ -78,6 +81,26 @@ export default defineConfig({
             },
         },
     ],
+
+    build: {
+        // 번들 크기 분석
+        reportCompressedSize: true,
+        
+        // 이미지 최적화
+        rollupOptions: {
+            output: {
+                // 에셋 파일 이름 패턴 (캐싱 최적화)
+                assetFileNames: (assetInfo) => {
+                    const info = assetInfo.name?.split('.') || [];
+                    const ext = info[info.length - 1];
+                    if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
+                        return `assets/images/[name]-[hash][extname]`;
+                    }
+                    return `assets/[name]-[hash][extname]`;
+                },
+            },
+        },
+    },
 
     resolve: {
         alias: {
