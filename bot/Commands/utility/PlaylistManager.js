@@ -141,6 +141,9 @@ class PlaylistManager {
 
 			// Calculate the maximum number of pages
 			this.maxPage = Math.ceil(this.playlist.length / this.pageSize) - 1;
+			
+			// 캐시 유효시간 설정 (30분)
+			this.cacheExpiry = Date.now() + 1800 * 1000;
 		} catch (error) {
 			console.error('Error refreshing playlist data:', error);
 			throw new Error('An error occurred while refreshing the playlist data.');
@@ -225,10 +228,27 @@ class PlaylistManager {
 		this.currentIndex = (this.currentIndex - 1 + this.playlist.length) % this.playlist.length;
 		await playCallback(this.currentIndex);
 	}
+	hasData() {
+		return this.playlist && this.playlist.length > 0;
+	}
+
+	isExpired() {
+		// 캐시가 5분(300초) 이상 지났는지 확인
+		return !this.cacheExpiry || Date.now() > this.cacheExpiry;
+	}
+
+	// 캐시 강제 초기화 (주소 추가/삭제 시 사용)
+	invalidateCache() {
+		this.cacheExpiry = null;
+		this._sortedCache[ABC] = null;
+		this._sortedCache[DATE] = null;
+		this._pageCache.clear();
+	}
+
 	getSortedList() {
-		// 캐시 확인 (5초간 유효)
+		// 캐시 확인 (30분간 유효로 변경)
 		if (this._sortedCache[this.sort] && 
-			Date.now() - this._sortedCache.lastUpdate < 5000) {
+			Date.now() - this._sortedCache.lastUpdate < 1800000) {
 			return this._sortedCache[this.sort];
 		}
 

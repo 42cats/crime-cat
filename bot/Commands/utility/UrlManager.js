@@ -24,6 +24,7 @@ const { AudioPlayerManager } = require('./AudioPlayerManager');
 const Debounce = require('./Debounce');
 const { encodeToString } = require('./delimiterGeter');
 const { isPermissionHas } = require('../api/user/permission');
+const { MusicPlayerStateMachine } = require('./MusicPlayerStateMachine');
 
 class GuildURLManager {
     constructor(guildId, client, user) {
@@ -47,6 +48,10 @@ class GuildURLManager {
         this.playlistManager = new PlaylistManager(this);
         this.audioPlayerManager = new AudioPlayerManager(this);
         this.interactionMsg = null;
+        
+        // 상태 머신 초기화
+        this.stateMachine = new MusicPlayerStateMachine(this);
+        
         // 명령 수행자
         this.operator = user;
         // UI 버튼 관리 (기존 버튼들은 buttonName 접두사를 사용)
@@ -130,56 +135,24 @@ class GuildURLManager {
         }
     }
 
-    // 실제 재생 로직
+    // 실제 재생 로직 (완전히 상태 머신으로 위임)
     async play(index, isSelect = false) {
-        try {
-            if (!this.audioPlayerManager.isInVoiceChannel()) {
-                await this.audioPlayerManager.join(this.operator);
-            }
-            if (this.playlistManager.playlist.length === 0) {
-                throw new Error("재생목록이 없습니다!");
-            }
-            const track = this.playlistManager.getByIndex(index);
-            if (isSelect) this.playlistManager.currentIndex = index;
-            // 재생
-            await this.audioPlayerManager.play(track, async (newState) => {
-                if (newState === AudioPlayerStatus.Playing || newState === AudioPlayerStatus.Idle) {
-                    if (this.interactionMsg) {
-                        const componentData = await this.reply();
-                        await this.interactionMsg.edit(componentData);
-                    }
-                }
-                if (this.stopped) {
-                    this.stopped = false;
-                    return;
-                }
-                if (newState === AudioPlayerStatus.Idle) {
-                    // 재생 모드에 따른 처리
-                    if (this.playlistManager.playMode === REPEATONE) {
-                        // 한곡 반복: 현재 인덱스 그대로 재생
-                        await this.play(this.playlistManager.currentIndex);
-                    } else if (this.playlistManager.playMode !== ONCE) {
-                        // 순차 재생 또는 셔플: 다음 곡으로
-                        await this.playlistManager.next(this.play.bind(this));
-                    }
-                    // ONCE 모드는 아무것도 하지 않음 (정지)
-                }
-            });
-            if (this.interactionMsg) {
-                const componentData = await this.reply();
-                this.interactionMsg.edit(componentData);
-            }
-        } catch (e) {
-            throw e;
+        console.log("[URLMANAGER] Redirecting to state machine, index:", index, "isSelect:", isSelect);
+        
+        if (isSelect) {
+            this.playlistManager.currentIndex = index;
         }
+        
+        // 상태 머신이 모든 것을 처리
+        await this.stateMachine.playTrack(index);
     }
 
     async pause() {
-        await this.audioPlayerManager.pause();
+        await this.stateMachine.pause();
     }
 
     resume() {
-        this.audioPlayerManager.resume();
+        this.stateMachine.resume();
     }
 
     volumeUp() {
@@ -204,12 +177,7 @@ class GuildURLManager {
     }
 
     async stop() {
-        if (this.audioPlayerManager.player.state.status === AudioPlayerStatus.Playing ||
-            this.audioPlayerManager.player.state.status === AudioPlayerStatus.Buffering ||
-            this.audioPlayerManager.player.state.status === AudioPlayerStatus.Paused) {
-            this.stopped = true;
-            await this.audioPlayerManager.stop();
-        }
+        await this.stateMachine.stop();
     }
 
     onOff() {
@@ -240,16 +208,34 @@ class GuildURLManager {
         });
     }
 
-    // 이전/다음 곡 이동
+    // UI 상태 해시 생성 (변경 감지용)
+    getUIHash() {
+        const state = {
+            currentIndex: this.playlistManager.currentIndex,
+            playMode: this.playlistManager.playMode,
+            sort: this.playlistManager.sort,
+            local: this.local,
+            volume: this.audioPlayerManager.volume,
+            playerStatus: this.audioPlayerManager.player?.state?.status,
+            connectionStatus: this.audioPlayerManager.connection?.state?.status,
+            currentPage: this.playlistManager.currentPage,
+            playlistLength: this.playlistManager.playlist.length
+        };
+        return JSON.stringify(state);
+    }
+
+    // 이전/다음 곡 이동 (상태 머신 사용)
     async next() {
-        await this.playlistManager.next(this.play.bind(this));
+        await this.stateMachine.next();
+        
         if (this.interactionMsg) {
             this.interactionMsg.edit(await this.reply());
         }
     }
 
     async prev() {
-        await this.playlistManager.prev(this.play.bind(this));
+        await this.stateMachine.prev();
+        
         if (this.interactionMsg) {
             this.interactionMsg.edit(await this.reply());
         }

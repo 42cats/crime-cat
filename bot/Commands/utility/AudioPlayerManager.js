@@ -85,10 +85,8 @@ class AudioPlayerManager {
   async play(track, onStateChange) {
     if (!track) throw new Error("No track information provided!");
 
-    if (this.process && !this.process.killed) {
-      this.process.kill("SIGKILL");
-      this.process = null;
-    }
+    // 기존 프로세스 확실히 정리
+    this.cleanupProcess();
 
     this.player.removeAllListeners("stateChange");
     this.player.track = track;
@@ -115,8 +113,11 @@ class AudioPlayerManager {
       this.process.on("error", (error) => {
         console.error("yt-dlp process spawn error:", error);
       });
+      
+      // stderr는 로깅만 하고 버퍼에 저장하지 않음 (메모리 절약)
       this.process.stderr.on("data", (data) => {
         const msg = data.toString();
+        
         console.error(`yt-dlp stderr: ${msg}`);
         if (msg.includes("Requested format is not available")) {
           this.parent.interactionMsg.channel.send(
@@ -137,17 +138,25 @@ class AudioPlayerManager {
 
     this._startFadeIn(this.volume, 3000, 0.05);
 
-    this.player.on("stateChange", async (oldState, newState) => {
-      if (
-        newState.status === AudioPlayerStatus.Idle ||
-        newState.status === AudioPlayerStatus.Playing
-      ) {
-        if (newState.status === AudioPlayerStatus.Idle) {
-          this.player.removeAllListeners("stateChange");
+    // 콜백이 제공된 경우에만 이벤트 리스너 등록
+    if (onStateChange) {
+      this.player.on("stateChange", async (oldState, newState) => {
+        if (
+          newState.status === AudioPlayerStatus.Idle ||
+          newState.status === AudioPlayerStatus.Playing
+        ) {
+          if (newState.status === AudioPlayerStatus.Idle) {
+            this.player.removeAllListeners("stateChange");
+          }
+          await onStateChange(newState.status);
         }
-        if (onStateChange) await onStateChange(newState.status);
-      }
-    });
+      });
+    }
+  }
+
+  // 콜백 없이 Raw 재생 (StateMachine 전용)
+  async playRaw(track) {
+    return this.play(track, null);
   }
 
   _startFadeIn(targetVolume = 0.5, duration = 3000, step = 0.05) {
@@ -184,6 +193,10 @@ class AudioPlayerManager {
       status === AudioPlayerStatus.Paused
     ) {
       await this._startFadeOut(1500, 0.05);
+      
+      // 이벤트 리스너 제거 (중요!)
+      this.player.removeAllListeners("stateChange");
+      
       this.player.stop();
       if (this._fadeInInterval) clearInterval(this._fadeInInterval);
     }
@@ -226,11 +239,47 @@ class AudioPlayerManager {
     this.setVolume(newVol);
   }
 
+  cleanupProcess() {
+    if (this.process) {
+      try {
+        // 스트림 정리
+        if (this.process.stdout) {
+          this.process.stdout.destroy();
+        }
+        if (this.process.stderr) {
+          this.process.stderr.destroy();
+        }
+        
+        // 이벤트 리스너 제거
+        this.process.removeAllListeners();
+        
+        // 프로세스 종료
+        if (!this.process.killed) {
+          this.process.kill('SIGTERM');
+          
+          // 1초 후에도 종료되지 않으면 강제 종료
+          setTimeout(() => {
+            if (this.process && !this.process.killed) {
+              this.process.kill('SIGKILL');
+            }
+          }, 1000);
+        }
+        
+        this.process = null;
+      } catch (error) {
+        console.error("Error cleaning up yt-dlp process:", error);
+      }
+    }
+  }
+
   destroy() {
     if (this._fadeInInterval) clearInterval(this._fadeInInterval);
     if (this._fadeOutInterval) clearInterval(this._fadeOutInterval);
 
     try {
+      // yt-dlp 프로세스 정리
+      this.cleanupProcess();
+      
       if (this.player) {
         this.player.stop();
         console.log("AudioPlayer stop 완료.");
