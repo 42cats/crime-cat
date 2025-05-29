@@ -110,4 +110,20 @@ public class GuildService {
         guildRepository.save(guild);
         return newStatus;
     }
+
+    /**
+     * 길드 이름 업데이트
+     * @param snowflake 길드 snowflake
+     * @param name 새로운 길드 이름
+     * @return 업데이트된 길드 정보
+     */
+    @Transactional
+    public GuildDto updateGuildName(String snowflake, String name) {
+        Guild guild = guildRepository.findBySnowflake(snowflake).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guild not found")
+        );
+        guild.setName(name);
+        guildRepository.save(guild);
+        return new GuildDto(guild);
+    }
 }

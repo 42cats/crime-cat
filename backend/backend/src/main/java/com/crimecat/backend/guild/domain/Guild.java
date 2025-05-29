@@ -77,4 +77,8 @@ public class Guild {
     }
 
     public void setIsPublic(boolean isPublic) {this.isPublic = isPublic;}
+
+    public void setName(String name) {
+        this.name = name;
+    }
 }

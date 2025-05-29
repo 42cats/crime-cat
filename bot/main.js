@@ -104,6 +104,13 @@ client.on(Events.GuildMemberAdd, async (member) => {
 	targetEvent.execute(member);
 });
 
+client.on(Events.GuildUpdate, async (oldGuild, newGuild) => {
+	const targetEvent = client.events.get('GuildUpdate');
+	if (targetEvent) {
+		targetEvent.execute(oldGuild, newGuild);
+	}
+});
+
 
 const crypto = require('crypto');
 
