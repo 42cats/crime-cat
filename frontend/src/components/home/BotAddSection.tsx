@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { statsService } from '@/api/stats';
+import { statsService } from "@/api/stats";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const container = {
@@ -58,7 +58,7 @@ const StatsSection: React.FC = () => {
                 ) : (
                     <>
                         <motion.div
-                            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4"
+                            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4"
                             variants={container}
                             initial="hidden"
                             whileInView="show"
@@ -70,8 +70,13 @@ const StatsSection: React.FC = () => {
                                 !!error
                             )}
                             {renderCard(
-                                "등록된 테마",
-                                data?.totalThemes,
+                                "등록 크라임씬수",
+                                data?.crimeThemes,
+                                !!error
+                            )}
+                            {renderCard(
+                                "등록 방탈출수",
+                                data?.escapeThemes,
                                 !!error
                             )}
                             {renderCard("전체 유저", data?.totalUsers, !!error)}

@@ -30,10 +30,10 @@ const Index: React.FC = () => {
                 structuredData={organizationData}
             />
             <div className="pt-20">
+                <GameAdsCarousel />
                 <BotAddSection />
                 {/* <BotStatsSection /> */}
                 <AnnouncementSection />
-                <GameAdsCarousel />
                 <LatestPostsSection />
                 {/* <GameAdsSection />
                 <CurrentGamesSection /> */}
