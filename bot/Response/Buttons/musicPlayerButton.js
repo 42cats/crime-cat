@@ -95,17 +95,26 @@ module.exports = {
 		}
 
 		musicData.interactionMsg = interaction.message;
-		const compData = await musicData.reply();
-		try {
-			await interaction.update(compData);
-		} catch (e) {
-			if (e.code === 10062) {
-				// 토큰 만료된 경우, followUp 으로 대체
-				await interaction.followUp({ content: "버튼 업데이트 시간이 초과되었습니다.", ephemeral: true })
-					.catch(err => { if (err.code !== 10062) console.error("fallback followUp failed:", err); });
-			} else {
-				console.error("interaction.update failed:", e);
+
+		// UI 해시를 비교하여 변경사항이 있을 때만 업데이트
+		const currentHash = musicData.getUIHash();
+		if (currentHash !== musicData.lastUIHash || !musicData.lastUIHash) {
+			musicData.lastUIHash = currentHash;
+			const compData = await musicData.reply();
+			try {
+				await interaction.update(compData);
+			} catch (e) {
+				if (e.code === 10062) {
+					// 토큰 만료된 경우, followUp 으로 대체
+					await interaction.followUp({ content: "버튼 업데이트 시간이 초과되었습니다.", ephemeral: true })
+						.catch(err => { if (err.code !== 10062) console.error("fallback followUp failed:", err); });
+				} else {
+					console.error("interaction.update failed:", e);
+				}
 			}
+		} else {
+			// UI 변경사항이 없으면 defer만 하고 업데이트하지 않음
+			await interaction.deferUpdate();
 		}
 	}
 };
