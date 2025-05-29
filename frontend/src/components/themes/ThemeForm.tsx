@@ -157,7 +157,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
     });
 
     const initialExtraFields = React.useMemo(() => {
-        console.log('ThemeForm - mode:', mode, 'initialData:', initialData);
+        console.log("ThemeForm - mode:", mode, "initialData:", initialData);
         if (mode === "edit" && initialData) {
             if (initialData.type === "CRIMESCENE") {
                 return {
@@ -173,7 +173,9 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                     horrorLevel: initialData.horrorLevel || 0,
                     deviceRatio: initialData.deviceRatio || 0,
                     activityLevel: initialData.activityLevel || 0,
-                    openDate: initialData.openDate ? initialData.openDate.split('T')[0] : "",
+                    openDate: initialData.openDate
+                        ? initialData.openDate.split("T")[0]
+                        : "",
                     isOperating: initialData.isOperating ?? true,
 
                     locations: initialData.locations || [],
@@ -204,14 +206,17 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
     React.useEffect(() => {
         if (didMountRef.current) {
             // 타입 변경 시에만 초기화 (편집 모드에서 최초 로드 시에는 실행하지 않음)
-            if (mode === "create" || (mode === "edit" && initialData?.type !== form.type)) {
+            if (
+                mode === "create" ||
+                (mode === "edit" && initialData?.type !== form.type)
+            ) {
                 setExtraFields(
                     initialExtraFieldsMap[
                         form.type as keyof typeof initialExtraFieldsMap
                     ]
                 );
             }
-            
+
             // 방탈출 테마일 때 강제로 모든 설정을 허용으로 변경
             if (form.type === "ESCAPE_ROOM") {
                 setForm((prev) => ({
@@ -243,14 +248,21 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
             )
                 newErrors.playerMax =
                     "최대 인원은 최소 인원보다 같거나 커야 합니다.";
-            if (!data.playtimeMin || Number(data.playtimeMin) <= 0)
-                newErrors.playtimeMin = "최소 시간은 1분 이상이어야 합니다.";
-            if (
-                !data.playtimeMax ||
-                Number(data.playtimeMax) < Number(data.playtimeMin)
-            )
-                newErrors.playtimeMax =
-                    "최대 시간은 최소 시간보다 같거나 커야 합니다.";
+            // 방탈출이 아닌 경우에만 최소 시간 검증
+            if (data.type !== "ESCAPE_ROOM") {
+                if (!data.playtimeMin || Number(data.playtimeMin) < 0)
+                    newErrors.playtimeMin = "최소 시간은 0분 이상이어야 합니다.";
+                if (
+                    !data.playtimeMax ||
+                    Number(data.playtimeMax) < Number(data.playtimeMin)
+                )
+                    newErrors.playtimeMax =
+                        "최대 시간은 최소 시간보다 같거나 커야 합니다.";
+            } else {
+                // 방탈출인 경우 시간 필드만 검증
+                if (!data.playtimeMax || Number(data.playtimeMax) <= 0)
+                    newErrors.playtimeMax = "시간은 1분 이상이어야 합니다.";
+            }
             if (!data.price || Number(data.price) < 0)
                 newErrors.price = "가격은 0 이상이어야 합니다.";
             if (!data.difficulty || Number(data.difficulty) < 1)
@@ -270,7 +282,8 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                 extraFields &&
                 (!extraFields.locations || extraFields.locations.length === 0)
             ) {
-                newErrors.locations = "최소 1개 이상의 매장 위치를 등록해주세요.";
+                newErrors.locations =
+                    "최소 1개 이상의 매장 위치를 등록해주세요.";
             }
             return newErrors;
         }
@@ -350,16 +363,14 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
             jsonData.activityLevel = extraFields.activityLevel || null;
             jsonData.openDate = extraFields.openDate || null;
             jsonData.isOperating = extraFields.isOperating ?? true;
-            
 
-            
             // 매장 위치 (List<EscapeRoomLocation> 형태)
             jsonData.locations = extraFields.locations || [];
-            
+
             // URL 정보
             jsonData.homepageUrl = extraFields.homepageUrl || null;
             jsonData.reservationUrl = extraFields.reservationUrl || null;
-            
+
             // 추가 정보
             if (extraFields.extra) {
                 jsonData.extra = extraFields.extra;
@@ -370,7 +381,7 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
             "data",
             new Blob([JSON.stringify(jsonData)], { type: "application/json" })
         );
-        
+
         onSubmit(formData);
     };
 
@@ -386,67 +397,79 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
     }, []);
 
     // 기존 이미지를 새로운 resizeMode로 재압축하는 함수
-    const recompressImage = useCallback(async (newResizeMode: ResizeMode) => {
-        if (!thumbnailFile || !imageOptions?.width || !imageOptions?.height) {
-            return;
-        }
-
-        try {
-            setIsCompressing(true);
-
-            toast({
-                title: "이미지 재처리 중",
-                description: "표시 방식 변경에 따라 이미지를 다시 처리하고 있습니다.",
-            });
-
-            // 압축 및 리사이징 옵션 설정
-            const compressionOptions = {
-                maxSizeMB: 1.9,
-                quality: imageOptions?.quality || 0.8,
-                targetWidth: imageOptions.width,
-                targetHeight: imageOptions.height,
-                resizeMode: newResizeMode,
-                backgroundColor: imageOptions.backgroundColor || "#FFFFFF",
-            };
-
-            // 이미지 재압축 실행
-            const compressionResult = await compressImage(
-                thumbnailFile,
-                compressionOptions
-            );
-
-            // 압축 결과 저장
-            setImageStats({
-                originalSize: compressionResult.originalSize,
-                compressedSize: compressionResult.compressedSize,
-                compressionRate: compressionResult.compressionRate,
-            });
-
-            // 기존 미리보기 URL 정리
-            if (form.thumbnail && form.thumbnail.startsWith('blob:')) {
-                URL.revokeObjectURL(form.thumbnail);
+    const recompressImage = useCallback(
+        async (newResizeMode: ResizeMode) => {
+            if (
+                !thumbnailFile ||
+                !imageOptions?.width ||
+                !imageOptions?.height
+            ) {
+                return;
             }
 
-            // 새로운 압축된 이미지 사용
-            const previewURL = URL.createObjectURL(compressionResult.file);
-            setThumbnailFile(compressionResult.file);
-            setForm((prev) => ({ ...prev, thumbnail: previewURL }));
+            try {
+                setIsCompressing(true);
 
-            toast({
-                title: "이미지 재처리 완료",
-                description: `${newResizeMode === 'fit' ? '전체 이미지 표시' : '꽉 채워 표시'} 방식으로 변경되었습니다.`,
-            });
-        } catch (error) {
-            console.error("이미지 재처리 중 오류:", error);
-            toast({
-                title: "이미지 재처리 실패",
-                description: "이미지를 재처리하는 중 오류가 발생했습니다.",
-                variant: "destructive",
-            });
-        } finally {
-            setIsCompressing(false);
-        }
-    }, [thumbnailFile, imageOptions, form.thumbnail, toast]);
+                toast({
+                    title: "이미지 재처리 중",
+                    description:
+                        "표시 방식 변경에 따라 이미지를 다시 처리하고 있습니다.",
+                });
+
+                // 압축 및 리사이징 옵션 설정
+                const compressionOptions = {
+                    maxSizeMB: 1.9,
+                    quality: imageOptions?.quality || 0.8,
+                    targetWidth: imageOptions.width,
+                    targetHeight: imageOptions.height,
+                    resizeMode: newResizeMode,
+                    backgroundColor: imageOptions.backgroundColor || "#FFFFFF",
+                };
+
+                // 이미지 재압축 실행
+                const compressionResult = await compressImage(
+                    thumbnailFile,
+                    compressionOptions
+                );
+
+                // 압축 결과 저장
+                setImageStats({
+                    originalSize: compressionResult.originalSize,
+                    compressedSize: compressionResult.compressedSize,
+                    compressionRate: compressionResult.compressionRate,
+                });
+
+                // 기존 미리보기 URL 정리
+                if (form.thumbnail && form.thumbnail.startsWith("blob:")) {
+                    URL.revokeObjectURL(form.thumbnail);
+                }
+
+                // 새로운 압축된 이미지 사용
+                const previewURL = URL.createObjectURL(compressionResult.file);
+                setThumbnailFile(compressionResult.file);
+                setForm((prev) => ({ ...prev, thumbnail: previewURL }));
+
+                toast({
+                    title: "이미지 재처리 완료",
+                    description: `${
+                        newResizeMode === "fit"
+                            ? "전체 이미지 표시"
+                            : "꽉 채워 표시"
+                    } 방식으로 변경되었습니다.`,
+                });
+            } catch (error) {
+                console.error("이미지 재처리 중 오류:", error);
+                toast({
+                    title: "이미지 재처리 실패",
+                    description: "이미지를 재처리하는 중 오류가 발생했습니다.",
+                    variant: "destructive",
+                });
+            } finally {
+                setIsCompressing(false);
+            }
+        },
+        [thumbnailFile, imageOptions, form.thumbnail, toast]
+    );
 
     const handleImageChange = async (
         e: React.ChangeEvent<HTMLInputElement>
@@ -595,26 +618,42 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                         <div className="flex items-center gap-2 mb-2">
                             <MapPin className="w-4 h-4 text-blue-600" />
-                            <span className="font-medium text-blue-800">방탈출 테마 설정</span>
+                            <span className="font-medium text-blue-800">
+                                방탈출 테마 설정
+                            </span>
                         </div>
                         <p className="text-sm text-blue-700 mb-3">
-                            방탈출 테마는 정보 공유를 위해 <strong>공개, 추천, 댓글이 모두 허용</strong>으로 자동 설정됩니다.
+                            방탈출 테마는 정보 공유를 위해{" "}
+                            <strong>공개, 추천, 댓글이 모두 허용</strong>으로
+                            자동 설정됩니다.
                         </p>
                         <div className="flex flex-wrap gap-4">
                             <div className="flex items-center gap-2">
-                                <Label className="font-medium text-blue-800">공개</Label>
+                                <Label className="font-medium text-blue-800">
+                                    공개
+                                </Label>
                                 <Switch checked={true} disabled />
-                                <span className="text-sm text-blue-600">공개</span>
+                                <span className="text-sm text-blue-600">
+                                    공개
+                                </span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Label className="font-medium text-blue-800">추천</Label>
+                                <Label className="font-medium text-blue-800">
+                                    추천
+                                </Label>
                                 <Switch checked={true} disabled />
-                                <span className="text-sm text-blue-600">허용</span>
+                                <span className="text-sm text-blue-600">
+                                    허용
+                                </span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Label className="font-medium text-blue-800">댓글</Label>
+                                <Label className="font-medium text-blue-800">
+                                    댓글
+                                </Label>
                                 <Switch checked={true} disabled />
-                                <span className="text-sm text-blue-600">허용</span>
+                                <span className="text-sm text-blue-600">
+                                    허용
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -907,47 +946,59 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                             </p>
                         )}
                     </div>
+                    {form.type !== "ESCAPE_ROOM" && (
+                        <div className="flex flex-col w-28">
+                            <Label className="font-bold mb-1 block">
+                                최소 시간 *
+                            </Label>
+                            <Input
+                                type="number"
+                                value={form.playtimeMin}
+                                onChange={(e) =>
+                                    setForm({
+                                        ...form,
+                                        playtimeMin: e.target.value,
+                                    })
+                                }
+                                onBlur={() =>
+                                    validateField("playtimeMin", form.playtimeMin)
+                                }
+                                placeholder="예: 60"
+                            />
+                            {errors.playtimeMin && (
+                                <p className="text-red-500 text-sm mt-1">
+                                    {errors.playtimeMin}
+                                </p>
+                            )}
+                        </div>
+                    )}
                     <div className="flex flex-col w-28">
                         <Label className="font-bold mb-1 block">
-                            최소 시간 *
-                        </Label>
-                        <Input
-                            type="number"
-                            value={form.playtimeMin}
-                            onChange={(e) =>
-                                setForm({
-                                    ...form,
-                                    playtimeMin: e.target.value,
-                                })
-                            }
-                            onBlur={() =>
-                                validateField("playtimeMin", form.playtimeMin)
-                            }
-                            placeholder="예: 60"
-                        />
-                        {errors.playtimeMin && (
-                            <p className="text-red-500 text-sm mt-1">
-                                {errors.playtimeMin}
-                            </p>
-                        )}
-                    </div>
-                    <div className="flex flex-col w-28">
-                        <Label className="font-bold mb-1 block">
-                            최대 시간 *
+                            {form.type === "ESCAPE_ROOM" ? "시간 *" : "최대 시간 *"}
                         </Label>
                         <Input
                             type="number"
                             value={form.playtimeMax}
-                            onChange={(e) =>
-                                setForm({
-                                    ...form,
-                                    playtimeMax: e.target.value,
-                                })
-                            }
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                if (form.type === "ESCAPE_ROOM") {
+                                    // 방탈출일 때는 최소시간도 같은 값으로 설정
+                                    setForm({
+                                        ...form,
+                                        playtimeMin: value,
+                                        playtimeMax: value,
+                                    });
+                                } else {
+                                    setForm({
+                                        ...form,
+                                        playtimeMax: value,
+                                    });
+                                }
+                            }}
                             onBlur={() =>
                                 validateField("playtimeMax", form.playtimeMax)
                             }
-                            placeholder="예: 120"
+                            placeholder={form.type === "ESCAPE_ROOM" ? "예: 60" : "예: 120"}
                         />
                         {errors.playtimeMax && (
                             <p className="text-red-500 text-sm mt-1">
@@ -1065,7 +1116,9 @@ const ThemeForm: React.FC<ThemeFormProps> = ({
                     <MarkdownEditor
                         label="본문 내용 *"
                         value={form.content}
-                        onChange={(val) => setForm({ ...form, content: val || "" })}
+                        onChange={(val) =>
+                            setForm({ ...form, content: val || "" })
+                        }
                         onBlur={() => validateField("content", form.content)}
                         height={400}
                         error={errors.content}

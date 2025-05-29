@@ -102,7 +102,7 @@ const CrimeSceneFields: React.FC<Props> = ({ extraFields, setExtraFields, onOpen
           className="mt-2"
           readOnly
           value={extraFields?.guildName || ""}
-          placeholder="선택된 길드가 없습니다"
+          placeholder="선택된 길드가 없습니다(연결을 원하지 않으시면 안하셔도 됩니다)"
         />
       </div>
 
