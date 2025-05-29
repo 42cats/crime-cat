@@ -20,7 +20,12 @@ const BoardSection = ({
         isError,
     } = useQuery<Theme[]>({
         queryKey: ["latest-themes", category],
-        queryFn: () => themesService.getLatestThemes(category),
+        queryFn: () => {
+            // 카테고리를 백엔드 API 형식으로 변환
+            const apiCategory = category.replace("-", "_") as "CRIMESCENE" | "ESCAPE_ROOM" | "MURDER_MYSTERY" | "REALWORLD";
+            return themesService.getLatestThemes(apiCategory);
+        },
+        enabled: category !== "MURDER-MYSTERY" && category !== "REALWORLD", // 머더미스터리와 리얼월드는 API 호출 안함
     });
 
     return (
@@ -40,7 +45,7 @@ const BoardSection = ({
             </div>
 
             <div className="glass p-4 rounded-lg min-h-[180px] flex-grow">
-                {category === "MURDER_MYSTERY" || category === "REALWORLD" ? (
+                {category === "MURDER-MYSTERY" || category === "REALWORLD" ? (
                     <div className="flex items-center justify-center h-full">
                         <p className="text-sm text-muted-foreground text-center py-4">
                             준비 중입니다. 조금만 기다려주세요.
@@ -83,8 +88,21 @@ const BoardSection = ({
                                             {post.summary}
                                         </p>
                                         <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                                            <span>제작 {post.teamName}</span>
-                                            <span className="opacity-0 group-hover:opacity-100 transition-all duration-200 text-primary">
+                                            <span className="truncate max-w-[80%]">
+                                                {post.type === "ESCAPE_ROOM" ? (
+                                                    <>
+                                                        매장{" "}
+                                                        {post.locations && post.locations.length > 0
+                                                            ? post.locations
+                                                                  .map((loc) => loc.storeName)
+                                                                  .join(", ")
+                                                            : "정보 없음"}
+                                                    </>
+                                                ) : (
+                                                    <>제작 {post.teamName || "정보 없음"}</>
+                                                )}
+                                            </span>
+                                            <span className="opacity-0 group-hover:opacity-100 transition-all duration-200 text-primary flex-shrink-0">
                                                 더보기
                                             </span>
                                         </div>
@@ -112,10 +130,10 @@ const LatestPostsSection: React.FC = () => {
                 <h2 className="text-xl font-bold mb-4">최신 게시글</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <BoardSection title="크라임씬" category="CRIMESCENE" />
-                    <BoardSection title="방탈출" category="ESCAPE_ROOM" />
+                    <BoardSection title="방탈출" category="ESCAPE-ROOM" />
                     <BoardSection
                         title="머더미스터리"
-                        category="MURDER_MYSTERY"
+                        category="MURDER-MYSTERY"
                     />
                     <BoardSection title="리얼월드" category="REALWORLD" />
                 </div>

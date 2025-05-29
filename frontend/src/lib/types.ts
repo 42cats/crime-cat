@@ -301,6 +301,7 @@ interface BaseTheme {
     recommendationEnabled: boolean;
     commentEnabled?: boolean;  // API 응답에 없을 수 있음
     type: "CRIMESCENE" | "ESCAPE_ROOM" | "MURDER_MYSTERY" | "REALWORLD";
+    teamName?: string;  // 크라임씬 테마의 제작팀 이름
 }
 
 interface CrimeSceneExtra {

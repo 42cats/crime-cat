@@ -29,24 +29,18 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
         return new Intl.NumberFormat("ko-KR").format(amount) + "원";
     };
 
-    const formatDuration = (
-        minTime: number | undefined,
-        maxTime: number | undefined
-    ): string => {
+    const formatDuration = (time: number | undefined): string => {
         // undefined 또는 NaN 체크
-        if (!minTime || !maxTime || isNaN(minTime) || isNaN(maxTime)) {
+        if (!time || isNaN(time)) {
             return "시간 정보 없음";
         }
 
-        if (minTime === maxTime) {
-            if (minTime < 60) return `${minTime}분`;
-            const hours = Math.floor(minTime / 60);
-            const remainingMinutes = minTime % 60;
-            return remainingMinutes > 0
-                ? `${hours}시간 ${remainingMinutes}분`
-                : `${hours}시간`;
-        }
-        return `${minTime}-${maxTime}분`;
+        if (time < 60) return `${time}분`;
+        const hours = Math.floor(time / 60);
+        const remainingMinutes = time % 60;
+        return remainingMinutes > 0
+            ? `${hours}시간 ${remainingMinutes}분`
+            : `${hours}시간`;
     };
 
     const formatCount = (num: number): string => {
@@ -184,10 +178,7 @@ const EscapeRoomThemeCard: React.FC<EscapeRoomThemeCardProps> = ({ theme }) => {
                             <div className="flex items-center gap-1">
                                 <Clock className="w-3 h-3 flex-shrink-0" />
                                 <span className="truncate">
-                                    {formatDuration(
-                                        theme.playTimeMin,
-                                        theme.playTimeMax
-                                    )}
+                                    {formatDuration(theme.playTimeMax)}
                                 </span>
                             </div>
                             <div className="flex items-center gap-1">
