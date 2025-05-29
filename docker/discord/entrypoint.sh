@@ -19,7 +19,7 @@ log "nodemon 설치 완료"
 
 # ytdlp 최신버전 업데이트
 log "yt-dlp 업데이트 중..."
-pip install -U yt-dlp
+python3 -m pip install --no-cache-dir --break-system-packages -U yt-dlp
 log "yt-dlp 업데이트 완료"
 
 # 프로젝트 의존성 설치

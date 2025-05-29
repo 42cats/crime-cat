@@ -12,9 +12,8 @@ RUN apk update && apk add --no-cache \
     curl \
     build-base
 
-# yt-dlp 설치
-RUN python3 -m pip install --no-cache-dir yt-dlp
-RUN pip install -U yt-dlp
+# yt-dlp 설치 (--break-system-packages 옵션 추가)
+RUN python3 -m pip install --no-cache-dir --break-system-packages yt-dlp
 # 소스 코드 복사
 # COPY .env /root/bot
 # COPY bot /root/bot
