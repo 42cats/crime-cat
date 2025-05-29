@@ -56,12 +56,24 @@ module.exports = {
 		if (fs.existsSync(filePath)) {
 			fs.unlinkSync(filePath);
 
+			// 음악 파일인 경우 플레이어 캐시 무효화
+			if (fileType === 'music') {
+				try {
+					const { handleFileDelete } = require('./utility/v2/MusicPlayerUtils');
+					await handleFileDelete(guildId, userId, 'music');
+					console.log(`[캐시갱신] 로컬 음악 캐시 무효화 완료`);
+				} catch (error) {
+					console.warn(`[캐시갱신] 캐시 무효화 실패 (무시됨):`, error);
+				}
+			}
+
 			let replyMessage = `✅ 파일이 성공적으로 삭제되었습니다: ${fileName}`;
 			if (fileType === 'music') {
 				const folderSize = calculateFolderSize(targetDirectory);
 				const maxStorage = 100 * 1024 * 1024;
 				const leftSpace = maxStorage - folderSize;
 				replyMessage += `\n남은 공간: ${(leftSpace / (1024 * 1024)).toFixed(2)}MB`;
+				replyMessage += `\n🔄 음악 플레이어 목록이 자동으로 업데이트되었습니다.`;
 			}
 
 			await interaction.reply(replyMessage);

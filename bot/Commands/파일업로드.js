@@ -124,12 +124,24 @@ module.exports = {
             fs.writeFileSync(filePath, response.data);
             console.log(`[저장성공] 파일 저장 완료: ${filePath}`);
 
+            // 음악 파일인 경우 플레이어 캐시 무효화
+            if (fileType === 'music') {
+                try {
+                    const { handleFileUpload } = require('./utility/v2/MusicPlayerUtils');
+                    await handleFileUpload(guildId, user.id, 'music');
+                    console.log(`[캐시갱신] 로컬 음악 캐시 무효화 완료`);
+                } catch (error) {
+                    console.warn(`[캐시갱신] 캐시 무효화 실패 (무시됨):`, error);
+                }
+            }
+
             let message = `✅ 파일이 성공적으로 저장되었습니다: ${finalFileName}`;
             if (fileType === 'music') {
                 const folderSize = calculateFolderSize(saveDirectory);
                 const maxStorage = 100 * 1024 * 1024;
                 const leftSpace = maxStorage - folderSize;
                 message += `\n남은 저장공간: ${(leftSpace / (1024 * 1024)).toFixed(2)}MB`;
+                message += `\n🔄 음악 플레이어 목록이 자동으로 업데이트되었습니다.`;
             }
             await interaction.reply(message);
         } catch (error) {
