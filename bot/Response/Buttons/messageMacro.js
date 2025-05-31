@@ -1,5 +1,5 @@
 // handlers/messageMacro.js
-const { PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const { getContents } = require('../../Commands/api/messageMacro/messageMacro');
 const logger = require('../../Commands/utility/logger');
 
@@ -8,6 +8,106 @@ function getNextColor(currentStyle) {
 	const index = COLORS.indexOf(currentStyle);
 	if (index === -1) return COLORS[0]; // fallback
 	return COLORS[(index + 1) % COLORS.length];
+}
+
+/**
+ * Discord 임베드 형식을 감지하고 파싱하는 함수
+ * @param {string} content - 파싱할 콘텐츠
+ * @returns {Object} { type, data } 형태의 객체
+ */
+function parseMessageContent(content) {
+	// JSON 형태의 임베드 감지
+	if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+		try {
+			const embedData = JSON.parse(content);
+			// embeds 배열이 있거나 embed 객체가 있는 경우
+			if (embedData.embeds || embedData.embed) {
+				return { type: 'embed', data: embedData };
+			}
+			// 단일 embed 객체인 경우 (title, description, color 등의 속성이 있는 경우)
+			if (embedData.title || embedData.description || embedData.color || embedData.fields) {
+				return { type: 'embed', data: { embeds: [embedData] } };
+			}
+		} catch (e) {
+			// JSON 파싱 실패 시 일반 텍스트로 처리
+			console.debug('JSON 파싱 실패, 일반 텍스트로 처리:', e.message);
+		}
+	}
+	
+	// 커스텀 임베드 마크다운 문법 감지 (예: {{embed}} ... {{/embed}})
+	if (content.includes('{{embed}}') && content.includes('{{/embed}}')) {
+		return { type: 'custom_embed', data: content };
+	}
+	
+	// 일반 텍스트
+	return { type: 'text', data: content };
+}
+
+/**
+ * 커스텀 임베드 마크다운을 Discord EmbedBuilder로 변환
+ * @param {string} content - 커스텀 임베드 마크다운
+ * @returns {EmbedBuilder} Discord EmbedBuilder 객체
+ */
+function parseCustomEmbedSyntax(content) {
+	const embed = new EmbedBuilder();
+	
+	// {{embed}}와 {{/embed}} 사이의 내용 추출
+	const embedMatch = content.match(/{{embed}}([\s\S]*?){{\/embed}}/i);
+	if (!embedMatch) return embed;
+	
+	const embedContent = embedMatch[1].trim();
+	const lines = embedContent.split('\n');
+	
+	for (const line of lines) {
+		const trimmedLine = line.trim();
+		if (!trimmedLine) continue;
+		
+		// title: 제목
+		if (trimmedLine.startsWith('title:')) {
+			embed.setTitle(trimmedLine.substring(6).trim());
+		}
+		// description: 설명
+		else if (trimmedLine.startsWith('description:')) {
+			embed.setDescription(trimmedLine.substring(12).trim());
+		}
+		// color: #hex 또는 숫자
+		else if (trimmedLine.startsWith('color:')) {
+			const colorValue = trimmedLine.substring(6).trim();
+			if (colorValue.startsWith('#')) {
+				embed.setColor(colorValue);
+			} else {
+				embed.setColor(parseInt(colorValue));
+			}
+		}
+		// field: 이름 | 값 | inline(true/false)
+		else if (trimmedLine.startsWith('field:')) {
+			const fieldData = trimmedLine.substring(6).trim().split('|');
+			if (fieldData.length >= 2) {
+				const name = fieldData[0].trim();
+				const value = fieldData[1].trim();
+				const inline = fieldData[2] ? fieldData[2].trim() === 'true' : false;
+				embed.addFields({ name, value, inline });
+			}
+		}
+		// thumbnail: 썸네일 URL
+		else if (trimmedLine.startsWith('thumbnail:')) {
+			embed.setThumbnail(trimmedLine.substring(10).trim());
+		}
+		// image: 이미지 URL
+		else if (trimmedLine.startsWith('image:')) {
+			embed.setImage(trimmedLine.substring(6).trim());
+		}
+		// footer: 푸터 텍스트
+		else if (trimmedLine.startsWith('footer:')) {
+			embed.setFooter({ text: trimmedLine.substring(7).trim() });
+		}
+		// timestamp: true이면 현재 시간
+		else if (trimmedLine.startsWith('timestamp:') && trimmedLine.includes('true')) {
+			embed.setTimestamp();
+		}
+	}
+	
+	return embed;
 }
 
 /**
@@ -45,11 +145,44 @@ async function safeSendMessage({ channel, content, interaction, ephemeral = fals
 			content = content.substring(0, 1997) + '...';
 		}
 
-		// 전송 시도
-		if (ephemeral && interaction) {
-			await interaction.followUp({ content, ephemeral: true });
+		// 임베드 파싱 및 전송
+		const parsedContent = parseMessageContent(content);
+		
+		if (parsedContent.type === 'embed') {
+			// JSON 형태의 임베드 처리
+			const { embeds, content: textContent, ...otherOptions } = parsedContent.data;
+			const embedBuilders = embeds ? embeds.map(embedData => new EmbedBuilder(embedData)) : [];
+			
+			if (ephemeral && interaction) {
+				await interaction.followUp({
+					content: textContent || undefined,
+					embeds: embedBuilders,
+					ephemeral: true,
+					...otherOptions
+				});
+			} else {
+				await channel.send({
+					content: textContent || undefined,
+					embeds: embedBuilders,
+					...otherOptions
+				});
+			}
+		} else if (parsedContent.type === 'custom_embed') {
+			// 커스텀 마크다운 임베드 처리
+			const embed = parseCustomEmbedSyntax(parsedContent.data);
+			
+			if (ephemeral && interaction) {
+				await interaction.followUp({ embeds: [embed], ephemeral: true });
+			} else {
+				await channel.send({ embeds: [embed] });
+			}
 		} else {
-			await channel.send(content);
+			// 일반 텍스트 처리 (기존 방식)
+			if (ephemeral && interaction) {
+				await interaction.followUp({ content, ephemeral: true });
+			} else {
+				await channel.send(content);
+			}
 		}
 
 		return true;
