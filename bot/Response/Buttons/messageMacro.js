@@ -150,31 +150,61 @@ async function safeSendMessage({ channel, content, interaction, ephemeral = fals
 		
 		if (parsedContent.type === 'embed') {
 			// JSON 형태의 임베드 처리
-			const { embeds, content: textContent, ...otherOptions } = parsedContent.data;
-			const embedBuilders = embeds ? embeds.map(embedData => new EmbedBuilder(embedData)) : [];
-			
-			if (ephemeral && interaction) {
-				await interaction.followUp({
-					content: textContent || undefined,
-					embeds: embedBuilders,
-					ephemeral: true,
-					...otherOptions
-				});
-			} else {
-				await channel.send({
-					content: textContent || undefined,
-					embeds: embedBuilders,
-					...otherOptions
-				});
+			try {
+				const { embeds, content: textContent, ...otherOptions } = parsedContent.data;
+				const embedBuilders = embeds ? embeds.map(embedData => new EmbedBuilder(embedData)) : [];
+				
+				// 임베드가 비어있으면 일반 텍스트로 폴백
+				if (embedBuilders.length === 0) {
+					throw new Error('임베드 데이터가 비어있습니다.');
+				}
+				
+				if (ephemeral && interaction) {
+					await interaction.followUp({
+						content: textContent || undefined,
+						embeds: embedBuilders,
+						ephemeral: true,
+						...otherOptions
+					});
+				} else {
+					await channel.send({
+						content: textContent || undefined,
+						embeds: embedBuilders,
+						...otherOptions
+					});
+				}
+			} catch (embedError) {
+				console.warn('임베드 생성 실패, 일반 텍스트로 폴백:', embedError.message);
+				// 임베드 생성 실패 시 원본 content를 일반 텍스트로 전송
+				if (ephemeral && interaction) {
+					await interaction.followUp({ content, ephemeral: true });
+				} else {
+					await channel.send(content);
+				}
 			}
 		} else if (parsedContent.type === 'custom_embed') {
 			// 커스텀 마크다운 임베드 처리
-			const embed = parseCustomEmbedSyntax(parsedContent.data);
-			
-			if (ephemeral && interaction) {
-				await interaction.followUp({ embeds: [embed], ephemeral: true });
-			} else {
-				await channel.send({ embeds: [embed] });
+			try {
+				const embed = parseCustomEmbedSyntax(parsedContent.data);
+				
+				// 임베드에 최소한의 내용이 있는지 확인
+				if (!embed.data.title && !embed.data.description && !embed.data.fields?.length) {
+					throw new Error('임베드에 표시할 내용이 없습니다.');
+				}
+				
+				if (ephemeral && interaction) {
+					await interaction.followUp({ embeds: [embed], ephemeral: true });
+				} else {
+					await channel.send({ embeds: [embed] });
+				}
+			} catch (customEmbedError) {
+				console.warn('커스텀 임베드 생성 실패, 일반 텍스트로 폴백:', customEmbedError.message);
+				// 커스텀 임베드 생성 실패 시 원본 content를 일반 텍스트로 전송
+				if (ephemeral && interaction) {
+					await interaction.followUp({ content, ephemeral: true });
+				} else {
+					await channel.send(content);
+				}
 			}
 		} else {
 			// 일반 텍스트 처리 (기존 방식)
