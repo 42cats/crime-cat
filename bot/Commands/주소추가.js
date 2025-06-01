@@ -191,16 +191,16 @@ async function addUrl(guildId, title, url, user) {
 	}
 }
 
-/**
- * v3 음악 플레이어 업데이트
- * @param {Client} client 
- */
-async function updatePlayer(client, guildId) {
-	try {
-		const { MusicSystemAdapter } = require('./utility/MusicSystemAdapter');
-		await MusicSystemAdapter.refreshPlaylist(client, guildId, 'youtube');
-		console.log('[주소추가 v3] 플레이어 업데이트 완료');
-	} catch (error) {
-		console.warn('[주소추가 v3] 플레이어 업데이트 실패 (무시됨):', error);
-	}
-}
+// /**
+//  * v3 음악 플레이어 업데이트
+//  * @param {Client} client 
+//  */
+// async function updatePlayer(client, guildId) {
+// 	try {
+// 		const { MusicSystemAdapter } = require('./utility/MusicSystemAdapter');
+// 		await MusicSystemAdapter.refreshPlaylist(client, guildId, 'youtube');
+// 		console.log('[주소추가 v3] 플레이어 업데이트 완료');
+// 	} catch (error) {
+// 		console.warn('[주소추가 v3] 플레이어 업데이트 실패 (무시됨):', error);
+// 	}
+// }

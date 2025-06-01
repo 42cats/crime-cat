@@ -56,11 +56,11 @@ module.exports = {
 		if (fs.existsSync(filePath)) {
 			fs.unlinkSync(filePath);
 
-			// 음악 파일인 경우 플레이어 캐시 무효화
+			// v3 플레이어 캐시 무효화
 			if (fileType === 'music') {
 				try {
-					const { handleFileDelete } = require('./utility/v2/MusicPlayerUtils');
-					await handleFileDelete(guildId, userId, 'music');
+					const { MusicSystemAdapter } = require('./utility/MusicSystemAdapter');
+					await MusicSystemAdapter.refreshPlaylist(interaction.client, guildId, 'local');
 					console.log(`[캐시갱신] 로컬 음악 캐시 무효화 완료`);
 				} catch (error) {
 					console.warn(`[캐시갱신] 캐시 무효화 실패 (무시됨):`, error);

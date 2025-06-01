@@ -1,9 +1,9 @@
-// commands/귀여워.js - Music Player v3.0
+// commands/귀여워.js - Music Player v4.0
 const { Client, Message, CommandInteraction, SlashCommandBuilder, PermissionFlagsBits, User, Guild } = require('discord.js');
-const { MusicPlayer } = require('./utility/v3/MusicPlayer');
+const MusicPlayerV4 = require('./utility/v4/MusicPlayerV4');
 
 const nameOfCommand = "귀여워";
-const description = "음악 플레이어 v3.0";
+const description = "음악 플레이어 v4.0";
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -26,11 +26,11 @@ module.exports = {
 			if (replyData) {
 				const msg = await interaction.editReply(replyData);
 				
-				// v3.0 시스템에 메시지 할당
+				// v4.0 시스템에 메시지 할당
 				const musicData = client.serverMusicData?.get(guild.id);
 				if (musicData) {
 					musicData.interactionMsg = msg;
-					console.log(`[Music Player v3.0] Message assigned to controller`);
+					console.log(`[Music Player v4.0] Message assigned to controller`);
 				}
 			} else {
 				await interaction.editReply({ content: "에러 발생. 관리자에게 문의해 주세요", ephemeral: true });
@@ -67,11 +67,11 @@ module.exports = {
 				if (replyData) {
 					const msg = await message.channel.send(replyData);
 					
-					// v3.0 시스템에 메시지 할당
+					// v4.0 시스템에 메시지 할당
 					const musicData = client.serverMusicData?.get(guild.id);
 					if (musicData) {
 						musicData.interactionMsg = msg;
-						console.log(`[Music Player v3.0] Message assigned to controller (prefix)`);
+						console.log(`[Music Player v4.0] Message assigned to controller (prefix)`);
 					}
 				} else {
 					await message.channel.send({ content: "에러 발생. 관리자에게 문의해 주세요", ephemeral: true });
@@ -87,7 +87,7 @@ module.exports = {
 };
 
 /**
- * 음악 플레이어 로직 v3.0
+ * 음악 플레이어 로직 v4.0
  * @param {Client} client   
  * @param {Guild} guild
  * @param {User} user 
@@ -96,9 +96,9 @@ module.exports = {
 async function musicLogic(client, guild, user) {
 	const guildId = guild.id;
 
-	console.log(`[Music Player v3.0] Starting for guild: ${guildId}`);
+	console.log(`[Music Player v4.0] Starting for guild: ${guildId}`);
 	
-	// v3.0 시스템 초기화
+	// v4.0 시스템 초기화
 	if (!client.serverMusicData) {
 		client.serverMusicData = new Map();
 	}
@@ -107,20 +107,23 @@ async function musicLogic(client, guild, user) {
 	
 	// 기존 플레이어 확인
 	if (!client.serverMusicData.has(guildId)) {
-		console.log(`[Music Player v3.0] Creating new player`);
+		console.log(`[Music Player v4.0] Creating new player`);
 		
 		try {
-			// v3.0 플레이어 생성
-			musicData = new MusicPlayer(guildId, client, user);
+			// v4.0 플레이어 생성
+			musicData = new MusicPlayerV4(guildId, client, user);
 			client.serverMusicData.set(guildId, musicData);
 			
-			console.log(`[Music Player v3.0] New player created for guild: ${guildId}`);
+			// 초기 플레이리스트 로드
+			await musicData.queue.loadFromSource('youtube');
+			
+			console.log(`[Music Player v4.0] New player created for guild: ${guildId}`);
 		} catch (error) {
-			console.error(`[Music Player v3.0] Failed to create player:`, error);
+			console.error(`[Music Player v4.0] Failed to create player:`, error);
 			return null;
 		}
 	} else {
-		console.log(`[Music Player v3.0] Using existing player`);
+		console.log(`[Music Player v4.0] Using existing player`);
 		musicData = client.serverMusicData.get(guildId);
 		
 		// 사용자 정보 업데이트
@@ -131,34 +134,31 @@ async function musicLogic(client, guild, user) {
 
 	// 상태 확인
 	const health = musicData.healthCheck();
-	if (health.status !== 'healthy') {
-		console.warn(`[Music Player v3.0] Player health warning:`, health);
-	}
+	console.log(`[Music Player v4.0] Health check:`, health);
 
 	try {
 		// UI 컴포넌트 생성
 		const replyData = await musicData.reply();
 		
 		// 플레이어 정보 로그
-		const playbackInfo = musicData.getPlaybackInfo();
-		const playlistInfo = musicData.getPlaylistInfo();
+		const fullState = musicData.getFullState();
 		
-		console.log(`[Music Player v3.0] Generated UI:`, {
-			state: playbackInfo.state,
-			currentTrack: playbackInfo.currentTrack?.title || 'None',
-			playlistSize: playlistInfo.totalCount,
-			mode: playlistInfo.mode,
-			source: playlistInfo.source
+		console.log(`[Music Player v4.0] Generated UI:`, {
+			state: fullState.isPlaying ? 'playing' : 'idle',
+			currentTrack: fullState.currentTrack?.title || 'None',
+			queueLength: fullState.queue.length,
+			mode: fullState.mode,
+			source: fullState.queue.source
 		});
 		
 		return replyData;
 		
 	} catch (error) {
-		console.error(`[Music Player v3.0] UI generation failed:`, error);
+		console.error(`[Music Player v4.0] UI generation failed:`, error);
 		
 		// 에러 발생 시 플레이어 재생성 시도
 		try {
-			console.log(`[Music Player v3.0] Attempting player recovery...`);
+			console.log(`[Music Player v4.0] Attempting player recovery...`);
 			
 			// 기존 플레이어 정리
 			if (musicData) {
@@ -166,16 +166,17 @@ async function musicLogic(client, guild, user) {
 			}
 			
 			// 새 플레이어 생성
-			musicData = new MusicPlayer(guildId, client, user);
+			musicData = new MusicPlayerV4(guildId, client, user);
 			client.serverMusicData.set(guildId, musicData);
+			await musicData.queue.loadFromSource('youtube');
 			
 			const replyData = await musicData.reply();
-			console.log(`[Music Player v3.0] Player recovery successful`);
+			console.log(`[Music Player v4.0] Player recovery successful`);
 			
 			return replyData;
 			
 		} catch (recoveryError) {
-			console.error(`[Music Player v3.0] Player recovery failed:`, recoveryError);
+			console.error(`[Music Player v4.0] Player recovery failed:`, recoveryError);
 			client.serverMusicData.delete(guildId);
 			return null;
 		}
