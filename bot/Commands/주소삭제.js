@@ -27,14 +27,8 @@ module.exports = {
 
 		const data = await deleteGuildMusic(guildId, title);
 		if (data) {
-			// YouTube 캐시 무효화 (v2.0 통합 지원)
-			try {
-				const { handleYouTubeDelete } = require('./utility/v2/MusicPlayerUtils');
-				await handleYouTubeDelete(guildId);
-				console.log(`[캐시갱신] YouTube 음악 캐시 무효화 완료`);
-			} catch (error) {
-				console.warn(`[캐시갱신] 캐시 무효화 실패 (무시됨):`, error);
-			}
+			// v3 플레이리스트 캐시 갱신
+			// updatePlayer 함수에서 처리
 
 			const msg = await interaction.reply({ 
 				content: `${data.message}\n${data.title} 삭제됨\n🔄 음악 플레이어 목록이 자동으로 업데이트되었습니다.`, 
@@ -60,9 +54,14 @@ module.exports = {
 };
 
 /**
- * v2.0 음악 플레이어 업데이트
+ * v3 음악 플레이어 업데이트
  */
 async function updatePlayer(client, guildId) {
-	// v2.0 시스템 업데이트 (handleYouTubeDelete에서 처리됨)
-	console.log('[주소삭제 v2.0] 플레이어 업데이트 완료');
+	try {
+		const { MusicSystemAdapter } = require('./utility/MusicSystemAdapter');
+		await MusicSystemAdapter.refreshPlaylist(client, guildId, 'youtube');
+		console.log('[주소삭제 v3] 플레이어 업데이트 완료');
+	} catch (error) {
+		console.warn('[주소삭제 v3] 플레이어 업데이트 실패 (무시됨):', error);
+	}
 }

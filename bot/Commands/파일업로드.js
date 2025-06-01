@@ -124,11 +124,11 @@ module.exports = {
             fs.writeFileSync(filePath, response.data);
             console.log(`[저장성공] 파일 저장 완료: ${filePath}`);
 
-            // 음악 파일인 경우 플레이어 캐시 무효화
+            // v3 플레이어 캐시 무효화
             if (fileType === 'music') {
                 try {
-                    const { handleFileUpload } = require('./utility/v2/MusicPlayerUtils');
-                    await handleFileUpload(guildId, user.id, 'music');
+                    const { MusicSystemAdapter } = require('./utility/MusicSystemAdapter');
+                    await MusicSystemAdapter.refreshPlaylist(interaction.client, guildId, 'local');
                     console.log(`[캐시갱신] 로컬 음악 캐시 무효화 완료`);
                 } catch (error) {
                     console.warn(`[캐시갱신] 캐시 무효화 실패 (무시됨):`, error);

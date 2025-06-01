@@ -201,17 +201,14 @@ const handleExit = async (signal) => {
 	try {
 		console.log('[EXIT] 데이터베이스 연결을 종료합니다...');
 		client.master.send("봇 종료됨!!!");
-		// serverMusicData가 있는 경우에만 실행
+		// v3 Music System 정리
 		if (client && client.serverMusicData && client.serverMusicData.size > 0) {
-			for (const [key, value] of client.serverMusicData.entries()) {
-				try {
-					console.log(`[EXIT] 서버 ID: ${key} 리소스 정리 중...`);
-					value.destroy();
-					console.log(`[EXIT] 접속중인 길드의 음성채널 캐쉬삭제 ${value.guildId}`);
-				} catch (err) {
-					console.error(`[EXIT] 서버 ${key} 해제 중 오류:`, err);
-					// 오류가 발생해도 계속 진행
-				}
+			try {
+				const { MusicSystemAdapter } = require('./Commands/utility/MusicSystemAdapter');
+				await MusicSystemAdapter.cleanupAll(client);
+				console.log('[EXIT] 모든 음악 플레이어가 정리되었습니다.');
+			} catch (err) {
+				console.error('[EXIT] 음악 플레이어 정리 중 오류:', err);
 			}
 		}
 

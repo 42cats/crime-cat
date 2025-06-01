@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, Client } = require('discord.js');
 const delayedDeleteMessage = require('./utility/deleteMsg');
 const { deleteMessagesFromChannel } = require('./utility/cleaner');
+const { MusicSystemAdapter } = require('./utility/MusicSystemAdapter');
 const dotenv = require('dotenv');
 const path = require('path');
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -58,16 +59,19 @@ module.exports = {
 };
 
 /**
- * 
+ * v3 통합 볼륨 제어
  * @param {Client} client 
  * @param {Number} Volume 
  */
 async function volumeControl(client, guildId, Volume) {
-	const musicData = client.serverMusicData.get(guildId);
-	if (!musicData)
-		return "음악 플레이어 정보가 없습니다. 음악 플레이어를 생성하고 사용해 주세요";
-	const targetVolume = (Volume / 100);
-	console.log("targetvolume = ", targetVolume);
-	await musicData.audioPlayerManager.setVolume(targetVolume);
-	return `음량이 설정되었습니다.`
+	try {
+		const result = await MusicSystemAdapter.setVolume(client, guildId, Volume);
+		return result;
+	} catch (error) {
+		console.error('[볼륨 설정 오류]', error);
+		if (error.message?.includes('No player')) {
+			return "음악 플레이어 정보가 없습니다. 음악 플레이어를 생성하고 사용해 주세요";
+		}
+		return "볼륨 설정 중 오류가 발생했습니다.";
+	}
 }
