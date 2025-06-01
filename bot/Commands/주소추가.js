@@ -168,24 +168,21 @@ async function addUrl(guildId, title, url, user) {
 		});
 
 
+		// URL 정규화 - video ID만으로 깨끗한 URL 생성
+		const normalizedUrl = `https://www.youtube.com/watch?v=${videoId}`;
+		
 		// Add URL, thumbnail, and duration to the GuildURL table
 		await addGuildMusic(guildId, {
 			title,
-			url,
+			url: normalizedUrl,  // 정규화된 URL 사용
 			thumbnail,
 			duration: durationReadable,
 		});
 
-		// YouTube 캐시 무효화 (v2.0 통합 지원)
-		try {
-			const { handleYouTubeAdd } = require('./utility/v2/MusicPlayerUtils');
-			await handleYouTubeAdd(guildId);
-			console.log(`[캐시갱신] YouTube 음악 캐시 무효화 완료`);
-		} catch (error) {
-			console.warn(`[캐시갱신] 캐시 무효화 실패 (무시됨):`, error);
-		}
+		// v3 플레이리스트 캐시 갱신
+		// updatePlayer 함수에서 처리
 
-		return `✅ Successfully added the URL!\n**Title:** ${title}\n**URL:** ${url}\n**Duration:** ${durationReadable}\n🔄 음악 플레이어 목록이 자동으로 업데이트되었습니다.`;
+		return `✅ Successfully added the URL!\n**Title:** ${title}\n**URL:** ${normalizedUrl}\n**Duration:** ${durationReadable}\n🔄 음악 플레이어 목록이 자동으로 업데이트되었습니다.`;
 	} catch (error) {
 		console.error('Error processing the URL:', error);
 
@@ -195,10 +192,15 @@ async function addUrl(guildId, title, url, user) {
 }
 
 /**
- * v2.0 음악 플레이어 업데이트
+ * v3 음악 플레이어 업데이트
  * @param {Client} client 
  */
 async function updatePlayer(client, guildId) {
-	// v2.0 시스템 업데이트 (handleYouTubeAdd에서 처리됨)
-	console.log('[주소추가 v2.0] 플레이어 업데이트 완료');
+	try {
+		const { MusicSystemAdapter } = require('./utility/MusicSystemAdapter');
+		await MusicSystemAdapter.refreshPlaylist(client, guildId, 'youtube');
+		console.log('[주소추가 v3] 플레이어 업데이트 완료');
+	} catch (error) {
+		console.warn('[주소추가 v3] 플레이어 업데이트 실패 (무시됨):', error);
+	}
 }
