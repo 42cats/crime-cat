@@ -1,4 +1,5 @@
 const { InteractionType, ComponentType } = require('discord.js');
+const { traceCommand, traceEvent } = require('../../trace');
 
 module.exports = {
 	name: 'interactionHandeleder',
@@ -10,7 +11,10 @@ module.exports = {
 					const command = client.slashCommands.get(interaction.commandName);
 					if (!command) return;
 					try {
-						await command.execute(interaction);
+						// 명령 실행을 추적
+						await traceCommand(interaction.commandName, async () => {
+							await command.execute(interaction);
+						});
 					} catch (error) {
 						console.error(error.stack);
 
@@ -35,11 +39,15 @@ module.exports = {
 
 				case InteractionType.MessageComponent: // 버튼 또는 셀렉트 메뉴
 					if (interaction.componentType === ComponentType.Button) {
-						const command = client.events.get('BUTTON_CLICK');
-						await command?.execute(client, interaction);
+						await traceEvent(`버튼:${interaction.customId}`, async () => {
+							const command = client.events.get('BUTTON_CLICK');
+							await command?.execute(client, interaction);
+						});
 					} else if (interaction.componentType === ComponentType.StringSelect) {
-						const command = client.events.get('SELECT_MENU');
-						await command?.execute(client, interaction);
+						await traceEvent(`선택메뉴:${interaction.customId}`, async () => {
+							const command = client.events.get('SELECT_MENU');
+							await command?.execute(client, interaction);
+						});
 					}
 					break;
 
@@ -48,14 +56,19 @@ module.exports = {
 					const optionName = focusedOption.name;
 					const isOptionAutoComplete = client.responses.autocomplete.get(optionName);
 					console.log("옵션네임 ", optionName);
-					if (isOptionAutoComplete)
-						await isOptionAutoComplete.execute(client, interaction);
+					if (isOptionAutoComplete) {
+						await traceEvent(`자동완성:${optionName}`, async () => {
+							await isOptionAutoComplete.execute(client, interaction);
+						});
+					}
 					break;
 
 				case InteractionType.ModalSubmit:
 					{
-						const command = client.events.get('MODAL_SUBMIT');
-						await command?.execute(client, interaction);
+						await traceEvent(`모달:${interaction.customId}`, async () => {
+							const command = client.events.get('MODAL_SUBMIT');
+							await command?.execute(client, interaction);
+						});
 					}
 					break;
 
