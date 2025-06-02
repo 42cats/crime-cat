@@ -6,6 +6,10 @@ const dotenv = require('dotenv');
 dotenv.config();
 const prefix = process.env.PRIFIX;
 
+// 추적 시스템 초기화
+const { initializeTracing } = require('./trace');
+initializeTracing();
+
 // 연결 설정
 const client = new Client({
 	intents: [
