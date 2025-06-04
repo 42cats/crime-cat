@@ -1,6 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch-custom"; // 커스텀 Switch 사용
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import { UserPostDto, Location } from '@/api/posts';
 import HashtagEditor from "@/components/sns/common/HashtagEditor";
 import { useToast } from "@/hooks/useToast";
 import { compressImageOnly, formatFileSize } from "@/utils/imageCompression";
+import { MarkdownEditor } from "@/components/markdown";
 
 interface PostEditFormProps {
     initialPost: UserPostDto;
@@ -242,15 +242,13 @@ const PostEditForm: React.FC<PostEditFormProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
             {/* 내용 입력 */}
             <div className="space-y-2">
-                <Label htmlFor="content">내용</Label>
-                <Textarea
-                    id="content"
+                <MarkdownEditor
                     value={content}
-                    onChange={(e) => setContent(e.target.value)}
+                    onChange={(value) => setContent(value || "")}
                     placeholder="무슨 일이 일어나고 있나요?"
-                    className="min-h-[120px] resize-none"
-                    disabled={isLoading}
-                    maxLength={500}
+                    height={200}
+                    label="내용"
+                    textareaId="content"
                 />
                 <div className="text-xs text-muted-foreground">
                     {content.length}/500자

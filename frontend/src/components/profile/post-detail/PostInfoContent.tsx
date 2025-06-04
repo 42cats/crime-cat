@@ -4,6 +4,7 @@ import { UserPostDto } from '@/api/posts';
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import TagBadge from "@/components/sns/common/TagBadge";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 interface PostInfoContentProps {
     post: UserPostDto;
@@ -26,76 +27,19 @@ const PostInfoContent: React.FC<PostInfoContentProps> = ({
         }
     };
 
-    // 내용에서 해시태그 찾아 강조 표시
-    const renderContent = (content: string) => {
-        if (!content) return null;
-
-        const parts = [];
-        let lastIndex = 0;
-        const hashTagRegex = /#[\w\p{L}]+/gu;
-        let match;
-
-        while ((match = hashTagRegex.exec(content)) !== null) {
-            const matchStart = match.index;
-            const matchEnd = matchStart + match[0].length;
-
-            // 해시태그 이전 텍스트
-            if (matchStart > lastIndex) {
-                parts.push({
-                    type: "text",
-                    content: content.substring(lastIndex, matchStart),
-                });
-            }
-
-            // 해시태그
-            parts.push({
-                type: "hashtag",
-                content: match[0],
-                tag: match[0].substring(1), // # 제외
-            });
-
-            lastIndex = matchEnd;
-        }
-
-        // 마지막 텍스트
-        if (lastIndex < content.length) {
-            parts.push({
-                type: "text",
-                content: content.substring(lastIndex),
-            });
-        }
-
-        return (
-            <div className="whitespace-pre-line">
-                {parts.map((part, index) => {
-                    if (part.type === "hashtag") {
-                        return (
-                            <button
-                                key={index}
-                                onClick={() =>
-                                    navigate(
-                                        `/sns/explore?search=${encodeURIComponent(
-                                            part.content
-                                        )}`
-                                    )
-                                }
-                                className="text-blue-500 hover:underline"
-                            >
-                                {part.content}{" "}
-                            </button>
-                        );
-                    }
-                    return <span key={index}>{part.content}</span>;
-                })}
-            </div>
-        );
-    };
 
     return (
         <div className="space-y-2">
             {/* 포스트 내용 */}
             <div>
-                <div className="mb-1">{renderContent(post.content)}</div>
+                {post.content && (
+                    <div className="mb-1">
+                        <MarkdownRenderer 
+                            content={post.content}
+                            className="prose prose-sm max-w-none dark:prose-invert"
+                        />
+                    </div>
+                )}
                 <p className="text-xs text-gray-500">
                     {post.createdAt && formatDate(post.createdAt)}
                 </p>
