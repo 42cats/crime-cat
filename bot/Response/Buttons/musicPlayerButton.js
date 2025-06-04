@@ -15,7 +15,7 @@ module.exports = {
 	*/
 	execute: async (client, interaction) => {
 		const { guildId } = interaction;
-		
+
 		// v4 플레이어 가져오기
 		let player;
 		try {
@@ -47,8 +47,8 @@ module.exports = {
 					await player.stop();
 					break;
 				case `onOff`:
-					// 자동재생 토글
-					player.toggleAutoplay();
+					// 음성채널 연결/해제 토글
+					await player.toggleVoiceConnection(interaction.member);
 					break;
 				case `next`:
 					await player.next();
@@ -71,13 +71,32 @@ module.exports = {
 					// 소스 전환
 					await player.toggleSource();
 					break;
+				case 'audioMode':
+					// 오디오 모드 전환
+					const currentMode = player.state.audioMode;
+					const newMode = currentMode === 'HIGH_QUALITY' ? 'VOLUME_CONTROL' : 'HIGH_QUALITY';
+					
+					const success = await player.setAudioMode(newMode);
+					if (success) {
+						const modeText = newMode === 'HIGH_QUALITY' ? '🎧 고음질' : '🎛️ 조절';
+						try {
+							await interaction.followUp({
+								content: `${modeText} 모드로 전환되었습니다.`,
+								ephemeral: true
+							});
+						} catch (error) {
+							console.log('Follow up failed:', error);
+						}
+					}
+					break;
 				case `exit`:
-					// v4 플레이어 정리
+					// v4 플레이어 정리 (메시지 삭제/비활성화 포함)
 					await player.destroy();
 					
 					// Map에서 제거
 					client.serverMusicData.delete(guildId);
 					return;
+
 			}
 		}
 		catch (e) {
@@ -99,10 +118,10 @@ module.exports = {
 		} catch (e) {
 			if (e.code === 10062) {
 				// 토큰 만료된 경우
-				await interaction.deferUpdate().catch(() => {});
+				await interaction.deferUpdate().catch(() => { });
 			} else {
 				console.error("[MusicPlayerButton] Update failed:", e);
-				await interaction.deferUpdate().catch(() => {});
+				await interaction.deferUpdate().catch(() => { });
 			}
 		}
 	}

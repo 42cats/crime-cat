@@ -33,10 +33,15 @@ module.exports = {
                 const selectedValues = interaction.values[0];
                 const { command, option, otherOption } = decodeFromString(selectedValues);
                 
-                // v4에서는 인덱스로 직접 재생
-                const trackIndex = parseInt(otherOption);
+                // v4에서는 인덱스로 직접 재생 (option 사용, otherOption 아님)
+                const trackIndex = parseInt(option);
                 console.log('[PlayListUrl] Playing track index:', trackIndex);
-                await player.play(trackIndex);
+                
+                if (isNaN(trackIndex) || trackIndex < 0) {
+                    throw new Error('Invalid track index: ' + option);
+                }
+                
+                await player.play(trackIndex, true); // 직접 선택 플래그 true
             }
             
             // 인터랙션 메시지 할당

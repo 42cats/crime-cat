@@ -29,6 +29,9 @@ async function addGuildMusic(guildId, { title, url, thumbnail, duration }) {
 		return response.data;
 	} catch (error) {
 		logger.error('API 요청 실패:', error.response?.data, error.response?.data?.message);
+		// 백엔드 에러 메시지를 그대로 throw
+		const backendMessage = error.response?.data?.detail || error.message || 'Unknown error occurred';
+		throw new Error(backendMessage);
 	}
 }
 
@@ -49,6 +52,9 @@ async function deleteGuildMusic(guildId, title) {
 		return response.data;
 	} catch (error) {
 		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+		// 백엔드 에러 메시지를 그대로 throw
+		const backendMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
+		throw new Error(backendMessage);
 	}
 }
 

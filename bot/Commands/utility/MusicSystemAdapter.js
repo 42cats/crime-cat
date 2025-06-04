@@ -10,10 +10,10 @@ class MusicSystemAdapter {
      * 플레이어 인스턴스 가져오기 또는 생성
      * @param {Client} client 
      * @param {string} guildId 
-     * @param {User} user 
+     * @param {User} user - 선택적 매개변수
      * @returns {MusicPlayer}
      */
-    static async getPlayer(client, guildId, user) {
+    static async getPlayer(client, guildId, user = null) {
         // serverMusicData Map 초기화
         if (!client.serverMusicData) {
             client.serverMusicData = new Map();
@@ -21,8 +21,18 @@ class MusicSystemAdapter {
 
         let player = client.serverMusicData.get(guildId);
         
-        // 기존 플레이어가 없거나 v4가 아닌 경우
+        // 기존 플레이어가 있는 경우 그대로 반환 (user 매개변수 없는 경우)
+        if (player && player.version === 'v4' && !user) {
+            return player;
+        }
+        
+        // 기존 플레이어가 없거나 v4가 아닌 경우, 또는 새로운 사용자가 있는 경우
         if (!player || !player.version || player.version !== 'v4') {
+            // user가 없으면 플레이어를 생성할 수 없음
+            if (!user) {
+                throw new Error('No player found and no user provided to create new player');
+            }
+            
             logger.info(`[MusicSystemAdapter] Creating new v4 player for guild ${guildId}`);
             
             // 기존 플레이어 정리

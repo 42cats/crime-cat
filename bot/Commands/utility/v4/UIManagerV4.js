@@ -54,6 +54,10 @@ class UIManagerV4 {
                 exit: '❌',
                 error: '⚠️',
                 success: '✅'
+            },
+            audioMode: {
+                'HIGH_QUALITY': '🎧',
+                'VOLUME_CONTROL': '🎛️'
             }
         };
         
@@ -92,8 +96,9 @@ class UIManagerV4 {
      * 임베드 생성
      */
     createEmbed(state) {
-        const { currentTrack, queue, isPlaying, isPaused, volume, mode } = state;
+        const { currentTrack, queue, isPlaying, isPaused, volume, mode, audioMode } = state;
         const nextTrack = this.getNextTrack(state);
+        const isHighQualityMode = audioMode === 'HIGH_QUALITY';
         
         const embed = new EmbedBuilder()
             .setColor(this.getEmbedColor(state))
@@ -116,12 +121,19 @@ class UIManagerV4 {
                 },
                 { 
                     name: "볼륨", 
-                    value: `${Math.round(volume * 100)}%`, 
+                    value: isHighQualityMode 
+                        ? `🚫 조절 불가 (고음질 모드)` 
+                        : `${Math.round(volume * 100)}%`, 
                     inline: true 
                 },
                 { 
                     name: "재생 모드", 
                     value: this.getModeText(mode), 
+                    inline: true 
+                },
+                { 
+                    name: "오디오 모드", 
+                    value: this.getAudioModeText(audioMode), 
                     inline: true 
                 },
                 { 
@@ -135,6 +147,11 @@ class UIManagerV4 {
             })
             .setThumbnail(currentTrack?.thumbnail || 'https://imgur.com/jCVVLrp.png')
             .setTimestamp();
+        
+        // 볼륨 차단 메시지가 있으면 표시
+        if (state.lastVolumeBlockMessage) {
+            embed.setDescription(`⚠️ ${state.lastVolumeBlockMessage}`);
+        }
         
         return embed;
     }
@@ -154,13 +171,13 @@ class UIManagerV4 {
         // 3. 플레이리스트 선택 메뉴
         components.push(this.createPlaylistSelect(state));
         
-        // 4. 페이지네이션 버튼 (필요한 경우)
+        // 4. 오디오 모드 및 소스 전환 버튼 (같은 줄에 배치)
+        components.push(this.createAudioModeAndSourceButtons(state));
+        
+        // 5. 페이지네이션 버튼 (필요한 경우)
         if (state.queue.length > 15) {
             components.push(this.createPaginationButtons(state));
         }
-        
-        // 5. 소스 전환 버튼
-        components.push(this.createSourceButtons(state));
         
         return components.filter(Boolean);
     }
@@ -169,17 +186,18 @@ class UIManagerV4 {
      * 메인 컨트롤 버튼 생성 (v3 스타일)
      */
     createMainControlButtons(state) {
-        const { isPlaying, isPaused, volume, queue } = state;
+        const { isPlaying, isPaused, volume, queue, audioMode } = state;
         const hasPlaylist = queue.length > 0;
+        const isHighQualityMode = audioMode === 'HIGH_QUALITY';
         
         const row = new ActionRowBuilder()
             .addComponents(
-                // 볼륨 업
+                // 볼륨 업 (고음질 모드에서 비활성화)
                 new ButtonBuilder()
                     .setCustomId(encodeToString(this.guildId, 'musicPlayerButton', 'volumeUp'))
                     .setEmoji(this.emojis.volume.up)
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(volume >= 1),
+                    .setStyle(isHighQualityMode ? ButtonStyle.Secondary : ButtonStyle.Primary)
+                    .setDisabled(isHighQualityMode || volume >= 1), // 고음질 모드에서 비활성화
                 
                 // 이전
                 new ButtonBuilder()
@@ -219,16 +237,17 @@ class UIManagerV4 {
      * 보조 컨트롤 버튼 생성 (v3 스타일)
      */
     createSecondaryControlButtons(state) {
-        const { volume, mode, queue } = state;
+        const { volume, mode, queue, audioMode } = state;
+        const isHighQualityMode = audioMode === 'HIGH_QUALITY';
         
         const row = new ActionRowBuilder()
             .addComponents(
-                // 볼륨 다운
+                // 볼륨 다운 (고음질 모드에서 비활성화)
                 new ButtonBuilder()
                     .setCustomId(encodeToString(this.guildId, 'musicPlayerButton', 'volumeDown'))
                     .setEmoji(this.emojis.volume.down)
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(volume <= 0),
+                    .setStyle(isHighQualityMode ? ButtonStyle.Secondary : ButtonStyle.Primary)
+                    .setDisabled(isHighQualityMode || volume <= 0), // 고음질 모드에서 비활성화
                 
                 // 정렬
                 new ButtonBuilder()
@@ -242,11 +261,11 @@ class UIManagerV4 {
                     .setEmoji(this.emojis.mode[mode])
                     .setStyle(ButtonStyle.Primary),
                 
-                // 자동재생/연결상태
+                // 음성채널 연결/해제 (위치 변경)
                 new ButtonBuilder()
                     .setCustomId(encodeToString(this.guildId, 'musicPlayerButton', 'onOff'))
-                    .setEmoji('✅')
-                    .setStyle(ButtonStyle.Primary),
+                    .setEmoji(state.audio?.connected ? '🔊' : '🔇')
+                    .setStyle(state.audio?.connected ? ButtonStyle.Success : ButtonStyle.Secondary),
                 
                 // 종료
                 new ButtonBuilder()
@@ -265,10 +284,14 @@ class UIManagerV4 {
         const { queue, currentIndex, isPlaying, currentTrack } = state;
         const currentPage = state.ui?.currentPage || 0;
         
-        // 페이지 데이터 가져오기
+        // 페이지 데이터 가져오기 - state에서 직접 계산하여 UI 업데이트 문제 해결
         const pageSize = 15; // v3 대로 복원
-        const pageData = this.player.queue.getPageData(currentPage, pageSize);
-        const pageItems = pageData.items;
+        const startIndex = currentPage * pageSize;
+        const endIndex = startIndex + pageSize;
+        
+        // 실제 큐 매니저에서 최신 트랙 목록 가져오기
+        const allTracks = this.player.queue.tracks || [];
+        const pageItems = allTracks.slice(startIndex, endIndex);
         
         // 빈 플레이리스트 처리
         if (pageItems.length === 0) {
@@ -296,10 +319,13 @@ class UIManagerV4 {
             : "재생할 곡을 선택해 주세요.";
         
         // 옵션 생성
-        const startIndex = currentPage * pageSize;
         const options = pageItems.map((track, pageIndex) => {
             const actualIndex = startIndex + pageIndex;
-            const isCurrent = actualIndex === currentIndex;
+            
+            // 실제 재생 중인 트랙인지 확인 (currentTrack과 비교)
+            const isCurrent = currentTrack && 
+                track.title === currentTrack.title && 
+                track.url === currentTrack.url;
             
             return {
                 label: `${isCurrent ? '▶ ' : ''}${track.title.slice(0, 80)}`,
@@ -444,21 +470,32 @@ class UIManagerV4 {
     }
     
     /**
-     * 소스 전환 버튼 생성 (v3 스타일 복원)
+     * 오디오 모드 및 소스 전환 버튼 생성 (한 줄에 배치, 권한 체크)
      */
-    createSourceButtons(state) {
-        const { queue } = state;
+    createAudioModeAndSourceButtons(state) {
+        const { audioMode, queue, hasLocalMusicPermission } = state;
+        const isHighQualityMode = audioMode === 'HIGH_QUALITY';
         const isLocal = queue.source === 'local';
         
-        const row = new ActionRowBuilder()
-            .addComponents(
+        const components = [
+            // 오디오 모드 버튼 (조절 ↔ 고음질) - 항상 표시
+            new ButtonBuilder()
+                .setCustomId(encodeToString(this.guildId, 'musicPlayerButton', 'audioMode'))
+                .setEmoji(this.emojis.audioMode[audioMode])
+                .setStyle(isHighQualityMode ? ButtonStyle.Success : ButtonStyle.Primary)
+        ];
+        
+        // 로컬 음악 권한이 있을 때만 소스 전환 버튼 추가
+        if (hasLocalMusicPermission) {
+            components.push(
                 new ButtonBuilder()
                     .setCustomId(encodeToString(this.guildId, "musicPlayerButton", "Local"))
                     .setEmoji(this.emojis.source[queue.source])
                     .setStyle(isLocal ? ButtonStyle.Success : ButtonStyle.Secondary)
-                    .setLabel(isLocal ? "Local Files" : "YouTube")
             );
+        }
         
+        const row = new ActionRowBuilder().addComponents(...components);
         return row;
     }
     
@@ -466,7 +503,21 @@ class UIManagerV4 {
      * 다음 트랙 가져오기
      */
     getNextTrack(state) {
-        const nextIndex = this.player.queue.getNextIndex(state.currentIndex, state.mode);
+        // 실제 재생 중인 트랙의 인덱스 찾기
+        let actualCurrentIndex = state.currentIndex;
+        
+        if (state.currentTrack) {
+            // AudioEngine의 currentTrack을 기준으로 실제 인덱스 찾기
+            const foundIndex = this.player.queue.tracks.findIndex(track => 
+                track.title === state.currentTrack.title && 
+                track.url === state.currentTrack.url
+            );
+            if (foundIndex >= 0) {
+                actualCurrentIndex = foundIndex;
+            }
+        }
+        
+        const nextIndex = this.player.queue.getNextIndex(actualCurrentIndex, state.mode);
         if (nextIndex >= 0) {
             return this.player.queue.getTrack(nextIndex);
         }
@@ -510,6 +561,44 @@ class UIManagerV4 {
         const sourceText = queue.source === 'local' ? '로컬 파일' : 'YouTube';
         
         return `정렬: ${sortText} | 목록: ${sourceText} | ${queue.length}곡`;
+    }
+
+    getAudioModeText(mode) {
+        const modeTexts = {
+            'HIGH_QUALITY': '🎧 고음질 모드 (볼륨 조절 불가)',
+            'VOLUME_CONTROL': '🎛️ 조절 모드 (볼륨/페이드 조절 가능)'
+        };
+        return modeTexts[mode] || mode;
+    }
+
+    /**
+     * 비활성화된 UI 생성 (종료 시 사용)
+     */
+    createDisabledUI() {
+        const embed = new EmbedBuilder()
+            .setColor(0x95A5A6) // 회색
+            .setTitle('🎵 Music Player v4.0')
+            .setDescription('🔚 **플레이어가 종료되었습니다.**\n\n새로운 플레이어를 시작하려면 `/귀여워` 명령어를 다시 사용하세요.')
+            .setFooter({ 
+                text: '플레이어 종료됨 | v4.0'
+            })
+            .setTimestamp();
+
+        // 모든 버튼 비활성화
+        const disabledRow = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('disabled_player')
+                    .setLabel('플레이어 종료됨')
+                    .setEmoji('🔚')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(true)
+            );
+
+        return {
+            embeds: [embed],
+            components: [disabledRow]
+        };
     }
 }
 
