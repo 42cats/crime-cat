@@ -25,8 +25,12 @@ public class GuildObservationService {
                                            ObservationPatchRequestDto observationPatchRequestDto) {
         Observation observation = guildObservationRepository.findByGuildSnowflake(guildSnowflake)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guild observation not exists"));
+        if(observationPatchRequestDto.getHeadTitle() != null && observationPatchRequestDto.getHeadTitle().isPresent()){
         observation.setHeadTitle(observationPatchRequestDto.getHeadTitle());
-        observation.setRoleSnowflake(observationPatchRequestDto.getRoleSnowFlake());
+        }
+        if(observationPatchRequestDto.getRoleSnowFlake() != null && observationPatchRequestDto.getRoleSnowFlake().isPresent()){
+            observation.setRoleSnowflake(observationPatchRequestDto.getRoleSnowFlake());
+        }
         guildObservationRepository.save(observation);
         return new ObservationDto(guildSnowflake, observation.getHeadTitle(), observation.getRoleSnowflake());
     }
