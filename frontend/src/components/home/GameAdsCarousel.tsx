@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Gamepad, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -27,39 +27,95 @@ const ThemeCardComponents = {
     REALWORLD: null, // 추후 구현
 };
 
-// 카드 크기 설정 상수
+// 개선된 카드 크기 설정 상수
 const CARD_SIZE_CONFIG = {
-    // 카드 최소/최대 크기
-    minWidth: "180px", // 최소 너비
-    maxWidth: "200px", // 최대 너비
-    height: "260px", // 고정 높이 (auto로 설정하면 컨텐츠에 맞춤)
+    // 카드 최적 크기 (CSS Grid auto-fit 기반)
+    optimalWidth: "220px",
+    minWidth: "180px", 
+    maxWidth: "280px",
+    aspectRatio: "3/4", // 고정 비율 (너비:높이 = 3:4)
+    height: "auto",
+    
+    // CSS Grid 기반 반응형 설정
+    gridConfig: {
+        minCardWidth: "180px",
+        maxCardWidth: "220px", 
+        gap: "16px"
+    },
 
-    // 로딩 스켈레톤 높이
-    skeletonHeight: "h-64", // Tailwind 클래스 (h-64 = 256px)
+    // 로딩 스켈레톤 높이 
+    skeletonHeight: "h-64",
 
-    // 반응형 슬라이드 개수 및 간격
+    // 반응형 설정
     responsive: {
         mobile: {
-            slidesPerView: 2, // 360px 화면에서 2개 (180px * 2)
-            spaceBetween: 12, // 작은 카드니까 간격도 줄임
+            slidesPerView: 1.2,
+            spaceBetween: 12,
         },
         tablet: {
-            slidesPerView: 3, // 768px 화면에서 3개
+            slidesPerView: 2.5,
             spaceBetween: 16,
         },
         desktop: {
-            slidesPerView: 5, // 1024px 화면에서 5개
+            slidesPerView: 3.5,
             spaceBetween: 20,
         },
         wide: {
-            slidesPerView: 6, // 1536px 화면에서 6개
+            slidesPerView: 4.5,
             spaceBetween: 24,
         },
         ultrawide: {
-            slidesPerView: 8, // 1920px 화면에서 8개
-            spaceBetween: 24,
+            slidesPerView: 5.5,
+            spaceBetween: 28,
         },
     },
+};
+
+// 동적 반응형 계산을 위한 커스텀 훅
+const useResponsiveCarousel = () => {
+    const [containerWidth, setContainerWidth] = useState(0);
+    const containerRef = useRef<HTMLDivElement>(null);
+    
+    // 컨테이너 크기 측정
+    useEffect(() => {
+        const updateWidth = () => {
+            if (containerRef.current) {
+                setContainerWidth(containerRef.current.offsetWidth);
+            }
+        };
+        
+        // 초기 측정
+        updateWidth();
+        
+        // 리사이즈 이벤트 리스너
+        window.addEventListener('resize', updateWidth);
+        return () => window.removeEventListener('resize', updateWidth);
+    }, []);
+    
+    // 동적 carousel 설정 계산
+    const carouselConfig = useMemo(() => {
+        const cardWidth = 220; // 기본 카드 너비
+        const gap = 16; // 카드 간격
+        const padding = 32; // 좌우 패딩
+        
+        const availableWidth = containerWidth - padding;
+        const maxSlides = Math.floor(availableWidth / (cardWidth + gap));
+        
+        const slidesPerView = Math.max(1, Math.min(maxSlides, 6));
+        
+        return {
+            slidesPerView,
+            spaceBetween: gap,
+            cardStyle: {
+                width: `clamp(${CARD_SIZE_CONFIG.minWidth}, 20vw, ${CARD_SIZE_CONFIG.maxWidth})`,
+                aspectRatio: CARD_SIZE_CONFIG.aspectRatio,
+                minWidth: CARD_SIZE_CONFIG.minWidth,
+                maxWidth: CARD_SIZE_CONFIG.maxWidth,
+            }
+        };
+    }, [containerWidth]);
+    
+    return { containerRef, carouselConfig };
 };
 
 const container = {
@@ -68,7 +124,8 @@ const container = {
 };
 
 const GameAdsCarousel: React.FC = () => {
-    const swiperRef = React.useRef<SwiperType>();
+    const swiperRef = useRef<SwiperType>();
+    const { containerRef, carouselConfig } = useResponsiveCarousel();
 
     // 활성 광고 목록 조회
     const { data: advertisements = [], isLoading } = useQuery({
@@ -77,24 +134,38 @@ const GameAdsCarousel: React.FC = () => {
         refetchInterval: 1000 * 60 * 5, // 5분마다 새로고침
     });
 
+    // 로딩 상태에서 표시할 스켈레톤 개수 동적 계산
+    const skeletonCount = useMemo(() => {
+        if (typeof window === 'undefined') return 4;
+        const width = window.innerWidth;
+        if (width < 768) return 2;
+        if (width < 1024) return 3;
+        if (width < 1280) return 4;
+        return 5;
+    }, []);
+
     // 광고가 없거나 로딩 중일 때
     if (isLoading) {
         return (
             <section className="py-8 px-4">
-                <div className="container mx-auto">
+                <div className="container mx-auto" ref={containerRef}>
                     <h2 className="text-xl font-bold mb-4 flex items-center">
                         <Gamepad className="h-5 w-5 mr-2 text-primary" />
                         추천 게임 테마
                     </h2>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div 
+                        className="grid gap-4"
+                        style={{
+                            gridTemplateColumns: `repeat(auto-fit, minmax(${CARD_SIZE_CONFIG.gridConfig.minCardWidth}, ${CARD_SIZE_CONFIG.gridConfig.maxCardWidth}))`,
+                            gap: CARD_SIZE_CONFIG.gridConfig.gap,
+                            justifyContent: 'center'
+                        }}
+                    >
+                        {Array.from({ length: skeletonCount }, (_, i) => (
                             <div
                                 key={i}
                                 className={`${CARD_SIZE_CONFIG.skeletonHeight} bg-muted rounded-lg animate-pulse`}
-                                style={{
-                                    minWidth: CARD_SIZE_CONFIG.minWidth,
-                                    maxWidth: CARD_SIZE_CONFIG.maxWidth,
-                                }}
+                                style={carouselConfig.cardStyle}
                             />
                         ))}
                     </div>
