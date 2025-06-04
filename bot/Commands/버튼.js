@@ -47,6 +47,9 @@ module.exports = {
 				.addBooleanOption(option =>
 					option.setName('누름표시')
 						.setDescription('버튼을 누르면 누른 사람의 이름이 해당버튼에 표기됨 (기본값: false)'))
+				.addBooleanOption(option =>
+					option.setName('역할옵션')
+						.setDescription('역할 권한이 있는 사용자에게 전용 채널을 생성하여 콘텐츠를 전송할까요? (기본값: false)'))
 		)
 		.addSubcommand(subcommand =>
 			subcommand
@@ -77,6 +80,9 @@ module.exports = {
 				.addBooleanOption(option =>
 					option.setName('누름표시')
 						.setDescription('버튼을 누르면 누른 사람의 이름이 해당버튼에 표기됨 (기본값: false)'))
+				.addBooleanOption(option =>
+					option.setName('역할옵션')
+						.setDescription('역할 권한이 있는 사용자에게 전용 채널을 생성하여 콘텐츠를 전송할까요? (기본값: false)'))
 		),
 
 	/**
@@ -94,6 +100,7 @@ module.exports = {
 		const toDm = interaction.options.getBoolean('디엠으로') ?? false;
 		const showOnlyMe = interaction.options.getBoolean('나만보기') ?? false;
 		const labelName = interaction.options.getBoolean('누름표시') ?? false;
+		const roleOption = interaction.options.getBoolean('역할옵션') ?? false;
 
 		// 멀티 모드 여부 판단 (서브커맨드에 따라 결정)
 		const isMulti = subcommand === '멀티';
@@ -111,6 +118,12 @@ module.exports = {
 				ephemeral: true
 			});
 		}
+		if (roleOption && (toDm || showOnlyMe)) {
+			return await interaction.reply({
+				content: "❌ '역할옵션'은 '디엠으로'나 '나만보기'와 동시에 사용할 수 없습니다.",
+				ephemeral: true
+			});
+		}
 		if (!isOneTime && labelName) {
 			return await interaction.reply({
 				content: "❌ '버튼에 이름표시'는 '한번만'과 같이 사용해야 합니다.",
@@ -123,7 +136,7 @@ module.exports = {
 			if (subcommand === '단일') {
 				const groupName = interaction.options.getString('groupname');
 				await handleSingleGroup(interaction, groupName, {
-					isOneTime, isAdminOnly, showPressDetail, changeColor, toDm, showOnlyMe, labelName, isMulti
+					isOneTime, isAdminOnly, showPressDetail, changeColor, toDm, showOnlyMe, labelName, isMulti, roleOption
 				});
 			} else if (subcommand === '멀티') {
 				const groupNamesStr = interaction.options.getString('groupnames');
@@ -134,7 +147,7 @@ module.exports = {
 				}
 
 				await handleMultipleGroups(interaction, groupNames, {
-					isOneTime, isAdminOnly, showPressDetail, changeColor, toDm, showOnlyMe, labelName, isMulti
+					isOneTime, isAdminOnly, showPressDetail, changeColor, toDm, showOnlyMe, labelName, isMulti, roleOption
 				});
 			}
 		} catch (error) {
@@ -277,7 +290,7 @@ async function createStatsMessage(interaction, groupNames) {
  * 버튼들을 최대 5개씩 묶어 Row 배열로 만들고 전송
  * @param {import('discord.js').CommandInteraction} interaction
  * @param {{ name: string, buttons: Array<{ id: string, name: string, index: number }> }} group
- * @param {{ isOneTime: boolean, isAdminOnly: boolean, showPressDetail: boolean, changeColor: boolean, toDm: boolean, showOnlyMe: boolean, labelName: boolean, isMulti: boolean, statsMessageId: string, followUp: boolean }} options
+ * @param {{ isOneTime: boolean, isAdminOnly: boolean, showPressDetail: boolean, changeColor: boolean, toDm: boolean, showOnlyMe: boolean, labelName: boolean, isMulti: boolean, roleOption: boolean, statsMessageId: string, followUp: boolean }} options
  */
 async function sendButtonGroupWithPagination(interaction, group, options = {}) {
 	const { name: groupName, buttons } = group;
@@ -290,6 +303,7 @@ async function sendButtonGroupWithPagination(interaction, group, options = {}) {
 		showOnlyMe = false,
 		labelName = false,
 		isMulti = false,           // 추가: 멀티 모드 여부
+		roleOption = false,        // 추가: 역할옵션 여부
 		statsMessageId = null,     // 추가: 통계 메시지 ID
 		followUp = false           // 추가: followUp 사용 여부
 	} = options;
@@ -301,8 +315,8 @@ async function sendButtonGroupWithPagination(interaction, group, options = {}) {
 		const row = new ActionRowBuilder();
 
 		for (const button of slice) {
-			// 옵션 비트에 멀티 모드 여부 추가
-			const optionBits = `${+isOneTime}${+isAdminOnly}${+showPressDetail}${+changeColor}${+toDm}${+showOnlyMe}${+labelName}${+isMulti}`;
+			// 옵션 비트에 역할옵션 추가 (9번째 비트)
+			const optionBits = `${+isOneTime}${+isAdminOnly}${+showPressDetail}${+changeColor}${+toDm}${+showOnlyMe}${+labelName}${+isMulti}${+roleOption}`;
 
 			// 멀티 모드이고 통계 기능이 켜져 있을 때만 통계 메시지 ID 전달
 			let customId;

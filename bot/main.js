@@ -40,6 +40,7 @@ const { initClientVariables } = require('./Commands/utility/clientVariables');
 const { loadSlashAndPrefixCommands } = require('./Commands/utility/loadCommand');
 const { loadEvents } = require('./Commands/utility/loadEvent');
 const { guildAddProcess } = require('./Commands/api/guild/guild');
+const categoryCleanupScheduler = require('./Commands/utility/categoryCleanupScheduler');
 
 initClientVariables(client);
 loadSlashAndPrefixCommands(client, path.join(__dirname, 'Commands'));
@@ -51,6 +52,10 @@ client.once(Events.ClientReady, async (readyClient) => {
 	console.log(`Ready! Logged in as !!${readyClient.user.tag}`);
 	updateActivity(client, messege, currentIndex);
 	client.master = await client.users.fetch('317655426868969482');
+	
+	// 카테고리 정리 스케줄러 시작 (24시간마다, 7일 이상 된 빈 카테고리 삭제)
+	categoryCleanupScheduler.start(client, 24, 7);
+	console.log('✅ 카테고리 자동 정리 스케줄러가 시작되었습니다.');
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -214,6 +219,14 @@ const handleExit = async (signal) => {
 			} catch (err) {
 				console.error('[EXIT] 음악 플레이어 정리 중 오류:', err);
 			}
+		}
+
+		// 카테고리 정리 스케줄러 중지
+		try {
+			categoryCleanupScheduler.stop();
+			console.log('[EXIT] 카테고리 정리 스케줄러가 중지되었습니다.');
+		} catch (schedulerErr) {
+			console.error('[EXIT] 스케줄러 중지 중 오류:', schedulerErr);
 		}
 
 		// Redis 연결 종료 (있는 경우)
