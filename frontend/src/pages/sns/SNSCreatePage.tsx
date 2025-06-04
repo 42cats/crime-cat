@@ -6,8 +6,8 @@ import { Loader2, Image, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import TagInputField from "@/components/sns/input/TagInputField";
-import ContentTextArea from "@/components/sns/input/ContentTextArea";
 import LocationPicker from "@/components/sns/location/LocationPicker";
+import { MarkdownEditor } from "@/components/markdown";
 import { Location } from "@/api/posts";
 import { userPostService } from "@/api/posts";
 import PrivacySettingsComponent, {
@@ -272,11 +272,12 @@ const SNSCreatePageContent: React.FC = () => {
                     />
 
                     {/* 내용 입력 */}
-                    <ContentTextArea
+                    <MarkdownEditor
                         value={content}
-                        onChange={setContent}
+                        onChange={(value) => setContent(value || "")}
                         placeholder="무슨 일이 일어나고 있나요?"
-                        maxLength={500}
+                        height={200}
+                        label="내용"
                     />
 
                     {/* 위치 선택 */}
