@@ -2,6 +2,9 @@
 const { PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const { getContents } = require('../../Commands/api/messageMacro/messageMacro');
 const logger = require('../../Commands/utility/logger');
+const channelManager = require('../../Commands/utility/channelManager');
+const { getGuildObserverSet } = require('../../Commands/api/guild/observer');
+const { createPrivateChannel } = require('../../Commands/utility/createPrivateChannel');
 
 const COLORS = [ButtonStyle.Primary, ButtonStyle.Danger, ButtonStyle.Success];
 function getNextColor(currentStyle) {
@@ -274,6 +277,7 @@ module.exports = {
 			const showOnlyMe = option?.[5] === '1';
 			const labelName = option?.[6] === '1';
 			const isMulti = option?.[7] === '1';  // 추가: 멀티 모드 여부 확인
+			const isRoleOption = option?.[8] === '1';  // 추가: 역할옵션 여부 확인
 			const buttonName = interaction.component?.label || '알 수 없는 버튼';
 
 			await interaction.deferReply({ ephemeral: true }); // 👈 가장 첫 줄에 추가
@@ -414,12 +418,126 @@ module.exports = {
 			}
 
 			// 콘텐츠 전송
+			let hasPermissionForAnyContent = false;
+			let blockedByRoleCount = 0;
+
 			for (const content of contents) {
 				const text = content.text;
 				const channelId = content.channelId;
+				const roleId = content.roleId;
 
 				// 빈 콘텐츠 건너뛰기
 				if (!text || text.trim().length === 0) continue;
+
+				// 역할 권한 검사
+				if (roleId && roleId !== "ALL") {
+					const hasRole = interaction.member.roles.cache.has(roleId);
+					if (!hasRole) {
+						console.log(`[권한 검사] 사용자 ${interaction.user.tag} (${interaction.user.id})가 역할 ID ${roleId}를 가지고 있지 않아 콘텐츠 접근이 차단됨`);
+						blockedByRoleCount++;
+						continue; // 권한이 없으면 이 콘텐츠를 건너뜀
+					} else {
+						console.log(`[권한 검사] 사용자 ${interaction.user.tag} (${interaction.user.id})가 역할 ID ${roleId}를 가지고 있어 콘텐츠 접근 허용`);
+					}
+				} else {
+					console.log(`[권한 검사] 콘텐츠가 모든 사용자에게 공개됨 (roleId: ${roleId || 'undefined'})`);
+				}
+
+				hasPermissionForAnyContent = true;
+
+				// 역할옵션이 켜져 있고 역할 권한이 있는 경우 전용 채널로 전송
+				if (isRoleOption && roleId && roleId !== "ALL") {
+					try {
+						// Redis에서 사용자 전용 채널 확인
+						let channelData = await channelManager.getUserPrivateChannel(
+							interaction.user.id,
+							interaction.guild.id
+						);
+
+						let targetChannel;
+
+						if (!channelData) {
+							// 새 채널 생성 필요
+							const observerData = await getGuildObserverSet(interaction.guild.id);
+							const observerRoleId = observerData?.data?.roleSnowFlake;
+
+							console.log(`[역할옵션] 새 채널 생성 시작 - 사용자: ${interaction.user.tag}, 관전자 역할: ${observerRoleId || '없음'}`);
+
+							targetChannel = await createPrivateChannel(
+								interaction.guild,
+								interaction.user,
+								observerRoleId,
+								roleId
+							);
+
+							// Redis에 저장
+							await channelManager.setUserPrivateChannel(
+								interaction.user.id,
+								interaction.guild.id,
+								targetChannel.id,
+								roleId
+							);
+
+							console.log(`[역할옵션] 새 채널 생성 완료: ${targetChannel.name} (${targetChannel.id})`);
+						} else {
+							// 기존 채널 사용
+							try {
+								targetChannel = await client.channels.fetch(channelData.channelId);
+								await channelManager.updateChannelLastUsed(interaction.user.id, interaction.guild.id);
+								console.log(`[역할옵션] 기존 채널 사용: ${targetChannel.name} (${targetChannel.id})`);
+							} catch (channelError) {
+								// 채널이 삭제된 경우 Redis에서도 제거하고 새로 생성
+								console.warn(`[역할옵션] 기존 채널이 삭제됨. 새로 생성합니다: ${channelError.message}`);
+								await channelManager.deleteUserPrivateChannel(interaction.user.id, interaction.guild.id);
+
+								// 새 채널 생성
+								const observerData = await getGuildObserverSet(interaction.guild.id);
+								const observerRoleId = observerData?.data?.roleSnowFlake;
+
+								targetChannel = await createPrivateChannel(
+									interaction.guild,
+									interaction.user,
+									observerRoleId,
+									roleId
+								);
+
+								await channelManager.setUserPrivateChannel(
+									interaction.user.id,
+									interaction.guild.id,
+									targetChannel.id,
+									roleId
+								);
+
+								console.log(`[역할옵션] 복구 채널 생성 완료: ${targetChannel.name} (${targetChannel.id})`);
+							}
+						}
+
+						// 전용 채널로 콘텐츠 전송
+						const success = await safeSendMessage({
+							channel: targetChannel,
+							content: text,
+							interaction,
+							channelId: targetChannel.id
+						});
+
+						if (success) successCount++;
+						else errorCount++;
+
+						continue; // 다음 콘텐츠로
+
+					} catch (roleOptionError) {
+						console.error(`[역할옵션] 처리 중 오류:`, roleOptionError);
+
+						// 오류 발생 시 사용자에게 알림
+						await interaction.followUp({
+							content: `❌ 전용 채널 처리 중 오류가 발생했습니다: ${roleOptionError.message}`,
+							ephemeral: true
+						}).catch(() => { });
+
+						errorCount++;
+						continue;
+					}
+				}
 
 				// DM 전송
 				if (toDm) {
@@ -502,15 +620,15 @@ module.exports = {
 				}
 			}
 
-			// 최종 응답
-			let summaryMessage = `✅ 버튼 \`${buttonName}\`을 눌렀습니다.`;
-			// if (contents.length > 0) {
-			// 	if (errorCount > 0) {
-			// 		summaryMessage += `\n📊 전송 결과: ${successCount}개 성공, ${errorCount}개 실패`;
-			// 	} else if (successCount > 0) {
-			// 		summaryMessage += `\n📊 ${successCount}개의 메시지가 성공적으로 전송되었습니다.`;
-			// 	}
-			// }
+			// 최종 응답 (권한 피드백 포함)
+			let summaryMessage;
+			if (!hasPermissionForAnyContent && blockedByRoleCount > 0) {
+				summaryMessage = `🚫 해당 버튼을 사용할 권한이 없습니다. 필요한 역할을 확인해주세요.`;
+			} else if (blockedByRoleCount > 0) {
+				summaryMessage = `✅ 버튼 \`${buttonName}\`을 눌렀습니다.\n⚠️ 일부 콘텐츠는 권한이 없어 전송되지 않았습니다.`;
+			} else {
+				summaryMessage = `✅ 버튼 \`${buttonName}\`을 눌렀습니다.`;
+			}
 
 			await interaction.followUp({
 				content: summaryMessage,
