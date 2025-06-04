@@ -21,7 +21,7 @@ class CategoryManager {
      * @returns {string} 카테고리명
      */
     generateCategoryName(date) {
-        return `🗓️ ${date} 개인 채널`;
+        return `🗓️ ${date} 플레이`;
     }
 
     /**
@@ -56,8 +56,8 @@ class CategoryManager {
      * @returns {import('discord.js').CategoryChannel|null} 카테고리 객체 또는 null
      */
     findCategoryByName(guild, categoryName) {
-        return guild.channels.cache.find(channel => 
-            channel.type === ChannelType.GuildCategory && 
+        return guild.channels.cache.find(channel =>
+            channel.type === ChannelType.GuildCategory &&
             channel.name === categoryName
         ) || null;
     }
@@ -81,7 +81,7 @@ class CategoryManager {
         ];
 
         // 관리자 권한 추가
-        const adminRoles = guild.roles.cache.filter(role => 
+        const adminRoles = guild.roles.cache.filter(role =>
             role.permissions.has(PermissionFlagsBits.Administrator)
         );
 
@@ -137,7 +137,7 @@ class CategoryManager {
         try {
             // 1. Redis 캐시에서 확인
             let cachedCategoryId = await this.getCachedCategoryId(guild.id, today);
-            
+
             if (cachedCategoryId) {
                 try {
                     const cachedCategory = await guild.channels.fetch(cachedCategoryId);
@@ -152,7 +152,7 @@ class CategoryManager {
 
             // 2. 길드에서 직접 찾기
             let category = this.findCategoryByName(guild, categoryName);
-            
+
             if (category) {
                 console.log(`[카테고리] 기존 카테고리 발견: ${category.name}`);
                 // Redis에 다시 캐싱
@@ -162,10 +162,10 @@ class CategoryManager {
 
             // 3. 새로 생성
             category = await this.createCategory(guild, categoryName, observerRoleId);
-            
+
             // Redis에 캐싱
             await this.setCachedCategoryId(guild.id, today, category.id);
-            
+
             return category;
 
         } catch (error) {
@@ -182,9 +182,9 @@ class CategoryManager {
      */
     async cleanupOldCategories(guild, daysToKeep = 7) {
         console.log(`[카테고리 정리] 시작: ${daysToKeep}일 이상 된 빈 카테고리 정리`);
-        
-        const categories = guild.channels.cache.filter(channel => 
-            channel.type === ChannelType.GuildCategory && 
+
+        const categories = guild.channels.cache.filter(channel =>
+            channel.type === ChannelType.GuildCategory &&
             channel.name.includes('개인 채널')
         );
 
@@ -196,10 +196,10 @@ class CategoryManager {
             try {
                 // 날짜 패턴 매칭 (YYYY-MM-DD)
                 const dateMatch = category.name.match(/(\d{4}-\d{2}-\d{2})/);
-                
+
                 if (dateMatch) {
                     const categoryDate = new Date(dateMatch[1]);
-                    
+
                     if (categoryDate < cutoffDate) {
                         // 빈 카테고리인지 확인
                         if (category.children.cache.size === 0) {
@@ -228,7 +228,7 @@ class CategoryManager {
      */
     async getCategoryStats(guild, date = null) {
         if (!date) date = this.getTodayString();
-        
+
         const categoryName = this.generateCategoryName(date);
         const category = this.findCategoryByName(guild, categoryName);
 
