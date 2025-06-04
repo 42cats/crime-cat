@@ -149,7 +149,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
             src={getOptimizedSrc(imageSrc)}
             alt={alt}
             loading={loading}
-            fetchPriority={fetchPriority as any}
+            fetchpriority={fetchPriority as any}
             onLoad={handleLoad}
             onError={handleError}
             className={cn(
@@ -198,7 +198,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         @keyframes shimmer {
           0% {
             background-position: -200% 0;
