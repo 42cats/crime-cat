@@ -53,8 +53,9 @@ async function ObserverSet(interaction, title, role) {
 	const { guildId } = interaction;
 	let response = await addGuildObserverSet(guildId, title, role?.id);
 
+	console.log("관전 리스폰스", response);
 	// 관전 정보 이미 존재 시 수정 요청
-	if (response?.status === 400 && response.data?.message === "Guild Observation information already exists") {
+	if (response?.status === 400 && response.data?.detail === "Guild Observation information already exists") {
 		response = await editGuildObserverSet(guildId, title, role?.id);
 	}
 

@@ -49,7 +49,7 @@ async function editGuildObserverSet(guildId, headTitle = "-관전", roleId = nul
 	};
 
 	if (roleId) {
-		body.roleSnowflake = roleId;
+		body.roleSnowFlake = roleId;
 	}
 	logger.info("body = ", body);
 	try {
