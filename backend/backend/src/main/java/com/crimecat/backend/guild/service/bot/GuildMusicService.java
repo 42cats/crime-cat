@@ -21,7 +21,7 @@ public class GuildMusicService {
     private final GuildMusicRepository guildMusicRepository;
     public GuildMusicListResponseDto getMusics(String guildSnowflake) {
         if (!guildQueryService.existsBySnowflake(guildSnowflake)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "guild not exists");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "길드가 존재하지 않습니다.");
         }
         return new GuildMusicListResponseDto(guildSnowflake,
                 guildMusicRepository.findByGuildSnowflake(guildSnowflake).stream()
@@ -35,17 +35,17 @@ public class GuildMusicService {
     @Transactional
     public void deleteMusic(String guildSnowflake, String title) {
         if (guildMusicRepository.deleteByGuildSnowflakeAndTitle(guildSnowflake, title) == 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no music found");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "음악을 찾을 수 없습니다.");
         }
     }
 
     public void addMusic(String guildSnowflake, GuildMusicRequestDto guildMusicRequestDto) {
         if (!guildQueryService.existsBySnowflake(guildSnowflake)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "guild not exists");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "길드가 존재하지 않습니다.");
         }
         if (guildMusicRepository.existsByGuildSnowflakeAndTitle(guildSnowflake, guildMusicRequestDto.getTitle())
         || guildMusicRepository.existsByGuildSnowflakeAndYoutubeUrl(guildSnowflake, guildMusicRequestDto.getUrl())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "music already exists");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 추가된 음악입니다.");
         }
         Music music = new Music(guildSnowflake, guildMusicRequestDto);
         // TODO: ConstraintViolationException 처리 (validation 처리)
@@ -57,7 +57,7 @@ public class GuildMusicService {
                 t = t.getCause();
             }
             if (t != null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "body require element need");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 바디에 필요한 부분이 없습니다.");
             }
             throw e;
         }
