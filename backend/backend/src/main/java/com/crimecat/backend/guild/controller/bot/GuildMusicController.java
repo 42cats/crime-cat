@@ -31,9 +31,9 @@ public class GuildMusicController {
     public MessageDto<GuildMusicListResponseDto> getMusics(@PathVariable String guildSnowflake) {
         try {
             GuildMusicListResponseDto guildMusicListResponseDto = guildMusicService.getMusics(guildSnowflake);
-            return new MessageDto<>("guild music list founded!", guildMusicListResponseDto);
+            return new MessageDto<>("길드의 음악리스트를 찾을 수 없습니다.", guildMusicListResponseDto);
         } catch (Exception e) {
-            return new MessageDto<>("guild not found");
+            return new MessageDto<>("길드를 찾을수 없습니다. 봇에 길드가 등록되지 않았습니다. 봇을 내보내고 다시 불러봐 주세요.");
         }
     }
 
@@ -41,11 +41,11 @@ public class GuildMusicController {
     public MessageDto<GuildMusicDeletedResponseDto> deleteMusic(@PathVariable String guildSnowflake,
                                      @RequestHeader Map<String, String> headers) {
         if (!headers.containsKey("title")) {
-            return new MessageDto<>("Wrong request");
+            return new MessageDto<>("잘못된 요청 입니다.");
         }
         String title = URLDecoder.decode(headers.get("title"), StandardCharsets.UTF_8);
         guildMusicService.deleteMusic(guildSnowflake, title);
-        return new MessageDto<>("Music deleted successfully",
+        return new MessageDto<>("음악이 성공적으로 삭제 되었습니다.",
                 new GuildMusicDeletedResponseDto(guildSnowflake, title));
     }
 
@@ -53,6 +53,6 @@ public class GuildMusicController {
     public MessageDto<GuildMusicRequestDto> postMusic(@PathVariable String guildSnowflake,
                                                @RequestBody GuildMusicRequestDto guildMusicDto) {
         guildMusicService.addMusic(guildSnowflake, guildMusicDto);
-        return new MessageDto<>("Music added successfully", guildMusicDto);
+        return new MessageDto<>("음악이 성공적으로 추가되었습니다.", guildMusicDto);
     }
 }
