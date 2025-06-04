@@ -48,7 +48,7 @@ module.exports = {
             
             ${messageContent}
             
-            **발신: Crime-Cat 개발팀**`
+            **발신: Mystery-place 개발팀**`
                     });
                     successCounter++;
                     logger.info(`✅ DM 전송됨: ${owner.globalName || '알 수 없음'} (${ownerId})`);
