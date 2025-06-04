@@ -51,6 +51,11 @@ public class GroupItemRequestDto {
     private String channelId;
 
     /**
+     * Discord 역할 ID
+     */
+    private String roleId;
+
+    /**
      * 아이템 정렬 인덱스
      */
     @Min(0)

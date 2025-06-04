@@ -40,6 +40,7 @@ import {
 interface SortableGroupProps {
   group: GroupData;
   index: number;
+  guildId: string;
   onChange: (groupId: string, updatedData: Partial<GroupData>) => void;
   onRemove: (groupId: string) => void;
   onButtonAdd: (groupId: string) => void;
@@ -49,6 +50,7 @@ interface SortableGroupProps {
 export function SortableGroup({
   group,
   index,
+  guildId,
   onChange,
   onRemove,
   onButtonAdd,
@@ -253,6 +255,7 @@ export function SortableGroup({
               <SortableButtonList 
                 buttons={group.buttons} 
                 groupId={group.id}
+                guildId={guildId}
                 onChange={onChange}
                 isButtonNameDuplicate={isButtonNameDuplicate}
               />

@@ -8,6 +8,7 @@ import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifier
 interface SortableButtonListProps {
   buttons: ButtonData[];
   groupId: string;
+  guildId: string;
   onChange: (groupId: string, updatedData: Partial<{ buttons: ButtonData[] }>) => void;
   isButtonNameDuplicate?: (groupId: string, buttonId: string, name: string) => boolean;
 }
@@ -15,6 +16,7 @@ interface SortableButtonListProps {
 export function SortableButtonList({ 
   buttons, 
   groupId, 
+  guildId,
   onChange, 
   isButtonNameDuplicate
 }: SortableButtonListProps) {
@@ -69,6 +71,7 @@ export function SortableButtonList({
             <SortableButton
               key={button.id}
               button={button}
+              guildId={guildId}
               onChange={handleButtonChange}
               onRemove={handleButtonRemove}
               isButtonNameDuplicate={isButtonNameDuplicate}

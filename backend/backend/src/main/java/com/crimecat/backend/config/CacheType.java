@@ -52,6 +52,7 @@ public class CacheType {
   // 외부 API 캐시 타입
   public static final String DISCORD_GUILD_INFO = "discord:guild:info";
   public static final String DISCORD_GUILD_CHANNELS = "discord:guild:channels";
+  public static final String DISCORD_GUILD_ROLES = "discord:guild:roles";
   public static final String NAVER_LOCAL_SEARCH = "naver:local:search";
   
   public static final String [] CACHE_TYPE = {
@@ -83,6 +84,7 @@ public class CacheType {
       SEARCH_USERS,
       DISCORD_GUILD_INFO,
       DISCORD_GUILD_CHANNELS,
+      DISCORD_GUILD_ROLES,
       NAVER_LOCAL_SEARCH
   };
 }

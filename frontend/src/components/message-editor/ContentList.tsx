@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ChannelSelect } from "@/components/ui/channel-select";
+import { RoleSelect } from "@/components/ui/role-select";
 import { Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -22,13 +23,15 @@ interface ContentListProps {
   onChange: (contentId: string, updatedData: Partial<ContentData>) => void;
   onRemove: (contentId: string) => void;
   onAdd: () => void;
+  guildId: string;
 }
 
 export function ContentList({ 
   contents, 
   onChange, 
   onRemove, 
-  onAdd 
+  onAdd,
+  guildId 
 }: ContentListProps) {
   const [selectedContents, setSelectedContents] = useState<string[]>([]);
   const [isAllSelected, setIsAllSelected] = useState(false);
@@ -171,15 +174,28 @@ export function ContentList({
                 className="mt-1"
               />
               <div className="flex-1 space-y-3">
-                <div>
-                  <Label htmlFor={`channel-${content.id}`} className="mb-1 block text-sm font-medium">
-                    출력 채널
-                  </Label>
-                  <ChannelSelect
-                    id={`channel-${content.id}`}
-                    value={content.channelId}
-                    onChange={(channelId) => onChange(content.id, { channelId })}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor={`channel-${content.id}`} className="mb-1 block text-sm font-medium">
+                      출력 채널
+                    </Label>
+                    <ChannelSelect
+                      id={`channel-${content.id}`}
+                      value={content.channelId}
+                      onChange={(channelId) => onChange(content.id, { channelId })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`role-${content.id}`} className="mb-1 block text-sm font-medium">
+                      권한 역할
+                    </Label>
+                    <RoleSelect
+                      id={`role-${content.id}`}
+                      value={content.roleId || "ALL"}
+                      onChange={(roleId) => onChange(content.id, { roleId })}
+                      guildId={guildId}
+                    />
+                  </div>
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-1">

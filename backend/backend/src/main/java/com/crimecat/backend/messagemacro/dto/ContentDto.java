@@ -18,6 +18,7 @@ public class ContentDto {
     private String text;
     @NotBlank
     private String channelId;
+    private String roleId;
     @Min(0)
     private int index;
 }

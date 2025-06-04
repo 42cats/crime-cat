@@ -1,5 +1,6 @@
 package com.crimecat.backend.auth.filter;
 
+import com.crimecat.backend.trace.annotation.NoTrace;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,6 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 @RequiredArgsConstructor
+@NoTrace
 public class DiscordBotTokenFilter extends OncePerRequestFilter {
 
   @Value("${spring.security.bot-auth.discord-bot-api-secret-token}")
