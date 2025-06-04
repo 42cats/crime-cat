@@ -28,6 +28,7 @@ import {
 import { useToast } from "@/hooks/useToast";
 import { BoardCommentList } from "@/components/boards/BoardCommentList";
 import ProfileDetailModal from "@/components/profile/ProfileDetailModal";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 interface BoardPostDetailProps {
     boardType: BoardType;
@@ -346,9 +347,9 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
 
                 <CardContent className="py-6">
                     {/* 게시글 내용 */}
-                    <div
+                    <MarkdownRenderer
+                        content={post.content}
                         className="prose dark:prose-invert max-w-none"
-                        dangerouslySetInnerHTML={{ __html: post.content }}
                     />
                 </CardContent>
 
