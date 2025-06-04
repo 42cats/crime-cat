@@ -42,6 +42,25 @@ class AudioEngineV4 extends EventEmitter {
         this.volume = 0.5;
         this.fadeInterval = null;
         
+        // 오디오 모드 설정
+        this.audioMode = 'VOLUME_CONTROL'; // 기본값
+        this.audioModeConfig = {
+            HIGH_QUALITY: {
+                inlineVolume: false,
+                streamType: StreamType.WebmOpus,
+                volumeControl: false,
+                fadeInEffect: false,
+                fadeOutEffect: false
+            },
+            VOLUME_CONTROL: {
+                inlineVolume: true,
+                streamType: StreamType.Arbitrary,
+                volumeControl: true,
+                fadeInEffect: true,
+                fadeOutEffect: true
+            }
+        };
+        
         // 이벤트 설정
         this.setupEventListeners();
         
@@ -81,7 +100,10 @@ class AudioEngineV4 extends EventEmitter {
         // 재생 시작
         if (newStatus === AudioPlayerStatus.Playing && oldStatus !== AudioPlayerStatus.Playing) {
             this.logger.playerEvent('Playback started');
-            this.startFadeIn();
+            // async 함수이지만 await 없이 호출하여 블로킹 방지
+            this.startFadeIn().catch(error => {
+                this.logger.warn('Fade in failed, continuing playback', error);
+            });
             this.emit('trackStart', this.currentTrack);
         }
         
@@ -177,11 +199,18 @@ class AudioEngineV4 extends EventEmitter {
                 }
             }
             
-            // 현재 재생 중이면 페이드 아웃 후 정지
-            if (this.audioPlayer.state.status === AudioPlayerStatus.Playing) {
+            // 현재 재생 중이면 완전히 정지 후 새 트랙 준비
+            if (this.audioPlayer.state.status === AudioPlayerStatus.Playing || 
+                this.audioPlayer.state.status === AudioPlayerStatus.Paused) {
                 this.logger.debug('Stopping current playback with fade out');
-                await this.fadeOut();
+                
+                // 빠른 페이드 아웃과 정지
+                await this.fadeOut(2000); // 1500ms 페이드
+                this.audioPlayer.stop(true); // 강제 정지
                 await this.cleanup();
+                
+                // 잠시 대기하여 완전한 정지 보장
+                await new Promise(resolve => setTimeout(resolve, 50));
             }
             
             // 리소스 생성
@@ -216,7 +245,7 @@ class AudioEngineV4 extends EventEmitter {
         
         try {
             if (track.source === 'local') {
-                return this.createLocalResource(track.url);
+                return await this.createLocalResource(track.url);
             } else {
                 return await this.createYouTubeResource(track.url);
             }
@@ -227,17 +256,20 @@ class AudioEngineV4 extends EventEmitter {
     }
 
     /**
-     * YouTube 리소스 생성
+     * YouTube 리소스 생성 (모드별) - 하이브리드 방식
      */
     async createYouTubeResource(url) {
+        const config = this.audioModeConfig[this.audioMode];
         this.logger.network('GET', url, 'yt-dlp');
         
         return new Promise((resolve, reject) => {
-            // yt-dlp 프로세스 생성
+            // 모드별 yt-dlp 설정
             const args = [
                 '--no-warnings',
                 '--quiet',
-                '-f', 'bestaudio[ext=webm]/bestaudio',
+                '-f', config.inlineVolume ? 'bestaudio[ext=m4a]/bestaudio[ext=mp3]/bestaudio' : 'bestaudio[ext=webm]/bestaudio',
+                '--audio-format', config.inlineVolume ? 'mp3' : 'opus',
+                '--audio-quality', config.inlineVolume ? '3' : '5',
                 '-o', '-',
                 url
             ];
@@ -252,21 +284,34 @@ class AudioEngineV4 extends EventEmitter {
                 reject(error);
             });
             
-            this.currentProcess.on('spawn', () => {
-                this.logger.debug('yt-dlp process spawned');
+            this.currentProcess.on('spawn', async () => {
+                this.logger.debug(`yt-dlp process spawned for ${config.inlineVolume ? 'volume control' : 'high quality'} mode`);
                 
-                // 리소스 생성
+                // 모드별 리소스 생성
                 const resource = createAudioResource(stream, {
-                    inputType: StreamType.WebmOpus,
-                    inlineVolume: true
+                    inputType: config.streamType,
+                    inlineVolume: config.inlineVolume
                 });
                 
-                // 볼륨 설정
-                if (resource.volume) {
-                    resource.volume.setVolume(this.volume);
+                // 조절 모드에서 볼륨 객체 준비 대기
+                if (config.volumeControl && config.inlineVolume) {
+                    this.logger.debug('Waiting for volume control to be ready...');
+                    
+                    // 스트림 시작 대기
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                    const volumeReady = await this.waitForVolumeReady(resource, 5000); // 더 긴 타임아웃
+                    if (volumeReady) {
+                        this.logger.debug('Volume control enabled for YouTube resource');
+                        resolve(resource);
+                    } else {
+                        this.logger.warn('Volume control setup failed, but proceeding with resource');
+                        resolve(resource); // 볼륨 실패해도 리소스는 반환
+                    }
+                } else {
+                    this.logger.debug('Volume control disabled for high quality mode');
+                    resolve(resource);
                 }
-                
-                resolve(resource);
             });
             
             // 에러 스트림 로깅
@@ -277,29 +322,51 @@ class AudioEngineV4 extends EventEmitter {
     }
 
     /**
-     * 로컬 파일 리소스 생성
+     * 로컬 파일 리소스 생성 (모드별)
      */
-    createLocalResource(filePath) {
+    async createLocalResource(filePath) {
+        const config = this.audioModeConfig[this.audioMode];
         this.logger.debug('Creating local file resource', { path: filePath });
         
         const resource = createAudioResource(filePath, {
-            inlineVolume: true
+            inlineVolume: config.inlineVolume
         });
         
-        if (resource.volume) {
-            resource.volume.setVolume(this.volume);
+        // 조절 모드에서 볼륨 객체 준비 대기
+        if (config.volumeControl && config.inlineVolume) {
+            this.logger.debug('Waiting for volume control to be ready for local file...');
+            const volumeReady = await this.waitForVolumeReady(resource, 2000); // 더 긴 타임아웃
+            if (volumeReady) {
+                this.logger.debug('Volume control enabled for local resource');
+                return resource;
+            } else {
+                this.logger.error('Volume control setup failed for local resource');
+                throw new Error('Volume control initialization failed for local resource');
+            }
+        } else {
+            this.logger.debug('Volume control disabled for high quality mode');
+            return resource;
         }
-        
-        return resource;
     }
 
     /**
-     * 일시정지
+     * 일시정지 (모드별 페이드 아웃 지원)
      */
-    pause() {
+    async pause() {
         this.logger.trace('pause');
         
         if (this.audioPlayer.state.status === AudioPlayerStatus.Playing) {
+            const config = this.audioModeConfig[this.audioMode];
+            
+            if (config.fadeOutEffect) {
+                // 조절 모드: 부드러운 페이드 아웃 후 일시정지
+                this.logger.audio('pause with fade out');
+                await this.fadeOut(2000);
+            } else {
+                // 고음질 모드: 즉시 일시정지
+                this.logger.audio('pause without fade');
+            }
+            
             const success = this.audioPlayer.pause();
             this.logger.stateChange('player', 'paused');
             return success;
@@ -316,6 +383,12 @@ class AudioEngineV4 extends EventEmitter {
         
         if (this.audioPlayer.state.status === AudioPlayerStatus.Paused) {
             const success = this.audioPlayer.unpause();
+            if (success) {
+                // 재개 후 페이드 인 (비동기로 실행하여 블로킹 방지)
+                this.startFadeIn().catch(error => {
+                    this.logger.warn('Fade in on resume failed, continuing playback', error);
+                });
+            }
             this.logger.stateChange('player', 'resumed');
             return success;
         }
@@ -324,12 +397,22 @@ class AudioEngineV4 extends EventEmitter {
     }
 
     /**
-     * 정지
+     * 정지 (모드별 페이드 아웃 지원)
      */
     async stop() {
         this.logger.trace('stop');
         
-        await this.fadeOut();
+        const config = this.audioModeConfig[this.audioMode];
+        
+        if (config.fadeOutEffect) {
+            // 조절 모드: 부드러운 페이드 아웃 후 정지
+            this.logger.audio('stop with fade out');
+            await this.fadeOut(2000);
+        } else {
+            // 고음질 모드: 즉시 정지
+            this.logger.audio('stop without fade');
+        }
+        
         const success = this.audioPlayer.stop();
         await this.cleanup();
         
@@ -338,75 +421,241 @@ class AudioEngineV4 extends EventEmitter {
     }
 
     /**
-     * 볼륨 설정
+     * 트랙 변경을 위한 정지 (페이드 포함)
+     */
+    async stopForTrackChange() {
+        this.logger.trace('stopForTrackChange');
+        
+        // 이벤트 리스너 임시 제거
+        this.audioPlayer.removeAllListeners('stateChange');
+        
+        const config = this.audioModeConfig[this.audioMode];
+        
+        if (config.fadeOutEffect) {
+            // 조절 모드: 빠른 페이드 아웃 (트랙 변경용)
+            await this.fadeOut(2000); // 모든 페이드 아웃을 1500ms로 통일
+        }
+        
+        const success = this.audioPlayer.stop();
+        
+        // 짧은 대기 후 정리
+        await new Promise(resolve => setTimeout(resolve, 30));
+        await this.cleanup();
+        
+        // 이벤트 리스너 복원
+        this.setupEventListeners();
+        
+        this.logger.stateChange('player', 'stopped for track change');
+        return success;
+    }
+
+    /**
+     * 이벤트 없이 정지 (직접 선택 시 사용) - 레거시 호환
+     */
+    async stopWithoutEvent() {
+        return await this.stopForTrackChange();
+    }
+
+    /**
+     * 볼륨 설정 (고음질 모드에서 완전 차단)
      */
     setVolume(volume) {
         this.logger.trace('setVolume', [volume]);
         
-        this.volume = volume;
+        const config = this.audioModeConfig[this.audioMode];
         
-        if (this.currentResource?.volume) {
-            this.currentResource.volume.setVolume(volume);
-            this.logger.audio('volume changed', { volume: Math.round(volume * 100) + '%' });
+        // 고음질 모드에서는 볼륨 조절 완전 차단
+        if (!config.volumeControl) {
+            this.logger.warn('Volume control blocked in high quality mode', {
+                requestedVolume: volume,
+                currentMode: this.audioMode
+            });
+            
+            // 에러 이벤트 발생시켜 상위 컴포넌트에 알림
+            this.emit('volumeBlocked', {
+                mode: this.audioMode,
+                message: '고음질 모드에서는 볼륨 조절이 불가능합니다.'
+            });
+            
+            return false;
         }
         
+        // 조절 모드에서만 실행
+        const normalizedVolume = Math.max(0, Math.min(1, volume));
+        this.volume = normalizedVolume;
+        
+        if (this.currentResource?.volume) {
+            try {
+                this.currentResource.volume.setVolume(normalizedVolume);
+                this.logger.audio('volume changed', { 
+                    volume: Math.round(normalizedVolume * 100) + '%',
+                    mode: this.audioMode 
+                });
+                return true;
+            } catch (error) {
+                this.logger.warn('Volume set failed', error);
+                return false;
+            }
+        }
+        
+        this.logger.debug('Volume stored for next track', { 
+            volume: Math.round(normalizedVolume * 100) + '%' 
+        });
         return true;
     }
 
     /**
-     * 페이드 인
+     * 페이드 인 (모드별 지원) - 강제 동기화 적용
      */
-    startFadeIn() {
-        this.logger.audio('fade in starting');
+    async startFadeIn() {
+        const config = this.audioModeConfig[this.audioMode];
         
-        if (!this.currentResource?.volume) return;
+        if (!config.fadeInEffect) {
+            this.logger.audio('fade in skipped - high quality mode');
+            // 고음질 모드에서는 즉시 정상 볼륨으로 설정
+            return this.setInstantVolume();
+        }
         
+        this.logger.audio('fade in starting - volume control mode');
+        
+        // 볼륨 객체 사용 가능성 확인 후 페이드 또는 즉시 설정
+        if (!this.currentResource?.volume) {
+            this.logger.warn('Fade in failed - no volume control available, using instant volume');
+            return this.setInstantVolume();
+        }
+        
+        // 🚀 강제 동기화: 페이드 시작 전 볼륨 테스트 + 안정화 대기
+        try {
+            this.currentResource.volume.setVolume(0); // 볼륨 객체 테스트
+            await new Promise(resolve => setTimeout(resolve, 100)); // 안정화 대기 (100ms)
+            
+            // 볼륨 객체 재검증
+            this.currentResource.volume.setVolume(0); // 다시 한번 테스트
+            this.logger.debug('Volume control synchronized successfully for fade in');
+        } catch (error) {
+            this.logger.warn('Volume synchronization failed, using instant volume', error);
+            return this.setInstantVolume();
+        }
+        
+        // 조절 모드에서만 실행되는 페이드 인 로직
         this.clearFade();
         
         let currentVolume = 0;
-        const targetVolume = this.volume;
-        const step = targetVolume / 10;
-        
-        this.currentResource.volume.setVolume(0);
+        const targetVolume = Math.max(0, Math.min(1, this.volume || 0.5));
+        const fadeDuration = 3000; // 페이드 인 지속시간 3000ms
+        const steps = Math.floor(fadeDuration / 50); // 50ms 간격으로 스텝 계산
+        const step = targetVolume / steps;
         
         this.fadeInterval = setInterval(() => {
             currentVolume = Math.min(currentVolume + step, targetVolume);
-            this.currentResource.volume.setVolume(currentVolume);
+            
+            // 각 스텝마다 볼륨 객체 재검증
+            if (this.currentResource?.volume) {
+                try {
+                    this.currentResource.volume.setVolume(currentVolume);
+                    this.logger.debug(`Fade in progress: ${Math.round(currentVolume * 100)}%`);
+                } catch (error) {
+                    this.logger.warn('Fade in volume set failed, completing with instant volume', error);
+                    this.clearFade();
+                    this.setInstantVolume();
+                    return;
+                }
+            } else {
+                this.clearFade();
+                this.logger.warn('Fade in stopped - resource unavailable, using instant volume');
+                this.setInstantVolume();
+                return;
+            }
             
             if (currentVolume >= targetVolume) {
                 this.clearFade();
-                this.logger.audio('fade in completed');
+                this.logger.audio('fade in completed', { finalVolume: Math.round(currentVolume * 100) + '%' });
             }
-        }, 30);
+        }, 50); // 3000ms 동안 50ms 간격으로 페이드 인
     }
 
     /**
-     * 페이드 아웃
+     * 페이드 아웃 (조절 모드에서 완전 지원)
      */
-    async fadeOut() {
-        this.logger.audio('fade out starting');
+    async fadeOut(duration = 2000) {
+        const config = this.audioModeConfig[this.audioMode];
         
-        if (!this.currentResource?.volume) return;
+        if (!config.fadeOutEffect) {
+            this.logger.audio('fade out skipped - high quality mode');
+            // 고음질 모드에서는 즉시 음소거
+            return this.setInstantMute();
+        }
+        
+        this.logger.audio('fade out starting - volume control mode', { duration });
+        
+        // 리소스 참조를 원자적으로 캡처하여 레이스 컨디션 방지
+        const fadeResource = this.currentResource;
+        
+        if (!fadeResource?.volume) {
+            this.logger.warn('Volume not ready for fade out, attempting to wait...');
+            const volumeReady = await this.waitForVolumeReady(fadeResource, 1000);
+            
+            if (!volumeReady || !fadeResource?.volume) {
+                this.logger.warn('Fade out failed - volume still unavailable after wait. This indicates a resource initialization problem.');
+                return this.setInstantMute();
+            }
+            
+            this.logger.debug('Volume became available for fade out');
+        }
         
         return new Promise((resolve) => {
             this.clearFade();
             
-            let currentVolume = this.volume;
-            const step = currentVolume / 10;
+            // 현재 볼륨에서 시작 (더 자연스러운 페이드)
+            let currentVolume;
+            try {
+                currentVolume = fadeResource.volume.volume || this.volume || 0.5;
+            } catch (error) {
+                currentVolume = this.volume || 0.5;
+            }
+            
+            const steps = Math.max(10, Math.floor(duration / 50)); // 50ms 간격 기준 스텝 계산
+            const step = currentVolume / steps;
+            const interval = Math.max(50, Math.floor(duration / steps)); // 타이밍 안전장치: 최소 50ms 보장
+            
+            this.logger.debug(`Fade out details: ${steps} steps, ${interval}ms interval, starting from ${Math.round(currentVolume * 100)}%`);
             
             this.fadeInterval = setInterval(() => {
                 currentVolume = Math.max(currentVolume - step, 0);
-                this.currentResource.volume.setVolume(currentVolume);
+                
+                // 캡처된 리소스 참조 사용으로 레이스 컨디션 방지
+                if (fadeResource?.volume) {
+                    try {
+                        fadeResource.volume.setVolume(currentVolume);
+                        this.logger.debug(`Fade out progress: ${Math.round(currentVolume * 100)}%`);
+                    } catch (error) {
+                        this.logger.warn('Fade out volume set failed', error);
+                        this.clearFade();
+                        resolve();
+                        return;
+                    }
+                } else {
+                    this.clearFade();
+                    this.logger.debug('Fade out stopped - resource unavailable');
+                    resolve();
+                    return;
+                }
                 
                 if (currentVolume <= 0) {
                     this.clearFade();
-                    this.logger.audio('fade out completed');
+                    this.logger.audio('fade out completed successfully');
                     resolve();
                 }
-            }, 30);
+            }, interval);
             
-            // 타임아웃 설정
-            setTimeout(resolve, 300);
+            // 안전장치: 최대 시간 초과 시 강제 완료
+            setTimeout(() => {
+                if (this.fadeInterval) {
+                    this.clearFade();
+                    this.logger.debug('Fade out timeout - force complete');
+                }
+                resolve();
+            }, duration + 200);
         });
     }
 
@@ -421,35 +670,164 @@ class AudioEngineV4 extends EventEmitter {
     }
 
     /**
+     * 고음질 모드용 즉시 볼륨 설정
+     */
+    setInstantVolume() {
+        if (this.currentResource?.volume) {
+            try {
+                this.currentResource.volume.setVolume(this.volume);
+                this.logger.audio('instant volume set', { volume: Math.round(this.volume * 100) + '%' });
+            } catch (error) {
+                this.logger.debug('Instant volume set failed (expected in high quality mode)', error);
+            }
+        }
+    }
+
+    /**
+     * 고음질 모드용 즉시 음소거
+     */
+    setInstantMute() {
+        if (this.currentResource?.volume) {
+            try {
+                this.currentResource.volume.setVolume(0);
+                this.logger.audio('instant mute set');
+            } catch (error) {
+                this.logger.debug('Instant mute failed (expected in high quality mode)', error);
+            }
+        }
+    }
+
+    /**
+     * 오디오 모드 설정
+     */
+    async setAudioMode(mode) {
+        this.logger.trace('setAudioMode', [mode]);
+        
+        if (!this.audioModeConfig[mode]) {
+            this.logger.warn('Invalid audio mode', { mode });
+            return false;
+        }
+        
+        const oldMode = this.audioMode;
+        this.audioMode = mode;
+        
+        this.logger.stateChange('audioMode', `${oldMode} → ${mode}`);
+        return true;
+    }
+
+    /**
+     * 볼륨 객체 준비 대기 (조절 모드용)
+     */
+    async waitForVolumeReady(resource, timeout = 2000) {
+        if (!resource) {
+            this.logger.warn('waitForVolumeReady called with null resource');
+            return false;
+        }
+        
+        return new Promise((resolve) => {
+            const startTime = Date.now();
+            let checkCount = 0;
+            
+            const checkVolume = () => {
+                checkCount++;
+                
+                if (resource.volume) {
+                    try {
+                        // Test if volume control actually works
+                        const testVolume = this.volume || 0.5;
+                        resource.volume.setVolume(testVolume);
+                        this.logger.debug(`Volume control ready and initialized after ${checkCount} checks (${Date.now() - startTime}ms)`);
+                        resolve(true);
+                    } catch (error) {
+                        this.logger.warn(`Volume initialization failed on check ${checkCount}`, error);
+                        resolve(false);
+                    }
+                } else if (Date.now() - startTime < timeout) {
+                    // Check more frequently initially, then less frequently
+                    const interval = checkCount < 20 ? 25 : 100;
+                    setTimeout(checkVolume, interval);
+                } else {
+                    this.logger.warn(`Volume control timeout after ${checkCount} checks (${Date.now() - startTime}ms) - volume object not available`);
+                    resolve(false);
+                }
+            };
+            
+            checkVolume();
+        });
+    }
+
+    /**
      * 리소스 정리
      */
     async cleanup() {
         this.logger.resource('audio', 'cleanup starting');
         
+        // 페이드 효과 먼저 정리
+        this.clearFade();
+        
         // 프로세스 정리
         if (this.currentProcess) {
             try {
-                this.currentProcess.stdout?.destroy();
-                this.currentProcess.stderr?.destroy();
-                this.currentProcess.kill('SIGTERM');
+                // 스트림부터 정리
+                if (this.currentProcess.stdout && !this.currentProcess.stdout.destroyed) {
+                    this.currentProcess.stdout.destroy();
+                }
+                if (this.currentProcess.stderr && !this.currentProcess.stderr.destroyed) {
+                    this.currentProcess.stderr.destroy();
+                }
                 
-                // 강제 종료 타임아웃
-                setTimeout(() => {
-                    if (this.currentProcess && !this.currentProcess.killed) {
-                        this.currentProcess.kill('SIGKILL');
-                    }
-                }, 1000);
+                // 프로세스 종료
+                if (!this.currentProcess.killed) {
+                    this.currentProcess.kill('SIGTERM');
+                    
+                    // 강제 종료 타임아웃
+                    await new Promise((resolve) => {
+                        const timeout = setTimeout(() => {
+                            if (this.currentProcess && !this.currentProcess.killed) {
+                                this.logger.warn('Force killing process');
+                                this.currentProcess.kill('SIGKILL');
+                            }
+                            resolve();
+                        }, 1000);
+                        
+                        this.currentProcess.on('exit', () => {
+                            clearTimeout(timeout);
+                            resolve();
+                        });
+                    });
+                }
                 
                 this.logger.debug('Process terminated');
             } catch (error) {
-                this.logger.warn('Process cleanup error', error);
+                this.logger.debug('Process cleanup error (may be normal)', { 
+                    message: error.message,
+                    killed: this.currentProcess?.killed 
+                });
             }
             
             this.currentProcess = null;
         }
         
         // 리소스 정리
-        this.currentResource = null;
+        if (this.currentResource) {
+            try {
+                // 볼륨을 0으로 설정하여 갑작스러운 끊김 방지
+                if (this.currentResource.volume) {
+                    this.currentResource.volume.setVolume(0);
+                }
+                
+                if (this.currentResource.readable && !this.currentResource.destroyed) {
+                    this.currentResource.destroy();
+                }
+            } catch (error) {
+                this.logger.debug('Resource cleanup error (may be normal)', {
+                    message: error.message,
+                    destroyed: this.currentResource?.destroyed
+                });
+            }
+            this.currentResource = null;
+        }
+        
         this.currentTrack = null;
         
         this.logger.resource('audio', 'cleanup completed');
@@ -489,7 +867,7 @@ class AudioEngineV4 extends EventEmitter {
             
             // 재생 정지
             if (this.audioPlayer.state.status !== AudioPlayerStatus.Idle) {
-                await this.fadeOut();
+                await this.fadeOut(2000);
                 this.audioPlayer.stop();
             }
             

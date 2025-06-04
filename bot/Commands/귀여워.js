@@ -115,11 +115,29 @@ async function musicLogic(client, guild, user) {
 			client.serverMusicData.set(guildId, musicData);
 			
 			// 초기 플레이리스트 로드
-			await musicData.queue.loadFromSource('youtube');
+			const loaded = await musicData.queue.loadFromSource('youtube');
+			if (!loaded) {
+				console.warn(`[Music Player v4.0] No playlist loaded, but continuing with empty queue`);
+			}
+			
+			// 사용자가 음성채널에 있으면 자동 접속
+			if (user?.voice?.channel) {
+				console.log(`[Music Player v4.0] User in voice channel, auto-connecting...`);
+				try {
+					await musicData.audio.connectToVoice(user);
+					console.log(`[Music Player v4.0] Auto-connected to voice channel: ${user.voice.channel.name}`);
+				} catch (error) {
+					console.warn(`[Music Player v4.0] Auto-connect failed (continuing):`, error);
+				}
+			}
 			
 			console.log(`[Music Player v4.0] New player created for guild: ${guildId}`);
 		} catch (error) {
 			console.error(`[Music Player v4.0] Failed to create player:`, error);
+			// 실패한 플레이어 제거
+			if (client.serverMusicData.has(guildId)) {
+				client.serverMusicData.delete(guildId);
+			}
 			return null;
 		}
 	} else {
@@ -168,7 +186,11 @@ async function musicLogic(client, guild, user) {
 			// 새 플레이어 생성
 			musicData = new MusicPlayerV4(guildId, client, user);
 			client.serverMusicData.set(guildId, musicData);
-			await musicData.queue.loadFromSource('youtube');
+			
+			const loaded = await musicData.queue.loadFromSource('youtube');
+			if (!loaded) {
+				console.warn(`[Music Player v4.0] Recovery: No playlist loaded, but continuing with empty queue`);
+			}
 			
 			const replyData = await musicData.reply();
 			console.log(`[Music Player v4.0] Player recovery successful`);

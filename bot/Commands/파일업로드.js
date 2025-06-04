@@ -124,7 +124,7 @@ module.exports = {
             fs.writeFileSync(filePath, response.data);
             console.log(`[저장성공] 파일 저장 완료: ${filePath}`);
 
-            // v3 플레이어 캐시 무효화
+            // v4 플레이어 캐시 무효화
             if (fileType === 'music') {
                 try {
                     const { MusicSystemAdapter } = require('./utility/MusicSystemAdapter');

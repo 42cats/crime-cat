@@ -141,8 +141,8 @@ class DebugLogger {
     /**
      * 사용자 액션 로그
      */
-    userAction(action, userId, details = null) {
-        this.info(`👤 User action: ${action} by ${userId}`, details);
+    userAction(action, details = null) {
+        this.info(`👤 User action: ${action}`, details);
     }
 
     /**
@@ -184,7 +184,7 @@ class DebugLogger {
      * 오디오 처리 로그
      */
     audio(action, details = null) {
-        this.debug(`🔊 Audio ${action}`, details);
+        this.info(`🔊 Audio ${action}`, details);
     }
 }
 

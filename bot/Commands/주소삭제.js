@@ -54,14 +54,14 @@ module.exports = {
 };
 
 /**
- * v3 음악 플레이어 업데이트
+ * v4 음악 플레이어 업데이트
  */
 async function updatePlayer(client, guildId) {
 	try {
 		const { MusicSystemAdapter } = require('./utility/MusicSystemAdapter');
 		await MusicSystemAdapter.refreshPlaylist(client, guildId, 'youtube');
-		console.log('[주소삭제 v3] 플레이어 업데이트 완료');
+		console.log('[주소삭제 v4] 플레이어 업데이트 완료');
 	} catch (error) {
-		console.warn('[주소삭제 v3] 플레이어 업데이트 실패 (무시됨):', error);
+		console.warn('[주소삭제 v4] 플레이어 업데이트 실패 (무시됨):', error);
 	}
 }
