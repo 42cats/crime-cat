@@ -45,6 +45,7 @@ import { ChannelSelect } from "@/components/ui/channel-select";
 
 interface SortableButtonProps {
   button: ButtonData;
+  guildId: string;
   onChange: (buttonId: string, updatedData: Partial<ButtonData>) => void;
   onRemove: (buttonId: string) => void;
   isButtonNameDuplicate?: (groupId: string, buttonId: string, name: string) => boolean;
@@ -52,6 +53,7 @@ interface SortableButtonProps {
 
 export function SortableButton({ 
   button, 
+  guildId,
   onChange, 
   onRemove, 
   isButtonNameDuplicate 
@@ -151,6 +153,7 @@ export function SortableButton({
     const newContent = {
       id: uuidv4(),
       channelId: "none",
+      roleId: "ALL",
       text: "",
       index: button.contents.length,
       buttonId: button.id,
@@ -340,6 +343,7 @@ export function SortableButton({
             onChange={handleContentChange}
             onRemove={removeContent}
             onAdd={addContent}
+            guildId={guildId}
           />
         </div>
       )}

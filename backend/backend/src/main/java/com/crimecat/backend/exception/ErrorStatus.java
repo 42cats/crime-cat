@@ -54,6 +54,11 @@ public enum ErrorStatus {
     // 💬 버튼/매크로 관련
     BUTTON_ID_NOT_FOUND("버튼 ID가 존재하지 않습니다.", HttpStatus.BAD_REQUEST),
     MACRO_EXECUTION_FAILED("매크로 실행에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    
+    // 🤖 Discord API 관련
+    DISCORD_API_ERROR("Discord API 호출에 실패했습니다.", HttpStatus.BAD_GATEWAY),
+    DISCORD_GUILD_ROLES_FETCH_FAILED("Discord 길드 역할 목록 조회에 실패했습니다.", HttpStatus.BAD_GATEWAY),
+    DISCORD_SERVICE_UNAVAILABLE("Discord 서비스를 일시적으로 사용할 수 없습니다.", HttpStatus.SERVICE_UNAVAILABLE),
 
     // 🧱 서버 내부 오류
     INTERNAL_ERROR("서버 내부 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR), // 500

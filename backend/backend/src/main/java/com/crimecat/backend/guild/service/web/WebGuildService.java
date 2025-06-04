@@ -1,20 +1,20 @@
 package com.crimecat.backend.guild.service.web;
 
+import com.crimecat.backend.api.discord.CachedDiscordBotService;
+import com.crimecat.backend.api.discord.DiscordBotApi;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gameHistory.domain.GameHistory;
 import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.guild.domain.Guild;
-import com.crimecat.backend.guild.dto.web.GuildInfoResponseDto;
-import com.crimecat.backend.guild.repository.GuildRepository;
-import com.crimecat.backend.api.discord.DiscordBotApi;
-import com.crimecat.backend.api.discord.CachedDiscordBotService;
 import com.crimecat.backend.guild.dto.web.ApiGetGuildInfoDto;
 import com.crimecat.backend.guild.dto.web.ChannelDto;
 import com.crimecat.backend.guild.dto.web.GuildBotInfoDto;
+import com.crimecat.backend.guild.dto.web.GuildInfoResponseDto;
 import com.crimecat.backend.guild.dto.web.GuildResponseDto;
+import com.crimecat.backend.guild.repository.GuildRepository;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.repository.WebUserRepository;
 import java.time.LocalDateTime;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +34,7 @@ public class WebGuildService {
     private final DiscordBotApi discordBotApi;
     private final CachedDiscordBotService cachedDiscordBotService;
     private final GameHistoryRepository gameHistoryRepository;
+    private final WebUserRepository webUserRepository;
 
     public GuildResponseDto guildBotInfoDTOS(WebUser webUser) {
         String discordUserSnowflake = webUser.getDiscordUserSnowflake();
@@ -213,5 +214,13 @@ public class WebGuildService {
           log.error("DTO 변환 실패: guildId={}, error={}", guildId, e.getMessage(), e);
           throw ErrorStatus.INTERNAL_ERROR.asServiceException();
       }
+  }
+  
+  public boolean isGuildOwner(String guildId,UUID webUserId){
+      WebUser webUser = webUserRepository.findById(webUserId)
+          .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+      Guild guild = guildRepository.findGuildByGuildSnowflake(guildId)
+          .orElseThrow(ErrorStatus.GUILD_NOT_FOUND::asServiceException);
+      return webUser.getDiscordUserSnowflake().equals(guild.getOwnerSnowflake());
   }
 }

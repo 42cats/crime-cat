@@ -1,8 +1,10 @@
 package com.crimecat.backend.api.discord;
 
 import com.crimecat.backend.config.CacheType;
+import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.guild.dto.web.ApiGetGuildInfoDto;
 import com.crimecat.backend.guild.dto.web.ChannelDto;
+import com.crimecat.backend.guild.dto.bot.RoleDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheConfig;
@@ -36,7 +38,7 @@ public class CachedDiscordBotService {
             return discordBotApi.getGuildInfo(guildSnowflake).block();
         } catch (Exception e) {
             log.error("Discord API 호출 실패 - 길드 정보: {}", guildSnowflake, e);
-            throw new RuntimeException("Discord API 호출 실패", e);
+            throw ErrorStatus.DISCORD_API_ERROR.asDomainException();
         }
     }
     
@@ -53,7 +55,24 @@ public class CachedDiscordBotService {
             return discordBotApi.getGuildChannels(guildSnowflake);
         } catch (Exception e) {
             log.error("Discord API 호출 실패 - 채널 목록: {}", guildSnowflake, e);
-            throw new RuntimeException("Discord API 호출 실패", e);
+            throw ErrorStatus.DISCORD_API_ERROR.asDomainException();
+        }
+    }
+    
+    /**
+     * 길드 역할 목록 조회 (캐시 적용)
+     * TTL: 10분
+     * @param guildSnowflake 길드 ID
+     * @return 역할 목록
+     */
+    @Cacheable(value = CacheType.DISCORD_GUILD_ROLES, key = "#guildSnowflake")
+    public List<RoleDto> getGuildRoles(String guildSnowflake) {
+        log.info("Discord API 호출 - 역할 목록 조회: {}", guildSnowflake);
+        try {
+            return discordBotApi.getGuildRoles(guildSnowflake);
+        } catch (Exception e) {
+            log.error("Discord API 호출 실패 - 역할 목록: {}", guildSnowflake, e);
+            throw ErrorStatus.DISCORD_GUILD_ROLES_FETCH_FAILED.asDomainException();
         }
     }
     
@@ -61,7 +80,7 @@ public class CachedDiscordBotService {
      * 특정 길드의 캐시 무효화
      * @param guildSnowflake 길드 ID
      */
-    @CacheEvict(value = {CacheType.DISCORD_GUILD_INFO, CacheType.DISCORD_GUILD_CHANNELS}, key = "#guildSnowflake")
+    @CacheEvict(value = {CacheType.DISCORD_GUILD_INFO, CacheType.DISCORD_GUILD_CHANNELS, CacheType.DISCORD_GUILD_ROLES}, key = "#guildSnowflake")
     public void evictGuildCache(String guildSnowflake) {
         log.info("Discord 캐시 무효화 - 길드: {}", guildSnowflake);
     }
@@ -69,7 +88,7 @@ public class CachedDiscordBotService {
     /**
      * 모든 Discord 캐시 무효화
      */
-    @CacheEvict(value = {CacheType.DISCORD_GUILD_INFO, CacheType.DISCORD_GUILD_CHANNELS}, allEntries = true)
+    @CacheEvict(value = {CacheType.DISCORD_GUILD_INFO, CacheType.DISCORD_GUILD_CHANNELS, CacheType.DISCORD_GUILD_ROLES}, allEntries = true)
     public void evictAllDiscordCache() {
         log.info("Discord 캐시 전체 무효화");
     }

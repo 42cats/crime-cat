@@ -47,6 +47,9 @@ public class GroupItem {
     @Column(name = "channel_id", length = 36)
     private String channelId;
 
+    @Column(name = "role_id", length = 255)
+    private String roleId;
+
     @Column(name = "`index`", nullable = false)
     private int index;
 

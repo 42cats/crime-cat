@@ -127,6 +127,7 @@ public class MessageMacroService {
                         .parentId(btn.getId())
                         .text(ct.getText())
                         .channelId(ct.getChannelId())
+                        .roleId(ct.getRoleId())
                         .index(ct.getIndex())
                         .build());
             }
@@ -168,6 +169,7 @@ public class MessageMacroService {
                                         .id(c.getId())
                                         .text(c.getText())
                                         .channelId(c.getChannelId())
+                                        .roleId(c.getRoleId())
                                         .index(c.getIndex())
                                         .build())
                                 .collect(Collectors.toList()))
@@ -207,9 +209,9 @@ public class MessageMacroService {
         List<ContentDto> contentDtos = allContentByParentId.stream()
                 .map(content -> ContentDto.builder()
                         .channelId(content.getChannelId())
+                        .roleId(content.getRoleId())
                         .index(content.getIndex())
                         .text(content.getText())
-                        .index(content.getIndex())
                         .build())
                 .toList();
 

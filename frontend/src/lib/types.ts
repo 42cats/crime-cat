@@ -112,6 +112,7 @@ export interface Channel {
 export interface ContentData {
     id: string;
     channelId: string;
+    roleId?: string;
     text: string;
     index: number;
     buttonId?: string;

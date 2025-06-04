@@ -328,6 +328,7 @@ const MessageButtonEditor: React.FC = () => {
                         {
                             id: contentId,
                             channelId: "none",
+                            roleId: "ALL",
                             text: "여기에 메시지를 입력하세요",
                             index: 0,
                             buttonId,
@@ -386,6 +387,7 @@ const MessageButtonEditor: React.FC = () => {
                     {
                         id: contentId,
                         channelId: "none",
+                        roleId: "ALL",
                         text: "",
                         index: 0,
                         buttonId: newButtonId,
@@ -515,6 +517,7 @@ const MessageButtonEditor: React.FC = () => {
                                         key={group.id}
                                         group={group}
                                         index={idx}
+                                        guildId={guildId}
                                         onChange={handleGroupChange}
                                         onRemove={handleGroupRemove}
                                         onButtonAdd={addButtonToGroup}

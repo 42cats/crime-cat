@@ -3,6 +3,7 @@ package com.crimecat.backend.auth.filter;
 import com.crimecat.backend.auth.jwt.JwtTokenProvider;
 import com.crimecat.backend.auth.service.JwtBlacklistService;
 import com.crimecat.backend.auth.service.RefreshTokenService;
+import com.crimecat.backend.trace.annotation.NoTrace;
 import com.crimecat.backend.utils.TokenCookieUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
@@ -25,6 +26,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 @Slf4j
 @RequiredArgsConstructor
+@NoTrace
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
