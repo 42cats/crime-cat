@@ -113,6 +113,22 @@ class MusicPlayerV4 extends EventEmitter {
     }
 
     /**
+     * 사용자 안내 메시지 전송
+     */
+    async sendUserGuidance(message) {
+        if (this.lastInteraction) {
+            try {
+                await this.lastInteraction.followUp({
+                    content: message,
+                    ephemeral: true
+                });
+            } catch (error) {
+                this.logger.debug('User guidance message failed', error);
+            }
+        }
+    }
+
+    /**
      * 로컬 음악 권한 체크
      */
     async checkLocalMusicPermission() {
@@ -141,6 +157,15 @@ class MusicPlayerV4 extends EventEmitter {
     async play(index = null, isDirectSelection = false) {
         this.logger.trace('play', [index, isDirectSelection]);
 
+        // 봇이 음성채널에 연결되어 있지 않은 경우
+        if (!this.audio.isConnected()) {
+            await this.sendUserGuidance('🔊 **음성채널 접속이 필요합니다!**\n\n' +
+                '음악을 재생하려면 먼저 음성채널에 접속해야 합니다.\n' +
+                '사용자가 음성채널에 접속후 봇의 초록색 🔇 버튼,\n' +
+                '🔇 **음성채널 On/Off 버튼**을 클릭하여 음성채널에 접속해주세요.');
+            return false;
+        }
+
         let targetIndex = index;
         if (targetIndex === null) {
             targetIndex = this.state.currentIndex >= 0 ? this.state.currentIndex : 0;
@@ -148,12 +173,16 @@ class MusicPlayerV4 extends EventEmitter {
 
         if (targetIndex < 0 || targetIndex >= this.queue.length) {
             this.logger.warn('Invalid track index', { index: targetIndex, queueLength: this.queue.length });
+            await this.sendUserGuidance('⚠️ **재생할 곡을 찾을 수 없습니다.**\n\n' +
+                '선택한 곡의 인덱스가 유효하지 않습니다.');
             return false;
         }
 
         const track = this.queue.getTrack(targetIndex);
         if (!track) {
             this.logger.warn('Track not found', { index: targetIndex });
+            await this.sendUserGuidance('⚠️ **재생할 곡을 찾을 수 없습니다.**\n\n' +
+                '플레이리스트를 다시 로드해주세요.');
             return false;
         }
 
@@ -195,12 +224,23 @@ class MusicPlayerV4 extends EventEmitter {
             this.logger.error('Play failed', error);
             this.state.isPlaying = false;
             this.state.isPaused = false;
+            await this.sendUserGuidance('❌ **재생 중 오류가 발생했습니다.**\n\n' +
+                '잠시 후 다시 시도해주세요.');
             return false;
         }
     }
 
     async togglePlayPause() {
         this.logger.trace('togglePlayPause');
+
+        // 봇이 음성채널에 연결되어 있지 않은 경우
+        if (!this.audio.isConnected()) {
+            await this.sendUserGuidance('🔊 **음성채널 접속이 필요합니다!**\n\n' +
+                '음악을 재생하려면 먼저 음성채널에 접속해야 합니다.\n' +
+                '사용자가 음성채널에 접속후 봇의 초록색 🔇 버튼,\n' +
+                '🔇 **음성채널 On/Off 버튼**을 클릭하여 음성채널에 접속해주세요.');
+            return false;
+        }
 
         if (!this.state.isPlaying && !this.state.isPaused) {
             return await this.play();
@@ -213,6 +253,9 @@ class MusicPlayerV4 extends EventEmitter {
                 this.state.isPlaying = true;
                 this.logger.userAction('resume', { userId: this.user?.id });
                 await this.updateUI('Resumed');
+            } else {
+                await this.sendUserGuidance('❌ **재생 재개에 실패했습니다.**\n\n' +
+                    '잠시 후 다시 시도해주세요.');
             }
             return success;
         } else {
@@ -222,6 +265,9 @@ class MusicPlayerV4 extends EventEmitter {
                 this.state.isPlaying = false;
                 this.logger.userAction('pause', { userId: this.user?.id });
                 await this.updateUI('Paused');
+            } else {
+                await this.sendUserGuidance('❌ **일시정지에 실패했습니다.**\n\n' +
+                    '잠시 후 다시 시도해주세요.');
             }
             return success;
         }
@@ -248,6 +294,15 @@ class MusicPlayerV4 extends EventEmitter {
     async next() {
         this.logger.trace('next');
 
+        // 봇이 음성채널에 연결되어 있지 않은 경우
+        if (!this.audio.isConnected()) {
+            await this.sendUserGuidance('🔊 **음성채널 접속이 필요합니다!**\n\n' +
+                '음악을 재생하려면 먼저 음성채널에 접속해야 합니다.\n' +
+                '사용자가 음성채널에 접속후 봇의 초록색 🔇 버튼,\n' +
+                '🔇 **음성채널 On/Off 버튼**을 클릭하여 음성채널에 접속해주세요.');
+            return false;
+        }
+
         const currentIndex = this.state.currentIndex;
 
         // 셔플 모드에서 인덱스 동기화
@@ -259,6 +314,8 @@ class MusicPlayerV4 extends EventEmitter {
 
         if (nextIndex === -1) {
             this.logger.debug('No next track available');
+            await this.sendUserGuidance('ℹ️ **다음 곡이 없습니다.**\n\n' +
+                '플레이리스트의 마지막 곡입니다.');
             if (this.state.mode === 'normal') {
                 await this.stop();
             }
@@ -272,6 +329,15 @@ class MusicPlayerV4 extends EventEmitter {
     async prev() {
         this.logger.trace('prev');
 
+        // 봇이 음성채널에 연결되어 있지 않은 경우
+        if (!this.audio.isConnected()) {
+            await this.sendUserGuidance('🔊 **음성채널 접속이 필요합니다!**\n\n' +
+                '음악을 재생하려면 먼저 음성채널에 접속해야 합니다.\n' +
+                '사용자가 음성채널에 접속후 봇의 초록색 🔇 버튼,\n' +
+                '🔇 **음성채널 On/Off 버튼**을 클릭하여 음성채널에 접속해주세요.');
+            return false;
+        }
+
         const currentIndex = this.state.currentIndex;
 
         // 셔플 모드에서 인덱스 동기화
@@ -282,7 +348,13 @@ class MusicPlayerV4 extends EventEmitter {
         const prevIndex = this.queue.getPreviousIndex(currentIndex, this.state.mode);
 
         if (prevIndex === -1) {
-            this.logger.debug('No previous track available');
+            // 첫 번째 곡에서 이전 버튼을 누르면 마지막 곡으로 이동
+            this.logger.debug('First track - moving to last track');
+            const lastIndex = this.queue.length - 1;
+            if (lastIndex >= 0) {
+                this.logger.debug(`Previous: ${currentIndex} -> ${lastIndex} (wrap to last)`);
+                return await this.play(lastIndex);
+            }
             return false;
         }
 
@@ -477,6 +549,14 @@ class MusicPlayerV4 extends EventEmitter {
         const currentSource = this.queue.source;
         const newSource = currentSource === 'youtube' ? 'local' : 'youtube';
 
+        // 로컬 음악으로 전환하려는데 권한이 없는 경우
+        if (newSource === 'local' && !this.state.hasLocalMusicPermission) {
+            await this.sendUserGuidance('🔒 **로컬 음악 권한이 필요합니다!**\n\n' +
+                '로컬 음악을 사용하려면 권한이 필요합니다.\n' +
+                'https://mystery-place.com 에 로그인후 마이페이지에서 구입 또는 관리하세요');
+            return false;
+        }
+
         const success = await this.queue.loadFromSource(newSource, this.user?.id);
 
         if (success) {
@@ -486,8 +566,23 @@ class MusicPlayerV4 extends EventEmitter {
 
             this.state.currentIndex = -1;
 
+            const sourceNames = {
+                'youtube': 'YouTube',
+                'local': '로컬 파일'
+            };
+
+            await this.sendUserGuidance(`🔄 **음악 소스가 변경되었습니다!**\n\n` +
+                `📍 **${sourceNames[newSource]}** 플레이리스트로 전환되었습니다.`);
+
             this.logger.userAction('source changed', { from: currentSource, to: newSource, userId: this.user?.id });
             await this.updateUI('Source changed');
+        } else {
+            const sourceNames = {
+                'youtube': 'YouTube',
+                'local': '로컬 파일'
+            };
+            await this.sendUserGuidance(`❌ **${sourceNames[newSource]} 로드에 실패했습니다.**\n\n` +
+                '플레이리스트가 비어있거나 오류가 발생했습니다.');
         }
 
         return success;
@@ -534,6 +629,8 @@ class MusicPlayerV4 extends EventEmitter {
                 }
 
                 this.logger.info('🔌 Voice channel disconnected');
+                await this.sendUserGuidance('🔇 **음성채널에서 연결이 해제되었습니다.**\n\n' +
+                    '음악 재생이 중지되었습니다.');
                 await this.updateUI('Voice disconnected');
                 return false;
 
@@ -543,21 +640,30 @@ class MusicPlayerV4 extends EventEmitter {
 
                 if (!user?.voice?.channel) {
                     this.logger.warn('User not in voice channel');
+                    await this.sendUserGuidance('🔊 **음성채널 접속이 필요합니다!**\n\n' +
+                        '먼저 음성채널에 입장한 후 다시 시도해주세요.');
                     return false;
                 }
 
                 const connected = await this.audio.connectToVoice(user);
                 if (connected) {
                     this.logger.info('🔌 Voice channel connected');
+                    // const channelName = user.voice.channel.name;
+                    // await this.sendUserGuidance(`🔊 **음성채널에 접속했습니다!**\n\n` +
+                    //     `📍 **${channelName}** 채널에서 음악을 재생할 수 있습니다.`);
                     await this.updateUI('Voice connected');
                     return true;
                 } else {
                     this.logger.warn('Voice connection failed');
+                    await this.sendUserGuidance('❌ **음성채널 접속에 실패했습니다.**\n\n' +
+                        '잠시 후 다시 시도해주세요.');
                     return false;
                 }
             }
         } catch (error) {
             this.logger.error('Voice connection toggle failed', error);
+            await this.sendUserGuidance('❌ **음성채널 연결 중 오류가 발생했습니다.**\n\n' +
+                '잠시 후 다시 시도해주세요.');
             return false;
         }
     }
