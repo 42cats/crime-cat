@@ -31,7 +31,7 @@ public class GuildMusicController {
     public MessageDto<GuildMusicListResponseDto> getMusics(@PathVariable String guildSnowflake) {
         try {
             GuildMusicListResponseDto guildMusicListResponseDto = guildMusicService.getMusics(guildSnowflake);
-            return new MessageDto<>("길드의 음악리스트를 찾을 수 없습니다.", guildMusicListResponseDto);
+            return new MessageDto<>("길드의 음악리스트를 찾았 습니다.", guildMusicListResponseDto);
         } catch (Exception e) {
             return new MessageDto<>("길드를 찾을수 없습니다. 봇에 길드가 등록되지 않았습니다. 봇을 내보내고 다시 불러봐 주세요.");
         }

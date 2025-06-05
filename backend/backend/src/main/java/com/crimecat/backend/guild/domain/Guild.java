@@ -24,7 +24,7 @@ import org.hibernate.type.SqlTypes;
 @Table(name = "GUILDS")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-@ToString
+@ToString(exclude = "user")
 public class Guild {
 
     @Id

@@ -40,8 +40,8 @@ public class GuildRoleController {
             List<RoleDto> roles = cachedDiscordBotService.getGuildRoles(guildSnowflake);
             
             log.info("Bot API - 길드 역할 목록 조회 성공: {} ({}개 역할)", guildSnowflake, roles.size());
-            return new MessageDto<>("Guild roles retrieved successfully", roles);
-            
+      return new MessageDto<>("길드 역할이 성공적으로 조회되었습니다", roles);
+
         } catch (Exception e) {
             log.error("Bot API - 길드 역할 목록 조회 실패: {}", guildSnowflake, e);
             throw ErrorStatus.DISCORD_GUILD_ROLES_FETCH_FAILED.asDomainException();
