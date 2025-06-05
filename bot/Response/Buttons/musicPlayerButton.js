@@ -77,6 +77,12 @@ module.exports = {
 					const newMode = currentMode === 'HIGH_QUALITY' ? 'VOLUME_CONTROL' : 'HIGH_QUALITY';
 					
 					const success = await player.setAudioMode(newMode);
+					
+					// 먼저 UI 업데이트 완료 대기
+					const compData = await player.reply();
+					await interaction.update(compData);
+					
+					// 그 다음 followUp
 					if (success) {
 						const modeText = newMode === 'HIGH_QUALITY' ? '🎧 고음질' : '🎛️ 조절';
 						try {
@@ -88,7 +94,7 @@ module.exports = {
 							console.log('Follow up failed:', error);
 						}
 					}
-					break;
+					return; // 하단의 공통 UI 업데이트 건너뛰기
 				case `exit`:
 					// v4 플레이어 정리 (메시지 삭제/비활성화 포함)
 					await player.destroy();
@@ -110,6 +116,7 @@ module.exports = {
 
 		// 인터랙션 메시지 할당
 		player.interactionMsg = interaction.message;
+		player.lastInteraction = interaction;
 
 		// v4 UI 업데이트 시스템 (즉시 업데이트)
 		try {
