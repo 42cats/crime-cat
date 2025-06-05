@@ -83,8 +83,16 @@ class AudioEngineV4 extends EventEmitter {
             this.handlePlayerStateChange(oldState, newState);
         });
         
-        // 에러 처리
+        // 에러 처리 개선
         this.audioPlayer.on('error', (error) => {
+            // EBML 태그 오류는 WebM 파싱 문제이지만 재생은 계속 가능할 수 있음
+            if (error.message && error.message.includes('EBML tag')) {
+                this.logger.warn('WebM parsing warning (playback may continue)', error);
+                // 에러 이벤트를 발생시키지 않고 계속 진행
+                return;
+            }
+            
+            // 다른 실제 오류들은 처리
             this.logger.error('Audio player error', error);
             this.emit('error', error);
         });
@@ -837,8 +845,8 @@ class AudioEngineV4 extends EventEmitter {
      * 연결 상태 확인
      */
     isConnected() {
-        return this.connection && 
-               this.connection.state.status === VoiceConnectionStatus.Ready;
+        return !!(this.connection && 
+                  this.connection.state.status === VoiceConnectionStatus.Ready);
     }
 
     /**

@@ -116,15 +116,24 @@ class MusicPlayerV4 extends EventEmitter {
      * 사용자 안내 메시지 전송
      */
     async sendUserGuidance(message) {
+        this.logger.debug('sendUserGuidance called', { 
+            hasLastInteraction: !!this.lastInteraction,
+            messageLength: message.length 
+        });
+        
         if (this.lastInteraction) {
             try {
+                this.logger.info('Sending user guidance message');
                 await this.lastInteraction.followUp({
                     content: message,
                     ephemeral: true
                 });
+                this.logger.info('User guidance message sent successfully');
             } catch (error) {
-                this.logger.debug('User guidance message failed', error);
+                this.logger.error('User guidance message failed', error);
             }
+        } else {
+            this.logger.warn('Cannot send user guidance - no lastInteraction available');
         }
     }
 
@@ -234,7 +243,14 @@ class MusicPlayerV4 extends EventEmitter {
         this.logger.trace('togglePlayPause');
 
         // 봇이 음성채널에 연결되어 있지 않은 경우
-        if (!this.audio.isConnected()) {
+        const isConnected = this.audio.isConnected();
+        this.logger.debug('Voice connection check', { 
+            isConnected, 
+            hasLastInteraction: !!this.lastInteraction 
+        });
+        
+        if (!isConnected) {
+            this.logger.info('Voice not connected - sending guidance message');
             await this.sendUserGuidance('🔊 **음성채널 접속이 필요합니다!**\n\n' +
                 '음악을 재생하려면 먼저 음성채널에 접속해야 합니다.\n' +
                 '사용자가 음성채널에 접속후 봇의 초록색 🔇 버튼,\n' +
