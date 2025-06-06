@@ -5,33 +5,13 @@
 #               (yes)   (yes)   (no)    (never) (100)
 # ==========================================================================
 
-# SMTP daemon for receiving mail
-smtp      inet  n       -       y       -       -       smtpd
+# SMTP daemon for receiving mail from local applications
+smtp      inet  n       -       n       -       -       smtpd
 
-# SMTP daemon for authenticated users (submission)
-submission inet n       -       y       -       -       smtpd
+# SMTP submission port for applications (587)
+submission inet n       -       n       -       -       smtpd
   -o syslog_name=postfix/submission
-  -o smtpd_tls_security_level=encrypt
-  -o smtpd_sasl_auth_enable=yes
-  -o smtpd_tls_auth_only=yes
-  -o smtpd_reject_unlisted_recipient=no
-  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
-  -o smtpd_helo_restrictions=permit_sasl_authenticated,reject
-  -o smtpd_sender_restrictions=permit_sasl_authenticated,reject
-  -o smtpd_recipient_restrictions=permit_sasl_authenticated,reject
-  -o milter_macro_daemon_name=ORIGINATING
-
-# SMTPS (deprecated, but still supported)
-smtps     inet  n       -       y       -       -       smtpd
-  -o syslog_name=postfix/smtps
-  -o smtpd_tls_wrappermode=yes
-  -o smtpd_sasl_auth_enable=yes
-  -o smtpd_tls_auth_only=yes
-  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
-  -o smtpd_helo_restrictions=permit_sasl_authenticated,reject
-  -o smtpd_sender_restrictions=permit_sasl_authenticated,reject
-  -o smtpd_recipient_restrictions=permit_sasl_authenticated,reject
-  -o milter_macro_daemon_name=ORIGINATING
+  -o smtpd_recipient_restrictions=permit_mynetworks,reject
 
 # Other standard services
 pickup    unix  n       -       y       60      1       pickup
