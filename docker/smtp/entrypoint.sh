@@ -44,19 +44,21 @@ postmap /etc/postfix/virtual
 sed -i "s/myhostname = .*/myhostname = ${MAIL_HOSTNAME}/" /etc/postfix/main.cf
 sed -i "s/mydomain = .*/mydomain = ${MAIL_DOMAIN}/" /etc/postfix/main.cf
 
-# Create SASL authentication configuration
-cat > /etc/postfix/sasl/smtpd.conf << EOF
+# Skip SASL local user creation for relay-only setup
+# We only need relay authentication to Gmail SMTP
+echo "Configuring SMTP relay authentication to Gmail..."
+
+# Create SASL configuration for client authentication (not server)
+mkdir -p /etc/sasl2
+cat > /etc/sasl2/smtpd.conf << EOF
 pwcheck_method: auxprop
 auxprop_plugin: sasldb
-mech_list: PLAIN LOGIN CRAM-MD5 DIGEST-MD5
+mech_list: PLAIN LOGIN
 EOF
 
-# Create user database for SMTP authentication
-echo "${SMTP_PASSWORD}" | saslpasswd2 -c -u ${MAIL_DOMAIN} ${SMTP_USER}
-
-# Set permissions
-chown postfix:postfix /etc/sasldb2
-chmod 640 /etc/sasldb2
+# For relay-only SMTP, we don't need local SASL users
+# The authentication happens at Gmail's SMTP server
+echo "SMTP relay configuration completed - no local SASL users needed"
 
 # Generate DH parameters if they don't exist
 if [ ! -f /etc/ssl/certs/dhparam.pem ]; then
