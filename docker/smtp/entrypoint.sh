@@ -60,13 +60,8 @@ EOF
 # The authentication happens at Gmail's SMTP server
 echo "SMTP relay configuration completed - no local SASL users needed"
 
-# Generate DH parameters in a writable location
-if [ ! -f /tmp/dhparam.pem ]; then
-    openssl dhparam -out /tmp/dhparam.pem 2048
-fi
-
-# Update postfix configuration with DH parameters
-echo "smtpd_tls_dh1024_param_file = /tmp/dhparam.pem" >> /etc/postfix/main.cf
+# Skip DH parameters for relay-only setup
+echo "Skipping TLS server configuration - relay mode only"
 
 # Initialize postfix databases
 newaliases
