@@ -86,7 +86,7 @@ class EmailServiceTest {
             "siteName", "Mystery Place"
         );
         
-        when(templateEngine.process(eq(templateName), any())).thenReturn("<html>테스트 HTML</html>");
+        when(templateEngine.process(eq(templateName), any(org.thymeleaf.context.Context.class))).thenReturn("<html>테스트 HTML</html>");
         doNothing().when(mailSender).send(any());
         
         // When
@@ -97,7 +97,7 @@ class EmailServiceTest {
         assertEquals(to, response.getTo());
         assertEquals(subject, response.getSubject());
         
-        verify(templateEngine, times(1)).process(eq(templateName), any());
+        verify(templateEngine, times(1)).process(eq(templateName), any(org.thymeleaf.context.Context.class));
     }
     
     @Test
@@ -108,7 +108,7 @@ class EmailServiceTest {
         String to = "test@example.com";
         String verificationCode = "123456";
         
-        when(templateEngine.process(eq("verification"), any())).thenReturn("<html>인증 메일</html>");
+        when(templateEngine.process(eq("verification"), any(org.thymeleaf.context.Context.class))).thenReturn("<html>인증 메일</html>");
         doNothing().when(mailSender).send(any());
         
         // When
@@ -128,7 +128,7 @@ class EmailServiceTest {
         String to = "test@example.com";
         String resetToken = "reset-token-123";
         
-        when(templateEngine.process(eq("password-reset"), any())).thenReturn("<html>비밀번호 재설정</html>");
+        when(templateEngine.process(eq("password-reset"), any(org.thymeleaf.context.Context.class))).thenReturn("<html>비밀번호 재설정</html>");
         doNothing().when(mailSender).send(any());
         
         // When
@@ -150,7 +150,7 @@ class EmailServiceTest {
         String gameTitle = "미스터리 게임";
         String result = "클리어!";
         
-        when(templateEngine.process(eq("game-result"), any())).thenReturn("<html>게임 결과</html>");
+        when(templateEngine.process(eq("game-result"), any(org.thymeleaf.context.Context.class))).thenReturn("<html>게임 결과</html>");
         doNothing().when(mailSender).send(any());
         
         // When
