@@ -9,7 +9,8 @@ RUN apk add --no-cache \
     supervisor \
     rsyslog \
     cyrus-sasl \
-    cyrus-sasl-plain \
+    cyrus-sasl-digestmd5 \
+    cyrus-sasl-crammd5 \
     cyrus-sasl-login \
     openssl \
     ca-certificates
