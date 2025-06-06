@@ -1,0 +1,70 @@
+#!/bin/sh
+set -e
+
+# Create postfix user if it doesn't exist
+if ! id postfix >/dev/null 2>&1; then
+    adduser -D -s /bin/false postfix
+fi
+
+# Create postdrop group if it doesn't exist
+if ! getent group postdrop >/dev/null 2>&1; then
+    addgroup postdrop
+fi
+
+# Create necessary directories
+mkdir -p /var/spool/postfix
+mkdir -p /var/lib/postfix
+mkdir -p /etc/postfix/sasl
+
+# Set proper permissions
+chown -R postfix:postfix /var/spool/postfix
+chown -R postfix:postfix /var/lib/postfix
+
+# Create SASL password file for authentication
+cat > /etc/postfix/sasl/sasl_passwd << EOF
+[smtp.gmail.com]:587 ${SMTP_USERNAME}:${SMTP_PASSWORD}
+EOF
+
+# Set permissions for SASL password file
+chmod 600 /etc/postfix/sasl/sasl_passwd
+chown postfix:postfix /etc/postfix/sasl/sasl_passwd
+
+# Hash the SASL password file
+postmap /etc/postfix/sasl/sasl_passwd
+
+# Create virtual alias file
+touch /etc/postfix/virtual
+postmap /etc/postfix/virtual
+
+# Update main.cf with environment variables
+sed -i "s/myhostname = .*/myhostname = ${MAIL_HOSTNAME}/" /etc/postfix/main.cf
+sed -i "s/mydomain = .*/mydomain = ${MAIL_DOMAIN}/" /etc/postfix/main.cf
+
+# Create SASL authentication configuration
+cat > /etc/postfix/sasl/smtpd.conf << EOF
+pwcheck_method: auxprop
+auxprop_plugin: sasldb
+mech_list: PLAIN LOGIN CRAM-MD5 DIGEST-MD5
+EOF
+
+# Create user database for SMTP authentication
+echo "${SMTP_PASSWORD}" | saslpasswd2 -c -u ${MAIL_DOMAIN} ${SMTP_USER}
+
+# Set permissions
+chown postfix:postfix /etc/sasldb2
+chmod 640 /etc/sasldb2
+
+# Generate DH parameters if they don't exist
+if [ ! -f /etc/ssl/certs/dhparam.pem ]; then
+    openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
+fi
+
+# Update postfix configuration with DH parameters
+echo "smtpd_tls_dh1024_param_file = /etc/ssl/certs/dhparam.pem" >> /etc/postfix/main.cf
+
+# Initialize postfix databases
+newaliases
+postmap /etc/postfix/virtual
+
+# Start services
+exec "$@"
