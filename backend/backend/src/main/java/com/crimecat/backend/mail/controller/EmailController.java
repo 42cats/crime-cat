@@ -3,8 +3,6 @@ package com.crimecat.backend.mail.controller;
 import com.crimecat.backend.mail.dto.EmailRequestDto;
 import com.crimecat.backend.mail.dto.EmailResponseDto;
 import com.crimecat.backend.mail.service.EmailService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,13 +16,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/email")
 @RequiredArgsConstructor
-@Tag(name = "Email", description = "메일 발송 API")
 public class EmailController {
     
     private final EmailService emailService;
     
     @PostMapping("/send/simple")
-    @Operation(summary = "단순 텍스트 메일 발송", description = "텍스트 메일을 발송합니다")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EmailResponseDto> sendSimpleEmail(@Valid @RequestBody EmailRequestDto request) {
         log.info("Simple email request: to={}, subject={}", request.getTo(), request.getSubject());
@@ -39,7 +35,6 @@ public class EmailController {
     }
     
     @PostMapping("/send/html")
-    @Operation(summary = "HTML 메일 발송", description = "HTML 형식의 메일을 발송합니다")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EmailResponseDto> sendHtmlEmail(@Valid @RequestBody EmailRequestDto request) {
         log.info("HTML email request: to={}, subject={}", request.getTo(), request.getSubject());
@@ -54,7 +49,6 @@ public class EmailController {
     }
     
     @PostMapping("/send/template")
-    @Operation(summary = "템플릿 메일 발송", description = "템플릿을 사용한 메일을 발송합니다")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EmailResponseDto> sendTemplateEmail(@Valid @RequestBody EmailRequestDto request) {
         log.info("Template email request: to={}, subject={}, template={}", 
@@ -74,7 +68,6 @@ public class EmailController {
     }
     
     @PostMapping("/send/verification")
-    @Operation(summary = "회원가입 인증 메일 발송", description = "회원가입 인증 메일을 발송합니다")
     public ResponseEntity<EmailResponseDto> sendVerificationEmail(
             @RequestParam String to,
             @RequestParam String verificationCode) {
@@ -86,7 +79,6 @@ public class EmailController {
     }
     
     @PostMapping("/send/password-reset")
-    @Operation(summary = "비밀번호 재설정 메일 발송", description = "비밀번호 재설정 메일을 발송합니다")
     public ResponseEntity<EmailResponseDto> sendPasswordResetEmail(
             @RequestParam String to,
             @RequestParam String resetToken) {
@@ -98,7 +90,6 @@ public class EmailController {
     }
     
     @PostMapping("/send/game-result")
-    @Operation(summary = "게임 결과 알림 메일 발송", description = "게임 결과 알림 메일을 발송합니다")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<EmailResponseDto> sendGameResultEmail(
             @RequestParam String to,
@@ -113,7 +104,6 @@ public class EmailController {
     }
     
     @PostMapping("/send/notification")
-    @Operation(summary = "공지사항 메일 발송", description = "공지사항 메일을 발송합니다")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EmailResponseDto> sendNotificationEmail(
             @RequestParam String to,
@@ -127,7 +117,6 @@ public class EmailController {
     }
     
     @GetMapping("/test")
-    @Operation(summary = "메일 발송 테스트", description = "메일 발송 기능을 테스트합니다")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EmailResponseDto> testEmail(@RequestParam String to) {
         log.info("Test email request: to={}", to);

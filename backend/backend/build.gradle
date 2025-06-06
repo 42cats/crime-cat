@@ -98,7 +98,13 @@ dependencies {
 	implementation 'org.hibernate:hibernate-jcache:6.6.8.Final'
 	implementation 'org.ehcache:ehcache:3.10.8'
 
-	// Handlebars for template processing
+	// Mail support
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	
+	// Thymeleaf template engine
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	
+	// Handlebars for notification templates
 	implementation 'com.github.jknack:handlebars:4.4.0'
 
 	//second chash
