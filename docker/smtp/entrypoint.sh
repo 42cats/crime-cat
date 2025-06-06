@@ -26,11 +26,15 @@ cat > /etc/postfix/sasl/sasl_passwd << EOF
 EOF
 
 # Set permissions for SASL password file
-chmod 600 /etc/postfix/sasl/sasl_passwd
-chown postfix:postfix /etc/postfix/sasl/sasl_passwd
+chmod 644 /etc/postfix/sasl/sasl_passwd
+chown root:root /etc/postfix/sasl/sasl_passwd
 
 # Hash the SASL password file
 postmap /etc/postfix/sasl/sasl_passwd
+
+# Fix permissions for the hashed file
+chmod 644 /etc/postfix/sasl/sasl_passwd.lmdb
+chown root:root /etc/postfix/sasl/sasl_passwd.lmdb || true
 
 # Create virtual alias file
 touch /etc/postfix/virtual
