@@ -9,10 +9,6 @@ services:
     build:
       context: .
       dockerfile: docker/mariadb/Dockerfile
-    environment:
-      - DB_DISCORD=${DB_DISCORD}
-      - DB_USER=${DB_USER}
-      - DB_PASS=${DB_PASS}
     networks:
       - discord-network
     healthcheck:
@@ -129,6 +125,20 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: >
+      tunnel --no-autoupdate run
+      --protocol quic
+      --token ${CF_TUNNEL_TOKEN}
+    container_name: cloudflared
+    restart: unless-stopped
+    networks:
+      - discord-network
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:2000/ready"]
+      interval: 30s
+      retries: 3
 
   frontend:
     build:
@@ -165,19 +175,50 @@ services:
     volumes:
       - web_data:/usr/share/nginx/html:ro
       - cert:/etc/nginx/certs:ro
-      - image_data:/images
+      - image_data:/images:ro
     extra_hosts:
       - "dev.crimecat.org:127.0.0.1"
     depends_on:
       frontend:
         condition: service_completed_successfully
-      backend:
-        condition: service_healthy
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "5"
+  smtp-server:
+    build:
+      context: .
+      dockerfile: docker/smtp/Dockerfile
+    image: smtp-server
+    container_name: smtp-server
+    restart: unless-stopped
+    environment:
+      - MAIL_HOSTNAME=mail.mystery-place.com
+      - MAIL_DOMAIN=mystery-place.com
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+    env_file:
+      - .env
+    ports:
+      - "25:25"
+      - "587:587"
+      - "465:465"
+    volumes:
+      - smtp_data:/var/spool/postfix
+      - smtp_config:/etc/postfix
+      - cert:/etc/ssl/certs:ro
+    networks:
+      - discord-network
+    depends_on:
+      - db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
   # db-backup:
   #   image: alpine:latest
   #   container_name: db-backup
@@ -244,3 +285,16 @@ volumes:
       type: none
       o: bind
       device: ${PWD}/images
+  smtp_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/smtp/data
+  smtp_config:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/smtp/config
+

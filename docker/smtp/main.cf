@@ -1,0 +1,56 @@
+# Basic settings
+myhostname = mail.mystery-place.com
+mydomain = mystery-place.com
+myorigin = $mydomain
+inet_interfaces = all
+inet_protocols = ipv4
+
+# Network settings
+mynetworks = 127.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 10.0.0.0/8
+
+# SMTP Authentication
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_security_options = noanonymous
+broken_sasl_auth_clients = yes
+
+# TLS settings
+smtpd_tls_cert_file = /etc/ssl/certs/mail.mystery-place.com.pem
+smtpd_tls_key_file = /etc/ssl/private/mail.mystery-place.com-key.pem
+smtpd_use_tls = yes
+smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+smtpd_tls_security_level = may
+smtp_tls_security_level = may
+smtpd_tls_auth_only = yes
+
+# Access restrictions
+smtpd_recipient_restrictions = 
+    permit_mynetworks,
+    permit_sasl_authenticated,
+    reject_unauth_destination,
+    reject_invalid_hostname,
+    reject_non_fqdn_hostname,
+    reject_non_fqdn_sender,
+    reject_non_fqdn_recipient,
+    reject_unknown_sender_domain,
+    reject_unknown_recipient_domain
+
+# Message size limit (25MB)
+message_size_limit = 26214400
+
+# Virtual domains (for sending only)
+virtual_alias_domains = 
+virtual_alias_maps = hash:/etc/postfix/virtual
+
+# Disable local delivery (sending only)
+local_transport = error:Local delivery disabled
+local_recipient_maps =
+
+# Queue settings
+maximal_queue_lifetime = 1d
+bounce_queue_lifetime = 1d
+
+# Logging
+maillog_file = /var/log/postfix.log

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게임 결과 알림</title>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .game-info {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .result-highlight {
+            background-color: #e8f5e8;
+            border-left: 4px solid #4CAF50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 th:text="${siteName}">Mystery Place</h1>
+            <p>🎮 게임 결과 알림</p>
+        </div>
+        
+        <div class="content">
+            <h2>게임이 완료되었습니다!</h2>
+            <p>안녕하세요, <strong th:text="${playerName}">플레이어</strong>님!</p>
+            <p>참여하신 게임의 결과를 알려드립니다.</p>
+            
+            <div class="game-info">
+                <h3>게임 정보</h3>
+                <p><strong>게임명:</strong> <span th:text="${gameTitle}">미스터리 게임</span></p>
+                <p><strong>플레이어:</strong> <span th:text="${playerName}">홍길동</span></p>
+            </div>
+            
+            <div class="result-highlight">
+                <h3>🏆 게임 결과</h3>
+                <p style="font-size: 18px; font-weight: bold;" th:text="${result}">게임 클리어!</p>
+            </div>
+            
+            <p>수고하셨습니다! 더 많은 흥미진진한 게임들이 기다리고 있어요.</p>
+            
+            <div style="text-align: center;">
+                <a th:href="${siteUrl}" class="button">더 많은 게임 보기</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>이 메일은 자동으로 발송된 메일입니다.</p>
+            <p>문의사항이 있으시면 <a href="mailto:hello@mystery-place.com">hello@mystery-place.com</a>으로 연락주세요.</p>
+            <p>&copy; 2024 Mystery Place. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
