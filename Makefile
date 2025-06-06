@@ -38,10 +38,10 @@ create_dirs:
 		if [ ! -d $$dir ]; then \
 			echo "${YELLOW}디렉토리 생성 중: $$dir${NC}"; \
 			mkdir -p $$dir; \
-			chmod 755 $$dir; \
+			chmod 755 $$dir || true; \
 		else \
 			echo "${GREEN}디렉토리가 이미 존재합니다: $$dir${NC}"; \
-			chmod 755 $$dir; \
+			chmod 755 $$dir || true; \
 		fi; \
 	done
 
