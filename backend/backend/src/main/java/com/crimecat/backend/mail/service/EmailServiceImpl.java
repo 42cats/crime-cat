@@ -3,6 +3,7 @@ package com.crimecat.backend.mail.service;
 import com.crimecat.backend.mail.dto.EmailResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -22,13 +23,14 @@ public class EmailServiceImpl implements EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
     
-    private static final String FROM_EMAIL = "hello@mystery-place.com";
+    @Value("${spring.mail.username:noreply@mystery-place.com}")
+    private String fromEmail;
     
     @Override
     public EmailResponseDto sendSimpleEmail(String to, String subject, String content) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(FROM_EMAIL);
+            message.setFrom(fromEmail);
             message.setTo(to);
             message.setSubject(subject);
             message.setText(content);
@@ -49,7 +51,7 @@ public class EmailServiceImpl implements EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             
-            helper.setFrom(FROM_EMAIL);
+            helper.setFrom(fromEmail);
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(htmlContent, true);
