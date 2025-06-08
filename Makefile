@@ -200,6 +200,9 @@ prod: update_config prepare_migration
 	@echo "${BLUE}마이그레이션 실행 중...${NC}"
 	@$(MAKE) migrate || true
 
+	@echo "${BLUE}PROD용 DNS 레코드 설정 중...${NC}"
+	@cd mail && ./setup-dns-prod.sh || true
+
 	@echo "${GREEN}운영 환경으로 전환 완료!${NC}"
 	@echo "${YELLOW}문제 발생 시 'make rollback RESTORE_DIR=$(BACKUP_DIR)' 명령으로 롤백 가능${NC}"
 
