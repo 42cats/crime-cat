@@ -60,8 +60,20 @@ module.exports = {
 							return total + (match ? parseInt(match[1]) : 0);
 						}, 0);
 
+						// 기존 통계 라인에서 총 버튼 수 추출
+						const existingStatsLine = lines.find(line => line.startsWith('📊'));
+						let totalButtons = 0;
+						if (existingStatsLine) {
+							const totalMatch = existingStatsLine.match(/\d+\/(\d+)/);
+							if (totalMatch) {
+								totalButtons = parseInt(totalMatch[1]);
+							}
+						}
+
 						const headerLine = lines.find(line => !line.startsWith('👤') && !line.startsWith('📊')) || '**체크리스트**';
-						const statsLine = `📊 누른사람: ${totalCount}회`;
+						const statsLine = totalButtons > 0
+							? `📊 총 체크 횟수: ${totalCount}/${totalButtons}`
+							: `📊 총 체크 횟수: ${totalCount}회`;
 						const newContent = [headerLine, statsLine, ...updatedLogLines].join('\n');
 
 						await statsMessage.edit({ content: newContent }).catch(err => {
@@ -88,7 +100,25 @@ module.exports = {
 								// 누가눌렀어: 버튼 라벨에 사용자 이름 추가 (한번만과 함께 사용)
 								if (labelName && isOneTime) {
 									const currentLabel = button.label || '알 수 없는 항목';
-									builder = builder.setLabel(`${currentLabel} (${userName})`);
+									// Discord 라벨 80자 제한을 고려한 사용자명 조정
+									const maxLabelLength = 80;
+									const baseLength = currentLabel.length + 3; // 3 = " ()"
+									const maxUserNameLength = maxLabelLength - baseLength;
+
+									let displayUserName = userName;
+									if (maxUserNameLength > 0) {
+										displayUserName = userName.length > maxUserNameLength
+											? userName.substring(0, Math.max(maxUserNameLength - 3, 1)) + "..."
+											: userName;
+									} else {
+										// 라벨이 너무 길면 사용자명 표시 안함
+										displayUserName = "";
+									}
+
+									const newLabel = displayUserName
+										? `${currentLabel} (${displayUserName})`
+										: currentLabel;
+									builder = builder.setLabel(newLabel);
 								}
 
 								// 한번만: 버튼 비활성화
