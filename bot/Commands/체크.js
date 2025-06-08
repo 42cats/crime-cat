@@ -76,14 +76,19 @@ module.exports = {
 
 			if (showPressDetail) {
 				const locationNames = locations.map(loc => loc.name).join(', ');
+				// 총 버튼 수 계산
+				const totalButtons = locations.reduce((sum, loc) => sum + loc.components.length, 0);
 				const statsMessage = await interaction.reply({
-					content: `**체크리스트** (${locationNames})\n📊 총 체크 횟수: 0회\n👤 체크한 항목: 개수`,
+					content: `**체크리스트** (${locationNames})\n📊 총 체크 횟수: 0/${totalButtons}\n👤 누른 사람:누른 수`,
 					fetchReply: true
 				});
 				statsMessageId = statsMessage.id;
 			} else {
-				// 통계 메시지 없이 시작
-				await interaction.deferReply();
+				// 통계 메시지 없이 시작 - 즉시 응답
+				await interaction.reply({
+					content: `✅ 총 ${locations.length}개 장소의 체크리스트를 생성합니다...`,
+					ephemeral: true
+				});
 			}
 
 			// 각 장소별로 메시지와 버튼 전송
@@ -94,14 +99,6 @@ module.exports = {
 					labelName,
 					isSecret,
 					statsMessageId
-				});
-			}
-
-			// 통계 메시지가 없을 때 완료 메시지
-			if (!showPressDetail) {
-				await interaction.followUp({
-					content: `✅ 총 ${locations.length}개 장소의 체크리스트를 생성했습니다.`,
-					ephemeral: true
 				});
 			}
 
@@ -249,8 +246,15 @@ async function sendLocationButtons(interaction, location, options) {
 				const optionBits = `${+isOneTime}0${+showPressDetail}000${+labelName}100${+isSecret}`;
 
 				// customId 생성: 구성요소명을 ID로 사용
+				// Discord customId 100자 제한을 위해 head 부분을 29자로 제한
+				const head = `${location.name}_${component}`;
+				const maxHeadLength = 29; // 80자 - 51자(고정부분) = 29자
+				const truncatedHead = head.length > maxHeadLength
+					? head.substring(0, maxHeadLength)
+					: head;
+
 				const customId = encodeToString(
-					`${location.name}_${component}`, // 장소명_구성요소명을 고유 ID로 사용
+					truncatedHead,
 					"checkButton", // 체크 버튼 전용 핸들러
 					optionBits,
 					statsMessageId // 통계 메시지 ID 전달
@@ -278,8 +282,8 @@ async function sendLocationButtons(interaction, location, options) {
 			messageTitle = `**${location.name}** 체크리스트`;
 		}
 
-		// 메시지 전송
-		await interaction.followUp({
+		// 메시지 전송 - channel.send() 사용
+		await interaction.channel.send({
 			content: messageTitle,
 			components: rows
 		});
