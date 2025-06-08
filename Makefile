@@ -17,8 +17,8 @@ GAME_THEME_DIR = images/gamethemes/
 MIGRATION_DIR = docker/mariadb/db/migrations
 BACKUP_DIR = backup/$(shell date +%Y%m%d_%H%M%S)
 NGINX_CONF_DIR = docker/nginx/conf/http.d
-SMTP_DATA_DIR = smtp/data
-SMTP_CONFIG_DIR = smtp/config
+# SMTP_DATA_DIR = smtp/data (Cloudflare Email Routing 사용으로 불필요)
+# SMTP_CONFIG_DIR = smtp/config (Cloudflare Email Routing 사용으로 불필요)
 
 # 기본 타겟 설정
 .DEFAULT_GOAL := help
@@ -34,7 +34,7 @@ update_config:
 # 디렉토리 생성
 create_dirs:
 	@echo "${BLUE}필요한 디렉토리 확인 및 생성 중...${NC}"
-	@for dir in $(DB_DATA_DIR) $(FRONT_BASE_DIR) ${IMAGE_DATA_DIR} ${AVATAR_DIR} ${GAME_THEME_DIR} ${NGINX_CONF_DIR} ${SMTP_DATA_DIR} ${SMTP_CONFIG_DIR}; do \
+	@for dir in $(DB_DATA_DIR) $(FRONT_BASE_DIR) ${IMAGE_DATA_DIR} ${AVATAR_DIR} ${GAME_THEME_DIR} ${NGINX_CONF_DIR}; do \
 		if [ ! -d $$dir ]; then \
 			echo "${YELLOW}디렉토리 생성 중: $$dir${NC}"; \
 			mkdir -p $$dir; \

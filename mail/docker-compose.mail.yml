@@ -1,0 +1,37 @@
+version: "3.9"
+services:
+  postfix:
+    image: boky/postfix:v4.2.0-alpine
+    container_name: postfix
+    hostname: ${MAIL_HOSTNAME:-mail.crimecat.org}
+    restart: unless-stopped
+    ports:
+      - "587:587"          # Submission 전용
+    volumes:
+      - ./dkim:/etc/opendkim/keys:ro
+      # (선택) Let's Encrypt 인증서 폴더 마운트
+      # - /etc/letsencrypt:/etc/letsencrypt:ro
+    environment:
+      ALLOWED_SENDER_DOMAINS: "${MAIL_DOMAIN:-crimecat.org}"
+      DKIM_SELECTOR:         "${DKIM_SELECTOR:-202406}"
+      DKIM_DOMAINS:          "${MAIL_DOMAIN:-crimecat.org}"
+      DKIM_PRIVATE_KEY_PATH: "/etc/opendkim/keys/${MAIL_DOMAIN:-crimecat.org}/${DKIM_SELECTOR:-202406}.private"
+      # boky/postfix에서 요구하는 키 파일 형식
+      POSTFIX_dkim_key_file: "/etc/opendkim/keys/${MAIL_DOMAIN:-crimecat.org}/${DKIM_SELECTOR:-202406}.private"
+
+      # Alpine 버전 기준 SMTP AUTH 변수
+      SMTPD_SASL_USERS: "${SMTP_USERNAME:-dev@crimecat.org}:${SMTP_PASSWORD:-dev_smtp_password_123}"
+
+      SMTP_SERVER_HOSTNAME: "${MAIL_HOSTNAME:-mail.crimecat.org}"
+      RELAY_NETWORKS:       "${SERVER_IP:-14.36.34.122}/32 127.0.0.0/8"
+
+      # (선택) TLS 직접 제공 시
+      # POSTFIX_smtpd_tls_cert_file: "/etc/letsencrypt/live/${MAIL_DOMAIN}/fullchain.pem"
+      # POSTFIX_smtpd_tls_key_file:  "/etc/letsencrypt/live/${MAIL_DOMAIN}/privkey.pem"
+
+    networks:
+      - mail-network
+
+networks:
+  mail-network:
+    driver: bridge
