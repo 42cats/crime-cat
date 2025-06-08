@@ -228,7 +228,7 @@ module.exports = {
 			} else {
 				// 일반 체크 완료 메시지 (interaction 응답)
 				const checkMessage = await interaction.followUp({
-					content: `✅ **${buttonName}** 항목을 체크했습니다.`,
+					content: `✅ **${userName}** 님이 **${buttonName}** 항목을 체크했습니다.`,
 					ephemeral: false
 				});
 
