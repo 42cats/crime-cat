@@ -89,8 +89,10 @@ async function createPrivateChannel(guild, member, observerRoleId, roleId) {
             content: `🎯 **${member.displayName || member.user.username}님의 전용 채널이 생성되었습니다!**\n\n` +
                 `**역할**: ${roleName}\n` +
                 `**카테고리**: ${category.name}\n` +
-                `이 채널은 역할 기반 콘텐츠 전용으로 사용됩니다.\n` +
-                `• 오직 ${member.displayName || member.user.username}님과 관리자, 관전자만 이 채널을 볼 수 있습니다.\n`
+                `• 오직 ${member.displayName || member.user.username}님과 관리자, 관전자만 이 채널을 볼 수 있습니다.\n` +
+                `•` +
+                `•` +
+                `•`
         });
 
         return channel;
