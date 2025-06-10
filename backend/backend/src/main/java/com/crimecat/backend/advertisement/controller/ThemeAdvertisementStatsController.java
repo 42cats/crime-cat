@@ -4,14 +4,14 @@ import com.crimecat.backend.advertisement.dto.AdvertisementStatsResponse;
 import com.crimecat.backend.advertisement.dto.PlatformAdvertisementStats;
 import com.crimecat.backend.advertisement.dto.UserAdvertisementSummary;
 import com.crimecat.backend.advertisement.service.ThemeAdvertisementStatsService;
-import com.crimecat.backend.auth.domain.WebUser;
-import com.crimecat.backend.auth.service.AuthService;
+import com.crimecat.backend.utils.AuthenticationUtil;
+import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.enums.UserRole;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,15 +25,14 @@ import java.util.UUID;
 public class ThemeAdvertisementStatsController {
     
     private final ThemeAdvertisementStatsService statsService;
-    private final AuthService authService;
     
     /**
      * 현재 사용자의 광고 상세 통계 조회
      */
     @GetMapping("/my-ads")
-    public ResponseEntity<List<AdvertisementStatsResponse>> getMyAdvertisementStats(Principal principal) {
+    public ResponseEntity<List<AdvertisementStatsResponse>> getMyAdvertisementStats() {
         try {
-            WebUser user = authService.getCurrentUser(principal);
+            WebUser user = AuthenticationUtil.getCurrentWebUser();
             List<AdvertisementStatsResponse> stats = statsService.getUserAdvertisementStats(user.getId());
             return ResponseEntity.ok(stats);
         } catch (Exception e) {
@@ -46,9 +45,9 @@ public class ThemeAdvertisementStatsController {
      * 현재 사용자의 광고 요약 통계
      */
     @GetMapping("/my-summary")
-    public ResponseEntity<UserAdvertisementSummary> getMyAdvertisementSummary(Principal principal) {
+    public ResponseEntity<UserAdvertisementSummary> getMyAdvertisementSummary() {
         try {
-            WebUser user = authService.getCurrentUser(principal);
+            WebUser user = AuthenticationUtil.getCurrentWebUser();
             UserAdvertisementSummary summary = statsService.getUserAdvertisementSummary(user.getId());
             return ResponseEntity.ok(summary);
         } catch (Exception e) {
@@ -61,15 +60,13 @@ public class ThemeAdvertisementStatsController {
      * 특정 광고의 상세 통계 조회 (관리자 또는 광고 게시 당사자만)
      */
     @GetMapping("/{requestId}")
-    public ResponseEntity<AdvertisementStatsResponse> getAdvertisementStats(
-            @PathVariable UUID requestId,
-            Principal principal) {
+    public ResponseEntity<AdvertisementStatsResponse> getAdvertisementStats(@PathVariable UUID requestId) {
         try {
-            WebUser user = authService.getCurrentUser(principal);
+            WebUser user = AuthenticationUtil.getCurrentWebUser();
             AdvertisementStatsResponse stats = statsService.getAdvertisementStats(requestId);
             
             // 관리자가 아니면서 본인의 광고가 아닌 경우 접근 거부
-            boolean isAdmin = user.getRole().equals("ADMIN") || user.getRole().equals("MANAGER");
+            boolean isAdmin = user.getRole() == UserRole.ADMIN || user.getRole() == UserRole.MANAGER;
             if (!isAdmin && !statsService.isUserAdvertisement(requestId, user.getId())) {
                 return ResponseEntity.status(403).build();
             }
