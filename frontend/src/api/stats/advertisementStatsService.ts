@@ -62,25 +62,53 @@ export interface PlatformAdvertisementStats {
 export const advertisementStatsService = {
   // 내 광고 상세 통계
   getMyAdvertisementStats: async (): Promise<AdvertisementStats[]> => {
-    const response = await apiClient.get('/theme-advertisements/stats/my-ads');
-    return response.data;
+    const response = await apiClient.get<AdvertisementStats[]>('/theme-advertisements/stats/my-ads');
+    return response || [];
   },
 
   // 내 광고 요약 통계
   getMyAdvertisementSummary: async (): Promise<UserAdvertisementSummary> => {
-    const response = await apiClient.get('/theme-advertisements/stats/my-summary');
-    return response.data;
+    const response = await apiClient.get<UserAdvertisementSummary>('/theme-advertisements/stats/my-summary');
+    return response || {
+      totalAdvertisements: 0,
+      activeAdvertisements: 0,
+      completedAdvertisements: 0,
+      queuedAdvertisements: 0,
+      totalSpent: 0,
+      totalRefunded: 0,
+      netSpent: 0,
+      totalExposures: 0,
+      totalClicks: 0,
+      averageCTR: 0,
+      averageCostPerClick: 0,
+      averageCostPerExposure: 0,
+      bestPerformingTheme: null,
+      bestPerformingCTR: 0
+    };
   },
 
   // 특정 광고 상세 통계
   getAdvertisementStats: async (requestId: string): Promise<AdvertisementStats> => {
-    const response = await apiClient.get(`/theme-advertisements/stats/${requestId}`);
-    return response.data;
+    const response = await apiClient.get<AdvertisementStats>(`/theme-advertisements/stats/${requestId}`);
+    return response;
   },
 
   // 플랫폼 전체 통계 (공개)
   getPlatformStats: async (): Promise<PlatformAdvertisementStats> => {
-    const response = await apiClient.get('/theme-advertisements/stats/platform');
-    return response.data;
+    const response = await apiClient.get<PlatformAdvertisementStats>('/theme-advertisements/stats/platform');
+    return response || {
+      totalAdvertisements: 0,
+      activeAdvertisements: 0,
+      queuedAdvertisements: 0,
+      totalRevenue: 0,
+      totalExposures: 0,
+      totalClicks: 0,
+      platformCTR: 0,
+      topPerformingThemes: [],
+      mostActiveThemes: [],
+      averageCTR: 0,
+      averageCostPerClick: 0,
+      averageCostPerExposure: 0
+    };
   },
 };
