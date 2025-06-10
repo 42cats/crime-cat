@@ -25,7 +25,9 @@ import {
     Clock, 
     AlertCircle, 
     CheckCircle,
-    Loader2
+    Loader2,
+    Plus,
+    Sparkles
 } from "lucide-react";
 import { CreateAdvertisementRequest, QueueStatus } from "@/api/themeAdvertisementService";
 import { UserTheme, getUserPublishedThemes } from "@/api/userThemesService";
