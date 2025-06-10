@@ -5,6 +5,7 @@ import { NotificationItem } from "@/components/NotificationItem";
 import { SystemNotificationItem } from "@/components/notification/SystemNotificationItem";
 import { GameRecordNotificationItem } from "@/components/notification/GameRecordNotificationItem";
 import { ThemePointRewardNotificationItem } from "@/components/notification/ThemePointRewardNotificationItem";
+import ThemeAdvertisementNotificationItem from "@/components/notification/ThemeAdvertisementNotificationItem";
 import { useProcessedNotifications } from "@/hooks/useProcessedNotifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -178,6 +179,16 @@ const NotificationListPage: React.FC = () => {
                         {...commonProps}
                     />
                 );
+            case NotificationType.THEME_AD_EXPIRED:
+            case NotificationType.THEME_AD_ACTIVATED:
+            case NotificationType.THEME_AD_CANCELLED:
+                return (
+                    <ThemeAdvertisementNotificationItem
+                        key={notification.id}
+                        notification={notification}
+                        onMarkAsRead={markAsReadMutation.mutate}
+                    />
+                );
             default:
                 return (
                     <NotificationItem key={notification.id} {...commonProps} />
@@ -294,6 +305,15 @@ const NotificationListPage: React.FC = () => {
                                 </SelectItem>
                                 <SelectItem value="THEME_POINT_REWARD">
                                     포인트 지급
+                                </SelectItem>
+                                <SelectItem value="THEME_AD_EXPIRED">
+                                    광고 만료
+                                </SelectItem>
+                                <SelectItem value="THEME_AD_ACTIVATED">
+                                    광고 활성화
+                                </SelectItem>
+                                <SelectItem value="THEME_AD_CANCELLED">
+                                    광고 취소
                                 </SelectItem>
                             </SelectContent>
                         </Select>

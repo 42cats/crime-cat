@@ -23,6 +23,7 @@ import {
     ImageIcon,
     GitCompare,
     MapPin,
+    Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -244,6 +245,12 @@ const SidebarInner = React.memo(() => {
                                             name: "합작팀",
                                             path: "/dashboard/teams",
                                             icon: Users,
+                                            roles: ["ADMIN", "MANAGER", "USER"],
+                                        },
+                                        {
+                                            name: "내 테마 광고",
+                                            path: "/dashboard/theme-ads",
+                                            icon: Sparkles,
                                             roles: ["ADMIN", "MANAGER", "USER"],
                                         },
                                         // {
