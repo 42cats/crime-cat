@@ -70,6 +70,7 @@ import CouponManagementPage from "@/pages/admin/CouponManagementPage";
 import LocationMappingPage from "@/pages/admin/LocationMappingPage";
 import PointMonitoringPage from "./pages/admin/point-monitoring";
 import ThemeAdsPage from "./pages/admin/theme-ads";
+import ThemeAdvertisements from "@/pages/themes/ThemeAdvertisements";
 
 // SNS Pages
 import SNSFeedPage from "@/pages/sns/SNSFeedPage";
@@ -359,6 +360,10 @@ const App = () => (
                                 <Route
                                     path="follows"
                                     element={<FollowsPage />}
+                                />
+                                <Route
+                                    path="theme-ads"
+                                    element={<ThemeAdvertisements />}
                                 />
 
                                 {/* 관리자 페이지 라우트 */}
