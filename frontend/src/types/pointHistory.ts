@@ -1,9 +1,9 @@
 export interface PointHistory {
   id: string;
-  type: 'CHARGE' | 'USE' | 'GIFT' | 'RECEIVE' | 'REFUND' | 'EXPIRE' | 'COUPON' | 'DAILY' | 'THEME_REWARD';
+  type: 'CHARGE' | 'USE' | 'GIFT' | 'RECEIVE' | 'REFUND' | 'EXPIRE' | 'COUPON' | 'DAILY' | 'THEME_REWARD' | 'ADVERTISEMENT' | 'ADVERTISEMENT_REFUND';
   amount: number;
   balanceAfter: number;
-  itemType?: 'PERMISSION' | 'THEME_WRITING';
+  itemType?: 'PERMISSION' | 'THEME_WRITING' | 'THEME_ADVERTISEMENT';
   permissionName?: string;
   relatedNickname?: string;
   memo: string;

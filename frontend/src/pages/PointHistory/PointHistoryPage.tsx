@@ -52,6 +52,8 @@ const transactionTypeLabels = {
     COUPON: "쿠폰",
     DAILY: "출석",
     THEME_REWARD: "테마 작성",
+    ADVERTISEMENT: "광고",
+    ADVERTISEMENT_REFUND: "광고 환불",
 };
 
 const sortOptions: SortOption[] = [

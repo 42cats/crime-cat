@@ -61,6 +61,22 @@ public class PointHistoryService {
 		pointHistoryQueryService.logThemeRewardTransaction(user, amount, themeId, themeName);
 	}
 
+	@Transactional
+	public boolean usePointsForAdvertisement(User user, int amount, String description) {
+		if (user.getPoint() < amount) {
+			return false;
+		}
+		user.subtractPoint(amount);
+		pointHistoryQueryService.logPointTransaction(user, TransactionType.ADVERTISEMENT, amount, description);
+		return true;
+	}
+
+	@Transactional
+	public void refundAdvertisementPoints(User user, int amount, String description) {
+		user.addPoint(amount);
+		pointHistoryQueryService.logPointTransaction(user, TransactionType.ADVERTISEMENT_REFUND, amount, description);
+	}
+
 	public Page<PointHistory> getUserPointHistory(String userId, TransactionType type, Pageable pageable) {
 		User user = userRepository.findByWebUserId(UUID.fromString(userId))
 				.orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
