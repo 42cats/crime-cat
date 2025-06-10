@@ -1,5 +1,6 @@
 package com.crimecat.backend.notification.builder;
 
+import com.crimecat.backend.notification.enums.NotificationType;
 import com.crimecat.backend.notification.service.NotificationService;
 import com.crimecat.backend.notification.template.TemplateService;
 import lombok.RequiredArgsConstructor;
@@ -111,11 +112,32 @@ public class NotificationBuilders {
     }
     
     /**
-     * 테마 광고 알림 빌더 생성
+     * 테마 광고 만료 알림 빌더 생성
      * @param userId 사용자 ID
      * @return ThemeAdvertisementBuilder
      */
-    public ThemeAdvertisementBuilder themeAdvertisement(UUID userId) {
-        return new ThemeAdvertisementBuilder();
+    public ThemeAdvertisementBuilder themeAdvertisementExpired(UUID userId) {
+        return new ThemeAdvertisementBuilder(notificationService, templateService, NotificationType.THEME_AD_EXPIRED)
+                .to(userId);
+    }
+    
+    /**
+     * 테마 광고 활성화 알림 빌더 생성
+     * @param userId 사용자 ID
+     * @return ThemeAdvertisementBuilder
+     */
+    public ThemeAdvertisementBuilder themeAdvertisementActivated(UUID userId) {
+        return new ThemeAdvertisementBuilder(notificationService, templateService, NotificationType.THEME_AD_ACTIVATED)
+                .to(userId);
+    }
+    
+    /**
+     * 테마 광고 취소 알림 빌더 생성
+     * @param userId 사용자 ID
+     * @return ThemeAdvertisementBuilder
+     */
+    public ThemeAdvertisementBuilder themeAdvertisementCancelled(UUID userId) {
+        return new ThemeAdvertisementBuilder(notificationService, templateService, NotificationType.THEME_AD_CANCELLED)
+                .to(userId);
     }
 }

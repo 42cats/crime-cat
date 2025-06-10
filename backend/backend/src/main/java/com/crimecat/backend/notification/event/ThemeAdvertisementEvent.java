@@ -24,6 +24,7 @@ public class ThemeAdvertisementEvent extends NotificationEvent {
                                  ThemeAdvertisementRequest.ThemeType themeType,
                                  Integer refundAmount,
                                  String additionalMessage) {
+        super(ThemeAdvertisementEvent.class, userId);
         this.userId = userId;
         this.themeName = themeName;
         this.notificationType = notificationType;
