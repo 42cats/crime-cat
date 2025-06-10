@@ -4,7 +4,7 @@
 -- 목적: 사용자가 포인트를 사용해 광고를 신청할 수 있는 시스템 구현
 -- =========================================
 
-USE ${DB_WEB};
+USE ${DB_DISCORD};
 
 -- 1. 테이블 생성 시작
 SELECT 'Creating theme_advertisement_requests table...' as status;
@@ -12,7 +12,7 @@ SELECT 'Creating theme_advertisement_requests table...' as status;
 -- 2. theme_advertisement_requests 테이블 생성
 CREATE TABLE IF NOT EXISTS theme_advertisement_requests (
     id CHAR(36) NOT NULL PRIMARY KEY,
-    user_id CHAR(36) NOT NULL,
+    user_id BINARY(16) NOT NULL,
     theme_id CHAR(36) NOT NULL,
     theme_type ENUM('CRIMESCENE', 'ESCAPE_ROOM', 'MURDER_MYSTERY', 'REALWORLD') NOT NULL,
     theme_name VARCHAR(255) NOT NULL,
