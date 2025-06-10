@@ -11,6 +11,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,11 +40,13 @@ public class DiscordBotCacheService {
             
             // 디스코드 봇에서 필요한 최소한의 정보만 추출
             List<Map<String, Object>> botFriendlyData = activeAds.stream()
-                .map(ad -> Map.of(
-                    "id", ad.getId().toString(),
-                    "themeName", ad.getThemeName(),
-                    "themeType", ad.getThemeType().toString()
-                ))
+                .map(ad -> {
+                    Map<String, Object> adData = new HashMap<>();
+                    adData.put("id", ad.getId().toString());
+                    adData.put("themeName", ad.getThemeName());
+                    adData.put("themeType", ad.getThemeType().toString());
+                    return adData;
+                })
                 .toList();
             
             String jsonData = objectMapper.writeValueAsString(botFriendlyData);

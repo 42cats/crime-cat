@@ -4,6 +4,7 @@ import com.crimecat.backend.advertisement.dto.AdvertisementStatsResponse;
 import com.crimecat.backend.advertisement.dto.PlatformAdvertisementStats;
 import com.crimecat.backend.advertisement.dto.UserAdvertisementSummary;
 import com.crimecat.backend.advertisement.service.ThemeAdvertisementStatsService;
+import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.enums.UserRole;
@@ -37,7 +38,7 @@ public class ThemeAdvertisementStatsController {
             return ResponseEntity.ok(stats);
         } catch (Exception e) {
             log.error("사용자 광고 상세 통계 조회 실패", e);
-            return ResponseEntity.internalServerError().build();
+            throw ErrorStatus.INTERNAL_ERROR.asControllerException();
         }
     }
     
@@ -52,7 +53,7 @@ public class ThemeAdvertisementStatsController {
             return ResponseEntity.ok(summary);
         } catch (Exception e) {
             log.error("사용자 광고 요약 통계 조회 실패", e);
-            return ResponseEntity.internalServerError().build();
+            throw ErrorStatus.INTERNAL_ERROR.asControllerException();
         }
     }
     
@@ -68,15 +69,15 @@ public class ThemeAdvertisementStatsController {
             // 관리자가 아니면서 본인의 광고가 아닌 경우 접근 거부
             boolean isAdmin = user.getRole() == UserRole.ADMIN || user.getRole() == UserRole.MANAGER;
             if (!isAdmin && !statsService.isUserAdvertisement(requestId, user.getId())) {
-                return ResponseEntity.status(403).build();
+                throw ErrorStatus.FORBIDDEN.asControllerException();
             }
             
             return ResponseEntity.ok(stats);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
+            throw ErrorStatus.ADVERTISEMENT_NOT_FOUND.asControllerException();
         } catch (Exception e) {
             log.error("광고 상세 통계 조회 실패: requestId={}", requestId, e);
-            return ResponseEntity.internalServerError().build();
+            throw ErrorStatus.INTERNAL_ERROR.asControllerException();
         }
     }
     
@@ -90,7 +91,7 @@ public class ThemeAdvertisementStatsController {
             return ResponseEntity.ok(stats);
         } catch (Exception e) {
             log.error("플랫폼 통계 조회 실패", e);
-            return ResponseEntity.internalServerError().build();
+            throw ErrorStatus.INTERNAL_ERROR.asControllerException();
         }
     }
 }

@@ -1,14 +1,11 @@
 package com.crimecat.backend.advertisement.service;
 
 import com.crimecat.backend.advertisement.domain.ThemeAdvertisementRequest;
-import com.crimecat.backend.notification.enums.NotificationType;
-import com.crimecat.backend.notification.event.NotificationEventPublisher;
-import com.crimecat.backend.notification.event.ThemeAdvertisementEvent;
+import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.notification.builder.NotificationBuilders;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.UUID;
 
 /**
  * 테마 광고 관련 알림 서비스
@@ -18,75 +15,67 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ThemeAdvertisementNotificationService {
     
-    private final NotificationEventPublisher eventPublisher;
+    private final NotificationBuilders notificationBuilders;
     
     /**
-     * 광고 만료 알림 발송
+     * 광고 만료 알림 전송
      */
     public void sendAdvertisementExpiredNotification(ThemeAdvertisementRequest request) {
         try {
-            ThemeAdvertisementEvent event = new ThemeAdvertisementEvent(
-                request.getUserId(),
-                request.getThemeName(),
-                NotificationType.THEME_AD_EXPIRED,
-                request.getThemeType()
-            );
+            log.info("광고 만료 알림 전송 시작: requestId={}, userId={}, themeName={}", 
+                    request.getId(), request.getUserId(), request.getThemeName());
             
-            eventPublisher.publishEvent(event);
-            log.info("광고 만료 알림 발송: userId={}, themeName={}", 
-                request.getUserId(), request.getThemeName());
+            notificationBuilders.themeAdvertisementExpired(request.getUserId())
+                    .themeName(request.getThemeName())
+                    .themeType(request.getThemeType())
+                    .send();
             
+            log.info("광고 만료 알림 전송 완료: requestId={}", request.getId());
         } catch (Exception e) {
-            log.error("광고 만료 알림 발송 실패: userId={}, themeName={}", 
-                request.getUserId(), request.getThemeName(), e);
+            log.error("광고 만료 알림 전송 실패: requestId={}", request.getId(), e);
+            throw ErrorStatus.INTERNAL_ERROR.asServiceException();
         }
     }
     
     /**
-     * 광고 활성화 알림 발송
+     * 광고 활성화 알림 전송
      */
     public void sendAdvertisementActivatedNotification(ThemeAdvertisementRequest request) {
         try {
-            ThemeAdvertisementEvent event = new ThemeAdvertisementEvent(
-                request.getUserId(),
-                request.getThemeName(),
-                NotificationType.THEME_AD_ACTIVATED,
-                request.getThemeType()
-            );
+            log.info("광고 활성화 알림 전송 시작: requestId={}, userId={}, themeName={}", 
+                    request.getId(), request.getUserId(), request.getThemeName());
             
-            eventPublisher.publishEvent(event);
-            log.info("광고 활성화 알림 발송: userId={}, themeName={}", 
-                request.getUserId(), request.getThemeName());
+            notificationBuilders.themeAdvertisementActivated(request.getUserId())
+                    .themeName(request.getThemeName())
+                    .themeType(request.getThemeType())
+                    .send();
             
+            log.info("광고 활성화 알림 전송 완료: requestId={}", request.getId());
         } catch (Exception e) {
-            log.error("광고 활성화 알림 발송 실패: userId={}, themeName={}", 
-                request.getUserId(), request.getThemeName(), e);
+            log.error("광고 활성화 알림 전송 실패: requestId={}", request.getId(), e);
+            throw ErrorStatus.INTERNAL_ERROR.asServiceException();
         }
     }
     
     /**
-     * 광고 취소 알림 발송
+     * 광고 취소 알림 전송
      */
-    public void sendAdvertisementCancelledNotification(ThemeAdvertisementRequest request, 
-                                                      Integer refundAmount, 
-                                                      String reason) {
+    public void sendAdvertisementCancelledNotification(ThemeAdvertisementRequest request, Integer refundAmount, String reason) {
         try {
-            ThemeAdvertisementEvent event = new ThemeAdvertisementEvent(
-                request.getUserId(),
-                request.getThemeName(),
-                NotificationType.THEME_AD_CANCELLED,
-                request.getThemeType(),
-                refundAmount,
-                reason
-            );
+            log.info("광고 취소 알림 전송 시작: requestId={}, userId={}, themeName={}, refundAmount={}", 
+                    request.getId(), request.getUserId(), request.getThemeName(), refundAmount);
             
-            eventPublisher.publishEvent(event);
-            log.info("광고 취소 알림 발송: userId={}, themeName={}, refund={}", 
-                request.getUserId(), request.getThemeName(), refundAmount);
+            notificationBuilders.themeAdvertisementCancelled(request.getUserId())
+                    .themeName(request.getThemeName())
+                    .themeType(request.getThemeType())
+                    .refundAmount(refundAmount)
+                    .reason(reason)
+                    .send();
             
+            log.info("광고 취소 알림 전송 완료: requestId={}", request.getId());
         } catch (Exception e) {
-            log.error("광고 취소 알림 발송 실패: userId={}, themeName={}", 
-                request.getUserId(), request.getThemeName(), e);
+            log.error("광고 취소 알림 전송 실패: requestId={}", request.getId(), e);
+            throw ErrorStatus.INTERNAL_ERROR.asServiceException();
         }
     }
 }

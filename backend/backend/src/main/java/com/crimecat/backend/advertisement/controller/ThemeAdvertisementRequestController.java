@@ -154,6 +154,38 @@ public class ThemeAdvertisementRequestController {
         return ResponseEntity.ok(Map.of("success", true));
     }
     
+    @PostMapping("/track-click/{requestId}")
+    public ResponseEntity<Void> trackAdvertisementClick(@PathVariable UUID requestId) {
+        try {
+            queueService.recordClick(requestId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            // 클릭 추적 실패는 조용히 처리 (사용자 경험에 영향 없도록)
+            return ResponseEntity.ok().build();
+        }
+    }
+    
+    @PostMapping("/calculate-refund")
+    public ResponseEntity<?> calculateRefund(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody CalculateRefundDto dto) {
+        try {
+            UUID userId = UUID.fromString(userDetails.getUsername());
+            // TODO: 환불 금액 계산 로직 구현
+            return ResponseEntity.ok(Map.of(
+                "remainingDays", 5,
+                "refundAmount", 500,
+                "message", "5일 남아 500포인트가 환불됩니다."
+            ));
+        } catch (Exception e) {
+            log.error("환불 계산 중 오류 발생", e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+    
     private String calculateEstimatedWaitTime(int queueSize) {
         if (queueSize == 0) return "즉시 활성화";
         if (queueSize <= 3) return "1-3일";
@@ -181,5 +213,12 @@ public class ThemeAdvertisementRequestController {
         
         public Integer getRequestedDays() { return requestedDays; }
         public void setRequestedDays(Integer requestedDays) { this.requestedDays = requestedDays; }
+    }
+    
+    public static class CalculateRefundDto {
+        private UUID requestId;
+        
+        public UUID getRequestId() { return requestId; }
+        public void setRequestId(UUID requestId) { this.requestId = requestId; }
     }
 }

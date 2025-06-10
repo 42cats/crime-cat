@@ -1,11 +1,18 @@
 package com.crimecat.backend.advertisement.controller;
 
+import com.crimecat.backend.advertisement.dto.CreateThemeAdvertisementRequest;
+import com.crimecat.backend.advertisement.dto.ThemeAdvertisementResponse;
+import com.crimecat.backend.advertisement.dto.UpdateThemeAdvertisementRequest;
 import com.crimecat.backend.advertisement.service.DiscordBotCacheService;
 import com.crimecat.backend.advertisement.service.ThemeAdvertisementQueueService;
+import com.crimecat.backend.advertisement.service.ThemeAdvertisementService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -17,16 +24,45 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ThemeAdvertisementAdminController {
     
+    private final ThemeAdvertisementService advertisementService;
     private final ThemeAdvertisementQueueService queueService;
     private final DiscordBotCacheService discordBotCacheService;
     
     /**
      * 모든 광고 신청 목록 조회 (관리자용)
      */
-    @GetMapping("/all")
-    public ResponseEntity<?> getAllAdvertisements() {
-        // TODO: 전체 광고 신청 목록 조회 구현
-        return ResponseEntity.ok("관리자용 전체 광고 목록");
+    @GetMapping
+    public ResponseEntity<List<ThemeAdvertisementResponse>> getAllAdvertisements() {
+        return ResponseEntity.ok(advertisementService.getAllAdvertisements());
+    }
+    
+    /**
+     * 새 광고 생성 (관리자용)
+     */
+    @PostMapping
+    public ResponseEntity<ThemeAdvertisementResponse> createAdvertisement(
+            @Valid @RequestBody CreateThemeAdvertisementRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(advertisementService.createAdvertisement(request));
+    }
+    
+    /**
+     * 광고 수정 (관리자용)
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<ThemeAdvertisementResponse> updateAdvertisement(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateThemeAdvertisementRequest request) {
+        return ResponseEntity.ok(advertisementService.updateAdvertisement(id, request));
+    }
+    
+    /**
+     * 광고 삭제 (관리자용)
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteAdvertisement(@PathVariable UUID id) {
+        advertisementService.deleteAdvertisement(id);
+        return ResponseEntity.noContent().build();
     }
     
     /**
