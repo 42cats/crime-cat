@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import CrimesceneThemeDetail from '../crimescene/CrimesceneThemeDetail';
 import EscapeRoomDetailPage from '@/components/escape-room/detail/EscapeRoomDetailPage';
@@ -6,6 +6,7 @@ import GameHistoryModal from '@/components/escape-room/detail/GameHistoryModal';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { themesService } from '@/api/content';
 import { escapeRoomHistoryService, EscapeRoomHistoryResponse } from '@/api/game/escapeRoomHistoryService';
+import { advertisementTrackingService } from '@/api/advertisement/trackingService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { EscapeRoomThemeDetailType } from '@/lib/types';
@@ -16,6 +17,13 @@ const ThemeDetailRouter: React.FC = () => {
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
     const [editingHistoryId, setEditingHistoryId] = useState<string | undefined>();
     const [editingHistoryData, setEditingHistoryData] = useState<EscapeRoomHistoryResponse | undefined>();
+
+    // 페이지 진입 시 광고 클릭 추적
+    useEffect(() => {
+        if (id) {
+            advertisementTrackingService.trackThemeClick(id);
+        }
+    }, [id]);
     
     // 방탈출 테마인 경우 별도 데이터 fetching
     const { data: escapeRoomData, isLoading: escapeRoomLoading, error: escapeRoomError } = useQuery({

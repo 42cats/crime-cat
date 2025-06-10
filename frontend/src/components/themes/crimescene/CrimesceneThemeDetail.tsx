@@ -8,6 +8,7 @@ import { themesService } from '@/api/content';
 import { gameHistoryService } from '@/api/game';
 import { teamsService } from '@/api/guild';
 import { UserPostDto } from '@/api/posts';
+import { advertisementTrackingService } from '@/api/advertisement/trackingService';
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     ThemeHeader,
@@ -80,6 +81,13 @@ const ThemeDetail: React.FC = () => {
         setProfileDetailUserId(userId);
         setShowProfileDetailModal(true);
     };
+
+    // 페이지 진입 시 광고 클릭 추적
+    useEffect(() => {
+        if (id) {
+            advertisementTrackingService.trackThemeClick(id);
+        }
+    }, [id]);
 
     // 초기 데이터 로드 및 설정
     useEffect(() => {
