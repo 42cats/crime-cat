@@ -24,6 +24,7 @@ import {
     GitCompare,
     MapPin,
     Sparkles,
+    BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -251,6 +252,12 @@ const SidebarInner = React.memo(() => {
                                             name: "내 테마 광고",
                                             path: "/dashboard/theme-ads",
                                             icon: Sparkles,
+                                            roles: ["ADMIN", "MANAGER", "USER"],
+                                        },
+                                        {
+                                            name: "광고 통계",
+                                            path: "/dashboard/theme-ad-stats",
+                                            icon: BarChart3,
                                             roles: ["ADMIN", "MANAGER", "USER"],
                                         },
                                         // {

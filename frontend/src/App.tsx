@@ -71,6 +71,7 @@ import LocationMappingPage from "@/pages/admin/LocationMappingPage";
 import PointMonitoringPage from "./pages/admin/point-monitoring";
 import ThemeAdsPage from "./pages/admin/theme-ads";
 import ThemeAdvertisements from "@/pages/themes/ThemeAdvertisements";
+import ThemeAdvertisementStats from "@/pages/dashboard/ThemeAdvertisementStats";
 
 // SNS Pages
 import SNSFeedPage from "@/pages/sns/SNSFeedPage";
@@ -364,6 +365,10 @@ const App = () => (
                                 <Route
                                     path="theme-ads"
                                     element={<ThemeAdvertisements />}
+                                />
+                                <Route
+                                    path="theme-ad-stats"
+                                    element={<ThemeAdvertisementStats />}
                                 />
 
                                 {/* 관리자 페이지 라우트 */}
