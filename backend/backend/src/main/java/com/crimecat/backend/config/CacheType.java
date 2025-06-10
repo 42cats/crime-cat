@@ -60,6 +60,9 @@ public class CacheType {
   public static final String THEME_AD_QUEUE = "theme:ad:queue";
   public static final String THEME_AD_USER_REQUESTS = "theme:ad:user:requests";
   public static final String THEME_AD_STATS = "theme:ad:stats";
+  public static final String THEME_AD_USER_STATS = "theme:ad:user:stats";
+  public static final String THEME_AD_USER_SUMMARY = "theme:ad:user:summary";
+  public static final String THEME_AD_PLATFORM_STATS = "theme:ad:platform:stats";
   
   public static final String [] CACHE_TYPE = {
       PERSONAL_DASHBOARD_INFO,
@@ -95,6 +98,9 @@ public class CacheType {
       THEME_AD_ACTIVE,
       THEME_AD_QUEUE,
       THEME_AD_USER_REQUESTS,
-      THEME_AD_STATS
+      THEME_AD_STATS,
+      THEME_AD_USER_STATS,
+      THEME_AD_USER_SUMMARY,
+      THEME_AD_PLATFORM_STATS
   };
 }

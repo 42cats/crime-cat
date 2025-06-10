@@ -124,4 +124,18 @@ public class ThemeAdvertisementController {
             ));
         }
     }
+    
+    /**
+     * 광고 클릭 추적 (공개 API - 로그인 불필요)
+     */
+    @PostMapping("/track-click/{requestId}")
+    public ResponseEntity<Void> trackAdvertisementClick(@PathVariable UUID requestId) {
+        try {
+            queueService.recordClick(requestId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            // 클릭 추적 실패는 조용히 처리 (사용자 경험에 영향 없도록)
+            return ResponseEntity.ok().build();
+        }
+    }
 }

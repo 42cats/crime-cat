@@ -273,14 +273,26 @@ public class ThemeAdvertisementQueueService {
     }
     
     @Transactional
-    @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId")
+    @Caching(evict = {
+        @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId"),
+        @CacheEvict(value = CacheType.THEME_AD_USER_STATS, allEntries = true),
+        @CacheEvict(value = CacheType.THEME_AD_USER_SUMMARY, allEntries = true),
+        @CacheEvict(value = CacheType.THEME_AD_PLATFORM_STATS, allEntries = true)
+    })
     public void recordClick(UUID requestId) {
         requestRepository.incrementClickCount(requestId);
+        log.debug("클릭 수 증가: requestId={}", requestId);
     }
     
     @Transactional
-    @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId")
+    @Caching(evict = {
+        @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId"),
+        @CacheEvict(value = CacheType.THEME_AD_USER_STATS, allEntries = true),
+        @CacheEvict(value = CacheType.THEME_AD_USER_SUMMARY, allEntries = true),
+        @CacheEvict(value = CacheType.THEME_AD_PLATFORM_STATS, allEntries = true)
+    })
     public void recordExposure(UUID requestId) {
         requestRepository.incrementExposureCount(requestId);
+        log.debug("노출 수 증가: requestId={}", requestId);
     }
 }
