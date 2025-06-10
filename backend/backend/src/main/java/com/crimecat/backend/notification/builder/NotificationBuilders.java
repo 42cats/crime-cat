@@ -109,4 +109,13 @@ public class NotificationBuilders {
         return new UserPostCommentReplyBuilder(notificationService, templateService, parentCommentId, replierId)
                 .from(replierId);
     }
+    
+    /**
+     * 테마 광고 알림 빌더 생성
+     * @param userId 사용자 ID
+     * @return ThemeAdvertisementBuilder
+     */
+    public ThemeAdvertisementBuilder themeAdvertisement(UUID userId) {
+        return new ThemeAdvertisementBuilder();
+    }
 }

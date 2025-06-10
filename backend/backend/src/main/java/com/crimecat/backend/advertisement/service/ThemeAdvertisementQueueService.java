@@ -33,6 +33,8 @@ public class ThemeAdvertisementQueueService {
     private final ThemeAdvertisementRequestRepository requestRepository;
     private final PointHistoryService pointHistoryService;
     private final UserRepository userRepository;
+    private final DiscordBotCacheService discordBotCacheService;
+    private final ThemeAdvertisementNotificationService notificationService;
     
     @Transactional
     @Caching(evict = {
@@ -90,7 +92,14 @@ public class ThemeAdvertisementQueueService {
                 log.info("광고 대기열 추가: userId={}, themeId={}, position={}", userId, themeId, request.getQueuePosition());
             }
             
-            return requestRepository.save(request);
+            ThemeAdvertisementRequest savedRequest = requestRepository.save(request);
+            
+            // 활성 광고가 변경된 경우 디스코드 봇 캐시 업데이트
+            if (savedRequest.getStatus() == AdvertisementStatus.ACTIVE) {
+                discordBotCacheService.updateActiveAdvertisementsCache();
+            }
+            
+            return savedRequest;
             
         } catch (Exception e) {
             // 오류 발생 시 포인트 환불
@@ -124,6 +133,9 @@ public class ThemeAdvertisementQueueService {
         request.setCancelledAt(LocalDateTime.now());
         request.setRefundAmount(request.getTotalCost());
         requestRepository.save(request);
+        
+        // 취소 알림 발송
+        notificationService.sendAdvertisementCancelledNotification(request, request.getTotalCost(), "사용자 요청에 의한 취소");
         
         // 대기열 재정렬
         if (request.getQueuePosition() != null) {
@@ -168,8 +180,14 @@ public class ThemeAdvertisementQueueService {
         request.setRefundAmount(refundAmount);
         requestRepository.save(request);
         
+        // 취소 알림 발송
+        notificationService.sendAdvertisementCancelledNotification(request, refundAmount, "사용자 요청에 의한 중도 취소");
+        
         // 대기열에서 다음 광고 활성화
         activateNextFromQueue();
+        
+        // 활성 광고 변경으로 인한 디스코드 봇 캐시 업데이트
+        discordBotCacheService.updateActiveAdvertisementsCache();
         
         log.info("활성 광고 취소: requestId={}, remainingDays={}, refund={}", 
             requestId, remainingDays, refundAmount);
@@ -194,10 +212,19 @@ public class ThemeAdvertisementQueueService {
         for (ThemeAdvertisementRequest ad : expiredAds) {
             ad.setStatus(AdvertisementStatus.EXPIRED);
             requestRepository.save(ad);
+            
+            // 만료 알림 발송
+            notificationService.sendAdvertisementExpiredNotification(ad);
+            
             log.info("광고 만료 처리: requestId={}", ad.getId());
             
             // 대기열에서 다음 광고 활성화
             activateNextFromQueue();
+        }
+        
+        // 광고 상태 변경으로 인한 디스코드 봇 캐시 업데이트
+        if (!expiredAds.isEmpty()) {
+            discordBotCacheService.updateActiveAdvertisementsCache();
         }
         
         log.info("만료된 광고 처리 완료: {} 건", expiredAds.size());
@@ -219,6 +246,13 @@ public class ThemeAdvertisementQueueService {
             request.setQueuePosition(null);
             
             requestRepository.save(request);
+            
+            // 활성화 알림 발송
+            notificationService.sendAdvertisementActivatedNotification(request);
+            
+            // 새로운 광고가 활성화된 경우 디스코드 봇 캐시 업데이트
+            discordBotCacheService.updateActiveAdvertisementsCache();
+            
             log.info("대기열 광고 활성화: requestId={}", request.getId());
         }
     }

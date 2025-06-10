@@ -12,7 +12,10 @@ public enum NotificationType {
     USER_POST_NEW("새 게시글"),
     USER_POST_COMMENT("게시글 댓글"),
     USER_POST_COMMENT_REPLY("댓글 답글"),
-    THEME_POINT_REWARD("테마 작성 포인트");
+    THEME_POINT_REWARD("테마 작성 포인트"),
+    THEME_AD_EXPIRED("테마 광고 만료"),
+    THEME_AD_ACTIVATED("테마 광고 활성화"),
+    THEME_AD_CANCELLED("테마 광고 취소");
     
     private final String displayName;
     
