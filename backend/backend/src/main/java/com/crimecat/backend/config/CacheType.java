@@ -55,6 +55,12 @@ public class CacheType {
   public static final String DISCORD_GUILD_ROLES = "discord:guild:roles";
   public static final String NAVER_LOCAL_SEARCH = "naver:local:search";
   
+  // 광고 관련 캐시 타입
+  public static final String THEME_AD_ACTIVE = "theme:ad:active";
+  public static final String THEME_AD_QUEUE = "theme:ad:queue";
+  public static final String THEME_AD_USER_REQUESTS = "theme:ad:user:requests";
+  public static final String THEME_AD_STATS = "theme:ad:stats";
+  
   public static final String [] CACHE_TYPE = {
       PERSONAL_DASHBOARD_INFO,
       VIEW_COUNT,
@@ -85,6 +91,10 @@ public class CacheType {
       DISCORD_GUILD_INFO,
       DISCORD_GUILD_CHANNELS,
       DISCORD_GUILD_ROLES,
-      NAVER_LOCAL_SEARCH
+      NAVER_LOCAL_SEARCH,
+      THEME_AD_ACTIVE,
+      THEME_AD_QUEUE,
+      THEME_AD_USER_REQUESTS,
+      THEME_AD_STATS
   };
 }
