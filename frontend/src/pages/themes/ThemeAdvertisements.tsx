@@ -587,7 +587,7 @@ const ThemeAdvertisements: React.FC = () => {
                                                 </span>
                                             </div>
                                             <div className="text-xs text-green-600">
-                                                취소 시 전액 환불
+                                                대기 중 취소 시 전액 환불
                                             </div>
                                         </div>
                                     </div>

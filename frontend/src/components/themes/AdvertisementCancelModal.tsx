@@ -42,18 +42,36 @@ const AdvertisementCancelModal: React.FC<AdvertisementCancelModalProps> = ({
     const isActive = advertisement.status === "ACTIVE";
     const isQueued = advertisement.status === "PENDING_QUEUE";
 
-    // 환불 가능 금액 계산
+    // 환불 가능 금액 계산 (백엔드와 동일한 실시간 계산 로직)
     const calculateRefundAmount = () => {
         if (isQueued) {
             return advertisement.totalCost; // 대기 중인 광고는 전액 환불
         }
-        if (isActive && advertisement.remainingDays) {
-            return advertisement.remainingDays * 100; // 활성 광고는 남은 일수 * 100P
+        if (isActive && advertisement.expiresAt) {
+            // 백엔드와 동일한 실시간 계산
+            const now = new Date();
+            const expiresAt = new Date(advertisement.expiresAt);
+            const timeDiff = expiresAt.getTime() - now.getTime();
+            const remainingDays = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            return Math.max(0, remainingDays) * 100; // 남은 일수 * 100P (음수면 0)
         }
         return 0;
     };
 
     const refundAmount = calculateRefundAmount();
+    
+    // 실시간으로 계산된 남은 일수 
+    const getRealTimeRemainingDays = () => {
+        if (isActive && advertisement.expiresAt) {
+            const now = new Date();
+            const expiresAt = new Date(advertisement.expiresAt);
+            const timeDiff = expiresAt.getTime() - now.getTime();
+            return Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+        }
+        return advertisement.remainingDays || 0;
+    };
+    
+    const realTimeRemainingDays = getRealTimeRemainingDays();
 
     const getThemeTypeBadge = (
         type: ThemeAdvertisementRequest["themeType"]
@@ -162,7 +180,7 @@ const AdvertisementCancelModal: React.FC<AdvertisementCancelModalProps> = ({
                                         남은 기간:
                                     </span>
                                     <div className="mt-1 font-medium">
-                                        {advertisement.remainingDays}일
+                                        {realTimeRemainingDays}일
                                     </div>
                                 </div>
                                 <div>
@@ -233,7 +251,7 @@ const AdvertisementCancelModal: React.FC<AdvertisementCancelModalProps> = ({
                                         부분 환불 예정
                                     </div>
                                     <div className="text-sm">
-                                        남은 {advertisement.remainingDays}일에
+                                        남은 {realTimeRemainingDays}일에
                                         대해{" "}
                                         <span className="font-semibold">
                                             {refundAmount.toLocaleString()}P
@@ -242,7 +260,7 @@ const AdvertisementCancelModal: React.FC<AdvertisementCancelModalProps> = ({
                                         <br />
                                         (이미 진행된{" "}
                                         {advertisement.requestedDays -
-                                            advertisement.remainingDays!}
+                                            realTimeRemainingDays}
                                         일분은 환불되지 않습니다)
                                     </div>
                                 </div>
