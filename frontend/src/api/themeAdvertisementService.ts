@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/api';
+import { apiClient } from "@/lib/api";
 
 // 타입 정의
 export interface ThemeAdvertisementRequest {
@@ -54,12 +54,14 @@ export interface RefundCalculationResponse {
 
 // API 서비스 클래스
 export class ThemeAdvertisementService {
-    private readonly baseUrl = '/api/v1/theme-ads';
+    private readonly baseUrl = "/theme-ads";
 
     /**
      * 광고 신청
      */
-    async requestAdvertisement(data: CreateAdvertisementRequest): Promise<CreateAdvertisementResponse> {
+    async requestAdvertisement(
+        data: CreateAdvertisementRequest
+    ): Promise<CreateAdvertisementResponse> {
         const response = await apiClient.post(`${this.baseUrl}/request`, data);
         return response;
     }
@@ -83,24 +85,37 @@ export class ThemeAdvertisementService {
     /**
      * 대기열 광고 취소
      */
-    async cancelQueuedAdvertisement(requestId: string): Promise<CancelAdvertisementResponse> {
-        const response = await apiClient.delete(`${this.baseUrl}/request/${requestId}`);
+    async cancelQueuedAdvertisement(
+        requestId: string
+    ): Promise<CancelAdvertisementResponse> {
+        const response = await apiClient.delete(
+            `${this.baseUrl}/request/${requestId}`
+        );
         return response;
     }
 
     /**
      * 활성 광고 취소
      */
-    async cancelActiveAdvertisement(requestId: string): Promise<CancelAdvertisementResponse> {
-        const response = await apiClient.delete(`${this.baseUrl}/active/${requestId}`);
+    async cancelActiveAdvertisement(
+        requestId: string
+    ): Promise<CancelAdvertisementResponse> {
+        const response = await apiClient.delete(
+            `${this.baseUrl}/active/${requestId}`
+        );
         return response;
     }
 
     /**
      * 환불 금액 계산 (미리보기)
      */
-    async calculateRefund(requestId: string): Promise<RefundCalculationResponse> {
-        const response = await apiClient.post(`${this.baseUrl}/calculate-refund`, { requestId });
+    async calculateRefund(
+        requestId: string
+    ): Promise<RefundCalculationResponse> {
+        const response = await apiClient.post(
+            `${this.baseUrl}/calculate-refund`,
+            { requestId }
+        );
         return response;
     }
 
@@ -125,13 +140,32 @@ export const themeAdvertisementService = new ThemeAdvertisementService();
 // 편의 함수들
 export const useThemeAdvertisements = () => {
     return {
-        requestAdvertisement: themeAdvertisementService.requestAdvertisement.bind(themeAdvertisementService),
-        getMyRequests: themeAdvertisementService.getMyRequests.bind(themeAdvertisementService),
-        getQueueStatus: themeAdvertisementService.getQueueStatus.bind(themeAdvertisementService),
-        cancelQueuedAdvertisement: themeAdvertisementService.cancelQueuedAdvertisement.bind(themeAdvertisementService),
-        cancelActiveAdvertisement: themeAdvertisementService.cancelActiveAdvertisement.bind(themeAdvertisementService),
-        calculateRefund: themeAdvertisementService.calculateRefund.bind(themeAdvertisementService),
-        recordClick: themeAdvertisementService.recordClick.bind(themeAdvertisementService),
-        recordExposure: themeAdvertisementService.recordExposure.bind(themeAdvertisementService),
+        requestAdvertisement:
+            themeAdvertisementService.requestAdvertisement.bind(
+                themeAdvertisementService
+            ),
+        getMyRequests: themeAdvertisementService.getMyRequests.bind(
+            themeAdvertisementService
+        ),
+        getQueueStatus: themeAdvertisementService.getQueueStatus.bind(
+            themeAdvertisementService
+        ),
+        cancelQueuedAdvertisement:
+            themeAdvertisementService.cancelQueuedAdvertisement.bind(
+                themeAdvertisementService
+            ),
+        cancelActiveAdvertisement:
+            themeAdvertisementService.cancelActiveAdvertisement.bind(
+                themeAdvertisementService
+            ),
+        calculateRefund: themeAdvertisementService.calculateRefund.bind(
+            themeAdvertisementService
+        ),
+        recordClick: themeAdvertisementService.recordClick.bind(
+            themeAdvertisementService
+        ),
+        recordExposure: themeAdvertisementService.recordExposure.bind(
+            themeAdvertisementService
+        ),
     };
 };

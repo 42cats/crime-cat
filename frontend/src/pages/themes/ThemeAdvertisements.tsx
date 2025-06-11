@@ -50,26 +50,12 @@ const ThemeAdvertisements: React.FC = () => {
     const loadData = async () => {
         try {
             setLoading(true);
-            // 임시로 빈 데이터 반환 (실제 API 연동 시 주석 해제)
-            // const [requestsData, queueData] = await Promise.all([
-            //     getMyRequests(),
-            //     getQueueStatus()
-            // ]);
-            // setRequests(requestsData);
-            // setQueueStatus(queueData);
-            
-            // 현재는 빈 상태로 설정
-            const dummyQueueStatus: QueueStatus = {
-                activeCount: 12,
-                maxActiveSlots: 15,
-                queuedCount: 0,
-                estimatedWaitTime: "즉시 시작"
-            };
-            
-            setTimeout(() => {
-                setRequests([]);
-                setQueueStatus(dummyQueueStatus);
-            }, 800);
+            const [requestsData, queueData] = await Promise.all([
+                getMyRequests(),
+                getQueueStatus()
+            ]);
+            setRequests(requestsData);
+            setQueueStatus(queueData);
         } catch (error) {
             console.error('데이터 로딩 실패:', error);
             toast({
@@ -85,16 +71,13 @@ const ThemeAdvertisements: React.FC = () => {
     const refreshData = async () => {
         try {
             setRefreshing(true);
-            // 실제 API 연동 시 주석 해제
-            // const [requestsData, queueData] = await Promise.all([
-            //     getMyRequests(),
-            //     getQueueStatus()
-            // ]);
-            // setRequests(requestsData);
-            // setQueueStatus(queueData);
+            const [requestsData, queueData] = await Promise.all([
+                getMyRequests(),
+                getQueueStatus()
+            ]);
+            setRequests(requestsData);
+            setQueueStatus(queueData);
             
-            // 현재는 빈 상태 유지
-            await loadData();
             toast({
                 title: "새로고침 완료",
                 description: "최신 데이터를 불러왔습니다.",
@@ -587,7 +570,7 @@ const ThemeAdvertisements: React.FC = () => {
                 onOpenChange={setIsModalOpen}
                 onSubmit={handleAdvertisementRequest}
                 queueStatus={queueStatus || undefined}
-                userPoints={user?.pointBalance}
+                userPoints={user?.point}
                 loading={loading}
             />
         </div>

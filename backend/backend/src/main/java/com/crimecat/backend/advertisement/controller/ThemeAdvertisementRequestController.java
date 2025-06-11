@@ -2,13 +2,11 @@ package com.crimecat.backend.advertisement.controller;
 
 import com.crimecat.backend.advertisement.domain.ThemeAdvertisementRequest;
 import com.crimecat.backend.advertisement.service.ThemeAdvertisementQueueService;
+import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,7 +23,7 @@ public class ThemeAdvertisementRequestController {
     
     @PostMapping("/request")
     public ResponseEntity<?> requestAdvertisement(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal WebUser currentUser,
             @RequestBody RequestAdvertisementDto dto) {
         try {
             // 입력 검증
@@ -36,7 +34,7 @@ public class ThemeAdvertisementRequestController {
                 ));
             }
             
-            UUID userId = UUID.fromString(userDetails.getUsername());
+            UUID userId = currentUser.getId();
             
             ThemeAdvertisementRequest request = queueService.requestAdvertisement(
                 userId, 
@@ -70,8 +68,8 @@ public class ThemeAdvertisementRequestController {
     
     @GetMapping("/my-requests")
     public ResponseEntity<List<ThemeAdvertisementRequest>> getMyRequests(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        UUID userId = UUID.fromString(userDetails.getUsername());
+            @AuthenticationPrincipal WebUser currentUser) {
+        UUID userId = currentUser.getId();
         List<ThemeAdvertisementRequest> requests = queueService.getUserAdvertisements(userId);
         return ResponseEntity.ok(requests);
     }
@@ -91,7 +89,7 @@ public class ThemeAdvertisementRequestController {
     
     @DeleteMapping("/request/{requestId}")
     public ResponseEntity<?> cancelRequest(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal WebUser currentUser,
             @PathVariable UUID requestId) {
         try {
             // 요청 소유자 확인은 서비스에서 처리
@@ -118,7 +116,7 @@ public class ThemeAdvertisementRequestController {
     
     @DeleteMapping("/active/{requestId}")
     public ResponseEntity<?> cancelActiveRequest(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal WebUser currentUser,
             @PathVariable UUID requestId) {
         try {
             queueService.cancelActiveAdvertisement(requestId);
@@ -167,10 +165,10 @@ public class ThemeAdvertisementRequestController {
     
     @PostMapping("/calculate-refund")
     public ResponseEntity<?> calculateRefund(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal WebUser currentUser,
             @RequestBody CalculateRefundDto dto) {
         try {
-            UUID userId = UUID.fromString(userDetails.getUsername());
+            UUID userId = currentUser.getId();
             // TODO: 환불 금액 계산 로직 구현
             return ResponseEntity.ok(Map.of(
                 "remainingDays", 5,
