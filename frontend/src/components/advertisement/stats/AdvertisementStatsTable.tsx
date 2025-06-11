@@ -46,7 +46,7 @@ const AdvertisementStatsTable: React.FC<AdvertisementStatsTableProps> = ({
     };
 
     const getThemeTypeBadge = (type: string) => {
-        return type === "CRIME_SCENE" ? (
+        return type === "CRIMESCENE" ? (
             <Badge variant="outline" className="text-red-600">
                 크라임씬
             </Badge>
