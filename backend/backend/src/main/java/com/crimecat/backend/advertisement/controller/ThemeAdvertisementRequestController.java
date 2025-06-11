@@ -31,10 +31,9 @@ public class ThemeAdvertisementRequestController {
         try {
             // 입력 검증
             if (dto.getRequestedDays() == null || dto.getRequestedDays() <= 0 || dto.getRequestedDays() > 15) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "광고 기간은 1일 이상 15일 이하로 설정해야 합니다."
-                ));
+                return ResponseEntity.badRequest().body(
+                    new BasicResponseDto(false, "광고 기간은 1일 이상 15일 이하로 설정해야 합니다.")
+                );
             }
             
             UUID userId = currentUser.getId();
@@ -47,25 +46,23 @@ public class ThemeAdvertisementRequestController {
                 dto.getRequestedDays()
             );
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "광고 신청이 완료되었습니다.",
-                "requestId", request.getId(),
-                "status", request.getStatus(),
-                "queuePosition", request.getQueuePosition()
+            return ResponseEntity.ok(new AdvertisementRequestResponseDto(
+                true,
+                "광고 신청이 완료되었습니다.",
+                request.getId(),
+                request.getStatus(),
+                request.getQueuePosition()
             ));
             
         } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-            ));
+            return ResponseEntity.badRequest().body(
+                new BasicResponseDto(false, e.getMessage())
+            );
         } catch (Exception e) {
             log.error("광고 신청 중 오류 발생", e);
-            return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "서버 오류가 발생했습니다."
-            ));
+            return ResponseEntity.internalServerError().body(
+                new BasicResponseDto(false, "서버 오류가 발생했습니다.")
+            );
         }
     }
     
@@ -78,81 +75,75 @@ public class ThemeAdvertisementRequestController {
     }
     
     @GetMapping("/queue-status")
-    public ResponseEntity<?> getQueueStatus() {
+    public ResponseEntity<QueueStatusResponseDto> getQueueStatus() {
         List<ThemeAdvertisementRequest> activeAds = queueService.getActiveAdvertisements();
         List<ThemeAdvertisementRequest> queuedAds = queueService.getQueuedAdvertisements();
         
-        return ResponseEntity.ok(Map.of(
-            "activeCount", activeAds.size(),
-            "maxActiveSlots", 15,
-            "queuedCount", queuedAds.size(),
-            "estimatedWaitTime", calculateEstimatedWaitTime(queuedAds.size())
+        return ResponseEntity.ok(new QueueStatusResponseDto(
+            activeAds.size(),
+            15,
+            queuedAds.size(),
+            calculateEstimatedWaitTime(queuedAds.size())
         ));
     }
     
     @DeleteMapping("/request/{requestId}")
-    public ResponseEntity<?> cancelRequest(
+    public ResponseEntity<BasicResponseDto> cancelRequest(
             @AuthenticationPrincipal WebUser currentUser,
             @PathVariable UUID requestId) {
         try {
             // 요청 소유자 확인은 서비스에서 처리
             queueService.cancelQueuedAdvertisement(requestId);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "광고 신청이 취소되었습니다."
-            ));
+            return ResponseEntity.ok(
+                new BasicResponseDto(true, "광고 신청이 취소되었습니다.")
+            );
             
         } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-            ));
+            return ResponseEntity.badRequest().body(
+                new BasicResponseDto(false, e.getMessage())
+            );
         } catch (Exception e) {
             log.error("광고 취소 중 오류 발생", e);
-            return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "서버 오류가 발생했습니다."
-            ));
+            return ResponseEntity.internalServerError().body(
+                new BasicResponseDto(false, "서버 오류가 발생했습니다.")
+            );
         }
     }
     
     @DeleteMapping("/active/{requestId}")
-    public ResponseEntity<?> cancelActiveRequest(
+    public ResponseEntity<BasicResponseDto> cancelActiveRequest(
             @AuthenticationPrincipal WebUser currentUser,
             @PathVariable UUID requestId) {
         try {
             queueService.cancelActiveAdvertisement(requestId);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "활성 광고가 취소되었습니다."
-            ));
+            return ResponseEntity.ok(
+                new BasicResponseDto(true, "활성 광고가 취소되었습니다.")
+            );
             
         } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-            ));
+            return ResponseEntity.badRequest().body(
+                new BasicResponseDto(false, e.getMessage())
+            );
         } catch (Exception e) {
             log.error("활성 광고 취소 중 오류 발생", e);
-            return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "서버 오류가 발생했습니다."
-            ));
+            return ResponseEntity.internalServerError().body(
+                new BasicResponseDto(false, "서버 오류가 발생했습니다.")
+            );
         }
     }
     
     @PostMapping("/click/{requestId}")
-    public ResponseEntity<?> recordClick(@PathVariable UUID requestId) {
+    public ResponseEntity<BasicResponseDto> recordClick(@PathVariable UUID requestId) {
         queueService.recordClick(requestId);
-        return ResponseEntity.ok(Map.of("success", true));
+        return ResponseEntity.ok(new BasicResponseDto(true, "클릭이 기록되었습니다."));
     }
     
     @PostMapping("/exposure/{requestId}")
-    public ResponseEntity<?> recordExposure(@PathVariable UUID requestId) {
+    public ResponseEntity<BasicResponseDto> recordExposure(@PathVariable UUID requestId) {
         queueService.recordExposure(requestId);
-        return ResponseEntity.ok(Map.of("success", true));
+        return ResponseEntity.ok(new BasicResponseDto(true, "노출이 기록되었습니다."));
     }
     
     @PostMapping("/track-click/{requestId}")
@@ -175,10 +166,9 @@ public class ThemeAdvertisementRequestController {
             
             // 입력 검증
             if (dto.getRequestId() == null) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "광고 요청 ID가 필요합니다."
-                ));
+                return ResponseEntity.badRequest().body(
+                    new BasicResponseDto(false, "광고 요청 ID가 필요합니다.")
+                );
             }
             
             // 광고 요청 조회
@@ -194,10 +184,9 @@ public class ThemeAdvertisementRequestController {
             if (request.getStatus() == AdvertisementStatus.CANCELLED ||
                 request.getStatus() == AdvertisementStatus.EXPIRED ||
                 request.getStatus() == AdvertisementStatus.REFUNDED) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "이미 취소되었거나 완료된 광고는 환불할 수 없습니다."
-                ));
+                return ResponseEntity.badRequest().body(
+                    new BasicResponseDto(false, "이미 취소되었거나 완료된 광고는 환불할 수 없습니다.")
+                );
             }
             
             int refundAmount = 0;
@@ -224,27 +213,25 @@ public class ThemeAdvertisementRequestController {
                 }
             }
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "remainingDays", remainingDays,
-                "refundAmount", refundAmount,
-                "originalAmount", request.getTotalCost(),
-                "status", request.getStatus().name(),
-                "message", message
+            return ResponseEntity.ok(new RefundCalculationResponseDto(
+                true,
+                message,
+                remainingDays,
+                refundAmount,
+                request.getTotalCost(),
+                request.getStatus().name()
             ));
             
         } catch (ServiceException e) {
             log.error("환불 계산 중 서비스 오류 발생: {}", e.getMessage());
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-            ));
+            return ResponseEntity.status(e.getStatus()).body(
+                new BasicResponseDto(false, e.getMessage())
+            );
         } catch (Exception e) {
             log.error("환불 계산 중 예상치 못한 오류 발생", e);
-            return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "서버 오류가 발생했습니다."
-            ));
+            return ResponseEntity.internalServerError().body(
+                new BasicResponseDto(false, "서버 오류가 발생했습니다.")
+            );
         }
     }
     
@@ -256,10 +243,9 @@ public class ThemeAdvertisementRequestController {
         try {
             // 관리자 권한 확인
             if (currentUser.getRole().ordinal() < com.crimecat.backend.webUser.enums.UserRole.ADMIN.ordinal()) {
-                return ResponseEntity.status(403).body(Map.of(
-                    "success", false,
-                    "message", "관리자만 강제 취소할 수 있습니다."
-                ));
+                return ResponseEntity.status(403).body(
+                    new BasicResponseDto(false, "관리자만 강제 취소할 수 있습니다.")
+                );
             }
             
             // 광고 요청 조회
@@ -270,34 +256,31 @@ public class ThemeAdvertisementRequestController {
             if (request.getStatus() == AdvertisementStatus.CANCELLED ||
                 request.getStatus() == AdvertisementStatus.EXPIRED ||
                 request.getStatus() == AdvertisementStatus.REFUNDED) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "이미 취소되었거나 완료된 광고입니다."
-                ));
+                return ResponseEntity.badRequest().body(
+                    new BasicResponseDto(false, "이미 취소되었거나 완료된 광고입니다.")
+                );
             }
             
             // 강제 취소 처리
             boolean refunded = queueService.forceCancelAdvertisement(requestId, dto.getReason(), currentUser.getId());
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "광고가 강제 취소되었습니다.",
-                "refunded", refunded,
-                "reason", dto.getReason()
+            return ResponseEntity.ok(new ForceCancelResponseDto(
+                true,
+                "광고가 강제 취소되었습니다.",
+                refunded,
+                dto.getReason()
             ));
             
         } catch (ServiceException e) {
             log.error("강제 광고 취소 중 서비스 오류 발생: {}", e.getMessage());
-            return ResponseEntity.status(e.getStatus()).body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-            ));
+            return ResponseEntity.status(e.getStatus()).body(
+                new BasicResponseDto(false, e.getMessage())
+            );
         } catch (Exception e) {
             log.error("강제 광고 취소 중 예상치 못한 오류 발생", e);
-            return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "서버 오류가 발생했습니다."
-            ));
+            return ResponseEntity.internalServerError().body(
+                new BasicResponseDto(false, "서버 오류가 발생했습니다.")
+            );
         }
     }
     
@@ -312,10 +295,9 @@ public class ThemeAdvertisementRequestController {
             // 권한 검증: 자신의 통계이거나 관리자인 경우만 조회 가능
             if (targetUserId != null && !targetUserId.equals(currentUser.getId())) {
                 if (currentUser.getRole().ordinal() < com.crimecat.backend.webUser.enums.UserRole.ADMIN.ordinal()) {
-                    return ResponseEntity.status(403).body(Map.of(
-                        "success", false,
-                        "message", "다른 사용자의 통계는 관리자만 조회할 수 있습니다."
-                    ));
+                    return ResponseEntity.status(403).body(
+                        new BasicResponseDto(false, "다른 사용자의 통계는 관리자만 조회할 수 있습니다.")
+                    );
                 }
             } else if (targetUserId == null) {
                 // userId가 지정되지 않으면 현재 사용자의 통계
@@ -325,17 +307,13 @@ public class ThemeAdvertisementRequestController {
             // 통계 조회
             Map<String, Object> statistics = queueService.getAdvertisementStatistics(targetUserId, themeId);
             
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "statistics", statistics
-            ));
+            return ResponseEntity.ok(new StatisticsResponseDto(true, statistics));
             
         } catch (Exception e) {
             log.error("광고 통계 조회 중 오류 발생", e);
-            return ResponseEntity.internalServerError().body(Map.of(
-                "success", false,
-                "message", "서버 오류가 발생했습니다."
-            ));
+            return ResponseEntity.internalServerError().body(
+                new BasicResponseDto(false, "서버 오류가 발생했습니다.")
+            );
         }
     }
     
@@ -380,5 +358,125 @@ public class ThemeAdvertisementRequestController {
         
         public String getReason() { return reason; }
         public void setReason(String reason) { this.reason = reason; }
+    }
+    
+    // Response DTO classes
+    public static class AdvertisementRequestResponseDto {
+        private boolean success;
+        private String message;
+        private UUID requestId;
+        private AdvertisementStatus status;
+        private Integer queuePosition;
+        
+        public AdvertisementRequestResponseDto(boolean success, String message, UUID requestId, 
+                                             AdvertisementStatus status, Integer queuePosition) {
+            this.success = success;
+            this.message = message;
+            this.requestId = requestId;
+            this.status = status;
+            this.queuePosition = queuePosition;
+        }
+        
+        // Getters
+        public boolean isSuccess() { return success; }
+        public String getMessage() { return message; }
+        public UUID getRequestId() { return requestId; }
+        public AdvertisementStatus getStatus() { return status; }
+        public Integer getQueuePosition() { return queuePosition; }
+    }
+    
+    public static class QueueStatusResponseDto {
+        private int activeCount;
+        private int maxActiveSlots;
+        private int queuedCount;
+        private String estimatedWaitTime;
+        
+        public QueueStatusResponseDto(int activeCount, int maxActiveSlots, int queuedCount, String estimatedWaitTime) {
+            this.activeCount = activeCount;
+            this.maxActiveSlots = maxActiveSlots;
+            this.queuedCount = queuedCount;
+            this.estimatedWaitTime = estimatedWaitTime;
+        }
+        
+        // Getters
+        public int getActiveCount() { return activeCount; }
+        public int getMaxActiveSlots() { return maxActiveSlots; }
+        public int getQueuedCount() { return queuedCount; }
+        public String getEstimatedWaitTime() { return estimatedWaitTime; }
+    }
+    
+    public static class BasicResponseDto {
+        private boolean success;
+        private String message;
+        
+        public BasicResponseDto(boolean success, String message) {
+            this.success = success;
+            this.message = message;
+        }
+        
+        // Getters
+        public boolean isSuccess() { return success; }
+        public String getMessage() { return message; }
+    }
+    
+    public static class RefundCalculationResponseDto {
+        private boolean success;
+        private String message;
+        private int remainingDays;
+        private int refundAmount;
+        private int originalAmount;
+        private String status;
+        
+        public RefundCalculationResponseDto(boolean success, String message, int remainingDays,
+                                          int refundAmount, int originalAmount, String status) {
+            this.success = success;
+            this.message = message;
+            this.remainingDays = remainingDays;
+            this.refundAmount = refundAmount;
+            this.originalAmount = originalAmount;
+            this.status = status;
+        }
+        
+        // Getters
+        public boolean isSuccess() { return success; }
+        public String getMessage() { return message; }
+        public int getRemainingDays() { return remainingDays; }
+        public int getRefundAmount() { return refundAmount; }
+        public int getOriginalAmount() { return originalAmount; }
+        public String getStatus() { return status; }
+    }
+    
+    public static class ForceCancelResponseDto {
+        private boolean success;
+        private String message;
+        private boolean refunded;
+        private String reason;
+        
+        public ForceCancelResponseDto(boolean success, String message, boolean refunded, String reason) {
+            this.success = success;
+            this.message = message;
+            this.refunded = refunded;
+            this.reason = reason;
+        }
+        
+        // Getters
+        public boolean isSuccess() { return success; }
+        public String getMessage() { return message; }
+        public boolean isRefunded() { return refunded; }
+        public String getReason() { return reason; }
+    }
+    
+    public static class StatisticsResponseDto {
+        private boolean success;
+        private Map<String, Object> statistics;
+        
+        public StatisticsResponseDto(boolean success, Map<String, Object> statistics) {
+            this.success = success;
+            this.statistics = statistics;
+        }
+        
+        // Getters
+        public boolean isSuccess() { return success; }
+        public Map<String, Object> getStatistics() { return statistics; }
     }
 }
