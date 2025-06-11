@@ -12,7 +12,7 @@ import java.util.UUID;
  * 디스코드 봇 전용 테마 광고 API 컨트롤러
  */
 @RestController
-@RequestMapping("/api/bot/v1/theme-ads")
+@RequestMapping("/bot/v1/theme-ads")
 @RequiredArgsConstructor
 public class ThemeAdvertisementBotController {
     
