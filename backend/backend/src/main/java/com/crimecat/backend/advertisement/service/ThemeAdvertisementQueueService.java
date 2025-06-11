@@ -51,7 +51,11 @@ public class ThemeAdvertisementQueueService {
         @CacheEvict(value = CacheType.THEME_AD_QUEUE, allEntries = true),
         @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, key = "#userId"),
         @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_ACTIVE + "_carousel", allEntries = true)
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE + "_carousel", allEntries = true),
+        // 새 광고 생성 시 통계 캐시도 무효화
+        @CacheEvict(value = CacheType.THEME_AD_USER_STATS, key = "#userId"),
+        @CacheEvict(value = CacheType.THEME_AD_USER_SUMMARY, key = "#userId"),
+        @CacheEvict(value = CacheType.THEME_AD_PLATFORM_STATS, allEntries = true)
     })
     public ThemeAdvertisementRequest requestAdvertisement(UUID userId, UUID themeId, String themeName, 
                                                         ThemeAdvertisementRequest.ThemeType themeType, 
@@ -342,7 +346,9 @@ public class ThemeAdvertisementQueueService {
         @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId"),
         @CacheEvict(value = CacheType.THEME_AD_USER_STATS, allEntries = true),
         @CacheEvict(value = CacheType.THEME_AD_USER_SUMMARY, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_PLATFORM_STATS, allEntries = true)
+        @CacheEvict(value = CacheType.THEME_AD_PLATFORM_STATS, allEntries = true),
+        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true), // ThemeAdvertisements 페이지 캐시 삭제
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true) // 활성 광고 캐시 삭제
     })
     public void recordClick(UUID requestId) {
         requestRepository.incrementClickCount(requestId);
@@ -354,7 +360,9 @@ public class ThemeAdvertisementQueueService {
         @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId"),
         @CacheEvict(value = CacheType.THEME_AD_USER_STATS, allEntries = true),
         @CacheEvict(value = CacheType.THEME_AD_USER_SUMMARY, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_PLATFORM_STATS, allEntries = true)
+        @CacheEvict(value = CacheType.THEME_AD_PLATFORM_STATS, allEntries = true),
+        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true), // ThemeAdvertisements 페이지 캐시 삭제
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true) // 활성 광고 캐시 삭제
     })
     public void recordExposure(UUID requestId) {
         requestRepository.incrementExposureCount(requestId);

@@ -74,6 +74,7 @@ const ThemeAdvertisements: React.FC = () => {
     const refreshData = async () => {
         try {
             setRefreshing(true);
+            // 최신 데이터 가져오기
             const [requestsData, queueData] = await Promise.all([
                 getMyRequests(),
                 getQueueStatus(),
@@ -100,6 +101,13 @@ const ThemeAdvertisements: React.FC = () => {
 
     useEffect(() => {
         loadData();
+        
+        // 실시간 업데이트를 위한 자동 새로고침 (30초마다)
+        const interval = setInterval(() => {
+            loadData();
+        }, 30000);
+        
+        return () => clearInterval(interval);
     }, []);
 
     const getStatusBadge = (status: ThemeAdvertisementRequest["status"]) => {

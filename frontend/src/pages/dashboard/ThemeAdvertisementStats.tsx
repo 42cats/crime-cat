@@ -24,7 +24,7 @@ const ThemeAdvertisementStats: React.FC = () => {
   } = useQuery({
     queryKey: ['advertisement-stats', 'my-summary'],
     queryFn: advertisementStatsService.getMyAdvertisementSummary,
-    staleTime: 30000, // 30초 캐시
+    staleTime: 5000, // 5초 캐시 (실시간 업데이트)
   });
 
   // 내 광고 상세 통계
@@ -35,7 +35,7 @@ const ThemeAdvertisementStats: React.FC = () => {
   } = useQuery({
     queryKey: ['advertisement-stats', 'my-ads'],
     queryFn: advertisementStatsService.getMyAdvertisementStats,
-    staleTime: 30000,
+    staleTime: 5000, // 5초 캐시 (실시간 업데이트)
   });
 
   const handleRefresh = () => {

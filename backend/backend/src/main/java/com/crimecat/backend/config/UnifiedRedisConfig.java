@@ -243,6 +243,28 @@ public class UnifiedRedisConfig {
         cacheConfigurations.put("escapeRoomThemeStats", 
                 defaultConfig.entryTtl(Duration.ofMinutes(30)));
         
+        // 테마 광고 캐시 설정 (실시간 업데이트를 위한 짧은 TTL)
+        cacheConfigurations.put(CacheType.THEME_AD_ACTIVE, 
+                defaultConfig.entryTtl(Duration.ofMinutes(1))); // 활성 광고 - 1분
+        
+        cacheConfigurations.put(CacheType.THEME_AD_QUEUE, 
+                defaultConfig.entryTtl(Duration.ofMinutes(2))); // 광고 대기열 - 2분
+        
+        cacheConfigurations.put(CacheType.THEME_AD_USER_REQUESTS, 
+                defaultConfig.entryTtl(Duration.ofMinutes(3))); // 사용자 광고 요청 - 3분
+        
+        cacheConfigurations.put(CacheType.THEME_AD_STATS, 
+                defaultConfig.entryTtl(Duration.ofMinutes(5))); // 개별 광고 통계 - 5분
+        
+        cacheConfigurations.put(CacheType.THEME_AD_USER_STATS, 
+                defaultConfig.entryTtl(Duration.ofMinutes(5))); // 사용자 광고 통계 - 5분
+        
+        cacheConfigurations.put(CacheType.THEME_AD_USER_SUMMARY, 
+                defaultConfig.entryTtl(Duration.ofMinutes(5))); // 사용자 광고 요약 - 5분
+        
+        cacheConfigurations.put(CacheType.THEME_AD_PLATFORM_STATS, 
+                defaultConfig.entryTtl(Duration.ofMinutes(10))); // 플랫폼 통계 - 10분
+        
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)

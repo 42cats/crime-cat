@@ -69,10 +69,23 @@ public class ThemeAdvertisementAdminController {
      * 특정 광고 강제 취소 (관리자용)
      */
     @DeleteMapping("/{requestId}/force-cancel")
-    public ResponseEntity<String> forceCancelAdvertisement(@PathVariable UUID requestId) {
+    public ResponseEntity<String> forceCancelAdvertisement(
+            @PathVariable UUID requestId,
+            @RequestParam(required = false, defaultValue = "관리자 강제 취소") String reason) {
         try {
-            // TODO: 관리자 강제 취소 로직 구현
-            return ResponseEntity.ok("광고 강제 취소 완료");
+            // AuthenticationUtil에서 현재 관리자 ID 가져오기
+            com.crimecat.backend.utils.AuthenticationUtil.validateUserHasMinimumRole(
+                com.crimecat.backend.webUser.enums.UserRole.ADMIN);
+            com.crimecat.backend.webUser.domain.WebUser currentAdmin = 
+                com.crimecat.backend.utils.AuthenticationUtil.getCurrentWebUser();
+            
+            boolean refunded = queueService.forceCancelAdvertisement(requestId, reason, currentAdmin.getId());
+            
+            String message = refunded ? 
+                "광고 강제 취소 및 환불 완료" : 
+                "광고 강제 취소 완료 (환불 대상 없음)";
+                
+            return ResponseEntity.ok(message);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("광고 강제 취소 실패: " + e.getMessage());
         }
