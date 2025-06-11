@@ -1,6 +1,6 @@
 
 const { Client, ActivityType } = require('discord.js')
-const ThemeAdTracker = require('./themeAdTracker');
+const { recordAdExposureFromData } = require('../api/themeAd/themeAd');
 
 async function ActivityMessage(bot, msg, type) {
 	bot.user.setActivity(msg, { type });
@@ -50,7 +50,7 @@ module.exports = (client, messege, currentIndex) => {
 			const adIndex = currentIndex - adStartIndex;
 			if (adIndex < activeAds.length) {
 				// 광고가 표시될 때 노출 기록
-				ThemeAdTracker.recordAdExposure(activeAds[adIndex]);
+				recordAdExposureFromData(activeAds[adIndex]);
 				activityType = ActivityType.Custom; // 광고는 Custom 타입으로 표시
 			}
 		} else if (currentIndex >= 1 && currentIndex < adStartIndex) {
