@@ -368,7 +368,8 @@ const AdvertisementRequestModal: React.FC<AdvertisementRequestModalProps> = ({
                         <AlertTitle>환불 정책</AlertTitle>
                         <AlertDescription className="space-y-1">
                             <div>• 대기 중 취소: 전액 환불</div>
-                            <div>• 활성 중 취소: 남은 일수만큼 부분 환불</div>
+                            <div>• 활성 중 취소: 남은 일수만큼 부분 환불 (100P/일)</div>
+                            <div>• 환불 계산: 취소 시점 기준 실시간 계산</div>
                             <div>• 포인트는 신청 즉시 차감됩니다</div>
                         </AlertDescription>
                     </Alert>
