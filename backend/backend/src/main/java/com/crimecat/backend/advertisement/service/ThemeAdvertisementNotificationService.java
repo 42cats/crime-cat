@@ -3,6 +3,8 @@ package com.crimecat.backend.advertisement.service;
 import com.crimecat.backend.advertisement.domain.ThemeAdvertisementRequest;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.notification.builder.NotificationBuilders;
+import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class ThemeAdvertisementNotificationService {
     
     private final NotificationBuilders notificationBuilders;
+    private final UserRepository userRepository;
     
     /**
      * 광고 만료 알림 전송
@@ -25,7 +28,10 @@ public class ThemeAdvertisementNotificationService {
             log.info("광고 만료 알림 전송 시작: requestId={}, userId={}, themeName={}", 
                     request.getId(), request.getUserId(), request.getThemeName());
             
-            notificationBuilders.themeAdvertisementExpired(request.getUserId())
+            User user = userRepository.findByWebUserId(request.getUserId())
+                    .orElseThrow(() -> new IllegalArgumentException("User not found for webUserId: " + request.getUserId()));
+            
+            notificationBuilders.themeAdvertisementExpired(user.getId())
                     .themeName(request.getThemeName())
                     .themeType(request.getThemeType())
                     .send();
@@ -45,7 +51,10 @@ public class ThemeAdvertisementNotificationService {
             log.info("광고 활성화 알림 전송 시작: requestId={}, userId={}, themeName={}", 
                     request.getId(), request.getUserId(), request.getThemeName());
             
-            notificationBuilders.themeAdvertisementActivated(request.getUserId())
+            User user = userRepository.findByWebUserId(request.getUserId())
+                    .orElseThrow(() -> new IllegalArgumentException("User not found for webUserId: " + request.getUserId()));
+            
+            notificationBuilders.themeAdvertisementActivated(user.getId())
                     .themeName(request.getThemeName())
                     .themeType(request.getThemeType())
                     .send();
@@ -65,7 +74,10 @@ public class ThemeAdvertisementNotificationService {
             log.info("광고 취소 알림 전송 시작: requestId={}, userId={}, themeName={}, refundAmount={}", 
                     request.getId(), request.getUserId(), request.getThemeName(), refundAmount);
             
-            notificationBuilders.themeAdvertisementCancelled(request.getUserId())
+            User user = userRepository.findByWebUserId(request.getUserId())
+                    .orElseThrow(() -> new IllegalArgumentException("User not found for webUserId: " + request.getUserId()));
+            
+            notificationBuilders.themeAdvertisementCancelled(user.getId())
                     .themeName(request.getThemeName())
                     .themeType(request.getThemeType())
                     .refundAmount(refundAmount)

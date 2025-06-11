@@ -110,7 +110,7 @@ public class ThemeAdvertisementBuilder extends NotificationBuilder<ThemeAdvertis
         if (themeType == null) return "테마";
         
         return switch (themeType) {
-            case CRIMESCENE -> "범죄현장";
+            case CRIMESCENE -> "크라임씬";
             case ESCAPE_ROOM -> "방탈출";
             case MURDER_MYSTERY -> "머더미스터리";
             case REALWORLD -> "리얼월드";
