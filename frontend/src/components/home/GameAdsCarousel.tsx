@@ -3,9 +3,9 @@ import { motion } from "framer-motion";
 import { Gamepad, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
-    themeAdsService,
-    ThemeAdvertisement,
-} from "@/api/admin/themeAdsService";
+    queueThemeAdsService,
+    QueueThemeAdvertisement,
+} from "@/api/admin/queueThemeAdsService";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
@@ -127,12 +127,26 @@ const GameAdsCarousel: React.FC = () => {
     const swiperRef = useRef<SwiperType>();
     const { containerRef, carouselConfig } = useResponsiveCarousel();
 
-    // 활성 광고 목록 조회
-    const { data: advertisements = [], isLoading } = useQuery({
-        queryKey: ["active-theme-ads"],
-        queryFn: themeAdsService.getActiveAdvertisements,
+    // 활성 광고 목록 조회 (새로운 큐 시스템)
+    const { data: advertisements = [], isLoading, error } = useQuery({
+        queryKey: ["active-queue-theme-ads"],
+        queryFn: queueThemeAdsService.getActiveAdvertisements,
         refetchInterval: 1000 * 60 * 5, // 5분마다 새로고침
     });
+
+    // 디버깅용 로그
+    useEffect(() => {
+        if (advertisements) {
+            console.log("광고 데이터:", advertisements);
+            console.log("광고 개수:", advertisements.length);
+            if (advertisements.length > 0) {
+                console.log("첫 번째 광고:", advertisements[0]);
+            }
+        }
+        if (error) {
+            console.error("광고 데이터 조회 실패:", error);
+        }
+    }, [advertisements, error]);
 
     // 로딩 상태에서 표시할 스켈레톤 개수 동적 계산
     const skeletonCount = useMemo(() => {
@@ -300,10 +314,19 @@ const GameAdsCarousel: React.FC = () => {
                                             flexDirection: "column",
                                         }}
                                     >
-                                        <CardComponent
-                                            theme={ad.theme}
-                                            index={0}
-                                        />
+                                        <div 
+                                            onClick={() => {
+                                                // 광고 클릭 기록
+                                                queueThemeAdsService.recordClick(ad.id).catch(err => 
+                                                    console.warn("클릭 기록 실패:", err)
+                                                );
+                                            }}
+                                        >
+                                            <CardComponent
+                                                theme={ad.theme}
+                                                index={0}
+                                            />
+                                        </div>
                                     </div>
                                 </SwiperSlide>
                             );
