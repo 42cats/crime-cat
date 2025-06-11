@@ -17,9 +17,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -294,5 +297,184 @@ public class ThemeAdvertisementQueueService {
     public void recordExposure(UUID requestId) {
         requestRepository.incrementExposureCount(requestId);
         log.debug("노출 수 증가: requestId={}", requestId);
+    }
+    
+    public Optional<ThemeAdvertisementRequest> getAdvertisementRequestById(UUID requestId) {
+        return requestRepository.findById(requestId);
+    }
+    
+    @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = CacheType.THEME_AD_QUEUE, allEntries = true),
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true),
+        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true)
+    })
+    public boolean forceCancelAdvertisement(UUID requestId, String reason, UUID adminUserId) {
+        ThemeAdvertisementRequest request = requestRepository.findById(requestId)
+            .orElseThrow(() -> new IllegalArgumentException("광고 신청을 찾을 수 없습니다."));
+        
+        // 이미 취소된 광고인지 확인
+        if (request.getStatus() == AdvertisementStatus.CANCELLED ||
+            request.getStatus() == AdvertisementStatus.EXPIRED ||
+            request.getStatus() == AdvertisementStatus.REFUNDED) {
+            throw new IllegalStateException("이미 취소되었거나 완료된 광고입니다.");
+        }
+        
+        // 사용자 조회
+        User user = userRepository.findByWebUserId(request.getUserId())
+            .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        
+        // 원래 상태 저장 (상태 변경 전에)
+        AdvertisementStatus originalStatus = request.getStatus();
+        Integer originalQueuePosition = request.getQueuePosition();
+        
+        int refundAmount = 0;
+        boolean refunded = false;
+        
+        if (request.getStatus() == AdvertisementStatus.PENDING_QUEUE) {
+            // 대기 중인 광고는 전액 환불
+            refundAmount = request.getTotalCost();
+            pointHistoryService.refundAdvertisementPoints(user, refundAmount, 
+                "관리자 강제 취소로 인한 환불: " + reason);
+            refunded = true;
+            
+        } else if (request.getStatus() == AdvertisementStatus.ACTIVE) {
+            // 활성 광고는 남은 일수만큼 환불 (수수료 없음)
+            if (request.getRemainingDays() != null && request.getRemainingDays() > 0) {
+                refundAmount = request.getRemainingDays() * COST_PER_DAY;
+                pointHistoryService.refundAdvertisementPoints(user, refundAmount,
+                    "관리자 강제 취소로 인한 환불 (남은 일수: " + request.getRemainingDays() + "일): " + reason);
+                refunded = true;
+            }
+        }
+        
+        // 상태 변경
+        request.setStatus(AdvertisementStatus.CANCELLED);
+        request.setCancelledAt(LocalDateTime.now());
+        request.setRefundAmount(refundAmount);
+        requestRepository.save(request);
+        
+        // 강제 취소 알림 발송
+        notificationService.sendAdvertisementCancelledNotification(request, refundAmount, "관리자 강제 취소: " + reason);
+        
+        // 대기열 처리 (원래 상태에 따라)
+        if (originalStatus == AdvertisementStatus.PENDING_QUEUE && originalQueuePosition != null) {
+            requestRepository.decrementQueuePositions(originalQueuePosition);
+        } else if (originalStatus == AdvertisementStatus.ACTIVE) {
+            // 활성 광고가 취소된 경우 대기열에서 다음 광고 활성화
+            activateNextFromQueue();
+        }
+        
+        // 광고 상태 변경으로 인한 디스코드 봇 캐시 업데이트
+        discordBotCacheService.updateActiveAdvertisementsCache();
+        
+        log.info("관리자 강제 광고 취소: requestId={}, adminUserId={}, refund={}, reason={}", 
+            requestId, adminUserId, refundAmount, reason);
+        
+        return refunded;
+    }
+    
+    public Map<String, Object> getAdvertisementStatistics(UUID userId, UUID themeId) {
+        Map<String, Object> statistics = new HashMap<>();
+        
+        // 기본 조건 설정
+        List<ThemeAdvertisementRequest> userAds;
+        if (themeId != null) {
+            userAds = requestRepository.findByUserIdAndThemeIdOrderByRequestedAtDesc(userId, themeId);
+        } else {
+            userAds = requestRepository.findByUserIdOrderByRequestedAtDesc(userId);
+        }
+        
+        // 전체 통계
+        statistics.put("totalRequests", userAds.size());
+        
+        // 상태별 통계
+        Map<String, Long> statusStats = userAds.stream()
+            .collect(Collectors.groupingBy(
+                ad -> ad.getStatus().name(),
+                Collectors.counting()
+            ));
+        statistics.put("statusBreakdown", statusStats);
+        
+        // 총 지출 포인트 계산
+        int totalSpent = userAds.stream()
+            .mapToInt(ThemeAdvertisementRequest::getTotalCost)
+            .sum();
+        statistics.put("totalPointsSpent", totalSpent);
+        
+        // 총 환불 포인트 계산
+        int totalRefunded = userAds.stream()
+            .filter(ad -> ad.getRefundAmount() != null)
+            .mapToInt(ThemeAdvertisementRequest::getRefundAmount)
+            .sum();
+        statistics.put("totalPointsRefunded", totalRefunded);
+        
+        // 순 지출 포인트
+        statistics.put("netPointsSpent", totalSpent - totalRefunded);
+        
+        // 클릭/노출 통계
+        int totalClicks = userAds.stream()
+            .filter(ad -> ad.getClickCount() != null)
+            .mapToInt(ThemeAdvertisementRequest::getClickCount)
+            .sum();
+        statistics.put("totalClicks", totalClicks);
+        
+        int totalExposures = userAds.stream()
+            .filter(ad -> ad.getExposureCount() != null)
+            .mapToInt(ThemeAdvertisementRequest::getExposureCount)
+            .sum();
+        statistics.put("totalExposures", totalExposures);
+        
+        // 평균 CTR 계산 (Click Through Rate)
+        double averageCTR = totalExposures > 0 ? (double) totalClicks / totalExposures * 100 : 0.0;
+        statistics.put("averageClickThroughRate", Math.round(averageCTR * 100.0) / 100.0);
+        
+        // 테마별 통계 (themeId가 지정되지 않은 경우)
+        if (themeId == null) {
+            Map<String, Object> themeStats = userAds.stream()
+                .collect(Collectors.groupingBy(
+                    ThemeAdvertisementRequest::getThemeName,
+                    Collectors.collectingAndThen(
+                        Collectors.toList(),
+                        ads -> {
+                            Map<String, Object> stats = new HashMap<>();
+                            stats.put("requestCount", ads.size());
+                            stats.put("totalCost", ads.stream().mapToInt(ThemeAdvertisementRequest::getTotalCost).sum());
+                            stats.put("totalClicks", ads.stream().mapToInt(ad -> ad.getClickCount() != null ? ad.getClickCount() : 0).sum());
+                            stats.put("totalExposures", ads.stream().mapToInt(ad -> ad.getExposureCount() != null ? ad.getExposureCount() : 0).sum());
+                            return stats;
+                        }
+                    )
+                ));
+            statistics.put("themeBreakdown", themeStats);
+        }
+        
+        // 최근 활동 (최근 5개 광고)
+        List<Map<String, Object>> recentActivity = userAds.stream()
+            .limit(5)
+            .map(ad -> {
+                Map<String, Object> activity = new HashMap<>();
+                activity.put("requestId", ad.getId());
+                activity.put("themeName", ad.getThemeName());
+                activity.put("themeType", ad.getThemeType());
+                activity.put("status", ad.getStatus());
+                activity.put("requestedAt", ad.getRequestedAt());
+                activity.put("totalCost", ad.getTotalCost());
+                activity.put("clickCount", ad.getClickCount());
+                activity.put("exposureCount", ad.getExposureCount());
+                return activity;
+            })
+            .collect(Collectors.toList());
+        statistics.put("recentActivity", recentActivity);
+        
+        // 성과 지표
+        Map<String, Object> performance = new HashMap<>();
+        performance.put("averageClicksPerAd", userAds.isEmpty() ? 0 : (double) totalClicks / userAds.size());
+        performance.put("averageExposuresPerAd", userAds.isEmpty() ? 0 : (double) totalExposures / userAds.size());
+        performance.put("averageCostPerClick", totalClicks > 0 ? (double) totalSpent / totalClicks : 0);
+        performance.put("averageCostPerExposure", totalExposures > 0 ? (double) totalSpent / totalExposures : 0);
+        statistics.put("performance", performance);
+        
+        return statistics;
     }
 }

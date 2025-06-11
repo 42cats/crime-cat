@@ -19,6 +19,9 @@ public interface ThemeAdvertisementRequestRepository extends JpaRepository<Theme
     // 사용자별 광고 신청 목록 조회
     List<ThemeAdvertisementRequest> findByUserIdOrderByRequestedAtDesc(UUID userId);
     
+    // 사용자와 테마별 광고 신청 목록 조회
+    List<ThemeAdvertisementRequest> findByUserIdAndThemeIdOrderByRequestedAtDesc(UUID userId, UUID themeId);
+    
     // 특정 상태의 광고 조회
     List<ThemeAdvertisementRequest> findByStatusOrderByQueuePositionAsc(AdvertisementStatus status);
     
