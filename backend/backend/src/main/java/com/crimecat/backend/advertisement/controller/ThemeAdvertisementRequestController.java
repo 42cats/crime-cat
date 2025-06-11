@@ -1,7 +1,10 @@
 package com.crimecat.backend.advertisement.controller;
 
+import com.crimecat.backend.advertisement.domain.AdvertisementStatus;
 import com.crimecat.backend.advertisement.domain.ThemeAdvertisementRequest;
 import com.crimecat.backend.advertisement.service.ThemeAdvertisementQueueService;
+import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.exception.ServiceException;
 import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -169,17 +172,169 @@ public class ThemeAdvertisementRequestController {
             @RequestBody CalculateRefundDto dto) {
         try {
             UUID userId = currentUser.getId();
-            // TODO: 환불 금액 계산 로직 구현
+            
+            // 입력 검증
+            if (dto.getRequestId() == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "광고 요청 ID가 필요합니다."
+                ));
+            }
+            
+            // 광고 요청 조회
+            ThemeAdvertisementRequest request = queueService.getAdvertisementRequestById(dto.getRequestId())
+                .orElseThrow(() -> ErrorStatus.ADVERTISEMENT_NOT_FOUND.asServiceException());
+            
+            // 소유권 검증
+            if (!request.getUserId().equals(userId)) {
+                throw ErrorStatus.FORBIDDEN.asServiceException();
+            }
+            
+            // 환불 가능 상태 검증
+            if (request.getStatus() == AdvertisementStatus.CANCELLED ||
+                request.getStatus() == AdvertisementStatus.EXPIRED ||
+                request.getStatus() == AdvertisementStatus.REFUNDED) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "이미 취소되었거나 완료된 광고는 환불할 수 없습니다."
+                ));
+            }
+            
+            int refundAmount = 0;
+            int remainingDays = 0;
+            String message = "";
+            
+            if (request.getStatus() == AdvertisementStatus.PENDING_QUEUE) {
+                // 대기 중인 광고는 전액 환불
+                refundAmount = request.getTotalCost();
+                remainingDays = request.getRequestedDays();
+                message = "대기 중인 광고로 전액 환불됩니다.";
+                
+            } else if (request.getStatus() == AdvertisementStatus.ACTIVE) {
+                // 활성 광고는 남은 일수만큼 부분 환불 (내림 처리)
+                if (request.getRemainingDays() != null && request.getRemainingDays() > 0) {
+                    remainingDays = request.getRemainingDays();
+                    // 남은 일수 내림으로 환불 계산 (하루 = 100포인트)
+                    refundAmount = remainingDays * 100;
+                    
+                    message = String.format("%d일 남아 %d포인트가 환불됩니다.", 
+                        remainingDays, refundAmount);
+                } else {
+                    message = "광고 기간이 이미 종료되어 환불할 수 없습니다.";
+                }
+            }
+            
             return ResponseEntity.ok(Map.of(
-                "remainingDays", 5,
-                "refundAmount", 500,
-                "message", "5일 남아 500포인트가 환불됩니다."
+                "success", true,
+                "remainingDays", remainingDays,
+                "refundAmount", refundAmount,
+                "originalAmount", request.getTotalCost(),
+                "status", request.getStatus().name(),
+                "message", message
             ));
-        } catch (Exception e) {
-            log.error("환불 계산 중 오류 발생", e);
-            return ResponseEntity.badRequest().body(Map.of(
+            
+        } catch (ServiceException e) {
+            log.error("환불 계산 중 서비스 오류 발생: {}", e.getMessage());
+            return ResponseEntity.status(e.getStatus()).body(Map.of(
                 "success", false,
                 "message", e.getMessage()
+            ));
+        } catch (Exception e) {
+            log.error("환불 계산 중 예상치 못한 오류 발생", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "success", false,
+                "message", "서버 오류가 발생했습니다."
+            ));
+        }
+    }
+    
+    @PostMapping("/admin/force-cancel/{requestId}")
+    public ResponseEntity<?> forceCancelAdvertisement(
+            @AuthenticationPrincipal WebUser currentUser,
+            @PathVariable UUID requestId,
+            @RequestBody ForceCancelDto dto) {
+        try {
+            // 관리자 권한 확인
+            if (currentUser.getRole().ordinal() < com.crimecat.backend.webUser.enums.UserRole.ADMIN.ordinal()) {
+                return ResponseEntity.status(403).body(Map.of(
+                    "success", false,
+                    "message", "관리자만 강제 취소할 수 있습니다."
+                ));
+            }
+            
+            // 광고 요청 조회
+            ThemeAdvertisementRequest request = queueService.getAdvertisementRequestById(requestId)
+                .orElseThrow(() -> ErrorStatus.ADVERTISEMENT_NOT_FOUND.asServiceException());
+            
+            // 이미 취소된 광고인지 확인
+            if (request.getStatus() == AdvertisementStatus.CANCELLED ||
+                request.getStatus() == AdvertisementStatus.EXPIRED ||
+                request.getStatus() == AdvertisementStatus.REFUNDED) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "이미 취소되었거나 완료된 광고입니다."
+                ));
+            }
+            
+            // 강제 취소 처리
+            boolean refunded = queueService.forceCancelAdvertisement(requestId, dto.getReason(), currentUser.getId());
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "광고가 강제 취소되었습니다.",
+                "refunded", refunded,
+                "reason", dto.getReason()
+            ));
+            
+        } catch (ServiceException e) {
+            log.error("강제 광고 취소 중 서비스 오류 발생: {}", e.getMessage());
+            return ResponseEntity.status(e.getStatus()).body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        } catch (Exception e) {
+            log.error("강제 광고 취소 중 예상치 못한 오류 발생", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "success", false,
+                "message", "서버 오류가 발생했습니다."
+            ));
+        }
+    }
+    
+    @GetMapping("/statistics")
+    public ResponseEntity<?> getAdvertisementStatistics(
+            @AuthenticationPrincipal WebUser currentUser,
+            @RequestParam(required = false) UUID userId,
+            @RequestParam(required = false) UUID themeId) {
+        try {
+            UUID targetUserId = userId;
+            
+            // 권한 검증: 자신의 통계이거나 관리자인 경우만 조회 가능
+            if (targetUserId != null && !targetUserId.equals(currentUser.getId())) {
+                if (currentUser.getRole().ordinal() < com.crimecat.backend.webUser.enums.UserRole.ADMIN.ordinal()) {
+                    return ResponseEntity.status(403).body(Map.of(
+                        "success", false,
+                        "message", "다른 사용자의 통계는 관리자만 조회할 수 있습니다."
+                    ));
+                }
+            } else if (targetUserId == null) {
+                // userId가 지정되지 않으면 현재 사용자의 통계
+                targetUserId = currentUser.getId();
+            }
+            
+            // 통계 조회
+            Map<String, Object> statistics = queueService.getAdvertisementStatistics(targetUserId, themeId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "statistics", statistics
+            ));
+            
+        } catch (Exception e) {
+            log.error("광고 통계 조회 중 오류 발생", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "success", false,
+                "message", "서버 오류가 발생했습니다."
             ));
         }
     }
@@ -218,5 +373,12 @@ public class ThemeAdvertisementRequestController {
         
         public UUID getRequestId() { return requestId; }
         public void setRequestId(UUID requestId) { this.requestId = requestId; }
+    }
+    
+    public static class ForceCancelDto {
+        private String reason;
+        
+        public String getReason() { return reason; }
+        public void setReason(String reason) { this.reason = reason; }
     }
 }
