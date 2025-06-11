@@ -28,6 +28,7 @@ import com.crimecat.backend.webUser.service.WebUserService;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -36,6 +37,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -49,6 +52,7 @@ public class AdminController {
     private final UserPermissionQueryService userPermissionQueryService;
     private final DiscordUserQueryService discordUserQueryService;
     private final UserRepository userRepository;
+    private final EntityManager entityManager;
     
     /**
      * 모든 사용자 목록을 조회합니다. 관리자만 가능합니다.
@@ -311,5 +315,83 @@ public class AdminController {
                 .toList();
         
         return ResponseEntity.ok(permissions);
+    }
+    
+    /**
+     * 데이터베이스의 GAME_THEMES 테이블 TYPE 컬럼 값들을 조사합니다. 관리자만 가능합니다.
+     */
+    @Transactional(readOnly = true)
+    @GetMapping("/debug/game-themes-type-analysis")
+    public ResponseEntity<Map<String, Object>> analyzeGameThemesTypeColumn() {
+        // 관리자 권한 확인
+        AuthenticationUtil.validateUserHasMinimumRole(UserRole.ADMIN);
+        
+        try {
+            // TYPE 컬럼 값별 개수 조회
+            Query typeCountQuery = entityManager.createNativeQuery(
+                "SELECT TYPE, COUNT(*) as count FROM GAME_THEMES GROUP BY TYPE ORDER BY count DESC"
+            );
+            @SuppressWarnings("unchecked")
+            List<Object[]> typeCountResults = typeCountQuery.getResultList();
+            
+            // NULL 값 개수 조회
+            Query nullCountQuery = entityManager.createNativeQuery(
+                "SELECT COUNT(*) FROM GAME_THEMES WHERE TYPE IS NULL"
+            );
+            Long nullCount = ((Number) nullCountQuery.getSingleResult()).longValue();
+            
+            // 빈 문자열 개수 조회
+            Query emptyStringCountQuery = entityManager.createNativeQuery(
+                "SELECT COUNT(*) FROM GAME_THEMES WHERE TYPE = ''"
+            );
+            Long emptyStringCount = ((Number) emptyStringCountQuery.getSingleResult()).longValue();
+            
+            // 전체 레코드 수 조회
+            Query totalCountQuery = entityManager.createNativeQuery(
+                "SELECT COUNT(*) FROM GAME_THEMES"
+            );
+            Long totalCount = ((Number) totalCountQuery.getSingleResult()).longValue();
+            
+            // 샘플 데이터 조회 (첫 10개)
+            Query sampleQuery = entityManager.createNativeQuery(
+                "SELECT HEX(ID) as id, TITLE, TYPE FROM GAME_THEMES LIMIT 10"
+            );
+            @SuppressWarnings("unchecked")
+            List<Object[]> sampleResults = sampleQuery.getResultList();
+            
+            // 결과 취합
+            java.util.Map<String, Object> result = new java.util.HashMap<>();
+            result.put("totalRecords", totalCount);
+            result.put("nullTypeCount", nullCount);
+            result.put("emptyStringTypeCount", emptyStringCount);
+            
+            // TYPE 값별 통계
+            java.util.List<java.util.Map<String, Object>> typeStats = new java.util.ArrayList<>();
+            for (Object[] row : typeCountResults) {
+                java.util.Map<String, Object> stat = new java.util.HashMap<>();
+                stat.put("type", row[0]);
+                stat.put("count", row[1]);
+                typeStats.add(stat);
+            }
+            result.put("typeStatistics", typeStats);
+            
+            // 샘플 데이터
+            java.util.List<java.util.Map<String, Object>> samples = new java.util.ArrayList<>();
+            for (Object[] row : sampleResults) {
+                java.util.Map<String, Object> sample = new java.util.HashMap<>();
+                sample.put("id", row[0]);
+                sample.put("title", row[1]);
+                sample.put("type", row[2]);
+                samples.add(sample);
+            }
+            result.put("sampleData", samples);
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            java.util.Map<String, Object> errorResult = new java.util.HashMap<>();
+            errorResult.put("error", "데이터베이스 조회 중 오류가 발생했습니다: " + e.getMessage());
+            return ResponseEntity.ok(errorResult);
+        }
     }
 }

@@ -94,7 +94,12 @@ public class GameThemeService {
         // 포인트 지급 및 알림 발송
         rewardPointsForThemeCreation(gameTheme, webUser);
         
-        // 캐시 무효화 - CrimesceneTheme인 경우 팀 멤버들의 캐시 무효화
+        // 캐시 무효화 - 작성자의 USER_THEME_SUMMARY 캐시 삭제
+        if (webUser != null) {
+            themeCacheService.evictUserThemeSummaryCache(webUser.getId());
+        }
+        
+        // CrimesceneTheme인 경우 팀 멤버들의 캐시도 무효화
         if (gameTheme instanceof CrimesceneTheme) {
             CrimesceneTheme crimesceneTheme = (CrimesceneTheme) gameTheme;
             if (crimesceneTheme.getTeam() != null) {
@@ -259,6 +264,12 @@ public class GameThemeService {
 
         updateThumbnailIfProvided(gameTheme, file);
         themeRepository.save(gameTheme);
+        
+        // 작성자의 USER_THEME_SUMMARY 캐시 삭제
+        invalidateThemeCountCacheByDiscriminator(gameTheme);
+        if (gameTheme.getAuthor() != null) {
+            themeCacheService.evictUserThemeSummaryCache(gameTheme.getAuthor().getId());
+        }
     }
 
     // ================================
@@ -275,6 +286,12 @@ public class GameThemeService {
 
         updateThumbnailIfProvided(gameTheme, file);
         themeRepository.save(gameTheme);
+        
+        // 작성자의 USER_THEME_SUMMARY 캐시 삭제
+        invalidateThemeCountCacheByDiscriminator(gameTheme);
+        if (gameTheme.getAuthor() != null) {
+            themeCacheService.evictUserThemeSummaryCache(gameTheme.getAuthor().getId());
+        }
     }
 
     // ================================

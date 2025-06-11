@@ -2,11 +2,14 @@ package com.crimecat.backend.advertisement.service;
 
 import com.crimecat.backend.advertisement.domain.AdvertisementStatus;
 import com.crimecat.backend.advertisement.domain.ThemeAdvertisementRequest;
+import com.crimecat.backend.advertisement.dto.PublicThemeAdvertisementResponse;
 import com.crimecat.backend.advertisement.repository.ThemeAdvertisementRequestRepository;
 import com.crimecat.backend.config.CacheType;
 import com.crimecat.backend.point.service.PointHistoryService;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.repository.UserRepository;
+import com.crimecat.backend.gametheme.service.GameThemeService;
+import com.crimecat.backend.gametheme.dto.GetGameThemeResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -41,12 +44,14 @@ public class ThemeAdvertisementQueueService {
     private final ThemeAdvertisementValidationService validationService;
     private final RateLimitingService rateLimitingService;
     private final InputSanitizationService sanitizationService;
+    private final GameThemeService gameThemeService;
     
     @Transactional
     @Caching(evict = {
         @CacheEvict(value = CacheType.THEME_AD_QUEUE, allEntries = true),
         @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, key = "#userId"),
-        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true)
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true),
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE + "_carousel", allEntries = true)
     })
     public ThemeAdvertisementRequest requestAdvertisement(UUID userId, UUID themeId, String themeName, 
                                                         ThemeAdvertisementRequest.ThemeType themeType, 
@@ -123,7 +128,8 @@ public class ThemeAdvertisementQueueService {
     @Caching(evict = {
         @CacheEvict(value = CacheType.THEME_AD_QUEUE, allEntries = true),
         @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, key = "#request.userId"),
-        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true)
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true),
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE + "_carousel", allEntries = true)
     })
     public void cancelQueuedAdvertisement(UUID requestId) {
         ThemeAdvertisementRequest request = requestRepository.findById(requestId)
@@ -160,7 +166,8 @@ public class ThemeAdvertisementQueueService {
     @Caching(evict = {
         @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true),
         @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId")
+        @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId"),
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE + "_carousel", allEntries = true)
     })
     public void cancelActiveAdvertisement(UUID requestId) {
         ThemeAdvertisementRequest request = requestRepository.findById(requestId)
@@ -208,7 +215,8 @@ public class ThemeAdvertisementQueueService {
     @Transactional
     @Caching(evict = {
         @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_QUEUE, allEntries = true)
+        @CacheEvict(value = CacheType.THEME_AD_QUEUE, allEntries = true),
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE + "_carousel", allEntries = true)
     })
     public void processExpiredAds() {
         log.info("만료된 광고 처리 시작");
@@ -268,9 +276,55 @@ public class ThemeAdvertisementQueueService {
         }
     }
     
-    @Cacheable(value = CacheType.THEME_AD_ACTIVE)
+    // @Cacheable(value = CacheType.THEME_AD_ACTIVE) // 임시로 캐시 비활성화
     public List<ThemeAdvertisementRequest> getActiveAdvertisements() {
         return requestRepository.findByStatusOrderByQueuePositionAsc(AdvertisementStatus.ACTIVE);
+    }
+    
+    /**
+     * GameAdsCarousel과 호환되는 형식으로 활성 광고 목록 조회
+     */
+    @Cacheable(value = CacheType.THEME_AD_ACTIVE + "_carousel")
+    public List<PublicThemeAdvertisementResponse> getActiveAdvertisementsForCarousel() {
+        List<ThemeAdvertisementRequest> activeAds = getActiveAdvertisements();
+        log.info("활성 광고 조회 - 총 {}개 발견", activeAds.size());
+        
+        // 시작 시간 순으로 정렬 (최신 시작 광고가 앞으로)
+        return activeAds.stream()
+                .sorted((a1, a2) -> {
+                    if (a1.getStartedAt() == null && a2.getStartedAt() == null) return 0;
+                    if (a1.getStartedAt() == null) return 1;
+                    if (a2.getStartedAt() == null) return -1;
+                    return a2.getStartedAt().compareTo(a1.getStartedAt()); // 내림차순 (최신이 먼저)
+                })
+                .map(request -> {
+                    // 테마 정보를 조회하여 포함
+                    GetGameThemeResponse themeResponse = null;
+                    try {
+                        // 테마 타입에 따라 적절한 서비스 호출
+                        switch (request.getThemeType()) {
+                            case CRIMESCENE:
+                            case ESCAPE_ROOM:
+                                themeResponse = gameThemeService.getGameTheme(request.getThemeId());
+                                break;
+                            case MURDER_MYSTERY:
+                            case REALWORLD:
+                                // 추후 구현
+                                log.warn("미구현 테마 타입: {}", request.getThemeType());
+                                break;
+                        }
+                    } catch (Exception e) {
+                        log.error("테마 정보 조회 실패: themeId={}, error={}", request.getThemeId(), e.getMessage());
+                    }
+                    
+                    PublicThemeAdvertisementResponse response = PublicThemeAdvertisementResponse.from(request, themeResponse);
+                    log.info("광고 변환 완료 - ID: {}, 테마명: {}, 테마정보 포함: {}", 
+                        response.getId(), request.getThemeName(), themeResponse != null);
+                    return response;
+                })
+                // 테마 정보가 없어도 광고는 표시 (디버깅을 위해 임시로 주석 처리)
+                // .filter(response -> response.getTheme() != null)
+                .collect(Collectors.toList());
     }
     
     @Cacheable(value = CacheType.THEME_AD_USER_REQUESTS, key = "#userId")
@@ -315,7 +369,8 @@ public class ThemeAdvertisementQueueService {
     @Caching(evict = {
         @CacheEvict(value = CacheType.THEME_AD_QUEUE, allEntries = true),
         @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true)
+        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true),
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE + "_carousel", allEntries = true)
     })
     public boolean forceCancelAdvertisement(UUID requestId, String reason, UUID adminUserId) {
         ThemeAdvertisementRequest request = requestRepository.findById(requestId)

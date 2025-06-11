@@ -1,10 +1,13 @@
 package com.crimecat.backend.advertisement.controller;
 
+import com.crimecat.backend.advertisement.dto.PublicThemeAdvertisementResponse;
 import com.crimecat.backend.advertisement.service.ThemeAdvertisementQueueService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -14,16 +17,28 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/public/theme-ads")
 @RequiredArgsConstructor
+@Slf4j
 public class ThemeAdvertisementPublicController {
     
     private final ThemeAdvertisementQueueService queueService;
     
     /**
-     * 활성 광고 목록 조회 (공개)
+     * 활성 광고 목록 조회 (공개) - 기존 큐 시스템용
      */
     @GetMapping("/active")
     public ResponseEntity<?> getActiveAdvertisements() {
         return ResponseEntity.ok(queueService.getActiveAdvertisements());
+    }
+    
+    /**
+     * 활성 광고 목록 조회 (공개) - GameAdsCarousel 호환 형식
+     */
+    @GetMapping("/active-compatible")
+    public ResponseEntity<List<PublicThemeAdvertisementResponse>> getActiveAdvertisementsCompatible() {
+        log.info("=== GameAdsCarousel 호환 API 호출됨 ===");
+        List<PublicThemeAdvertisementResponse> result = queueService.getActiveAdvertisementsForCarousel();
+        log.info("=== 반환 결과 크기: {} ===", result.size());
+        return ResponseEntity.ok(result);
     }
     
     /**
