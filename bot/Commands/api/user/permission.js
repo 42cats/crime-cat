@@ -13,38 +13,40 @@ const baseUrl = process.env.BASE_URL
  * @returns {Boolean} 권한 여부
  */
 async function isPermissionHas(userId, permissionName) {
-	const API_URL = `${baseUrl}/bot/v1/users/${userId}/permission?permission_name=${encodeURI(permissionName)}`;
-	try {
-		const response = await axios.get(API_URL, {
-			headers: {
-				'Authorization': `Bearer ${BEARER_TOKEN}`
-			}
-		});
-		logger.info('응답 데이터:', response.data.message);
-		return response.status === 200;
-	} catch (error) {
-		logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
-		return false; // ✅ 반드시 false 반환
-	}
+	return true;
+	// const API_URL = `${baseUrl}/bot/v1/users/${userId}/permission?permission_name=${encodeURI(permissionName)}`;
+	// try {
+	// 	const response = await axios.get(API_URL, {
+	// 		headers: {
+	// 			'Authorization': `Bearer ${BEARER_TOKEN}`
+	// 		}
+	// 	});
+	// 	logger.info('응답 데이터:', response.data.message);
+	// 	return response.status === 200;
+	// } catch (error) {
+	// 	logger.error('API 요청 실패:', error.response?.data || error.response?.data?.message);
+	// 	return false; // ✅ 반드시 false 반환
+	// }
 }
 
 
 async function getPermissons() {
+	return [];
 	const API_URL = `${baseUrl}/bot/v1/permissions`;
 
-	// GuildMember 또는 User 객체 구분
-	try {
-		const response = await axios.get(API_URL, {
-			headers: {
-				'Authorization': `Bearer ${BEARER_TOKEN}`,
-			}
-		});
-		logger.info('응답 데이터 전체 퍼미션:', response?.data?.permissionList);
-		return response?.data?.permissionList ?? [];
-	} catch (error) {
-		logger.error('API 요청 실패 전체퍼미션:', error.response.data);
-		return [];
-	}
+	// // GuildMember 또는 User 객체 구분
+	// try {
+	// 	const response = await axios.get(API_URL, {
+	// 		headers: {
+	// 			'Authorization': `Bearer ${BEARER_TOKEN}`,
+	// 		}
+	// 	});
+	// 	logger.info('응답 데이터 전체 퍼미션:', response?.data?.permissionList);
+	// 	return response?.data?.permissionList ?? [];
+	// } catch (error) {
+	// 	logger.error('API 요청 실패 전체퍼미션:', error.response.data);
+	// 	return [];
+// }
 }
 
 

@@ -311,12 +311,12 @@ export const DashboardProfileCard: React.FC<Props> = ({
                     )}
 
                     {/* 권한 관리 섹션 */}
-                    <div className="mt-8">
+                    {/* <div className="mt-8">
                         <UserPermissionCard
                             userId={user.id}
                             onPointChange={handlePointChange}
                         />
-                    </div>
+                    </div> */}
                 </CardContent>
             </Card>
 
