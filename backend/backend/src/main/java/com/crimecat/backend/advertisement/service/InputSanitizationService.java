@@ -45,19 +45,19 @@ public class InputSanitizationService {
         String trimmed = themeName.trim();
         
         // SQL Injection 검사
-        if (SQL_INJECTION_PATTERN.matcher(trimmed).matches()) {
+        if (SQL_INJECTION_PATTERN.matcher(trimmed).find()) {
             log.warn("SQL Injection 시도 감지 - 테마명: {}", trimmed);
             throw new IllegalArgumentException("테마 이름에 허용되지 않는 문자가 포함되어 있습니다.");
         }
         
         // XSS 검사
-        if (XSS_PATTERN.matcher(trimmed).matches()) {
+        if (XSS_PATTERN.matcher(trimmed).find()) {
             log.warn("XSS 시도 감지 - 테마명: {}", trimmed);
             throw new IllegalArgumentException("테마 이름에 허용되지 않는 문자가 포함되어 있습니다.");
         }
         
         // 위험한 특수문자 검사
-        if (SPECIAL_CHARS_PATTERN.matcher(trimmed).matches()) {
+        if (SPECIAL_CHARS_PATTERN.matcher(trimmed).find()) {
             log.warn("위험한 특수문자 감지 - 테마명: {}", trimmed);
             throw new IllegalArgumentException("테마 이름에 허용되지 않는 특수문자가 포함되어 있습니다.");
         }
