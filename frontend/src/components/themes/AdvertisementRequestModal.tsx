@@ -51,6 +51,7 @@ const AdvertisementRequestModal: React.FC<AdvertisementRequestModalProps> = ({
 }) => {
     const [selectedTheme, setSelectedTheme] = useState<string>("");
     const [requestedDays, setRequestedDays] = useState<number>(1);
+    const [daysInputValue, setDaysInputValue] = useState<string>("1");
     const [submitting, setSubmitting] = useState(false);
     const [userThemes, setUserThemes] = useState<UserTheme[]>([]);
     const [themesLoading, setThemesLoading] = useState(false);
@@ -87,6 +88,7 @@ const AdvertisementRequestModal: React.FC<AdvertisementRequestModalProps> = ({
     const resetForm = () => {
         setSelectedTheme("");
         setRequestedDays(1);
+        setDaysInputValue("1");
         setSubmitting(false);
     };
 
@@ -117,7 +119,7 @@ const AdvertisementRequestModal: React.FC<AdvertisementRequestModalProps> = ({
 
     const getThemeTypeBadge = (type: UserTheme["type"]) => {
         const typeConfig = {
-            CRIMESCENE: { label: "범죄현장", color: "bg-red-100 text-red-800" },
+            CRIMESCENE: { label: "크라임씬", color: "bg-red-100 text-red-800" },
             ESCAPE_ROOM: { label: "방탈출", color: "bg-blue-100 text-blue-800" },
             MURDER_MYSTERY: { label: "머더미스터리", color: "bg-purple-100 text-purple-800" },
             REALWORLD: { label: "리얼월드", color: "bg-green-100 text-green-800" }
@@ -177,14 +179,19 @@ const AdvertisementRequestModal: React.FC<AdvertisementRequestModalProps> = ({
                                         <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
                                             <Plus className="w-8 h-8 text-white" />
                                         </div>
-                                        <h4 className="font-semibold text-gray-700 mb-2">출간된 테마가 없어요</h4>
+                                        <h4 className="font-semibold text-gray-700 mb-2">광고 가능한 테마가 없어요</h4>
                                         <p className="text-sm text-muted-foreground mb-4">
-                                            먼저 테마를 제작하고 출간해야<br />
-                                            광고를 신청할 수 있습니다.
+                                            테마 광고를 신청하려면 먼저 메이커 팀에 가입하고<br />
+                                            범죄현장 테마를 제작해서 출간해야 합니다.
                                         </p>
-                                        <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full mx-auto w-fit">
-                                            <Sparkles className="w-4 h-4" />
-                                            <span>테마 제작 후 다시 시도해보세요</span>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full mx-auto w-fit">
+                                                <Sparkles className="w-4 h-4" />
+                                                <span>메이커 팀 가입 → 테마 제작 → 출간</span>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">
+                                                팀 페이지에서 팀을 생성하거나 기존 팀에 가입할 수 있어요
+                                            </p>
                                         </div>
                                     </div>
                                 ) : (
@@ -208,8 +215,37 @@ const AdvertisementRequestModal: React.FC<AdvertisementRequestModalProps> = ({
                             type="number"
                             min={1}
                             max={MAX_DAYS}
-                            value={requestedDays}
-                            onChange={(e) => setRequestedDays(Number(e.target.value))}
+                            value={daysInputValue}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                // 빈 값이면 그대로 표시
+                                if (value === '') {
+                                    setDaysInputValue('');
+                                    setRequestedDays(1);
+                                    return;
+                                }
+                                
+                                // 숫자로 변환
+                                const numValue = parseInt(value, 10);
+                                
+                                // 유효한 숫자이고 범위 내에 있으면 업데이트
+                                if (!isNaN(numValue) && numValue >= 1 && numValue <= MAX_DAYS) {
+                                    setDaysInputValue(numValue.toString());
+                                    setRequestedDays(numValue);
+                                } else if (!isNaN(numValue)) {
+                                    // 범위를 벗어나면 제한
+                                    const clampedValue = Math.max(1, Math.min(MAX_DAYS, numValue));
+                                    setDaysInputValue(clampedValue.toString());
+                                    setRequestedDays(clampedValue);
+                                }
+                            }}
+                            onBlur={(e) => {
+                                // 포커스를 잃을 때 빈 값이면 1로 설정
+                                if (e.target.value === '' || parseInt(e.target.value, 10) < 1) {
+                                    setDaysInputValue('1');
+                                    setRequestedDays(1);
+                                }
+                            }}
                             placeholder="1-15일"
                         />
                         <p className="text-xs text-muted-foreground">
