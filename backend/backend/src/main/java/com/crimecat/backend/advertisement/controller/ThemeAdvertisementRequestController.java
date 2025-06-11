@@ -5,37 +5,35 @@ import com.crimecat.backend.advertisement.domain.ThemeAdvertisementRequest;
 import com.crimecat.backend.advertisement.service.ThemeAdvertisementQueueService;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.exception.ServiceException;
+import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
-
+import com.crimecat.backend.webUser.enums.UserRole;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/theme-ads")
 @RequiredArgsConstructor
+@Validated
 public class ThemeAdvertisementRequestController {
     
     private final ThemeAdvertisementQueueService queueService;
     
     @PostMapping("/request")
     public ResponseEntity<?> requestAdvertisement(
-            @AuthenticationPrincipal WebUser currentUser,
-            @RequestBody RequestAdvertisementDto dto) {
+            @Valid @RequestBody RequestAdvertisementDto dto) {
+        WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
+        AuthenticationUtil.validateUserHasMinimumRole(UserRole.USER);
         try {
-            // 입력 검증
-            if (dto.getRequestedDays() == null || dto.getRequestedDays() <= 0 || dto.getRequestedDays() > 15) {
-                return ResponseEntity.badRequest().body(
-                    new BasicResponseDto(false, "광고 기간은 1일 이상 15일 이하로 설정해야 합니다.")
-                );
-            }
-            
             UUID userId = currentUser.getId();
             
             ThemeAdvertisementRequest request = queueService.requestAdvertisement(
@@ -67,9 +65,9 @@ public class ThemeAdvertisementRequestController {
     }
     
     @GetMapping("/my-requests")
-    public ResponseEntity<List<ThemeAdvertisementRequest>> getMyRequests(
-            @AuthenticationPrincipal WebUser currentUser) {
-        UUID userId = currentUser.getId();
+    public ResponseEntity<List<ThemeAdvertisementRequest>> getMyRequests() {
+        AuthenticationUtil.validateUserHasMinimumRole(UserRole.USER);
+        UUID userId = AuthenticationUtil.getCurrentWebUserId();
         List<ThemeAdvertisementRequest> requests = queueService.getUserAdvertisements(userId);
         return ResponseEntity.ok(requests);
     }
@@ -89,7 +87,6 @@ public class ThemeAdvertisementRequestController {
     
     @DeleteMapping("/request/{requestId}")
     public ResponseEntity<BasicResponseDto> cancelRequest(
-            @AuthenticationPrincipal WebUser currentUser,
             @PathVariable UUID requestId) {
         try {
             // 요청 소유자 확인은 서비스에서 처리
@@ -113,7 +110,6 @@ public class ThemeAdvertisementRequestController {
     
     @DeleteMapping("/active/{requestId}")
     public ResponseEntity<BasicResponseDto> cancelActiveRequest(
-            @AuthenticationPrincipal WebUser currentUser,
             @PathVariable UUID requestId) {
         try {
             queueService.cancelActiveAdvertisement(requestId);
@@ -159,10 +155,9 @@ public class ThemeAdvertisementRequestController {
     
     @PostMapping("/calculate-refund")
     public ResponseEntity<?> calculateRefund(
-            @AuthenticationPrincipal WebUser currentUser,
             @RequestBody CalculateRefundDto dto) {
         try {
-            UUID userId = currentUser.getId();
+            UUID userId = AuthenticationUtil.getCurrentWebUserId();
             
             // 입력 검증
             if (dto.getRequestId() == null) {
@@ -173,7 +168,7 @@ public class ThemeAdvertisementRequestController {
             
             // 광고 요청 조회
             ThemeAdvertisementRequest request = queueService.getAdvertisementRequestById(dto.getRequestId())
-                .orElseThrow(() -> ErrorStatus.ADVERTISEMENT_NOT_FOUND.asServiceException());
+                .orElseThrow(ErrorStatus.ADVERTISEMENT_NOT_FOUND::asServiceException);
             
             // 소유권 검증
             if (!request.getUserId().equals(userId)) {
@@ -237,10 +232,10 @@ public class ThemeAdvertisementRequestController {
     
     @PostMapping("/admin/force-cancel/{requestId}")
     public ResponseEntity<?> forceCancelAdvertisement(
-            @AuthenticationPrincipal WebUser currentUser,
             @PathVariable UUID requestId,
             @RequestBody ForceCancelDto dto) {
         try {
+            WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
             // 관리자 권한 확인
             if (currentUser.getRole().ordinal() < com.crimecat.backend.webUser.enums.UserRole.ADMIN.ordinal()) {
                 return ResponseEntity.status(403).body(
@@ -250,7 +245,7 @@ public class ThemeAdvertisementRequestController {
             
             // 광고 요청 조회
             ThemeAdvertisementRequest request = queueService.getAdvertisementRequestById(requestId)
-                .orElseThrow(() -> ErrorStatus.ADVERTISEMENT_NOT_FOUND.asServiceException());
+                .orElseThrow(ErrorStatus.ADVERTISEMENT_NOT_FOUND::asServiceException);
             
             // 이미 취소된 광고인지 확인
             if (request.getStatus() == AdvertisementStatus.CANCELLED ||
@@ -286,10 +281,10 @@ public class ThemeAdvertisementRequestController {
     
     @GetMapping("/statistics")
     public ResponseEntity<?> getAdvertisementStatistics(
-            @AuthenticationPrincipal WebUser currentUser,
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) UUID themeId) {
         try {
+      WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
             UUID targetUserId = userId;
             
             // 권한 검증: 자신의 통계이거나 관리자인 경우만 조회 가능
@@ -327,9 +322,19 @@ public class ThemeAdvertisementRequestController {
     
     // DTO 클래스들
     public static class RequestAdvertisementDto {
+        @NotNull(message = "테마 ID는 필수입니다")
         private UUID themeId;
+        
+        @NotBlank(message = "테마 이름은 필수입니다")
+        @Size(max = 100, message = "테마 이름은 100자 이하여야 합니다")
         private String themeName;
+        
+        @NotNull(message = "테마 타입은 필수입니다")
         private ThemeAdvertisementRequest.ThemeType themeType;
+        
+        @NotNull(message = "광고 기간은 필수입니다")
+        @Min(value = 1, message = "광고 기간은 최소 1일입니다")
+        @Max(value = 15, message = "광고 기간은 최대 15일입니다")
         private Integer requestedDays;
         
         // Getters and Setters
@@ -354,6 +359,8 @@ public class ThemeAdvertisementRequestController {
     }
     
     public static class ForceCancelDto {
+        @NotBlank(message = "취소 사유는 필수입니다")
+        @Size(max = 500, message = "취소 사유는 500자 이하여야 합니다")
         private String reason;
         
         public String getReason() { return reason; }

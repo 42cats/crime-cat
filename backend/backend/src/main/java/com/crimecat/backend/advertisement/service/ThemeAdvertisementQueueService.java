@@ -38,6 +38,9 @@ public class ThemeAdvertisementQueueService {
     private final UserRepository userRepository;
     private final DiscordBotCacheService discordBotCacheService;
     private final ThemeAdvertisementNotificationService notificationService;
+    private final ThemeAdvertisementValidationService validationService;
+    private final RateLimitingService rateLimitingService;
+    private final InputSanitizationService sanitizationService;
     
     @Transactional
     @Caching(evict = {
@@ -48,36 +51,41 @@ public class ThemeAdvertisementQueueService {
     public ThemeAdvertisementRequest requestAdvertisement(UUID userId, UUID themeId, String themeName, 
                                                         ThemeAdvertisementRequest.ThemeType themeType, 
                                                         int requestedDays) {
-        // 1. 입력 검증
-        if (requestedDays <= 0 || requestedDays > MAX_DAYS_PER_AD) {
-            throw new IllegalArgumentException("광고 기간은 1일 이상 " + MAX_DAYS_PER_AD + "일 이하로 설정해야 합니다.");
-        }
+        // 1. Rate limiting 검증
+        rateLimitingService.checkRateLimit(userId);
         
-        // 2. 비용 계산
+        // 2. 입력 데이터 검증 및 정화
+        sanitizationService.validateNumberRange(requestedDays, 1, MAX_DAYS_PER_AD, "광고 기간");
+        String sanitizedThemeName = sanitizationService.sanitizeThemeName(themeName);
+        
+        // 3. 종합 검증 (테마 소유권, 중복 광고, 포인트 잔액)
+        validationService.validateAdvertisementRequest(userId, themeId, requestedDays);
+        
+        // 4. 비용 계산
         int totalCost = requestedDays * COST_PER_DAY;
         
-        // 2. 사용자 조회 및 포인트 잔액 확인
+        // 5. 사용자 조회 및 포인트 차감
         User user = userRepository.findByWebUserId(userId)
             .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         
         boolean deducted = pointHistoryService.usePointsForAdvertisement(user, totalCost, 
-            "테마 광고 신청: " + themeName + " (" + requestedDays + "일)");
+            "테마 광고 신청: " + sanitizedThemeName + " (" + requestedDays + "일)");
         if (!deducted) {
             throw new IllegalStateException("포인트가 부족합니다. 필요 포인트: " + totalCost);
         }
         
         try {
-            // 3. 광고 신청 생성
+            // 5. 광고 신청 생성
             ThemeAdvertisementRequest request = ThemeAdvertisementRequest.builder()
                 .userId(userId)
                 .themeId(themeId)
-                .themeName(themeName)
+                .themeName(sanitizedThemeName)
                 .themeType(themeType)
                 .requestedDays(requestedDays)
                 .totalCost(totalCost)
                 .build();
             
-            // 4. 활성 광고 수 확인
+            // 6. 활성 광고 수 확인
             long activeCount = requestRepository.countByStatus(AdvertisementStatus.ACTIVE);
             
             if (activeCount < MAX_ACTIVE_ADS) {

@@ -42,6 +42,7 @@ public enum ErrorStatus {
     INVALID_INPUT("잘못된 요청입니다.", HttpStatus.BAD_REQUEST),    //400                 // 400
     INVALID_PARAMETER("요청 파라미터가 잘못되었습니다.", HttpStatus.BAD_REQUEST),     // 400
     MISSING_REQUIRED_FIELD("필수 항목이 누락되었습니다.", HttpStatus.BAD_REQUEST),   // 400
+    TOO_MANY_REQUESTS("요청 횟수가 너무 많습니다. 잠시 후 다시 시도해주세요.", HttpStatus.TOO_MANY_REQUESTS), // 429
     
     // 📍 위치 매핑 관련
     LOCATION_MAPPING_NOT_FOUND("위치 매핑을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
