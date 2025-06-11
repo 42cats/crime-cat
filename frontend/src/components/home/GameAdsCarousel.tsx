@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Gamepad, ChevronLeft, ChevronRight } from "lucide-react";
+import { Gamepad, ChevronLeft, ChevronRight, Sparkles, Coins, TrendingUp, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
     queueThemeAdsService,
     QueueThemeAdvertisement,
@@ -126,6 +129,7 @@ const container = {
 const GameAdsCarousel: React.FC = () => {
     const swiperRef = useRef<SwiperType>();
     const { containerRef, carouselConfig } = useResponsiveCarousel();
+    const navigate = useNavigate();
 
     // 활성 광고 목록 조회 (새로운 큐 시스템)
     const { data: advertisements = [], isLoading, error } = useQuery({
@@ -188,8 +192,56 @@ const GameAdsCarousel: React.FC = () => {
         );
     }
 
+    // 광고가 없을 때 홍보 섹션 표시
     if (advertisements.length === 0) {
-        return null; // 광고가 없으면 섹션 자체를 표시하지 않음
+        return (
+            <section className="py-8 px-4">
+                <div className="container mx-auto">
+                    <h2 className="text-xl font-bold mb-4 flex items-center">
+                        <Gamepad className="h-5 w-5 mr-2 text-primary" />
+                        추천 게임 테마
+                    </h2>
+                    
+                    <motion.div
+                        className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-xl p-8 text-center"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        <div className="max-w-md mx-auto">
+                            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                                <Sparkles className="w-8 h-8 text-white" />
+                            </div>
+                            <h3 className="text-xl font-bold mb-3 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                내 테마를 홍보해보세요!
+                            </h3>
+                            <p className="text-muted-foreground mb-6 leading-relaxed">
+                                테마 광고로 더 많은 플레이어들에게 노출시키고
+                                <br />
+                                게임 참여율을 높여보세요!
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-6">
+                                <Badge variant="secondary" className="text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/30">
+                                    <Coins className="w-4 h-4 mr-1" />
+                                    100P/일부터 시작
+                                </Badge>
+                                <Badge variant="secondary" className="text-blue-700 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30">
+                                    <TrendingUp className="w-4 h-4 mr-1" />
+                                    즉시 노출 가능
+                                </Badge>
+                            </div>
+                            <Button 
+                                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0"
+                                onClick={() => navigate('/dashboard/theme-ads')}
+                            >
+                                <Plus className="w-4 h-4 mr-2" />
+                                광고 신청하기
+                            </Button>
+                        </div>
+                    </motion.div>
+                </div>
+            </section>
+        );
     }
 
     // displayOrder로 정렬

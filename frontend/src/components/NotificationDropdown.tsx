@@ -141,7 +141,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 return (
                     <div key={notification.id}>
                         <ThemeAdvertisementNotificationItem
-                            {...commonProps}
+                            notification={notification}
+                            onMarkAsRead={markAsRead}
                             onClick={handleNotificationClick}
                         />
                         {index < recentNotifications.length - 1 && (
