@@ -234,7 +234,7 @@ public class WebGameHistoryService {
 		GameTheme gameTheme = gameThemeRepository.findById(gameThemeId)
 				.orElseThrow(ErrorStatus.INVALID_ACCESS::asServiceException);
 		
-		// 2. 범죄현장 테마인 경우 제작팀 멤버 여부 확인
+		// 2. 크라임씬 테마인 경우 제작팀 멤버 여부 확인
 		if (gameTheme instanceof CrimesceneTheme) {
 			// JOIN FETCH로 팀과 멤버를 함께 조회
 			Optional<CrimesceneTheme> crimesceneThemeOpt = crimesceneThemeRepository.findByIdWithTeamAndMembers(gameThemeId);

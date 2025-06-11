@@ -159,7 +159,7 @@ public class ThemeAdvertisementQueueService {
     @Transactional
     @Caching(evict = {
         @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, key = "#request.userId"),
+        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true),
         @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId")
     })
     public void cancelActiveAdvertisement(UUID requestId) {
