@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits,CommandInteraction } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, CommandInteraction } = require('discord.js');
 const UserInfoImage = require('./utility/userInfoToImage');
 const { addUserPermisson } = require('./api/user/user');
 const nameOfCommand = "권한업글";
@@ -24,13 +24,13 @@ module.exports = {
      */
     async execute(interaction) {
         const botPermission = interaction.options.getString('봇권한');
-        if(!botPermission){
-            interaction.reply({embeds: [await UserInfoImage(interaction.user)]});
+        if (!botPermission) {
+            interaction.reply({ embeds: [await UserInfoImage(interaction.user)] });
         }
-        else{
+        else {
             const response = await addUserPermisson(interaction.user, botPermission);
             console.log("response ", response);
-            interaction.reply(`${response.status === 200 ? "✅ 권한 등록 성공" : "❌ 권한 등록 실패"} \n현재 권한 : ${response.data.permissions ? `${response.data.permissions.map(v=>v.name)}` : ""}`);
+            interaction.reply(`${response.status === 200 ? "✅ 권한 등록 성공" : "❌ 권한 등록 실패"} \n현재 권한 : ${response.data.permissions ? `${response.data.permissions.map(v => v.name)}` : ""}`);
         }
     },
 
@@ -43,6 +43,6 @@ module.exports = {
             */
         }
     },
-    upload: true,
+    upload: false,
     permissionLevel: PermissionFlagsBits.DeafenMembers
 };

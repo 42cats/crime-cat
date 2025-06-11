@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { NotificationItem } from "@/components/NotificationItem";
 import { SystemNotificationItem } from "@/components/notification/SystemNotificationItem";
 import { GameRecordNotificationItem } from "@/components/notification/GameRecordNotificationItem";
+import ThemeAdvertisementNotificationItem from "@/components/notification/ThemeAdvertisementNotificationItem";
 import { useNotification } from "@/hooks/useNotification";
 import { useProcessedNotifications } from "@/hooks/useProcessedNotifications";
 import { handleNotificationRouting } from "@/utils/notificationRouting";
@@ -128,6 +129,20 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                                 })
                             }
                             isLoading={processActionMutation.isPending}
+                        />
+                        {index < recentNotifications.length - 1 && (
+                            <Separator className="mx-3" />
+                        )}
+                    </div>
+                );
+            case NotificationType.THEME_AD_EXPIRED:
+            case NotificationType.THEME_AD_ACTIVATED:
+            case NotificationType.THEME_AD_CANCELLED:
+                return (
+                    <div key={notification.id}>
+                        <ThemeAdvertisementNotificationItem
+                            {...commonProps}
+                            onClick={handleNotificationClick}
                         />
                         {index < recentNotifications.length - 1 && (
                             <Separator className="mx-3" />

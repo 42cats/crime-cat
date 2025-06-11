@@ -16,13 +16,39 @@ import { useNavigate } from "react-router-dom";
 interface ThemeAdvertisementNotificationItemProps {
     notification: Notification;
     onMarkAsRead: (id: string) => void;
+    onClick?: (notification: Notification) => void;
 }
 
 const ThemeAdvertisementNotificationItem: React.FC<ThemeAdvertisementNotificationItemProps> = ({
     notification,
-    onMarkAsRead
+    onMarkAsRead,
+    onClick
 }) => {
     const navigate = useNavigate();
+
+    // 메타데이터에서 정보 추출
+    const getNotificationData = () => {
+        try {
+            // notification.data가 있으면 사용, 없으면 metadata를 파싱
+            const data = notification.data || (notification.metadata ? JSON.parse(notification.metadata) : {});
+            return {
+                themeName: data.themeName || '테마',
+                themeType: data.themeType || '',
+                refundAmount: data.refundAmount || 0,
+                reason: data.reason || ''
+            };
+        } catch (error) {
+            console.error('알림 메타데이터 파싱 실패:', error);
+            return {
+                themeName: '테마',
+                themeType: '',
+                refundAmount: 0,
+                reason: ''
+            };
+        }
+    };
+
+    const notificationData = getNotificationData();
 
     const getNotificationIcon = () => {
         switch (notification.type) {
@@ -77,11 +103,52 @@ const ThemeAdvertisementNotificationItem: React.FC<ThemeAdvertisementNotificatio
     };
 
     const handleClick = () => {
-        onMarkAsRead(notification.id);
-        navigate('/dashboard/theme-ads');
+        if (notification.status === 'UNREAD') {
+            onMarkAsRead(notification.id);
+        }
+        if (onClick) {
+            onClick(notification);
+        } else {
+            navigate('/dashboard/theme-ads');
+        }
     };
 
-    const hasRefundInfo = notification.message.includes('포인트가 환불');
+    // 메타데이터를 기반으로 동적 제목과 메시지 생성
+    const getDisplayTitle = () => {
+        const { themeName, themeType } = notificationData;
+        const typeLabel = themeType === 'CRIMESCENE' ? '크라임씬' : 
+                         themeType === 'ESCAPE_ROOM' ? '방탈출' : '테마';
+        
+        switch (notification.type) {
+            case NotificationType.THEME_AD_ACTIVATED:
+                return `${typeLabel} 광고 활성화`;
+            case NotificationType.THEME_AD_EXPIRED:
+                return `${typeLabel} 광고 만료`;
+            case NotificationType.THEME_AD_CANCELLED:
+                return `${typeLabel} 광고 취소`;
+            default:
+                return notification.title || '테마 광고 알림';
+        }
+    };
+
+    const getDisplayMessage = () => {
+        const { themeName, refundAmount, reason } = notificationData;
+        
+        switch (notification.type) {
+            case NotificationType.THEME_AD_ACTIVATED:
+                return `"${themeName}" 테마의 광고가 활성화되었습니다.`;
+            case NotificationType.THEME_AD_EXPIRED:
+                return `"${themeName}" 테마의 광고가 만료되었습니다.`;
+            case NotificationType.THEME_AD_CANCELLED:
+                const refundText = refundAmount > 0 ? ` ${refundAmount.toLocaleString()}P가 환불되었습니다.` : '';
+                const reasonText = reason ? ` (사유: ${reason})` : '';
+                return `"${themeName}" 테마의 광고가 취소되었습니다.${refundText}${reasonText}`;
+            default:
+                return notification.message || '테마 광고와 관련된 업데이트가 있습니다.';
+        }
+    };
+
+    const hasRefundInfo = notificationData.refundAmount > 0;
 
     return (
         <Card className={`border-l-4 ${getNotificationColor()} hover:shadow-md transition-shadow cursor-pointer`}>
@@ -94,7 +161,7 @@ const ThemeAdvertisementNotificationItem: React.FC<ThemeAdvertisementNotificatio
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
                             <h4 className="font-semibold text-sm text-gray-900">
-                                {notification.title}
+                                {getDisplayTitle()}
                             </h4>
                             <Badge variant={getBadgeVariant()} className="text-xs">
                                 {getBadgeText()}
@@ -102,13 +169,13 @@ const ThemeAdvertisementNotificationItem: React.FC<ThemeAdvertisementNotificatio
                         </div>
                         
                         <p className="text-sm text-gray-600 mb-2">
-                            {notification.message}
+                            {getDisplayMessage()}
                         </p>
                         
                         {hasRefundInfo && (
                             <div className="flex items-center gap-1 text-xs text-green-600 bg-green-100 rounded px-2 py-1 w-fit">
                                 <Coins className="w-3 h-3" />
-                                <span>환불 완료</span>
+                                <span>환불 완료: {notificationData.refundAmount.toLocaleString()}P</span>
                             </div>
                         )}
                     </div>
