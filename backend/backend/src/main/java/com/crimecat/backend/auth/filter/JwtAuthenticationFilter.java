@@ -120,7 +120,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             || uri.startsWith("/api/v1/auth/logout")
             || uri.startsWith("/actuator/health")
             || uri.startsWith("/actuator/info")
-            || uri.startsWith("/api/v1/csrf/token");
+            || uri.startsWith("/api/v1/csrf/token")
+            || uri.startsWith("/api/ssr/")      // SSR 엔드포인트 (크롤러용)
+            || uri.startsWith("/api/sitemap/"); // 동적 사이트맵 (크롤러용)
     }
 
     private String extractAccessToken(HttpServletRequest request) {
