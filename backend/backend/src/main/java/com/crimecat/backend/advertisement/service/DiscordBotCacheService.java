@@ -38,6 +38,14 @@ public class DiscordBotCacheService {
             List<ThemeAdvertisementRequest> activeAds = 
                 requestRepository.findByStatusOrderByQueuePositionAsc(AdvertisementStatus.ACTIVE);
             
+            // 활성 광고가 없는 경우에도 빈 배열을 저장
+            if (activeAds.isEmpty()) {
+                String emptyJsonArray = "[]";
+                redisTemplate.opsForValue().set(DISCORD_BOT_ACTIVE_ADS_KEY, emptyJsonArray, CACHE_TTL);
+                log.info("디스코드 봇용 활성 광고 캐시 업데이트 완료: 0 건 (빈 배열 저장)");
+                return;
+            }
+            
             // 디스코드 봇에서 필요한 최소한의 정보만 추출
             List<Map<String, Object>> botFriendlyData = activeAds.stream()
                 .map(ad -> {
