@@ -232,4 +232,10 @@ public interface UserPostRepository extends JpaRepository<UserPost, UUID> {
                                   @Param("currentUserId") UUID currentUserId, 
                                   @Param("minPopularityScore") Double minPopularityScore, 
                                   Pageable pageable);
+
+    /**
+     * 사이트맵용 공개 게시물 조회 (최신순)
+     */
+    @Query("SELECT p FROM UserPost p WHERE p.isPrivate = false AND p.isFollowersOnly = false ORDER BY p.createdAt DESC")
+    List<UserPost> findPublicPostsForSitemap(Pageable pageable);
 }

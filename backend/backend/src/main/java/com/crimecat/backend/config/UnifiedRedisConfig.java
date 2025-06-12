@@ -265,6 +265,31 @@ public class UnifiedRedisConfig {
         cacheConfigurations.put(CacheType.THEME_AD_PLATFORM_STATS, 
                 defaultConfig.entryTtl(Duration.ofMinutes(10))); // 플랫폼 통계 - 10분
         
+        // 사이트맵 캐시 설정
+        cacheConfigurations.put(CacheType.SITEMAP_INDEX, 
+                defaultConfig.entryTtl(Duration.ofHours(1))); // 사이트맵 인덱스 - 1시간
+        
+        cacheConfigurations.put(CacheType.SITEMAP_THEMES, 
+                defaultConfig.entryTtl(Duration.ofMinutes(30))); // 테마 사이트맵 - 30분
+        
+        cacheConfigurations.put(CacheType.SITEMAP_POSTS, 
+                defaultConfig.entryTtl(Duration.ofMinutes(30))); // 게시글 사이트맵 - 30분
+        
+        cacheConfigurations.put(CacheType.SITEMAP_PROFILES, 
+                defaultConfig.entryTtl(Duration.ofHours(1))); // 프로필 사이트맵 - 1시간
+        
+        cacheConfigurations.put(CacheType.SITEMAP_SNS, 
+                defaultConfig.entryTtl(Duration.ofMinutes(30))); // SNS 사이트맵 - 30분
+        
+        cacheConfigurations.put(CacheType.SITEMAP_NOTICES, 
+                defaultConfig.entryTtl(Duration.ofHours(1))); // 공지사항 사이트맵 - 1시간
+        
+        cacheConfigurations.put(CacheType.SITEMAP_COMMANDS, 
+                defaultConfig.entryTtl(Duration.ofHours(2))); // 명령어 사이트맵 - 2시간
+        
+        cacheConfigurations.put(CacheType.SITEMAP_GAME_THEMES, 
+                defaultConfig.entryTtl(Duration.ofMinutes(30))); // 게임테마 사이트맵 - 30분
+        
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)

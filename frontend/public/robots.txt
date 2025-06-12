@@ -32,6 +32,6 @@ Disallow: /node_modules/
 # 크롤링 속도 제한
 Crawl-delay: 1
 
-# 사이트맵 위치
+# 사이트맵 위치 (Spring Boot 백엔드 사이트맵 인덱스 사용)
+Sitemap: https://mystery-place.com/api/sitemap/sitemap-index.xml
 Sitemap: https://mystery-place.com/sitemap.xml
-Sitemap: https://mystery-place.com/api/sitemap-index.xml

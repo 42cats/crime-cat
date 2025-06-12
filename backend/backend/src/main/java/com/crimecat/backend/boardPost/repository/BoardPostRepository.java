@@ -77,4 +77,10 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID>, Jpa
     @Query("UPDATE BoardPost p SET p.comments = :comments WHERE p.id = :postId")
     void updateComments(@Param("postId") UUID postId, int comments);
 
+    /**
+     * 사이트맵용 게시글 조회 (보드 타입별, 최신순)
+     */
+    @Query("SELECT p FROM BoardPost p WHERE p.boardType = :boardType AND p.isDeleted = false ORDER BY p.createdAt DESC")
+    java.util.List<BoardPost> findByBoardTypeOrderByCreatedAtDesc(@Param("boardType") BoardType boardType, Pageable pageable);
+
 }
