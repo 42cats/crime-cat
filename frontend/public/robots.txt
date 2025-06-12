@@ -15,7 +15,6 @@ Disallow: /oauth2/
 # API 엔드포인트 차단 (사이트맵 제외)
 Disallow: /api/
 Allow: /api/sitemap/
-Allow: /api/sitemap-index.xml
 
 # 중복 콘텐츠 방지
 Disallow: /*?*sort=
