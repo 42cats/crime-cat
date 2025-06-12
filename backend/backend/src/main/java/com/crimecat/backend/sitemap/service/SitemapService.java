@@ -17,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -36,7 +37,7 @@ public class SitemapService {
     private final CommandRepository commandRepository;
     
     private static final String BASE_URL = "https://mystery-place.com";
-    private static final DateTimeFormatter ISO_DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
     
     /**
      * 사이트맵 인덱스 생성
@@ -49,7 +50,7 @@ public class SitemapService {
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
         
-        String now = LocalDateTime.now().format(ISO_DATE_FORMAT);
+        String now = LocalDateTime.now(KST).format(DateTimeFormatter.ISO_LOCAL_DATE);
         
         // 정적 사이트맵
         addSitemapEntry(xml, "/sitemap.xml", now);
@@ -156,7 +157,7 @@ public class SitemapService {
         xml.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
         
         // 활성 사용자들 (최근 30일 내 활동)
-        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
+        LocalDateTime thirtyDaysAgo = LocalDateTime.now(KST).minusDays(30);
         var activeUsers = userRepository.findActiveUsersForSitemap(thirtyDaysAgo, PageRequest.of(0, 500));
         
         for (var user : activeUsers) {
@@ -238,7 +239,7 @@ public class SitemapService {
         xml.append("  <url>\n");
         xml.append("    <loc>").append(BASE_URL).append(loc).append("</loc>\n");
         if (lastmod != null) {
-            xml.append("    <lastmod>").append(lastmod.format(ISO_DATE_FORMAT)).append("</lastmod>\n");
+            xml.append("    <lastmod>").append(lastmod.format(DateTimeFormatter.ISO_LOCAL_DATE)).append("</lastmod>\n");
         }
         xml.append("    <changefreq>").append(changefreq).append("</changefreq>\n");
         xml.append("    <priority>").append(priority).append("</priority>\n");
@@ -257,7 +258,7 @@ public class SitemapService {
         xml.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
         
         // 명령어 목록 페이지
-        addUrlEntry(xml, "/commands", LocalDateTime.now(), "weekly", "0.8");
+        addUrlEntry(xml, "/commands", LocalDateTime.now(KST), "weekly", "0.8");
         
         // 개별 명령어 상세 페이지
         var commands = commandRepository.findTop100ByOrderByCreatedAtDesc(PageRequest.of(0, 100));
@@ -285,9 +286,9 @@ public class SitemapService {
         xml.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
         
         // 카테고리별 테마 목록 페이지
-        addUrlEntry(xml, "/api/v1/public/themes", LocalDateTime.now(), "daily", "0.9");
-        addUrlEntry(xml, "/api/v1/public/themes/crimescene", LocalDateTime.now(), "daily", "0.8");
-        addUrlEntry(xml, "/api/v1/public/themes/escape-room", LocalDateTime.now(), "daily", "0.8");
+        addUrlEntry(xml, "/api/v1/public/themes", LocalDateTime.now(KST), "daily", "0.9");
+        addUrlEntry(xml, "/api/v1/public/themes/crimescene", LocalDateTime.now(KST), "daily", "0.8");
+        addUrlEntry(xml, "/api/v1/public/themes/escape-room", LocalDateTime.now(KST), "daily", "0.8");
         
         // 개별 테마 상세 페이지 (모든 타입)
         List<GameTheme> allThemes = gameThemeRepository.findAll();
