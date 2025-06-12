@@ -2,85 +2,85 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- 메인 페이지 -->
   <url>
-    <loc>https://mystery-place.com//</loc>
+    <loc>https://mystery-place.com/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
-  
+
   <!-- 테마 카테고리 페이지 -->
   <url>
-    <loc>https://mystery-place.com//themes/크라임씬</loc>
+    <loc>https://mystery-place.com/themes/crimescene</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://mystery-place.com//themes/방탈출</loc>
+    <loc>https://mystery-place.com/themes/escape_room</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://mystery-place.com//themes/머더미스터리</loc>
+    <loc>https://mystery-place.com/themes/머더미스터리</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
-  
+
   <!-- 커뮤니티 페이지 -->
   <url>
-    <loc>https://mystery-place.com//community/question</loc>
+    <loc>https://mystery-place.com/community/question</loc>
     <changefreq>hourly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mystery-place.com//community/chat</loc>
+    <loc>https://mystery-place.com/community/chat</loc>
     <changefreq>hourly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mystery-place.com//community/creator</loc>
+    <loc>https://mystery-place.com/community/creator</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
-  
+
   <!-- SNS 페이지 -->
   <url>
-    <loc>https://mystery-place.com//sns/explore</loc>
+    <loc>https://mystery-place.com/sns/explore</loc>
     <changefreq>hourly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mystery-place.com//sns/feed</loc>
+    <loc>https://mystery-place.com/sns/feed</loc>
     <changefreq>hourly</changefreq>
     <priority>0.7</priority>
   </url>
-  
+
   <!-- 기타 페이지 -->
   <url>
-    <loc>https://mystery-place.com//notices</loc>
+    <loc>https://mystery-place.com/notices</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://mystery-place.com//commands</loc>
+    <loc>https://mystery-place.com/commands</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://mystery-place.com//terms</loc>
+    <loc>https://mystery-place.com/terms</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mystery-place.com//privacy</loc>
+    <loc>https://mystery-place.com/privacy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://mystery-place.com//contact</loc>
+    <loc>https://mystery-place.com/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://mystery-place.com//donate</loc>
+    <loc>https://mystery-place.com/donate</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

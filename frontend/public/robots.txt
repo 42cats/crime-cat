@@ -1,26 +1,37 @@
 # 미스터리 플레이스 robots.txt
 # https://mystery-place.com/
 
-# 모든 검색 엔진 허용
 User-agent: *
 Allow: /
 
-# 관리자 페이지 크롤링 차단
-Disallow: /dashboard/
+# 개인 정보 및 관리 페이지 차단
+Disallow: /dashboard/admin/
+Disallow: /dashboard/profile
+Disallow: /dashboard/guilds/
 Disallow: /admin/
-Disallow: /api/
 Disallow: /login
 Disallow: /oauth2/
 
-# 임시 파일 차단
-Disallow: /*.json$
-Disallow: /*.xml$
+# API 엔드포인트 차단 (사이트맵 제외)
+Disallow: /api/
+Allow: /api/sitemap/
+Allow: /api/sitemap-index.xml
+
+# 중복 콘텐츠 방지
 Disallow: /*?*sort=
 Disallow: /*?*page=
 Disallow: /*?*filter=
+Disallow: /*?*search=
 
-# 크롤링 속도 제한 (선택사항)
+# 파일 형식 차단
+Disallow: /*.json$
+Disallow: /*.js.map$
+Disallow: /src/
+Disallow: /node_modules/
+
+# 크롤링 속도 제한
 Crawl-delay: 1
 
 # 사이트맵 위치
-Sitemap: https://mystery-place.com//sitemap.xml
+Sitemap: https://mystery-place.com/sitemap.xml
+Sitemap: https://mystery-place.com/api/sitemap-index.xml
