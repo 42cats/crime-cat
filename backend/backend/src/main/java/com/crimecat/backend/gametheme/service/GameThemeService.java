@@ -507,7 +507,7 @@ public class GameThemeService {
      * @param limit 조회할 개수
      * @return 테마 목록
      */
-    @Cacheable(value = CacheType.SITEMAP_THEMES, key = "#discriminator + '_' + #limit")
+    @Cacheable(value = CacheType.GAME_THEME_LIST_BY_TYPE, key = "#discriminator + '_' + #limit")
     public List<GameTheme> getThemesByType(String discriminator, int limit) {
         log.debug("Fetching themes with discriminator: {}", discriminator);
         Pageable pageable = PageRequest.of(0, limit);

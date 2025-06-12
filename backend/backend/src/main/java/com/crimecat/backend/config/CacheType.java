@@ -28,6 +28,7 @@ public class CacheType {
   // 게임 테마 관련 캐시 타입
   public static final String GAME_THEME = "game:theme";
   public static final String GAME_THEME_LIST = "game:theme:list";
+  public static final String GAME_THEME_LIST_BY_TYPE = "game:theme:list:type";
   public static final String GAME_THEME_LIKE = "game:theme:like";
   public static final String USER_THEME_SUMMARY = "user:theme:summary";
   
@@ -91,6 +92,7 @@ public class CacheType {
       NOTIFICATION_UNREAD,
       GAME_THEME,
       GAME_THEME_LIST,
+      GAME_THEME_LIST_BY_TYPE,
       GAME_THEME_LIKE,
       USER_THEME_SUMMARY,
       BOARD_POST_LIST,
