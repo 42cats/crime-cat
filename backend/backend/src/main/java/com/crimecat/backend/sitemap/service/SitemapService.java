@@ -325,6 +325,7 @@ public class SitemapService {
             case QUESTION -> "question";
             case CHAT -> "chat";
             case CREATOR -> "creator";
+            case NONE -> "none";
         };
     }
 }
