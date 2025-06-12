@@ -64,6 +64,16 @@ public class CacheType {
   public static final String THEME_AD_USER_SUMMARY = "theme:ad:user:summary";
   public static final String THEME_AD_PLATFORM_STATS = "theme:ad:platform:stats";
   
+  // 사이트맵 관련 캐시 타입
+  public static final String SITEMAP_INDEX = "sitemap:index";
+  public static final String SITEMAP_THEMES = "sitemap:themes";
+  public static final String SITEMAP_POSTS = "sitemap:posts";
+  public static final String SITEMAP_PROFILES = "sitemap:profiles";
+  public static final String SITEMAP_SNS = "sitemap:sns";
+  public static final String SITEMAP_NOTICES = "sitemap:notices";
+  public static final String SITEMAP_COMMANDS = "sitemap:commands";
+  public static final String SITEMAP_GAME_THEMES = "sitemap:game_themes";
+  
   public static final String [] CACHE_TYPE = {
       PERSONAL_DASHBOARD_INFO,
       VIEW_COUNT,
@@ -101,6 +111,14 @@ public class CacheType {
       THEME_AD_STATS,
       THEME_AD_USER_STATS,
       THEME_AD_USER_SUMMARY,
-      THEME_AD_PLATFORM_STATS
+      THEME_AD_PLATFORM_STATS,
+      SITEMAP_INDEX,
+      SITEMAP_THEMES,
+      SITEMAP_POSTS,
+      SITEMAP_PROFILES,
+      SITEMAP_SNS,
+      SITEMAP_NOTICES,
+      SITEMAP_COMMANDS,
+      SITEMAP_GAME_THEMES
   };
 }

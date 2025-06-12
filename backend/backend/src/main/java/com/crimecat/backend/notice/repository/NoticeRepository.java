@@ -17,5 +17,8 @@ public interface NoticeRepository extends JpaRepository<Notice, UUID> {
   @Query("SELECT n FROM Notice n ORDER BY n.isPinned DESC, n.orderIdx ASC, n.createdAt DESC")
   Page<Notice> findAllNoticesOrdered(Pageable pageable);
 
+  @Query("SELECT n FROM Notice n ORDER BY n.createdAt DESC")
+  List<Notice> findTop100ByOrderByCreatedAtDesc();
+
 
 }
