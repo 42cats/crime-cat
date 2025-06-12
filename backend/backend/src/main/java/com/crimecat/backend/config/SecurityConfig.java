@@ -75,7 +75,9 @@ public class SecurityConfig {
                         "/login/**", // 로그인 관련 경로
                         "/api/v1/auth/logout",
                         "/api/v1/auth/reissue",
-                        "/bot/v1/**", // 디스코드 봇 API 경로\
+                        "/bot/v1/**", // 디스코드 봇 API 경로
+                        "/api/ssr/**", // SSR 엔드포인트 (크롤러용)
+                        "/api/sitemap/**", // 동적 사이트맵 (크롤러용)
                         "/api/v1/csrf/token" // csrf 인증경로
                         )
                     .sessionAuthenticationStrategy((req, res, auth) -> {})
@@ -98,6 +100,8 @@ public class SecurityConfig {
                         "/api/v1/auth/oauth2/error",
                         "/login/**",
                         "/api/v1/public/**",
+                        "/api/ssr/**",  // SSR 엔드포인트 (크롤러용)
+                        "/api/sitemap/**",  // 동적 사이트맵 (크롤러용)
                         "/api/v1/csrf/token")
                     .permitAll()
                     .anyRequest()

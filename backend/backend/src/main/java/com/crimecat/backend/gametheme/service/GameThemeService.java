@@ -25,6 +25,7 @@ import com.crimecat.backend.point.service.PointHistoryService;
 import com.crimecat.backend.notification.service.NotificationService;
 import com.crimecat.backend.notification.enums.NotificationType;
 import com.crimecat.backend.config.CacheType;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.*;
 
 import java.util.*;
@@ -45,6 +46,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class GameThemeService {
     private final StorageService storageService;
     private final GameThemeRepository themeRepository;
@@ -494,4 +496,55 @@ public class GameThemeService {
     public void invalidateThemeCountCacheByDiscriminator(GameTheme gameTheme) {
         // Spring Cache가 처리
     }
+
+    // ================================
+    // SSR용 메서드들 (크롤러 전용)
+    // ================================
+
+    /**
+     * SSR용 테마 목록 조회 (타입별)
+     * @param discriminator 테마 구분자 (CRIMESCENE, ESCAPE_ROOM)
+     * @param limit 조회할 개수
+     * @return 테마 목록
+     */
+    @Cacheable(value = CacheType.SITEMAP_THEMES, key = "#discriminator + '_' + #limit")
+    public List<GameTheme> getThemesByType(String discriminator, int limit) {
+        log.debug("Fetching themes with discriminator: {}", discriminator);
+        Pageable pageable = PageRequest.of(0, limit);
+        
+        // Repository 메서드 사용 (discriminator 값 그대로 사용)
+        Page<GameTheme> page = themeRepository.findByTypeAndPublicStatusAndIsDeleted(
+            discriminator, true, false, pageable
+        );
+        
+        return page.getContent();
+    }
+
+    /**
+     * SSR용 테마 단일 조회 (String ID 기반)
+     * @param id 테마 ID (String 타입을 UUID로 변환)
+     * @return 테마 또는 null
+     */
+    public GameTheme getThemeByStringId(String id) {
+        try {
+            UUID uuid = UUID.fromString(id);
+            return themeRepository.findById(uuid)
+                .filter(theme -> theme.isPublicStatus() && !theme.isDeleted())
+                .orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * SSR용 테마 단일 조회 (UUID 기반)
+     * @param uuid 테마 UUID
+     * @return 테마 또는 null
+     */
+    public GameTheme getThemeById(UUID uuid) {
+        return themeRepository.findById(uuid)
+            .filter(theme -> theme.isPublicStatus() && !theme.isDeleted())
+            .orElse(null);
+    }
+
 }

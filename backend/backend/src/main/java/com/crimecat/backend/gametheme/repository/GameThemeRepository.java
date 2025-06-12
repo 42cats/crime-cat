@@ -36,4 +36,16 @@ public interface GameThemeRepository extends JpaRepository<GameTheme, UUID>, Jpa
          "AND gt.isDeleted = false")
   Long countByMakerTeamMember_WebUserId(@Param("webUserId") UUID webUserId);
 
+  /**
+   * SSR용 테마 타입별 조회 메서드 (Native Query 사용)
+   * @param type 테마 타입 (CRIMESCENE, ESCAPE_ROOM 등)
+   * @param isPublic 공개 여부
+   * @param isDeleted 삭제 여부
+   * @param pageable 페이지 정보
+   * @return 테마 목록
+   */
+  @Query(value = "SELECT * FROM game_themes t WHERE t.is_public = :isPublic AND t.is_deleted = :isDeleted AND t.type = :type ORDER BY t.created_at DESC", 
+         nativeQuery = true)
+  Page<GameTheme> findByTypeAndPublicStatusAndIsDeleted(@Param("type") String type, @Param("isPublic") boolean isPublic, @Param("isDeleted") boolean isDeleted, Pageable pageable);
+
 }
