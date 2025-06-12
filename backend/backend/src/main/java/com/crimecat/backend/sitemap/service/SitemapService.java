@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -38,6 +39,7 @@ public class SitemapService {
     
     private static final String BASE_URL = "https://mystery-place.com";
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+    private static final DateTimeFormatter SITEMAP_DATE_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
     
     /**
      * 사이트맵 인덱스 생성
@@ -50,7 +52,7 @@ public class SitemapService {
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
         
-        String now = LocalDateTime.now(KST).format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String now = ZonedDateTime.now(KST).format(SITEMAP_DATE_FORMAT);
         
         // 정적 사이트맵
         addSitemapEntry(xml, "/sitemap.xml", now);
@@ -239,7 +241,8 @@ public class SitemapService {
         xml.append("  <url>\n");
         xml.append("    <loc>").append(BASE_URL).append(loc).append("</loc>\n");
         if (lastmod != null) {
-            xml.append("    <lastmod>").append(lastmod.format(DateTimeFormatter.ISO_LOCAL_DATE)).append("</lastmod>\n");
+            ZonedDateTime zonedDateTime = lastmod.atZone(KST);
+            xml.append("    <lastmod>").append(zonedDateTime.format(SITEMAP_DATE_FORMAT)).append("</lastmod>\n");
         }
         xml.append("    <changefreq>").append(changefreq).append("</changefreq>\n");
         xml.append("    <priority>").append(priority).append("</priority>\n");
