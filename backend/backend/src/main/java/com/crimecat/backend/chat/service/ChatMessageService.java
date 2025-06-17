@@ -1,9 +1,15 @@
 package com.crimecat.backend.chat.service;
 
 import com.crimecat.backend.chat.domain.ChatMessage;
+import com.crimecat.backend.chat.domain.ChatServer;
+import com.crimecat.backend.chat.domain.ServerChannel;
 import com.crimecat.backend.chat.dto.BatchChatMessageDto;
 import com.crimecat.backend.chat.dto.ChatMessageDto;
 import com.crimecat.backend.chat.repository.ChatMessageRepository;
+import com.crimecat.backend.chat.repository.ChatServerRepository;
+import com.crimecat.backend.chat.repository.ServerChannelRepository;
+import com.crimecat.backend.exception.ErrorStatus;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -22,6 +28,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ChatMessageService {
 
     private final ChatMessageRepository chatMessageRepository;
+    private final ChatServerRepository chatServerRepository;
+    private final ServerChannelRepository serverChannelRepository;
     
     // 배치 처리 통계용
     private final AtomicLong totalBatchesProcessed = new AtomicLong(0);
@@ -33,14 +41,20 @@ public class ChatMessageService {
      * 단일 채팅 메시지 저장
      */
     @Transactional
-    public ChatMessageDto.Response saveMessage(ChatMessageDto.Request request, String userId, String username) {
-        log.debug("Saving single chat message from user: {}", username);
+    public ChatMessageDto.Response saveMessage(ChatMessageDto.Request request, UUID userId, String username) {
+        log.debug("Saving chat message from user: {} to server: {}, channel: {}", username, request.getServerId(), request.getChannelId());
         
-        ChatMessage chatMessage = request.toEntity(userId, username);
+        ChatServer server = chatServerRepository.findById(request.getServerId())
+                .orElseThrow(ErrorStatus.SERVER_NOT_FOUND::asServiceException);
+        
+        ServerChannel channel = serverChannelRepository.findByIdAndServerIdAndIsActiveTrue(request.getChannelId(), request.getServerId())
+                .orElseThrow(ErrorStatus.CHANNEL_NOT_FOUND::asServiceException);
+        
+        ChatMessage chatMessage = request.toEntity(userId, username, server, channel);
         ChatMessage saved = chatMessageRepository.save(chatMessage);
         
-        log.info("Chat message saved: id={}, user={}, content={}", 
-                saved.getId(), saved.getUsername(), 
+        log.info("Chat message saved: id={}, user={}, server={}, channel={}, content={}", 
+                saved.getId(), saved.getUsername(), server.getName(), channel.getName(),
                 saved.getContent().length() > 50 ? 
                     saved.getContent().substring(0, 50) + "..." : saved.getContent());
         
@@ -104,7 +118,7 @@ public class ChatMessageService {
         for (int i = 0; i < messages.size(); i++) {
             ChatMessage message = messages.get(i);
             
-            if (message.getUserId() == null || message.getUserId().trim().isEmpty()) {
+            if (message.getUserId() == null || message.getUserId().toString().trim().isEmpty()) {
                 errors.add(String.format("Message %d: userId is required", i));
             }
             
@@ -146,8 +160,15 @@ public class ChatMessageService {
      * 채팅 메시지 목록 조회 (페이징)
      */
     @Transactional(readOnly = true)
-    public Page<ChatMessageDto.Response> getMessages(Pageable pageable) {
-        Page<ChatMessage> messages = chatMessageRepository.findAllByOrderByCreatedAtDesc(pageable);
+    public Page<ChatMessageDto.Response> getChannelMessages(Long serverId, Long channelId, Pageable pageable) {
+        ChatServer server = chatServerRepository.findById(serverId)
+                .orElseThrow(ErrorStatus.SERVER_NOT_FOUND::asServiceException);
+        
+        ServerChannel channel = serverChannelRepository.findByIdAndServerIdAndIsActiveTrue(channelId, serverId)
+                .orElseThrow(ErrorStatus.CHANNEL_NOT_FOUND::asServiceException);
+        
+        Page<ChatMessage> messages = chatMessageRepository.findByServerIdAndChannelIdOrderByCreatedAtDesc(
+                serverId, channelId, pageable);
         return messages.map(ChatMessageDto.Response::from);
     }
 
@@ -155,8 +176,12 @@ public class ChatMessageService {
      * 특정 사용자의 메시지 조회
      */
     @Transactional(readOnly = true)
-    public Page<ChatMessageDto.Response> getMessagesByUser(String userId, Pageable pageable) {
-        Page<ChatMessage> messages = chatMessageRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+    public Page<ChatMessageDto.Response> getMessagesByUser(Long serverId, UUID userId, Pageable pageable) {
+        ChatServer server = chatServerRepository.findById(serverId)
+                .orElseThrow(ErrorStatus.SERVER_NOT_FOUND::asServiceException);
+        
+        Page<ChatMessage> messages = chatMessageRepository.findByServerIdAndUserIdOrderByCreatedAtDesc(
+                serverId, userId, pageable);
         return messages.map(ChatMessageDto.Response::from);
     }
 
@@ -164,8 +189,15 @@ public class ChatMessageService {
      * 특정 시간 이후의 메시지 조회 (실시간 동기화용)
      */
     @Transactional(readOnly = true)
-    public List<ChatMessageDto.Response> getMessagesSince(LocalDateTime since) {
-        List<ChatMessage> messages = chatMessageRepository.findMessagesSince(since);
+    public List<ChatMessageDto.Response> getMessagesSince(Long serverId, Long channelId, LocalDateTime since) {
+        ChatServer server = chatServerRepository.findById(serverId)
+                .orElseThrow(ErrorStatus.SERVER_NOT_FOUND::asServiceException);
+        
+        ServerChannel channel = serverChannelRepository.findByIdAndServerIdAndIsActiveTrue(channelId, serverId)
+                .orElseThrow(ErrorStatus.CHANNEL_NOT_FOUND::asServiceException);
+        
+        List<ChatMessage> messages = chatMessageRepository.findMessagesSinceByServerAndChannel(
+                serverId, channelId, since);
         return messages.stream()
                 .map(ChatMessageDto.Response::from)
                 .toList();
@@ -175,8 +207,15 @@ public class ChatMessageService {
      * 최근 N개 메시지 조회 (채팅방 입장시)
      */
     @Transactional(readOnly = true)
-    public List<ChatMessageDto.Response> getRecentMessages(int limit) {
-        List<ChatMessage> messages = chatMessageRepository.findRecentMessages(limit);
+    public List<ChatMessageDto.Response> getRecentMessages(Long serverId, Long channelId, int limit) {
+        ChatServer server = chatServerRepository.findById(serverId)
+                .orElseThrow(ErrorStatus.SERVER_NOT_FOUND::asServiceException);
+        
+        ServerChannel channel = serverChannelRepository.findByIdAndServerIdAndIsActiveTrue(channelId, serverId)
+                .orElseThrow(ErrorStatus.CHANNEL_NOT_FOUND::asServiceException);
+        
+        List<ChatMessage> messages = chatMessageRepository.findRecentMessagesByServerAndChannel(
+                serverId, channelId, limit);
         // 시간순으로 정렬 (오래된 것부터)
         return messages.stream()
                 .sorted((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt()))
@@ -188,8 +227,15 @@ public class ChatMessageService {
      * 메시지 검색
      */
     @Transactional(readOnly = true)
-    public Page<ChatMessageDto.Response> searchMessages(String keyword, Pageable pageable) {
-        Page<ChatMessage> messages = chatMessageRepository.findByContentContaining(keyword, pageable);
+    public Page<ChatMessageDto.Response> searchMessages(Long serverId, Long channelId, String keyword, Pageable pageable) {
+        ChatServer server = chatServerRepository.findById(serverId)
+                .orElseThrow(ErrorStatus.SERVER_NOT_FOUND::asServiceException);
+        
+        ServerChannel channel = serverChannelRepository.findByIdAndServerIdAndIsActiveTrue(channelId, serverId)
+                .orElseThrow(ErrorStatus.CHANNEL_NOT_FOUND::asServiceException);
+        
+        Page<ChatMessage> messages = chatMessageRepository.findByServerIdAndChannelIdAndContentContaining(
+                serverId, channelId, keyword, pageable);
         return messages.map(ChatMessageDto.Response::from);
     }
 
@@ -212,7 +258,14 @@ public class ChatMessageService {
      * 특정 기간의 메시지 수 조회
      */
     @Transactional(readOnly = true)
-    public Long getMessageCountBetween(LocalDateTime startDate, LocalDateTime endDate) {
-        return chatMessageRepository.countMessagesBetween(startDate, endDate);
+    public Long getMessageCountBetween(Long serverId, Long channelId, LocalDateTime startDate, LocalDateTime endDate) {
+        ChatServer server = chatServerRepository.findById(serverId)
+                .orElseThrow(ErrorStatus.SERVER_NOT_FOUND::asServiceException);
+        
+        ServerChannel channel = serverChannelRepository.findByIdAndServerIdAndIsActiveTrue(channelId, serverId)
+                .orElseThrow(ErrorStatus.CHANNEL_NOT_FOUND::asServiceException);
+        
+        return chatMessageRepository.countByServerIdAndChannelIdAndCreatedAtBetween(
+                serverId, channelId, startDate, endDate);
     }
 }

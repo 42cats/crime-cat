@@ -84,4 +84,7 @@ public interface ServerChannelRepository extends JpaRepository<ServerChannel, Lo
     
     // 서버의 활성 채널을 생성일시 순으로 조회
     List<ServerChannel> findByServerIdAndIsActiveTrueOrderByCreatedAt(Long serverId);
+    
+    // 특정 서버의 특정 채널 조회
+    Optional<ServerChannel> findByIdAndServerIdAndIsActiveTrue(Long channelId, Long serverId);
 }
