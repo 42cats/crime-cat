@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import { ServerInfo } from '../services/websocketService';
+import { serverApiService, CreateServerRequest, JoinServerRequest } from '../services/serverApi';
 
 interface ServerListPageProps {}
 
@@ -13,64 +14,33 @@ export const ServerListPage: React.FC<ServerListPageProps> = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // 서버 목록 로드
   useEffect(() => {
     const loadServers = async () => {
       setIsLoading(true);
+      setError(null);
       try {
-        // TODO: API에서 공개 서버 목록 + 사용자 참여 서버 목록 로드
-        const mockServers: ServerInfo[] = [
-          {
-            id: 1,
-            name: 'Mystery Place 공식 서버',
-            description: '공식 커뮤니티 서버입니다. 모든 사용자를 환영합니다!',
-            hasPassword: false,
-            memberCount: 1247,
-            maxMembers: 2000,
-            roles: []
-          },
-          {
-            id: 2,
-            name: '게임 동호회',
-            description: '다양한 게임을 함께 즐기는 커뮤니티',
-            hasPassword: true,
-            memberCount: 342,
-            maxMembers: 500,
-            roles: []
-          },
-          {
-            id: 3,
-            name: '개발자 모임',
-            description: '개발 지식을 공유하고 토론하는 공간',
-            hasPassword: false,
-            memberCount: 156,
-            maxMembers: 300,
-            roles: []
-          },
-          {
-            id: 4,
-            name: '음악 감상실',
-            description: '음악을 함께 듣고 이야기하는 서버',
-            hasPassword: true,
-            memberCount: 89,
-            maxMembers: 200,
-            roles: []
-          },
-          {
-            id: 5,
-            name: '스터디 그룹',
-            description: '함께 공부하고 동기부여를 얻는 공간',
-            hasPassword: false,
-            memberCount: 234,
-            maxMembers: 400,
-            roles: []
+        // 공개 서버 목록과 내 서버 목록을 병렬로 로드
+        const [publicServersResponse, myServers] = await Promise.all([
+          serverApiService.getPublicServers(0, 50),
+          serverApiService.getMyServers()
+        ]);
+
+        // 중복 제거하여 서버 목록 합치기
+        const allServers = [...myServers];
+        publicServersResponse.content.forEach(publicServer => {
+          if (!myServers.find(myServer => myServer.id === publicServer.id)) {
+            allServers.push(publicServer);
           }
-        ];
-        
-        setServers(mockServers);
+        });
+
+        setServers(allServers);
       } catch (error) {
         console.error('서버 목록 로드 실패:', error);
+        setError('서버 목록을 불러오는데 실패했습니다.');
+        setServers([]);
       } finally {
         setIsLoading(false);
       }
@@ -171,8 +141,27 @@ export const ServerListPage: React.FC<ServerListPageProps> = () => {
           </div>
         )}
 
+        {/* 에러 표시 */}
+        {error && (
+          <div className="text-center py-16">
+            <div className="text-6xl mb-4">⚠️</div>
+            <h3 className="text-xl font-semibold text-red-400 mb-2">
+              오류가 발생했습니다
+            </h3>
+            <p className="text-gray-400 mb-4">
+              {error}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
+            >
+              다시 시도
+            </button>
+          </div>
+        )}
+
         {/* 검색 결과 없음 */}
-        {!isLoading && filteredServers.length === 0 && (
+        {!isLoading && !error && filteredServers.length === 0 && (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">🔍</div>
             <h3 className="text-xl font-semibold text-gray-300 mb-2">
@@ -333,27 +322,27 @@ const CreateServerModal: React.FC<CreateServerModalProps> = ({ onClose, onServer
   const [password, setPassword] = useState('');
   const [maxMembers, setMaxMembers] = useState(100);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!serverName.trim()) return;
 
     setIsLoading(true);
+    setError(null);
     try {
-      // TODO: API 호출로 서버 생성
-      const newServer: ServerInfo = {
-        id: Date.now(),
+      const createData: CreateServerRequest = {
         name: serverName,
         description: serverDescription || undefined,
-        hasPassword: !!password,
-        memberCount: 1,
-        maxMembers: maxMembers,
-        roles: []
+        password: password || undefined,
+        maxMembers: maxMembers
       };
       
+      const newServer = await serverApiService.createServer(createData);
       onServerCreated(newServer);
-    } catch (error) {
+    } catch (error: any) {
       console.error('서버 생성 실패:', error);
+      setError(error.message || '서버 생성에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -429,6 +418,12 @@ const CreateServerModal: React.FC<CreateServerModalProps> = ({ onClose, onServer
             />
           </div>
 
+          {error && (
+            <div className="text-red-400 text-sm bg-red-900/20 border border-red-900/50 rounded-lg p-3">
+              {error}
+            </div>
+          )}
+
           <div className="flex space-x-3 pt-4">
             <button
               type="button"
@@ -460,27 +455,34 @@ const JoinServerModal: React.FC<JoinServerModalProps> = ({ onClose, onServerJoin
   const [serverId, setServerId] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!serverId.trim()) return;
 
     setIsLoading(true);
+    setError(null);
     try {
-      // TODO: API 호출로 서버 참가
-      const server: ServerInfo = {
-        id: Number(serverId),
-        name: `서버 ${serverId}`,
-        description: '참가한 서버',
-        hasPassword: !!password,
-        memberCount: 42,
-        maxMembers: 100,
-        roles: []
+      const serverIdNum = Number(serverId);
+      if (isNaN(serverIdNum)) {
+        throw new Error('올바른 서버 ID를 입력해주세요.');
+      }
+
+      const joinData: JoinServerRequest = {
+        serverId: serverIdNum,
+        password: password || undefined
       };
       
-      onServerJoined(server);
-    } catch (error) {
+      // 서버 참가 요청
+      await serverApiService.joinServer(joinData);
+      
+      // 서버 정보 조회
+      const serverInfo = await serverApiService.getServerById(serverIdNum);
+      onServerJoined(serverInfo);
+    } catch (error: any) {
       console.error('서버 참가 실패:', error);
+      setError(error.message || '서버 참가에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -528,6 +530,12 @@ const JoinServerModal: React.FC<JoinServerModalProps> = ({ onClose, onServerJoin
               placeholder="비밀번호가 있다면 입력"
             />
           </div>
+
+          {error && (
+            <div className="text-red-400 text-sm bg-red-900/20 border border-red-900/50 rounded-lg p-3">
+              {error}
+            </div>
+          )}
 
           <div className="flex space-x-3 pt-4">
             <button

@@ -81,6 +81,7 @@
         "remark-breaks": "^4.0.0",
         "remark-gfm": "^4.0.1",
         "serve-static": "^2.2.0",
+        "socket.io-client": "^4.8.1",
         "sonner": "^1.5.0",
         "swiper": "^11.2.8",
         "tailwind-merge": "^2.5.2",

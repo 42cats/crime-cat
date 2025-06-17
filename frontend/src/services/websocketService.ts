@@ -70,7 +70,7 @@ class WebSocketService {
   };
   
   // Event listeners
-  private eventListeners: { [event: string]: Function[] } = {};
+  private eventListeners: { [event: string]: ((...args: unknown[]) => void)[] } = {};
 
   constructor() {
     this.initializeConnection();
@@ -100,7 +100,7 @@ class WebSocketService {
   private getAuthToken(): string | null {
     // 쿠키에서 토큰 추출
     const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
+    for (const cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
       if (name === 'accessToken') {
         return value;
@@ -227,20 +227,20 @@ class WebSocketService {
   }
 
   // 이벤트 리스너 관리
-  on(event: string, callback: Function) {
+  on(event: string, callback: (...args: unknown[]) => void) {
     if (!this.eventListeners[event]) {
       this.eventListeners[event] = [];
     }
     this.eventListeners[event].push(callback);
   }
 
-  off(event: string, callback: Function) {
+  off(event: string, callback: (...args: unknown[]) => void) {
     if (this.eventListeners[event]) {
       this.eventListeners[event] = this.eventListeners[event].filter(cb => cb !== callback);
     }
   }
 
-  private emit(event: string, data?: any) {
+  private emit(event: string, data?: unknown) {
     if (this.eventListeners[event]) {
       this.eventListeners[event].forEach(callback => callback(data));
     }

@@ -4,6 +4,7 @@ import { useAppStore } from '../store/useAppStore';
 import { useServerChannel } from '../hooks/useServerChannel';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { ChatLayout } from '../components/chat/ChatLayout';
+import { serverApiService } from '../services/serverApi';
 
 interface ServerPageProps {}
 
@@ -66,8 +67,15 @@ export const ServerPage: React.FC<ServerPageProps> = () => {
 
         // 서버 정보가 없으면 로드
         if (!serverInfo) {
-          // TODO: API에서 서버 정보 로드
-          console.log(`서버 ${serverIdNum} 정보를 로드해야 합니다.`);
+          try {
+            const loadedServerInfo = await serverApiService.getServerById(serverIdNum);
+            // 스토어에 서버 정보 추가
+            const { addServer } = useAppStore.getState();
+            addServer(loadedServerInfo);
+          } catch (error) {
+            console.error('서버 정보 로드 실패:', error);
+            throw new Error('서버 정보를 불러올 수 없습니다.');
+          }
         }
 
         // 서버가 비밀번호를 요구하는지 확인
