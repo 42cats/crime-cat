@@ -253,4 +253,44 @@ public class AuthenticationUtil {
     return getCurrentUserOptional()
             .map(User::getId);
   }
+
+  /**
+   * 현재 인증된 사용자의 ID를 String으로 반환합니다.
+   * 채팅 시스템에서 사용하기 위한 편의 메서드입니다.
+   *
+   * @return 인증된 사용자의 User ID (String)
+   */
+  public static String getCurrentUserId() {
+    User currentUser = getCurrentUser();
+    return currentUser.getId().toString();
+  }
+
+  /**
+   * 현재 인증된 사용자의 사용자명을 반환합니다.
+   * 채팅 시스템에서 사용하기 위한 편의 메서드입니다.
+   *
+   * @return 인증된 사용자의 사용자명
+   */
+  public static String getCurrentUsername() {
+    WebUser currentWebUser = getCurrentWebUser();
+    // WebUser에서 이름을 가져오거나, DiscordUser에서 username을 가져올 수 있음
+    if (currentWebUser.getName() != null && !currentWebUser.getName().trim().isEmpty()) {
+      return currentWebUser.getName();
+    }
+    
+    // WebUser의 이름이 없으면 DiscordUser의 name 사용
+    DiscordUser discordUser = getCurrentDiscordUser();
+    return discordUser.getName();
+  }
+
+  /**
+   * 현재 인증된 사용자의 Discord Snowflake ID를 반환합니다.
+   * 채팅 시스템에서 사용하기 위한 편의 메서드입니다.
+   *
+   * @return 인증된 사용자의 Discord Snowflake ID
+   */
+  public static String getCurrentDiscordId() {
+    WebUser currentWebUser = getCurrentWebUser();
+    return currentWebUser.getDiscordUserSnowflake();
+  }
   }
