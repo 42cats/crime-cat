@@ -67,7 +67,7 @@ public class ServerMemberService {
         validateServerExists(serverId);
         
         ServerMember member = serverMemberRepository.findByServerIdAndUserIdAndIsActiveTrue(serverId, userId)
-                .orElseThrow(() -> ErrorStatus.MEMBER_NOT_FOUND.asException());
+                .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
                 
         return convertToDto(member);
     }
@@ -83,7 +83,7 @@ public class ServerMemberService {
         
         // 멤버 조회
         ServerMember member = serverMemberRepository.findByServerIdAndUserIdAndIsActiveTrue(serverId, userId)
-                .orElseThrow(() -> ErrorStatus.MEMBER_NOT_FOUND.asException());
+                .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
 
         // 역할 유효성 확인
         if (request.getRoleIds() != null && !request.getRoleIds().isEmpty()) {

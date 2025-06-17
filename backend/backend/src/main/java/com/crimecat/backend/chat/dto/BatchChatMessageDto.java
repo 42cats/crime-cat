@@ -1,6 +1,7 @@
 package com.crimecat.backend.chat.dto;
 
 import com.crimecat.backend.chat.domain.ChatMessage;
+import java.util.UUID;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -52,7 +53,7 @@ public class BatchChatMessageDto {
 
         public ChatMessage toEntity() {
             return ChatMessage.builder()
-                    .userId(userId)
+                    .userId(UUID.fromString(userId))
                     .username(username)
                     .content(content)
                     .messageType(messageType != null ? messageType : ChatMessage.MessageType.TEXT)

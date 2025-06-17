@@ -1,6 +1,7 @@
 package com.crimecat.backend.chat.dto;
 
 import com.crimecat.backend.chat.domain.ChatMessage;
+import java.util.UUID;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -16,7 +17,7 @@ public class ChatMessageDto {
 
         public ChatMessage toEntity(String userId, String username) {
             return ChatMessage.builder()
-                    .userId(userId)
+                    .userId(UUID.fromString(userId))
                     .username(username)
                     .content(content)
                     .messageType(messageType != null ? messageType : ChatMessage.MessageType.TEXT)
@@ -37,7 +38,7 @@ public class ChatMessageDto {
         public static Response from(ChatMessage chatMessage) {
             return Response.builder()
                     .id(chatMessage.getId())
-                    .userId(chatMessage.getUserId())
+                    .userId(chatMessage.getUserId().toString())
                     .username(chatMessage.getUsername())
                     .content(chatMessage.getContent())
                     .messageType(chatMessage.getMessageType())
@@ -57,7 +58,7 @@ public class ChatMessageDto {
 
         public static RealtimeMessage from(ChatMessage chatMessage) {
             return RealtimeMessage.builder()
-                    .userId(chatMessage.getUserId())
+                    .userId(chatMessage.getUserId().toString())
                     .username(chatMessage.getUsername())
                     .content(chatMessage.getContent())
                     .messageType(chatMessage.getMessageType())
