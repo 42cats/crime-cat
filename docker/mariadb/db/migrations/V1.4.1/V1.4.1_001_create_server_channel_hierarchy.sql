@@ -202,12 +202,54 @@ LEFT JOIN chat_messages msg ON sc.id = msg.channel_id
 WHERE sc.is_active = TRUE AND s.is_active = TRUE
 GROUP BY sc.id, sc.server_id, s.name, sc.name, sc.description, sc.channel_type, sc.created_at;
 
+-- 17. Create ServerRole table for custom role management
+CREATE TABLE server_roles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    server_id BIGINT NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    color VARCHAR(7) DEFAULT '#ffffff' COMMENT '역할 색상 (예: #FF0000)',
+    permissions JSON NOT NULL COMMENT '권한 비트맵 또는 키 배열 저장',
+    created_by BINARY(16) NOT NULL COMMENT '생성자 User ID',
+    is_active BOOLEAN DEFAULT TRUE COMMENT 'Soft delete 플래그',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    UNIQUE KEY unique_server_role_name (server_id, name),
+    INDEX idx_server_roles_server_id (server_id),
+    INDEX idx_server_roles_created_by (created_by),
+    INDEX idx_server_roles_is_active (is_active),
+    
+    FOREIGN KEY (server_id) REFERENCES chat_servers(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='서버별 커스텀 역할 테이블';
+
+-- 18. Extend ServerMember table for custom roles and server-specific profile
+ALTER TABLE server_members 
+ADD COLUMN display_name VARCHAR(50) COMMENT '서버별 닉네임 (NULL이면 전역 사용자명 사용)',
+ADD COLUMN avatar_url VARCHAR(255) COMMENT '서버별 아바타 (NULL이면 전역 아바타 사용)',
+ADD COLUMN assigned_roles JSON COMMENT '할당된 ServerRole.id 배열 저장 [1,2,3]';
+
+-- 19. Create default roles for existing servers
+INSERT INTO server_roles (server_id, name, color, permissions, created_by, created_at)
+VALUES 
+(1, 'Admin', '#ff0000', JSON_ARRAY('canManageServer', 'canManageChannels', 'canManageRoles', 'canKickMembers', 'canSendMessages', 'canUseVoice'), UNHEX(REPLACE('00000000-0000-0000-0000-000000000000', '-', '')), NOW()),
+(1, 'Member', '#ffffff', JSON_ARRAY('canSendMessages', 'canUseVoice'), UNHEX(REPLACE('00000000-0000-0000-0000-000000000000', '-', '')), NOW());
+
+-- 20. Update existing server members with default roles
+UPDATE server_members 
+SET assigned_roles = CASE 
+    WHEN role = 'ADMIN' THEN JSON_ARRAY(1)  -- Admin role
+    WHEN role = 'MEMBER' THEN JSON_ARRAY(2)  -- Member role
+    ELSE JSON_ARRAY(2)  -- Default to Member role
+END
+WHERE assigned_roles IS NULL;
+
 -- Migration completion
--- This migration creates a complete Server-Channel hierarchy with:
+-- This migration creates a complete Server-Channel hierarchy with custom roles:
 -- 1. Password-protected servers (BCrypt)
 -- 2. Role-based channel access (no passwords)
--- 3. Server roles: MEMBER, ADMIN
--- 4. Channel roles: MEMBER, MODERATOR
--- 5. Performance-optimized indexes
--- 6. Soft delete support
--- 7. Server and channel statistics monitoring
+-- 3. Custom server roles with permissions (ServerRole table)
+-- 4. Server-specific member profiles (display_name, avatar_url)
+-- 5. Channel roles: MEMBER, MODERATOR
+-- 6. Performance-optimized indexes
+-- 7. Soft delete support
+-- 8. Server and channel statistics monitoring
