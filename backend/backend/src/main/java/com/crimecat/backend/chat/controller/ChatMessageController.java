@@ -25,7 +25,7 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/servers/{serverId}/channels/{channelId}/messages")
+@RequestMapping("/api/v1/servers/{serverId}/channels/{channelId}/messages")
 @RequiredArgsConstructor
 @Validated
 public class ChatMessageController {

@@ -11,7 +11,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/servers/{serverId}/channels")
+@RequestMapping("/api/v1/servers/{serverId}/channels")
 @RequiredArgsConstructor
 @Slf4j
 public class ChannelController {
