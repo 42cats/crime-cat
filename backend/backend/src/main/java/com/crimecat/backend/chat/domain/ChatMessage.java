@@ -5,11 +5,14 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "chat_messages")
@@ -22,8 +25,17 @@ public class ChatMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private String userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "server_id", nullable = false)
+    private ChatServer server;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "channel_id", nullable = false)
+    private ServerChannel channel;
+
+    @Column(name = "user_id", nullable = false, columnDefinition = "BINARY(16)")
+    @JdbcTypeCode(SqlTypes.BINARY)
+    private UUID userId;
 
     @Column(name = "username", nullable = false)
     private String username;
@@ -44,7 +56,9 @@ public class ChatMessage {
     private LocalDateTime updatedAt;
 
     @Builder
-    public ChatMessage(String userId, String username, String content, MessageType messageType) {
+    public ChatMessage(ChatServer server, ServerChannel channel, UUID userId, String username, String content, MessageType messageType) {
+        this.server = server;
+        this.channel = channel;
         this.userId = userId;
         this.username = username;
         this.content = content;
