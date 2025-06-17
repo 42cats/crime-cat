@@ -14,6 +14,7 @@ import {
     Heart,
     BookmarkIcon,
     Camera,
+    Mic,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -59,6 +60,7 @@ const Navbar: React.FC = () => {
         { name: "SNS" }, // path 없음
         { name: "공지사항", path: "/notices" },
         { name: "명령어", path: "/commands" },
+        { name: "음성 채팅", path: "/servers", icon: <Mic className="w-4 h-4 mr-1" /> },
     ];
 
     const themeSubItems = [
@@ -132,12 +134,13 @@ const Navbar: React.FC = () => {
                                 {item.path ? (
                                     <Link
                                         to={item.path}
-                                        className={`relative text-sm font-medium transition-colors ${
+                                        className={`relative text-sm font-medium transition-colors flex items-center ${
                                             isActive(item.path)
                                                 ? "text-primary"
                                                 : "text-foreground/80 hover:text-foreground"
                                         }`}
                                     >
+                                        {item.icon && item.icon}
                                         {item.name}
                                         {isActive(item.path) && (
                                             <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary rounded-full" />
@@ -262,7 +265,7 @@ const Navbar: React.FC = () => {
                                 {item.path ? (
                                     <Link
                                         to={item.path}
-                                        className={`block py-2 text-sm font-medium ${
+                                        className={`block py-2 text-sm font-medium flex items-center ${
                                             isActive(item.path)
                                                 ? "text-primary"
                                                 : "text-foreground/80"
@@ -271,6 +274,7 @@ const Navbar: React.FC = () => {
                                             setIsMobileMenuOpen(false)
                                         }
                                     >
+                                        {item.icon && item.icon}
                                         {item.name}
                                     </Link>
                                 ) : (

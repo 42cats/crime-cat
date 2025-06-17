@@ -80,6 +80,10 @@ import SNSCreatePage from "@/pages/sns/SNSCreatePage";
 import SNSPostDetailPage from "@/pages/sns/SNSPostDetailPage";
 import SNSMyPostsPage from "@/pages/sns/SNSMyPostsPage";
 
+// Voice Chat Pages
+import ServerListPage from "@/pages/ServerListPage";
+import ServerPage from "@/pages/ServerPage";
+
 import { queryClient } from "@/lib/reactQuery";
 import GameHistoryManager from "@/pages/GameHistoryOwnerBoard";
 import UserGameHistoryPage from "@/pages/UserGameHistoryPage";
@@ -307,7 +311,27 @@ const App = () => (
                                     path="/profile/:userId"
                                     element={<ProfilePage />}
                                 />
+
+                                {/* Voice Chat 라우트 */}
+                                <Route
+                                    path="/servers"
+                                    element={
+                                        <PrivateRoute>
+                                            <ServerListPage />
+                                        </PrivateRoute>
+                                    }
+                                />
                             </Route>
+
+                            {/* Voice Chat 독립 라우트 (레이아웃 없음) */}
+                            <Route
+                                path="/servers/:serverId"
+                                element={
+                                    <PrivateRoute>
+                                        <ServerPage />
+                                    </PrivateRoute>
+                                }
+                            />
 
                             {/* Dashboard Layout Routes */}
                             <Route
