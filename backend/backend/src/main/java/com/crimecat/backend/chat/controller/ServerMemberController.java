@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/servers/{serverId}/members")
+@RequestMapping("/api/v1/servers/{serverId}/members")
 @RequiredArgsConstructor
 @Slf4j
 public class ServerMemberController {

@@ -14,7 +14,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/servers/{serverId}/roles")
+@RequestMapping("/api/v1/servers/{serverId}/roles")
 @RequiredArgsConstructor
 @Slf4j
 public class ServerRoleController {

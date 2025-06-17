@@ -31,11 +31,11 @@ public interface ServerRoleRepository extends JpaRepository<ServerRole, Long> {
     List<ServerRole> findByCreatedByAndIsActiveTrue(UUID createdBy);
 
     // 특정 권한을 가진 역할 조회
-    @Query("SELECT sr FROM ServerRole sr WHERE sr.server.id = :serverId AND JSON_CONTAINS(sr.permissions, :permission) AND sr.isActive = true")
+    @Query("SELECT sr FROM ServerRole sr WHERE sr.server.id = :serverId AND CAST(JSON_CONTAINS(sr.permissions, :permission) AS boolean) = true AND sr.isActive = true")
     List<ServerRole> findByServerIdAndPermission(@Param("serverId") Long serverId, @Param("permission") String permission);
 
     // 관리자 권한을 가진 역할 조회
-    @Query("SELECT sr FROM ServerRole sr WHERE sr.server.id = :serverId AND JSON_CONTAINS(sr.permissions, '\"canManageServer\"') AND sr.isActive = true")
+    @Query("SELECT sr FROM ServerRole sr WHERE sr.server.id = :serverId AND CAST(JSON_CONTAINS(sr.permissions, '\"canManageServer\"') AS boolean) = true AND sr.isActive = true")
     List<ServerRole> findAdminRolesByServerId(@Param("serverId") Long serverId);
 
     // 특정 기간 동안 생성된 역할 조회
