@@ -2,20 +2,58 @@ import { create } from 'zustand';
 
 export interface ChatMessage {
   id: string;
+  serverId?: number;
+  channelId?: number;
   userId: string;
   username: string;
   content: string;
   timestamp: Date;
   type: 'text' | 'gif' | 'emoji';
+  serverProfile?: {
+    roles: ServerRole[];
+    displayName: string;
+  };
+  buffered?: boolean;
 }
 
 export interface VoiceUser {
   id: string;
   username: string;
+  serverId?: number;
+  channelId?: number;
   avatar?: string;
   volume: number;
   isMuted: boolean;
   isConnected: boolean;
+  isDeafened?: boolean;
+  isScreenSharing?: boolean;
+}
+
+export interface ServerRole {
+  id: number;
+  name: string;
+  color: string;
+  permissions: string[];
+}
+
+export interface ServerInfo {
+  id: number;
+  name: string;
+  description?: string;
+  hasPassword: boolean;
+  memberCount: number;
+  maxMembers: number;
+  roles?: ServerRole[];
+}
+
+export interface ChannelInfo {
+  id: number;
+  serverId: number;
+  name: string;
+  description?: string;
+  type: 'TEXT' | 'VOICE' | 'BOTH';
+  memberCount: number;
+  maxMembers: number;
 }
 
 export interface Vote {
@@ -50,32 +88,62 @@ export interface AudioFile {
 }
 
 interface AppState {
+  // Connection State
+  isConnected: boolean;
+  
+  // Server-Channel State
+  currentServer?: number;
+  currentChannel?: { serverId: number; channelId: number };
+  servers: ServerInfo[];
+  channels: { [serverId: number]: ChannelInfo[] };
+  serverRoles: ServerRole[];
+  
   // Chat State
   messages: ChatMessage[];
-  isConnected: boolean;
+  messagesByChannel: { [channelKey: string]: ChatMessage[] }; // key: serverId:channelId
   
   // Voice State
   voiceUsers: VoiceUser[];
   isVoiceConnected: boolean;
   localMuted: boolean;
   voiceEffect: 'none' | 'robot' | 'echo' | 'pitch';
+  currentVoiceChannel?: { serverId: number; channelId: number };
   
   // Admin State
   votes: Vote[];
   announcements: Announcement[];
   audioFiles: AudioFile[];
   
-  // Actions
-  addMessage: (message: ChatMessage) => void;
-  setMessages: (messages: ChatMessage[]) => void;
+  // Connection Actions
   setConnected: (connected: boolean) => void;
   
+  // Server-Channel Actions
+  setCurrentServer: (serverId?: number) => void;
+  setCurrentChannel: (channel?: { serverId: number; channelId: number }) => void;
+  setServers: (servers: ServerInfo[]) => void;
+  addServer: (server: ServerInfo) => void;
+  setChannels: (serverId: number, channels: ChannelInfo[]) => void;
+  addChannel: (serverId: number, channel: ChannelInfo) => void;
+  setServerRoles: (roles: ServerRole[]) => void;
+  
+  // Chat Actions
+  addMessage: (message: ChatMessage) => void;
+  setMessages: (messages: ChatMessage[]) => void;
+  addMessageToChannel: (serverId: number, channelId: number, message: ChatMessage) => void;
+  setChannelMessages: (serverId: number, channelId: number, messages: ChatMessage[]) => void;
+  getChannelMessages: (serverId: number, channelId: number) => ChatMessage[];
+  
+  // Voice Actions
   setVoiceUsers: (users: VoiceUser[]) => void;
+  addVoiceUser: (user: VoiceUser) => void;
+  removeVoiceUser: (userId: string) => void;
   updateUserVolume: (userId: string, volume: number) => void;
   setVoiceConnected: (connected: boolean) => void;
   setLocalMuted: (muted: boolean) => void;
   setVoiceEffect: (effect: 'none' | 'robot' | 'echo' | 'pitch') => void;
+  setCurrentVoiceChannel: (channel?: { serverId: number; channelId: number }) => void;
   
+  // Admin Actions
   addVote: (vote: Vote) => void;
   addVoteResponse: (response: VoteResponse) => void;
   addAnnouncement: (announcement: Announcement) => void;
@@ -84,15 +152,57 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set, get) => ({
   // Initial State
-  messages: [],
   isConnected: false,
+  currentServer: undefined,
+  currentChannel: undefined,
+  servers: [],
+  channels: {},
+  serverRoles: [],
+  messages: [],
+  messagesByChannel: {},
   voiceUsers: [],
   isVoiceConnected: false,
   localMuted: false,
   voiceEffect: 'none',
+  currentVoiceChannel: undefined,
   votes: [],
   announcements: [],
   audioFiles: [],
+  
+  // Connection Actions
+  setConnected: (connected) => 
+    set({ isConnected: connected }),
+  
+  // Server-Channel Actions
+  setCurrentServer: (serverId) => 
+    set({ currentServer: serverId }),
+    
+  setCurrentChannel: (channel) => 
+    set({ currentChannel: channel }),
+    
+  setServers: (servers) => 
+    set({ servers }),
+    
+  addServer: (server) => 
+    set((state) => ({ 
+      servers: [...state.servers, server] 
+    })),
+    
+  setChannels: (serverId, channels) => 
+    set((state) => ({ 
+      channels: { ...state.channels, [serverId]: channels } 
+    })),
+    
+  addChannel: (serverId, channel) => 
+    set((state) => ({
+      channels: {
+        ...state.channels,
+        [serverId]: [...(state.channels[serverId] || []), channel]
+      }
+    })),
+    
+  setServerRoles: (roles) => 
+    set({ serverRoles: roles }),
   
   // Chat Actions
   addMessage: (message) => 
@@ -103,12 +213,47 @@ export const useAppStore = create<AppState>((set, get) => ({
   setMessages: (messages) => 
     set({ messages }),
     
-  setConnected: (connected) => 
-    set({ isConnected: connected }),
+  addMessageToChannel: (serverId, channelId, message) => 
+    set((state) => {
+      const channelKey = `${serverId}:${channelId}`;
+      return {
+        messagesByChannel: {
+          ...state.messagesByChannel,
+          [channelKey]: [...(state.messagesByChannel[channelKey] || []), message]
+        }
+      };
+    }),
+    
+  setChannelMessages: (serverId, channelId, messages) => 
+    set((state) => {
+      const channelKey = `${serverId}:${channelId}`;
+      return {
+        messagesByChannel: {
+          ...state.messagesByChannel,
+          [channelKey]: messages
+        }
+      };
+    }),
+    
+  getChannelMessages: (serverId, channelId) => {
+    const state = get();
+    const channelKey = `${serverId}:${channelId}`;
+    return state.messagesByChannel[channelKey] || [];
+  },
   
   // Voice Actions
   setVoiceUsers: (users) => 
     set({ voiceUsers: users }),
+    
+  addVoiceUser: (user) => 
+    set((state) => ({ 
+      voiceUsers: [...state.voiceUsers, user] 
+    })),
+    
+  removeVoiceUser: (userId) => 
+    set((state) => ({ 
+      voiceUsers: state.voiceUsers.filter(u => u.id !== userId) 
+    })),
     
   updateUserVolume: (userId, volume) =>
     set((state) => ({
@@ -125,6 +270,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     
   setVoiceEffect: (effect) => 
     set({ voiceEffect: effect }),
+    
+  setCurrentVoiceChannel: (channel) => 
+    set({ currentVoiceChannel: channel }),
   
   // Admin Actions
   addVote: (vote) =>
