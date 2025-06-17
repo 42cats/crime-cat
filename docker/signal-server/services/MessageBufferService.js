@@ -29,8 +29,8 @@ class MessageBufferService {
       console.log('🔄 Redis reconnecting...');
     });
 
-    // 배치 처리 설정
-    this.BUFFER_KEY = 'chat:message_buffer';
+    // 배치 처리 설정 (서버-채널 구조)
+    this.BUFFER_KEY_PREFIX = 'chat:buffer';
     this.BATCH_SIZE = process.env.BATCH_SIZE || 50;
     this.BATCH_INTERVAL = process.env.BATCH_INTERVAL || 5000; // 5초
     this.MAX_RETRY_ATTEMPTS = 3;
@@ -44,9 +44,9 @@ class MessageBufferService {
   }
 
   /**
-   * 메시지를 Redis 버퍼에 추가
+   * 메시지를 Redis 버퍼에 추가 (서버-채널별 키 사용)
    */
-  async bufferMessage(message) {
+  async bufferMessage(message, serverId, channelId) {
     try {
       const messageData = {
         ...message,
@@ -54,18 +54,21 @@ class MessageBufferService {
         id: this.generateMessageId()
       };
 
-      // Redis List에 메시지 추가 (LPUSH - 왼쪽에서 추가)
-      await this.redis.lpush(this.BUFFER_KEY, JSON.stringify(messageData));
+      // 서버-채널별 버퍼 키
+      const bufferKey = `${this.BUFFER_KEY_PREFIX}:${serverId}:${channelId}`;
       
-      console.log(`📝 Message buffered: ${message.username} - ${message.content.substring(0, 50)}...`);
+      // Redis List에 메시지 추가 (LPUSH - 왼쪽에서 추가)
+      await this.redis.lpush(bufferKey, JSON.stringify(messageData));
+      
+      console.log(`📝 Message buffered [${serverId}/${channelId}]: ${message.username} - ${message.content.substring(0, 50)}...`);
       
       // 버퍼 크기 확인
-      const bufferSize = await this.redis.llen(this.BUFFER_KEY);
+      const bufferSize = await this.redis.llen(bufferKey);
       
       // 버퍼가 너무 크면 즉시 처리
       if (bufferSize >= this.BATCH_SIZE) {
-        console.log(`⚡ Buffer size (${bufferSize}) reached batch limit, triggering immediate flush`);
-        this.triggerImmediateFlush();
+        console.log(`⚡ Buffer size (${bufferSize}) for ${serverId}/${channelId} reached batch limit, triggering immediate flush`);
+        this.triggerImmediateFlush(serverId, channelId);
       }
 
       return messageData.id;
@@ -76,7 +79,7 @@ class MessageBufferService {
   }
 
   /**
-   * 버퍼에서 메시지들을 배치로 가져와서 처리
+   * 모든 서버-채널 버퍼에서 메시지들을 배치로 가져와서 처리
    */
   async processBatch() {
     if (this.isProcessing) {
@@ -87,22 +90,49 @@ class MessageBufferService {
     this.isProcessing = true;
 
     try {
-      // 버퍼 크기 확인
-      const bufferSize = await this.redis.llen(this.BUFFER_KEY);
+      // 모든 버퍼 키 찾기
+      const bufferKeys = await this.redis.keys(`${this.BUFFER_KEY_PREFIX}:*`);
       
-      if (bufferSize === 0) {
-        console.log('📭 No messages in buffer to process');
+      if (bufferKeys.length === 0) {
+        console.log('📭 No message buffers found');
         return;
       }
 
-      console.log(`🔄 Processing batch of ${Math.min(bufferSize, this.BATCH_SIZE)} messages...`);
+      console.log(`🔄 Processing ${bufferKeys.length} buffer keys...`);
 
-      // 배치 크기만큼 메시지 가져오기 (RPOP - 오른쪽에서 제거)
+      // 각 서버-채널별로 처리
+      for (const bufferKey of bufferKeys) {
+        await this.processChannelBuffer(bufferKey);
+      }
+
+      console.log(`✅ Completed processing all buffers`);
+
+    } catch (error) {
+      console.error('❌ Error processing batch:', error);
+    } finally {
+      this.isProcessing = false;
+    }
+  }
+
+  /**
+   * 특정 채널 버퍼 처리
+   */
+  async processChannelBuffer(bufferKey) {
+    try {
+      const bufferSize = await this.redis.llen(bufferKey);
+      
+      if (bufferSize === 0) {
+        return;
+      }
+
+      console.log(`🔄 Processing ${bufferKey}: ${Math.min(bufferSize, this.BATCH_SIZE)} messages...`);
+
+      // 배치 크기만큼 메시지 가져오기
       const messages = [];
       const batchSize = Math.min(bufferSize, this.BATCH_SIZE);
 
       for (let i = 0; i < batchSize; i++) {
-        const messageStr = await this.redis.rpop(this.BUFFER_KEY);
+        const messageStr = await this.redis.rpop(bufferKey);
         if (messageStr) {
           try {
             const message = JSON.parse(messageStr);
@@ -114,31 +144,35 @@ class MessageBufferService {
       }
 
       if (messages.length === 0) {
-        console.log('📭 No valid messages to process');
         return;
       }
 
-      // 백엔드 API로 배치 저장
-      await this.saveBatchToDatabase(messages);
+      // 서버-채널 정보 추출
+      const keyParts = bufferKey.split(':');
+      const serverId = keyParts[2];
+      const channelId = keyParts[3];
 
-      console.log(`✅ Successfully processed batch of ${messages.length} messages`);
+      // 백엔드 API로 배치 저장
+      await this.saveBatchToDatabase(messages, serverId, channelId);
+
+      console.log(`✅ Successfully processed ${messages.length} messages for ${serverId}/${channelId}`);
 
     } catch (error) {
-      console.error('❌ Error processing batch:', error);
-    } finally {
-      this.isProcessing = false;
+      console.error(`❌ Error processing buffer ${bufferKey}:`, error);
     }
   }
 
   /**
-   * 메시지 배치를 데이터베이스에 저장
+   * 메시지 배치를 데이터베이스에 저장 (서버-채널별)
    */
-  async saveBatchToDatabase(messages, retryCount = 0) {
+  async saveBatchToDatabase(messages, serverId, channelId, retryCount = 0) {
     try {
       const backendUrl = process.env.BACKEND_URL || 'http://spring-backend:8080';
       
-      // 배치 저장을 위한 DTO 형태로 변환
+      // 배치 저장을 위한 DTO 형태로 변환 (서버-채널 정보 포함)
       const batchData = messages.map(msg => ({
+        serverId: parseInt(serverId),
+        channelId: parseInt(channelId),
         userId: msg.userId,
         username: msg.username,
         content: msg.content,
@@ -146,25 +180,27 @@ class MessageBufferService {
         timestamp: msg.timestamp
       }));
 
-      const response = await axios.post(`${backendUrl}/api/v1/chat/messages/batch`, {
+      const response = await axios.post(`${backendUrl}/api/v1/servers/${serverId}/channels/${channelId}/messages/batch`, {
         messages: batchData
       }, {
         headers: {
           'Content-Type': 'application/json',
           'X-Service-Name': 'signal-server',
-          'X-Batch-Size': messages.length.toString()
+          'X-Batch-Size': messages.length.toString(),
+          'X-Server-Id': serverId,
+          'X-Channel-Id': channelId
         },
         timeout: 10000 // 10초 타임아웃
       });
 
       if (response.status === 200 || response.status === 201) {
-        console.log(`✅ Batch saved to database: ${messages.length} messages`);
+        console.log(`✅ Batch saved to database [${serverId}/${channelId}]: ${messages.length} messages`);
       } else {
         throw new Error(`Unexpected response status: ${response.status}`);
       }
 
     } catch (error) {
-      console.error(`❌ Error saving batch to database (attempt ${retryCount + 1}):`, error.message);
+      console.error(`❌ Error saving batch to database [${serverId}/${channelId}] (attempt ${retryCount + 1}):`, error.message);
       
       // 재시도 로직
       if (retryCount < this.MAX_RETRY_ATTEMPTS) {
@@ -173,11 +209,11 @@ class MessageBufferService {
         // 지수 백오프 (2초, 4초, 6초)
         await this.sleep((retryCount + 1) * 2000);
         
-        return this.saveBatchToDatabase(messages, retryCount + 1);
+        return this.saveBatchToDatabase(messages, serverId, channelId, retryCount + 1);
       } else {
         // 최대 재시도 횟수 초과 시 메시지를 백업 큐에 저장
         console.error(`💀 Failed to save batch after ${this.MAX_RETRY_ATTEMPTS} attempts, moving to backup queue`);
-        await this.moveToBackupQueue(messages);
+        await this.moveToBackupQueue(messages, serverId, channelId);
       }
     }
   }
@@ -185,17 +221,19 @@ class MessageBufferService {
   /**
    * 실패한 메시지들을 백업 큐로 이동
    */
-  async moveToBackupQueue(messages) {
+  async moveToBackupQueue(messages, serverId, channelId) {
     try {
-      const backupKey = 'chat:failed_messages';
+      const backupKey = `chat:failed_messages:${serverId}:${channelId}`;
       const backupData = {
         messages,
+        serverId,
+        channelId,
         failedAt: new Date().toISOString(),
         retryCount: this.MAX_RETRY_ATTEMPTS
       };
 
       await this.redis.lpush(backupKey, JSON.stringify(backupData));
-      console.log(`💾 Moved ${messages.length} failed messages to backup queue`);
+      console.log(`💾 Moved ${messages.length} failed messages to backup queue [${serverId}/${channelId}]`);
     } catch (error) {
       console.error('❌ Error moving messages to backup queue:', error);
     }
@@ -217,9 +255,9 @@ class MessageBufferService {
   }
 
   /**
-   * 즉시 배치 처리 트리거
+   * 즉시 배치 처리 트리거 (특정 서버-채널 또는 전체)
    */
-  triggerImmediateFlush() {
+  triggerImmediateFlush(serverId = null, channelId = null) {
     // 디바운싱을 위해 기존 타이머가 있으면 취소
     if (this.immediateFlushTimeout) {
       clearTimeout(this.immediateFlushTimeout);
@@ -227,21 +265,54 @@ class MessageBufferService {
 
     // 100ms 후 즉시 처리 (다른 메시지들과 함께 배치 처리)
     this.immediateFlushTimeout = setTimeout(async () => {
-      await this.processBatch();
+      if (serverId && channelId) {
+        // 특정 채널만 처리
+        const bufferKey = `${this.BUFFER_KEY_PREFIX}:${serverId}:${channelId}`;
+        await this.processChannelBuffer(bufferKey);
+      } else {
+        // 전체 배치 처리
+        await this.processBatch();
+      }
     }, 100);
   }
 
   /**
-   * 버퍼 상태 조회
+   * 버퍼 상태 조회 (서버-채널별)
    */
   async getBufferStatus() {
     try {
-      const bufferSize = await this.redis.llen(this.BUFFER_KEY);
-      const backupSize = await this.redis.llen('chat:failed_messages');
+      // 모든 버퍼 키 찾기
+      const bufferKeys = await this.redis.keys(`${this.BUFFER_KEY_PREFIX}:*`);
+      const backupKeys = await this.redis.keys('chat:failed_messages:*');
+      
+      let totalBufferSize = 0;
+      let totalBackupSize = 0;
+      const channelBuffers = {};
+      
+      // 각 채널별 버퍼 크기 계산
+      for (const key of bufferKeys) {
+        const size = await this.redis.llen(key);
+        totalBufferSize += size;
+        
+        const keyParts = key.split(':');
+        if (keyParts.length >= 4) {
+          const serverId = keyParts[2];
+          const channelId = keyParts[3];
+          channelBuffers[`${serverId}:${channelId}`] = size;
+        }
+      }
+      
+      // 백업 큐 크기 계산
+      for (const key of backupKeys) {
+        const size = await this.redis.llen(key);
+        totalBackupSize += size;
+      }
       
       return {
-        bufferSize,
-        backupSize,
+        totalBufferSize,
+        totalBackupSize,
+        activeChannels: Object.keys(channelBuffers).length,
+        channelBuffers,
         isProcessing: this.isProcessing,
         batchSize: this.BATCH_SIZE,
         batchInterval: this.BATCH_INTERVAL
