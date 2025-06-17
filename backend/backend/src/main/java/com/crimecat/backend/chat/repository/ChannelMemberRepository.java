@@ -78,4 +78,7 @@ public interface ChannelMemberRepository extends JpaRepository<ChannelMember, Lo
     // 특정 서버의 모든 채널 멤버 수 조회
     @Query("SELECT COUNT(cm) FROM ChannelMember cm WHERE cm.channel.server.id = :serverId AND cm.isActive = true")
     long countByServerIdAndIsActiveTrue(@Param("serverId") Long serverId);
+    
+    // 채널 멤버 존재 여부 확인
+    boolean existsByChannelIdAndUserIdAndIsActiveTrue(Long channelId, UUID userId);
 }

@@ -81,4 +81,7 @@ public interface ServerChannelRepository extends JpaRepository<ServerChannel, Lo
     // 서버의 기본 채널 조회 (첫 번째 생성된 채널)
     @Query("SELECT sc FROM ServerChannel sc WHERE sc.server.id = :serverId AND sc.isActive = true ORDER BY sc.createdAt ASC")
     List<ServerChannel> findFirstChannelByServerId(@Param("serverId") Long serverId, Pageable pageable);
+    
+    // 서버의 활성 채널을 생성일시 순으로 조회
+    List<ServerChannel> findByServerIdAndIsActiveTrueOrderByCreatedAt(Long serverId);
 }

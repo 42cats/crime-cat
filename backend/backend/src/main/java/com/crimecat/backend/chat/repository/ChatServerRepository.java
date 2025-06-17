@@ -56,4 +56,8 @@ public interface ChatServerRepository extends JpaRepository<ChatServer, Long> {
     // 최근 활성 서버 조회
     @Query("SELECT DISTINCT s FROM ChatServer s JOIN s.members m WHERE m.lastActivityAt >= :since AND s.isActive = true ORDER BY m.lastActivityAt DESC")
     List<ChatServer> findRecentlyActiveServers(@Param("since") LocalDateTime since);
+    
+    // 공개 서버 조회 (비밀번호가 없는 서버)
+    @Query("SELECT s FROM ChatServer s WHERE s.passwordHash IS NULL AND s.isActive = true ORDER BY s.createdAt DESC")
+    Page<ChatServer> findPublicServers(Pageable pageable);
 }

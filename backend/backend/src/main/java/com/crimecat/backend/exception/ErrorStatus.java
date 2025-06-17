@@ -101,7 +101,45 @@ public enum ErrorStatus {
     // 광고 관련
     ADVERTISEMENT_NOT_FOUND("광고를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     ADVERTISEMENT_PERIOD_OVERLAP("해당 테마는 이미 겹치는 기간에 광고가 등록되어 있습니다.", HttpStatus.CONFLICT),
-    ADVERTISEMENT_INVALID_PERIOD("시작 날짜는 종료 날짜보다 이전이어야 합니다.", HttpStatus.BAD_REQUEST);
+    ADVERTISEMENT_INVALID_PERIOD("시작 날짜는 종료 날짜보다 이전이어야 합니다.", HttpStatus.BAD_REQUEST),
+    
+    // 🎙️ Voice Chat 서버 관련
+    SERVER_NOT_FOUND("서버를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    SERVER_ACCESS_DENIED("서버에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    SERVER_PASSWORD_INCORRECT("서버 비밀번호가 잘못되었습니다.", HttpStatus.UNAUTHORIZED),
+    SERVER_MEMBER_LIMIT_EXCEEDED("서버 최대 멤버 수를 초과했습니다.", HttpStatus.BAD_REQUEST),
+    SERVER_ALREADY_MEMBER("이미 서버의 멤버입니다.", HttpStatus.CONFLICT),
+    SERVER_NOT_MEMBER("서버의 멤버가 아닙니다.", HttpStatus.FORBIDDEN),
+    
+    // 🎙️ Voice Chat 채널 관련
+    CHANNEL_NOT_FOUND("채널을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    CHANNEL_ACCESS_DENIED("채널에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    CHANNEL_ALREADY_MEMBER("이미 채널의 멤버입니다.", HttpStatus.CONFLICT),
+    CHANNEL_NOT_MEMBER("채널의 멤버가 아닙니다.", HttpStatus.FORBIDDEN),
+    CHANNEL_NAME_DUPLICATE("이미 존재하는 채널 이름입니다.", HttpStatus.CONFLICT),
+    INVALID_CHANNEL_TYPE("잘못된 채널 타입입니다.", HttpStatus.BAD_REQUEST),
+    
+    // 🎙️ Voice Chat 역할 관련
+    ROLE_NOT_FOUND("역할을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    ROLE_NAME_DUPLICATE("이미 존재하는 역할 이름입니다.", HttpStatus.CONFLICT),
+    CANNOT_MODIFY_DEFAULT_ROLE("기본 역할은 수정할 수 없습니다.", HttpStatus.BAD_REQUEST),
+    CANNOT_DELETE_DEFAULT_ROLE("기본 역할은 삭제할 수 없습니다.", HttpStatus.BAD_REQUEST),
+    INVALID_ROLE("잘못된 역할입니다.", HttpStatus.BAD_REQUEST),
+    ROLE_IN_USE("사용 중인 역할은 삭제할 수 없습니다.", HttpStatus.CONFLICT),
+    
+    // 🎙️ Voice Chat 멤버 관련
+    MEMBER_NOT_FOUND("멤버를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    INSUFFICIENT_PERMISSION("권한이 부족합니다.", HttpStatus.FORBIDDEN),
+    INVALID_PERMISSION("잘못된 권한입니다.", HttpStatus.BAD_REQUEST),
+    CANNOT_MODIFY_SELF_ROLE("자신의 역할은 수정할 수 없습니다.", HttpStatus.BAD_REQUEST),
+    CANNOT_KICK_SELF("자기 자신을 추방할 수 없습니다.", HttpStatus.BAD_REQUEST),
+    CANNOT_KICK_SERVER_OWNER("서버 소유자는 추방할 수 없습니다.", HttpStatus.BAD_REQUEST),
+    
+    // 🎙️ Voice Chat 메시지 관련
+    MESSAGE_NOT_FOUND("메시지를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    MESSAGE_ACCESS_DENIED("메시지에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    MESSAGE_CONTENT_EMPTY("메시지 내용이 비어있습니다.", HttpStatus.BAD_REQUEST),
+    MESSAGE_CONTENT_TOO_LONG("메시지가 너무 깁니다.", HttpStatus.BAD_REQUEST);
 
     private final String message;
     private final HttpStatus status;

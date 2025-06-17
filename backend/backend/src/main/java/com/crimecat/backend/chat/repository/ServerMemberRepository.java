@@ -62,6 +62,9 @@ public interface ServerMemberRepository extends JpaRepository<ServerMember, Long
     // 사용자의 서버 멤버십 확인
     @Query("SELECT CASE WHEN COUNT(sm) > 0 THEN true ELSE false END FROM ServerMember sm WHERE sm.server.id = :serverId AND sm.userId = :userId AND sm.isActive = true")
     boolean isUserMemberOfServer(@Param("serverId") Long serverId, @Param("userId") UUID userId);
+    
+    // 서버 멤버 존재 여부 확인
+    boolean existsByServerIdAndUserIdAndIsActiveTrue(Long serverId, UUID userId);
 
     // 서버 내 온라인 멤버 조회 (최근 활동 기준)
     @Query("SELECT sm FROM ServerMember sm WHERE sm.server.id = :serverId AND sm.lastActivityAt >= :onlineThreshold AND sm.isActive = true")

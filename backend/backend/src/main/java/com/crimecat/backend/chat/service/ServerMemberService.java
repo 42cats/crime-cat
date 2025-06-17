@@ -89,7 +89,7 @@ public class ServerMemberService {
         if (request.getRoleIds() != null && !request.getRoleIds().isEmpty()) {
             List<ServerRole> roles = serverRoleRepository.findByIdsAndServerId(request.getRoleIds(), serverId);
             if (roles.size() != request.getRoleIds().size()) {
-                throw ErrorStatus.INVALID_ROLE.asException();
+                throw ErrorStatus.INVALID_ROLE.asServiceException();
             }
         }
 
@@ -114,7 +114,7 @@ public class ServerMemberService {
         
         // 멤버 조회
         ServerMember member = serverMemberRepository.findByServerIdAndUserIdAndIsActiveTrue(serverId, userId)
-                .orElseThrow(() -> ErrorStatus.MEMBER_NOT_FOUND.asException());
+                .orElseThrow(() -> ErrorStatus.MEMBER_NOT_FOUND.asServiceException());
 
         // 역할 제거
         member.removeRole(roleId);
@@ -139,7 +139,7 @@ public class ServerMemberService {
         
         // 멤버 조회
         ServerMember member = serverMemberRepository.findByServerIdAndUserIdAndIsActiveTrue(serverId, userId)
-                .orElseThrow(() -> ErrorStatus.MEMBER_NOT_FOUND.asException());
+                .orElseThrow(() -> ErrorStatus.MEMBER_NOT_FOUND.asServiceException());
 
         // 프로필 업데이트
         member.updateProfile(request.getDisplayName(), request.getAvatarUrl());
@@ -259,17 +259,25 @@ public class ServerMemberService {
         return permissions.stream().distinct().collect(Collectors.toList());
     }
 
+    /**
+     * 서버 멤버십 확인
+     */
+    @Transactional(readOnly = true)
+    public boolean hasServerMembership(Long serverId, UUID userId) {
+        return serverMemberRepository.existsByServerIdAndUserIdAndIsActiveTrue(serverId, userId);
+    }
+
     // === Private Helper Methods ===
 
     private ChatServer validateServerExists(Long serverId) {
         return chatServerRepository.findById(serverId)
                 .filter(server -> server.getIsActive())
-                .orElseThrow(() -> ErrorStatus.SERVER_NOT_FOUND.asException());
+                .orElseThrow(() -> ErrorStatus.SERVER_NOT_FOUND.asServiceException());
     }
 
     private void validateServerAdminPermission(Long serverId, UUID userId) {
         if (!hasServerAdminPermission(serverId, userId)) {
-            throw ErrorStatus.INSUFFICIENT_PERMISSION.asException();
+            throw ErrorStatus.INSUFFICIENT_PERMISSION.asServiceException();
         }
     }
 

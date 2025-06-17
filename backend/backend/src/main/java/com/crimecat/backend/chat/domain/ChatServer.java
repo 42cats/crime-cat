@@ -98,6 +98,21 @@ public class ChatServer {
             this.maxMembers = maxMembers;
         }
     }
+    
+    public void updateInfo(String name, String description, String passwordHash, Integer maxMembers) {
+        if (name != null && !name.trim().isEmpty()) {
+            this.name = name;
+        }
+        if (description != null) {
+            this.description = description;
+        }
+        if (passwordHash != null) {
+            this.passwordHash = passwordHash;
+        }
+        if (maxMembers != null && maxMembers > 0) {
+            this.maxMembers = maxMembers;
+        }
+    }
 
     public void updatePassword(String passwordHash) {
         this.passwordHash = passwordHash;

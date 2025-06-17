@@ -67,7 +67,7 @@ public class ServerRoleService {
         
         // 역할명 중복 확인
         if (serverRoleRepository.existsByServerIdAndNameAndIsActiveTrue(serverId, request.getName())) {
-            throw ErrorStatus.ROLE_NAME_DUPLICATE.asException();
+            throw ErrorStatus.ROLE_NAME_DUPLICATE.asServiceException();
         }
 
         // 권한 검증
@@ -101,17 +101,17 @@ public class ServerRoleService {
         // 역할 조회
         ServerRole role = serverRoleRepository.findById(roleId)
                 .filter(r -> r.getServer().getId().equals(serverId) && r.getIsActive())
-                .orElseThrow(() -> ErrorStatus.ROLE_NOT_FOUND.asException());
+                .orElseThrow(() -> ErrorStatus.ROLE_NOT_FOUND.asServiceException());
 
         // 기본 역할 수정 방지 (Admin, Member)
         if (isDefaultRole(role.getName())) {
-            throw ErrorStatus.CANNOT_MODIFY_DEFAULT_ROLE.asException();
+            throw ErrorStatus.CANNOT_MODIFY_DEFAULT_ROLE.asServiceException();
         }
 
         // 역할명 중복 확인 (자기 자신 제외)
         if (request.getName() != null && !request.getName().equals(role.getName())) {
             if (serverRoleRepository.existsByServerIdAndNameAndIsActiveTrue(serverId, request.getName())) {
-                throw ErrorStatus.ROLE_NAME_DUPLICATE.asException();
+                throw ErrorStatus.ROLE_NAME_DUPLICATE.asServiceException();
             }
         }
 
@@ -142,17 +142,17 @@ public class ServerRoleService {
         // 역할 조회
         ServerRole role = serverRoleRepository.findById(roleId)
                 .filter(r -> r.getServer().getId().equals(serverId) && r.getIsActive())
-                .orElseThrow(() -> ErrorStatus.ROLE_NOT_FOUND.asException());
+                .orElseThrow(() -> ErrorStatus.ROLE_NOT_FOUND.asServiceException());
 
         // 기본 역할 삭제 방지
         if (isDefaultRole(role.getName())) {
-            throw ErrorStatus.CANNOT_DELETE_DEFAULT_ROLE.asException();
+            throw ErrorStatus.CANNOT_DELETE_DEFAULT_ROLE.asServiceException();
         }
 
         // 역할을 사용 중인 멤버가 있는지 확인
         long memberCount = serverMemberService.countMembersWithRole(serverId, roleId);
         if (memberCount > 0) {
-            throw ErrorStatus.ROLE_IN_USE.asException();
+            throw ErrorStatus.ROLE_IN_USE.asServiceException();
         }
 
         // 소프트 삭제
@@ -172,7 +172,7 @@ public class ServerRoleService {
         
         ServerRole role = serverRoleRepository.findById(roleId)
                 .filter(r -> r.getServer().getId().equals(serverId) && r.getIsActive())
-                .orElseThrow(() -> ErrorStatus.ROLE_NOT_FOUND.asException());
+                .orElseThrow(() -> ErrorStatus.ROLE_NOT_FOUND.asServiceException());
 
         return ServerRoleDto.from(role);
     }
@@ -206,18 +206,18 @@ public class ServerRoleService {
     private ChatServer validateServerExists(Long serverId) {
         return chatServerRepository.findById(serverId)
                 .filter(server -> server.getIsActive())
-                .orElseThrow(() -> ErrorStatus.SERVER_NOT_FOUND.asException());
+                .orElseThrow(() -> ErrorStatus.SERVER_NOT_FOUND.asServiceException());
     }
 
     private void validateServerAdminPermission(Long serverId, UUID userId) {
         if (!serverMemberService.hasServerAdminPermission(serverId, userId)) {
-            throw ErrorStatus.INSUFFICIENT_PERMISSION.asException();
+            throw ErrorStatus.INSUFFICIENT_PERMISSION.asServiceException();
         }
     }
 
     private void validatePermissions(List<String> permissions) {
         if (permissions == null || permissions.isEmpty()) {
-            throw ErrorStatus.INVALID_PERMISSION.asException();
+            throw ErrorStatus.INVALID_PERMISSION.asServiceException();
         }
 
         // 유효한 권한 목록 확인
@@ -239,7 +239,7 @@ public class ServerRoleService {
 
         for (String permission : permissions) {
             if (!validPermissions.contains(permission)) {
-                throw ErrorStatus.INVALID_PERMISSION.asException();
+                throw ErrorStatus.INVALID_PERMISSION.asServiceException();
             }
         }
     }
