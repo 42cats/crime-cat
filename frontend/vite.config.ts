@@ -63,6 +63,21 @@ export default defineConfig({
                     );
                 },
             },
+            // Voice Chat Signal Server WebSocket proxy
+            "/socket.io": {
+                target: "http://localhost:4000",
+                changeOrigin: true,
+                ws: true, // WebSocket 지원
+                configure(proxy) {
+                    proxy.on("proxyReq", (pr) => {
+                        pr.setHeader("X-Forwarded-Host", "localhost:5173");
+                        pr.setHeader("Origin", "http://localhost:5173");
+                    });
+                    proxy.on("proxyReqWs", (proxyReq, req, socket) => {
+                        proxyReq.setHeader("Origin", "http://localhost:5173");
+                    });
+                },
+            },
             // /images proxy 제거
         },
     },

@@ -12,6 +12,8 @@ class MessageBufferService {
       retryDelayOnFailover: 100,
       maxRetriesPerRequest: 3,
       lazyConnect: true,
+      connectTimeout: 10000,
+      maxRetriesPerRequest: 1
     });
 
     // Redis 연결 이벤트 핸들링
