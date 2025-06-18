@@ -45,76 +45,35 @@ export const MemberList: React.FC<MemberListProps> = ({ className = '' }) => {
       return;
     }
 
-    // TODO: API에서 멤버 목록 로드
-    const mockMembers: Member[] = [
-      {
-        id: '1',
-        username: 'ServerOwner',
-        displayName: '서버 관리자',
-        status: 'online',
-        roles: [
-          { id: 1, name: '관리자', color: '#ff6b6b', permissions: ['ADMIN'] }
-        ],
-        joinedAt: new Date('2024-01-01'),
-        isOwner: true,
-        currentActivity: '관리 중'
-      },
-      {
-        id: '2',
-        username: 'Moderator1',
-        displayName: '모더레이터',
-        status: 'online',
-        roles: [
-          { id: 2, name: '모더레이터', color: '#4ecdc4', permissions: ['MODERATE'] }
-        ],
-        joinedAt: new Date('2024-01-15'),
-        currentActivity: '채팅 중'
-      },
-      {
-        id: '3',
-        username: 'ActiveUser',
-        displayName: '활발한 사용자',
-        status: 'away',
-        roles: [
-          { id: 3, name: '활성 회원', color: '#45b7d1', permissions: [] }
-        ],
-        joinedAt: new Date('2024-02-01'),
-        currentActivity: '잠깐 자리 비움'
-      },
-      {
-        id: '4',
-        username: 'VoiceUser',
-        status: 'busy',
-        roles: [
-          { id: 4, name: '일반 회원', color: '#96ceb4', permissions: [] }
-        ],
-        joinedAt: new Date('2024-02-10'),
-        currentActivity: '음성 채팅 중'
-      },
-      {
-        id: '5',
-        username: 'OfflineUser',
-        status: 'offline',
-        roles: [
-          { id: 4, name: '일반 회원', color: '#96ceb4', permissions: [] }
-        ],
-        joinedAt: new Date('2024-02-20'),
-        currentActivity: '마지막 접속: 2시간 전'
-      },
-      {
-        id: 'bot1',
-        username: 'MusicBot',
-        status: 'online',
-        roles: [
-          { id: 5, name: '봇', color: '#feca57', permissions: [] }
-        ],
-        joinedAt: new Date('2024-01-01'),
-        isBot: true,
-        currentActivity: '음악 재생 중'
+    // API에서 멤버 목록 로드
+    const loadMembers = async () => {
+      try {
+        console.log('📡 Loading members for server:', currentServer);
+        const serverApiService = (await import('../../services/serverApi')).default;
+        const membersData = await serverApiService.getServerMembers(currentServer);
+        console.log('✅ Loaded members:', membersData);
+        
+        // API 응답을 Member 인터페이스에 맞게 변환
+        const formattedMembers: Member[] = membersData.map((member: any) => ({
+          id: member.userId || member.id,
+          username: member.username || member.user?.username || 'Unknown',
+          displayName: member.displayName || member.nickname || member.username,
+          status: 'online', // TODO: 실제 온라인 상태 구현
+          roles: member.roles || [],
+          joinedAt: new Date(member.joinedAt || member.createdAt),
+          isOwner: member.role === 'ADMIN' || member.isOwner,
+          isBot: false,
+          currentActivity: undefined
+        }));
+        
+        setMembers(formattedMembers);
+      } catch (error) {
+        console.error('❌ Failed to load members:', error);
+        setMembers([]);
       }
-    ];
+    };
 
-    setMembers(mockMembers);
+    loadMembers();
   }, [currentServer]);
 
   // 멤버 필터링

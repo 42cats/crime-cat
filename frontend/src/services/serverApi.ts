@@ -105,6 +105,11 @@ class ServerApiService {
     // 첫 번째 채널을 기본 채널로 사용하거나, TEXT 타입 중 첫 번째
     return channels.find(c => c.type === 'TEXT') || channels[0];
   }
+
+  // 서버 멤버 목록 조회
+  async getServerMembers(serverId: string): Promise<any[]> {
+    return apiClient.get<any[]>(`/servers/${serverId}/members`);
+  }
 }
 
 export const serverApiService = new ServerApiService();

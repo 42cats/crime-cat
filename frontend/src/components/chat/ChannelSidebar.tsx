@@ -41,39 +41,32 @@ export const ChannelSidebar: React.FC<ChannelSidebarProps> = ({ className = '' }
 
   // 서버가 변경되면 채널 목록 로드
   useEffect(() => {
-    if (currentServer && serverChannels.length === 0) {
-      // TODO: API에서 채널 목록 로드
-      const mockChannels: ChannelInfo[] = [
-        {
-          id: 1,
-          serverId: currentServer,
-          name: '일반',
-          description: '일반적인 대화를 위한 채널',
-          type: 'TEXT',
-          memberCount: 15,
-          maxMembers: 100
-        },
-        {
-          id: 2,
-          serverId: currentServer,
-          name: '음성채팅',
-          description: '음성 대화를 위한 채널',
-          type: 'VOICE',
-          memberCount: 8,
-          maxMembers: 50
-        },
-        {
-          id: 3,
-          serverId: currentServer,
-          name: '게임',
-          description: '게임 관련 대화',
-          type: 'BOTH',
-          memberCount: 23,
-          maxMembers: 100
+    const loadChannels = async () => {
+      if (currentServer && serverChannels.length === 0) {
+        try {
+          console.log('📡 Loading channels for server:', currentServer);
+          const serverApiService = (await import('../../services/serverApi')).default;
+          const channels = await serverApiService.getServerChannels(currentServer);
+          console.log('✅ Loaded channels:', channels);
+          setChannels(currentServer, channels);
+        } catch (error) {
+          console.error('❌ Failed to load channels:', error);
+          // 에러 시 기본 채널 생성
+          const defaultChannel: ChannelInfo = {
+            id: '00000000-0000-4000-8000-000000000001',
+            serverId: currentServer,
+            name: '일반',
+            description: '일반적인 대화를 위한 채널',
+            type: 'TEXT',
+            memberCount: 0,
+            maxMembers: 100
+          };
+          setChannels(currentServer, [defaultChannel]);
         }
-      ];
-      setChannels(currentServer, mockChannels);
-    }
+      }
+    };
+    
+    loadChannels();
   }, [currentServer, serverChannels.length, setChannels]);
 
   if (!currentServer) {

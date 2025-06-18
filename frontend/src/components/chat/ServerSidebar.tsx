@@ -175,20 +175,20 @@ const CreateServerModal: React.FC<CreateServerModalProps> = ({ onClose, onServer
 
     setIsLoading(true);
     try {
-      // TODO: API 호출로 서버 생성
-      const newServer: ServerInfo = {
-        id: Date.now(), // 임시 ID
+      console.log('🚀 Creating new server...');
+      const serverApiService = (await import('../../services/serverApi')).default;
+      const newServer = await serverApiService.createServer({
         name: serverName,
         description: serverDescription || undefined,
-        hasPassword: !!password,
-        memberCount: 1,
-        maxMembers: maxMembers,
-        roles: []
-      };
+        password: password || undefined,
+        maxMembers: maxMembers
+      });
+      console.log('✅ Server created:', newServer);
       
       onServerCreated(newServer);
     } catch (error) {
-      console.error('서버 생성 실패:', error);
+      console.error('❌ 서버 생성 실패:', error);
+      alert('서버 생성에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
@@ -302,20 +302,27 @@ const JoinServerModal: React.FC<JoinServerModalProps> = ({ onClose, onServerJoin
 
     setIsLoading(true);
     try {
-      // TODO: API 호출로 서버 참가
-      const server: ServerInfo = {
-        id: Number(serverId),
-        name: `서버 ${serverId}`,
-        description: '참가한 서버',
-        hasPassword: !!password,
-        memberCount: 42,
-        maxMembers: 100,
-        roles: []
-      };
+      console.log('🚀 Joining server:', serverId);
+      const serverApiService = (await import('../../services/serverApi')).default;
       
+      // 먼저 서버 정보를 가져옴
+      const server = await serverApiService.getServerById(serverId);
+      
+      // 서버 참가 시도
+      await serverApiService.joinServer({
+        serverId: serverId,
+        password: password || undefined
+      });
+      
+      console.log('✅ Successfully joined server:', server);
       onServerJoined(server);
-    } catch (error) {
-      console.error('서버 참가 실패:', error);
+    } catch (error: any) {
+      console.error('❌ 서버 참가 실패:', error);
+      if (error.response?.data?.message) {
+        alert(error.response.data.message);
+      } else {
+        alert('서버 참가에 실패했습니다. 서버 ID를 확인해주세요.');
+      }
     } finally {
       setIsLoading(false);
     }

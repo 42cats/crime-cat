@@ -1,9 +1,10 @@
 import { useEffect, useCallback, useState } from 'react';
 import websocketService, { ChatMessage } from '../services/websocketService';
 import { useAppStore } from '../store/useAppStore';
+import { ChatMessage as StoreChatMessage } from '../store/useAppStore';
 
 export interface UseChatReturn {
-  messages: ChatMessage[];
+  messages: StoreChatMessage[];
   isTyping: { [userId: string]: boolean };
   sendMessage: (serverId: string, channelId: string, content: string, messageType?: 'text' | 'gif' | 'emoji') => void;
   sendTyping: (serverId: string, channelId: string, isTyping: boolean) => void;
@@ -13,22 +14,40 @@ export interface UseChatReturn {
 }
 
 export const useChat = (): UseChatReturn => {
-  const { messages, addMessage, setMessages } = useAppStore();
+  const { messages, addMessage, setMessages, addMessageToChannel, currentServer, currentChannel } = useAppStore();
   const [isTyping, setIsTyping] = useState<{ [userId: string]: boolean }>({});
   const [typingTimeouts, setTypingTimeouts] = useState<{ [userId: string]: NodeJS.Timeout }>({});
 
   // Message received handler
   const handleMessageReceived = useCallback((message: ChatMessage) => {
     console.log('Message received:', message);
-    addMessage({
-      id: message.id,
-      userId: message.userId,
-      username: message.username,
-      content: message.content,
-      timestamp: new Date(message.timestamp),
-      type: message.messageType
-    });
-  }, [addMessage]);
+    
+    // 메시지에 serverId와 channelId가 있으면 채널별로 저장
+    if (message.serverId && message.channelId) {
+      addMessageToChannel(message.serverId, message.channelId, {
+        id: message.id,
+        serverId: message.serverId,
+        channelId: message.channelId,
+        userId: message.userId,
+        username: message.username,
+        content: message.content,
+        timestamp: new Date(message.timestamp),
+        type: message.messageType || 'text',
+        serverProfile: message.serverProfile,
+        buffered: message.buffered
+      });
+    } else {
+      // 폴백: 전역 메시지 배열에 추가
+      addMessage({
+        id: message.id,
+        userId: message.userId,
+        username: message.username,
+        content: message.content,
+        timestamp: new Date(message.timestamp),
+        type: message.messageType || 'text'
+      });
+    }
+  }, [addMessage, addMessageToChannel]);
 
   // Message sent confirmation handler
   const handleMessageSent = useCallback((data: any) => {
@@ -90,11 +109,16 @@ export const useChat = (): UseChatReturn => {
 
   // Setup event listeners
   useEffect(() => {
+    console.log('🎯 Setting up chat event listeners');
     websocketService.on('chat:message:received', handleMessageReceived);
     websocketService.on('chat:message:sent', handleMessageSent);
     websocketService.on('chat:typing', handleTyping);
 
+    // 디버깅: WebSocket 연결 상태 확인
+    console.log('WebSocket connected:', websocketService.isConnected());
+
     return () => {
+      console.log('🔥 Cleaning up chat event listeners');
       websocketService.off('chat:message:received', handleMessageReceived);
       websocketService.off('chat:message:sent', handleMessageSent);
       websocketService.off('chat:typing', handleTyping);
@@ -112,9 +136,11 @@ export const useChat = (): UseChatReturn => {
     messageType: 'text' | 'gif' | 'emoji' = 'text'
   ) => {
     try {
+      console.log('📤 Sending message:', { serverId, channelId, content, messageType });
       websocketService.sendMessage(serverId, channelId, content, messageType);
+      console.log('✅ Message sent to WebSocket');
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error('❌ Failed to send message:', error);
     }
   }, []);
 
