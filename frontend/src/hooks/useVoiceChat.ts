@@ -6,13 +6,13 @@ export interface UseVoiceChatReturn {
   voiceUsers: VoiceUser[];
   isVoiceConnected: boolean;
   localMuted: boolean;
-  currentVoiceChannel?: { serverId: number; channelId: number };
+  currentVoiceChannel?: { serverId: string; channelId: string };
   localStream: MediaStream | null;
   remoteStreams: { [userId: string]: MediaStream };
-  joinVoiceChannel: (serverId: number, channelId: number) => Promise<void>;
+  joinVoiceChannel: (serverId: string, channelId: string) => Promise<void>;
   leaveVoiceChannel: () => void;
   toggleMute: () => void;
-  updateVoiceStatus: (serverId: number, channelId: number, status: {
+  updateVoiceStatus: (serverId: string, channelId: string, status: {
     isMuted?: boolean;
     isDeafened?: boolean;
     isScreenSharing?: boolean;
@@ -32,7 +32,7 @@ export const useVoiceChat = (): UseVoiceChatReturn => {
     setLocalMuted
   } = useAppStore();
 
-  const [currentVoiceChannel, setCurrentVoiceChannel] = useState<{ serverId: number; channelId: number } | undefined>();
+  const [currentVoiceChannel, setCurrentVoiceChannel] = useState<{ serverId: string; channelId: string } | undefined>();
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStreams, setRemoteStreams] = useState<{ [userId: string]: MediaStream }>({});
   
@@ -41,7 +41,7 @@ export const useVoiceChat = (): UseVoiceChatReturn => {
   const iceCandidateQueues = useRef<{ [userId: string]: RTCIceCandidateInit[] }>({});
 
   // Voice channel join success handler
-  const handleVoiceJoined = useCallback((data: { serverId: number; channelId: number }) => {
+  const handleVoiceJoined = useCallback((data: { serverId: string; channelId: string }) => {
     console.log('Voice channel joined:', data);
     setCurrentVoiceChannel({ serverId: data.serverId, channelId: data.channelId });
     setVoiceConnected(true);
@@ -75,8 +75,8 @@ export const useVoiceChat = (): UseVoiceChatReturn => {
   const handleWebRTCOffer = useCallback(async (data: {
     from: string;
     offer: RTCSessionDescriptionInit;
-    serverId: number;
-    channelId: number;
+    serverId: string;
+    channelId: string;
   }) => {
     const { from, offer, serverId, channelId } = data;
     
@@ -143,8 +143,8 @@ export const useVoiceChat = (): UseVoiceChatReturn => {
   const handleWebRTCAnswer = useCallback(async (data: {
     from: string;
     answer: RTCSessionDescriptionInit;
-    serverId: number;
-    channelId: number;
+    serverId: string;
+    channelId: string;
   }) => {
     const { from, answer } = data;
     const pc = peerConnections.current[from];
@@ -169,8 +169,8 @@ export const useVoiceChat = (): UseVoiceChatReturn => {
   const handleWebRTCIceCandidate = useCallback(async (data: {
     from: string;
     candidate: RTCIceCandidateInit;
-    serverId: number;
-    channelId: number;
+    serverId: string;
+    channelId: string;
   }) => {
     const { from, candidate } = data;
     const pc = peerConnections.current[from];
@@ -217,7 +217,7 @@ export const useVoiceChat = (): UseVoiceChatReturn => {
   ]);
 
   // Join voice channel
-  const joinVoiceChannel = useCallback(async (serverId: number, channelId: number) => {
+  const joinVoiceChannel = useCallback(async (serverId: string, channelId: string) => {
     try {
       // Get user media
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -278,7 +278,7 @@ export const useVoiceChat = (): UseVoiceChatReturn => {
   }, [localMuted, localStream, currentVoiceChannel, setLocalMuted]);
 
   // Update voice status
-  const updateVoiceStatus = useCallback((serverId: number, channelId: number, status: {
+  const updateVoiceStatus = useCallback((serverId: string, channelId: string, status: {
     isMuted?: boolean;
     isDeafened?: boolean;
     isScreenSharing?: boolean;

@@ -26,13 +26,12 @@ export const ServerPage: React.FC<ServerPageProps> = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const serverIdNum = serverId ? parseInt(serverId, 10) : null;
-  const serverInfo = servers.find(s => s.id === serverIdNum);
+  const serverInfo = servers.find(s => s.id === serverId);
 
   // 서버 정보 로드 및 접속 처리
   useEffect(() => {
     const handleServerAccess = async () => {
-      if (!serverIdNum) {
+      if (!serverId) {
         setError('잘못된 서버 ID입니다.');
         setIsLoading(false);
         return;
@@ -76,7 +75,7 @@ export const ServerPage: React.FC<ServerPageProps> = () => {
         // 서버 정보가 없으면 로드
         if (!serverInfo) {
           try {
-            const loadedServerInfo = await serverApiService.getServerById(serverIdNum);
+            const loadedServerInfo = await serverApiService.getServerById(serverId);
             // 스토어에 서버 정보 추가
             const { addServer } = useAppStore.getState();
             addServer(loadedServerInfo);
@@ -95,7 +94,7 @@ export const ServerPage: React.FC<ServerPageProps> = () => {
         }
 
         // 서버 접속 시도
-        await attemptServerJoin(serverIdNum);
+        await attemptServerJoin(serverId);
         
       } catch (error) {
         console.error('서버 접속 실패:', error);
@@ -106,11 +105,24 @@ export const ServerPage: React.FC<ServerPageProps> = () => {
     };
 
     handleServerAccess();
-  }, [serverIdNum, isConnected, serverInfo]);
+  }, [serverId, isConnected, serverInfo]);
 
-  const attemptServerJoin = async (serverId: number, password?: string) => {
+  const attemptServerJoin = async (serverId: string, password?: string) => {
     try {
       console.log('🎯 Attempting to join server:', serverId);
+      
+      // STEP 1: 백엔드 API로 서버 가입 먼저! (이미 멤버여도 성공 반환)
+      console.log('📡 Calling backend API to join server...');
+      try {
+        await serverApiService.joinServer({
+          serverId: serverId,
+          password: password
+        });
+        console.log('✅ Successfully joined/verified server membership via API');
+      } catch (error: any) {
+        console.error('❌ Backend API join failed:', error);
+        throw new Error(error.response?.data?.message || '서버 가입에 실패했습니다.');
+      }
       
       // 이전 서버에서 나가기
       if (currentServer && currentServer !== serverId) {
@@ -118,21 +130,26 @@ export const ServerPage: React.FC<ServerPageProps> = () => {
         leaveServer(currentServer);
       }
 
-      // 새 서버 접속
-      console.log('🚀 Joining server:', serverId);
+      // STEP 2: WebSocket으로 서버 입장
+      console.log('🚀 Joining server via WebSocket:', serverId);
       await joinServer(serverId);
       setCurrentServer(serverId);
       
       // 기본 채널로 이동 - 실제 API에서 기본 채널 조회
       console.log('📱 Getting default channel from API...');
       try {
-        const { serverApiService } = await import('@/services/serverApi');
-        const defaultChannel = await serverApiService.getDefaultChannel(serverId);
-        setCurrentChannel({ serverId, channelId: defaultChannel.id });
-        console.log('✅ Default channel set:', defaultChannel.name, `(ID: ${defaultChannel.id})`);
+        const channels = await serverApiService.getServerChannels(serverId);
+        if (channels && channels.length > 0) {
+          const defaultChannel = channels[0]; // 첫 번째 채널을 기본으로 사용
+          setCurrentChannel({ serverId, channelId: defaultChannel.id });
+          console.log('✅ Default channel set:', defaultChannel.name, `(ID: ${defaultChannel.id})`);
+        } else {
+          console.warn('⚠️ No channels found for server');
+          setCurrentChannel({ serverId, channelId: '00000000-0000-4000-8000-000000000001' }); // 백업 UUID
+        }
       } catch (error) {
-        console.warn('⚠️ Failed to get default channel, using fallback');
-        setCurrentChannel({ serverId, channelId: 1 }); // 백업으로 ID 1 사용
+        console.warn('⚠️ Failed to get channels, using fallback');
+        setCurrentChannel({ serverId, channelId: '00000000-0000-4000-8000-000000000001' }); // 백업 UUID
       }
       
       setShowPasswordModal(false);
@@ -146,11 +163,11 @@ export const ServerPage: React.FC<ServerPageProps> = () => {
   };
 
   const handlePasswordSubmit = async (password: string) => {
-    if (!serverIdNum) return;
+    if (!serverId) return;
     
     try {
       setIsLoading(true);
-      await attemptServerJoin(serverIdNum, password);
+      await attemptServerJoin(serverId, password);
     } catch (error) {
       setError('비밀번호가 올바르지 않거나 서버 접속에 실패했습니다.');
     } finally {

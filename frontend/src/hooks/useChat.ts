@@ -5,8 +5,8 @@ import { useAppStore } from '../store/useAppStore';
 export interface UseChatReturn {
   messages: ChatMessage[];
   isTyping: { [userId: string]: boolean };
-  sendMessage: (serverId: number, channelId: number, content: string, messageType?: 'text' | 'gif' | 'emoji') => void;
-  sendTyping: (serverId: number, channelId: number, isTyping: boolean) => void;
+  sendMessage: (serverId: string, channelId: string, content: string, messageType?: 'text' | 'gif' | 'emoji') => void;
+  sendTyping: (serverId: string, channelId: string, isTyping: boolean) => void;
   onMessageReceived: (callback: (message: ChatMessage) => void) => () => void;
   onMessageSent: (callback: (data: any) => void) => () => void;
   onTyping: (callback: (data: any) => void) => () => void;
@@ -39,8 +39,8 @@ export const useChat = (): UseChatReturn => {
   const handleTyping = useCallback((data: {
     userId: string;
     username: string;
-    serverId: number;
-    channelId: number;
+    serverId: string;
+    channelId: string;
     isTyping: boolean;
   }) => {
     const { userId, isTyping: typing } = data;
@@ -106,8 +106,8 @@ export const useChat = (): UseChatReturn => {
 
   // Send message
   const sendMessage = useCallback((
-    serverId: number,
-    channelId: number,
+    serverId: string,
+    channelId: string,
     content: string,
     messageType: 'text' | 'gif' | 'emoji' = 'text'
   ) => {
@@ -119,7 +119,7 @@ export const useChat = (): UseChatReturn => {
   }, []);
 
   // Send typing indicator
-  const sendTyping = useCallback((serverId: number, channelId: number, isTypingValue: boolean) => {
+  const sendTyping = useCallback((serverId: string, channelId: string, isTypingValue: boolean) => {
     websocketService.sendTyping(serverId, channelId, isTypingValue);
   }, []);
 

@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 console.log('✅ socket.io-client imported successfully', { io, Socket });
 
 export interface ServerInfo {
-  id: number;
+  id: string;
   name: string;
   description?: string;
   hasPassword: boolean;
@@ -13,8 +13,8 @@ export interface ServerInfo {
 }
 
 export interface ChannelInfo {
-  id: number;
-  serverId: number;
+  id: string;
+  serverId: string;
   name: string;
   description?: string;
   type: 'TEXT' | 'VOICE' | 'BOTH';
@@ -23,7 +23,7 @@ export interface ChannelInfo {
 }
 
 export interface ServerRole {
-  id: number;
+  id: string;
   name: string;
   color: string;
   permissions: string[];
@@ -31,8 +31,8 @@ export interface ServerRole {
 
 export interface ChatMessage {
   id: string;
-  serverId: number;
-  channelId: number;
+  serverId: string;
+  channelId: string;
   userId: string;
   username: string;
   content: string;
@@ -48,8 +48,8 @@ export interface ChatMessage {
 export interface VoiceUser {
   userId: string;
   username: string;
-  serverId: number;
-  channelId: number;
+  serverId: string;
+  channelId: string;
   volume?: number;
   isMuted?: boolean;
   isDeafened?: boolean;
@@ -58,9 +58,9 @@ export interface VoiceUser {
 
 export interface ConnectionState {
   isConnected: boolean;
-  currentServer?: number;
-  currentChannel?: { serverId: number; channelId: number };
-  currentVoiceChannel?: { serverId: number; channelId: number };
+  currentServer?: string;
+  currentChannel?: { serverId: string; channelId: string };
+  currentVoiceChannel?: { serverId: string; channelId: string };
   serverRoles: ServerRole[];
 }
 
@@ -323,7 +323,7 @@ class WebSocketService {
   }
 
   // 서버 관련 메서드
-  joinServer(serverId: number) {
+  joinServer(serverId: string) {
     if (!this.socket) {
       throw new Error('WebSocket not initialized');
     }
@@ -340,7 +340,7 @@ class WebSocketService {
     console.log('📤 Server join request sent');
   }
 
-  leaveServer(serverId: number) {
+  leaveServer(serverId: string) {
     if (!this.socket?.connected) return;
     
     console.log('👋 Leaving server:', serverId);
@@ -355,7 +355,7 @@ class WebSocketService {
   }
 
   // 채널 관련 메서드
-  joinChannel(serverId: number, channelId: number) {
+  joinChannel(serverId: string, channelId: string) {
     if (!this.socket?.connected) {
       throw new Error('WebSocket not connected');
     }
@@ -364,7 +364,7 @@ class WebSocketService {
     this.socket.emit('channel:join', { serverId, channelId });
   }
 
-  leaveChannel(serverId: number, channelId: number) {
+  leaveChannel(serverId: string, channelId: string) {
     if (!this.socket?.connected) return;
     
     console.log('👋 Leaving channel:', serverId, channelId);
@@ -377,7 +377,7 @@ class WebSocketService {
   }
 
   // 채팅 관련 메서드
-  sendMessage(serverId: number, channelId: number, content: string, messageType: 'text' | 'gif' | 'emoji' = 'text') {
+  sendMessage(serverId: string, channelId: string, content: string, messageType: 'text' | 'gif' | 'emoji' = 'text') {
     if (!this.socket?.connected) {
       throw new Error('WebSocket not connected');
     }
@@ -396,7 +396,7 @@ class WebSocketService {
     });
   }
 
-  sendTyping(serverId: number, channelId: number, isTyping: boolean) {
+  sendTyping(serverId: string, channelId: string, isTyping: boolean) {
     if (!this.socket?.connected) return;
 
     this.socket.emit('chat:typing', {
@@ -407,7 +407,7 @@ class WebSocketService {
   }
 
   // 음성 채팅 관련 메서드
-  joinVoiceChannel(serverId: number, channelId: number) {
+  joinVoiceChannel(serverId: string, channelId: string) {
     if (!this.socket?.connected) {
       throw new Error('WebSocket not connected');
     }
@@ -416,7 +416,7 @@ class WebSocketService {
     this.socket.emit('voice:join', { serverId, channelId });
   }
 
-  leaveVoiceChannel(serverId?: number, channelId?: number) {
+  leaveVoiceChannel(serverId?: string, channelId?: string) {
     if (!this.socket?.connected) return;
 
     console.log('🔇 Leaving voice channel');
@@ -425,7 +425,7 @@ class WebSocketService {
     this.connectionState.currentVoiceChannel = undefined;
   }
 
-  updateVoiceStatus(serverId: number, channelId: number, status: {
+  updateVoiceStatus(serverId: string, channelId: string, status: {
     isMuted?: boolean;
     isDeafened?: boolean;
     isScreenSharing?: boolean;
@@ -440,7 +440,7 @@ class WebSocketService {
   }
 
   // WebRTC 시그널링 메서드
-  sendOffer(targetUserId: string, offer: RTCSessionDescriptionInit, serverId: number, channelId: number) {
+  sendOffer(targetUserId: string, offer: RTCSessionDescriptionInit, serverId: string, channelId: string) {
     if (!this.socket?.connected) return;
 
     this.socket.emit('voice:offer', {
@@ -451,7 +451,7 @@ class WebSocketService {
     });
   }
 
-  sendAnswer(targetUserId: string, answer: RTCSessionDescriptionInit, serverId: number, channelId: number) {
+  sendAnswer(targetUserId: string, answer: RTCSessionDescriptionInit, serverId: string, channelId: string) {
     if (!this.socket?.connected) return;
 
     this.socket.emit('voice:answer', {
@@ -462,7 +462,7 @@ class WebSocketService {
     });
   }
 
-  sendIceCandidate(targetUserId: string, candidate: RTCIceCandidateInit, serverId: number, channelId: number) {
+  sendIceCandidate(targetUserId: string, candidate: RTCIceCandidateInit, serverId: string, channelId: string) {
     if (!this.socket?.connected) return;
 
     this.socket.emit('voice:ice-candidate', {

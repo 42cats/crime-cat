@@ -2,13 +2,13 @@ import { useEffect, useCallback, useState } from 'react';
 import websocketService, { ServerInfo, ChannelInfo, ServerRole } from '../services/websocketService';
 
 export interface UseServerChannelReturn {
-  currentServer?: number;
-  currentChannel?: { serverId: number; channelId: number };
+  currentServer?: string;
+  currentChannel?: { serverId: string; channelId: string };
   serverRoles: ServerRole[];
-  joinServer: (serverId: number) => void;
-  leaveServer: (serverId: number) => void;
-  joinChannel: (serverId: number, channelId: number) => void;
-  leaveChannel: (serverId: number, channelId: number) => void;
+  joinServer: (serverId: string) => void;
+  leaveServer: (serverId: string) => void;
+  joinChannel: (serverId: string, channelId: string) => void;
+  leaveChannel: (serverId: string, channelId: string) => void;
   onServerJoined: (callback: (data: any) => void) => void;
   onChannelJoined: (callback: (data: any) => void) => void;
   onMemberJoined: (callback: (data: any) => void) => void;
@@ -16,19 +16,19 @@ export interface UseServerChannelReturn {
 }
 
 export const useServerChannel = (): UseServerChannelReturn => {
-  const [currentServer, setCurrentServer] = useState<number | undefined>();
-  const [currentChannel, setCurrentChannel] = useState<{ serverId: number; channelId: number } | undefined>();
+  const [currentServer, setCurrentServer] = useState<string | undefined>();
+  const [currentChannel, setCurrentChannel] = useState<{ serverId: string; channelId: string } | undefined>();
   const [serverRoles, setServerRoles] = useState<ServerRole[]>([]);
 
   // Server join success handler
-  const handleServerJoined = useCallback((data: { serverId: number; roles: ServerRole[] }) => {
+  const handleServerJoined = useCallback((data: { serverId: string; roles: ServerRole[] }) => {
     console.log('Server joined:', data);
     setCurrentServer(data.serverId);
     setServerRoles(data.roles || []);
   }, []);
 
   // Channel join success handler
-  const handleChannelJoined = useCallback((data: { serverId: number; channelId: number }) => {
+  const handleChannelJoined = useCallback((data: { serverId: string; channelId: string }) => {
     console.log('Channel joined:', data);
     setCurrentChannel({ serverId: data.serverId, channelId: data.channelId });
   }, []);
@@ -83,7 +83,7 @@ export const useServerChannel = (): UseServerChannelReturn => {
   ]);
 
   // Server/Channel actions
-  const joinServer = useCallback((serverId: number) => {
+  const joinServer = useCallback((serverId: string) => {
     try {
       websocketService.joinServer(serverId);
     } catch (error) {
@@ -91,7 +91,7 @@ export const useServerChannel = (): UseServerChannelReturn => {
     }
   }, []);
 
-  const leaveServer = useCallback((serverId: number) => {
+  const leaveServer = useCallback((serverId: string) => {
     websocketService.leaveServer(serverId);
     if (currentServer === serverId) {
       setCurrentServer(undefined);
@@ -100,7 +100,7 @@ export const useServerChannel = (): UseServerChannelReturn => {
     }
   }, [currentServer]);
 
-  const joinChannel = useCallback((serverId: number, channelId: number) => {
+  const joinChannel = useCallback((serverId: string, channelId: string) => {
     try {
       websocketService.joinChannel(serverId, channelId);
     } catch (error) {
@@ -108,7 +108,7 @@ export const useServerChannel = (): UseServerChannelReturn => {
     }
   }, []);
 
-  const leaveChannel = useCallback((serverId: number, channelId: number) => {
+  const leaveChannel = useCallback((serverId: string, channelId: string) => {
     websocketService.leaveChannel(serverId, channelId);
     if (currentChannel?.serverId === serverId && currentChannel?.channelId === channelId) {
       setCurrentChannel(undefined);

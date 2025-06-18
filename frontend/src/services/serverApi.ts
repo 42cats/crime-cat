@@ -9,7 +9,7 @@ export interface CreateServerRequest {
 }
 
 export interface JoinServerRequest {
-  serverId: number;
+  serverId: string;
   password?: string;
 }
 
@@ -22,13 +22,13 @@ export interface ServerListResponse {
 }
 
 export interface ChannelInfo {
-  id: number;
+  id: string;
   name: string;
   description?: string;
   type: 'TEXT' | 'VOICE' | 'BOTH';
   memberCount: number;
   maxMembers: number;
-  serverId: number;
+  serverId: string;
 }
 
 export interface CreateChannelRequest {
@@ -63,7 +63,7 @@ class ServerApiService {
   }
 
   // 서버 상세 정보 조회
-  async getServerById(serverId: number): Promise<ServerDetailResponse> {
+  async getServerById(serverId: string): Promise<ServerDetailResponse> {
     return apiClient.get<ServerDetailResponse>(`/servers/${serverId}`);
   }
 
@@ -80,7 +80,7 @@ class ServerApiService {
   }
 
   // 서버 탈퇴
-  async leaveServer(serverId: number): Promise<{ success: boolean; message?: string }> {
+  async leaveServer(serverId: string): Promise<{ success: boolean; message?: string }> {
     return apiClient.post<{ success: boolean; message?: string }>(`/servers/${serverId}/leave`);
   }
 
@@ -90,17 +90,17 @@ class ServerApiService {
   }
 
   // 서버 채널 목록 조회
-  async getServerChannels(serverId: number): Promise<ChannelInfo[]> {
+  async getServerChannels(serverId: string): Promise<ChannelInfo[]> {
     return apiClient.get<ChannelInfo[]>(`/servers/${serverId}/channels`);
   }
 
   // 채널 생성
-  async createChannel(serverId: number, channelData: CreateChannelRequest): Promise<ChannelInfo> {
+  async createChannel(serverId: string, channelData: CreateChannelRequest): Promise<ChannelInfo> {
     return apiClient.post<ChannelInfo>(`/servers/${serverId}/channels`, channelData);
   }
 
   // 서버의 기본 채널 조회
-  async getDefaultChannel(serverId: number): Promise<ChannelInfo> {
+  async getDefaultChannel(serverId: string): Promise<ChannelInfo> {
     const channels = await this.getServerChannels(serverId);
     // 첫 번째 채널을 기본 채널로 사용하거나, TEXT 타입 중 첫 번째
     return channels.find(c => c.type === 'TEXT') || channels[0];
