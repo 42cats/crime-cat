@@ -21,12 +21,12 @@ public interface VoteResponseRepository extends JpaRepository<VoteResponse, UUID
     /**
      * 특정 사용자의 특정 투표 응답 조회
      */
-    Optional<VoteResponse> findByVoteIdAndUserId(UUID voteId, String userId);
+    Optional<VoteResponse> findByVoteIdAndUserId(UUID voteId, UUID userId);
 
     /**
      * 사용자가 특정 투표에 응답했는지 확인
      */
-    boolean existsByVoteIdAndUserId(UUID voteId, String userId);
+    boolean existsByVoteIdAndUserId(UUID voteId, UUID userId);
 
     /**
      * 특정 투표의 응답 수 조회
@@ -37,11 +37,11 @@ public interface VoteResponseRepository extends JpaRepository<VoteResponse, UUID
     /**
      * 특정 투표의 선택지별 응답 수 조회
      */
-    @Query("SELECT vr.choiceIndex, COUNT(vr) FROM VoteResponse vr WHERE vr.vote.id = :voteId GROUP BY vr.choiceIndex")
+    @Query("SELECT vr.selectedOption, COUNT(vr) FROM VoteResponse vr WHERE vr.vote.id = :voteId GROUP BY vr.selectedOption")
     List<Object[]> countResponsesByChoice(@Param("voteId") UUID voteId);
 
     /**
      * 특정 사용자의 모든 투표 응답 조회
      */
-    List<VoteResponse> findByUserIdOrderByCreatedAtDesc(String userId);
+    List<VoteResponse> findByUserIdOrderByCreatedAtDesc(UUID userId);
 }

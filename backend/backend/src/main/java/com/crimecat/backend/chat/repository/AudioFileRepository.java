@@ -28,7 +28,7 @@ public interface AudioFileRepository extends JpaRepository<AudioFile, UUID> {
     /**
      * 특정 사용자가 업로드한 오디오 파일 조회
      */
-    Page<AudioFile> findByUploadedByOrderByCreatedAtDesc(String uploadedBy, Pageable pageable);
+    Page<AudioFile> findByUploadedByOrderByCreatedAtDesc(UUID uploadedBy, Pageable pageable);
 
     /**
      * 활성 상태이면서 특정 ID인 오디오 파일 조회
@@ -41,9 +41,9 @@ public interface AudioFileRepository extends JpaRepository<AudioFile, UUID> {
     Optional<AudioFile> findByFilenameAndIsActiveTrue(String filename);
 
     /**
-     * 콘텐츠 타입별 오디오 파일 조회
+     * MIME 타입별 오디오 파일 조회
      */
-    List<AudioFile> findByContentTypeAndIsActiveTrueOrderByCreatedAtDesc(String contentType);
+    List<AudioFile> findByMimeTypeAndIsActiveTrueOrderByCreatedAtDesc(String mimeType);
 
     /**
      * 총 파일 크기 계산
@@ -55,5 +55,5 @@ public interface AudioFileRepository extends JpaRepository<AudioFile, UUID> {
      * 특정 사용자의 총 파일 크기 계산
      */
     @Query("SELECT COALESCE(SUM(af.fileSize), 0) FROM AudioFile af WHERE af.uploadedBy = :userId AND af.isActive = true")
-    Long getTotalFileSizeByUser(@Param("userId") String userId);
+    Long getTotalFileSizeByUser(@Param("userId") UUID userId);
 }

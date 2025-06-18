@@ -26,7 +26,7 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, UUID
     /**
      * 특정 사용자가 생성한 공지사항 조회
      */
-    Page<Announcement> findByCreatedByOrderByCreatedAtDesc(String createdBy, Pageable pageable);
+    Page<Announcement> findByCreatedByOrderByCreatedAtDesc(UUID createdBy, Pageable pageable);
 
     /**
      * 최신 활성 공지사항 N개 조회
