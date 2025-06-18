@@ -20,7 +20,6 @@ RUN npm install --only=production && \
 # 소스 코드 복사
 COPY --chown=signalserver:nodejs index.js ./
 COPY --chown=signalserver:nodejs services ./services/
-COPY --chown=signalserver:nodejs test-server.js ./
 
 # 비루트 사용자로 전환
 USER signalserver
