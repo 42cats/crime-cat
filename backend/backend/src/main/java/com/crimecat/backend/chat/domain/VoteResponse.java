@@ -5,10 +5,14 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "vote_responses", 
@@ -19,31 +23,34 @@ import java.time.LocalDateTime;
 public class VoteResponse {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @UuidGenerator
+    @Column(name = "id", columnDefinition = "BINARY(16)", updatable = false)
+    private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vote_id", nullable = false)
     private Vote vote;
 
-    @Column(name = "user_id", nullable = false)
-    private String userId;
+    @Column(name = "user_id", nullable = false, columnDefinition = "BINARY(16)")
+    @JdbcTypeCode(SqlTypes.BINARY)
+    private UUID userId;
 
     @Column(name = "username", nullable = false)
     private String username;
 
-    @Column(name = "choice_index", nullable = false)
-    private Integer choiceIndex;
+    @Column(name = "selected_option", nullable = false)
+    private String selectedOption;
 
     @CreatedDate
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Builder
-    public VoteResponse(Vote vote, String userId, String username, Integer choiceIndex) {
+    public VoteResponse(Vote vote, UUID userId, String username, String selectedOption) {
         this.vote = vote;
         this.userId = userId;
         this.username = username;
-        this.choiceIndex = choiceIndex;
+        this.selectedOption = selectedOption;
     }
 }

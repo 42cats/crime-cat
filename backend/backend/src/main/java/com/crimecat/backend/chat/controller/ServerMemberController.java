@@ -26,7 +26,7 @@ public class ServerMemberController {
      * 서버의 모든 멤버 조회
      */
     @GetMapping
-    public ResponseEntity<List<ServerMemberDto>> getAllMembers(@PathVariable Long serverId) {
+    public ResponseEntity<List<ServerMemberDto>> getAllMembers(@PathVariable UUID serverId) {
         List<ServerMemberDto> members = serverMemberService.getAllMembers(serverId);
         return ResponseEntity.ok(members);
     }
@@ -36,7 +36,7 @@ public class ServerMemberController {
      */
     @GetMapping("/page")
     public ResponseEntity<Page<ServerMemberDto>> getMembersByPage(
-            @PathVariable Long serverId,
+            @PathVariable UUID serverId,
             @PageableDefault(size = 20) Pageable pageable) {
         Page<ServerMemberDto> members = serverMemberService.getMembersByPage(serverId, pageable);
         return ResponseEntity.ok(members);
@@ -47,7 +47,7 @@ public class ServerMemberController {
      */
     @GetMapping("/{userId}")
     public ResponseEntity<ServerMemberDto> getMember(
-            @PathVariable Long serverId,
+            @PathVariable UUID serverId,
             @PathVariable UUID userId) {
         ServerMemberDto member = serverMemberService.getMember(serverId, userId);
         return ResponseEntity.ok(member);
@@ -58,7 +58,7 @@ public class ServerMemberController {
      */
     @PostMapping("/{userId}/roles")
     public ResponseEntity<ServerMemberDto> assignRoles(
-            @PathVariable Long serverId,
+            @PathVariable UUID serverId,
             @PathVariable UUID userId,
             @Valid @RequestBody ServerMemberDto.RoleAssignRequest request) {
         ServerMemberDto updatedMember = serverMemberService.assignRoles(serverId, userId, request);
@@ -70,9 +70,9 @@ public class ServerMemberController {
      */
     @DeleteMapping("/{userId}/roles/{roleId}")
     public ResponseEntity<ServerMemberDto> removeRole(
-            @PathVariable Long serverId,
+            @PathVariable UUID serverId,
             @PathVariable UUID userId,
-            @PathVariable Long roleId) {
+            @PathVariable UUID roleId) {
         ServerMemberDto updatedMember = serverMemberService.removeRole(serverId, userId, roleId);
         return ResponseEntity.ok(updatedMember);
     }
@@ -82,7 +82,7 @@ public class ServerMemberController {
      */
     @PutMapping("/{userId}/profile")
     public ResponseEntity<ServerMemberDto> updateMemberProfile(
-            @PathVariable Long serverId,
+            @PathVariable UUID serverId,
             @PathVariable UUID userId,
             @Valid @RequestBody ServerMemberDto.ProfileUpdateRequest request) {
         ServerMemberDto updatedMember = serverMemberService.updateMemberProfile(serverId, userId, request);
@@ -94,7 +94,7 @@ public class ServerMemberController {
      */
     @GetMapping("/{userId}/permissions")
     public ResponseEntity<List<String>> getMemberPermissions(
-            @PathVariable Long serverId,
+            @PathVariable UUID serverId,
             @PathVariable UUID userId) {
         List<String> permissions = serverMemberService.getMemberPermissions(serverId, userId);
         return ResponseEntity.ok(permissions);
@@ -105,7 +105,7 @@ public class ServerMemberController {
      */
     @GetMapping("/{userId}/permissions/{permission}")
     public ResponseEntity<Boolean> hasPermission(
-            @PathVariable Long serverId,
+            @PathVariable UUID serverId,
             @PathVariable UUID userId,
             @PathVariable String permission) {
         boolean hasPermission = serverMemberService.hasPermission(serverId, userId, permission);

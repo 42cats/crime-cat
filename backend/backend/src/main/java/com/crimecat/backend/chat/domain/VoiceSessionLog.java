@@ -5,10 +5,14 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "voice_session_logs")
@@ -18,11 +22,22 @@ import java.time.LocalDateTime;
 public class VoiceSessionLog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @UuidGenerator
+    @Column(name = "id", columnDefinition = "BINARY(16)", updatable = false)
+    private UUID id;
 
-    @Column(name = "user_id", nullable = false)
-    private String userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "server_id", nullable = false)
+    private ChatServer server;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "channel_id", nullable = false)
+    private ServerChannel channel;
+
+    @Column(name = "user_id", nullable = false, columnDefinition = "BINARY(16)")
+    @JdbcTypeCode(SqlTypes.BINARY)
+    private UUID userId;
 
     @Column(name = "username", nullable = false)
     private String username;
@@ -41,8 +56,10 @@ public class VoiceSessionLog {
     private LocalDateTime createdAt;
 
     @Builder
-    public VoiceSessionLog(String userId, String username, LocalDateTime startTime, 
-                          LocalDateTime endTime, String effectsUsed) {
+    public VoiceSessionLog(ChatServer server, ServerChannel channel, UUID userId, String username, 
+                          LocalDateTime startTime, LocalDateTime endTime, String effectsUsed) {
+        this.server = server;
+        this.channel = channel;
         this.userId = userId;
         this.username = username;
         this.startTime = startTime;

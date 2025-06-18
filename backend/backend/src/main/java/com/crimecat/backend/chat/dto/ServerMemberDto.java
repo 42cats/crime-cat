@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -15,13 +16,13 @@ import java.util.List;
 @AllArgsConstructor
 public class ServerMemberDto {
 
-    private Long id;
-    private Long serverId;
-    private String userId;
+    private UUID id;
+    private UUID serverId;
+    private UUID userId;
     private String role; // MEMBER, ADMIN (legacy)
     private String displayName;
     private String avatarUrl;
-    private List<Long> assignedRoles;
+    private List<UUID> assignedRoles;
     private String effectiveDisplayName;
     private String effectiveAvatarUrl;
     private LocalDateTime joinedAt;
@@ -33,7 +34,7 @@ public class ServerMemberDto {
         return ServerMemberDto.builder()
                 .id(serverMember.getId())
                 .serverId(serverMember.getServer().getId())
-                .userId(serverMember.getUserId().toString())
+                .userId(serverMember.getUserId())
                 .role(serverMember.getRole().name())
                 .displayName(serverMember.getDisplayName())
                 .avatarUrl(serverMember.getAvatarUrl())
@@ -61,7 +62,7 @@ public class ServerMemberDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class RoleAssignRequest {
-        private List<Long> roleIds;
+        private List<UUID> roleIds;
     }
 
     // Extended DTO with role details
@@ -70,13 +71,13 @@ public class ServerMemberDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class WithRoles {
-        private Long id;
-        private Long serverId;
-        private String userId;
+        private UUID id;
+        private UUID serverId;
+        private UUID userId;
         private String role;
         private String displayName;
         private String avatarUrl;
-        private List<Long> assignedRoles;
+        private List<UUID> assignedRoles;
         private List<ServerRoleDto> roleDetails;
         private String effectiveDisplayName;
         private String effectiveAvatarUrl;

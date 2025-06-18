@@ -69,7 +69,7 @@ public class ServerService {
     /**
      * 서버 입장 (비밀번호 검증)
      */
-    public ServerDto.Response joinServer(Long serverId, ServerDto.JoinRequest request) {
+    public ServerDto.Response joinServer(UUID serverId, ServerDto.JoinRequest request) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 서버 조회
@@ -114,7 +114,7 @@ public class ServerService {
     /**
      * 서버 탈퇴
      */
-    public void leaveServer(Long serverId) {
+    public void leaveServer(UUID serverId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 서버 조회
@@ -141,7 +141,7 @@ public class ServerService {
      * 서버 정보 조회
      */
     @Transactional(readOnly = true)
-    public ServerDto.Response getServer(Long serverId) {
+    public ServerDto.Response getServer(UUID serverId) {
         ChatServer server = chatServerRepository.findById(serverId)
                 .filter(ChatServer::getIsActive)
                 .orElseThrow(() -> ErrorStatus.SERVER_NOT_FOUND.asServiceException());
@@ -174,7 +174,7 @@ public class ServerService {
     /**
      * 서버 정보 수정 (소유자만 가능)
      */
-    public ServerDto.Response updateServer(Long serverId, ServerDto.UpdateRequest request) {
+    public ServerDto.Response updateServer(UUID serverId, ServerDto.UpdateRequest request) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 서버 조회
@@ -211,7 +211,7 @@ public class ServerService {
     /**
      * 서버 삭제 (소유자만 가능)
      */
-    public void deleteServer(Long serverId) {
+    public void deleteServer(UUID serverId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 서버 조회
@@ -239,7 +239,7 @@ public class ServerService {
     /**
      * 멤버 추방 (관리자만 가능)
      */
-    public void kickMember(Long serverId, UUID targetUserId) {
+    public void kickMember(UUID serverId, UUID targetUserId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 서버 조회
@@ -275,7 +275,7 @@ public class ServerService {
 
     // === Private Helper Methods ===
 
-    private boolean hasKickPermission(Long serverId, UUID userId) {
+    private boolean hasKickPermission(UUID serverId, UUID userId) {
         // 서버 소유자는 항상 가능
         ChatServer server = chatServerRepository.findById(serverId).orElse(null);
         if (server != null && server.isOwner(userId)) {

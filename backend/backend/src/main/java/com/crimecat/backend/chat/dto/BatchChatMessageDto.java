@@ -35,8 +35,7 @@ public class BatchChatMessageDto {
     @Builder
     public static class MessageRequest {
         @NotNull
-        @NotEmpty
-        private String userId;
+        private UUID userId;
         
         @NotNull
         @NotEmpty
@@ -53,7 +52,7 @@ public class BatchChatMessageDto {
 
         public ChatMessage toEntity() {
             return ChatMessage.builder()
-                    .userId(UUID.fromString(userId))
+                    .userId(userId)
                     .username(username)
                     .content(content)
                     .messageType(messageType != null ? messageType : ChatMessage.MessageType.TEXT)

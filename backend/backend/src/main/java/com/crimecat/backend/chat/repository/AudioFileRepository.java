@@ -10,9 +10,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface AudioFileRepository extends JpaRepository<AudioFile, Long> {
+public interface AudioFileRepository extends JpaRepository<AudioFile, UUID> {
 
     /**
      * 활성 상태의 오디오 파일만 조회
@@ -32,7 +33,7 @@ public interface AudioFileRepository extends JpaRepository<AudioFile, Long> {
     /**
      * 활성 상태이면서 특정 ID인 오디오 파일 조회
      */
-    Optional<AudioFile> findByIdAndIsActiveTrue(Long id);
+    Optional<AudioFile> findByIdAndIsActiveTrue(UUID id);
 
     /**
      * 파일명으로 오디오 파일 조회

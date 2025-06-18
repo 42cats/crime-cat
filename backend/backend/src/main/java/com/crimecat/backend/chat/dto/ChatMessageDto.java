@@ -22,10 +22,10 @@ public class ChatMessageDto {
     @AllArgsConstructor
     public static class Request {
         @NotNull(message = "서버 ID는 필수입니다")
-        private Long serverId;
+        private UUID serverId;
 
         @NotNull(message = "채널 ID는 필수입니다")
-        private Long channelId;
+        private UUID channelId;
 
         @NotBlank(message = "메시지 내용은 필수입니다")
         @Size(max = 2000, message = "메시지는 2000자를 초과할 수 없습니다")
@@ -51,10 +51,10 @@ public class ChatMessageDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Response {
-        private Long id;
-        private Long serverId;
+        private UUID id;
+        private UUID serverId;
         private String serverName;
-        private Long channelId;
+        private UUID channelId;
         private String channelName;
         private UUID userId;
         private String username; 
@@ -85,8 +85,8 @@ public class ChatMessageDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class RealtimeMessage {
-        private Long serverId;
-        private Long channelId;
+        private UUID serverId;
+        private UUID channelId;
         private UUID userId;
         private String username;
         private String content;
@@ -111,8 +111,8 @@ public class ChatMessageDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class MessageHistory {
-        private Long serverId;
-        private Long channelId;
+        private UUID serverId;
+        private UUID channelId;
         private int page;
         private int size;
         private LocalDateTime beforeTime;
@@ -124,8 +124,8 @@ public class ChatMessageDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class MessageSearch {
-        private Long serverId;
-        private Long channelId;
+        private UUID serverId;
+        private UUID channelId;
         @NotBlank(message = "검색 키워드는 필수입니다")
         private String keyword;
         private int page;
@@ -137,12 +137,12 @@ public class ChatMessageDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ChannelPreview {
-        private Long channelId;
+        private UUID channelId;
         private String channelName;
         private String lastMessageContent;
         private String lastMessageUsername;
         private LocalDateTime lastMessageTime;
-        private Long unreadCount;
+        private UUID unreadCount;
         private ChatMessage.MessageType lastMessageType;
     }
 
@@ -151,11 +151,11 @@ public class ChatMessageDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ServerActivity {
-        private Long serverId;
+        private UUID serverId;
         private String serverName;
-        private Long totalMessages;
-        private Long todayMessages;
-        private Long activeChannels;
+        private UUID totalMessages;
+        private UUID todayMessages;
+        private UUID activeChannels;
         private LocalDateTime lastActivity;
     }
 
@@ -166,8 +166,8 @@ public class ChatMessageDto {
     public static class UserMessageStats {
         private UUID userId;
         private String username;
-        private Long messageCount;
+        private UUID messageCount;
         private LocalDateTime lastMessageTime;
-        private Long serverMessageCount;
+        private UUID serverMessageCount;
     }
 }

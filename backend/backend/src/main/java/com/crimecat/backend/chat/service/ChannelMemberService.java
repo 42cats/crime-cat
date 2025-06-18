@@ -38,7 +38,7 @@ public class ChannelMemberService {
      * 채널 멤버 목록 조회
      */
     @Transactional(readOnly = true)
-    public List<ChannelMemberDto> getAllMembers(Long serverId, Long channelId) {
+    public List<ChannelMemberDto> getAllMembers(UUID serverId, UUID channelId) {
         validateChannelExists(serverId, channelId);
         
         List<ChannelMember> members = channelMemberRepository.findByChannelIdAndIsActiveTrue(channelId);
@@ -51,7 +51,7 @@ public class ChannelMemberService {
      * 채널 멤버 페이징 조회
      */
     @Transactional(readOnly = true)
-    public Page<ChannelMemberDto> getMembersByPage(Long serverId, Long channelId, Pageable pageable) {
+    public Page<ChannelMemberDto> getMembersByPage(UUID serverId, UUID channelId, Pageable pageable) {
         validateChannelExists(serverId, channelId);
         
         Page<ChannelMember> members = channelMemberRepository.findByChannelIdAndIsActiveTrue(channelId, pageable);
@@ -62,7 +62,7 @@ public class ChannelMemberService {
      * 특정 채널 멤버 조회
      */
     @Transactional(readOnly = true)
-    public ChannelMemberDto getMember(Long serverId, Long channelId, UUID userId) {
+    public ChannelMemberDto getMember(UUID serverId, UUID channelId, UUID userId) {
         validateChannelExists(serverId, channelId);
         
         ChannelMember member = channelMemberRepository.findByChannelIdAndUserIdAndIsActiveTrue(channelId, userId)
@@ -74,7 +74,7 @@ public class ChannelMemberService {
     /**
      * 채널 입장
      */
-    public ChannelMemberDto joinChannel(Long serverId, Long channelId) {
+    public ChannelMemberDto joinChannel(UUID serverId, UUID channelId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 채널 존재 확인
@@ -112,7 +112,7 @@ public class ChannelMemberService {
     /**
      * 채널 탈퇴
      */
-    public void leaveChannel(Long serverId, Long channelId) {
+    public void leaveChannel(UUID serverId, UUID channelId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         validateChannelExists(serverId, channelId);
@@ -131,7 +131,7 @@ public class ChannelMemberService {
     /**
      * 채널 멤버 역할 변경 (모더레이터 또는 서버 관리자만 가능)
      */
-    public ChannelMemberDto updateMemberRole(Long serverId, Long channelId, UUID targetUserId, 
+    public ChannelMemberDto updateMemberRole(UUID serverId, UUID channelId, UUID targetUserId, 
                                            ChannelMemberDto.RoleUpdateRequest request) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
@@ -166,7 +166,7 @@ public class ChannelMemberService {
     /**
      * 채널 멤버 추방 (모더레이터 또는 서버 관리자만 가능)
      */
-    public void kickMember(Long serverId, Long channelId, UUID targetUserId) {
+    public void kickMember(UUID serverId, UUID channelId, UUID targetUserId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         validateChannelExists(serverId, channelId);
@@ -193,7 +193,7 @@ public class ChannelMemberService {
     /**
      * 채널 활동 업데이트
      */
-    public void updateActivity(Long channelId, UUID userId) {
+    public void updateActivity(UUID channelId, UUID userId) {
         ChannelMember member = channelMemberRepository.findByChannelIdAndUserIdAndIsActiveTrue(channelId, userId)
                 .orElse(null);
         
@@ -207,7 +207,7 @@ public class ChannelMemberService {
      * 채널 멤버 통계 조회
      */
     @Transactional(readOnly = true)
-    public ChannelMemberDto.Statistics getChannelStatistics(Long serverId, Long channelId) {
+    public ChannelMemberDto.Statistics getChannelStatistics(UUID serverId, UUID channelId) {
         ServerChannel channel = validateChannelExists(serverId, channelId);
         
         long totalMembers = channelMemberRepository.countByChannelIdAndIsActiveTrue(channelId);
@@ -230,19 +230,19 @@ public class ChannelMemberService {
 
     // === Private Helper Methods ===
     
-    private ServerChannel validateChannelExists(Long serverId, Long channelId) {
+    private ServerChannel validateChannelExists(UUID serverId, UUID channelId) {
         return serverChannelRepository.findByIdAndServerIdAndIsActiveTrue(channelId, serverId)
                 .orElseThrow(() -> ErrorStatus.CHANNEL_NOT_FOUND.asServiceException());
     }
     
-    private void validateServerMembership(Long serverId, UUID userId) {
+    private void validateServerMembership(UUID serverId, UUID userId) {
         boolean isMember = serverMemberRepository.existsByServerIdAndUserIdAndIsActiveTrue(serverId, userId);
         if (!isMember) {
             throw ErrorStatus.SERVER_NOT_MEMBER.asServiceException();
         }
     }
     
-    private void validateChannelModeratorPermission(Long serverId, Long channelId, UUID userId) {
+    private void validateChannelModeratorPermission(UUID serverId, UUID channelId, UUID userId) {
         // 채널 모더레이터인지 확인 (Repository에 해당 메서드가 없으므로 임시로 기본 체크)
         boolean isChannelModerator = channelMemberRepository.existsByChannelIdAndUserIdAndIsActiveTrue(channelId, userId);
         

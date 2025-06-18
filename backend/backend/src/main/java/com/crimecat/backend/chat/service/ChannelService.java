@@ -32,7 +32,7 @@ public class ChannelService {
     /**
      * 채널 생성 (서버 관리자만 가능)
      */
-    public ChannelDto.Response createChannel(Long serverId, ChannelDto.CreateRequest request) {
+    public ChannelDto.Response createChannel(UUID serverId, ChannelDto.CreateRequest request) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 서버 존재 확인
@@ -76,7 +76,7 @@ public class ChannelService {
      * 서버의 모든 채널 조회
      */
     @Transactional(readOnly = true)
-    public List<ChannelDto.Response> getServerChannels(Long serverId) {
+    public List<ChannelDto.Response> getServerChannels(UUID serverId) {
         validateServerExists(serverId);
         
         List<ServerChannel> channels = serverChannelRepository.findByServerIdAndIsActiveTrueOrderByCreatedAt(serverId);
@@ -89,7 +89,7 @@ public class ChannelService {
      * 특정 채널 조회
      */
     @Transactional(readOnly = true)
-    public ChannelDto.Response getChannel(Long serverId, Long channelId) {
+    public ChannelDto.Response getChannel(UUID serverId, UUID channelId) {
         validateServerExists(serverId);
         
         ServerChannel channel = serverChannelRepository.findById(channelId)
@@ -102,7 +102,7 @@ public class ChannelService {
     /**
      * 채널 정보 수정 (서버 관리자만 가능)
      */
-    public ChannelDto.Response updateChannel(Long serverId, Long channelId, ChannelDto.UpdateRequest request) {
+    public ChannelDto.Response updateChannel(UUID serverId, UUID channelId, ChannelDto.UpdateRequest request) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 권한 확인
@@ -144,7 +144,7 @@ public class ChannelService {
     /**
      * 채널 삭제 (서버 관리자만 가능)
      */
-    public void deleteChannel(Long serverId, Long channelId) {
+    public void deleteChannel(UUID serverId, UUID channelId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 권한 확인
@@ -171,7 +171,7 @@ public class ChannelService {
     /**
      * 채널 입장
      */
-    public ChannelDto.Response joinChannel(Long serverId, Long channelId) {
+    public ChannelDto.Response joinChannel(UUID serverId, UUID channelId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 서버 멤버 확인
@@ -207,7 +207,7 @@ public class ChannelService {
     /**
      * 채널 탈퇴
      */
-    public void leaveChannel(Long serverId, Long channelId) {
+    public void leaveChannel(UUID serverId, UUID channelId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 채널 멤버 조회
@@ -223,13 +223,13 @@ public class ChannelService {
 
     // === Private Helper Methods ===
 
-    private ChatServer validateServerExists(Long serverId) {
+    private ChatServer validateServerExists(UUID serverId) {
         return chatServerRepository.findById(serverId)
                 .filter(server -> server.getIsActive())
                 .orElseThrow(() -> ErrorStatus.SERVER_NOT_FOUND.asServiceException());
     }
 
-    private void validateServerAdminPermission(Long serverId, UUID userId) {
+    private void validateServerAdminPermission(UUID serverId, UUID userId) {
         if (!serverMemberService.hasServerAdminPermission(serverId, userId)) {
             throw ErrorStatus.INSUFFICIENT_PERMISSION.asServiceException();
         }

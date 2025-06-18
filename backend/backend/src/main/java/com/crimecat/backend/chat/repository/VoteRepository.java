@@ -10,9 +10,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface VoteRepository extends JpaRepository<Vote, Long> {
+public interface VoteRepository extends JpaRepository<Vote, UUID> {
 
     /**
      * 활성 상태의 투표만 조회
@@ -22,7 +23,7 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
     /**
      * 특정 사용자가 생성한 투표 조회
      */
-    Page<Vote> findByCreatedByOrderByCreatedAtDesc(String createdBy, Pageable pageable);
+    Page<Vote> findByCreatedByOrderByCreatedAtDesc(UUID createdBy, Pageable pageable);
 
     /**
      * 활성 상태인 최신 투표 1개 조회
@@ -33,13 +34,13 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
     /**
      * 투표 ID와 활성 상태로 조회
      */
-    Optional<Vote> findByIdAndIsActiveTrue(Long id);
+    Optional<Vote> findByIdAndIsActiveTrue(UUID id);
 
     /**
      * 투표 응답 수와 함께 조회
      */
     @Query("SELECT v FROM Vote v LEFT JOIN FETCH v.responses WHERE v.id = :voteId")
-    Optional<Vote> findByIdWithResponses(@Param("voteId") Long voteId);
+    Optional<Vote> findByIdWithResponses(@Param("voteId") UUID voteId);
 
     /**
      * 모든 투표를 응답과 함께 조회 (관리자용)

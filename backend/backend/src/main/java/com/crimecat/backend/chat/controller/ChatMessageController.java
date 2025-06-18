@@ -38,8 +38,8 @@ public class ChatMessageController {
     @PostMapping
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<ChatMessageDto.Response> sendMessage(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId,
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId,
             @Valid @RequestBody ChatMessageDto.Request request) {
         
         WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
@@ -86,8 +86,8 @@ public class ChatMessageController {
     @GetMapping
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Page<ChatMessageDto.Response>> getChannelMessages(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId,
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId,
             @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         
         Page<ChatMessageDto.Response> messages = chatMessageService.getChannelMessages(serverId, channelId, pageable);
@@ -100,8 +100,8 @@ public class ChatMessageController {
     @GetMapping("/users/{userId}")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Page<ChatMessageDto.Response>> getUserMessages(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId,
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId,
             @PathVariable UUID userId,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         
@@ -115,8 +115,8 @@ public class ChatMessageController {
     @GetMapping("/recent")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<List<ChatMessageDto.Response>> getRecentMessages(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId,
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId,
             @RequestParam(defaultValue = "50") @Min(1) @Max(100) int limit) {
         
         List<ChatMessageDto.Response> messages = chatMessageService.getRecentMessages(serverId, channelId, limit);
@@ -129,8 +129,8 @@ public class ChatMessageController {
     @GetMapping("/since")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<List<ChatMessageDto.Response>> getMessagesSince(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId,
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId,
             @RequestParam LocalDateTime since) {
         
         List<ChatMessageDto.Response> messages = chatMessageService.getMessagesSince(serverId, channelId, since);
@@ -143,8 +143,8 @@ public class ChatMessageController {
     @GetMapping("/search")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Page<ChatMessageDto.Response>> searchMessages(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId,
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId,
             @RequestParam String keyword,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         
@@ -170,8 +170,8 @@ public class ChatMessageController {
     @GetMapping("/count")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Long> getMessageCount(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId,
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId,
             @RequestParam LocalDateTime startDate,
             @RequestParam LocalDateTime endDate) {
         

@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -15,12 +16,12 @@ import java.util.List;
 @AllArgsConstructor
 public class ServerRoleDto {
 
-    private Long id;
-    private Long serverId;
+    private UUID id;
+    private UUID serverId;
     private String name;
     private String color;
     private List<String> permissions;
-    private String createdBy;
+    private UUID createdBy;
     private Boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -33,7 +34,7 @@ public class ServerRoleDto {
                 .name(serverRole.getName())
                 .color(serverRole.getColor())
                 .permissions(serverRole.getPermissions())
-                .createdBy(serverRole.getCreatedBy().toString())
+                .createdBy(serverRole.getCreatedBy())
                 .isActive(serverRole.getIsActive())
                 .createdAt(serverRole.getCreatedAt())
                 .updatedAt(serverRole.getUpdatedAt())
@@ -66,7 +67,7 @@ public class ServerRoleDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class AssignRequest {
-        private List<Long> roleIds;
+        private List<UUID> roleIds;
     }
 
     // Response DTOs

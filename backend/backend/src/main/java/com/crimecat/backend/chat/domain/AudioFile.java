@@ -5,11 +5,15 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "audio_files")
@@ -19,14 +23,24 @@ import java.time.LocalDateTime;
 public class AudioFile {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @UuidGenerator
+    @Column(name = "id", columnDefinition = "BINARY(16)", updatable = false)
+    private UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "server_id", nullable = false)
+    private ChatServer server;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "channel_id", nullable = false)
+    private ServerChannel channel;
 
     @Column(name = "filename", nullable = false)
     private String filename;
 
-    @Column(name = "original_filename", nullable = false)
-    private String originalFilename;
+    @Column(name = "original_name", nullable = false)
+    private String originalName;
 
     @Column(name = "file_path", nullable = false, length = 500)
     private String filePath;
@@ -37,11 +51,12 @@ public class AudioFile {
     @Column(name = "duration_seconds")
     private Integer durationSeconds;
 
-    @Column(name = "content_type", length = 100)
-    private String contentType;
+    @Column(name = "mime_type", length = 100)
+    private String mimeType;
 
-    @Column(name = "uploaded_by", nullable = false)
-    private String uploadedBy;
+    @Column(name = "uploaded_by", nullable = false, columnDefinition = "BINARY(16)")
+    @JdbcTypeCode(SqlTypes.BINARY)
+    private UUID uploadedBy;
 
     @Column(name = "is_active")
     private Boolean isActive = true;
@@ -55,14 +70,15 @@ public class AudioFile {
     private LocalDateTime updatedAt;
 
     @Builder
-    public AudioFile(String filename, String originalFilename, String filePath, 
-                    Long fileSize, Integer durationSeconds, String contentType, String uploadedBy) {
+    public AudioFile(ChatServer server, ServerChannel channel, String filename, String originalName, String filePath, 
+                    Long fileSize, String mimeType, UUID uploadedBy) {
+        this.server = server;
+        this.channel = channel;
         this.filename = filename;
-        this.originalFilename = originalFilename;
+        this.originalName = originalName;
         this.filePath = filePath;
         this.fileSize = fileSize;
-        this.durationSeconds = durationSeconds;
-        this.contentType = contentType;
+        this.mimeType = mimeType;
         this.uploadedBy = uploadedBy;
         this.isActive = true;
     }

@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -24,8 +25,10 @@ import java.util.UUID;
 public class ServerMember {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @UuidGenerator
+    @Column(name = "id", columnDefinition = "BINARY(16)", updatable = false)
+    private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "server_id", nullable = false)
@@ -47,7 +50,7 @@ public class ServerMember {
 
     @Column(name = "assigned_roles", columnDefinition = "JSON")
     @JdbcTypeCode(SqlTypes.JSON)
-    private List<Long> assignedRoles;
+    private List<UUID> assignedRoles;
 
     @CreatedDate
     @Column(name = "joined_at")
@@ -61,7 +64,7 @@ public class ServerMember {
     private Boolean isActive = true;
 
     @Builder
-    public ServerMember(ChatServer server, UUID userId, ServerRole role, String displayName, String avatarUrl, List<Long> assignedRoles) {
+    public ServerMember(ChatServer server, UUID userId, ServerRole role, String displayName, String avatarUrl, List<UUID> assignedRoles) {
         this.server = server;
         this.userId = userId;
         this.role = role != null ? role : ServerRole.MEMBER;
@@ -99,11 +102,11 @@ public class ServerMember {
     }
 
     // 커스텀 역할 관리
-    public void assignRoles(List<Long> roleIds) {
+    public void assignRoles(List<UUID> roleIds) {
         this.assignedRoles = roleIds != null ? new ArrayList<>(roleIds) : new ArrayList<>();
     }
 
-    public void addRole(Long roleId) {
+    public void addRole(UUID roleId) {
         if (assignedRoles == null) {
             assignedRoles = new ArrayList<>();
         }
@@ -112,17 +115,17 @@ public class ServerMember {
         }
     }
 
-    public void removeRole(Long roleId) {
+    public void removeRole(UUID roleId) {
         if (assignedRoles != null) {
             assignedRoles.remove(roleId);
         }
     }
 
-    public boolean hasRole(Long roleId) {
+    public boolean hasRole(UUID roleId) {
         return assignedRoles != null && assignedRoles.contains(roleId);
     }
 
-    public List<Long> getAssignedRoles() {
+    public List<UUID> getAssignedRoles() {
         return assignedRoles != null ? new ArrayList<>(assignedRoles) : new ArrayList<>();
     }
 

@@ -27,8 +27,8 @@ public class ChannelMemberController {
      */
     @GetMapping
     public ResponseEntity<List<ChannelMemberDto>> getAllMembers(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId) {
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId) {
         List<ChannelMemberDto> members = channelMemberService.getAllMembers(serverId, channelId);
         return ResponseEntity.ok(members);
     }
@@ -38,8 +38,8 @@ public class ChannelMemberController {
      */
     @GetMapping("/page")
     public ResponseEntity<Page<ChannelMemberDto>> getMembersByPage(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId,
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId,
             @PageableDefault(size = 20) Pageable pageable) {
         Page<ChannelMemberDto> members = channelMemberService.getMembersByPage(serverId, channelId, pageable);
         return ResponseEntity.ok(members);
@@ -50,8 +50,8 @@ public class ChannelMemberController {
      */
     @GetMapping("/{userId}")
     public ResponseEntity<ChannelMemberDto> getMember(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId,
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId,
             @PathVariable UUID userId) {
         ChannelMemberDto member = channelMemberService.getMember(serverId, channelId, userId);
         return ResponseEntity.ok(member);
@@ -62,8 +62,8 @@ public class ChannelMemberController {
      */
     @PostMapping("/join")
     public ResponseEntity<ChannelMemberDto> joinChannel(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId) {
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId) {
         ChannelMemberDto member = channelMemberService.joinChannel(serverId, channelId);
         return ResponseEntity.ok(member);
     }
@@ -73,8 +73,8 @@ public class ChannelMemberController {
      */
     @PostMapping("/leave")
     public ResponseEntity<Void> leaveChannel(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId) {
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId) {
         channelMemberService.leaveChannel(serverId, channelId);
         return ResponseEntity.noContent().build();
     }
@@ -84,8 +84,8 @@ public class ChannelMemberController {
      */
     @PutMapping("/{userId}/role")
     public ResponseEntity<ChannelMemberDto> updateMemberRole(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId,
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId,
             @PathVariable UUID userId,
             @Valid @RequestBody ChannelMemberDto.RoleUpdateRequest request) {
         ChannelMemberDto updatedMember = channelMemberService.updateMemberRole(serverId, channelId, userId, request);
@@ -97,8 +97,8 @@ public class ChannelMemberController {
      */
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> kickMember(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId,
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId,
             @PathVariable UUID userId) {
         channelMemberService.kickMember(serverId, channelId, userId);
         return ResponseEntity.noContent().build();
@@ -109,8 +109,8 @@ public class ChannelMemberController {
      */
     @GetMapping("/statistics")
     public ResponseEntity<ChannelMemberDto.Statistics> getChannelStatistics(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId) {
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId) {
         ChannelMemberDto.Statistics statistics = channelMemberService.getChannelStatistics(serverId, channelId);
         return ResponseEntity.ok(statistics);
     }
@@ -120,7 +120,7 @@ public class ChannelMemberController {
      */
     @PostMapping("/{userId}/activity")
     public ResponseEntity<Void> updateActivity(
-            @PathVariable Long channelId,
+            @PathVariable UUID channelId,
             @PathVariable UUID userId) {
         channelMemberService.updateActivity(channelId, userId);
         return ResponseEntity.noContent().build();

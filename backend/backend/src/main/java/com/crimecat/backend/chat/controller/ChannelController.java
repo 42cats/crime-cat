@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/servers/{serverId}/channels")
@@ -23,7 +24,7 @@ public class ChannelController {
      */
     @PostMapping
     public ResponseEntity<ChannelDto.Response> createChannel(
-            @PathVariable Long serverId,
+            @PathVariable UUID serverId,
             @Valid @RequestBody ChannelDto.CreateRequest request) {
         ChannelDto.Response createdChannel = channelService.createChannel(serverId, request);
         return ResponseEntity.ok(createdChannel);
@@ -33,7 +34,7 @@ public class ChannelController {
      * 서버의 모든 채널 조회
      */
     @GetMapping
-    public ResponseEntity<List<ChannelDto.Response>> getServerChannels(@PathVariable Long serverId) {
+    public ResponseEntity<List<ChannelDto.Response>> getServerChannels(@PathVariable UUID serverId) {
         List<ChannelDto.Response> channels = channelService.getServerChannels(serverId);
         return ResponseEntity.ok(channels);
     }
@@ -43,8 +44,8 @@ public class ChannelController {
      */
     @GetMapping("/{channelId}")
     public ResponseEntity<ChannelDto.Response> getChannel(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId) {
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId) {
         ChannelDto.Response channel = channelService.getChannel(serverId, channelId);
         return ResponseEntity.ok(channel);
     }
@@ -54,8 +55,8 @@ public class ChannelController {
      */
     @PutMapping("/{channelId}")
     public ResponseEntity<ChannelDto.Response> updateChannel(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId,
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId,
             @Valid @RequestBody ChannelDto.UpdateRequest request) {
         ChannelDto.Response updatedChannel = channelService.updateChannel(serverId, channelId, request);
         return ResponseEntity.ok(updatedChannel);
@@ -66,8 +67,8 @@ public class ChannelController {
      */
     @DeleteMapping("/{channelId}")
     public ResponseEntity<Void> deleteChannel(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId) {
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId) {
         channelService.deleteChannel(serverId, channelId);
         return ResponseEntity.noContent().build();
     }
@@ -77,8 +78,8 @@ public class ChannelController {
      */
     @PostMapping("/{channelId}/join")
     public ResponseEntity<ChannelDto.Response> joinChannel(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId) {
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId) {
         ChannelDto.Response channel = channelService.joinChannel(serverId, channelId);
         return ResponseEntity.ok(channel);
     }
@@ -88,8 +89,8 @@ public class ChannelController {
      */
     @PostMapping("/{channelId}/leave")
     public ResponseEntity<Void> leaveChannel(
-            @PathVariable Long serverId,
-            @PathVariable Long channelId) {
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId) {
         channelService.leaveChannel(serverId, channelId);
         return ResponseEntity.noContent().build();
     }

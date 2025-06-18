@@ -68,7 +68,7 @@ public class ServerDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Response {
-        private Long id;
+        private UUID id;
         private String name;
         private String description;
         private boolean hasPassword;

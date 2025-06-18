@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/servers/{serverId}/roles")
@@ -25,7 +26,7 @@ public class ServerRoleController {
      * 서버의 모든 역할 조회
      */
     @GetMapping
-    public ResponseEntity<List<ServerRoleDto>> getAllRoles(@PathVariable Long serverId) {
+    public ResponseEntity<List<ServerRoleDto>> getAllRoles(@PathVariable UUID serverId) {
         List<ServerRoleDto> roles = serverRoleService.getAllRoles(serverId);
         return ResponseEntity.ok(roles);
     }
@@ -35,7 +36,7 @@ public class ServerRoleController {
      */
     @GetMapping("/page")
     public ResponseEntity<Page<ServerRoleDto>> getRolesByPage(
-            @PathVariable Long serverId,
+            @PathVariable UUID serverId,
             @PageableDefault(size = 20) Pageable pageable) {
         Page<ServerRoleDto> roles = serverRoleService.getRolesByPage(serverId, pageable);
         return ResponseEntity.ok(roles);
@@ -46,8 +47,8 @@ public class ServerRoleController {
      */
     @GetMapping("/{roleId}")
     public ResponseEntity<ServerRoleDto> getRole(
-            @PathVariable Long serverId,
-            @PathVariable Long roleId) {
+            @PathVariable UUID serverId,
+            @PathVariable UUID roleId) {
         ServerRoleDto role = serverRoleService.getRole(serverId, roleId);
         return ResponseEntity.ok(role);
     }
@@ -57,7 +58,7 @@ public class ServerRoleController {
      */
     @PostMapping
     public ResponseEntity<ServerRoleDto> createRole(
-            @PathVariable Long serverId,
+            @PathVariable UUID serverId,
             @Valid @RequestBody ServerRoleDto.CreateRequest request) {
         ServerRoleDto createdRole = serverRoleService.createRole(serverId, request);
         return ResponseEntity.ok(createdRole);
@@ -68,8 +69,8 @@ public class ServerRoleController {
      */
     @PutMapping("/{roleId}")
     public ResponseEntity<ServerRoleDto> updateRole(
-            @PathVariable Long serverId,
-            @PathVariable Long roleId,
+            @PathVariable UUID serverId,
+            @PathVariable UUID roleId,
             @Valid @RequestBody ServerRoleDto.UpdateRequest request) {
         ServerRoleDto updatedRole = serverRoleService.updateRole(serverId, roleId, request);
         return ResponseEntity.ok(updatedRole);
@@ -80,8 +81,8 @@ public class ServerRoleController {
      */
     @DeleteMapping("/{roleId}")
     public ResponseEntity<Void> deleteRole(
-            @PathVariable Long serverId,
-            @PathVariable Long roleId) {
+            @PathVariable UUID serverId,
+            @PathVariable UUID roleId) {
         serverRoleService.deleteRole(serverId, roleId);
         return ResponseEntity.noContent().build();
     }
@@ -90,7 +91,7 @@ public class ServerRoleController {
      * 관리자 역할 조회
      */
     @GetMapping("/admin")
-    public ResponseEntity<List<ServerRoleDto>> getAdminRoles(@PathVariable Long serverId) {
+    public ResponseEntity<List<ServerRoleDto>> getAdminRoles(@PathVariable UUID serverId) {
         List<ServerRoleDto> adminRoles = serverRoleService.getAdminRoles(serverId);
         return ResponseEntity.ok(adminRoles);
     }

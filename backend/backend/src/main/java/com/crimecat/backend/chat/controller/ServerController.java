@@ -36,7 +36,7 @@ public class ServerController {
      * 서버 정보 조회
      */
     @GetMapping("/{serverId}")
-    public ResponseEntity<ServerDto.Response> getServer(@PathVariable Long serverId) {
+    public ResponseEntity<ServerDto.Response> getServer(@PathVariable UUID serverId) {
         ServerDto.Response server = serverService.getServer(serverId);
         return ResponseEntity.ok(server);
     }
@@ -65,7 +65,7 @@ public class ServerController {
      */
     @PostMapping("/{serverId}/join")
     public ResponseEntity<ServerDto.Response> joinServer(
-            @PathVariable Long serverId,
+            @PathVariable UUID serverId,
             @Valid @RequestBody ServerDto.JoinRequest request) {
         ServerDto.Response server = serverService.joinServer(serverId, request);
         return ResponseEntity.ok(server);
@@ -75,7 +75,7 @@ public class ServerController {
      * 서버 탈퇴
      */
     @PostMapping("/{serverId}/leave")
-    public ResponseEntity<Void> leaveServer(@PathVariable Long serverId) {
+    public ResponseEntity<Void> leaveServer(@PathVariable UUID serverId) {
         serverService.leaveServer(serverId);
         return ResponseEntity.noContent().build();
     }
@@ -85,7 +85,7 @@ public class ServerController {
      */
     @PutMapping("/{serverId}")
     public ResponseEntity<ServerDto.Response> updateServer(
-            @PathVariable Long serverId,
+            @PathVariable UUID serverId,
             @Valid @RequestBody ServerDto.UpdateRequest request) {
         ServerDto.Response updatedServer = serverService.updateServer(serverId, request);
         return ResponseEntity.ok(updatedServer);
@@ -95,7 +95,7 @@ public class ServerController {
      * 서버 삭제 (소유자만 가능)
      */
     @DeleteMapping("/{serverId}")
-    public ResponseEntity<Void> deleteServer(@PathVariable Long serverId) {
+    public ResponseEntity<Void> deleteServer(@PathVariable UUID serverId) {
         serverService.deleteServer(serverId);
         return ResponseEntity.noContent().build();
     }
@@ -105,7 +105,7 @@ public class ServerController {
      */
     @DeleteMapping("/{serverId}/members/{userId}")
     public ResponseEntity<Void> kickMember(
-            @PathVariable Long serverId,
+            @PathVariable UUID serverId,
             @PathVariable UUID userId) {
         serverService.kickMember(serverId, userId);
         return ResponseEntity.noContent().build();

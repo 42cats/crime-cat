@@ -39,7 +39,7 @@ public class ServerMemberService {
      * 서버 멤버 목록 조회
      */
     @Transactional(readOnly = true)
-    public List<ServerMemberDto> getAllMembers(Long serverId) {
+    public List<ServerMemberDto> getAllMembers(UUID serverId) {
         validateServerExists(serverId);
         
         List<ServerMember> members = serverMemberRepository.findByServerIdAndIsActiveTrue(serverId);
@@ -52,7 +52,7 @@ public class ServerMemberService {
      * 서버 멤버를 페이징으로 조회
      */
     @Transactional(readOnly = true)
-    public Page<ServerMemberDto> getMembersByPage(Long serverId, Pageable pageable) {
+    public Page<ServerMemberDto> getMembersByPage(UUID serverId, Pageable pageable) {
         validateServerExists(serverId);
         
         Page<ServerMember> members = serverMemberRepository.findByServerIdAndIsActiveTrue(serverId, pageable);
@@ -63,7 +63,7 @@ public class ServerMemberService {
      * 특정 멤버 조회
      */
     @Transactional(readOnly = true)
-    public ServerMemberDto getMember(Long serverId, UUID userId) {
+    public ServerMemberDto getMember(UUID serverId, UUID userId) {
         validateServerExists(serverId);
         
         ServerMember member = serverMemberRepository.findByServerIdAndUserIdAndIsActiveTrue(serverId, userId)
@@ -75,7 +75,7 @@ public class ServerMemberService {
     /**
      * 멤버에게 역할 할당
      */
-    public ServerMemberDto assignRoles(Long serverId, UUID userId, ServerMemberDto.RoleAssignRequest request) {
+    public ServerMemberDto assignRoles(UUID serverId, UUID userId, ServerMemberDto.RoleAssignRequest request) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 권한 확인
@@ -106,7 +106,7 @@ public class ServerMemberService {
     /**
      * 멤버에서 특정 역할 제거
      */
-    public ServerMemberDto removeRole(Long serverId, UUID userId, Long roleId) {
+    public ServerMemberDto removeRole(UUID serverId, UUID userId, UUID roleId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 권한 확인
@@ -129,7 +129,7 @@ public class ServerMemberService {
     /**
      * 멤버 서버별 프로필 업데이트
      */
-    public ServerMemberDto updateMemberProfile(Long serverId, UUID userId, ServerMemberDto.ProfileUpdateRequest request) {
+    public ServerMemberDto updateMemberProfile(UUID serverId, UUID userId, ServerMemberDto.ProfileUpdateRequest request) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 본인이거나 관리자만 가능
@@ -155,7 +155,7 @@ public class ServerMemberService {
      * 서버 관리자 권한 확인
      */
     @Transactional(readOnly = true)
-    public boolean hasServerAdminPermission(Long serverId, UUID userId) {
+    public boolean hasServerAdminPermission(UUID serverId, UUID userId) {
         // 서버 소유자 확인
         ChatServer server = chatServerRepository.findById(serverId)
                 .filter(s -> s.getIsActive())
@@ -191,7 +191,7 @@ public class ServerMemberService {
      * 특정 역할을 가진 멤버 수 조회
      */
     @Transactional(readOnly = true)
-    public long countMembersWithRole(Long serverId, Long roleId) {
+    public long countMembersWithRole(UUID serverId, UUID roleId) {
         List<ServerMember> members = serverMemberRepository.findByServerIdAndIsActiveTrue(serverId);
         return members.stream()
                 .filter(member -> member.hasRole(roleId))
@@ -202,7 +202,7 @@ public class ServerMemberService {
      * 멤버의 권한 확인
      */
     @Transactional(readOnly = true)
-    public boolean hasPermission(Long serverId, UUID userId, String permission) {
+    public boolean hasPermission(UUID serverId, UUID userId, String permission) {
         ServerMember member = serverMemberRepository.findByServerIdAndUserIdAndIsActiveTrue(serverId, userId)
                 .orElse(null);
                 
@@ -228,7 +228,7 @@ public class ServerMemberService {
      * 멤버의 모든 권한 조회
      */
     @Transactional(readOnly = true)
-    public List<String> getMemberPermissions(Long serverId, UUID userId) {
+    public List<String> getMemberPermissions(UUID serverId, UUID userId) {
         ServerMember member = serverMemberRepository.findByServerIdAndUserIdAndIsActiveTrue(serverId, userId)
                 .orElse(null);
                 
@@ -263,19 +263,19 @@ public class ServerMemberService {
      * 서버 멤버십 확인
      */
     @Transactional(readOnly = true)
-    public boolean hasServerMembership(Long serverId, UUID userId) {
+    public boolean hasServerMembership(UUID serverId, UUID userId) {
         return serverMemberRepository.existsByServerIdAndUserIdAndIsActiveTrue(serverId, userId);
     }
 
     // === Private Helper Methods ===
 
-    private ChatServer validateServerExists(Long serverId) {
+    private ChatServer validateServerExists(UUID serverId) {
         return chatServerRepository.findById(serverId)
                 .filter(server -> server.getIsActive())
                 .orElseThrow(() -> ErrorStatus.SERVER_NOT_FOUND.asServiceException());
     }
 
-    private void validateServerAdminPermission(Long serverId, UUID userId) {
+    private void validateServerAdminPermission(UUID serverId, UUID userId) {
         if (!hasServerAdminPermission(serverId, userId)) {
             throw ErrorStatus.INSUFFICIENT_PERMISSION.asServiceException();
         }

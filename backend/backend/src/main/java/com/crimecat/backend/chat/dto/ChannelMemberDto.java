@@ -18,8 +18,8 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ChannelMemberDto {
 
-    private Long id;
-    private Long channelId;
+    private UUID id;
+    private UUID channelId;
     private String channelName;
     private UUID userId;
     private String username;
@@ -75,7 +75,7 @@ public class ChannelMemberDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Statistics {
-        private Long channelId;
+        private UUID channelId;
         private String channelName;
         private long totalMembers;
         private long activeMembersToday;

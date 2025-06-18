@@ -33,7 +33,7 @@ public class ServerRoleService {
      * 서버의 모든 역할 조회
      */
     @Transactional(readOnly = true)
-    public List<ServerRoleDto> getAllRoles(Long serverId) {
+    public List<ServerRoleDto> getAllRoles(UUID serverId) {
         validateServerExists(serverId);
         
         List<ServerRole> roles = serverRoleRepository.findByServerIdAndIsActiveTrueOrderByCreatedAt(serverId);
@@ -46,7 +46,7 @@ public class ServerRoleService {
      * 서버의 역할을 페이징으로 조회
      */
     @Transactional(readOnly = true)
-    public Page<ServerRoleDto> getRolesByPage(Long serverId, Pageable pageable) {
+    public Page<ServerRoleDto> getRolesByPage(UUID serverId, Pageable pageable) {
         validateServerExists(serverId);
         
         Page<ServerRole> roles = serverRoleRepository.findByServerIdAndIsActiveTrue(serverId, pageable);
@@ -56,7 +56,7 @@ public class ServerRoleService {
     /**
      * 역할 생성 (서버 관리자만 가능)
      */
-    public ServerRoleDto createRole(Long serverId, ServerRoleDto.CreateRequest request) {
+    public ServerRoleDto createRole(UUID serverId, ServerRoleDto.CreateRequest request) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 서버 존재 확인
@@ -92,7 +92,7 @@ public class ServerRoleService {
     /**
      * 역할 수정
      */
-    public ServerRoleDto updateRole(Long serverId, Long roleId, ServerRoleDto.UpdateRequest request) {
+    public ServerRoleDto updateRole(UUID serverId, UUID roleId, ServerRoleDto.UpdateRequest request) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 권한 확인
@@ -133,7 +133,7 @@ public class ServerRoleService {
     /**
      * 역할 삭제
      */
-    public void deleteRole(Long serverId, Long roleId) {
+    public void deleteRole(UUID serverId, UUID roleId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
         
         // 권한 확인
@@ -167,7 +167,7 @@ public class ServerRoleService {
      * 특정 역할 조회
      */
     @Transactional(readOnly = true)
-    public ServerRoleDto getRole(Long serverId, Long roleId) {
+    public ServerRoleDto getRole(UUID serverId, UUID roleId) {
         validateServerExists(serverId);
         
         ServerRole role = serverRoleRepository.findById(roleId)
@@ -181,7 +181,7 @@ public class ServerRoleService {
      * 역할 ID 목록으로 역할들 조회
      */
     @Transactional(readOnly = true)
-    public List<ServerRole> getRolesByIds(Long serverId, List<Long> roleIds) {
+    public List<ServerRole> getRolesByIds(UUID serverId, List<UUID> roleIds) {
         if (roleIds == null || roleIds.isEmpty()) {
             return List.of();
         }
@@ -192,7 +192,7 @@ public class ServerRoleService {
      * 관리자 역할 조회
      */
     @Transactional(readOnly = true)
-    public List<ServerRoleDto> getAdminRoles(Long serverId) {
+    public List<ServerRoleDto> getAdminRoles(UUID serverId) {
         validateServerExists(serverId);
         
         List<ServerRole> adminRoles = serverRoleRepository.findAdminRolesByServerId(serverId);
@@ -203,13 +203,13 @@ public class ServerRoleService {
 
     // === Private Helper Methods ===
 
-    private ChatServer validateServerExists(Long serverId) {
+    private ChatServer validateServerExists(UUID serverId) {
         return chatServerRepository.findById(serverId)
                 .filter(server -> server.getIsActive())
                 .orElseThrow(() -> ErrorStatus.SERVER_NOT_FOUND.asServiceException());
     }
 
-    private void validateServerAdminPermission(Long serverId, UUID userId) {
+    private void validateServerAdminPermission(UUID serverId, UUID userId) {
         if (!serverMemberService.hasServerAdminPermission(serverId, userId)) {
             throw ErrorStatus.INSUFFICIENT_PERMISSION.asServiceException();
         }

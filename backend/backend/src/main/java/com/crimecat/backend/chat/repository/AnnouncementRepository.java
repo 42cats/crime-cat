@@ -8,9 +8,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface AnnouncementRepository extends JpaRepository<Announcement, Long> {
+public interface AnnouncementRepository extends JpaRepository<Announcement, UUID> {
 
     /**
      * 활성 상태의 공지사항만 조회

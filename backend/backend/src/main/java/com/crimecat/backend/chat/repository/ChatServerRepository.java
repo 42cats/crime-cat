@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface ChatServerRepository extends JpaRepository<ChatServer, Long> {
+public interface ChatServerRepository extends JpaRepository<ChatServer, UUID> {
 
     // 활성 서버 조회
     List<ChatServer> findByIsActiveTrue();
@@ -43,7 +43,7 @@ public interface ChatServerRepository extends JpaRepository<ChatServer, Long> {
 
     // 서버 통계 조회
     @Query("SELECT s FROM ChatServer s LEFT JOIN FETCH s.members m WHERE s.id = :serverId AND s.isActive = true")
-    Optional<ChatServer> findByIdWithMembers(@Param("serverId") Long serverId);
+    Optional<ChatServer> findByIdWithMembers(@Param("serverId") UUID serverId);
 
     // 사용자가 참여한 서버 조회
     @Query("SELECT DISTINCT s FROM ChatServer s JOIN s.members m WHERE m.userId = :userId AND m.isActive = true AND s.isActive = true")

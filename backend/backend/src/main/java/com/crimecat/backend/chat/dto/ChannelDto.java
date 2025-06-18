@@ -49,8 +49,8 @@ public class ChannelDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Response {
-        private Long id;
-        private Long serverId;
+        private UUID id;
+        private UUID serverId;
         private String name;
         private String description;
         private String type;
