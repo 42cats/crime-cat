@@ -49,7 +49,8 @@ public class ServerMemberController {
     public ResponseEntity<ServerMemberDto> getMember(
             @PathVariable UUID serverId,
             @PathVariable UUID userId) {
-        ServerMemberDto member = serverMemberService.getMember(serverId, userId);
+        // Signal Server API 호출용 - 인증 확인 없이 멤버십만 확인
+        ServerMemberDto member = serverMemberService.getMemberForSignalServer(serverId, userId);
         return ResponseEntity.ok(member);
     }
 

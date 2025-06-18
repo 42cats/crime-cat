@@ -83,10 +83,14 @@ public class ChannelMemberService {
         // 서버 멤버인지 확인
         validateServerMembership(serverId, currentUserId);
         
-        // 이미 채널 멤버인지 확인
+        // 이미 채널 멤버인지 확인 - Signal Server에서는 재입장 허용
         boolean isAlreadyMember = channelMemberRepository.existsByChannelIdAndUserIdAndIsActiveTrue(channelId, currentUserId);
         if (isAlreadyMember) {
-            throw ErrorStatus.CHANNEL_ALREADY_MEMBER.asServiceException();
+            // 이미 멤버인 경우 기존 데이터 반환
+            ChannelMember existingMember = channelMemberRepository.findByChannelIdAndUserIdAndIsActiveTrue(channelId, currentUserId)
+                    .orElseThrow(() -> ErrorStatus.MEMBER_NOT_FOUND.asServiceException());
+            log.info("User {} is already a member of channel: {} in server: {}", currentUserId, channelId, serverId);
+            return convertToDto(existingMember);
         }
         
         // 최대 멤버 수 확인

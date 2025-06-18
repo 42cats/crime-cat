@@ -80,10 +80,12 @@ public class ServerService {
         // 이미 멤버인지 확인
         boolean isAlreadyMember = serverMemberRepository.existsByServerIdAndUserIdAndIsActiveTrue(serverId, currentUserId);
         if (isAlreadyMember) {
-            throw ErrorStatus.SERVER_ALREADY_MEMBER.asServiceException();
+            // 이미 멤버인 경우, 서버 정보를 정상적으로 반환
+            log.info("User {} is already a member of server: {}", currentUserId, serverId);
+            return ServerDto.from(server);
         }
 
-        // 비밀번호 검증
+        // 비밀번호 검증 (새로 가입하는 경우에만)
         if (server.getPasswordHash() != null) {
             if (request.getPassword() == null || 
                 !passwordEncoder.matches(request.getPassword(), server.getPasswordHash())) {

@@ -292,4 +292,25 @@ public class ServerMemberService {
 
         return ServerMemberDto.from(member, defaultUsername, defaultAvatarUrl);
     }
+
+    /**
+     * 사용자가 서버 멤버인지 확인
+     */
+    @Transactional(readOnly = true)
+    public boolean isServerMember(UUID serverId, UUID userId) {
+        return serverMemberRepository.existsByServerIdAndUserIdAndIsActiveTrue(serverId, userId);
+    }
+
+    /**
+     * Signal Server용 멤버 조회 (인증 없이)
+     */
+    @Transactional(readOnly = true)
+    public ServerMemberDto getMemberForSignalServer(UUID serverId, UUID userId) {
+        validateServerExists(serverId);
+        
+        ServerMember member = serverMemberRepository.findByServerIdAndUserIdAndIsActiveTrue(serverId, userId)
+                .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+                
+        return convertToDto(member);
+    }
 }

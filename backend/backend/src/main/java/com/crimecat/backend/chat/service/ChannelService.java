@@ -90,7 +90,15 @@ public class ChannelService {
      */
     @Transactional(readOnly = true)
     public ChannelDto.Response getChannel(UUID serverId, UUID channelId) {
+        UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
+        
+        // 서버 존재 확인
         validateServerExists(serverId);
+        
+        // 서버 멤버십 확인
+        if (!serverMemberService.isServerMember(serverId, currentUserId)) {
+            throw ErrorStatus.SERVER_NOT_MEMBER.asServiceException();
+        }
         
         ServerChannel channel = serverChannelRepository.findById(channelId)
                 .filter(c -> c.getServer().getId().equals(serverId) && c.getIsActive())
