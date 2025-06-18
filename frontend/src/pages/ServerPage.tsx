@@ -43,10 +43,15 @@ export const ServerPage: React.FC<ServerPageProps> = () => {
         setError(null);
 
         // WebSocket 연결 확인
+        console.log('🔌 Checking WebSocket connection...');
+        console.log('Initial connection state:', isConnected);
+        
         if (!isConnected) {
+          console.log('⏳ Waiting for WebSocket connection...');
           // WebSocket 연결 대기
-          await new Promise((resolve) => {
+          const connected = await new Promise((resolve) => {
             const interval = setInterval(() => {
+              console.log('🔄 Connection check:', isConnected);
               if (isConnected) {
                 clearInterval(interval);
                 resolve(true);
@@ -55,15 +60,18 @@ export const ServerPage: React.FC<ServerPageProps> = () => {
             
             // 10초 타임아웃
             setTimeout(() => {
+              console.log('⏰ WebSocket connection timeout');
               clearInterval(interval);
               resolve(false);
             }, 10000);
           });
+          
+          if (!connected) {
+            throw new Error('Signal Server 연결에 실패했습니다. Docker 컨테이너가 실행 중인지 확인해주세요.');
+          }
         }
 
-        if (!isConnected) {
-          throw new Error('서버 연결에 실패했습니다.');
-        }
+        console.log('✅ WebSocket connected, proceeding with server join');
 
         // 서버 정보가 없으면 로드
         if (!serverInfo) {
@@ -102,23 +110,29 @@ export const ServerPage: React.FC<ServerPageProps> = () => {
 
   const attemptServerJoin = async (serverId: number, password?: string) => {
     try {
+      console.log('🎯 Attempting to join server:', serverId);
+      
       // 이전 서버에서 나가기
       if (currentServer && currentServer !== serverId) {
+        console.log('👋 Leaving previous server:', currentServer);
         leaveServer(currentServer);
       }
 
       // 새 서버 접속
+      console.log('🚀 Joining server:', serverId);
       await joinServer(serverId);
       setCurrentServer(serverId);
       
       // 기본 채널로 이동 (예: ID 1)
+      console.log('📱 Setting current channel');
       setCurrentChannel({ serverId, channelId: 1 });
       
       setShowPasswordModal(false);
       setError(null);
+      console.log('✅ Server join completed successfully');
       
     } catch (error) {
-      console.error('서버 접속 실패:', error);
+      console.error('❌ Server join failed:', error);
       throw error;
     }
   };

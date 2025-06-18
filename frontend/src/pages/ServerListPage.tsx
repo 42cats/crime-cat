@@ -207,7 +207,9 @@ interface ServerCardProps {
 }
 
 const ServerCard: React.FC<ServerCardProps> = ({ server, onConnect }) => {
-  const membershipRate = (server.memberCount / server.maxMembers) * 100;
+  const memberCount = server.memberCount || 0;
+  const maxMembers = server.maxMembers || 100;
+  const membershipRate = maxMembers > 0 ? (memberCount / maxMembers) * 100 : 0;
 
   return (
     <div className="bg-gray-800 rounded-lg border border-gray-700 hover:border-gray-600 transition-all hover:shadow-lg">
@@ -233,7 +235,7 @@ const ServerCard: React.FC<ServerCardProps> = ({ server, onConnect }) => {
                 <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
                 </svg>
-                {server.memberCount.toLocaleString()} / {server.maxMembers.toLocaleString()} 멤버
+                {memberCount.toLocaleString()} / {maxMembers.toLocaleString()} 멤버
               </div>
             </div>
           </div>
@@ -265,10 +267,10 @@ const ServerCard: React.FC<ServerCardProps> = ({ server, onConnect }) => {
         {/* 접속 버튼 */}
         <button
           onClick={onConnect}
-          disabled={server.memberCount >= server.maxMembers}
+          disabled={memberCount >= maxMembers}
           className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
         >
-          {server.memberCount >= server.maxMembers ? (
+          {memberCount >= maxMembers ? (
             <>
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />

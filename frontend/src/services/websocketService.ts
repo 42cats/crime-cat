@@ -1,4 +1,6 @@
+console.log('📥 Importing socket.io-client...');
 import { io, Socket } from 'socket.io-client';
+console.log('✅ socket.io-client imported successfully', { io, Socket });
 
 export interface ServerInfo {
   id: number;
@@ -73,39 +75,83 @@ class WebSocketService {
   private eventListeners: { [event: string]: ((...args: unknown[]) => void)[] } = {};
 
   constructor() {
+    console.log('🏗️ WebSocketService constructor called');
     this.initializeConnection();
   }
 
   private initializeConnection() {
     const token = this.getAuthToken();
+    const signalServerUrl = import.meta.env.VITE_SIGNAL_SERVER_URL || 'http://localhost:4000';
+    
+    console.log('🔌 Initializing WebSocket connection...');
+    console.log('Signal Server URL:', signalServerUrl);
+    console.log('Auth token available:', !!token);
+    console.log('Environment variables:', {
+      VITE_SIGNAL_SERVER_URL: import.meta.env.VITE_SIGNAL_SERVER_URL,
+      NODE_ENV: import.meta.env.NODE_ENV,
+      MODE: import.meta.env.MODE
+    });
+    
     if (!token) {
-      console.warn('No auth token found, WebSocket connection not established');
-      return;
+      console.warn('⚠️ No auth token found, attempting connection without authentication');
+      // 토큰이 없어도 연결 시도 (Signal Server에서 처리)
     }
 
-    this.socket = io(process.env.REACT_APP_SIGNAL_SERVER_URL || 'http://localhost:3001', {
+    this.socket = io(signalServerUrl, {
       auth: {
-        token
+        token: token || 'development-mode'  // 개발 모드용 임시 토큰
       },
       transports: ['websocket', 'polling'],
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      timeout: 10000,
+      forceNew: true,
+      query: {
+        development: 'true'  // 개발 모드 플래그
+      }
     });
+    
+    // 연결 시도 즉시 로깅
+    console.log('📡 Socket.IO instance created');
+    console.log('Socket connected:', this.socket.connected);
+    console.log('Socket disconnected:', this.socket.disconnected);
 
     this.setupEventHandlers();
   }
 
   private getAuthToken(): string | null {
-    // 쿠키에서 토큰 추출
+    console.log('🔑 Searching for auth token...');
+    console.log('🍪 All cookies:', document.cookie);
+    
+    // 쿠키에서 토큰 추출 (여러 가능한 토큰 이름 시도)
     const cookies = document.cookie.split(';');
+    const possibleTokenNames = ['Authorization', 'RefreshToken', 'accessToken', 'access_token', 'jwt', 'token', 'authToken'];
+    
+    console.log('🍪 Parsed cookies:', cookies.map(c => c.trim().split('=')));
+    
     for (const cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
-      if (name === 'accessToken') {
+      console.log(`🔍 Checking cookie: ${name} = ${value ? '[PRESENT]' : '[EMPTY]'}`);
+      if (possibleTokenNames.includes(name)) {
+        console.log('✅ Found auth token in cookies:', name, value ? 'present' : 'empty');
         return value;
       }
     }
+    
+    // localStorage에서도 확인
+    console.log('🗃️ Checking localStorage...');
+    for (const tokenName of possibleTokenNames) {
+      const token = localStorage.getItem(tokenName);
+      if (token) {
+        console.log('✅ Found auth token in localStorage:', tokenName);
+        return token;
+      }
+    }
+    
+    console.warn('⚠️ No auth token found in cookies or localStorage');
+    console.log('🔍 Available localStorage keys:', Object.keys(localStorage));
     return null;
   }
 
@@ -114,7 +160,8 @@ class WebSocketService {
 
     // 연결 상태 관리
     this.socket.on('connect', () => {
-      console.log('✅ WebSocket connected');
+      console.log('✅ WebSocket connected to Signal Server');
+      console.log('Socket ID:', this.socket?.id);
       this.connectionState.isConnected = true;
       this.emit('connection:status', { connected: true });
     });
@@ -130,7 +177,36 @@ class WebSocketService {
 
     this.socket.on('connect_error', (error) => {
       console.error('❌ WebSocket connection error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        description: error.description,
+        context: error.context,
+        type: error.type
+      });
       this.emit('connection:error', error);
+    });
+
+    // 추가 디버깅 이벤트들
+    this.socket.on('reconnect', (attemptNumber) => {
+      console.log('🔄 WebSocket reconnected after', attemptNumber, 'attempts');
+    });
+
+    this.socket.on('reconnect_attempt', (attemptNumber) => {
+      console.log('🔄 WebSocket reconnection attempt:', attemptNumber);
+    });
+
+    this.socket.on('reconnect_error', (error) => {
+      console.error('❌ WebSocket reconnection error:', error);
+    });
+
+    this.socket.on('reconnect_failed', () => {
+      console.error('❌ WebSocket reconnection failed');
+    });
+
+    // 서버 연결 실패 이벤트 추가
+    this.socket.on('server:join:error', (error) => {
+      console.error('❌ Server join error:', error);
+      this.emit('server:join:error', error);
     });
 
     // 서버 관련 이벤트
@@ -248,12 +324,20 @@ class WebSocketService {
 
   // 서버 관련 메서드
   joinServer(serverId: number) {
-    if (!this.socket?.connected) {
-      throw new Error('WebSocket not connected');
+    if (!this.socket) {
+      throw new Error('WebSocket not initialized');
     }
     
-    console.log('🚀 Joining server:', serverId);
+    if (!this.socket.connected) {
+      throw new Error('WebSocket not connected to Signal Server');
+    }
+    
+    console.log('🚀 Attempting to join server:', serverId);
+    console.log('Socket connected:', this.socket.connected);
+    console.log('Socket ID:', this.socket.id);
+    
     this.socket.emit('server:join', { serverId });
+    console.log('📤 Server join request sent');
   }
 
   leaveServer(serverId: number) {
@@ -421,5 +505,6 @@ class WebSocketService {
 }
 
 // 싱글톤 인스턴스
+console.log('📦 Creating WebSocketService singleton instance...');
 export const websocketService = new WebSocketService();
 export default websocketService;

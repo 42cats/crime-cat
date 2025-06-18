@@ -11,6 +11,11 @@ export interface UseWebSocketReturn {
 }
 
 export const useWebSocket = (): UseWebSocketReturn => {
+  console.log('🪝 useWebSocket hook initialized');
+  console.log('🔍 WebSocket service instance:', websocketService);
+  console.log('🔍 WebSocket service type:', typeof websocketService);
+  console.log('🔍 WebSocket service methods:', Object.getOwnPropertyNames(websocketService));
+  
   const { setConnected } = useAppStore();
   const connectionStateRef = useRef<ConnectionState>({ isConnected: false, serverRoles: [] });
 
@@ -35,11 +40,13 @@ export const useWebSocket = (): UseWebSocketReturn => {
 
   // Setup event listeners
   useEffect(() => {
+    console.log('🔗 Setting up WebSocket event listeners');
     websocketService.on('connection:status', handleConnectionStatus);
     websocketService.on('connection:error', handleConnectionError);
 
     // Initial connection state
     const initialState = websocketService.getConnectionState();
+    console.log('📊 Initial WebSocket state:', initialState);
     connectionStateRef.current = initialState;
     setConnected(initialState.isConnected);
 

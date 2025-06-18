@@ -38,21 +38,84 @@ const authenticateSocket = async (socket, next) => {
   try {
     const token = socket.handshake.auth.token || 
                  socket.handshake.headers.cookie?.split(';')
-                   .find(c => c.trim().startsWith('accessToken='))
+                   .find(c => c.trim().startsWith('Authorization='))
                    ?.split('=')[1];
 
     if (!token) {
       return next(new Error('Authentication error: No token provided'));
     }
 
-    // JWT 검증
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // JWT 검증 (Spring Boot와 동일한 환경변수 및 알고리즘 사용)
+    const jwtSecret = process.env.SPRING_SECRET_KEY || process.env.JWT_SECRET;
+    console.log('🔑 JWT Secret available:', !!jwtSecret);
+    console.log('🔑 Using SPRING_SECRET_KEY:', !!process.env.SPRING_SECRET_KEY);
+    console.log('🔑 Using JWT_SECRET:', !!process.env.JWT_SECRET);
+    
+    // DEBUG: Secret 값 비교 (첫 10자리와 마지막 10자리만 로깅)
+    console.log('🔍 Secret preview:', jwtSecret ? 
+      `${jwtSecret.substring(0, 10)}...${jwtSecret.substring(jwtSecret.length - 10)}` : 'null');
+    console.log('🔍 Secret length:', jwtSecret ? jwtSecret.length : 0);
+    
+    if (!jwtSecret) {
+      return next(new Error('Authentication error: JWT secret not configured'));
+    }
+    
+    // 토큰 헤더 분석 (서명 검증 없이)
+    const decodedHeader = jwt.decode(token, {complete: true});
+    console.log('📋 Token header:', decodedHeader?.header);
+    console.log('🔐 Token algorithm:', decodedHeader?.header?.alg);
+    console.log('🔍 Token preview:', token ? 
+      `${token.substring(0, 20)}...${token.substring(token.length - 20)}` : 'null');
+    
+    // Spring Boot와 동일한 방식으로 JWT 검증 (Base64 디코딩 우선)
+    let decoded = null;
+    
+    try {
+      // 방법 1: Base64 디코딩으로 검증 (Spring Boot와 동일)
+      console.log('🔍 시도 1: Base64 디코딩으로 검증 (Spring Boot 방식)');
+      const base64Secret = Buffer.from(jwtSecret, 'base64');
+      decoded = jwt.verify(token, base64Secret, { algorithms: ['HS256'] });
+      console.log('✅ Base64 디코딩 검증 성공 - Spring Boot와 일치');
+    } catch (error1) {
+      console.log('❌ Base64 디코딩 검증 실패:', error1.message);
+      
+      try {
+        // 방법 2: 기본 문자열로 검증 (백업)
+        console.log('🔍 시도 2: 기본 문자열로 검증');
+        decoded = jwt.verify(token, jwtSecret, { algorithms: ['HS256'] });
+        console.log('✅ 기본 문자열 검증 성공');
+      } catch (error2) {
+        console.log('❌ 기본 문자열 검증 실패:', error2.message);
+        
+        try {
+          // 방법 3: Buffer로 변환하여 검증
+          console.log('🔍 시도 3: Buffer 변환으로 검증');
+          const bufferSecret = Buffer.from(jwtSecret, 'utf8');
+          decoded = jwt.verify(token, bufferSecret, { algorithms: ['HS256'] });
+          console.log('✅ Buffer 변환 검증 성공');
+        } catch (error3) {
+          console.log('❌ Buffer 변환 검증 실패:', error3.message);
+          throw new Error('Authentication error: All JWT verification methods failed');
+        }
+      }
+    }
+    
+    if (!decoded) {
+      throw new Error('Authentication error: JWT verification failed - no decoded token');
+    }
+    
+    console.log('✅ JWT 검증 성공, decoded token:', {
+      sub: decoded.sub,
+      nickname: decoded.nickname,
+      iat: decoded.iat,
+      exp: decoded.exp
+    });
     
     // 백엔드 API로 사용자 정보 검증
     try {
       const response = await axios.get(`${process.env.BACKEND_URL}/api/v1/auth/me`, {
         headers: {
-          'Cookie': `accessToken=${token}`,
+          'Cookie': `Authorization=${token}`,
           'Authorization': `Bearer ${token}`
         }
       });
