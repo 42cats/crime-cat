@@ -112,6 +112,7 @@ const authenticateSocket = async (socket, next) => {
     });
     
     // 백엔드 API로 사용자 정보 검증
+    
     try {
       const response = await axios.get(`${process.env.BACKEND_URL}/api/v1/auth/me`, {
         headers: {
@@ -191,6 +192,7 @@ const handleChatEvents = (socket) => {
   socket.on('channel:join', async (data) => {
     try {
       const { serverId, channelId } = data;
+      
       
       // 채널 멤버십 확인 또는 자동 입장
       try {
