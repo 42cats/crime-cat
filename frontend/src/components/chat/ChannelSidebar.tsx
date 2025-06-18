@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { useServerChannel } from '../../hooks/useServerChannel';
 import { ChannelInfo } from '../../services/websocketService';
+import websocketService from '../../services/websocketService';
 
 interface ChannelSidebarProps {
   className?: string;
@@ -24,19 +25,29 @@ export const ChannelSidebar: React.FC<ChannelSidebarProps> = ({ className = '' }
   const currentServerInfo = servers.find(s => s.id === currentServer);
   const serverChannels = currentServer ? channels[currentServer] || [] : [];
 
-  const handleChannelClick = (channelId: number) => {
+  const handleChannelClick = (channelId: string) => {
     if (!currentServer) return;
     
     if (currentChannel?.channelId === channelId) return;
 
-    // 이전 채널에서 나가기
-    if (currentChannel) {
-      leaveChannel(currentChannel.serverId, currentChannel.channelId);
-    }
+    console.log('🎯 Clicking channel:', channelId, 'in server:', currentServer);
+    console.log('🔌 WebSocket connected:', websocketService.isConnected());
 
-    // 새 채널에 입장
-    joinChannel(currentServer, channelId);
-    setCurrentChannel({ serverId: currentServer, channelId });
+    try {
+      // 이전 채널에서 나가기
+      if (currentChannel) {
+        console.log('👋 Leaving previous channel:', currentChannel.channelId);
+        leaveChannel(currentChannel.serverId, currentChannel.channelId);
+      }
+
+      // 새 채널에 입장
+      console.log('🚀 Joining new channel:', channelId);
+      joinChannel(currentServer, channelId);
+      setCurrentChannel({ serverId: currentServer, channelId });
+      console.log('✅ Channel join request sent');
+    } catch (error) {
+      console.error('❌ Failed to join channel:', error);
+    }
   };
 
   // 서버가 변경되면 채널 목록 로드
@@ -148,8 +159,8 @@ export const ChannelSidebar: React.FC<ChannelSidebarProps> = ({ className = '' }
 interface ChannelSectionProps {
   title: string;
   channels: ChannelInfo[];
-  currentChannelId?: number;
-  onChannelClick: (channelId: number) => void;
+  currentChannelId?: string;
+  onChannelClick: (channelId: string) => void;
   icon: React.ReactNode;
 }
 
@@ -256,8 +267,8 @@ const ChannelItem: React.FC<ChannelItemProps> = ({ channel, isActive, onClick })
         )}
 
         {/* 설정 버튼 */}
-        <button
-          className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white ml-1"
+        <div
+          className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white ml-1 cursor-pointer"
           onClick={(e) => {
             e.stopPropagation();
             // TODO: 채널 설정 모달 열기
@@ -266,7 +277,7 @@ const ChannelItem: React.FC<ChannelItemProps> = ({ channel, isActive, onClick })
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
           </svg>
-        </button>
+        </div>
       </button>
 
       {/* 툴팁 */}
@@ -337,7 +348,7 @@ const UserInfoBar: React.FC = () => {
 };
 
 interface CreateChannelModalProps {
-  serverId: number;
+  serverId: string;
   onClose: () => void;
   onChannelCreated: (channel: ChannelInfo) => void;
 }
@@ -359,20 +370,26 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
 
     setIsLoading(true);
     try {
-      // TODO: API 호출로 채널 생성
-      const newChannel: ChannelInfo = {
-        id: Date.now(), // 임시 ID
-        serverId,
+      console.log('🚀 Creating channel via API...');
+      const serverApiService = (await import('../../services/serverApi')).default;
+      
+      const newChannel = await serverApiService.createChannel(serverId, {
         name: channelName,
         description: channelDescription || undefined,
         type: channelType,
-        memberCount: 0,
-        maxMembers
-      };
+        maxMembers: maxMembers
+      });
+      
+      console.log('✅ Channel created successfully:', newChannel);
       
       onChannelCreated(newChannel);
-    } catch (error) {
-      console.error('채널 생성 실패:', error);
+    } catch (error: any) {
+      console.error('❌ 채널 생성 실패:', error);
+      if (error.response?.data?.message) {
+        alert(`채널 생성 실패: ${error.response.data.message}`);
+      } else {
+        alert('채널 생성에 실패했습니다. 권한을 확인해주세요.');
+      }
     } finally {
       setIsLoading(false);
     }

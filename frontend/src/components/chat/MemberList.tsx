@@ -56,8 +56,8 @@ export const MemberList: React.FC<MemberListProps> = ({ className = '' }) => {
         // API 응답을 Member 인터페이스에 맞게 변환
         const formattedMembers: Member[] = membersData.map((member: any) => ({
           id: member.userId || member.id,
-          username: member.username || member.user?.username || 'Unknown',
-          displayName: member.displayName || member.nickname || member.username,
+          username: member.effectiveDisplayName || member.username || member.user?.username || 'Unknown User',
+          displayName: member.effectiveDisplayName || member.displayName || member.nickname,
           status: 'online', // TODO: 실제 온라인 상태 구현
           roles: member.roles || [],
           joinedAt: new Date(member.joinedAt || member.createdAt),

@@ -47,8 +47,8 @@ export interface ServerInfo {
 }
 
 export interface ChannelInfo {
-  id: number;
-  serverId: number;
+  id: string;
+  serverId: string;
   name: string;
   description?: string;
   type: 'TEXT' | 'VOICE' | 'BOTH';
@@ -92,10 +92,10 @@ interface AppState {
   isConnected: boolean;
   
   // Server-Channel State
-  currentServer?: number;
-  currentChannel?: { serverId: number; channelId: number };
+  currentServer?: string;
+  currentChannel?: { serverId: string; channelId: string };
   servers: ServerInfo[];
-  channels: { [serverId: number]: ChannelInfo[] };
+  channels: { [serverId: string]: ChannelInfo[] };
   serverRoles: ServerRole[];
   
   // Chat State
@@ -107,7 +107,7 @@ interface AppState {
   isVoiceConnected: boolean;
   localMuted: boolean;
   voiceEffect: 'none' | 'robot' | 'echo' | 'pitch';
-  currentVoiceChannel?: { serverId: number; channelId: number };
+  currentVoiceChannel?: { serverId: string; channelId: string };
   
   // Admin State
   votes: Vote[];
@@ -118,20 +118,20 @@ interface AppState {
   setConnected: (connected: boolean) => void;
   
   // Server-Channel Actions
-  setCurrentServer: (serverId?: number) => void;
-  setCurrentChannel: (channel?: { serverId: number; channelId: number }) => void;
+  setCurrentServer: (serverId?: string) => void;
+  setCurrentChannel: (channel?: { serverId: string; channelId: string }) => void;
   setServers: (servers: ServerInfo[]) => void;
   addServer: (server: ServerInfo) => void;
-  setChannels: (serverId: number, channels: ChannelInfo[]) => void;
-  addChannel: (serverId: number, channel: ChannelInfo) => void;
+  setChannels: (serverId: string, channels: ChannelInfo[]) => void;
+  addChannel: (serverId: string, channel: ChannelInfo) => void;
   setServerRoles: (roles: ServerRole[]) => void;
   
   // Chat Actions
   addMessage: (message: ChatMessage) => void;
   setMessages: (messages: ChatMessage[]) => void;
-  addMessageToChannel: (serverId: number, channelId: number, message: ChatMessage) => void;
-  setChannelMessages: (serverId: number, channelId: number, messages: ChatMessage[]) => void;
-  getChannelMessages: (serverId: number, channelId: number) => ChatMessage[];
+  addMessageToChannel: (serverId: string, channelId: string, message: ChatMessage) => void;
+  setChannelMessages: (serverId: string, channelId: string, messages: ChatMessage[]) => void;
+  getChannelMessages: (serverId: string, channelId: string) => ChatMessage[];
   
   // Voice Actions
   setVoiceUsers: (users: VoiceUser[]) => void;
@@ -141,7 +141,7 @@ interface AppState {
   setVoiceConnected: (connected: boolean) => void;
   setLocalMuted: (muted: boolean) => void;
   setVoiceEffect: (effect: 'none' | 'robot' | 'echo' | 'pitch') => void;
-  setCurrentVoiceChannel: (channel?: { serverId: number; channelId: number }) => void;
+  setCurrentVoiceChannel: (channel?: { serverId: string; channelId: string }) => void;
   
   // Admin Actions
   addVote: (vote: Vote) => void;

@@ -99,7 +99,7 @@ class WebSocketService {
 
     this.socket = io(signalServerUrl, {
       auth: {
-        token: token || 'development-mode'  // 개발 모드용 임시 토큰
+        token: token
       },
       transports: ['websocket', 'polling'],
       autoConnect: true,
@@ -108,9 +108,6 @@ class WebSocketService {
       reconnectionDelay: 1000,
       timeout: 10000,
       forceNew: true,
-      query: {
-        development: 'true'  // 개발 모드 플래그
-      }
     });
     
     // 연결 시도 즉시 로깅
@@ -507,4 +504,36 @@ class WebSocketService {
 // 싱글톤 인스턴스
 console.log('📦 Creating WebSocketService singleton instance...');
 export const websocketService = new WebSocketService();
+
+// 개발 모드에서 전역으로 노출 (디버깅용)
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+  (window as any).websocketService = websocketService;
+  
+  // 테스트 도우미 함수들
+  (window as any).testChat = {
+    join: (serverId = 'test-server', channelId = 'test-channel') => {
+      console.log('🧪 Test: Joining server and channel...');
+      websocketService.joinServer(serverId);
+      websocketService.joinChannel(serverId, channelId);
+    },
+    send: (message = 'Hello from console!', serverId = 'test-server', channelId = 'test-channel') => {
+      console.log('🧪 Test: Sending message...');
+      websocketService.sendMessage(serverId, channelId, message);
+    },
+    status: () => {
+      console.log('🧪 Test: WebSocket status:', {
+        connected: websocketService.isConnected(),
+        state: websocketService.getConnectionState()
+      });
+    }
+  };
+  
+  console.log('🌐 WebSocketService is available globally as window.websocketService');
+  console.log('🧪 Test helpers available as window.testChat');
+  console.log('Usage:');
+  console.log('  testChat.status() - Check connection status');
+  console.log('  testChat.join() - Join test server and channel');
+  console.log('  testChat.send("Hello") - Send test message');
+}
+
 export default websocketService;

@@ -19,7 +19,7 @@ export const ServerPage: React.FC<ServerPageProps> = () => {
     setCurrentChannel
   } = useAppStore();
   
-  const { joinServer, leaveServer } = useServerChannel();
+  const { joinServer, leaveServer, joinChannel } = useServerChannel();
   const { isConnected } = useWebSocket();
   
   const [isLoading, setIsLoading] = useState(true);
@@ -135,21 +135,32 @@ export const ServerPage: React.FC<ServerPageProps> = () => {
       await joinServer(serverId);
       setCurrentServer(serverId);
       
-      // 기본 채널로 이동 - 실제 API에서 기본 채널 조회
+      // 기본 채널로 이동 - 실제 API에서 기본 채널 조회 후 WebSocket으로 채널 가입
       console.log('📱 Getting default channel from API...');
       try {
         const channels = await serverApiService.getServerChannels(serverId);
         if (channels && channels.length > 0) {
           const defaultChannel = channels[0]; // 첫 번째 채널을 기본으로 사용
+          
+          // 먼저 스토어에 채널 설정
           setCurrentChannel({ serverId, channelId: defaultChannel.id });
-          console.log('✅ Default channel set:', defaultChannel.name, `(ID: ${defaultChannel.id})`);
+          
+          // WebSocket으로 채널 가입
+          console.log('🚀 Joining channel via WebSocket:', defaultChannel.name, `(ID: ${defaultChannel.id})`);
+          joinChannel(serverId, defaultChannel.id);
+          
+          console.log('✅ Default channel set and joined:', defaultChannel.name, `(ID: ${defaultChannel.id})`);
         } else {
           console.warn('⚠️ No channels found for server');
-          setCurrentChannel({ serverId, channelId: '00000000-0000-4000-8000-000000000001' }); // 백업 UUID
+          const fallbackChannelId = '00000000-0000-4000-8000-000000000001';
+          setCurrentChannel({ serverId, channelId: fallbackChannelId });
+          joinChannel(serverId, fallbackChannelId);
         }
       } catch (error) {
         console.warn('⚠️ Failed to get channels, using fallback');
-        setCurrentChannel({ serverId, channelId: '00000000-0000-4000-8000-000000000001' }); // 백업 UUID
+        const fallbackChannelId = '00000000-0000-4000-8000-000000000001';
+        setCurrentChannel({ serverId, channelId: fallbackChannelId });
+        joinChannel(serverId, fallbackChannelId);
       }
       
       setShowPasswordModal(false);
