@@ -21,15 +21,25 @@ export interface ServerListResponse {
   number: number;
 }
 
+export interface ChannelInfo {
+  id: number;
+  name: string;
+  description?: string;
+  type: 'TEXT' | 'VOICE' | 'BOTH';
+  memberCount: number;
+  maxMembers: number;
+  serverId: number;
+}
+
+export interface CreateChannelRequest {
+  name: string;
+  description?: string;
+  type: 'TEXT' | 'VOICE' | 'BOTH';
+  maxMembers?: number;
+}
+
 export interface ServerDetailResponse extends ServerInfo {
-  channels?: {
-    id: number;
-    name: string;
-    description?: string;
-    type: 'TEXT' | 'VOICE' | 'BOTH';
-    memberCount: number;
-    maxMembers: number;
-  }[];
+  channels?: ChannelInfo[];
 }
 
 class ServerApiService {
@@ -77,6 +87,23 @@ class ServerApiService {
   // 서버 검색
   async searchServers(query: string, page = 0, size = 20): Promise<ServerListResponse> {
     return this.getPublicServers(page, size, query);
+  }
+
+  // 서버 채널 목록 조회
+  async getServerChannels(serverId: number): Promise<ChannelInfo[]> {
+    return apiClient.get<ChannelInfo[]>(`/servers/${serverId}/channels`);
+  }
+
+  // 채널 생성
+  async createChannel(serverId: number, channelData: CreateChannelRequest): Promise<ChannelInfo> {
+    return apiClient.post<ChannelInfo>(`/servers/${serverId}/channels`, channelData);
+  }
+
+  // 서버의 기본 채널 조회
+  async getDefaultChannel(serverId: number): Promise<ChannelInfo> {
+    const channels = await this.getServerChannels(serverId);
+    // 첫 번째 채널을 기본 채널로 사용하거나, TEXT 타입 중 첫 번째
+    return channels.find(c => c.type === 'TEXT') || channels[0];
   }
 }
 

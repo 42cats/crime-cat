@@ -123,9 +123,17 @@ export const ServerPage: React.FC<ServerPageProps> = () => {
       await joinServer(serverId);
       setCurrentServer(serverId);
       
-      // 기본 채널로 이동 (예: ID 1)
-      console.log('📱 Setting current channel');
-      setCurrentChannel({ serverId, channelId: 1 });
+      // 기본 채널로 이동 - 실제 API에서 기본 채널 조회
+      console.log('📱 Getting default channel from API...');
+      try {
+        const { serverApiService } = await import('@/services/serverApi');
+        const defaultChannel = await serverApiService.getDefaultChannel(serverId);
+        setCurrentChannel({ serverId, channelId: defaultChannel.id });
+        console.log('✅ Default channel set:', defaultChannel.name, `(ID: ${defaultChannel.id})`);
+      } catch (error) {
+        console.warn('⚠️ Failed to get default channel, using fallback');
+        setCurrentChannel({ serverId, channelId: 1 }); // 백업으로 ID 1 사용
+      }
       
       setShowPasswordModal(false);
       setError(null);

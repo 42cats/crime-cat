@@ -115,16 +115,20 @@ const authenticateSocket = async (socket, next) => {
     try {
       const response = await axios.get(`${process.env.BACKEND_URL}/api/v1/auth/me`, {
         headers: {
-          'Cookie': `Authorization=${token}`,
-          'Authorization': `Bearer ${token}`
+          'Cookie': `Authorization=${token}`
         }
       });
       
       socket.user = {
         id: decoded.sub || decoded.userId,
-        username: response.data.username || response.data.name,
+        username: response.data.nickname || response.data.username || response.data.name,
+        nickname: response.data.nickname,
+        snowflake: response.data.snowflake,
         ...response.data
       };
+      
+      // 토큰을 socket에 저장하여 이후 API 호출에서 사용
+      socket.authToken = token;
       
       next();
     } catch (error) {
@@ -149,7 +153,9 @@ const handleChatEvents = (socket) => {
       const membershipResponse = await axios.get(
         `${process.env.BACKEND_URL}/api/v1/servers/${serverId}/members/${socket.user.id}`,
         {
-          headers: { 'Authorization': `Bearer ${socket.handshake.auth.token}` }
+          headers: { 
+            'Cookie': `Authorization=${socket.authToken}`
+          }
         }
       );
       
@@ -192,7 +198,9 @@ const handleChatEvents = (socket) => {
           `${process.env.BACKEND_URL}/api/v1/servers/${serverId}/channels/${channelId}/members/join`,
           {},
           {
-            headers: { 'Authorization': `Bearer ${socket.handshake.auth.token}` }
+            headers: { 
+            'Cookie': `Authorization=${socket.authToken}`
+          }
           }
         );
       } catch (joinError) {
@@ -365,7 +373,9 @@ const handleVoiceEvents = (socket) => {
       const channelResponse = await axios.get(
         `${process.env.BACKEND_URL}/api/v1/servers/${serverId}/channels/${channelId}`,
         {
-          headers: { 'Authorization': `Bearer ${socket.handshake.auth.token}` }
+          headers: { 
+            'Cookie': `Authorization=${socket.authToken}`
+          }
         }
       );
       
@@ -388,7 +398,9 @@ const handleVoiceEvents = (socket) => {
           `${process.env.BACKEND_URL}/api/v1/voice/sessions/start`,
           { serverId, channelId, userId: socket.user.id, username: socket.user.username },
           {
-            headers: { 'Authorization': `Bearer ${socket.handshake.auth.token}` }
+            headers: { 
+            'Cookie': `Authorization=${socket.authToken}`
+          }
           }
         );
       } catch (logError) {
@@ -431,7 +443,9 @@ const handleVoiceEvents = (socket) => {
             `${process.env.BACKEND_URL}/api/v1/voice/sessions/end`,
             { serverId, channelId, userId: socket.user.id },
             {
-              headers: { 'Authorization': `Bearer ${socket.handshake.auth.token}` }
+              headers: { 
+            'Cookie': `Authorization=${socket.authToken}`
+          }
             }
           );
         } catch (logError) {
@@ -629,7 +643,9 @@ io.on('connection', (socket) => {
           `${process.env.BACKEND_URL}/api/v1/voice/sessions/end`,
           { serverId, channelId, userId: socket.user.id },
           {
-            headers: { 'Authorization': `Bearer ${socket.handshake.auth.token}` }
+            headers: { 
+            'Cookie': `Authorization=${socket.authToken}`
+          }
           }
         );
       } catch (error) {
