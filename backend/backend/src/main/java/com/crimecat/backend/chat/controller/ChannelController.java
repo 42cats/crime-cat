@@ -58,7 +58,8 @@ public class ChannelController {
             @PathVariable UUID channelId,
             HttpServletRequest request) {
         signalServerAuthUtil.logSignalServerRequest(request, "GET_CHANNEL");
-        ChannelDto.Response channel = channelService.getChannel(serverId, channelId);
+        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(request);
+        ChannelDto.Response channel = channelService.getChannel(serverId, channelId, currentUser);
         return ResponseEntity.ok(channel);
     }
 

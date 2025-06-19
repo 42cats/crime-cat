@@ -144,7 +144,7 @@ public class ChatMessageDto {
         private String lastMessageContent;
         private String lastMessageUsername;
         private LocalDateTime lastMessageTime;
-        private UUID unreadCount;
+        private Long unreadCount;           // ✅ UUID → Long 타입으로 수정
         private ChatMessage.MessageType lastMessageType;
     }
 
@@ -155,9 +155,9 @@ public class ChatMessageDto {
     public static class ServerActivity {
         private UUID serverId;
         private String serverName;
-        private UUID totalMessages;
-        private UUID todayMessages;
-        private UUID activeChannels;
+        private Long totalMessages;         // ✅ UUID → Long 타입으로 수정
+        private Long todayMessages;         // ✅ UUID → Long 타입으로 수정
+        private Long activeChannels;        // ✅ UUID → Long 타입으로 수정
         private LocalDateTime lastActivity;
     }
 
@@ -168,9 +168,9 @@ public class ChatMessageDto {
     public static class UserMessageStats {
         private UUID userId;
         private String username;
-        private UUID messageCount;
+        private Long messageCount;          // ✅ UUID → Long 타입으로 수정
         private LocalDateTime lastMessageTime;
-        private UUID serverMessageCount;
+        private Long serverMessageCount;    // ✅ UUID → Long 타입으로 수정
     }
 
     // === Batch Message Processing DTOs ===

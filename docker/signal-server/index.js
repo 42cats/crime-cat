@@ -382,6 +382,31 @@ const handleVoiceEvents = (socket) => {
     try {
       const { serverId, channelId } = data;
 
+      // 먼저 채널 입장을 시도 (자동 멤버십 생성)
+      try {
+        await axios.post(
+          `${process.env.BACKEND_URL}/api/v1/signal/servers/${serverId}/channels/${channelId}/join`,
+          {
+            userId: socket.user.id,
+            username: socket.user.username
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${process.env.SIGNAL_SERVER_SECRET_TOKEN}`,
+              'X-User-ID': socket.user.id,
+              'X-User-Token': socket.authToken,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      } catch (joinError) {
+        // 이미 멤버인 경우 무시 (409 Conflict)
+        if (joinError.response?.status !== 409) {
+          console.error('Voice channel join failed:', joinError.message);
+          throw joinError;
+        }
+      }
+
       // 채널이 음성 지원하는지 확인
       const channelResponse = await axios.get(
         `${process.env.BACKEND_URL}/api/v1/signal/servers/${serverId}/channels/${channelId}`,

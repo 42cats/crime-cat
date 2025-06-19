@@ -105,24 +105,46 @@ public class ChannelService {
     }
 
     /**
-     * 특정 채널 조회
+     * 특정 채널 조회 (웹 클라이언트용)
      */
     @Transactional(readOnly = true)
     public ChannelDto.Response getChannel(UUID serverId, UUID channelId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
+        return getChannel(serverId, channelId, currentUserId);
+    }
+    
+    /**
+     * 특정 채널 조회 (Signal Server용)
+     */
+    @Transactional(readOnly = true)
+    public ChannelDto.Response getChannel(UUID serverId, UUID channelId, WebUser currentUser) {
+        return getChannel(serverId, channelId, currentUser.getId());
+    }
+    
+    /**
+     * 특정 채널 조회 (내부 구현)
+     */
+    @Transactional(readOnly = true)
+    private ChannelDto.Response getChannel(UUID serverId, UUID channelId, UUID webUserId) {
+        // WebUser ID -> User ID 매핑
+        UUID actualUserId = mapWebUserToUserId(webUserId);
+        log.info("🔍 Channel get: WebUser {} mapped to User {} for server {}", 
+                webUserId, actualUserId, serverId);
         
         // 서버 존재 확인
         validateServerExists(serverId);
         
-        // 서버 멤버십 확인
-        if (!serverMemberService.isServerMember(serverId, currentUserId)) {
+        // 서버 멤버십 확인 (User ID로)
+        if (!serverMemberService.hasServerMembership(serverId, actualUserId)) {
+            log.error("❌ User {} is not a member of server {}", actualUserId, serverId);
             throw ErrorStatus.SERVER_NOT_MEMBER.asServiceException();
         }
         
         ServerChannel channel = serverChannelRepository.findById(channelId)
                 .filter(c -> c.getServer().getId().equals(serverId) && c.getIsActive())
-                .orElseThrow(() -> ErrorStatus.CHANNEL_NOT_FOUND.asServiceException());
+                .orElseThrow(ErrorStatus.CHANNEL_NOT_FOUND::asServiceException);
 
+        log.info("✅ Channel {} found for user {} in server {}", channelId, actualUserId, serverId);
         return ChannelDto.from(channel);
     }
 

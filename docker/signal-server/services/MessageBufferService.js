@@ -171,8 +171,8 @@ class MessageBufferService {
       
       // 배치 저장을 위한 DTO 형태로 변환 (서버-채널 정보 포함)
       const batchData = messages.map(msg => ({
-        serverId: parseInt(serverId),
-        channelId: parseInt(channelId),
+        serverId: serverId,           // ✅ UUID 문자열 그대로 전송
+        channelId: channelId,         // ✅ UUID 문자열 그대로 전송
         userId: msg.userId,
         username: msg.username,
         content: msg.content,
@@ -185,7 +185,7 @@ class MessageBufferService {
       const userId = firstMessage.userId;
       const userToken = firstMessage.userToken || '';
       
-      const response = await axios.post(`${backendUrl}/api/v1/signal/servers/${serverId}/channels/${channelId}/messages/batch`, {
+      const response = await axios.post(`${backendUrl}/api/v1/signal/servers/${serverId}/channels/${channelId}/batch`, {
         messages: batchData
       }, {
         headers: {
