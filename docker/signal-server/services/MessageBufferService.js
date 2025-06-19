@@ -180,12 +180,19 @@ class MessageBufferService {
         timestamp: msg.timestamp
       }));
 
-      const response = await axios.post(`${backendUrl}/api/v1/servers/${serverId}/channels/${channelId}/messages/batch`, {
+      // Signal Server API 사용 (첫 번째 메시지의 사용자 정보로 인증)
+      const firstMessage = messages[0];
+      const userId = firstMessage.userId;
+      const userToken = firstMessage.userToken || '';
+      
+      const response = await axios.post(`${backendUrl}/api/v1/signal/servers/${serverId}/channels/${channelId}/messages/batch`, {
         messages: batchData
       }, {
         headers: {
+          'Authorization': `Bearer ${process.env.SIGNAL_SERVER_SECRET_TOKEN}`,
+          'X-User-ID': userId,
+          'X-User-Token': userToken,
           'Content-Type': 'application/json',
-          'X-Service-Name': 'signal-server',
           'X-Batch-Size': messages.length.toString(),
           'X-Server-Id': serverId,
           'X-Channel-Id': channelId

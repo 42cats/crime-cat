@@ -271,6 +271,7 @@ const handleChatEvents = (socket) => {
         content,
         messageType,
         timestamp: new Date(),
+        userToken: socket.authToken, // Signal Server API 인증용
         // 서버별 프로필 오버라이드 (역할 기반)
         serverProfile: {
           roles: socket.serverRoles,

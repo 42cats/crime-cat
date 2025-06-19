@@ -216,10 +216,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   addMessageToChannel: (serverId, channelId, message) => 
     set((state) => {
       const channelKey = `${serverId}:${channelId}`;
+      const existingMessages = state.messagesByChannel[channelKey] || [];
+      
+      // 중복 메시지 검사 (ID 기반)
+      const messageExists = existingMessages.some(existingMessage => existingMessage.id === message.id);
+      
+      if (messageExists) {
+        console.log('🚫 Duplicate message detected, skipping:', message.id);
+        return state; // 상태 변경 없이 기존 상태 반환
+      }
+      
+      console.log('✅ Adding new message to channel:', message.id);
       return {
         messagesByChannel: {
           ...state.messagesByChannel,
-          [channelKey]: [...(state.messagesByChannel[channelKey] || []), message]
+          [channelKey]: [...existingMessages, message]
         }
       };
     }),
