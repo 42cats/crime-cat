@@ -485,15 +485,13 @@ const handleVoiceEvents = (socket) => {
         currentUsers 
       });
 
-      // 기존 사용자들과 WebRTC 연결 시작
-      for (const existingUser of currentUsers) {
-        socket.to(existingUser.id).emit('voice:new-peer', {
-          userId: socket.user.id,
-          username: socket.user.username,
-          serverId,
-          channelId
-        });
-      }
+      // 기존 사용자들에게 새 피어 알림 (WebRTC 연결 시작용)
+      socket.to(voiceRoom).emit('voice:new-peer', {
+        peerId: socket.user.id,
+        username: socket.user.username,
+        serverId,
+        channelId
+      });
 
       console.log(`${socket.user.username} joined voice in channel: ${serverId}/${channelId}`);
 

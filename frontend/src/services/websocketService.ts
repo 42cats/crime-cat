@@ -261,6 +261,25 @@ class WebSocketService {
         serverId: data.serverId,
         channelId: data.channelId
       };
+      
+      // 기존 참가자 목록 처리
+      if (data.currentUsers && data.currentUsers.length > 0) {
+        console.log('📋 Current voice users:', data.currentUsers);
+        // 각 기존 사용자를 store에 추가
+        data.currentUsers.forEach((user: VoiceUser) => {
+          this.emit('voice:member:joined', user);
+        });
+        
+        // 각 기존 사용자와 WebRTC 연결 시작을 위해 이벤트 발생
+        data.currentUsers.forEach((user: VoiceUser) => {
+          // VoiceArea 컴포넌트에서 처리하도록 이벤트 발생
+          this.emit('voice:init-connection', {
+            targetUserId: user.id || user.userId,
+            username: user.username
+          });
+        });
+      }
+      
       this.emit('voice:joined', data);
     });
 

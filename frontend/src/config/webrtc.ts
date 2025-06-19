@@ -1,51 +1,65 @@
-// WebRTC configuration
-export const webrtcConfig = {
+// WebRTC Configuration
+
+export const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
-    // Google's public STUN servers
+    // Public STUN servers
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
     { urls: 'stun:stun3.l.google.com:19302' },
     { urls: 'stun:stun4.l.google.com:19302' },
     
-    // Alternative STUN servers
-    { urls: 'stun:stun.services.mozilla.com' },
+    // Additional STUN servers for better connectivity
+    { urls: 'stun:stun.cloudflare.com:3478' },
     { urls: 'stun:stun.stunprotocol.org:3478' },
     
-    // TURN server configuration (if available)
-    // Uncomment and configure if you have a TURN server
+    // TURN server (if available) - uncomment and configure as needed
     // {
-    //   urls: 'turn:your-turn-server.com:3478',
-    //   username: 'username',
+    //   urls: 'turn:localhost:3478',
+    //   username: 'user',
     //   credential: 'password'
     // }
   ],
-  
-  // Optional configuration for better performance
   iceCandidatePoolSize: 10,
-  
-  // Audio constraints
-  audioConstraints: {
+};
+
+// Audio constraints for voice chat
+export const AUDIO_CONSTRAINTS: MediaStreamConstraints = {
+  audio: {
     echoCancellation: true,
     noiseSuppression: true,
     autoGainControl: true,
     sampleRate: 48000,
-    channelCount: 2
+  },
+  video: false
+};
+
+// For backward compatibility
+export function getAudioConstraints(): MediaStreamConstraints {
+  return AUDIO_CONSTRAINTS;
+}
+
+export function getRTCConfiguration(): RTCConfiguration {
+  return ICE_SERVERS;
+}
+
+// Helper function to create a new RTCPeerConnection
+export function createPeerConnection(): RTCPeerConnection {
+  const pc = new RTCPeerConnection(ICE_SERVERS);
+  
+  // Enable audio transceivers
+  pc.addTransceiver('audio', { direction: 'sendrecv' });
+  
+  return pc;
+}
+
+// Helper function to get user media
+export async function getUserMedia(): Promise<MediaStream> {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
+    return stream;
+  } catch (error) {
+    console.error('Failed to get user media:', error);
+    throw error;
   }
-};
-
-// Get RTCPeerConnection configuration
-export const getRTCConfiguration = (): RTCConfiguration => {
-  return {
-    iceServers: webrtcConfig.iceServers,
-    iceCandidatePoolSize: webrtcConfig.iceCandidatePoolSize
-  };
-};
-
-// Get audio constraints
-export const getAudioConstraints = (): MediaStreamConstraints => {
-  return {
-    audio: webrtcConfig.audioConstraints,
-    video: false
-  };
-};
+}
