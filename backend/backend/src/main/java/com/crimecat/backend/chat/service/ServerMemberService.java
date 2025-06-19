@@ -340,15 +340,39 @@ public class ServerMemberService {
     }
 
     /**
-     * Signal Server용 멤버 조회 (인증 없이)
+     * Signal Server용 멤버 조회 (인증 없이) - WebUser ID를 User ID로 매핑
      */
     @Transactional(readOnly = true)
-    public ServerMemberDto getMemberForSignalServer(UUID serverId, UUID userId) {
+    public ServerMemberDto getMemberForSignalServer(UUID serverId, UUID webUserId) {
         validateServerExists(serverId);
         
-        ServerMember member = serverMemberRepository.findByServerIdAndUserIdAndIsActiveTrue(serverId, userId)
-                .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+        // WebUser -> User ID 매핑
+        UUID actualUserId = mapWebUserToUserId(webUserId);
+        log.info("🔄 Signal Server request: WebUser {} mapped to User {} for server {}", 
+                webUserId, actualUserId, serverId);
+        
+        ServerMember member = serverMemberRepository.findByServerIdAndUserIdAndIsActiveTrue(serverId, actualUserId)
+                .orElseThrow(() -> {
+                    log.error("❌ Server member not found for User ID: {} in server: {}", actualUserId, serverId);
+                    return ErrorStatus.USER_NOT_FOUND.asServiceException();
+                });
                 
         return convertToDto(member);
+    }
+    
+    /**
+     * WebUser ID를 User ID로 매핑합니다
+     */
+    private UUID mapWebUserToUserId(UUID webUserId) {
+        // WebUser 엔티티에서 User 참조를 통해 User ID 가져오기
+        return userRepository.findByWebUserId(webUserId)
+                .map(user -> {
+                    log.debug("🔄 Mapped WebUser {} to User {}", webUserId, user.getId());
+                    return user.getId();
+                })
+                .orElseThrow(() -> {
+                    log.error("❌ User not found for WebUser ID: {}", webUserId);
+                    return ErrorStatus.USER_NOT_FOUND.asServiceException();
+                });
     }
 }

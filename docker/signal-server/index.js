@@ -201,7 +201,7 @@ const handleChatEvents = (socket) => {
       // 채널 멤버십 확인 또는 자동 입장
       try {
         await axios.post(
-          `${process.env.BACKEND_URL}/api/v1/signal/servers/${serverId}/channels/${channelId}/members/join`,
+          `${process.env.BACKEND_URL}/api/v1/signal/servers/${serverId}/channels/${channelId}/join`,
           {
             userId: socket.user.id,
             username: socket.user.username
