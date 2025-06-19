@@ -101,7 +101,7 @@ public class ChannelController {
             HttpServletRequest request) {
         signalServerAuthUtil.logSignalServerRequest(request, "JOIN_CHANNEL");
         WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(request);
-        ChannelDto.Response channel = channelService.joinChannel(serverId, channelId);
+        ChannelDto.Response channel = channelService.joinChannel(serverId, channelId, currentUser);
         return ResponseEntity.ok(channel);
     }
 

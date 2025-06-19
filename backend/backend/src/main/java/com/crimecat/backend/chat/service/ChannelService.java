@@ -8,8 +8,10 @@ import com.crimecat.backend.chat.repository.ChannelMemberRepository;
 import com.crimecat.backend.chat.repository.ChatServerRepository;
 import com.crimecat.backend.chat.repository.ServerChannelRepository;
 import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.user.repository.UserRepository;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.repository.WebUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,8 @@ public class ChannelService {
     private final ChannelMemberRepository channelMemberRepository;
     private final ChatServerRepository chatServerRepository;
     private final ServerMemberService serverMemberService;
+    private final WebUserRepository webUserRepository;
+    private final UserRepository userRepository;
 
     /**
      * 채널 생성 (웹 클라이언트용)
@@ -192,13 +196,32 @@ public class ChannelService {
     }
 
     /**
-     * 채널 입장
+     * 채널 입장 (웹 클라이언트용)
      */
     public ChannelDto.Response joinChannel(UUID serverId, UUID channelId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
+        return joinChannel(serverId, channelId, currentUserId);
+    }
+    
+    /**
+     * 채널 입장 (Signal Server용)
+     */
+    public ChannelDto.Response joinChannel(UUID serverId, UUID channelId, WebUser currentUser) {
+        return joinChannel(serverId, channelId, currentUser.getId());
+    }
+    
+    /**
+     * 채널 입장 (내부 구현)
+     */
+    private ChannelDto.Response joinChannel(UUID serverId, UUID channelId, UUID webUserId) {
+        // WebUser ID -> User ID 매핑
+        UUID actualUserId = mapWebUserToUserId(webUserId);
+        log.info("🔄 Channel join: WebUser {} mapped to User {} for server {}", 
+                webUserId, actualUserId, serverId);
         
-        // 서버 멤버 확인
-        if (!serverMemberService.hasServerMembership(serverId, currentUserId)) {
+        // 서버 멤버 확인 (User ID로)
+        if (!serverMemberService.hasServerMembership(serverId, actualUserId)) {
+            log.error("❌ User {} is not a member of server {}", actualUserId, serverId);
             throw ErrorStatus.SERVER_NOT_MEMBER.asServiceException();
         }
         
@@ -207,22 +230,23 @@ public class ChannelService {
                 .filter(c -> c.getServer().getId().equals(serverId) && c.getIsActive())
                 .orElseThrow(() -> ErrorStatus.CHANNEL_NOT_FOUND.asServiceException());
 
-        // 이미 채널 멤버인지 확인
-        boolean isAlreadyMember = channelMemberRepository.existsByChannelIdAndUserIdAndIsActiveTrue(channelId, currentUserId);
+        // 이미 채널 멤버인지 확인 (User ID로)
+        boolean isAlreadyMember = channelMemberRepository.existsByChannelIdAndUserIdAndIsActiveTrue(channelId, actualUserId);
         if (isAlreadyMember) {
+            log.warn("User {} is already a member of channel {}", actualUserId, channelId);
             throw ErrorStatus.CHANNEL_ALREADY_MEMBER.asServiceException();
         }
 
-        // 채널 멤버 추가
+        // 채널 멤버 추가 (User ID로)
         ChannelMember member = ChannelMember.builder()
                 .channel(channel)
-                .userId(currentUserId)
+                .userId(actualUserId)
                 .role(ChannelMember.ChannelRole.MEMBER)
                 .build();
         
         channelMemberRepository.save(member);
 
-        log.info("User {} joined channel: {} in server: {}", currentUserId, channelId, serverId);
+        log.info("User {} (WebUser {}) joined channel: {} in server: {}", actualUserId, webUserId, channelId, serverId);
 
         return ChannelDto.from(channel);
     }
@@ -256,5 +280,20 @@ public class ChannelService {
         if (!serverMemberService.hasServerAdminPermission(serverId, userId)) {
             throw ErrorStatus.INSUFFICIENT_PERMISSION.asServiceException();
         }
+    }
+    
+    /**
+     * WebUser ID를 User ID로 매핑합니다
+     */
+    private UUID mapWebUserToUserId(UUID webUserId) {
+        return userRepository.findByWebUserId(webUserId)
+                .map(user -> {
+                    log.debug("🔄 Mapped WebUser {} to User {}", webUserId, user.getId());
+                    return user.getId();
+                })
+                .orElseThrow(() -> {
+                    log.error("❌ User not found for WebUser ID: {}", webUserId);
+                    return ErrorStatus.USER_NOT_FOUND.asServiceException();
+                });
     }
 }
