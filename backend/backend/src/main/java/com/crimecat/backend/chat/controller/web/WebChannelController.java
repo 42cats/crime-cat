@@ -1,27 +1,23 @@
-package com.crimecat.backend.chat.controller;
+package com.crimecat.backend.chat.controller.web;
 
 import com.crimecat.backend.chat.dto.ChannelDto;
 import com.crimecat.backend.chat.service.ChannelService;
-import com.crimecat.backend.utils.SignalServerAuthUtil;
-import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/signal/servers/{serverId}/channels")
+@RequestMapping("/api/v1/servers/{serverId}/channels")
 @RequiredArgsConstructor
 @Slf4j
-public class ChannelController {
+public class WebChannelController {
 
     private final ChannelService channelService;
-    private final SignalServerAuthUtil signalServerAuthUtil;
 
     /**
      * 채널 생성 (서버 관리자만 가능)
@@ -29,11 +25,8 @@ public class ChannelController {
     @PostMapping
     public ResponseEntity<ChannelDto.Response> createChannel(
             @PathVariable UUID serverId,
-            @Valid @RequestBody ChannelDto.CreateRequest request,
-            HttpServletRequest httpRequest) {
-        signalServerAuthUtil.logSignalServerRequest(httpRequest, "CREATE_CHANNEL");
-        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(httpRequest);
-        ChannelDto.Response createdChannel = channelService.createChannel(serverId, request, currentUser);
+            @Valid @RequestBody ChannelDto.CreateRequest request) {
+        ChannelDto.Response createdChannel = channelService.createChannel(serverId, request);
         return ResponseEntity.ok(createdChannel);
     }
 
@@ -41,10 +34,7 @@ public class ChannelController {
      * 서버의 모든 채널 조회
      */
     @GetMapping
-    public ResponseEntity<List<ChannelDto.Response>> getServerChannels(
-            @PathVariable UUID serverId,
-            HttpServletRequest request) {
-        signalServerAuthUtil.logSignalServerRequest(request, "GET_SERVER_CHANNELS");
+    public ResponseEntity<List<ChannelDto.Response>> getServerChannels(@PathVariable UUID serverId) {
         List<ChannelDto.Response> channels = channelService.getServerChannels(serverId);
         return ResponseEntity.ok(channels);
     }
@@ -55,9 +45,7 @@ public class ChannelController {
     @GetMapping("/{channelId}")
     public ResponseEntity<ChannelDto.Response> getChannel(
             @PathVariable UUID serverId,
-            @PathVariable UUID channelId,
-            HttpServletRequest request) {
-        signalServerAuthUtil.logSignalServerRequest(request, "GET_CHANNEL");
+            @PathVariable UUID channelId) {
         ChannelDto.Response channel = channelService.getChannel(serverId, channelId);
         return ResponseEntity.ok(channel);
     }
@@ -69,10 +57,7 @@ public class ChannelController {
     public ResponseEntity<ChannelDto.Response> updateChannel(
             @PathVariable UUID serverId,
             @PathVariable UUID channelId,
-            @Valid @RequestBody ChannelDto.UpdateRequest request,
-            HttpServletRequest httpRequest) {
-        signalServerAuthUtil.logSignalServerRequest(httpRequest, "UPDATE_CHANNEL");
-        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(httpRequest);
+            @Valid @RequestBody ChannelDto.UpdateRequest request) {
         ChannelDto.Response updatedChannel = channelService.updateChannel(serverId, channelId, request);
         return ResponseEntity.ok(updatedChannel);
     }
@@ -83,10 +68,7 @@ public class ChannelController {
     @DeleteMapping("/{channelId}")
     public ResponseEntity<Void> deleteChannel(
             @PathVariable UUID serverId,
-            @PathVariable UUID channelId,
-            HttpServletRequest request) {
-        signalServerAuthUtil.logSignalServerRequest(request, "DELETE_CHANNEL");
-        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(request);
+            @PathVariable UUID channelId) {
         channelService.deleteChannel(serverId, channelId);
         return ResponseEntity.noContent().build();
     }
@@ -97,10 +79,7 @@ public class ChannelController {
     @PostMapping("/{channelId}/join")
     public ResponseEntity<ChannelDto.Response> joinChannel(
             @PathVariable UUID serverId,
-            @PathVariable UUID channelId,
-            HttpServletRequest request) {
-        signalServerAuthUtil.logSignalServerRequest(request, "JOIN_CHANNEL");
-        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(request);
+            @PathVariable UUID channelId) {
         ChannelDto.Response channel = channelService.joinChannel(serverId, channelId);
         return ResponseEntity.ok(channel);
     }
@@ -111,10 +90,7 @@ public class ChannelController {
     @PostMapping("/{channelId}/leave")
     public ResponseEntity<Void> leaveChannel(
             @PathVariable UUID serverId,
-            @PathVariable UUID channelId,
-            HttpServletRequest request) {
-        signalServerAuthUtil.logSignalServerRequest(request, "LEAVE_CHANNEL");
-        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(request);
+            @PathVariable UUID channelId) {
         channelService.leaveChannel(serverId, channelId);
         return ResponseEntity.noContent().build();
     }

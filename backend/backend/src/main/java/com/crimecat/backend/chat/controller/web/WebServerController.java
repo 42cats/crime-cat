@@ -1,7 +1,10 @@
-package com.crimecat.backend.chat.controller;
+package com.crimecat.backend.chat.controller.web;
 
 import com.crimecat.backend.chat.dto.ServerDto;
 import com.crimecat.backend.chat.service.ServerService;
+import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -10,15 +13,11 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
-import java.util.List;
-import java.util.UUID;
-
 @RestController
 @RequestMapping("/api/v1/servers")
 @RequiredArgsConstructor
 @Slf4j
-public class ServerController {
+public class WebServerController {
 
     private final ServerService serverService;
 

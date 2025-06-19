@@ -7,22 +7,21 @@ import com.crimecat.backend.chat.dto.ServerMemberDto;
 import com.crimecat.backend.chat.repository.ChatServerRepository;
 import com.crimecat.backend.chat.repository.ServerMemberRepository;
 import com.crimecat.backend.chat.repository.ServerRoleRepository;
-import com.crimecat.backend.exception.CrimeCatException;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.repository.UserRepository;
 import com.crimecat.backend.utils.AuthenticationUtil;
+import com.crimecat.backend.webUser.domain.WebUser;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -73,11 +72,24 @@ public class ServerMemberService {
     }
 
     /**
-     * 멤버에게 역할 할당
+     * 멤버에게 역할 할당 (웹 클라이언트용)
      */
     public ServerMemberDto assignRoles(UUID serverId, UUID userId, ServerMemberDto.RoleAssignRequest request) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
-        
+        return assignRoles(serverId, userId, request, currentUserId);
+    }
+    
+    /**
+     * 멤버에게 역할 할당 (Signal Server용)
+     */
+    public ServerMemberDto assignRoles(UUID serverId, UUID userId, ServerMemberDto.RoleAssignRequest request, WebUser currentUser) {
+        return assignRoles(serverId, userId, request, currentUser.getId());
+    }
+    
+    /**
+     * 멤버에게 역할 할당 (내부 구현)
+     */
+    private ServerMemberDto assignRoles(UUID serverId, UUID userId, ServerMemberDto.RoleAssignRequest request, UUID currentUserId) {
         // 권한 확인
         validateServerAdminPermission(serverId, currentUserId);
         
@@ -104,11 +116,24 @@ public class ServerMemberService {
     }
 
     /**
-     * 멤버에서 특정 역할 제거
+     * 멤버에서 특정 역할 제거 (웹 클라이언트용)
      */
     public ServerMemberDto removeRole(UUID serverId, UUID userId, UUID roleId) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
-        
+        return removeRole(serverId, userId, roleId, currentUserId);
+    }
+    
+    /**
+     * 멤버에서 특정 역할 제거 (Signal Server용)
+     */
+    public ServerMemberDto removeRole(UUID serverId, UUID userId, UUID roleId, WebUser currentUser) {
+        return removeRole(serverId, userId, roleId, currentUser.getId());
+    }
+    
+    /**
+     * 멤버에서 특정 역할 제거 (내부 구현)
+     */
+    private ServerMemberDto removeRole(UUID serverId, UUID userId, UUID roleId, UUID currentUserId) {
         // 권한 확인
         validateServerAdminPermission(serverId, currentUserId);
         
@@ -127,11 +152,24 @@ public class ServerMemberService {
     }
 
     /**
-     * 멤버 서버별 프로필 업데이트
+     * 멤버 서버별 프로필 업데이트 (웹 클라이언트용)
      */
     public ServerMemberDto updateMemberProfile(UUID serverId, UUID userId, ServerMemberDto.ProfileUpdateRequest request) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
-        
+        return updateMemberProfile(serverId, userId, request, currentUserId);
+    }
+    
+    /**
+     * 멤버 서버별 프로필 업데이트 (Signal Server용)
+     */
+    public ServerMemberDto updateMemberProfile(UUID serverId, UUID userId, ServerMemberDto.ProfileUpdateRequest request, WebUser currentUser) {
+        return updateMemberProfile(serverId, userId, request, currentUser.getId());
+    }
+    
+    /**
+     * 멤버 서버별 프로필 업데이트 (내부 구현)
+     */
+    private ServerMemberDto updateMemberProfile(UUID serverId, UUID userId, ServerMemberDto.ProfileUpdateRequest request, UUID currentUserId) {
         // 본인이거나 관리자만 가능
         if (!currentUserId.equals(userId)) {
             validateServerAdminPermission(serverId, currentUserId);
@@ -271,8 +309,8 @@ public class ServerMemberService {
 
     private ChatServer validateServerExists(UUID serverId) {
         return chatServerRepository.findById(serverId)
-                .filter(server -> server.getIsActive())
-                .orElseThrow(() -> ErrorStatus.SERVER_NOT_FOUND.asServiceException());
+                .filter(ChatServer::getIsActive)
+                .orElseThrow(ErrorStatus.SERVER_NOT_FOUND::asServiceException);
     }
 
     private void validateServerAdminPermission(UUID serverId, UUID userId) {

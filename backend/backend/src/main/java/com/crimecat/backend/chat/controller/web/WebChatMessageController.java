@@ -1,10 +1,11 @@
-package com.crimecat.backend.chat.controller;
+package com.crimecat.backend.chat.controller.web;
 
 import com.crimecat.backend.chat.dto.BatchChatMessageDto;
 import com.crimecat.backend.chat.dto.ChatMessageDto;
 import com.crimecat.backend.chat.service.ChatMessageService;
-import com.crimecat.backend.utils.SignalServerAuthUtil;
+import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.enums.UserRole;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -15,7 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -25,13 +25,12 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/signal/servers/{serverId}/channels/{channelId}/messages")
+@RequestMapping("/api/v1/servers/{serverId}/channels/{channelId}/messages")
 @RequiredArgsConstructor
 @Validated
-public class ChatMessageController {
+public class WebChatMessageController {
 
     private final ChatMessageService chatMessageService;
-    private final SignalServerAuthUtil signalServerAuthUtil;
 
     /**
      * 메시지 전송
@@ -40,11 +39,10 @@ public class ChatMessageController {
     public ResponseEntity<ChatMessageDto.Response> sendMessage(
             @PathVariable UUID serverId,
             @PathVariable UUID channelId,
-            @Valid @RequestBody ChatMessageDto.Request request,
-            HttpServletRequest httpRequest) {
+            @Valid @RequestBody ChatMessageDto.Request request) {
         
-        signalServerAuthUtil.logSignalServerRequest(httpRequest, "SEND_MESSAGE");
-        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(httpRequest);
+        AuthenticationUtil.validateUserHasAuthority(UserRole.USER);
+        WebUser currentUser = AuthenticationUtil.getCurrentWebUser();
         UUID currentUserId = currentUser.getId();
         String username = currentUser.getNickname();
         
@@ -55,40 +53,15 @@ public class ChatMessageController {
     }
 
     /**
-     * 배치로 채팅 메시지들 저장 (시그널 서버 전용)
-     */
-    @PostMapping("/messages/batch")
-    public ResponseEntity<BatchChatMessageDto.BatchResponse> createBatchMessages(
-            @Valid @RequestBody BatchChatMessageDto.BatchRequest request,
-            HttpServletRequest httpRequest) {
-        
-        signalServerAuthUtil.logSignalServerRequest(httpRequest, "BATCH_MESSAGES");
-        
-        log.info("Processing batch request from signal-server: {} messages", 
-                request.getMessages().size());
-        
-        BatchChatMessageDto.BatchResponse response = chatMessageService.saveBatchMessages(request);
-        
-        if (response.getFailureCount() > 0) {
-            log.warn("Batch processing completed with errors: {}/{} failed", 
-                    response.getFailureCount(), response.getTotalMessages());
-            return ResponseEntity.status(207).body(response); // 207 Multi-Status
-        }
-        
-        return ResponseEntity.ok(response);
-    }
-
-    /**
      * 채널의 메시지 목록 조회 (페이징)
      */
     @GetMapping
     public ResponseEntity<Page<ChatMessageDto.Response>> getChannelMessages(
             @PathVariable UUID serverId,
             @PathVariable UUID channelId,
-            @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
-            HttpServletRequest request) {
+            @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         
-        signalServerAuthUtil.logSignalServerRequest(request, "GET_CHANNEL_MESSAGES");
+        AuthenticationUtil.validateUserHasAuthority(UserRole.USER);
         Page<ChatMessageDto.Response> messages = chatMessageService.getChannelMessages(serverId, channelId, pageable);
         return ResponseEntity.ok(messages);
     }
@@ -101,10 +74,9 @@ public class ChatMessageController {
             @PathVariable UUID serverId,
             @PathVariable UUID channelId,
             @PathVariable UUID userId,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
-            HttpServletRequest request) {
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         
-        signalServerAuthUtil.logSignalServerRequest(request, "GET_USER_MESSAGES");
+        AuthenticationUtil.validateUserHasAuthority(UserRole.USER);
         Page<ChatMessageDto.Response> messages = chatMessageService.getMessagesByUser(serverId, userId, pageable);
         return ResponseEntity.ok(messages);
     }
@@ -116,10 +88,9 @@ public class ChatMessageController {
     public ResponseEntity<List<ChatMessageDto.Response>> getRecentMessages(
             @PathVariable UUID serverId,
             @PathVariable UUID channelId,
-            @RequestParam(defaultValue = "50") @Min(1) @Max(100) int limit,
-            HttpServletRequest request) {
+            @RequestParam(defaultValue = "50") @Min(1) @Max(100) int limit) {
         
-        signalServerAuthUtil.logSignalServerRequest(request, "GET_RECENT_MESSAGES");
+        AuthenticationUtil.validateUserHasAuthority(UserRole.USER);
         List<ChatMessageDto.Response> messages = chatMessageService.getRecentMessages(serverId, channelId, limit);
         return ResponseEntity.ok(messages);
     }
@@ -131,10 +102,9 @@ public class ChatMessageController {
     public ResponseEntity<List<ChatMessageDto.Response>> getMessagesSince(
             @PathVariable UUID serverId,
             @PathVariable UUID channelId,
-            @RequestParam LocalDateTime since,
-            HttpServletRequest request) {
+            @RequestParam LocalDateTime since) {
         
-        signalServerAuthUtil.logSignalServerRequest(request, "GET_MESSAGES_SINCE");
+        AuthenticationUtil.validateUserHasAuthority(UserRole.USER);
         List<ChatMessageDto.Response> messages = chatMessageService.getMessagesSince(serverId, channelId, since);
         return ResponseEntity.ok(messages);
     }
@@ -147,22 +117,20 @@ public class ChatMessageController {
             @PathVariable UUID serverId,
             @PathVariable UUID channelId,
             @RequestParam String keyword,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
-            HttpServletRequest request) {
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         
-        signalServerAuthUtil.logSignalServerRequest(request, "SEARCH_MESSAGES");
+        AuthenticationUtil.validateUserHasAuthority(UserRole.USER);
         Page<ChatMessageDto.Response> messages = chatMessageService.searchMessages(serverId, channelId, keyword, pageable);
         return ResponseEntity.ok(messages);
     }
-
 
     /**
      * 배치 처리 통계 조회 (관리자용)
      */
     @GetMapping("/batch/stats")
-    public ResponseEntity<BatchChatMessageDto.BatchStats> getBatchStats(HttpServletRequest request) {
+    public ResponseEntity<BatchChatMessageDto.BatchStats> getBatchStats() {
         
-        signalServerAuthUtil.logSignalServerRequest(request, "GET_BATCH_STATS");
+        AuthenticationUtil.validateUserHasAuthority(UserRole.ADMIN);
         BatchChatMessageDto.BatchStats stats = chatMessageService.getBatchStats();
         return ResponseEntity.ok(stats);
     }
@@ -175,12 +143,10 @@ public class ChatMessageController {
             @PathVariable UUID serverId,
             @PathVariable UUID channelId,
             @RequestParam LocalDateTime startDate,
-            @RequestParam LocalDateTime endDate,
-            HttpServletRequest request) {
+            @RequestParam LocalDateTime endDate) {
         
-        signalServerAuthUtil.logSignalServerRequest(request, "GET_MESSAGE_COUNT");
+        AuthenticationUtil.validateUserHasAuthority(UserRole.USER);
         Long count = chatMessageService.getMessageCountBetween(serverId, channelId, startDate, endDate);
         return ResponseEntity.ok(count);
     }
-
 }

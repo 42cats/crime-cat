@@ -9,6 +9,7 @@ import com.crimecat.backend.chat.repository.ChatServerRepository;
 import com.crimecat.backend.chat.repository.ServerChannelRepository;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.utils.AuthenticationUtil;
+import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,10 +31,24 @@ public class ChannelService {
     private final ServerMemberService serverMemberService;
 
     /**
-     * 채널 생성 (서버 관리자만 가능)
+     * 채널 생성 (웹 클라이언트용)
      */
     public ChannelDto.Response createChannel(UUID serverId, ChannelDto.CreateRequest request) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
+        return createChannel(serverId, request, currentUserId);
+    }
+    
+    /**
+     * 채널 생성 (Signal Server용)
+     */
+    public ChannelDto.Response createChannel(UUID serverId, ChannelDto.CreateRequest request, WebUser currentUser) {
+        return createChannel(serverId, request, currentUser.getId());
+    }
+    
+    /**
+     * 채널 생성 (내부 구현)
+     */
+    private ChannelDto.Response createChannel(UUID serverId, ChannelDto.CreateRequest request, UUID currentUserId) {
         
         // 서버 존재 확인
         ChatServer server = validateServerExists(serverId);

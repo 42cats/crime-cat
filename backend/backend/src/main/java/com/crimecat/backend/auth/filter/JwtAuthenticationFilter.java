@@ -115,6 +115,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private boolean isExcludedPath(String uri) {
         return uri.startsWith("/bot/v1/")
+            || uri.startsWith("/api/v1/signal/")    // Signal Server API (SignalServerTokenFilter에서 처리)
             || uri.startsWith("/login")
             || uri.startsWith("/api/v1/auth/reissue")
             || uri.startsWith("/api/v1/auth/logout")
@@ -126,6 +127,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String extractAccessToken(HttpServletRequest request) {
+        // 1. Authorization 헤더에서 Bearer 토큰 확인 (Signal Server용)
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        
+        // 2. 기존 쿠키 방식 유지 (웹 클라이언트용)
         return TokenCookieUtil.getCookieValue(request, "Authorization");
     }
 

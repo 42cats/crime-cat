@@ -2,6 +2,8 @@ package com.crimecat.backend.chat.controller;
 
 import com.crimecat.backend.chat.dto.ChannelMemberDto;
 import com.crimecat.backend.chat.service.ChannelMemberService;
+import com.crimecat.backend.utils.SignalServerAuthUtil;
+import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -10,17 +12,19 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/servers/{serverId}/channels/{channelId}/members")
+@RequestMapping("/api/v1/signal/servers/{serverId}/channels/{channelId}/members")
 @RequiredArgsConstructor
 @Slf4j
 public class ChannelMemberController {
 
     private final ChannelMemberService channelMemberService;
+    private final SignalServerAuthUtil signalServerAuthUtil;
 
     /**
      * 채널의 모든 멤버 조회
@@ -28,7 +32,9 @@ public class ChannelMemberController {
     @GetMapping
     public ResponseEntity<List<ChannelMemberDto>> getAllMembers(
             @PathVariable UUID serverId,
-            @PathVariable UUID channelId) {
+            @PathVariable UUID channelId,
+            HttpServletRequest request) {
+        signalServerAuthUtil.logSignalServerRequest(request, "GET_CHANNEL_ALL_MEMBERS");
         List<ChannelMemberDto> members = channelMemberService.getAllMembers(serverId, channelId);
         return ResponseEntity.ok(members);
     }
@@ -40,7 +46,9 @@ public class ChannelMemberController {
     public ResponseEntity<Page<ChannelMemberDto>> getMembersByPage(
             @PathVariable UUID serverId,
             @PathVariable UUID channelId,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20) Pageable pageable,
+            HttpServletRequest request) {
+        signalServerAuthUtil.logSignalServerRequest(request, "GET_CHANNEL_MEMBERS_BY_PAGE");
         Page<ChannelMemberDto> members = channelMemberService.getMembersByPage(serverId, channelId, pageable);
         return ResponseEntity.ok(members);
     }
@@ -52,7 +60,9 @@ public class ChannelMemberController {
     public ResponseEntity<ChannelMemberDto> getMember(
             @PathVariable UUID serverId,
             @PathVariable UUID channelId,
-            @PathVariable UUID userId) {
+            @PathVariable UUID userId,
+            HttpServletRequest request) {
+        signalServerAuthUtil.logSignalServerRequest(request, "GET_CHANNEL_MEMBER");
         ChannelMemberDto member = channelMemberService.getMember(serverId, channelId, userId);
         return ResponseEntity.ok(member);
     }
@@ -63,7 +73,10 @@ public class ChannelMemberController {
     @PostMapping("/join")
     public ResponseEntity<ChannelMemberDto> joinChannel(
             @PathVariable UUID serverId,
-            @PathVariable UUID channelId) {
+            @PathVariable UUID channelId,
+            HttpServletRequest request) {
+        signalServerAuthUtil.logSignalServerRequest(request, "JOIN_CHANNEL_MEMBER");
+        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(request);
         ChannelMemberDto member = channelMemberService.joinChannel(serverId, channelId);
         return ResponseEntity.ok(member);
     }
@@ -74,7 +87,10 @@ public class ChannelMemberController {
     @PostMapping("/leave")
     public ResponseEntity<Void> leaveChannel(
             @PathVariable UUID serverId,
-            @PathVariable UUID channelId) {
+            @PathVariable UUID channelId,
+            HttpServletRequest request) {
+        signalServerAuthUtil.logSignalServerRequest(request, "LEAVE_CHANNEL_MEMBER");
+        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(request);
         channelMemberService.leaveChannel(serverId, channelId);
         return ResponseEntity.noContent().build();
     }
@@ -87,7 +103,10 @@ public class ChannelMemberController {
             @PathVariable UUID serverId,
             @PathVariable UUID channelId,
             @PathVariable UUID userId,
-            @Valid @RequestBody ChannelMemberDto.RoleUpdateRequest request) {
+            @Valid @RequestBody ChannelMemberDto.RoleUpdateRequest request,
+            HttpServletRequest httpRequest) {
+        signalServerAuthUtil.logSignalServerRequest(httpRequest, "UPDATE_CHANNEL_MEMBER_ROLE");
+        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(httpRequest);
         ChannelMemberDto updatedMember = channelMemberService.updateMemberRole(serverId, channelId, userId, request);
         return ResponseEntity.ok(updatedMember);
     }
@@ -99,7 +118,10 @@ public class ChannelMemberController {
     public ResponseEntity<Void> kickMember(
             @PathVariable UUID serverId,
             @PathVariable UUID channelId,
-            @PathVariable UUID userId) {
+            @PathVariable UUID userId,
+            HttpServletRequest request) {
+        signalServerAuthUtil.logSignalServerRequest(request, "KICK_CHANNEL_MEMBER");
+        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(request);
         channelMemberService.kickMember(serverId, channelId, userId);
         return ResponseEntity.noContent().build();
     }
@@ -110,7 +132,9 @@ public class ChannelMemberController {
     @GetMapping("/statistics")
     public ResponseEntity<ChannelMemberDto.Statistics> getChannelStatistics(
             @PathVariable UUID serverId,
-            @PathVariable UUID channelId) {
+            @PathVariable UUID channelId,
+            HttpServletRequest request) {
+        signalServerAuthUtil.logSignalServerRequest(request, "GET_CHANNEL_STATISTICS");
         ChannelMemberDto.Statistics statistics = channelMemberService.getChannelStatistics(serverId, channelId);
         return ResponseEntity.ok(statistics);
     }
@@ -121,7 +145,9 @@ public class ChannelMemberController {
     @PostMapping("/{userId}/activity")
     public ResponseEntity<Void> updateActivity(
             @PathVariable UUID channelId,
-            @PathVariable UUID userId) {
+            @PathVariable UUID userId,
+            HttpServletRequest request) {
+        signalServerAuthUtil.logSignalServerRequest(request, "UPDATE_CHANNEL_ACTIVITY");
         channelMemberService.updateActivity(channelId, userId);
         return ResponseEntity.noContent().build();
     }

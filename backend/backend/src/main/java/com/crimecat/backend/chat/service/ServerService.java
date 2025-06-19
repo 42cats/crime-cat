@@ -8,6 +8,7 @@ import com.crimecat.backend.chat.repository.ServerMemberRepository;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.user.repository.UserRepository;
 import com.crimecat.backend.utils.AuthenticationUtil;
+import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,10 +33,24 @@ public class ServerService {
     private final PasswordEncoder passwordEncoder;
 
     /**
-     * 서버 생성
+     * 서버 생성 (웹 클라이언트용)
      */
     public ServerDto.Response createServer(ServerDto.CreateRequest request) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
+        return createServer(request, currentUserId);
+    }
+    
+    /**
+     * 서버 생성 (Signal Server용)
+     */
+    public ServerDto.Response createServer(ServerDto.CreateRequest request, WebUser currentUser) {
+        return createServer(request, currentUser.getId());
+    }
+    
+    /**
+     * 서버 생성 (내부 구현)
+     */
+    private ServerDto.Response createServer(ServerDto.CreateRequest request, UUID currentUserId) {
         
         // 사용자 존재 확인
         userRepository.findById(currentUserId)
@@ -67,10 +82,24 @@ public class ServerService {
     }
 
     /**
-     * 서버 입장 (비밀번호 검증)
+     * 서버 입장 (웹 클라이언트용)
      */
     public ServerDto.Response joinServer(UUID serverId, ServerDto.JoinRequest request) {
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
+        return joinServer(serverId, request, currentUserId);
+    }
+    
+    /**
+     * 서버 입장 (Signal Server용)
+     */
+    public ServerDto.Response joinServer(UUID serverId, ServerDto.JoinRequest request, WebUser currentUser) {
+        return joinServer(serverId, request, currentUser.getId());
+    }
+    
+    /**
+     * 서버 입장 (내부 구현)
+     */
+    private ServerDto.Response joinServer(UUID serverId, ServerDto.JoinRequest request, UUID currentUserId) {
         
         // 서버 조회
         ChatServer server = chatServerRepository.findById(serverId)

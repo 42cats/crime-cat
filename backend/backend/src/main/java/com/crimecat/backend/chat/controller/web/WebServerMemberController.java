@@ -1,9 +1,7 @@
-package com.crimecat.backend.chat.controller;
+package com.crimecat.backend.chat.controller.web;
 
 import com.crimecat.backend.chat.dto.ServerMemberDto;
 import com.crimecat.backend.chat.service.ServerMemberService;
-import com.crimecat.backend.utils.SignalServerAuthUtil;
-import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -12,28 +10,23 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/signal/servers/{serverId}/members")
+@RequestMapping("/api/v1/servers/{serverId}/members")
 @RequiredArgsConstructor
 @Slf4j
-public class ServerMemberController {
+public class WebServerMemberController {
 
     private final ServerMemberService serverMemberService;
-    private final SignalServerAuthUtil signalServerAuthUtil;
 
     /**
      * 서버의 모든 멤버 조회
      */
     @GetMapping
-    public ResponseEntity<List<ServerMemberDto>> getAllMembers(
-            @PathVariable UUID serverId,
-            HttpServletRequest request) {
-        signalServerAuthUtil.logSignalServerRequest(request, "GET_ALL_MEMBERS");
+    public ResponseEntity<List<ServerMemberDto>> getAllMembers(@PathVariable UUID serverId) {
         List<ServerMemberDto> members = serverMemberService.getAllMembers(serverId);
         return ResponseEntity.ok(members);
     }
@@ -44,9 +37,7 @@ public class ServerMemberController {
     @GetMapping("/page")
     public ResponseEntity<Page<ServerMemberDto>> getMembersByPage(
             @PathVariable UUID serverId,
-            @PageableDefault(size = 20) Pageable pageable,
-            HttpServletRequest request) {
-        signalServerAuthUtil.logSignalServerRequest(request, "GET_MEMBERS_BY_PAGE");
+            @PageableDefault(size = 20) Pageable pageable) {
         Page<ServerMemberDto> members = serverMemberService.getMembersByPage(serverId, pageable);
         return ResponseEntity.ok(members);
     }
@@ -57,12 +48,8 @@ public class ServerMemberController {
     @GetMapping("/{userId}")
     public ResponseEntity<ServerMemberDto> getMember(
             @PathVariable UUID serverId,
-            @PathVariable UUID userId,
-            HttpServletRequest request) {
-        signalServerAuthUtil.logSignalServerRequest(request, "GET_MEMBER");
-        // Signal Server API 호출용 - 인증 확인 없이 멤버십만 확인
-        ServerMemberDto member = serverMemberService.getMemberForSignalServer(serverId, userId);
-        log.info("d응답완료  = {}" ,member);
+            @PathVariable UUID userId) {
+        ServerMemberDto member = serverMemberService.getMember(serverId, userId);
         return ResponseEntity.ok(member);
     }
 
@@ -73,11 +60,8 @@ public class ServerMemberController {
     public ResponseEntity<ServerMemberDto> assignRoles(
             @PathVariable UUID serverId,
             @PathVariable UUID userId,
-            @Valid @RequestBody ServerMemberDto.RoleAssignRequest request,
-            HttpServletRequest httpRequest) {
-        signalServerAuthUtil.logSignalServerRequest(httpRequest, "ASSIGN_ROLES");
-        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(httpRequest);
-        ServerMemberDto updatedMember = serverMemberService.assignRoles(serverId, userId, request, currentUser);
+            @Valid @RequestBody ServerMemberDto.RoleAssignRequest request) {
+        ServerMemberDto updatedMember = serverMemberService.assignRoles(serverId, userId, request);
         return ResponseEntity.ok(updatedMember);
     }
 
@@ -88,11 +72,8 @@ public class ServerMemberController {
     public ResponseEntity<ServerMemberDto> removeRole(
             @PathVariable UUID serverId,
             @PathVariable UUID userId,
-            @PathVariable UUID roleId,
-            HttpServletRequest request) {
-        signalServerAuthUtil.logSignalServerRequest(request, "REMOVE_ROLE");
-        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(request);
-        ServerMemberDto updatedMember = serverMemberService.removeRole(serverId, userId, roleId, currentUser);
+            @PathVariable UUID roleId) {
+        ServerMemberDto updatedMember = serverMemberService.removeRole(serverId, userId, roleId);
         return ResponseEntity.ok(updatedMember);
     }
 
@@ -103,11 +84,8 @@ public class ServerMemberController {
     public ResponseEntity<ServerMemberDto> updateMemberProfile(
             @PathVariable UUID serverId,
             @PathVariable UUID userId,
-            @Valid @RequestBody ServerMemberDto.ProfileUpdateRequest request,
-            HttpServletRequest httpRequest) {
-        signalServerAuthUtil.logSignalServerRequest(httpRequest, "UPDATE_MEMBER_PROFILE");
-        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(httpRequest);
-        ServerMemberDto updatedMember = serverMemberService.updateMemberProfile(serverId, userId, request, currentUser);
+            @Valid @RequestBody ServerMemberDto.ProfileUpdateRequest request) {
+        ServerMemberDto updatedMember = serverMemberService.updateMemberProfile(serverId, userId, request);
         return ResponseEntity.ok(updatedMember);
     }
 
@@ -117,9 +95,7 @@ public class ServerMemberController {
     @GetMapping("/{userId}/permissions")
     public ResponseEntity<List<String>> getMemberPermissions(
             @PathVariable UUID serverId,
-            @PathVariable UUID userId,
-            HttpServletRequest request) {
-        signalServerAuthUtil.logSignalServerRequest(request, "GET_MEMBER_PERMISSIONS");
+            @PathVariable UUID userId) {
         List<String> permissions = serverMemberService.getMemberPermissions(serverId, userId);
         return ResponseEntity.ok(permissions);
     }
@@ -131,9 +107,7 @@ public class ServerMemberController {
     public ResponseEntity<Boolean> hasPermission(
             @PathVariable UUID serverId,
             @PathVariable UUID userId,
-            @PathVariable String permission,
-            HttpServletRequest request) {
-        signalServerAuthUtil.logSignalServerRequest(request, "HAS_PERMISSION");
+            @PathVariable String permission) {
         boolean hasPermission = serverMemberService.hasPermission(serverId, userId, permission);
         return ResponseEntity.ok(hasPermission);
     }

@@ -2,6 +2,7 @@ package com.crimecat.backend.config;
 
 import com.crimecat.backend.auth.filter.DiscordBotTokenFilter;
 import com.crimecat.backend.auth.filter.JwtAuthenticationFilter;
+import com.crimecat.backend.auth.filter.SignalServerTokenFilter;
 import com.crimecat.backend.auth.handler.CustomOAuth2SuccessHandler;
 import com.crimecat.backend.auth.handler.LoginSuccessHandler;
 import com.crimecat.backend.auth.handler.SignupSuccessHandler;
@@ -56,6 +57,7 @@ public class SecurityConfig {
   private final DiscordSignupService discordSignupService;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final DiscordBotTokenFilter discordBotTokenFilter;
+  private final SignalServerTokenFilter signalServerTokenFilter;
   private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler; // 기존 핸들러 (이전 버전 호환용)
   private final LoginSuccessHandler loginSuccessHandler;
   private final SignupSuccessHandler signupSuccessHandler;
@@ -82,6 +84,7 @@ public class SecurityConfig {
                         "/api/v1/auth/logout",
                         "/api/v1/auth/reissue",
                         "/bot/v1/**", // 디스코드 봇 API 경로
+                        "/api/v1/signal/**", // Signal Server API 경로
                         "/api/ssr/**", // SSR 엔드포인트 (크롤러용)
                         "/api/sitemap/**", // 동적 사이트맵 (크롤러용)
                         "/api/v1/csrf/token" // csrf 인증경로
@@ -100,6 +103,7 @@ public class SecurityConfig {
                         "/actuator/info",
                         "/oauth2/**",
                         "/bot/v1/**",
+                        "/api/v1/signal/**", // Signal Server API 경로
                         "/api/v1/auth/logout",
                         "/api/v1/auth/reissue",
                         "/api/v1/auth/block-status",
@@ -184,6 +188,7 @@ public class SecurityConfig {
                     })
             )
         .addFilterBefore(discordBotTokenFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterBefore(signalServerTokenFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

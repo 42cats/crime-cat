@@ -2,28 +2,35 @@ package com.crimecat.backend.chat.controller;
 
 import com.crimecat.backend.chat.dto.VoiceSessionDto;
 import com.crimecat.backend.chat.service.VoiceSessionService;
+import com.crimecat.backend.utils.SignalServerAuthUtil;
+import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/voice/sessions")
+@RequestMapping("/api/v1/signal/voice/sessions")
 @RequiredArgsConstructor
 @Slf4j
 public class VoiceSessionController {
 
     private final VoiceSessionService voiceSessionService;
+    private final SignalServerAuthUtil signalServerAuthUtil;
 
     /**
      * 음성 세션 시작
      */
     @PostMapping("/start")
     public ResponseEntity<VoiceSessionDto.Response> startSession(
-            @Valid @RequestBody VoiceSessionDto.StartRequest request) {
+            @Valid @RequestBody VoiceSessionDto.StartRequest request,
+            HttpServletRequest httpRequest) {
+        signalServerAuthUtil.logSignalServerRequest(httpRequest, "START_VOICE_SESSION");
+        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(httpRequest);
         VoiceSessionDto.Response session = voiceSessionService.startSession(request);
         return ResponseEntity.ok(session);
     }
@@ -33,7 +40,10 @@ public class VoiceSessionController {
      */
     @PostMapping("/end")
     public ResponseEntity<Void> endSession(
-            @Valid @RequestBody VoiceSessionDto.EndRequest request) {
+            @Valid @RequestBody VoiceSessionDto.EndRequest request,
+            HttpServletRequest httpRequest) {
+        signalServerAuthUtil.logSignalServerRequest(httpRequest, "END_VOICE_SESSION");
+        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(httpRequest);
         voiceSessionService.endSession(request);
         return ResponseEntity.noContent().build();
     }
@@ -44,7 +54,9 @@ public class VoiceSessionController {
     @GetMapping("/active")
     public ResponseEntity<VoiceSessionDto.ActiveSessionsResponse> getActiveSessions(
             @RequestParam UUID serverId,
-            @RequestParam UUID channelId) {
+            @RequestParam UUID channelId,
+            HttpServletRequest request) {
+        signalServerAuthUtil.logSignalServerRequest(request, "GET_ACTIVE_VOICE_SESSIONS");
         VoiceSessionDto.ActiveSessionsResponse activeSessions = 
             voiceSessionService.getActiveSessions(serverId, channelId);
         return ResponseEntity.ok(activeSessions);
