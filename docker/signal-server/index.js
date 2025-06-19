@@ -451,15 +451,49 @@ const handleVoiceEvents = (socket) => {
         console.warn('Voice session logging failed:', logError.message);
       }
 
+      // 현재 음성 채널에 있는 사용자 목록 가져오기
+      const socketsInRoom = await io.in(voiceRoom).fetchSockets();
+      const currentUsers = socketsInRoom
+        .filter(s => s.id !== socket.id)
+        .map(s => ({
+          id: s.user.id,
+          userId: s.user.id,
+          username: s.user.username,
+          serverId,
+          channelId,
+          isMuted: s.voiceStatus?.isMuted || false,
+          isDeafened: s.voiceStatus?.isDeafened || false,
+          isScreenSharing: s.voiceStatus?.isScreenSharing || false
+        }));
+
       // 채널의 다른 음성 참여자들에게 알림
       socket.to(voiceRoom).emit('voice:user-joined', {
+        id: socket.user.id,
         userId: socket.user.id,
         username: socket.user.username,
         serverId,
-        channelId
+        channelId,
+        isMuted: false,
+        isDeafened: false,
+        isScreenSharing: false
       });
 
-      socket.emit('voice:join:success', { serverId, channelId });
+      // 현재 사용자에게 성공 메시지와 함께 기존 사용자 목록 전송
+      socket.emit('voice:join:success', { 
+        serverId, 
+        channelId,
+        currentUsers 
+      });
+
+      // 기존 사용자들과 WebRTC 연결 시작
+      for (const existingUser of currentUsers) {
+        socket.to(existingUser.id).emit('voice:new-peer', {
+          userId: socket.user.id,
+          username: socket.user.username,
+          serverId,
+          channelId
+        });
+      }
 
       console.log(`${socket.user.username} joined voice in channel: ${serverId}/${channelId}`);
 
@@ -500,6 +534,7 @@ const handleVoiceEvents = (socket) => {
         }
 
         socket.to(voiceRoom).emit('voice:user-left', {
+          id: socket.user.id,
           userId: socket.user.id,
           username: socket.user.username,
           serverId,

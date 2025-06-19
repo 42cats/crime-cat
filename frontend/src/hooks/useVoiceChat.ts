@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import websocketService, { VoiceUser } from '../services/websocketService';
 import { useAppStore } from '../store/useAppStore';
+import { getRTCConfiguration, getAudioConstraints } from '../config/webrtc';
 
 export interface UseVoiceChatReturn {
   voiceUsers: VoiceUser[];
@@ -41,35 +42,99 @@ export const useVoiceChat = (): UseVoiceChatReturn => {
   const iceCandidateQueues = useRef<{ [userId: string]: RTCIceCandidateInit[] }>({});
 
   // Voice channel join success handler
-  const handleVoiceJoined = useCallback((data: { serverId: string; channelId: string }) => {
+  const handleVoiceJoined = useCallback((data: { serverId: string; channelId: string; currentUsers?: VoiceUser[] }) => {
     console.log('Voice channel joined:', data);
     setCurrentVoiceChannel({ serverId: data.serverId, channelId: data.channelId });
     setVoiceConnected(true);
-  }, [setVoiceConnected]);
+    
+    // 기존 사용자 목록 설정
+    if (data.currentUsers && data.currentUsers.length > 0) {
+      console.log('Setting existing voice users:', data.currentUsers);
+      setVoiceUsers(data.currentUsers);
+      
+      // 기존 사용자들과 WebRTC 연결 시작
+      data.currentUsers.forEach(user => {
+        initiateWebRTCConnection(user.id, data.serverId, data.channelId);
+      });
+    }
+  }, [setVoiceConnected, setVoiceUsers]);
 
   // Voice member joined handler
   const handleVoiceMemberJoined = useCallback((user: VoiceUser) => {
     console.log('Voice member joined:', user);
-    setVoiceUsers([...voiceUsers, user]);
-  }, [voiceUsers, setVoiceUsers]);
+    setVoiceUsers(prevUsers => {
+      // 중복 방지
+      const exists = prevUsers.some(u => (u.userId || u.id) === (user.userId || user.id));
+      if (exists) {
+        console.log('User already in voice channel, skipping:', user.userId || user.id);
+        return prevUsers;
+      }
+      return [...prevUsers, user];
+    });
+  }, [setVoiceUsers]);
 
   // Voice member left handler
   const handleVoiceMemberLeft = useCallback((user: VoiceUser) => {
     console.log('Voice member left:', user);
-    setVoiceUsers(voiceUsers.filter(u => u.userId !== user.userId));
+    const userId = user.userId || user.id;
+    
+    setVoiceUsers(prevUsers => prevUsers.filter(u => (u.userId || u.id) !== userId));
     
     // Clean up peer connection
-    if (peerConnections.current[user.userId]) {
-      peerConnections.current[user.userId].close();
-      delete peerConnections.current[user.userId];
+    if (peerConnections.current[userId]) {
+      peerConnections.current[userId].close();
+      delete peerConnections.current[userId];
     }
     
     // Remove remote stream
     setRemoteStreams(prev => {
-      const { [user.userId]: removed, ...rest } = prev;
+      const { [userId]: removed, ...rest } = prev;
       return rest;
     });
-  }, [voiceUsers, setVoiceUsers]);
+  }, [setVoiceUsers]);
+
+  // WebRTC 연결 시작 함수
+  const initiateWebRTCConnection = useCallback(async (targetUserId: string, serverId: string, channelId: string) => {
+    console.log('Initiating WebRTC connection to:', targetUserId);
+    
+    try {
+      // Create peer connection
+      const pc = new RTCPeerConnection(getRTCConfiguration());
+
+      peerConnections.current[targetUserId] = pc;
+
+      // Add local stream
+      if (localStream) {
+        localStream.getTracks().forEach(track => {
+          pc.addTrack(track, localStream);
+        });
+      }
+
+      // Handle remote stream
+      pc.ontrack = (event) => {
+        console.log('Received remote track from:', targetUserId);
+        setRemoteStreams(prev => ({
+          ...prev,
+          [targetUserId]: event.streams[0]
+        }));
+      };
+
+      // Handle ICE candidates
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          websocketService.sendIceCandidate(targetUserId, event.candidate, serverId, channelId);
+        }
+      };
+
+      // Create and send offer
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      
+      websocketService.sendOffer(targetUserId, offer, serverId, channelId);
+    } catch (error) {
+      console.error('Error initiating WebRTC connection:', error);
+    }
+  }, [localStream]);
 
   // WebRTC signaling handlers
   const handleWebRTCOffer = useCallback(async (data: {
@@ -88,12 +153,7 @@ export const useVoiceChat = (): UseVoiceChatReturn => {
 
     try {
       // Create peer connection
-      const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'turn:your-turn-server.com:3478', username: 'username', credential: 'credential' }
-        ]
-      });
+      const pc = new RTCPeerConnection(getRTCConfiguration());
 
       peerConnections.current[from] = pc;
 
@@ -190,11 +250,28 @@ export const useVoiceChat = (): UseVoiceChatReturn => {
     }
   }, []);
 
+  // 새로운 피어 참가 핸들러
+  const handleNewPeer = useCallback(async (data: {
+    userId: string;
+    username: string;
+    serverId: string;
+    channelId: string;
+  }) => {
+    console.log('New peer joined, initiating connection:', data.userId);
+    
+    if (currentVoiceChannel && 
+        currentVoiceChannel.serverId === data.serverId && 
+        currentVoiceChannel.channelId === data.channelId) {
+      await initiateWebRTCConnection(data.userId, data.serverId, data.channelId);
+    }
+  }, [currentVoiceChannel, initiateWebRTCConnection]);
+
   // Setup event listeners
   useEffect(() => {
     websocketService.on('voice:joined', handleVoiceJoined);
     websocketService.on('voice:member:joined', handleVoiceMemberJoined);
     websocketService.on('voice:member:left', handleVoiceMemberLeft);
+    websocketService.on('voice:new-peer', handleNewPeer);
     websocketService.on('webrtc:offer', handleWebRTCOffer);
     websocketService.on('webrtc:answer', handleWebRTCAnswer);
     websocketService.on('webrtc:ice-candidate', handleWebRTCIceCandidate);
@@ -203,6 +280,7 @@ export const useVoiceChat = (): UseVoiceChatReturn => {
       websocketService.off('voice:joined', handleVoiceJoined);
       websocketService.off('voice:member:joined', handleVoiceMemberJoined);
       websocketService.off('voice:member:left', handleVoiceMemberLeft);
+      websocketService.off('voice:new-peer', handleNewPeer);
       websocketService.off('webrtc:offer', handleWebRTCOffer);
       websocketService.off('webrtc:answer', handleWebRTCAnswer);
       websocketService.off('webrtc:ice-candidate', handleWebRTCIceCandidate);
@@ -211,6 +289,7 @@ export const useVoiceChat = (): UseVoiceChatReturn => {
     handleVoiceJoined,
     handleVoiceMemberJoined,
     handleVoiceMemberLeft,
+    handleNewPeer,
     handleWebRTCOffer,
     handleWebRTCAnswer,
     handleWebRTCIceCandidate
@@ -220,10 +299,7 @@ export const useVoiceChat = (): UseVoiceChatReturn => {
   const joinVoiceChannel = useCallback(async (serverId: string, channelId: string) => {
     try {
       // Get user media
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: true, 
-        video: false 
-      });
+      const stream = await navigator.mediaDevices.getUserMedia(getAudioConstraints());
       
       setLocalStream(stream);
       

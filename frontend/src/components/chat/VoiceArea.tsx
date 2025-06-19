@@ -185,10 +185,10 @@ const VoiceActiveArea: React.FC<VoiceActiveAreaProps> = ({
         {/* 원격 사용자들 */}
         {voiceUsers.map((user) => (
           <VoiceUserCard
-            key={user.id}
+            key={user.userId || user.id}
             user={user}
             isLocal={false}
-            stream={remoteStreams[user.id]}
+            stream={remoteStreams[user.userId || user.id]}
           />
         ))}
       </div>

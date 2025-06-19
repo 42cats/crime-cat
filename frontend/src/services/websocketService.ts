@@ -46,7 +46,8 @@ export interface ChatMessage {
 }
 
 export interface VoiceUser {
-  userId: string;
+  id: string;  // useAppStore와 통일
+  userId: string;  // 하위 호환성을 위해 유지
   username: string;
   serverId: string;
   channelId: string;
@@ -290,6 +291,11 @@ class WebSocketService {
 
     this.socket.on('voice:ice-candidate', (data) => {
       this.emit('webrtc:ice-candidate', data);
+    });
+
+    // 새로운 피어 참가 이벤트
+    this.socket.on('voice:new-peer', (data) => {
+      this.emit('voice:new-peer', data);
     });
 
     // 에러 처리
