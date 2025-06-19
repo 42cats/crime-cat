@@ -105,7 +105,7 @@ export const ServerPage: React.FC<ServerPageProps> = () => {
     };
 
     handleServerAccess();
-  }, [serverId, isConnected, serverInfo]);
+  }, [serverId, serverInfo]); // isConnected 의존성 제거
 
   const attemptServerJoin = async (serverId: string, password?: string) => {
     try {

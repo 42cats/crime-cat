@@ -183,7 +183,7 @@ const VoiceActiveArea: React.FC<VoiceActiveAreaProps> = ({
         />
 
         {/* 원격 사용자들 */}
-        {voiceUsers.map((user) => (
+        {Array.isArray(voiceUsers) && voiceUsers.map((user) => (
           <VoiceUserCard
             key={user.userId || user.id}
             user={user}

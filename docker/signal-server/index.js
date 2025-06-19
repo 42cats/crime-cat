@@ -433,20 +433,11 @@ const handleVoiceEvents = (socket) => {
       socket.join(voiceRoom);
       socket.currentVoiceChannel = { serverId, channelId };
 
-      // 음성 세션 로그 시작
+      // 음성 세션 로그 시작 (TODO: 백엔드 API 구현 필요)
       try {
-        await axios.post(
-          `${process.env.BACKEND_URL}/api/v1/signal/voice/sessions/start`,
-          { serverId, channelId, userId: socket.user.id, username: socket.user.username },
-          {
-            headers: {
-              'Authorization': `Bearer ${process.env.SIGNAL_SERVER_SECRET_TOKEN}`,
-              'X-User-ID': socket.user.id,
-              'X-User-Token': socket.authToken,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
+        console.log(`🎤 Voice session started: ${socket.user.username} in ${serverId}/${channelId}`);
+        // TODO: 백엔드에 voice session API 엔드포인트 구현 후 활성화
+        // await axios.post(`${process.env.BACKEND_URL}/api/v1/signal/voice/sessions/start`, ...);
       } catch (logError) {
         console.warn('Voice session logging failed:', logError.message);
       }
@@ -513,20 +504,11 @@ const handleVoiceEvents = (socket) => {
         const voiceRoom = `voice:server:${serverId}:channel:${channelId}`;
         socket.leave(voiceRoom);
 
-        // 음성 세션 로그 종료
+        // 음성 세션 로그 종료 (TODO: 백엔드 API 구현 필요)
         try {
-          await axios.post(
-            `${process.env.BACKEND_URL}/api/v1/signal/voice/sessions/end`,
-            { serverId, channelId, userId: socket.user.id },
-            {
-              headers: {
-                'Authorization': `Bearer ${process.env.SIGNAL_SERVER_SECRET_TOKEN}`,
-                'X-User-ID': socket.user.id,
-                'X-User-Token': socket.authToken,
-                'Content-Type': 'application/json'
-              }
-            }
-          );
+          console.log(`🎤 Voice session ended: ${socket.user.username} left ${serverId}/${channelId}`);
+          // TODO: 백엔드에 voice session API 엔드포인트 구현 후 활성화
+          // await axios.post(`${process.env.BACKEND_URL}/api/v1/signal/voice/sessions/end`, ...);
         } catch (logError) {
           console.warn('Voice session end logging failed:', logError.message);
         }
