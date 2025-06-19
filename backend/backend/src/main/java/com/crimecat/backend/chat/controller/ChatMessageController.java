@@ -1,6 +1,5 @@
 package com.crimecat.backend.chat.controller;
 
-import com.crimecat.backend.chat.dto.BatchChatMessageDto;
 import com.crimecat.backend.chat.dto.ChatMessageDto;
 import com.crimecat.backend.chat.service.ChatMessageService;
 import com.crimecat.backend.utils.SignalServerAuthUtil;
@@ -57,21 +56,24 @@ public class ChatMessageController {
     /**
      * 배치로 채팅 메시지들 저장 (시그널 서버 전용)
      */
-    @PostMapping("/messages/batch")
-    public ResponseEntity<BatchChatMessageDto.BatchResponse> createBatchMessages(
-            @Valid @RequestBody BatchChatMessageDto.BatchRequest request,
+    @PostMapping("/batch")
+    public ResponseEntity<ChatMessageDto.BatchResponse> createBatchMessages(
+            @PathVariable UUID serverId,
+            @PathVariable UUID channelId,
+            @Valid @RequestBody ChatMessageDto.BatchRequest request,
             HttpServletRequest httpRequest) {
         
         signalServerAuthUtil.logSignalServerRequest(httpRequest, "BATCH_MESSAGES");
+        WebUser currentUser = signalServerAuthUtil.extractUserFromHeaders(httpRequest);
         
-        log.info("Processing batch request from signal-server: {} messages", 
-                request.getMessages().size());
+        log.info("Processing batch request from signal-server: {} messages for server: {}, channel: {}", 
+                request.getMessages().size(), serverId, channelId);
         
-        BatchChatMessageDto.BatchResponse response = chatMessageService.saveBatchMessages(request);
+        ChatMessageDto.BatchResponse response = chatMessageService.saveBatchMessages(serverId, channelId, request, currentUser);
         
-        if (response.getFailureCount() > 0) {
+        if (response.getFailedCount() > 0) {
             log.warn("Batch processing completed with errors: {}/{} failed", 
-                    response.getFailureCount(), response.getTotalMessages());
+                    response.getFailedCount(), response.getTotalMessages());
             return ResponseEntity.status(207).body(response); // 207 Multi-Status
         }
         
@@ -160,11 +162,11 @@ public class ChatMessageController {
      * 배치 처리 통계 조회 (관리자용)
      */
     @GetMapping("/batch/stats")
-    public ResponseEntity<BatchChatMessageDto.BatchStats> getBatchStats(HttpServletRequest request) {
+    public ResponseEntity<String> getBatchStats(HttpServletRequest request) {
         
         signalServerAuthUtil.logSignalServerRequest(request, "GET_BATCH_STATS");
-        BatchChatMessageDto.BatchStats stats = chatMessageService.getBatchStats();
-        return ResponseEntity.ok(stats);
+        // TODO: 배치 통계 기능 구현 예정
+        return ResponseEntity.ok("Batch stats not implemented yet");
     }
 
     /**

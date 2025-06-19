@@ -3,13 +3,12 @@ package com.crimecat.backend.chat.service;
 import com.crimecat.backend.chat.domain.ChatMessage;
 import com.crimecat.backend.chat.domain.ChatServer;
 import com.crimecat.backend.chat.domain.ServerChannel;
-import com.crimecat.backend.chat.dto.BatchChatMessageDto;
 import com.crimecat.backend.chat.dto.ChatMessageDto;
 import com.crimecat.backend.chat.repository.ChatMessageRepository;
 import com.crimecat.backend.chat.repository.ChatServerRepository;
 import com.crimecat.backend.chat.repository.ServerChannelRepository;
 import com.crimecat.backend.exception.ErrorStatus;
-import java.util.UUID;
+import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -20,7 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -30,12 +30,6 @@ public class ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatServerRepository chatServerRepository;
     private final ServerChannelRepository serverChannelRepository;
-    
-    // 배치 처리 통계용
-    private final AtomicLong totalBatchesProcessed = new AtomicLong(0);
-    private final AtomicLong totalMessagesProcessed = new AtomicLong(0);
-    private volatile LocalDateTime lastProcessedAt;
-    private final List<Long> processingTimes = new ArrayList<>();
 
     /**
      * 단일 채팅 메시지 저장
@@ -62,99 +56,62 @@ public class ChatMessageService {
     }
 
     /**
-     * 배치로 채팅 메시지들 저장 (Redis에서 오는 배치 처리)
+     * 배치로 채팅 메시지들 저장 (Signal Server에서 오는 배치 처리)
      */
     @Transactional
-    public BatchChatMessageDto.BatchResponse saveBatchMessages(BatchChatMessageDto.BatchRequest request) {
-        long startTime = System.currentTimeMillis();
+    public ChatMessageDto.BatchResponse saveBatchMessages(UUID serverId, UUID channelId, 
+            ChatMessageDto.BatchRequest request, WebUser currentUser) {
         
-        log.info("Processing batch of {} chat messages", request.getMessages().size());
+        log.info("Processing batch of {} chat messages for server: {}, channel: {}", 
+                request.getMessages().size(), serverId, channelId);
         
-        List<String> errors = new ArrayList<>();
+        // 서버 및 채널 검증
+        ChatServer server = chatServerRepository.findById(serverId)
+                .orElseThrow(() -> ErrorStatus.SERVER_NOT_FOUND.asServiceException());
+        
+        ServerChannel channel = serverChannelRepository.findByIdAndServerIdAndIsActiveTrue(channelId, serverId)
+                .orElseThrow(() -> ErrorStatus.CHANNEL_NOT_FOUND.asServiceException());
+        
+        List<UUID> savedMessageIds = new ArrayList<>();
         int successCount = 0;
+        int failedCount = 0;
         
         try {
-            // 엔티티 변환
-            List<ChatMessage> messages = request.toEntities();
-            
-            // 배치 검증
-            validateBatchMessages(messages, errors);
-            
-            if (!errors.isEmpty()) {
-                log.warn("Batch validation failed with {} errors", errors.size());
-                long processingTime = System.currentTimeMillis() - startTime;
-                return BatchChatMessageDto.BatchResponse.partial(
-                    request.getMessages().size(), 0, errors, processingTime);
+            // 각 메시지를 개별적으로 저장 (부분 실패 허용)
+            for (ChatMessageDto.CreateRequest messageRequest : request.getMessages()) {
+                try {
+                    ChatMessage message = messageRequest.toEntity(server, channel);
+                    ChatMessage savedMessage = chatMessageRepository.save(message);
+                    savedMessageIds.add(savedMessage.getId());
+                    successCount++;
+                    
+                    log.debug("Saved message: id={}, user={}, content={}", 
+                            savedMessage.getId(), savedMessage.getUsername(),
+                            savedMessage.getContent().length() > 50 ? 
+                                savedMessage.getContent().substring(0, 50) + "..." : savedMessage.getContent());
+                    
+                } catch (Exception e) {
+                    failedCount++;
+                    log.warn("Failed to save message from user {}: {}", 
+                            messageRequest.getUsername(), e.getMessage());
+                }
             }
             
-            // 배치 저장 - JPA의 batch insert 활용
-            List<ChatMessage> savedMessages = chatMessageRepository.saveAll(messages);
-            successCount = savedMessages.size();
+            log.info("Batch processing completed: {}/{} messages saved successfully", 
+                    successCount, request.getMessages().size());
             
-            // 통계 업데이트
-            updateBatchStats(savedMessages.size(), startTime);
-            
-            long processingTime = System.currentTimeMillis() - startTime;
-            
-            log.info("Successfully processed batch: {} messages in {}ms", 
-                    successCount, processingTime);
-            
-            return BatchChatMessageDto.BatchResponse.success(successCount, processingTime);
+            if (failedCount == 0) {
+                return ChatMessageDto.BatchResponse.success(request.getMessages().size(), savedMessageIds);
+            } else {
+                return ChatMessageDto.BatchResponse.partial(request.getMessages().size(), successCount, savedMessageIds);
+            }
             
         } catch (Exception e) {
-            long processingTime = System.currentTimeMillis() - startTime;
-            log.error("Error processing chat message batch", e);
-            
-            errors.add("Batch processing failed: " + e.getMessage());
-            return BatchChatMessageDto.BatchResponse.partial(
-                request.getMessages().size(), successCount, errors, processingTime);
+            log.error("Critical error during batch processing", e);
+            return ChatMessageDto.BatchResponse.partial(request.getMessages().size(), successCount, savedMessageIds);
         }
     }
 
-    /**
-     * 배치 메시지 검증
-     */
-    private void validateBatchMessages(List<ChatMessage> messages, List<String> errors) {
-        for (int i = 0; i < messages.size(); i++) {
-            ChatMessage message = messages.get(i);
-            
-            if (message.getUserId() == null || message.getUserId().toString().trim().isEmpty()) {
-                errors.add(String.format("Message %d: userId is required", i));
-            }
-            
-            if (message.getUsername() == null || message.getUsername().trim().isEmpty()) {
-                errors.add(String.format("Message %d: username is required", i));
-            }
-            
-            if (message.getContent() == null || message.getContent().trim().isEmpty()) {
-                errors.add(String.format("Message %d: content is required", i));
-            }
-            
-            if (message.getContent() != null && message.getContent().length() > 2000) {
-                errors.add(String.format("Message %d: content too long (%d characters)", 
-                          i, message.getContent().length()));
-            }
-            
-            // 추가 비즈니스 규칙 검증 가능
-        }
-    }
-
-    /**
-     * 배치 처리 통계 업데이트
-     */
-    private synchronized void updateBatchStats(int messageCount, long startTime) {
-        totalBatchesProcessed.incrementAndGet();
-        totalMessagesProcessed.addAndGet(messageCount);
-        lastProcessedAt = LocalDateTime.now();
-        
-        long processingTime = System.currentTimeMillis() - startTime;
-        processingTimes.add(processingTime);
-        
-        // 최근 100개 처리 시간만 유지
-        if (processingTimes.size() > 100) {
-            processingTimes.remove(0);
-        }
-    }
 
     /**
      * 채팅 메시지 목록 조회 (페이징)
@@ -239,20 +196,6 @@ public class ChatMessageService {
         return messages.map(ChatMessageDto.Response::from);
     }
 
-    /**
-     * 배치 처리 통계 조회
-     */
-    public BatchChatMessageDto.BatchStats getBatchStats() {
-        double averageProcessingTime = processingTimes.isEmpty() ? 0.0 :
-            processingTimes.stream().mapToLong(Long::longValue).average().orElse(0.0);
-            
-        return BatchChatMessageDto.BatchStats.builder()
-                .totalBatchesProcessed(totalBatchesProcessed.get())
-                .totalMessagesProcessed(totalMessagesProcessed.get())
-                .averageProcessingTimeMs(averageProcessingTime)
-                .lastProcessedAt(lastProcessedAt)
-                .build();
-    }
 
     /**
      * 특정 기간의 메시지 수 조회

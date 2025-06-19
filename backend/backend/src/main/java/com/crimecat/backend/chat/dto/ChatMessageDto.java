@@ -11,7 +11,9 @@ import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.Valid;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public class ChatMessageDto {
@@ -169,5 +171,91 @@ public class ChatMessageDto {
         private UUID messageCount;
         private LocalDateTime lastMessageTime;
         private UUID serverMessageCount;
+    }
+
+    // === Batch Message Processing DTOs ===
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BatchRequest {
+        @NotNull(message = "메시지 목록은 필수입니다")
+        @Size(min = 1, max = 100, message = "배치 크기는 1-100개 사이여야 합니다")
+        @Valid
+        private List<CreateRequest> messages;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CreateRequest {
+        @NotNull(message = "서버 ID는 필수입니다")
+        private UUID serverId;
+
+        @NotNull(message = "채널 ID는 필수입니다")
+        private UUID channelId;
+
+        @NotNull(message = "사용자 ID는 필수입니다")
+        private UUID userId;
+
+        @NotBlank(message = "사용자명은 필수입니다")
+        private String username;
+
+        @NotBlank(message = "메시지 내용은 필수입니다")
+        @Size(max = 2000, message = "메시지는 2000자를 초과할 수 없습니다")
+        private String content;
+
+        @Builder.Default
+        private String messageType = "text";
+
+        private LocalDateTime timestamp;
+
+        public ChatMessage toEntity(ChatServer server, ServerChannel channel) {
+            return ChatMessage.builder()
+                    .server(server)
+                    .channel(channel)
+                    .userId(userId)
+                    .username(username)
+                    .content(content)
+                    .messageType(ChatMessage.MessageType.valueOf(messageType.toUpperCase()))
+                    .build();
+        }
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BatchResponse {
+        private int totalMessages;
+        private int successCount;
+        private int failedCount;
+        private List<UUID> savedMessageIds;
+        private LocalDateTime processedAt;
+        private String status;
+
+        public static BatchResponse success(int totalMessages, List<UUID> savedMessageIds) {
+            return BatchResponse.builder()
+                    .totalMessages(totalMessages)
+                    .successCount(totalMessages)
+                    .failedCount(0)
+                    .savedMessageIds(savedMessageIds)
+                    .processedAt(LocalDateTime.now())
+                    .status("SUCCESS")
+                    .build();
+        }
+
+        public static BatchResponse partial(int totalMessages, int successCount, List<UUID> savedMessageIds) {
+            return BatchResponse.builder()
+                    .totalMessages(totalMessages)
+                    .successCount(successCount)
+                    .failedCount(totalMessages - successCount)
+                    .savedMessageIds(savedMessageIds)
+                    .processedAt(LocalDateTime.now())
+                    .status("PARTIAL_SUCCESS")
+                    .build();
+        }
     }
 }

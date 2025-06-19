@@ -1,6 +1,5 @@
 package com.crimecat.backend.chat.controller.web;
 
-import com.crimecat.backend.chat.dto.BatchChatMessageDto;
 import com.crimecat.backend.chat.dto.ChatMessageDto;
 import com.crimecat.backend.chat.service.ChatMessageService;
 import com.crimecat.backend.utils.AuthenticationUtil;
@@ -128,11 +127,11 @@ public class WebChatMessageController {
      * 배치 처리 통계 조회 (관리자용)
      */
     @GetMapping("/batch/stats")
-    public ResponseEntity<BatchChatMessageDto.BatchStats> getBatchStats() {
+    public ResponseEntity<String> getBatchStats() {
         
         AuthenticationUtil.validateUserHasAuthority(UserRole.ADMIN);
-        BatchChatMessageDto.BatchStats stats = chatMessageService.getBatchStats();
-        return ResponseEntity.ok(stats);
+        // TODO: 배치 통계 기능 구현 예정
+        return ResponseEntity.ok("Batch stats not implemented yet");
     }
 
     /**
