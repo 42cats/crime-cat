@@ -9,9 +9,12 @@ USE ${DB_DISCORD};
 -- 마이그레이션 시작 로그
 SELECT 'Starting Simplified Button Automation System migration...' as status;
 
--- 1. 자동화 그룹 테이블 생성
-CREATE TABLE IF NOT EXISTS button_automation_groups (
-  id VARCHAR(100) PRIMARY KEY COMMENT '그룹 고유 ID',
+-- 1. 자동화 그룹 테이블 생성 (UUID 사용)
+DROP TABLE IF EXISTS button_automations;
+DROP TABLE IF EXISTS button_automation_groups;
+
+CREATE TABLE button_automation_groups (
+  id BINARY(16) PRIMARY KEY COMMENT '그룹 고유 UUID',
   guild_id VARCHAR(50) NOT NULL COMMENT 'Discord 길드 ID',
   name VARCHAR(100) NOT NULL COMMENT '그룹 이름',
   display_order INT DEFAULT 0 COMMENT '그룹 표시 순서',
@@ -21,14 +24,15 @@ CREATE TABLE IF NOT EXISTS button_automation_groups (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uk_guild_name (guild_id, name),
   INDEX idx_guild_order (guild_id, display_order),
-  INDEX idx_guild_active (guild_id, is_active)
+  INDEX idx_guild_active (guild_id, is_active),
+  INDEX idx_button_automation_groups_guild_id (guild_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 2. 자동화 버튼 테이블 생성 (JSON 중심 설계)
-CREATE TABLE IF NOT EXISTS button_automations (
-  id VARCHAR(100) PRIMARY KEY COMMENT '버튼 고유 ID',
+-- 2. 자동화 버튼 테이블 생성 (UUID 사용, JSON 중심 설계)
+CREATE TABLE button_automations (
+  id BINARY(16) PRIMARY KEY COMMENT '버튼 고유 UUID',
   guild_id VARCHAR(50) NOT NULL COMMENT 'Discord 길드 ID',
-  group_id VARCHAR(100) COMMENT '소속 그룹 ID',
+  group_id BINARY(16) COMMENT '소속 그룹 UUID',
   button_label VARCHAR(100) NOT NULL COMMENT '버튼 표시 텍스트',
   display_order INT DEFAULT 0 COMMENT '그룹 내 버튼 표시 순서',
   config JSON NOT NULL COMMENT '전체 버튼 설정 (트리거, 액션, 옵션, UI 등)',
@@ -39,7 +43,9 @@ CREATE TABLE IF NOT EXISTS button_automations (
   UNIQUE KEY uk_guild_label (guild_id, button_label),
   INDEX idx_guild_group (guild_id, group_id),
   INDEX idx_group_order (group_id, display_order),
-  INDEX idx_guild_active (guild_id, is_active)
+  INDEX idx_guild_active (guild_id, is_active),
+  INDEX idx_button_automations_guild_id (guild_id),
+  INDEX idx_button_automations_group_id (group_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 3. 테이블 생성 확인
