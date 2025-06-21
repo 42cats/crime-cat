@@ -85,6 +85,7 @@ import GameHistoryManager from "@/pages/GameHistoryOwnerBoard";
 import UserGameHistoryPage from "@/pages/UserGameHistoryPage";
 import UserGameHistoryPageV2 from "@/pages/UserGameHistoryPageV2";
 import GameComparisonPage from "@/pages/GameComparisonPage";
+import ButtonAutomationPage from "@/pages/dashboard/ButtonAutomationPage";
 
 const App = () => (
     <RecoilRoot>
@@ -318,6 +319,10 @@ const App = () => (
                                 <Route
                                     path="guilds/message-format"
                                     element={<MessageFormat />}
+                                />
+                                <Route
+                                    path="guilds/automation/:guildId"
+                                    element={<ButtonAutomationPage />}
                                 />
                                 <Route
                                     path="guilds/crime-scene-history"
