@@ -17,7 +17,7 @@ export interface ChannelInfo {
   serverId: string;
   name: string;
   description?: string;
-  type: 'TEXT' | 'VOICE' | 'BOTH';
+  type: 'TEXT' | 'VOICE';  // Phase 1에서 BOTH 제거
   memberCount: number;
   maxMembers: number;
 }
@@ -51,10 +51,15 @@ export interface VoiceUser {
   username: string;
   serverId: string;
   channelId: string;
+  trackId?: string;  // SFU 트랙 ID (Cloudflare Realtime)
   volume?: number;
   isMuted?: boolean;
   isDeafened?: boolean;
   isScreenSharing?: boolean;
+  isSpeaking?: boolean;  // Phase 1에서 추가된 Speaking Detection
+  isConnected?: boolean;
+  joinedAt?: Date;
+  lastActivity?: Date;
 }
 
 export interface ConnectionState {
@@ -299,22 +304,66 @@ class WebSocketService {
       this.emit('voice:status:updated', data);
     });
 
-    // WebRTC 시그널링
-    this.socket.on('voice:offer', (data) => {
-      this.emit('webrtc:offer', data);
+    // Phase 2/3: 새로운 Discord 스타일 음성 이벤트들
+    this.socket.on('voice:speaking', (data) => {
+      this.emit('voice:speaking:updated', data);
     });
 
-    this.socket.on('voice:answer', (data) => {
-      this.emit('webrtc:answer', data);
+    this.socket.on('voice:state:update', (data) => {
+      this.emit('voice:state:updated', data);
     });
 
-    this.socket.on('voice:ice-candidate', (data) => {
-      this.emit('webrtc:ice-candidate', data);
+    this.socket.on('voice:users', (data) => {
+      this.emit('voice:users:received', data);
     });
 
-    // 새로운 피어 참가 이벤트
-    this.socket.on('voice:new-peer', (data) => {
-      this.emit('voice:new-peer', data);
+    this.socket.on('voice:joined', (data) => {
+      console.log('✅ Voice channel joined with users:', data);
+      this.connectionState.currentVoiceChannel = {
+        serverId: data.serverId,
+        channelId: data.channelId
+      };
+      
+      // Phase 2에서 업데이트된 사용자 목록 처리
+      if (data.users && data.users.length > 0) {
+        console.log('📋 Voice channel users:', data.users);
+        this.emit('voice:users:received', data);
+      }
+      
+      this.emit('voice:joined', data);
+    });
+
+    // SFU 트랙 관리 이벤트 (P2P WebRTC 시그널링 대체)
+    this.socket.on('sfu:track:published', (data) => {
+      this.emit('sfu:track:published', data);
+    });
+
+    this.socket.on('sfu:track:unpublished', (data) => {
+      this.emit('sfu:track:unpublished', data);
+    });
+
+    this.socket.on('sfu:track:publish:success', (data) => {
+      this.emit('sfu:track:publish:success', data);
+    });
+
+    this.socket.on('sfu:track:publish:error', (data) => {
+      this.emit('sfu:track:publish:error', data);
+    });
+
+    this.socket.on('sfu:track:subscribe:success', (data) => {
+      this.emit('sfu:track:subscribe:success', data);
+    });
+
+    this.socket.on('sfu:track:subscribe:error', (data) => {
+      this.emit('sfu:track:subscribe:error', data);
+    });
+
+    this.socket.on('sfu:track:unpublish:success', (data) => {
+      this.emit('sfu:track:unpublish:success', data);
+    });
+
+    this.socket.on('sfu:track:unpublish:error', (data) => {
+      this.emit('sfu:track:unpublish:error', data);
     });
 
     // 에러 처리
@@ -429,13 +478,13 @@ class WebSocketService {
   }
 
   // 음성 채팅 관련 메서드
-  joinVoiceChannel(serverId: string, channelId: string) {
+  joinVoiceChannel(serverId: string, channelId: string, trackId?: string) {
     if (!this.socket?.connected) {
       throw new Error('WebSocket not connected');
     }
 
-    console.log('🎤 Joining voice channel:', serverId, channelId);
-    this.socket.emit('voice:join', { serverId, channelId });
+    console.log('🎤 Joining voice channel:', serverId, channelId, trackId ? `(Track: ${trackId})` : '');
+    this.socket.emit('voice:join', { serverId, channelId, trackId });
   }
 
   leaveVoiceChannel(serverId?: string, channelId?: string) {
@@ -457,39 +506,62 @@ class WebSocketService {
     this.socket.emit('voice:status', {
       serverId,
       channelId,
-      status
+      ...status
     });
   }
 
-  // WebRTC 시그널링 메서드
-  sendOffer(targetUserId: string, offer: RTCSessionDescriptionInit, serverId: string, channelId: string) {
+  // Phase 3: 새로운 Discord 스타일 음성 이벤트 방출 메서드들
+  
+  // Speaking Detection 상태 전송
+  updateSpeakingStatus(serverId: string, channelId: string, isSpeaking: boolean) {
     if (!this.socket?.connected) return;
 
-    this.socket.emit('voice:offer', {
-      targetUserId,
+    this.socket.emit('voice:speaking', {
+      serverId,
+      channelId,
+      isSpeaking
+    });
+  }
+
+  // 음성 채널 사용자 목록 요청
+  requestVoiceUsers(serverId: string, channelId: string) {
+    if (!this.socket?.connected) return;
+
+    this.socket.emit('voice:get-users', {
+      serverId,
+      channelId
+    });
+  }
+
+  // SFU 트랙 관리 메서드 (P2P WebRTC 시그널링 대체)
+  publishTrack(offer: RTCSessionDescriptionInit, serverId: string, channelId: string) {
+    if (!this.socket?.connected) return;
+
+    console.log('📤 SFU 트랙 발행 요청 전송:', serverId, channelId);
+    this.socket.emit('sfu:track:publish', {
       offer,
       serverId,
       channelId
     });
   }
 
-  sendAnswer(targetUserId: string, answer: RTCSessionDescriptionInit, serverId: string, channelId: string) {
+  subscribeToTrack(trackId: string, offer: RTCSessionDescriptionInit, serverId: string, channelId: string) {
     if (!this.socket?.connected) return;
 
-    this.socket.emit('voice:answer', {
-      targetUserId,
-      answer,
+    console.log('📤 SFU 트랙 구독 요청 전송:', trackId, serverId, channelId);
+    this.socket.emit('sfu:track:subscribe', {
+      trackId,
+      offer,
       serverId,
       channelId
     });
   }
 
-  sendIceCandidate(targetUserId: string, candidate: RTCIceCandidateInit, serverId: string, channelId: string) {
+  unpublishTrack(serverId: string, channelId: string) {
     if (!this.socket?.connected) return;
 
-    this.socket.emit('voice:ice-candidate', {
-      targetUserId,
-      candidate,
+    console.log('📤 SFU 트랙 발행 중단 요청 전송:', serverId, channelId);
+    this.socket.emit('sfu:track:unpublish', {
       serverId,
       channelId
     });

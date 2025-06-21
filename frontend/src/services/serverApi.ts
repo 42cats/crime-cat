@@ -25,7 +25,7 @@ export interface ChannelInfo {
     id: string;
     name: string;
     description?: string;
-    type: "TEXT" | "VOICE" | "BOTH";
+    type: "TEXT" | "VOICE";
     memberCount: number;
     maxMembers: number;
     serverId: string;
@@ -34,7 +34,7 @@ export interface ChannelInfo {
 export interface CreateChannelRequest {
     name: string;
     description?: string;
-    type: "TEXT" | "VOICE" | "BOTH";
+    type: "TEXT" | "VOICE";
     maxMembers?: number;
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import websocketService, { VoiceUser } from '../services/websocketService';
 import { useAppStore } from '../store/useAppStore';
-import { getRTCConfiguration, getAudioConstraints, getRTCConfigurationSync } from '../config/webrtc';
+import { createPeerConnection, getAudioConstraints, createPeerConnectionSync } from '../config/webrtc';
 
 export interface UseVoiceChatReturn {
   voiceUsers: VoiceUser[];
@@ -51,13 +51,15 @@ export const useVoiceChat = (): UseVoiceChatReturn => {
     console.log('⏰ Timestamp:', new Date().toISOString());
     
     try {
-      // Create peer connection with basic auth
-      console.log('📋 1단계: RTC Configuration 가져오기...');
-      const rtcConfig = getRTCConfiguration();
+      // Create peer connection with Cloudflare TURN
+      console.log('📋 1단계: Cloudflare RTCPeerConnection 생성...');
       
-      console.log('📋 2단계: RTCPeerConnection 생성...');
-      const pc = new RTCPeerConnection(rtcConfig);
-      console.log('✅ RTCPeerConnection 생성 성공!');
+      // 사용자 ID와 채널 ID를 사용하여 동적 TURN 자격증명 획득
+      const { user } = useAppStore.getState();
+      const userId = user?.id || 'anonymous';
+      
+      const pc = await createPeerConnection(userId, channelId);
+      console.log('✅ Cloudflare RTCPeerConnection 생성 성공!');
       console.log('🔧 Connection State:', pc.connectionState);
       console.log('🧊 ICE Connection State:', pc.iceConnectionState);
       console.log('📡 ICE Gathering State:', pc.iceGatheringState);
@@ -296,10 +298,11 @@ export const useVoiceChat = (): UseVoiceChatReturn => {
     }
 
     try {
-      // Create peer connection with basic auth
-      const rtcConfig = getRTCConfiguration();
-      const pc = new RTCPeerConnection(rtcConfig);
-
+      // Create peer connection with Cloudflare TURN
+      const { user } = useAppStore.getState();
+      const userId = user?.id || 'anonymous';
+      
+      const pc = await createPeerConnection(userId, channelId);
       peerConnections.current[from] = pc;
 
       // Add local stream

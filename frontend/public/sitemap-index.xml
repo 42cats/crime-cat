@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://mystery-place.com/sitemap.xml</loc>
+    <lastmod>2025-06-18T09:20:56.038Z</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://mystery-place.com/api/sitemap/themes.xml</loc>
+    <lastmod>2025-06-18T09:20:56.038Z</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://mystery-place.com/api/sitemap/game-themes.xml</loc>
+    <lastmod>2025-06-18T09:20:56.038Z</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://mystery-place.com/api/sitemap/posts.xml</loc>
+    <lastmod>2025-06-18T09:20:56.038Z</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://mystery-place.com/api/sitemap/sns.xml</loc>
+    <lastmod>2025-06-18T09:20:56.038Z</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://mystery-place.com/api/sitemap/notices.xml</loc>
+    <lastmod>2025-06-18T09:20:56.038Z</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://mystery-place.com/api/sitemap/commands.xml</loc>
+    <lastmod>2025-06-18T09:20:56.038Z</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://mystery-place.com/api/sitemap/profiles.xml</loc>
+    <lastmod>2025-06-18T09:20:56.038Z</lastmod>
+  </sitemap>
+</sitemapindex>

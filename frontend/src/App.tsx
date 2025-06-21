@@ -83,6 +83,7 @@ import SNSMyPostsPage from "@/pages/sns/SNSMyPostsPage";
 // Voice Chat Pages
 import ServerListPage from "@/pages/ServerListPage";
 import ServerPage from "@/pages/ServerPage";
+import VoiceChatDemo from "@/pages/VoiceChatDemo";
 
 import { queryClient } from "@/lib/reactQuery";
 import GameHistoryManager from "@/pages/GameHistoryOwnerBoard";
@@ -331,6 +332,12 @@ const App = () => (
                                         <ServerPage />
                                     </PrivateRoute>
                                 }
+                            />
+
+                            {/* Voice Chat SFU 데모 페이지 */}
+                            <Route
+                                path="/voice-demo"
+                                element={<VoiceChatDemo />}
                             />
 
                             {/* Dashboard Layout Routes */}

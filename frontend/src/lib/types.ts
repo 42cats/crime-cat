@@ -107,14 +107,11 @@ export interface User {
 export interface Channel {
     id: string;
     name: string;
-    type?: number;           // Discord 채널 타입 번호 (0: 텍스트, 2: 음성, 4: 카테고리 등)
-    typeKey?: string;        // 프론트엔드용 타입 키 ('text', 'voice', 'category' 등)
-    displayName?: string;    // 사용자 친화적 타입명 ('텍스트 채널', '음성 채널' 등)
-    emoji?: string;          // UI 표시용 이모지 ('💬', '🔊' 등)
-    position?: number;       // 채널 정렬 순서
-    parentId?: string;       // 부모 카테고리 ID
-    topic?: string;          // 채널 주제 (선택적)
-    nsfw?: boolean;          // NSFW 여부 (선택적)
+    type: "TEXT" | "VOICE";
+    serverId?: string;
+    description?: string;
+    memberCount?: number;
+    maxMembers?: number;
 }
 
 export interface ContentData {

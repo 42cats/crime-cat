@@ -42,7 +42,7 @@ public class ServerChannel {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "channel_type")
-    private ChannelType channelType = ChannelType.BOTH;
+    private ChannelType channelType = ChannelType.TEXT;
 
     @Column(name = "created_by", nullable = false, columnDefinition = "BINARY(16)")
     @JdbcTypeCode(SqlTypes.BINARY)
@@ -76,16 +76,15 @@ public class ServerChannel {
         this.server = server;
         this.name = name;
         this.description = description;
-        this.channelType = channelType != null ? channelType : ChannelType.BOTH;
+        this.channelType = channelType != null ? channelType : ChannelType.TEXT;
         this.createdBy = createdBy;
         this.maxMembers = maxMembers != null ? maxMembers : 50;
         this.isActive = true;
     }
 
     public enum ChannelType {
-        TEXT,   // 텍스트 전용
-        VOICE,  // 음성 전용
-        BOTH    // 텍스트 + 음성
+        TEXT,   // 텍스트 전용 (Discord 스타일)
+        VOICE   // 음성 전용 (Discord 스타일)
     }
 
     public boolean isOwner(UUID userId) {

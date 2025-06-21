@@ -114,9 +114,10 @@ export const ChannelSidebar: React.FC<ChannelSidebarProps> = ({ className = '' }
         {/* 텍스트 채널 섹션 */}
         <ChannelSection
           title="텍스트 채널"
-          channels={serverChannels.filter(c => c.type === 'TEXT' || c.type === 'BOTH')}
+          channels={serverChannels.filter(c => c.type === 'TEXT')}
           currentChannelId={currentChannel?.channelId}
           onChannelClick={handleChannelClick}
+          isVoiceSection={false}
           icon={
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z" clipRule="evenodd" />
@@ -125,9 +126,9 @@ export const ChannelSidebar: React.FC<ChannelSidebarProps> = ({ className = '' }
         />
 
         {/* 음성 채널 섹션 */}
-        <ChannelSection
+        <VoiceChannelSection
           title="음성 채널"
-          channels={serverChannels.filter(c => c.type === 'VOICE' || c.type === 'BOTH')}
+          channels={serverChannels.filter(c => c.type === 'VOICE')}
           currentChannelId={currentChannel?.channelId}
           onChannelClick={handleChannelClick}
           icon={
@@ -161,6 +162,15 @@ interface ChannelSectionProps {
   channels: ChannelInfo[];
   currentChannelId?: string;
   onChannelClick: (channelId: string) => void;
+  isVoiceSection: boolean;
+  icon: React.ReactNode;
+}
+
+interface VoiceChannelSectionProps {
+  title: string;
+  channels: ChannelInfo[];
+  currentChannelId?: string;
+  onChannelClick: (channelId: string) => void;
   icon: React.ReactNode;
 }
 
@@ -169,6 +179,7 @@ const ChannelSection: React.FC<ChannelSectionProps> = ({
   channels,
   currentChannelId,
   onChannelClick,
+  isVoiceSection,
   icon
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -231,12 +242,6 @@ const ChannelItem: React.FC<ChannelItemProps> = ({ channel, isActive, onClick })
             <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.824L4.168 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.168l4.215-3.824z" clipRule="evenodd" />
           </svg>
         );
-      case 'BOTH':
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-          </svg>
-        );
       default:
         return null;
     }
@@ -260,7 +265,7 @@ const ChannelItem: React.FC<ChannelItemProps> = ({ channel, isActive, onClick })
         <span className="flex-1 truncate text-sm">{channel.name}</span>
         
         {/* 멤버 수 표시 (음성 채널용) */}
-        {(channel.type === 'VOICE' || channel.type === 'BOTH') && channel.memberCount > 0 && (
+        {channel.type === 'VOICE' && channel.memberCount > 0 && (
           <span className="text-xs text-gray-400 ml-1">
             {channel.memberCount}
           </span>
@@ -290,6 +295,187 @@ const ChannelItem: React.FC<ChannelItemProps> = ({ channel, isActive, onClick })
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// Discord 스타일 음성 채널 섹션 (참여중인 사용자 표시)
+const VoiceChannelSection: React.FC<VoiceChannelSectionProps> = ({
+  title,
+  channels,
+  currentChannelId,
+  onChannelClick,
+  icon
+}) => {
+  const { voiceUsers, isVoiceConnected, currentServer } = useAppStore();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  return (
+    <div className="mb-4">
+      {/* 섹션 헤더 */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="flex items-center w-full text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 hover:text-gray-300"
+      >
+        <svg
+          className={`w-3 h-3 mr-1 transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+        </svg>
+        {icon}
+        <span className="ml-1">{title}</span>
+      </button>
+
+      {/* 채널 목록 */}
+      {!isCollapsed && (
+        <div className="space-y-0.5">
+          {channels.map((channel) => (
+            <VoiceChannelItem
+              key={channel.id}
+              channel={channel}
+              isActive={currentChannelId === channel.id}
+              isConnected={isVoiceConnected && currentChannelId === channel.id}
+              voiceUsers={voiceUsers.filter(user => 
+                (user.channelId === channel.id || user.channelId === parseInt(channel.id)) && 
+                (user.serverId === currentServer || user.serverId === parseInt(currentServer || '0'))
+              )}
+              onClick={() => onChannelClick(channel.id)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Discord 스타일 음성 채널 아이템
+interface VoiceChannelItemProps {
+  channel: ChannelInfo;
+  isActive: boolean;
+  isConnected: boolean;
+  voiceUsers: any[];
+  onClick: () => void;
+}
+
+const VoiceChannelItem: React.FC<VoiceChannelItemProps> = ({ 
+  channel, 
+  isActive, 
+  isConnected,
+  voiceUsers,
+  onClick 
+}) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  return (
+    <div className="relative">
+      {/* 채널 버튼 */}
+      <button
+        onClick={onClick}
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        className={`
+          w-full flex items-center px-2 py-1 rounded text-left transition-colors group
+          ${isActive 
+            ? 'bg-gray-600 text-white' 
+            : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+          }
+        `}
+      >
+        <span className={`text-gray-400 mr-2 ${isConnected ? 'text-green-400' : ''}`}>
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.824L4.168 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.168l4.215-3.824z" clipRule="evenodd" />
+          </svg>
+        </span>
+        <span className="flex-1 truncate text-sm">{channel.name}</span>
+        
+        {/* 멤버 수 표시 */}
+        {voiceUsers.length > 0 && (
+          <span className="text-xs text-gray-400 ml-1">
+            {voiceUsers.length}
+          </span>
+        )}
+
+        {/* 설정 버튼 */}
+        <div
+          className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-white ml-1 cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            // TODO: 채널 설정 모달 열기
+          }}
+        >
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+          </svg>
+        </div>
+      </button>
+
+      {/* 참여중인 사용자 목록 (Discord 스타일) */}
+      {voiceUsers.length > 0 && (
+        <div className="ml-6 mt-1 space-y-1">
+          {voiceUsers.map((user) => (
+            <VoiceUserItem key={user.id || user.userId} user={user} />
+          ))}
+        </div>
+      )}
+
+      {/* 툴팁 */}
+      {showTooltip && channel.description && (
+        <div className="absolute left-full top-0 z-50 ml-2 bg-black text-white px-3 py-2 rounded-lg shadow-lg whitespace-nowrap">
+          <div className="font-semibold">{channel.name}</div>
+          <div className="text-sm text-gray-300">{channel.description}</div>
+          <div className="text-xs text-gray-400 mt-1">
+            {voiceUsers.length > 0 ? `${voiceUsers.length}명 참여중` : '참여자 없음'}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Discord 스타일 음성 채널 참여 사용자 아이템
+interface VoiceUserItemProps {
+  user: any;
+}
+
+const VoiceUserItem: React.FC<VoiceUserItemProps> = ({ user }) => {
+  return (
+    <div className={`flex items-center px-2 py-1 text-sm transition-all duration-200 ${
+      user.isSpeaking ? 'text-green-400' : 'text-gray-400'
+    }`}>
+      {/* 사용자 아바타 */}
+      <div className={`w-4 h-4 rounded-full mr-2 flex items-center justify-center text-xs transition-all duration-200 ${
+        user.isSpeaking 
+          ? 'bg-green-400 text-white ring-2 ring-green-400 ring-opacity-50' 
+          : 'bg-gray-600 text-gray-300'
+      }`}>
+        {user.username?.charAt(0).toUpperCase() || 'U'}
+      </div>
+
+      {/* 사용자명 */}
+      <span className="flex-1 truncate">
+        {user.username || 'Unknown User'}
+      </span>
+
+      {/* 상태 아이콘들 */}
+      <div className="flex items-center space-x-1 ml-1">
+        {user.isMuted && (
+          <svg className="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0017.542 11H16.5a8.002 8.002 0 01-11.532-2.226L3.707 2.293z" clipRule="evenodd" />
+          </svg>
+        )}
+        {user.isDeafened && (
+          <svg className="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
+          </svg>
+        )}
+        {user.isScreenSharing && (
+          <svg className="w-3 h-3 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 3a1 1 0 000 2h.01a1 1 0 100-2H5zm0 3a1 1 0 000 2h6a1 1 0 100-2H5z" clipRule="evenodd" />
+          </svg>
+        )}
+      </div>
     </div>
   );
 };
@@ -360,7 +546,7 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
 }) => {
   const [channelName, setChannelName] = useState('');
   const [channelDescription, setChannelDescription] = useState('');
-  const [channelType, setChannelType] = useState<'TEXT' | 'VOICE' | 'BOTH'>('TEXT');
+  const [channelType, setChannelType] = useState<'TEXT' | 'VOICE'>('TEXT');
   const [maxMembers, setMaxMembers] = useState(100);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -418,8 +604,7 @@ const CreateChannelModal: React.FC<CreateChannelModalProps> = ({
             <div className="space-y-2">
               {[
                 { value: 'TEXT', label: '텍스트 채널', icon: '💬' },
-                { value: 'VOICE', label: '음성 채널', icon: '🔊' },
-                { value: 'BOTH', label: '텍스트 + 음성', icon: '🎥' }
+                { value: 'VOICE', label: '음성 채널', icon: '🔊' }
               ].map((type) => (
                 <label key={type.value} className="flex items-center cursor-pointer">
                   <input
