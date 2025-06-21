@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Search, Server, Users, Settings, Globe, Lock } from "lucide-react";
+import { Search, Server, Users, Settings, Globe, Lock, Zap } from "lucide-react";
 import { authService } from "@/api/auth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -71,6 +71,12 @@ const Guilds: React.FC = () => {
 
     const gameHistoryPage = (guildId: string, guildName: string) => {
         navigate(`/dashboard/guilds/crime-scene-history`, {
+            state: { guildName, guildId },
+        });
+    };
+
+    const buttonAutomationPage = (guildId: string, guildName: string) => {
+        navigate(`/dashboard/guilds/automation/${guildId}`, {
             state: { guildName, guildId },
         });
     };
@@ -262,6 +268,19 @@ const Guilds: React.FC = () => {
                                     >
                                         <Settings className="h-4 w-4 mr-2" />
                                         버튼 매크로
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        className="w-full"
+                                        onClick={() =>
+                                            buttonAutomationPage(
+                                                guild.id,
+                                                guild.name
+                                            )
+                                        }
+                                    >
+                                        <Zap className="h-4 w-4 mr-2" />
+                                        자동화 버튼
                                     </Button>
                                     <Button
                                         variant="secondary"
