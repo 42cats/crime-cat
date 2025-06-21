@@ -639,4 +639,8 @@ api 구조는
 Users/byeonsanghun/goinfre/crime-cat/backend/backend/src/main/java/com/crimecat/backend/user/domain/DiscordUser.java 가 있어
 백엔드 캐시구조및 시큐리티 설정은 /Users/byeonsanghun/goinfre/crime-cat/backend/backend/src/main/java/com/crimecat/backend/config 에서 확인가능
 
+디스코드는 에이피아이는 /Users/byeonsanghun/goinfre/crime-cat/bot/Commands/api 에 있고
+커맨드는 /Users/byeonsanghun/goinfre/crime-cat/bot/Commands 에 잇는 커맨드 형식을따르고 유틸은 /Users/byeonsanghun/goinfre/crime-cat/bot/Commands/utility 에 있는 유틸을 사용하거나 추가한다 /Users/byeonsanghun/goinfre/crime-cat/bot/Response 에서 각종 버튼이나 이벤트에 응답하는 구조를 작성하고 /Users/byeonsanghun/goinfre/crime-cat/bot/main.js 는 메인 인 파일로 최초 실행 파일 구조이다.
+
 모든 작업은 단계적으로 원인및 어떻게 진행할지 파악해서 총합 정리및 검토를 거치고 불완전 하거나 오류가 있으면 다시 초기 단계로 돌아가 재검토 하여 완성도를 높이고 그다음 사용자에게 어떻게 진행할지 브리핑한다음에 사용자가 승인하면 작업을 시작한다. 
+ 
