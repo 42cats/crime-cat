@@ -3,7 +3,7 @@ import { Card, Typography, message } from 'antd';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { DragOutlined } from '@ant-design/icons';
 import { ActionConfig } from '../../types/buttonAutomation';
-import { ACTION_TYPES } from './ActionEditor';
+import { ACTION_TYPES } from '../../constants/actionTypes';
 
 const { Text } = Typography;
 

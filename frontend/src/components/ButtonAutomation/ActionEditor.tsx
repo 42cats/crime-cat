@@ -1,128 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Select, Input, InputNumber, Button, Space, Row, Col, Typography, Divider, Switch, Form, message } from 'antd';
-import { DeleteOutlined, PlusOutlined, DragOutlined } from '@ant-design/icons';
+import { Card, Select, Input, InputNumber, Button, Space, Row, Col, Typography, Divider, Switch, Form, message, Tag } from 'antd';
+import { DeleteOutlined, PlusOutlined, DragOutlined, CopyOutlined } from '@ant-design/icons';
 import { ActionConfig, ActionType } from '../../types/buttonAutomation';
 import { DISCORD_LIMITS, validateActionCount, isValidDiscordId } from '../../utils/validation';
 import { MusicParameterEditor } from './ActionParameters/MusicParameterEditor';
+import { PERMISSION_CATEGORIES, PERMISSION_INFO, PermissionUtils, CHANNEL_TYPE_PERMISSIONS } from '../../constants/discordPermissions';
+import { MultiChannelSelect } from '../ui/multi-channel-select';
+import { MultiRoleSelect } from '../ui/multi-role-select';
+import { ChannelProvider } from '../../contexts/ChannelContext';
+import { useChannels } from '../../hooks/useChannels';
+import { ACTION_TYPES } from '../../constants/actionTypes';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
-// 액션 타입 정의
-export const ACTION_TYPES = {
-  // 역할 관리
-  add_role: {
-    label: '역할 추가',
-    icon: '👥',
-    description: '사용자에게 역할을 추가합니다',
-    parameters: ['roleId'],
-    requiredPermissions: ['MANAGE_ROLES']
-  },
-  remove_role: {
-    label: '역할 제거',
-    icon: '👤',
-    description: '사용자의 역할을 제거합니다',
-    parameters: ['roleId'],
-    requiredPermissions: ['MANAGE_ROLES']
-  },
-  toggle_role: {
-    label: '역할 토글',
-    icon: '🔄',
-    description: '역할이 있으면 제거, 없으면 추가합니다',
-    parameters: ['roleId'],
-    requiredPermissions: ['MANAGE_ROLES']
-  },
-  
-  // 닉네임 관리
-  change_nickname: {
-    label: '닉네임 변경',
-    icon: '✏️',
-    description: '사용자의 닉네임을 변경합니다',
-    parameters: ['nickname'],
-    requiredPermissions: ['MANAGE_NICKNAMES']
-  },
-  reset_nickname: {
-    label: '닉네임 초기화',
-    icon: '🔄',
-    description: '사용자의 닉네임을 원래대로 복원합니다',
-    parameters: [],
-    requiredPermissions: ['MANAGE_NICKNAMES']
-  },
-  
-  // 메시지 관리
-  send_message: {
-    label: '메시지 전송',
-    icon: '💬',
-    description: '지정된 채널에 메시지를 전송합니다',
-    parameters: ['channelId', 'message'],
-    requiredPermissions: ['SEND_MESSAGES']
-  },
-  send_dm: {
-    label: 'DM 전송',
-    icon: '📨',
-    description: '사용자에게 개인 메시지를 전송합니다',
-    parameters: ['message'],
-    requiredPermissions: []
-  },
-  
-  // 음성 채널 관리
-  move_voice_channel: {
-    label: '음성 채널 이동',
-    icon: '🎵',
-    description: '사용자를 다른 음성 채널로 이동시킵니다',
-    parameters: ['channelId'],
-    requiredPermissions: ['MOVE_MEMBERS']
-  },
-  disconnect_voice: {
-    label: '음성 채널 연결 해제',
-    icon: '🔇',
-    description: '사용자를 음성 채널에서 연결 해제합니다',
-    parameters: [],
-    requiredPermissions: ['MOVE_MEMBERS']
-  },
-  
-  // 채널 관리
-  set_slowmode: {
-    label: '슬로우모드 설정',
-    icon: '⏰',
-    description: '채널의 슬로우모드를 설정합니다',
-    parameters: ['channelId', 'seconds'],
-    requiredPermissions: ['MANAGE_CHANNELS']
-  },
-  
-  // 음악 관리
-  play_music: {
-    label: '음악 재생',
-    icon: '🎵',
-    description: '선택한 음악을 재생합니다',
-    parameters: ['source', 'trackId', 'trackTitle', 'duration', 'stopBehavior', 'volume'],
-    requiredPermissions: ['CONNECT', 'SPEAK'],
-    category: 'music'
-  },
-  stop_music: {
-    label: '음악 정지',
-    icon: '⏹️',
-    description: '현재 재생 중인 음악을 정지합니다',
-    parameters: [],
-    requiredPermissions: ['CONNECT', 'SPEAK'],
-    category: 'music'
-  },
-  pause_music: {
-    label: '음악 일시정지/재개',
-    icon: '⏸️',
-    description: '현재 재생 중인 음악을 일시정지하거나 재개합니다',
-    parameters: [],
-    requiredPermissions: ['CONNECT', 'SPEAK'],
-    category: 'music'
-  }
-} as const;
+
 
 interface ActionEditorProps {
   actions: ActionConfig[];
   onChange: (actions: ActionConfig[]) => void;
   maxActions?: number;
-  guildId?: string;
+  guildId: string; // 필수로 변경
   userId?: string;
 }
 
@@ -134,6 +33,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
   userId
 }) => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const { channels } = useChannels();
 
   // 액션 추가
   const addAction = () => {
@@ -160,6 +60,20 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
   const removeAction = (index: number) => {
     const newActions = actions.filter((_, i) => i !== index);
     onChange(newActions);
+  };
+
+  // 액션 복사
+  const copyAction = (index: number) => {
+    if (actions.length >= maxActions) {
+      message.warning('최대 액션 개수에 도달했습니다.');
+      return;
+    }
+    
+    const actionToCopy = { ...actions[index] };
+    const newActions = [...actions];
+    newActions.splice(index + 1, 0, actionToCopy);
+    onChange(newActions);
+    message.success('액션이 복사되었습니다.');
   };
 
   // 액션 업데이트
@@ -204,7 +118,110 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
     if (draggedIndex !== null && draggedIndex !== dropIndex) {
       moveAction(draggedIndex, dropIndex);
     }
+    // 드래그 상태를 확실히 초기화
+    setTimeout(() => setDraggedIndex(null), 100);
+  };
+
+  const handleDragEnd = () => {
+    // 드래그가 끝나면 상태 초기화
     setDraggedIndex(null);
+  };
+
+  // 권한 옵션 렌더링 함수
+  const renderPermissionOptions = (action: ActionConfig) => {
+    // 액션 타입에 따라 적절한 권한 카테고리만 표시
+    let relevantCategories: string[] = [];
+    let specificPermissions: string[] = [];
+    
+    if (action.type === 'grant_server_permission' || action.type === 'revoke_server_permission') {
+      // 서버 권한 액션: 서버 레벨 권한만
+      relevantCategories = ['admin', 'server_management', 'member_management', 'events', 'misc'];
+    } else if (action.type === 'set_channel_permission' || action.type === 'remove_channel_permission') {
+      // 채널 권한 액션: 선택된 채널 타입에 따라 권한 결정
+      const selectedChannelIds = action.parameters.channelId;
+      if (selectedChannelIds && channels.length > 0) {
+        // 여러 채널이 선택된 경우를 고려
+        const channelIds = Array.isArray(selectedChannelIds) ? selectedChannelIds : [selectedChannelIds];
+        const selectedChannels = channels.filter(ch => channelIds.includes(ch.id));
+        
+        if (selectedChannels.length > 0) {
+          // 선택된 채널들의 타입을 확인하여 공통 권한 결정
+          const channelTypes = selectedChannels.map(ch => ch.typeKey || 'text');
+          const hasVoice = channelTypes.some(type => type === 'voice' || type === 'stage');
+          const hasText = channelTypes.some(type => type === 'text' || type === 'announcement');
+          const hasCategory = channelTypes.some(type => type === 'category');
+          
+          // 선택된 채널 타입에 따라 권한 카테고리 결정
+          if (hasVoice && hasText) {
+            // 음성과 텍스트 채널이 섞여있으면 공통 권한만 표시 (채널 보기, 관리 등)
+            relevantCategories = ['server_management'];
+            specificPermissions = ['VIEW_CHANNEL', 'MANAGE_CHANNELS', 'MANAGE_PERMISSIONS'];
+          } else if (hasVoice) {
+            // 음성 채널만 선택: 음성 관련 권한만
+            relevantCategories = ['voice_channel'];
+            specificPermissions = CHANNEL_TYPE_PERMISSIONS.voice || [];
+          } else if (hasText) {
+            // 텍스트 채널만 선택: 텍스트 관련 권한만
+            relevantCategories = ['text_channel', 'threads'];
+            specificPermissions = CHANNEL_TYPE_PERMISSIONS.text || [];
+          } else if (hasCategory) {
+            relevantCategories = ['server_management'];
+            specificPermissions = CHANNEL_TYPE_PERMISSIONS.category || [];
+          } else {
+            // 알 수 없는 타입: 기본 채널 권한만
+            relevantCategories = ['server_management'];
+            specificPermissions = ['VIEW_CHANNEL', 'MANAGE_CHANNELS'];
+          }
+        } else {
+          // 기본값: 모든 채널 권한
+          relevantCategories = ['text_channel', 'voice_channel', 'threads'];
+        }
+      } else {
+        // 채널이 선택되지 않았으면 모든 채널 권한 표시
+        relevantCategories = ['text_channel', 'voice_channel', 'threads'];
+      }
+    } else {
+      // 기타 액션: 모든 권한 표시
+      relevantCategories = Object.keys(PERMISSION_CATEGORIES);
+    }
+
+    return Object.entries(PERMISSION_CATEGORIES)
+      .filter(([categoryKey]) => relevantCategories.includes(categoryKey))
+      .map(([categoryKey, category]) => {
+        // 특정 권한이 지정된 경우 해당 권한만 표시
+        const permissionsToShow = specificPermissions.length > 0 
+          ? category.permissions.filter(p => specificPermissions.includes(p))
+          : category.permissions;
+          
+        if (permissionsToShow.length === 0) return null;
+        
+        return (
+          <Select.OptGroup 
+            key={categoryKey} 
+            label={
+              <span style={{ fontWeight: 'bold', color: category.color }}>
+                {category.icon} {category.name}
+              </span>
+            }
+          >
+            {permissionsToShow.map((permission) => (
+              <Option 
+                key={permission} 
+                value={permission}
+                label={PermissionUtils.getPermissionName(permission as keyof typeof PERMISSION_INFO)}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{PermissionUtils.getPermissionName(permission as keyof typeof PERMISSION_INFO)}</span>
+                  <Tag color={category.color} size="small">{category.icon}</Tag>
+                </div>
+                <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>
+                  {PermissionUtils.getPermissionDescription(permission as keyof typeof PERMISSION_INFO)}
+                </div>
+              </Option>
+            ))}
+          </Select.OptGroup>
+        );
+      }).filter(Boolean); // null 값 제거
   };
 
   // 액션 타입별 파라미터 렌더링
@@ -234,29 +251,54 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
     return (
       <div style={{ marginTop: 16 }}>
         {actionType.parameters.includes('roleId') && (
-          <Form.Item label="역할 ID" style={{ marginBottom: 12 }}>
-            <Input
-              value={action.parameters.roleId || ''}
-              onChange={(e) => updateActionParameter(index, 'roleId', e.target.value)}
-              placeholder="123456789012345678"
-              status={action.parameters.roleId && !isValidDiscordId(action.parameters.roleId) ? 'error' : ''}
+          <Form.Item label="대상 역할" style={{ marginBottom: 12 }}>
+            <MultiRoleSelect 
+              value={action.parameters.roleId ? [action.parameters.roleId] : []}
+              onChange={(roles) => updateActionParameter(index, 'roleId', roles[0] || '')}
+              guildId={guildId}
+              placeholder="역할을 선택하세요"
+              maxSelections={1}
             />
-            {action.parameters.roleId && !isValidDiscordId(action.parameters.roleId) && (
-              <Text type="danger" style={{ fontSize: 12 }}>올바른 역할 ID를 입력해주세요</Text>
-            )}
+            <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+              💡 역할의 색상과 위치가 표시됩니다
+            </Text>
           </Form.Item>
         )}
 
         {actionType.parameters.includes('channelId') && (
-          <Form.Item label="채널 ID" style={{ marginBottom: 12 }}>
-            <Input
-              value={action.parameters.channelId || ''}
-              onChange={(e) => updateActionParameter(index, 'channelId', e.target.value)}
-              placeholder="123456789012345678"
-              status={action.parameters.channelId && !isValidDiscordId(action.parameters.channelId) ? 'error' : ''}
-            />
-            {action.parameters.channelId && !isValidDiscordId(action.parameters.channelId) && (
-              <Text type="danger" style={{ fontSize: 12 }}>올바른 채널 ID를 입력해주세요</Text>
+          <Form.Item label="대상 채널" style={{ marginBottom: 12 }}>
+            <ChannelProvider guildId={guildId}>
+              <MultiChannelSelect 
+                value={action.parameters.channelId ? (Array.isArray(action.parameters.channelId) ? action.parameters.channelId : [action.parameters.channelId]) : []}
+                onChange={(channels) => {
+                  // 채널 권한 액션의 경우 여러 채널 선택 가능, 그 외는 단일 채널만 선택
+                  if (action.type.includes('channel_permission')) {
+                    updateActionParameter(index, 'channelId', channels);
+                  } else {
+                    updateActionParameter(index, 'channelId', channels[0] || '');
+                  }
+                }}
+                placeholder="채널을 선택하세요"
+                maxSelections={action.type.includes('channel_permission') ? undefined : 1}
+                channelTypes={
+                  action.type.includes('channel_permission') 
+                    ? ['text', 'voice', 'category', 'announcement'] 
+                    : undefined
+                }
+              />
+            </ChannelProvider>
+            
+            {/* 채널별 적용 가능한 권한 안내 */}
+            {action.type.includes('channel_permission') && (
+              <div style={{ marginTop: 8, padding: 8, backgroundColor: '#f0f8ff', borderRadius: 4 }}>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  💡 <strong>채널 타입별 권한:</strong><br/>
+                  📝 텍스트: 메시지, 스레드, 이모지 관련 권한<br/>
+                  🔊 음성: 연결, 말하기, 음소거 관련 권한<br/>
+                  📁 카테고리: 채널 보기, 관리 권한<br/>
+                  🔢 <strong>여러 채널 선택 가능:</strong> 한 번에 여러 채널에 같은 권한을 적용할 수 있습니다
+                </Text>
+              </div>
             )}
           </Form.Item>
         )}
@@ -303,6 +345,95 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
             />
           </Form.Item>
         )}
+
+        {actionType.parameters.includes('duration') && (
+          <Form.Item label="지속 시간 (초)" style={{ marginBottom: 12 }}>
+            <InputNumber
+              value={action.parameters.duration || 0}
+              onChange={(value) => updateActionParameter(index, 'duration', value || 0)}
+              min={0}
+              max={3600} // 1시간
+              style={{ width: '100%' }}
+              placeholder="0 (영구)"
+              addonAfter="초"
+            />
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              0으로 설정하면 영구적으로 적용됩니다
+            </Text>
+          </Form.Item>
+        )}
+
+        {actionType.parameters.includes('enable') && (
+          <Form.Item label="활성화" style={{ marginBottom: 12 }}>
+            <Switch
+              checked={action.parameters.enable !== false}
+              onChange={(checked) => updateActionParameter(index, 'enable', checked)}
+              checkedChildren="ON"
+              unCheckedChildren="OFF"
+            />
+          </Form.Item>
+        )}
+
+        {actionType.parameters.includes('permissions') && (
+          <Form.Item label="권한 설정" style={{ marginBottom: 12 }}>
+            <div>
+              <Select
+                mode="multiple"
+                value={action.parameters.permissions || []}
+                onChange={(value) => updateActionParameter(index, 'permissions', value)}
+                placeholder="권한을 선택하세요"
+                style={{ width: '100%', marginBottom: 12 }}
+                optionLabelProp="label"
+                filterOption={(input, option) => 
+                  (option?.label?.toString().toLowerCase().includes(input.toLowerCase()) || false) ||
+                  (option?.value?.toString().toLowerCase().includes(input.toLowerCase()) || false)
+                }
+              >
+                {renderPermissionOptions(action)}
+              </Select>
+              
+              {/* 권한 범위 안내 */}
+              <div style={{ marginBottom: 8, padding: 8, backgroundColor: '#f0f8ff', borderRadius: 4 }}>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  {action.type === 'grant_server_permission' || action.type === 'revoke_server_permission' ? (
+                    <>🏢 <strong>서버 권한:</strong> 서버 전체에 적용되는 권한들입니다</>
+                  ) : action.type === 'set_channel_permission' || action.type === 'remove_channel_permission' ? (
+                    <>📝 <strong>채널 권한:</strong> 선택한 채널에만 적용되는 권한들입니다</>
+                  ) : (
+                    <>⚙️ <strong>일반 권한:</strong> 액션에 필요한 권한들입니다</>
+                  )}
+                </Text>
+              </div>
+              
+              {/* 선택된 권한들 표시 */}
+              {action.parameters.permissions && action.parameters.permissions.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <Text type="secondary" style={{ fontSize: 12, marginBottom: 4, display: 'block' }}>
+                    선택된 권한 ({action.parameters.permissions.length}개):
+                  </Text>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {action.parameters.permissions.map((permission: string) => {
+                      const categoryKey = Object.keys(PERMISSION_CATEGORIES).find(key => 
+                        PERMISSION_CATEGORIES[key as keyof typeof PERMISSION_CATEGORIES].permissions.includes(permission)
+                      );
+                      const category = categoryKey ? PERMISSION_CATEGORIES[categoryKey as keyof typeof PERMISSION_CATEGORIES] : null;
+                      
+                      return (
+                        <Tag 
+                          key={permission} 
+                          color={category?.color || 'default'}
+                          style={{ fontSize: 11 }}
+                        >
+                          {category?.icon} {PermissionUtils.getPermissionName(permission as keyof typeof PERMISSION_INFO)}
+                        </Tag>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Form.Item>
+        )}
       </div>
     );
   };
@@ -336,19 +467,30 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
               </div>
             }
             extra={
-              actions.length > 1 && (
+              <Space>
                 <Button
                   type="text"
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={() => removeAction(index)}
+                  icon={<CopyOutlined />}
+                  onClick={() => copyAction(index)}
+                  disabled={actions.length >= maxActions}
+                  title="액션 복사"
                 />
-              )
+                {actions.length > 1 && (
+                  <Button
+                    type="text"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={() => removeAction(index)}
+                    title="액션 삭제"
+                  />
+                )}
+              </Space>
             }
             draggable
             onDragStart={() => handleDragStart(index)}
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, index)}
+            onDragEnd={handleDragEnd}
           >
             <Row gutter={16}>
               <Col span={8}>
@@ -379,6 +521,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                   >
                     <Option value="executor">버튼을 누른 사람</Option>
                     <Option value="all">모든 사람</Option>
+                    <Option value="role">특정 역할의 모든 사용자</Option>
                     <Option value="specific">특정 사용자</Option>
                   </Select>
                 </Form.Item>
@@ -396,6 +539,48 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                 </Form.Item>
               </Col>
             </Row>
+
+            {/* 대상이 특정 역할인 경우 역할 선택 */}
+            {action.target === 'role' && (
+              <Row gutter={16} style={{ marginTop: 8 }}>
+                <Col span={24}>
+                  <Form.Item label="대상 역할 선택" style={{ marginBottom: 12 }}>
+                    <MultiRoleSelect 
+                      value={action.parameters.targetRoleId ? [action.parameters.targetRoleId] : []}
+                      onChange={(roles) => updateActionParameter(index, 'targetRoleId', roles[0] || '')}
+                      guildId={guildId}
+                      placeholder="액션을 적용할 역할을 선택하세요"
+                      maxSelections={1}
+                    />
+                    <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+                      💡 선택한 역할을 가진 모든 사용자에게 액션이 적용됩니다
+                    </Text>
+                  </Form.Item>
+                </Col>
+              </Row>
+            )}
+
+            {/* 대상이 특정 사용자인 경우 사용자 ID 입력 */}
+            {action.target === 'specific' && (
+              <Row gutter={16} style={{ marginTop: 8 }}>
+                <Col span={24}>
+                  <Form.Item label="대상 사용자 ID" style={{ marginBottom: 12 }}>
+                    <Input
+                      value={action.parameters.targetUserId || ''}
+                      onChange={(e) => updateActionParameter(index, 'targetUserId', e.target.value)}
+                      placeholder="123456789012345678"
+                      status={action.parameters.targetUserId && !isValidDiscordId(action.parameters.targetUserId) ? 'error' : ''}
+                    />
+                    {action.parameters.targetUserId && !isValidDiscordId(action.parameters.targetUserId) && (
+                      <Text type="danger" style={{ fontSize: 12 }}>올바른 사용자 ID를 입력해주세요</Text>
+                    )}
+                    <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+                      👤 특정 사용자의 Discord ID를 입력하세요
+                    </Text>
+                  </Form.Item>
+                </Col>
+              </Row>
+            )}
 
             {actionType && (
               <div style={{ marginTop: 8, padding: 8, backgroundColor: '#f5f5f5', borderRadius: 4 }}>
@@ -421,8 +606,9 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     style={{ width: '100%' }}
                   >
                     <Option value="none">표시 안함</Option>
-                    <Option value="private">개인에게만</Option>
-                    <Option value="public">채널에 공개</Option>
+                    <Option value="private">개인에게만 (DM)</Option>
+                    <Option value="current_channel">현재 채널</Option>
+                    <Option value="specific_channel">특정 채널</Option>
                   </Select>
                 </Form.Item>
               </Col>
@@ -434,12 +620,44 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     onChange={(e) => updateAction(index, { 
                       result: { ...action.result, message: e.target.value }
                     })}
-                    placeholder="완료되었습니다!"
+                    placeholder="완료되었습니다! {user}님의 작업이 성공했습니다."
                     maxLength={200}
                   />
                 </Form.Item>
               </Col>
             </Row>
+
+            {/* 특정 채널 선택 (결과 메시지가 특정 채널인 경우) */}
+            {action.result?.visibility === 'specific_channel' && (
+              <Row gutter={16} style={{ marginTop: 8 }}>
+                <Col span={24}>
+                  <Form.Item label="메시지를 보낼 채널" style={{ marginBottom: 12 }}>
+                    <ChannelProvider guildId={guildId}>
+                      <MultiChannelSelect 
+                        value={action.result?.channelId ? [action.result.channelId] : []}
+                        onChange={(channels) => updateAction(index, { 
+                          result: { ...action.result, channelId: channels[0] || '' }
+                        })}
+                        placeholder="결과 메시지를 보낼 채널을 선택하세요"
+                        maxSelections={1}
+                        channelTypes={['text', 'announcement']} // 텍스트 채널만
+                      />
+                    </ChannelProvider>
+                    <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+                      📝 텍스트 채널과 공지 채널만 선택할 수 있습니다
+                    </Text>
+                  </Form.Item>
+                </Col>
+              </Row>
+            )}
+
+            {/* 변수 사용 가이드 */}
+            <div style={{ marginTop: 8, padding: 8, backgroundColor: '#f0f8ff', borderRadius: 4, fontSize: 12 }}>
+              <Text type="secondary">
+                💡 <strong>사용 가능한 변수:</strong> {'{user}'} (사용자 멘션), {'{username}'} (사용자명), 
+                {'{guild}'} (서버명), {'{channel}'} (채널명), {'{button}'} (버튼명)
+              </Text>
+            </div>
           </Card>
         );
       })}
