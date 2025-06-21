@@ -136,7 +136,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
     if (action.type === 'grant_server_permission' || action.type === 'revoke_server_permission') {
       // 서버 권한 액션: 서버 레벨 권한만
       relevantCategories = ['admin', 'server_management', 'member_management', 'events', 'misc'];
-    } else if (action.type === 'set_channel_permission' || action.type === 'remove_channel_permission') {
+    } else if (action.type === 'set_channel_permission' || action.type === 'remove_channel_permission' || action.type === 'override_channel_permission' || action.type === 'reset_channel_permission') {
       // 채널 권한 액션: 선택된 채널 타입에 따라 권한 결정
       const selectedChannelIds = action.parameters.channelId;
       if (selectedChannelIds && channels.length > 0) {
@@ -282,7 +282,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                 maxSelections={action.type.includes('channel_permission') ? undefined : 1}
                 channelTypes={
                   action.type.includes('channel_permission') 
-                    ? ['text', 'voice', 'category', 'announcement'] 
+                    ? ['text', 'voice', 'category', 'announcement', 'stage'] 
                     : undefined
                 }
               />
@@ -295,7 +295,9 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                   💡 <strong>채널 타입별 권한:</strong><br/>
                   📝 텍스트: 메시지, 스레드, 이모지 관련 권한<br/>
                   🔊 음성: 연결, 말하기, 음소거 관련 권한<br/>
+                  🎭 스테이지: 스테이지 채널 관련 권한<br/>
                   📁 카테고리: 채널 보기, 관리 권한<br/>
+                  📢 공지: 공지 채널 관련 권한<br/>
                   🔢 <strong>여러 채널 선택 가능:</strong> 한 번에 여러 채널에 같은 권한을 적용할 수 있습니다
                 </Text>
               </div>
@@ -397,7 +399,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                 <Text type="secondary" style={{ fontSize: 12 }}>
                   {action.type === 'grant_server_permission' || action.type === 'revoke_server_permission' ? (
                     <>🏢 <strong>서버 권한:</strong> 서버 전체에 적용되는 권한들입니다</>
-                  ) : action.type === 'set_channel_permission' || action.type === 'remove_channel_permission' ? (
+                  ) : action.type === 'set_channel_permission' || action.type === 'remove_channel_permission' || action.type === 'override_channel_permission' || action.type === 'reset_channel_permission' ? (
                     <>📝 <strong>채널 권한:</strong> 선택한 채널에만 적용되는 권한들입니다</>
                   ) : (
                     <>⚙️ <strong>일반 권한:</strong> 액션에 필요한 권한들입니다</>

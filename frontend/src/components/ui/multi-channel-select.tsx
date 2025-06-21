@@ -61,7 +61,7 @@ export function MultiChannelSelect({
         // 채널 타입 필터링
         if (channelTypes && channelTypes.length > 0) {
             filtered = channels.filter(channel => 
-                channelTypes.includes(channel.type || 'text')
+                channelTypes.includes(channel.typeKey || 'text')
             );
         }
         

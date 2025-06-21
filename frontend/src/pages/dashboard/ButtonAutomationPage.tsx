@@ -403,20 +403,19 @@ const ButtonAutomationPage: React.FC = () => {
             <div className="container mx-auto px-6 py-8">
                 {/* 헤더 */}
                 <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                        <Button
-                            icon={<ArrowLeftOutlined />}
-                            onClick={() => navigate("/dashboard/guilds")}
-                        >
-                            길드 목록
-                        </Button>
-                        <div>
-                            <Title level={2} className="mb-0">
-                                버튼 자동화
-                            </Title>
-                            <Text type="secondary">{guildName || guildId}</Text>
-                        </div>
+                    <Button
+                        icon={<ArrowLeftOutlined />}
+                        onClick={() => navigate("/dashboard/guilds")}
+                    >
+                        길드 목록
+                    </Button>
+                    <div className="text-center">
+                        <Title level={2} className="mb-0">
+                            버튼 자동화
+                        </Title>
+                        <Text type="secondary" className="text-5xl">{guildName || guildId}</Text>
                     </div>
+                    <div style={{ width: '88px' }}></div>
                 </div>
 
                 {/* 그룹 선택 */}

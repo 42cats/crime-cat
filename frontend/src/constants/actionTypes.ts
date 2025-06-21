@@ -140,6 +140,21 @@ export const ACTION_TYPES = {
     requiredPermissions: ['MANAGE_ROLES']
   },
   
+  override_channel_permission: {
+    label: '채널 권한 오버라이드',
+    icon: '🛡️',
+    description: '채널에 대한 여러 권한을 한 번에 설정합니다',
+    parameters: ['channelId', 'permissions'],
+    requiredPermissions: ['MANAGE_CHANNELS']
+  },
+  reset_channel_permission: {
+    label: '채널 권한 초기화',
+    icon: '🔄',
+    description: '채널의 모든 권한 오버라이드를 제거하고 기본값으로 되돌립니다',
+    parameters: ['channelId'],
+    requiredPermissions: ['MANAGE_CHANNELS']
+  },
+  
   // 기타
   remove_timeout: {
     label: '타임아웃 해제',
