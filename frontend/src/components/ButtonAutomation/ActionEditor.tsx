@@ -548,14 +548,14 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                 <Col span={24}>
                   <Form.Item label="대상 역할 선택" style={{ marginBottom: 12 }}>
                     <MultiRoleSelect 
-                      value={action.parameters.targetRoleId ? [action.parameters.targetRoleId] : []}
-                      onChange={(roles) => updateActionParameter(index, 'targetRoleId', roles[0] || '')}
+                      value={action.parameters.targetRoleIds || []}
+                      onChange={(roles) => updateActionParameter(index, 'targetRoleIds', roles)}
                       guildId={guildId}
-                      placeholder="액션을 적용할 역할을 선택하세요"
-                      maxSelections={1}
+                      placeholder="액션을 적용할 역할들을 선택하세요 (다중 선택 가능)"
+                      maxSelections={undefined}
                     />
                     <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
-                      💡 선택한 역할을 가진 모든 사용자에게 액션이 적용됩니다
+                      💡 선택한 역할들을 가진 모든 사용자에게 액션이 적용됩니다 (다중 역할 선택 가능)
                     </Text>
                   </Form.Item>
                 </Col>
