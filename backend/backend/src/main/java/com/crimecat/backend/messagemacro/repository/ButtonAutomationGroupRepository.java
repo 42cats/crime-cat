@@ -8,9 +8,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface ButtonAutomationGroupRepository extends JpaRepository<ButtonAutomationGroup, String> {
+public interface ButtonAutomationGroupRepository extends JpaRepository<ButtonAutomationGroup, UUID> {
 
     @Query("SELECT g FROM ButtonAutomationGroup g WHERE g.guildId = :guildId AND g.isActive = true ORDER BY g.displayOrder ASC")
     List<ButtonAutomationGroup> findActiveGroupsByGuildIdOrderByDisplayOrder(@Param("guildId") String guildId);

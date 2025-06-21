@@ -8,18 +8,19 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface ButtonAutomationRepository extends JpaRepository<ButtonAutomation, String> {
+public interface ButtonAutomationRepository extends JpaRepository<ButtonAutomation, UUID> {
 
     @Query("SELECT b FROM ButtonAutomation b WHERE b.guildId = :guildId AND b.isActive = true ORDER BY b.displayOrder ASC")
     List<ButtonAutomation> findActiveButtonsByGuildIdOrderByDisplayOrder(@Param("guildId") String guildId);
 
     @Query("SELECT b FROM ButtonAutomation b WHERE b.groupId = :groupId AND b.isActive = true ORDER BY b.displayOrder ASC")
-    List<ButtonAutomation> findActiveButtonsByGroupIdOrderByDisplayOrder(@Param("groupId") String groupId);
+    List<ButtonAutomation> findActiveButtonsByGroupIdOrderByDisplayOrder(@Param("groupId") UUID groupId);
 
     @Query("SELECT b FROM ButtonAutomation b WHERE b.groupId = :groupId ORDER BY b.displayOrder ASC")
-    List<ButtonAutomation> findAllByGroupIdOrderByDisplayOrder(@Param("groupId") String groupId);
+    List<ButtonAutomation> findAllByGroupIdOrderByDisplayOrder(@Param("groupId") UUID groupId);
 
     @Query("SELECT b FROM ButtonAutomation b WHERE b.guildId = :guildId AND b.buttonLabel = :buttonLabel")
     Optional<ButtonAutomation> findByGuildIdAndButtonLabel(@Param("guildId") String guildId, @Param("buttonLabel") String buttonLabel);
@@ -28,11 +29,11 @@ public interface ButtonAutomationRepository extends JpaRepository<ButtonAutomati
     List<ButtonAutomation> findAllByGuildIdOrderByDisplayOrder(@Param("guildId") String guildId);
 
     @Query("SELECT COALESCE(MAX(b.displayOrder), 0) FROM ButtonAutomation b WHERE b.groupId = :groupId")
-    Integer findMaxDisplayOrderByGroupId(@Param("groupId") String groupId);
+    Integer findMaxDisplayOrderByGroupId(@Param("groupId") UUID groupId);
 
     boolean existsByGuildIdAndButtonLabel(String guildId, String buttonLabel);
 
-    void deleteAllByGroupId(String groupId);
+    void deleteAllByGroupId(UUID groupId);
 
     void deleteAllByGuildId(String guildId);
 
@@ -40,5 +41,5 @@ public interface ButtonAutomationRepository extends JpaRepository<ButtonAutomati
     long countActiveButtonsByGuildId(@Param("guildId") String guildId);
 
     @Query("SELECT COUNT(b) FROM ButtonAutomation b WHERE b.groupId = :groupId AND b.isActive = true")
-    long countActiveButtonsByGroupId(@Param("groupId") String groupId);
+    long countActiveButtonsByGroupId(@Param("groupId") UUID groupId);
 }
