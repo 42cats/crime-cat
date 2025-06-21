@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, Hash, Volume2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Hangul from "hangul-js";
@@ -17,7 +17,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Channel } from "@/lib/types";
-import { useChannels } from "@/contexts/ChannelContext";
+import { useChannels } from "@/hooks/useChannels";
 
 interface ChannelSelectProps {
     value: string;
@@ -63,6 +63,28 @@ export function ChannelSelect({
         }
     };
 
+    // 채널 타입별 아이콘 (백엔드 이모지 우선 사용)
+    const getChannelIcon = (channel?: Channel) => {
+        if (channel?.emoji) {
+            return <span className="text-sm mr-2">{channel.emoji}</span>;
+        }
+        
+        const type = channel?.typeKey;
+        switch (type) {
+            case 'voice':
+            case 'stage':
+                return <Volume2 className="h-4 w-4 text-green-500 mr-2" />;
+            case 'category':
+                return <Users className="h-4 w-4 text-gray-500 mr-2" />;
+            case 'announcement':
+                return <Hash className="h-4 w-4 text-yellow-500 mr-2" />;
+            case 'forum':
+                return <Hash className="h-4 w-4 text-purple-500 mr-2" />;
+            default:
+                return <Hash className="h-4 w-4 text-blue-500 mr-2" />;
+        }
+    };
+
     // 검색 필터링
     const filtered = channels.filter((c) =>
         !searchQuery.trim() ? true : matches(c.name, searchQuery)
@@ -88,9 +110,12 @@ export function ChannelSelect({
                         className
                     )}
                 >
-                    {selectedChannel
-                        ? selectedChannel.name
-                        : "채널을 선택하세요"}
+                    <div className="flex items-center">
+                        {selectedChannel && getChannelIcon(selectedChannel)}
+                        {selectedChannel
+                            ? selectedChannel.name
+                            : "채널을 선택하세요"}
+                    </div>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
@@ -142,7 +167,15 @@ export function ChannelSelect({
                                                             : "opacity-0"
                                                     )}
                                                 />
-                                                {ch.name}
+                                                {getChannelIcon(ch)}
+                                                <div className="flex-1">
+                                                    <div>{ch.name}</div>
+                                                    {ch.displayName && (
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {ch.displayName}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </button>
                                         </CommandItem>
                                     ))}

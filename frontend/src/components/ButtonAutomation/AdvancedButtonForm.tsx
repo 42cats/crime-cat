@@ -9,11 +9,11 @@ import { DISCORD_LIMITS } from '../../utils/validation';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
-const { TabPane } = Tabs;
 
 interface AdvancedButtonFormProps {
   button?: ButtonAutomation;
   groupId?: string;
+  guildId: string;
   onSubmit: (data: ButtonFormData) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
@@ -30,6 +30,7 @@ export interface ButtonFormData {
 export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
   button,
   groupId,
+  guildId,
   onSubmit,
   onCancel,
   loading = false
@@ -144,6 +145,47 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
         [field]: value
       }
     });
+  };
+
+  // 액션 표시명 가져오기
+  const getActionDisplayName = (actionType: string) => {
+    const actionNames: Record<string, string> = {
+      'add_role': '역할 추가',
+      'remove_role': '역할 제거',
+      'toggle_role': '역할 토글',
+      'change_nickname': '닉네임 변경',
+      'reset_nickname': '닉네임 초기화',
+      'send_message': '메시지 전송',
+      'send_dm': 'DM 전송',
+      'move_voice_channel': '음성 채널 이동',
+      'disconnect_voice': '음성 연결 해제',
+      'set_slowmode': '슬로우모드 설정',
+      'play_music': '음악 재생',
+      'stop_music': '음악 정지',
+      'pause_music': '음악 일시정지/재개',
+      'set_voice_mute': '마이크 음소거',
+      'set_voice_deafen': '스피커 차단',
+      'toggle_voice_mute': '마이크 토글',
+      'toggle_voice_deafen': '스피커 토글',
+      'set_priority_speaker': '우선 발언자 설정',
+      'set_channel_permission': '채널 권한 설정',
+      'remove_channel_permission': '채널 권한 제거',
+      'override_channel_permission': '채널 권한 오버라이드',
+      'reset_channel_permission': '채널 권한 초기화',
+      'remove_timeout': '타임아웃 해제'
+    };
+    return actionNames[actionType] || actionType;
+  };
+
+  // 대상 표시명 가져오기
+  const getTargetDisplayName = (target: string) => {
+    const targetNames: Record<string, string> = {
+      'executor': '버튼을 누른 사람',
+      'all': '모든 사람',
+      'specific': '특정 사용자',
+      'role': '특정 역할의 모든 사용자'
+    };
+    return targetNames[target] || target;
   };
 
   return (
@@ -262,6 +304,7 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
                   <ConditionEditor
                     conditions={buttonConfig.conditions}
                     onChange={handleConditionsChange}
+                    guildId={guildId}
                   />
                 )
               },
@@ -273,6 +316,7 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
                     actions={buttonConfig.actions}
                     onChange={handleActionsChange}
                     maxActions={DISCORD_LIMITS.MAX_ACTIONS_PER_BUTTON}
+                    guildId={guildId}
                   />
                 )
               },
@@ -281,7 +325,127 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
                 label: '미리보기',
                 children: (
                   <Space direction="vertical" style={{ width: '100%' }} size="large">
-                    <Card size="small" title="설정 요약">
+                    {/* 액션 플로우 시각화 */}
+                    <Card size="small" title="🎯 액션 플로우">
+                      <div className="p-4">
+                        {/* 트리거 단계 */}
+                        <div className="flex items-center mb-4">
+                          <div className="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full font-semibold mr-3">
+                            1
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-gray-800">버튼 클릭</div>
+                            <div className="text-sm text-gray-600">
+                              📝 "{form.getFieldValue('buttonLabel') || '(버튼명 없음)'}" 버튼을 클릭
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              👥 {
+                                buttonConfig.trigger.type === 'everyone' ? '모든 사람이 사용 가능' :
+                                buttonConfig.trigger.type === 'role' ? '특정 역할만 사용 가능' :
+                                buttonConfig.trigger.type === 'admin' ? '관리자만 사용 가능' : '트리거 설정되지 않음'
+                              }
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 조건 확인 단계 */}
+                        <div className="flex items-center mb-4">
+                          <div className="flex items-center justify-center w-10 h-10 bg-orange-100 text-orange-600 rounded-full font-semibold mr-3">
+                            2
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-gray-800">조건 확인</div>
+                            <div className="text-sm text-gray-600">
+                              {Object.keys(buttonConfig.conditions || {}).length > 0 ? (
+                                <div className="space-y-1">
+                                  {buttonConfig.conditions.requiredRoles?.length > 0 && (
+                                    <div>✅ 필수 역할: {buttonConfig.conditions.requiredRoles.length}개</div>
+                                  )}
+                                  {buttonConfig.conditions.deniedRoles?.length > 0 && (
+                                    <div>❌ 차단 역할: {buttonConfig.conditions.deniedRoles.length}개</div>
+                                  )}
+                                  {buttonConfig.conditions.requiredChannels?.length > 0 && (
+                                    <div>📍 허용 채널: {buttonConfig.conditions.requiredChannels.length}개</div>
+                                  )}
+                                  {buttonConfig.conditions.cooldownSeconds && (
+                                    <div>⏰ 쿨다운: {buttonConfig.conditions.cooldownSeconds}초</div>
+                                  )}
+                                  {buttonConfig.conditions.oncePerUser && (
+                                    <div>👤 사용자당 1회 제한</div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="text-green-600">🎉 제한 없음 - 모든 조건 통과</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 액션 실행 단계들 */}
+                        {buttonConfig.actions.map((action, index) => (
+                          <div key={index} className="flex items-start mb-4">
+                            <div className="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full font-semibold mr-3 mt-1">
+                              {index + 3}
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-semibold text-gray-800">
+                                액션 {index + 1}: {getActionDisplayName(action.type)}
+                              </div>
+                              <div className="text-sm text-gray-600 mt-1">
+                                🎯 대상: {getTargetDisplayName(action.target)}
+                              </div>
+                              {action.delay > 0 && (
+                                <div className="text-xs text-orange-500 mt-1">
+                                  ⏱️ {action.delay}초 지연 후 실행
+                                </div>
+                              )}
+                              {action.result?.message && (
+                                <div className="text-xs text-blue-600 mt-1">
+                                  💬 결과 메시지: "{action.result.message}"
+                                  ({action.result.visibility === 'private' ? '개인' : 
+                                    action.result.visibility === 'public' ? '공개' : '표시 안함'})
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+
+                        {buttonConfig.actions.length === 0 && (
+                          <div className="flex items-center mb-4">
+                            <div className="flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-400 rounded-full font-semibold mr-3">
+                              3
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-semibold text-gray-400">액션 없음</div>
+                              <div className="text-sm text-gray-400">
+                                실행할 액션이 설정되지 않았습니다
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 완료 단계 */}
+                        <div className="flex items-center">
+                          <div className="flex items-center justify-center w-10 h-10 bg-purple-100 text-purple-600 rounded-full font-semibold mr-3">
+                            ✓
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-gray-800">완료</div>
+                            <div className="text-sm text-gray-600">
+                              🎉 모든 액션이 성공적으로 실행되었습니다
+                            </div>
+                            {buttonConfig.buttonSettings?.disableAfterUse && (
+                              <div className="text-xs text-red-500 mt-1">
+                                🔒 버튼이 비활성화됩니다
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+
+                    {/* 설정 요약 */}
+                    <Card size="small" title="📋 설정 요약">
                       <div style={{ lineHeight: 2 }}>
                         <div><strong>버튼 라벨:</strong> {form.getFieldValue('buttonLabel') || '(설정되지 않음)'}</div>
                         <div><strong>트리거:</strong> {
@@ -291,14 +455,21 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
                         }</div>
                         <div><strong>액션 수:</strong> {buttonConfig.actions.length}개</div>
                         <div><strong>조건:</strong> {
-                          Object.keys(buttonConfig.conditions).length > 0 
+                          Object.keys(buttonConfig.conditions || {}).length > 0 
                             ? '설정됨' 
                             : '제한 없음'
+                        }</div>
+                        <div><strong>버튼 스타일:</strong> {
+                          buttonConfig.buttonSettings?.style === 'primary' ? '파란색 (Primary)' :
+                          buttonConfig.buttonSettings?.style === 'secondary' ? '회색 (Secondary)' :
+                          buttonConfig.buttonSettings?.style === 'success' ? '초록색 (Success)' :
+                          buttonConfig.buttonSettings?.style === 'danger' ? '빨간색 (Danger)' : '기본'
                         }</div>
                       </div>
                     </Card>
 
-                    <Card size="small" title="JSON 설정">
+                    {/* JSON 설정 */}
+                    <Card size="small" title="⚙️ JSON 설정">
                       <pre style={{ 
                         backgroundColor: '#f5f5f5', 
                         padding: 16, 

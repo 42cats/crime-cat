@@ -11,7 +11,6 @@ import { buttonAutomationApi, withErrorHandling } from '../lib/api/buttonAutomat
 import { DISCORD_LIMITS, validateButtonCount } from '../utils/validation';
 
 const { Title, Text } = Typography;
-const { TabPane } = Tabs;
 
 interface ButtonAutomationEditorProps {}
 
@@ -166,16 +165,12 @@ export const ButtonAutomationEditor: React.FC<ButtonAutomationEditorProps> = () 
             setSelectedGroup(group || null);
             setSelectedButton(null);
           }}
-        >
-          {groups.map(group => (
-            <TabPane 
-              tab={`${group.name} (${group.buttons?.length || 0})`} 
-              key={group.id}
-            >
-              {renderButtonList(group)}
-            </TabPane>
-          ))}
-        </Tabs>
+          items={groups.map(group => ({
+            key: group.id,
+            label: `${group.name} (${group.buttons?.length || 0})`,
+            children: renderButtonList(group)
+          }))}
+        />
       )}
     </Card>
   );
@@ -285,7 +280,7 @@ export const ButtonAutomationEditor: React.FC<ButtonAutomationEditorProps> = () 
         onCancel={() => setIsGroupModalVisible(false)}
         footer={null}
         width={700}
-        destroyOnClose
+        destroyOnHidden
       >
         <GroupForm 
           onSubmit={handleCreateGroup}
@@ -301,7 +296,7 @@ export const ButtonAutomationEditor: React.FC<ButtonAutomationEditorProps> = () 
         onCancel={() => setIsButtonModalVisible(false)}
         footer={null}
         width={900}
-        destroyOnClose
+        destroyOnHidden
       >
         <ButtonForm 
           groupId={selectedGroup?.id}

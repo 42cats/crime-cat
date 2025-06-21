@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, Button, Space, Typography, Steps, Alert, Spin, Timeline, Tag, Modal, message } from 'antd';
 import { PlayCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, InfoCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { ButtonAutomation, ActionConfig } from '../../types/buttonAutomation';
-import { ACTION_TYPES } from './ActionEditor';
+import { ACTION_TYPES } from '../../constants/actionTypes';
 import { buttonAutomationApi } from '../../lib/api/buttonAutomation';
 
 const { Title, Text } = Typography;

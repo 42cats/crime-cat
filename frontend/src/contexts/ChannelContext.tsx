@@ -14,9 +14,7 @@ const initialChannelContext: ChannelContextType = {
   error: null
 };
 
-const ChannelContext = createContext<ChannelContextType>(initialChannelContext);
-
-export const useChannels = () => useContext(ChannelContext);
+export const ChannelContext = createContext<ChannelContextType>(initialChannelContext);
 
 interface ChannelProviderProps {
   children: ReactNode;
