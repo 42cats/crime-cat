@@ -12,6 +12,7 @@ import com.crimecat.backend.guild.dto.web.GuildBotInfoDto;
 import com.crimecat.backend.guild.dto.web.GuildInfoResponseDto;
 import com.crimecat.backend.guild.dto.web.GuildResponseDto;
 import com.crimecat.backend.guild.repository.GuildRepository;
+import com.crimecat.backend.guild.dto.bot.RoleDto;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import java.time.LocalDateTime;
@@ -85,6 +86,27 @@ public class WebGuildService {
         }
     }
 
+    /**
+     * 길드의 역할 목록을 조회합니다
+     * 
+     * @param guildSnowflake 길드 ID
+     * @return 역할 목록
+     */
+    public List<RoleDto> getGuildRoles(String guildSnowflake) {
+        try {
+            List<RoleDto> result = cachedDiscordBotService.getGuildRoles(guildSnowflake);
+            if (result != null && !result.isEmpty()) {
+                log.info("✅ [역할 정보 획득 성공] guildId={}, roleCount={}", guildSnowflake, result.size());
+                return result;
+            } else {
+                log.warn("⚠️ [빈 역할 리스트] guildId={}", guildSnowflake);
+                return List.of();
+            }
+        } catch (Exception e) {
+            log.error("❌ [역할 정보 조회 실패] guildId={}, error={}", guildSnowflake, e.toString());
+            return List.of();
+        }
+    }
 
     private GuildBotInfoDto convertToGuildBotInfo(ApiGetGuildInfoDto info, String currentUserId) {
         if (!info.getOwnerId().equals(currentUserId)) {
