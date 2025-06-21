@@ -3,9 +3,12 @@ package com.crimecat.backend.messagemacro.domain;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.sql.Timestamp;
+import java.util.UUID;
 
 @Entity
 @Table(name = "button_automations")
@@ -14,14 +17,16 @@ import java.sql.Timestamp;
 public class ButtonAutomation {
 
     @Id
-    @Column(length = 100)
-    private String id;
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(columnDefinition = "BINARY(16)")
+    private UUID id;
 
     @Column(name = "guild_id", nullable = false, length = 50)
     private String guildId;
 
-    @Column(name = "group_id", length = 100)
-    private String groupId;
+    @Column(name = "group_id")
+    @JdbcTypeCode(SqlTypes.BINARY)
+    private UUID groupId;
 
     @Column(name = "button_label", nullable = false, length = 100)
     private String buttonLabel;
@@ -53,8 +58,7 @@ public class ButtonAutomation {
     @PrePersist
     protected void onCreate() {
         if (id == null) {
-            id = "btn_" + System.currentTimeMillis() + "_" + 
-                 guildId.substring(Math.max(0, guildId.length() - 6));
+            id = UUID.randomUUID();
         }
     }
 }
