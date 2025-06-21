@@ -218,6 +218,27 @@
 
 ### ✅ 최근 완료된 주요 작업
 
+**21. Cloudflare Realtime SFU 통합 문제 수정** ⭐️ **SFU INTEGRATION FIXES**
+   - **자동 종료 문제 해결**: 
+     - useEffect cleanup 로직 정밀화 - 빈 dependency 배열 사용
+     - 컴포넌트 언마운트 시에만 정리 작업 수행
+     - leaveVoiceChannel 함수 호출 대신 직접 cleanup 구현
+   - **사이드바 참여자 표시 수정**:
+     - voice:join:success 이벤트에서 setVoiceUsers 호출 추가
+     - voice:user-joined 이벤트에서 새 사용자를 voiceUsers 배열에 추가
+     - WebSocket 이벤트 리스너 등록 및 cleanup 처리
+   - **원격 오디오 수신 구현**:
+     - RemoteAudioPlayer 컴포넌트 생성 - HTML audio 요소로 원격 스트림 재생
+     - ChatLayout에 RemoteAudioPlayer 컴포넌트 추가
+     - trackId 기반 오디오 요소 관리 및 자동 재생
+   - **WebSocket 이벤트 처리 강화**:
+     - joinVoiceChannel 메서드에 trackId 매개변수 추가
+     - Signal Server index.js에서 trackId 전달 및 저장
+     - VoiceStateManager에 trackId 필드 추가하여 SFU 트랙 관리
+     - voice:user-joined 이벤트에 trackId 포함하여 브로드캐스트
+
+### ✅ 최근 완료된 주요 작업
+
 2. **React UI 컴포넌트 최종 다듬기** ⭐️ **98% 완료**
    - **기본 컴포넌트**: ServerSidebar, ChannelSidebar, ChatArea, MemberList 구현 완료
    - **API 통합**: 모든 컴포넌트에서 실제 백엔드 API 사용
@@ -532,8 +553,8 @@ dependencies {
 - **7단계** ✅ **완료**: 전체 테스트 + 생산 환경 준비
 - **8단계** 🚧 **진행중**: UI/UX 최종 완성 + 성능 최적화
 
-**현재 진행률**: 96% 완료  
-**남은 작업**: Cloudflare Realtime API 세부 수정 및 SFU 아키텍처 완성 (Phase 1-1 완료)
+**현재 진행률**: 97% 완료  
+**남은 작업**: Cloudflare Realtime API 세부 수정 및 SFU 아키텍처 완성 (Phase 1-1 완료, SFU 통합 문제 수정 완료)
 
 ---
 
@@ -574,3 +595,9 @@ dependencies {
 - **WebRTC P2P 연결**: NAT 환경에서도 정상 작동하는 음성 연결 구현
 - **Signal Server 개선**: 음성 채널 입장 시 기존 사용자 목록 자동 전송
 - **프론트엔드 UI**: VoiceArea 컴포넌트 및 실시간 음성 사용자 관리
+
+### 🎯 Cloudflare Realtime SFU 통합 최종 수정 ⭐️ **COMPLETED**
+- **자동 종료 문제 완전 해결**: useEffect cleanup 로직 정밀화로 안정적인 음성 연결 유지
+- **사이드바 참여자 실시간 표시**: WebSocket 이벤트 기반 voiceUsers 상태 동기화
+- **원격 오디오 수신/재생**: RemoteAudioPlayer 컴포넌트로 다중 사용자 오디오 처리
+- **TrackId 기반 SFU 관리**: Signal Server와 프론트엔드 간 trackId 동기화 완료
