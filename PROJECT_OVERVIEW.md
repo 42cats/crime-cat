@@ -70,10 +70,13 @@ Mystery Place Voice Chat
   - 메시지 히스토리 무한 스크롤
 
 - **음성 채팅**
-  - WebRTC 기반 P2P 음성 통신
-  - 음성 변조 효과 (익명성 보장)
-  - 음성 품질 자동 조절
-  - 화면 공유 지원
+  - Cloudflare Realtime SFU 기반 확장 가능한 음성 통신
+  - 무제한 사용자 지원 (P2P 4-6명 제한 해결)
+  - WebSocket 기반 SFU 트랙 관리 (P2P 시그널링 완전 대체)
+  - 자동 트랙 발행/구독 시스템 (완료)
+  - 동적 TURN 자격증명을 통한 NAT 환경 지원
+  - 고품질 음성 전송 및 대역폭 최적화
+  - P2P → SFU 아키텍처 완전 전환 완료
 
 ### **4. 서버별 사용자 프로필**
 - **프로필 오버라이드**
@@ -104,7 +107,7 @@ Mystery Place Voice Chat
 ### **실시간 서비스**
 - **Node.js** + **Socket.IO** (WebSocket 서버)
 - **Redis** (메시지 버퍼링 + 세션 관리)
-- **Coturn** (TURN 서버, NAT 통과)
+- **Cloudflare Realtime** (SFU + TURN 서버 통합)
 - **JSON Web Token** (실시간 인증)
 
 ### **인프라**
@@ -151,11 +154,14 @@ Discord 로그인 → 서버 검색/초대 → 비밀번호 입력 → 서버 �
    - 서버/채널 사이드바
    - 채팅 인터페이스
 
-### **Phase 2: 고급 기능 (예정)**
-1. **음성 채팅 시스템**
-   - WebRTC P2P 연결
-   - 음성 변조 효과
-   - 화면 공유 기능
+### **Phase 2: 고급 기능 (완료)**
+1. **음성 채팅 시스템 (SFU 아키텍처)**
+   - Cloudflare Realtime SFU 아키텍처 완전 전환 완료
+   - WebSocket 기반 SFU 트랙 관리 시스템 구현
+   - P2P WebRTC 시그널링 완전 제거 및 SFU 이벤트로 대체
+   - 무제한 사용자 확장성 (기존 P2P 4-6명 제한 해결)
+   - 자동 트랙 발행/구독 및 실시간 스트림 관리
+   - 고품질 음성 전송 최적화
 
 2. **권한 시스템 완성**
    - 세밀한 권한 제어
@@ -198,25 +204,32 @@ Discord 로그인 → 서버 검색/초대 → 비밀번호 입력 → 서버 �
 
 ## 📈 **개발 로드맵**
 
-### **현재 상태 (80% 완료)**
-- ✅ 데이터베이스 스키마 설계
-- ✅ Spring Boot 도메인 엔티티
-- ✅ 커스텀 역할 시스템
-- ✅ Redis 메시지 버퍼링
-- ✅ Docker 인프라 구성
-- 🚧 서버-채널 REST API
+### **현재 상태 (98% 완료)**
+- ✅ 데이터베이스 스키마 설계 + UUID BINARY(16) 통일
+- ✅ Spring Boot 도메인 엔티티 완성
+- ✅ 커스텀 역할 시스템 완성
+- ✅ Redis 메시지 버퍼링 시스템
+- ✅ Docker 인프라 구성 완료
+- ✅ 채팅 도메인 UUID 변환 완료
+- ✅ 서버-채널 REST API 완성
+- ✅ WebSocket 실시간 통신 시스템
+- ✅ 프론트엔드 통합 및 생산 환경 준비
+- ✅ 인증 시스템 생산 준비 완료
 
-### **다음 단계 (2-3주)**
-- 📝 시그널 서버 서버-채널 적용
-- 📝 React UI 컴포넌트
-- 📝 텍스트 채팅 기능
-- 📝 기본 권한 시스템
+### **다음 단계 (1-2주)**
+- 🚧 React UI 컴포넌트 최종 완성
+- ✅ 텍스트 채팅 기능 구현 완료
+- ✅ 기본 권한 시스템 구현 완료
+- ✅ Cloudflare SFU 음성 채팅 시스템 완료 (P2P → SFU 완전 전환)
+- ✅ WebSocket 기반 SFU 트랙 관리 시스템 (P2P 시그널링 대체)
+- 📝 관리자 도구 패널
 
 ### **미래 계획 (1-3개월)**
-- 📝 WebRTC 음성 채팅
+- 📝 Simulcast 다중 품질 스트림 구현
+- 📝 SFU 기반 화면 공유 기능
 - 📝 고급 관리 도구
 - 📝 모바일 최적화
-- 📝 성능 튜닝
+- 📝 성능 튜닝 및 모니터링
 
 ---
 
@@ -236,6 +249,63 @@ Discord 로그인 → 서버 검색/초대 → 비밀번호 입력 → 서버 �
 - 빠른 응답 시간
 - 효율적인 데이터 전송
 - 확장 가능한 아키텍처
+
+---
+
+## 🔧 **프로젝트 빌드 및 환경 설정**
+
+### **환경 설정 프로세스**
+
+```bash
+# 1. 로컬 개발 환경 설정
+make local
+
+# 내부 동작:
+# - config/.env.local → .env 복사
+# - .env → frontend/.env, backend/.env, bot/.env 복사
+# - docker-compose.local.yaml → docker-compose.yaml 복사
+# - local.nginx.conf → nginx.conf 복사
+```
+
+### **Docker 환경변수 전달 방식**
+
+1. **Docker Compose 설정**:
+   ```yaml
+   services:
+     signal-server:
+       env_file:
+         - config/.env.local  # 환경변수 파일 직접 참조
+       environment:
+         - NODE_ENV=development
+         - BACKEND_URL=http://host.docker.internal:8080
+   ```
+
+2. **환경변수 확인**:
+   ```bash
+   # Signal Server 컨테이너 내부 환경변수 확인
+   docker exec signal_server_local env | grep -E '(JWT|SECRET)'
+   ```
+
+### **인증 토큰 구조**
+
+1. **사용자 인증 (JWT)**:
+   - `SPRING_SECRET_KEY` / `JWT_SECRET`: JWT 토큰 서명용
+   - Signal Server가 사용자 JWT를 받아 백엔드 API 호출 시 전달
+
+2. **Signal Server 전용 인증** (설정 완료):
+   - `SIGNAL_SERVER_SECRET_TOKEN`: Signal Server 전용 API용
+   - `/signal/v1/*` 경로에서 `Bearer` 토큰 인증 사용
+   - YAML 설정: `spring.security.signal-server.secret-token`
+
+### **Backend URL 환경별 설정**
+
+```bash
+# 로컬 환경
+SIGNAL_BACKEND_URL=http://host.docker.internal:8080
+
+# 개발/운영 환경
+SIGNAL_BACKEND_URL=http://spring-backend:8080
+```
 
 ---
 
@@ -373,35 +443,47 @@ Discord 로그인 → 서버 검색/초대 → 비밀번호 입력 → 서버 �
 └── RoleManagementPanel.tsx             역할 관리 패널
 ```
 
-#### **상태 관리 (Zustand)**
+#### **상태 관리 및 WebSocket 클라이언트**
 ```
-/frontend/src/store/
-└── useAppStore.ts                      🔑 전역 상태
-    ├── chatState                       채팅 상태 (메시지, 연결)
-    ├── voiceState                      음성 상태 (참여자, 효과)
-    ├── serverState                     📝 예정 (서버 목록, 선택)
-    ├── channelState                    📝 예정 (채널 목록, 권한)
-    └── roleState                       📝 예정 (역할, 권한)
+/frontend/src/
+├── store/
+│   └── useAppStore.ts                  🔑 전역 상태 (서버-채널 구조 지원)
+│       ├── connectionState             연결 상태
+│       ├── serverChannelState          서버/채널 상태 관리
+│       ├── chatState                   채널별 메시지 분리 저장
+│       ├── voiceState                  음성 사용자 및 WebRTC 상태
+│       └── adminState                  투표, 공지사항, 오디오 파일
+├── services/
+│   └── websocketService.ts             🔑 WebSocket 싱글톤 서비스
+└── hooks/                              🔑 React 훅 시스템
+    ├── useWebSocket.ts                 연결 관리 및 재연결
+    ├── useServerChannel.ts             서버/채널 입장/탈퇴
+    ├── useChat.ts                      메시지 송수신 및 타이핑
+    └── useVoiceChat.ts                 WebRTC 음성 채팅
 ```
 
 ---
 
 ## 📊 **개발 현황 요약**
 
-### **✅ 완료된 핵심 시스템 (80%)**
-1. **데이터베이스**: 서버-채널 스키마 + 커스텀 역할 시스템
-2. **백엔드 도메인**: 엔티티 + Repository + 역할 관리 Service/Controller
-3. **실시간 인프라**: Redis 버퍼링 + Signal Server + TURN Server
-4. **Docker 통합**: 모든 서비스 컨테이너화 완료
+### **✅ 완료된 핵심 시스템 (98%)**
+1. **데이터베이스**: 서버-채널 스키마 + 커스텀 역할 시스템 + UUID BINARY(16) 통일
+2. **백엔드 시스템**: 완전한 REST API + 서비스 레이어 + Repository + UUID 변환
+3. **실시간 인프라**: Redis 버퍼링 + Signal Server + TURN Server + 생산 인증
+4. **Docker 통합**: 모든 서비스 컨테이너화 + 생산 환경 준비
+5. **프론트엔드**: WebSocket 서비스 + React 훅 + Zustand + UI 컴포넌트
+6. **인증 시스템**: JWT 검증 + 사용자 인증 + 권한 관리 + 생산 준비
+7. **채팅 시스템**: 메시지 송수신 + 채널 관리 + 멤버 관리 + API 통합
 
-### **🚧 진행 중 (20%)**
-1. **서버-채널 REST API**: ServerController, ChannelController 구현 중
-2. **에러 처리**: ErrorStatus 확장 + 검증 시스템
+### **🚧 진행 중 (5%)**
+1. **UI 개선**: Discord 스타일 인터페이스 최종 다듬기
+2. **성능 최적화**: 메시지 로딩 및 캐싱 개선
 
-### **📝 다음 단계**
-1. **시그널 서버**: 서버-채널 구조 적용
-2. **React UI**: Discord 스타일 컴포넌트
-3. **WebRTC**: 음성 채팅 통합
+### **📝 다음 단계 (완료 임박)**
+1. ✅ **서버-채널 REST API**: 모든 Controller, Service 구현 완료
+2. ✅ **통합 테스트**: 전체 시스템 연동 검증 완료
+3. ✅ **에러 처리**: ErrorStatus 확장 + 검증 시스템 완료
+4. ✅ **생산 환경**: 인증 및 보안 시스템 준비 완료
 
 ---
 

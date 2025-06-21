@@ -65,54 +65,211 @@
    - **REST API**: `ServerRoleController.java`, `ServerMemberController.java`
    - **DTO 시스템**: 역할 생성/수정, 멤버 프로필 업데이트 DTO
 
+11. **로컬 개발환경 Voice Chat 시스템 구축 완료** ⭐️ **NEW**
+   - **Docker Compose 로컬 설정**: `docker-compose.local.yaml`에 Signal Server + TURN Server 추가
+   - **Vite 프록시 설정**: WebSocket 연결을 위한 Signal Server 프록시 구성
+   - **Nginx 로컬 설정**: WebSocket 업그레이드 및 프록시 패스 설정
+   - **Spring Boot 로컬 설정**: Voice Chat 관련 환경변수 및 설정 추가
+   - **Docker 이미지 분리**: Signal Server (경량, opus 제외) + Discord Bot (opus 포함)
+   - **의존성 충돌 해결**: @discordjs/opus 네이티브 모듈 컴파일 문제 해결
+   - **Spring Security 수정**: PasswordEncoder 빈 추가 (ServerService 의존성 해결)
+
+12. **프론트엔드 WebSocket 클라이언트 시스템 완성** ⭐️ **NEW**
+   - **WebSocket 서비스**: `/frontend/src/services/websocketService.ts` (싱글톤 연결 관리)
+   - **React 훅 시스템**: 4개 커스텀 훅 구현
+     - `useWebSocket`: 연결 상태 관리 및 재연결 로직
+     - `useServerChannel`: 서버/채널 입장/탈퇴 관리
+     - `useChat`: 메시지 송수신 및 타이핑 인디케이터
+     - `useVoiceChat`: 음성 채팅 및 WebRTC 연결 관리
+   - **Zustand 스토어 확장**: 서버-채널 구조 지원
+     - 채널별 메시지 분리 저장 (`messagesByChannel`)
+     - 서버/채널 상태 관리 (`currentServer`, `currentChannel`)
+     - 음성 사용자 관리 및 WebRTC 상태 추적
+   - **WebRTC P2P 연결**: 음성 채팅을 위한 피어 연결 관리
+   - **이벤트 기반 아키텍처**: 실시간 이벤트 처리 및 React 컴포넌트 연동 준비
+
+13. **채팅 도메인 UUID BINARY(16) 변환 완료** ⭐️ **COMPLETED**
+   - **V1.4.3 마이그레이션**: 모든 채팅 관련 테이블을 UUID BINARY(16)로 변환
+     - 기존 BIGINT PRIMARY KEY → UUID BINARY(16) 형식으로 완전 변환
+     - Character.java 패턴 따라 `@UuidGenerator` + `@JdbcTypeCode(SqlTypes.BINARY)` 적용
+     - 기존 데이터 삭제 후 새로운 UUID 구조로 재생성
+   - **도메인 엔티티 업데이트**: 11개 채팅 관련 엔티티 모두 UUID 변환
+     - `ChatServer`, `ServerMember`, `ServerRole`, `ServerChannel`, `ChannelMember`
+     - `ChatMessage`, `VoiceSessionLog`, `Vote`, `VoteResponse`, `Announcement`, `AudioFile`
+   - **Repository 인터페이스**: `JpaRepository<Entity, UUID>` 형식으로 일관성 있게 변경
+   - **Service 메소드**: 모든 파라미터 Long → UUID 변환 (ChatMessageService 등)
+   - **Controller PathVariable**: 모든 컨트롤러 @PathVariable UUID 타입으로 변경
+   - **DTO 클래스**: 모든 ID 필드 Long → UUID 타입 변경
+   - **빌드 성공**: Gradle 컴파일 오류 없이 성공적으로 완료
+
+14. **전체 시스템 통합 및 문제 해결 완룼** ⭐️ **NEW**
+   - **인증 문제 해결**: @PreAuthorize 어노테이션을 AuthenticationUtil로 완전 대체
+   - **컴파일 오류 수정**: Repository 인터페이스의 모든 Long → UUID 매개변수 변환
+   - **프론트엔드 서버 연결**: "잘못된 서버 ID입니다" 오류 해결
+   - **서버 멤버십 로직**: "이미 서버의 멤버입니다" 오류를 정상 동작으로 수정
+   - **하드코딩된 데이터 제거**: 모든 React 컴포넌트에서 실제 API 연동으로 대체
+   - **메시지 전송 수정**: 채널별 단순한 배열 저장에서 서버-채널 구조로 변경
+   - **사용자명 수정**: "Unknown" 표시 문제를 effectiveDisplayName 필드로 해결
+   - **음성 채널 수정**: 400 오류를 VoiceSession API 엔드포인트 추가로 해결
+   - **TypeScript 타입 수정**: 모든 number → string (UUID) 타입 변환 완료
+
+15. **생산 환경 인증 시스템 구축 완료** ⭐️ **NEW**
+   - **Signal Server 인증 강화**: 모든 development-mode 로직 제거
+     - JWT 토큰 필수 검증: development-mode 토큰 허용 중단
+     - 사용자 인증 바이패스 제거: 모든 연결에 대해 백엔드 API 검증 필수
+     - 채널 멤버십 검증: 개발 모드 스킵 로직 제거
+   - **프론트엔드 WebSocket**: development 플래그 및 임시 토큰 제거
+   - **인증 플로우**: 모든 WebSocket 연결에 대해 적절한 JWT 토큰 필수
+   - **생산 준비**: 모든 인증 단계에서 우회 및 개발 모드 로직 완전 제거
+
+16. **Signal Server 전용 인증 체계 구축 완료** ⭐️ **NEW**
+   - **환경변수 설정**: `SIGNAL_SERVER_SECRET_TOKEN` YAML 설정 통합
+   - **Backend URL 환경별 분리**: 로컬/개발/운영 환경별 올바른 URL 설정
+   - **SignalServerTokenFilter 개선**: YAML 설정에서 토큰 읽기
+   - **이중 인증 체계 준비**: 사용자 JWT + Signal Server 전용 토큰
+
+17. **Signal Server와 Backend API 분리 및 인증 통합 완료** ⭐️ **CRITICAL FIX**
+   - **API 엔드포인트 분리**: Signal Server 전용 API (`/api/v1/signal/`) vs 웹 클라이언트 API (`/api/v1/servers/`)
+   - **SignalServerAuthUtil 헬퍼 클래스**: X-User-ID, X-User-Token 헤더 기반 사용자 인증 추출
+   - **JWT 인증 필터 수정**: `/api/v1/signal/` 경로를 JWT 처리에서 제외하고 SignalServerTokenFilter로 처리
+   - **Signal Server 컨트롤러 완전 분리**: 
+     - `ServerController` → Signal Server 전용 (`/api/v1/signal/servers/`)
+     - `ServerMemberController` → Signal Server 전용 (`/api/v1/signal/servers/{serverId}/members/`)
+     - `ChannelController` → Signal Server 전용 (`/api/v1/signal/servers/{serverId}/channels/`)
+     - `ChatMessageController` → Signal Server 전용 (`/api/v1/signal/servers/{serverId}/channels/{channelId}/messages/`)
+   - **웹 클라이언트 전용 컨트롤러 생성**: 
+     - `WebServerController` → 웹 클라이언트용 (`/api/v1/servers/`)
+     - `WebServerMemberController`, `WebChannelController`, `WebChatMessageController`
+   - **서비스 레이어 통합**: WebUser ID ↔ User ID 매핑 로직으로 양쪽 인증 체계 지원
+   - **MessageBufferService 배치 저장 수정**: 웹 클라이언트 API → Signal Server API로 변경하여 403 오류 해결
+   - **Bearer 토큰 인증**: Signal Server의 모든 백엔드 API 호출에 `SIGNAL_SERVER_SECRET_TOKEN` 사용
+
+17. **음성 채팅 WebRTC 연결 및 오류 수정 완료** ⭐️ **VOICE CHAT FIX**
+   - **React Hook 초기화 에러 해결**: `useVoiceChat.ts`에서 함수 정의 순서 문제 수정
+     - `initiateWebRTCConnection` 함수를 `handleVoiceJoined` 콜백보다 먼저 정의
+     - "Cannot access before initialization" 에러 완전 해결
+   - **TURN 서버 401 Unauthorized 에러 해결**: 
+     - **환경변수 동기화**: `.env.local`에 `VITE_TURN_*` 환경변수 추가
+     - **동적 TURN 인증**: 시간 기반 credential 생성 함수 구현 (HMAC-SHA1 + Base64)
+     - **인증 방식 통일**: Docker Compose `--use-auth-secret` + 클라이언트 동적 인증
+     - **WebRTC 설정 업데이트**: `getRTCConfiguration()` 비동기 함수로 변경
+   - **Signal Server 음성 채널 개선**:
+     - 음성 채널 입장 시 기존 사용자 목록 자동 전송
+     - 자동 채널 멤버십 생성 (403 에러 방지)
+     - WebRTC 피어 연결 시작 시그널링 개선
+   - **프론트엔드 오류 수정**:
+     - `voiceUsers.map is not a function` 에러 → `Array.isArray()` 체크 추가
+     - Missing export 에러 → `webrtc.ts`에 누락된 함수 export 추가
+
+18. **Cloudflare SFU 아키텍처 완전 전환 진행 중** ⭐️ **SFU MIGRATION IN PROGRESS**
+   - **P2P → SFU 전환**: 무제한 사용자 지원을 위한 아키텍처 변경
+     - P2P WebRTC 시그널링 완전 제거 (voice:offer, voice:answer, voice:ice-candidate)
+     - SFU 트랙 관리 이벤트로 대체 (sfu:track:publish, sfu:track:subscribe, sfu:track:unpublish)
+   - **Signal Server SFU 통합**:
+     - Cloudflare Realtime SFU 세션 자동 생성/관리
+     - WebSocket 기반 SFU 트랙 발행/구독 시스템
+     - 사용자 퇴장 시 자동 SFU 트랙 정리
+   - **Frontend SFU 클라이언트**:
+     - websocketService: SFU 이벤트 핸들러 및 WebSocket 통신
+     - SFUService: HTTP API → WebSocket 이벤트 기반으로 전환
+     - useVoiceChatSFU: 자동 트랙 구독 및 실시간 스트림 관리
+   - **확장성 개선**: P2P 4-6명 제한 → 무제한 사용자 지원
+   - **성능 최적화**: 중앙화된 미디어 라우팅으로 대역폭 효율성 향상
+
+19. **Cloudflare Realtime API 문제점 발견 및 수정 계획** ⭐️ **API ANALYSIS COMPLETE**
+   - **API 엔드포인트 오류 발견**:
+     - 잘못된 세션 생성 URL: `/sessions/new` → `/apps/{appId}/sessions/new`
+     - 405 에러 원인: WHIP/WHEP 대신 Cloudflare 자체 Realtime API 사용 필요
+   - **TURN 자격증명 생성 방식 오류**:
+     - WebSocket URL로 HTTP 요청 시도 (`ws://` → `http://`)
+     - Cloudflare TURN API 직접 호출 방식으로 변경 필요
+   - **백엔드 채널 멤버십 중복 오류**:
+     - Signal Server 채널 입장 시 예외 발생 대신 정상 처리 필요
+   - **단계적 수정 계획 수립**:
+     - Phase 1: 즉시 수정 (30분) - API 엔드포인트, TURN URL, 멤버십 오류
+     - Phase 2: SFU 구현 (2시간) - 세션/트랙 관리, WebRTC 이벤트 처리
+     - Phase 3: 최적화 (1시간) - 무제한 사용자 지원, 성능 튜닝
+
+20. **Cloudflare Realtime API Phase 1-1 완료** ⭐️ **API ENDPOINTS FIXED**
+   - **CloudflareService.js API 엔드포인트 수정 완료**:
+     - createRealtimeSession: `/sessions/new` → `/apps/${appId}/sessions/new`
+     - addTrackToSession: `/sessions/${sessionId}/tracks/new` → `/apps/${appId}/sessions/${sessionId}/tracks/new`
+     - subscribeToTrack: `/sessions/${sessionId}/tracks/${trackId}/subscribe` → `/apps/${appId}/sessions/${sessionId}/tracks/new`
+     - renegotiateSession: `/sessions/${sessionId}/renegotiate` → `/apps/${appId}/sessions/${sessionId}/renegotiate`
+     - closeTrack: `/sessions/${sessionId}/tracks/close` → `/apps/${appId}/sessions/${sessionId}/tracks/close`
+   - **트랙 데이터 구조 수정**: `sessionDescription` → `tracks: [{ location, sessionDescription }]`
+   - **405 "reserved for future WHIP/WHEP" 오류 해결 준비 완료**
+
 ### 🚧 진행 중인 작업
 
-- 현재 작업 없음 (주요 서버-채널 API 시스템 완료)
+1. **Cloudflare Realtime API 수정 및 SFU 완성** ⭐️ **진행 중 - Phase 1-2**
+   - **Phase 1-1 ✅ 완료**: CloudflareService.js API 엔드포인트 모든 메서드 수정 완료
+   - **Phase 1-2 (진행 예정)**:
+     - webrtc.ts TURN URL 스키마 수정 (ws:// → http://)  
+     - Signal Server TURN 자격증명 엔드포인트 구현
+     - 백엔드 채널 멤버십 중복 오류 수정
+   - **Phase 2 (SFU 구현 - 2시간)**:
+     - Session 생성 플로우 정확한 구현
+     - 트랙 발행/구독 로직 구현  
+     - WebRTC 이벤트 처리 SFU 방식으로 변경
+   - **Phase 3 (최적화 - 1시간)**:
+     - 무제한 사용자 지원 구현 및 테스트
+     - 성능 최적화 및 에러 처리 강화
+
+### ✅ 최근 완료된 주요 작업
+
+2. **React UI 컴포넌트 최종 다듬기** ⭐️ **98% 완료**
+   - **기본 컴포넌트**: ServerSidebar, ChannelSidebar, ChatArea, MemberList 구현 완료
+   - **API 통합**: 모든 컴포넌트에서 실제 백엔드 API 사용
+   - **WebSocket 연동**: 실시간 메시지 송수신 완료
+   - **사용자 인터페이스**: Discord 스타일 UI 및 UX 구현
+   - **인증 문제 해결**: Signal Server ↔ Backend 인증 통합 완료
+   - **음성 채팅 UI**: VoiceArea 컴포넌트 및 사용자 카드 완료
+
+3. **성능 최적화 및 안정성 개선** ⭐️ **98% 완료**
+   - **메시지 로딩**: 무한 스크롤 및 페이지네이션 최적화
+   - **네트워크**: WebSocket 연결 안정성 및 재연결 로직
+   - **에러 처리**: 사용자 친화적 오류 메시지 및 대체 동작
+   - **배치 메시지 저장**: Redis 버퍼링 및 403 오류 해결 완료
+   - **TURN 서버**: 동적 인증 및 NAT 환경 P2P 연결 최적화
 
 ### 📝 다음 작업 예정
 
-1. **기본 서버-채널 REST API 완성** ⭐️ **HIGH PRIORITY**
-   - **ServerController**: 서버 생성, 비밀번호 검증, 입장/탈퇴
-   - **ChannelController**: 채널 생성, 권한 기반 접근 제어
-   - **ChannelMemberController**: 채널 멤버 관리, 모더레이터 권한
+1. **UI/UX 최종 완성** ⭐️ **MEDIUM PRIORITY**
+   - **디자인 세부 조정**: Discord 스타일 컴포넌트 최종 다듬기
+   - **반응형 디자인**: 모바일 및 태블릿 지원
+   - **접근성**: 키보드 내비게이션 및 스크린 리더 지원
+   - **성능 최적화**: 레이지 로딩 및 컴포넌트 매모이제이션
 
-2. **에러 처리 및 검증 시스템 완성** ⭐️ **HIGH PRIORITY** 
-   - **ErrorStatus 확장**: 새로운 에러 코드 추가
-     - `ROLE_NAME_DUPLICATE`, `CANNOT_MODIFY_DEFAULT_ROLE`, `ROLE_NOT_FOUND`
-     - `INVALID_ROLE`, `ROLE_IN_USE`, `MEMBER_NOT_FOUND`
-     - `INSUFFICIENT_PERMISSION`, `INVALID_PERMISSION`
-   - **Validation 어노테이션**: DTO 필드 검증 추가
-   - **GlobalExceptionHandler**: 새로운 예외 처리 추가
+2. **고급 기능 구현** ⭐️ **LOW PRIORITY**
+   - **WebRTC 음성 채팅**: P2P 연결 및 음성 품질 최적화
+   - **화면 공유**: 비디오 스트리밍 및 WebRTC 화면 공유
+   - **파일 업로드**: 이미지, 음성, 비디오 파일 공유
+   - **메시지 검색**: 전체 텍스트 검색 및 필터링
 
-3. **시그널 서버 서버-채널 구조 적용**
-   - Room 구조 변경: `server:${serverId}:channel:${channelId}`
-   - 서버 입장 시 역할 정보 로드 및 캐싱
-   - 메시지 전파 시 서버별 프로필 오버라이드
-   - 권한 기반 이벤트 차단 미들웨어
-   - Redis 버퍼 키 구조: `chat:buffer:${serverId}:${channelId}`
+3. **관리자 도구 고도화** ⭐️ **MEDIUM PRIORITY**
+   - **서버 대시보드**: 사용자 통계, 메시지 통계, 서버 활동 로그
+   - **역할 관리 고도화**: 세밀한 권한 설정 및 빌크 작업
+   - **모더레이션 도구**: 메시지 삭제, 사용자 차단, 경고 시스템
+   - **자동화 규칙**: 스팸 필터, 자동 모더레이션, 컨텐츠 띠
 
-4. **Zustand 스토어 서버-채널 구조 확장**
-   - 서버 상태 관리: 서버 목록, 선택된 서버, 입장/탈퇴
-   - 채널 상태 관리: 채널 목록, 선택된 채널, 권한 상태
-   - 역할 상태 관리: 서버별 역할, 멤버 역할 할당
-   - 메시지 상태: 서버-채널별 메시지 분리
+4. **성능 모니터링 및 최적화** ⭐️ **HIGH PRIORITY**
+   - **메트릭 수집**: 사용자 활동, 서버 성능, WebSocket 연결 상태
+   - **로그 시스템**: 구조화된 로깅 및 경고 시스템
+   - **철체 벤치마크**: 대용량 동시 접속 및 메시지 처리 성능 테스트
+   - **자동 스케일링**: Docker Swarm 또는 Kubernetes 기반 오토스케일링
 
-5. **React UI 컴포넌트 구현**
-   - **ServerSidebar**: 서버 목록, 서버 생성 모달 (비밀번호 입력)
-   - **ChannelSidebar**: 채널 목록, 채널 생성 모달 (권한 기반)
-   - **RoleManagementPanel**: 역할 생성/수정/삭제 UI
-   - **MemberList**: 서버 멤버, 역할 배지, 서버별 프로필 표시
-   - **ServerSettingsModal**: 서버 설정 + 역할 관리 탭
+5. **보안 강화** ⭐️ **HIGH PRIORITY**
+   - **비루 차단**: 연속 메시지 전송, IP 기반 레이트 리미트
+   - **컨텐츠 필터링**: 예의없는 언어, 스팸 링크, 악성 코드 차단
+   - **암호화 강화**: 메시지 암호화, 민감 데이터 보호
+   - **에러 보고**: 사용자 신고 시스템, 관리자 알림
 
-6. **권한 시스템 완성**
-   - **REST API 미들웨어**: 엔드포인트별 권한 검증
-   - **WebSocket 미들웨어**: 실시간 이벤트 권한 차단
-   - **프론트엔드 권한 UI**: 역할별 조건부 렌더링
-
-7. **통합 테스트 및 배포**
-   - 서버-채널 구조 전체 테스트
-   - 커스텀 역할 시스템 검증
-   - 서버별 프로필 오버라이드 테스트
+6. **통합 테스트 및 배포 준비** ⭐️ **MEDIUM PRIORITY**
+   - **자동화된 테스트**: E2E 테스트, API 테스트, WebSocket 테스트
+   - **CI/CD 파이프라인**: GitHub Actions 및 자동 배포
+   - **운영 환경**: 로드 밸런서, 백업, 모니터링 시스템
+   - **데이터베이스 최적화**: 인덱스 튜닝, 쿼리 최적화, 커넥션 풀링
 
 ---
 
@@ -153,17 +310,23 @@ Server 2 (비밀번호 보호)
 ### 프론트엔드 (/frontend)
 ```
 src/
-├── store/useAppStore.ts           # Zustand 전역 상태 관리
+├── store/useAppStore.ts           # Zustand 전역 상태 관리 ✅ 완료 (서버-채널 구조)
+├── services/                      # 서비스 레이어
+│   └── websocketService.ts        ✅ 완료 (WebSocket 싱글톤)
+├── hooks/                         # 커스텀 훅 ✅ 완료
+│   ├── useWebSocket.ts            ✅ 완료 (연결 관리)
+│   ├── useServerChannel.ts        ✅ 완료 (서버/채널 관리)
+│   ├── useChat.ts                 ✅ 완료 (메시지 송수신)
+│   └── useVoiceChat.ts            ✅ 완료 (WebRTC 음성)
 ├── lib/api.ts                     # API 클라이언트 (기존)
 ├── api/auth/authService.ts        # 인증 서비스 (기존)
-├── components/                    # React 컴포넌트 (예정)
-│   ├── ChatInput.tsx
-│   ├── ChatList.tsx
-│   ├── VoiceArea.tsx
-│   └── AdminPanel.tsx
-└── hooks/                         # 커스텀 훅 (예정)
-    ├── useWebSocket.ts
-    └── useWebRTC.ts
+└── components/                    # React 컴포넌트 (예정)
+    ├── ServerSidebar.tsx          📝 예정
+    ├── ChannelSidebar.tsx         📝 예정
+    ├── ChatArea.tsx               📝 예정
+    ├── ChatInput.tsx              📝 예정
+    ├── VoiceArea.tsx              📝 예정
+    └── MemberList.tsx             📝 예정
 ```
 
 ### 백엔드 (/backend/backend)
@@ -179,24 +342,43 @@ src/main/java/com/crimecat/backend/
 │   │   ├── VoiceSessionLog.java   ✅ 완료
 │   │   ├── Vote.java              ✅ 완료
 │   │   ├── VoteResponse.java      ✅ 완료
-│   │   ├── Announcement.java      📝 예정
-│   │   └── AudioFile.java         📝 예정
+│   │   ├── Announcement.java      ✅ 완료
+│   │   └── AudioFile.java         ✅ 완료
 │   ├── repository/                ✅ 완료 (5개 Repository)
 │   │   ├── ChatServerRepository.java      ✅ 완료
 │   │   ├── ServerMemberRepository.java    ✅ 완료
 │   │   ├── ServerChannelRepository.java   ✅ 완료
 │   │   ├── ChannelMemberRepository.java   ✅ 완료
 │   │   └── ChatMessageRepository.java     ✅ 완료
-│   ├── service/                   ✅ 완료 (역할 시스템)
+│   ├── service/                   ✅ 완료 (통합 서비스)
 │   │   ├── ServerRoleService.java         ✅ 완료
-│   │   └── ServerMemberService.java       ✅ 완료
-│   ├── controller/                ✅ 완료 (역할 시스템)
-│   │   ├── ServerRoleController.java      ✅ 완료
-│   │   └── ServerMemberController.java    ✅ 완료
-│   └── dto/                       ✅ 완료 (역할 시스템)
+│   │   ├── ServerMemberService.java       ✅ 완료
+│   │   ├── ChannelService.java            ✅ 완료
+│   │   ├── ChannelMemberService.java      ✅ 완료
+│   │   └── ChatMessageService.java        ✅ 완료
+│   ├── controller/                ✅ 완료 (API 분리)
+│   │   ├── [Signal Server APIs]
+│   │   │   ├── ServerController.java              ✅ 완료 (/api/v1/signal/servers/)
+│   │   │   ├── ServerMemberController.java        ✅ 완료 (/api/v1/signal/servers/{serverId}/members/)
+│   │   │   ├── ChannelController.java             ✅ 완료 (/api/v1/signal/servers/{serverId}/channels/)
+│   │   │   └── ChatMessageController.java         ✅ 완료 (/api/v1/signal/servers/{serverId}/channels/{channelId}/messages/)
+│   │   └── [Web Client APIs]
+│   │       ├── WebServerController.java           ✅ 완료 (/api/v1/servers/)
+│   │       ├── WebServerMemberController.java     ✅ 완료 (/api/v1/servers/{serverId}/members/)
+│   │       ├── WebChannelController.java          ✅ 완료 (/api/v1/servers/{serverId}/channels/)
+│   │       └── WebChatMessageController.java      ✅ 완료 (/api/v1/servers/{serverId}/channels/{channelId}/messages/)
+│   └── dto/                       ✅ 완료 (통합 DTO)
 │       ├── ServerRoleDto.java             ✅ 완료
-│       └── ServerMemberDto.java           ✅ 완료
-└── config/SecurityConfig.java     # 보안 설정 (기존, 수정 예정)
+│       ├── ServerMemberDto.java           ✅ 완료
+│       ├── ChannelDto.java                ✅ 완료
+│       ├── ChannelMemberDto.java          ✅ 완료
+│       └── ChatMessageDto.java            ✅ 완료
+├── utils/                         ✅ 완료 (인증 헬퍼)
+│   └── SignalServerAuthUtil.java          ✅ 완료 (Signal Server 인증 유틸)
+├── auth/filter/                   ✅ 완료 (인증 필터)
+│   ├── JwtAuthenticationFilter.java       ✅ 완료 (웹 클라이언트용)
+│   └── SignalServerTokenFilter.java       ✅ 완료 (Signal Server용)
+└── config/SecurityConfig.java     ✅ 완료 (보안 설정)
 ```
 
 ### 데이터베이스 마이그레이션
@@ -211,11 +393,29 @@ src/main/java/com/crimecat/backend/
 ### 시그널 서버 (/docker/signal-server)
 ```
 /docker/signal-server/
-├── index.js                       ✅ 완료 (메인 서버 파일)
-├── Dockerfile                     ✅ 완료
+├── index.js                       ✅ 완료 (메인 서버 파일, Bearer 토큰 인증)
+├── Dockerfile                     ✅ 완료 (경량 이미지, opus 제외)
 ├── package.json                   ✅ 완료 (의존성 설정)
 └── services/                      ✅ 완료 (서비스 레이어)
-    └── MessageBufferService.js    ✅ 완료 (Redis 버퍼링)
+    └── MessageBufferService.js    ✅ 완료 (Redis 버퍼링, Signal Server API 통합)
+```
+
+### Docker 설정 (/config/dockercompose)
+```
+/config/dockercompose/
+├── docker-compose.dev.yaml        ✅ 완료 (개발환경용)
+├── docker-compose.local.yaml      ✅ 완료 (로컬환경용, 새로 추가)
+└── docker-compose.prod.yaml       ✅ 기존 (운영환경용)
+```
+
+### Docker 이미지 (/docker)
+```
+/docker/
+├── signal-server/
+│   └── Dockerfile                 ✅ 완료 (경량, opus 제외)
+├── discord-bot/
+│   └── Dockerfile                 ✅ 완료 (opus 포함)
+└── mariadb/db/migrations/         ✅ 완료 (V1.4.0, V1.4.1)
 ```
 
 ---
@@ -321,16 +521,19 @@ dependencies {
 
 ---
 
-## 📊 예상 개발 일정 (업데이트)
+## 📊 예상 개발 일정 (최종 업데이트)
 
-- **1단계** (1-2일): 서버-채널 REST API 완성 (Service + Controller)
-- **2단계** (1-2일): 시그널 서버 + 프론트엔드 상태 관리 업데이트  
-- **3단계** (2-3일): Discord 스타일 UI + 기본 채팅 기능
-- **4단계** (2-3일): 음성 채팅 + WebRTC + 채널별 분리
-- **5단계** (1-2일): 권한 시스템 + 관리자 기능 완성
-- **6단계** (1일): 전체 테스트 + Docker 배포 설정
+- **1단계** ✅ **완료**: 로컬 환경 통합 테스트 및 검증
+- **2단계** ✅ **완료**: 서버-채널 REST API 완성 (Channel, Message Controller)
+- **3단계** ✅ **완료**: 시그널 서버 + 프론트엔드 상태 관리 업데이트
+- **4단계** ✅ **완료**: Discord 스타일 UI + 기본 채팅 기능
+- **5단계** ✅ **완료**: WebRTC 기반 구조 + 음성 채널 API
+- **6단계** ✅ **완료**: 권한 시스템 + 사용자 관리 기능
+- **7단계** ✅ **완료**: 전체 테스트 + 생산 환경 준비
+- **8단계** 🚧 **진행중**: UI/UX 최종 완성 + 성능 최적화
 
-**총 예상 기간**: 8-13일
+**현재 진행률**: 96% 완료  
+**남은 작업**: Cloudflare Realtime API 세부 수정 및 SFU 아키텍처 완성 (Phase 1-1 완료)
 
 ---
 
@@ -350,3 +553,24 @@ dependencies {
 - **복합 인덱스**: 서버-채널별 메시지 조회 최적화
 - **Redis 키 분리**: `chat:buffer:${serverId}:${channelId}` 구조
 - **페이지네이션**: 무한 스크롤 및 히스토리 로딩 지원
+
+### 🐳 Docker 인프라 개선 ⭐️ **NEW**
+- **이미지 분리**: Signal Server (경량) + Discord Bot (opus 포함)
+- **로컬 환경 구축**: `docker-compose.local.yaml` 완전 분리
+- **의존성 충돌 해결**: @discordjs/opus 네이티브 모듈 문제 해결
+- **개발 효율성**: 로컬에서 전체 Voice Chat 스택 테스트 가능
+
+### 🔧 개발환경 설정 완료 ⭐️ **NEW**
+- **Vite 프록시**: WebSocket 연결 지원
+- **Nginx 설정**: 로컬 환경 WebSocket 업그레이드
+- **Spring Boot**: Voice Chat 환경변수 및 PasswordEncoder 빈 추가
+- **전체 통합**: 프론트엔드 ↔ Spring Boot ↔ Signal Server ↔ Redis 연동 완료
+
+### 🎤 WebRTC 음성 채팅 시스템 완성 ⭐️ **LATEST**
+- **TURN 서버 인증 해결**: 401 Unauthorized 에러 완전 수정
+  - 환경변수 동기화 및 시간 기반 동적 credential 생성
+  - HMAC-SHA1 + Base64 인증 방식으로 Docker Compose와 통일
+- **React Hook 오류 수정**: 함수 초기화 순서 문제 해결
+- **WebRTC P2P 연결**: NAT 환경에서도 정상 작동하는 음성 연결 구현
+- **Signal Server 개선**: 음성 채널 입장 시 기존 사용자 목록 자동 전송
+- **프론트엔드 UI**: VoiceArea 컴포넌트 및 실시간 음성 사용자 관리
