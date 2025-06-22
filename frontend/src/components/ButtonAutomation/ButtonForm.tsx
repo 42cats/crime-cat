@@ -424,7 +424,7 @@ export const ButtonForm: React.FC<ButtonFormProps> = ({
                     onChange={(value) => updateAction(index, 'target', value)}
                   >
                     <Option value="executor">버튼을 누른 사람</Option>
-                    <Option value="all">모든 사람</Option>
+                    <Option value="admin">관리자</Option>
                   </Select>
                 </Form.Item>
               </Col>

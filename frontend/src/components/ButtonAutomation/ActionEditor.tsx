@@ -49,7 +49,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
       delay: 0,
       result: {
         message: '',
-        visibility: 'private'
+        visibility: 'none'
       }
     };
 
@@ -253,14 +253,26 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
         {actionType.parameters.includes('roleId') && (
           <Form.Item label="대상 역할" style={{ marginBottom: 12 }}>
             <MultiRoleSelect 
-              value={action.parameters.roleId ? [action.parameters.roleId] : []}
-              onChange={(roles) => updateActionParameter(index, 'roleId', roles[0] || '')}
+              value={action.parameters.roleIds || (action.parameters.roleId ? [action.parameters.roleId] : [])}
+              onChange={(roles) => {
+                // 다중 역할 지원: 한 번에 두 파라미터 모두 업데이트
+                const newActions = [...actions];
+                newActions[index] = {
+                  ...newActions[index],
+                  parameters: {
+                    ...newActions[index].parameters,
+                    roleIds: roles,
+                    roleId: roles[0] || '' // 하위 호환성
+                  }
+                };
+                onChange(newActions);
+              }}
               guildId={guildId}
-              placeholder="역할을 선택하세요"
-              maxSelections={1}
+              placeholder="역할을 선택하세요 (다중 선택 가능)"
+              maxSelections={undefined}
             />
             <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
-              💡 역할의 색상과 위치가 표시됩니다
+              💡 여러 역할을 선택할 수 있습니다. 역할의 색상과 위치가 표시됩니다.
             </Text>
           </Form.Item>
         )}
@@ -314,9 +326,12 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
               maxLength={32}
               showCount
             />
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {'{username}'}을 사용하면 사용자 이름으로 치환됩니다
-            </Text>
+            <div style={{ marginTop: 4, padding: 6, backgroundColor: '#f0f8ff', borderRadius: 4, fontSize: 11 }}>
+              <Text type="secondary">
+                💡 <strong>사용 가능한 변수:</strong> {'{user}'} (사용자 멘션), {'{username}'} (사용자명), 
+                {'{guild}'} (서버명), {'{channel}'} (현재 채널명), {'{button}'} (버튼명)
+              </Text>
+            </div>
           </Form.Item>
         )}
 
@@ -330,9 +345,12 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
               maxLength={2000}
               showCount
             />
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {'{user}'}, {'{username}'}, {'{guild}'} 등의 변수를 사용할 수 있습니다
-            </Text>
+            <div style={{ marginTop: 4, padding: 6, backgroundColor: '#f0f8ff', borderRadius: 4, fontSize: 11 }}>
+              <Text type="secondary">
+                💡 <strong>사용 가능한 변수:</strong> {'{user}'} (사용자 멘션), {'{username}'} (사용자명), 
+                {'{guild}'} (서버명), {'{channel}'} (현재 채널명), {'{button}'} (버튼명)
+              </Text>
+            </div>
           </Form.Item>
         )}
 
@@ -436,6 +454,74 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
             </div>
           </Form.Item>
         )}
+
+        {/* 버튼 설정 파라미터들 */}
+        {actionType.parameters.includes('buttonStyle') && (
+          <Form.Item label="버튼 스타일" style={{ marginBottom: 12 }}>
+            <Select
+              value={action.parameters.buttonStyle || 'primary'}
+              onChange={(value) => updateActionParameter(index, 'buttonStyle', value)}
+              style={{ width: '100%' }}
+            >
+              <Option value="primary">Primary (파란색)</Option>
+              <Option value="secondary">Secondary (회색)</Option>
+              <Option value="success">Success (초록색)</Option>
+              <Option value="danger">Danger (빨간색)</Option>
+            </Select>
+            <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+              액션 실행 후 버튼의 색상을 변경합니다
+            </Text>
+          </Form.Item>
+        )}
+
+        {actionType.parameters.includes('buttonLabel') && (
+          <Form.Item label="새 버튼 라벨" style={{ marginBottom: 12 }}>
+            <Input
+              value={action.parameters.buttonLabel || ''}
+              onChange={(e) => updateActionParameter(index, 'buttonLabel', e.target.value)}
+              placeholder="🎉 {username}님이 완료했습니다!"
+              maxLength={80}
+              showCount
+            />
+            <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+              액션 실행 후 버튼의 텍스트를 변경합니다 (비워두면 변경하지 않음)
+            </Text>
+            <div style={{ marginTop: 4, padding: 6, backgroundColor: '#f0f8ff', borderRadius: 4, fontSize: 11 }}>
+              <Text type="secondary">
+                💡 <strong>사용 가능한 변수:</strong> {'{user}'} (사용자 멘션), {'{username}'} (사용자명), 
+                {'{guild}'} (서버명), {'{channel}'} (현재 채널명), {'{button}'} (버튼명)
+              </Text>
+            </div>
+          </Form.Item>
+        )}
+
+        {actionType.parameters.includes('buttonDisabled') && (
+          <Form.Item label="버튼 비활성화" style={{ marginBottom: 12 }}>
+            <Switch
+              checked={action.parameters.buttonDisabled === true}
+              onChange={(checked) => updateActionParameter(index, 'buttonDisabled', checked)}
+              checkedChildren="비활성화"
+              unCheckedChildren="활성화 유지"
+            />
+            <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+              액션 실행 후 버튼을 비활성화할지 선택합니다
+            </Text>
+          </Form.Item>
+        )}
+
+        {actionType.parameters.includes('buttonEmoji') && (
+          <Form.Item label="버튼 이모지" style={{ marginBottom: 12 }}>
+            <Input
+              value={action.parameters.buttonEmoji || ''}
+              onChange={(e) => updateActionParameter(index, 'buttonEmoji', e.target.value)}
+              placeholder="😀 또는 <:name:id>"
+              maxLength={50}
+            />
+            <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+              버튼에 표시할 이모지를 설정합니다 (유니코드 이모지 또는 Discord 커스텀 이모지)
+            </Text>
+          </Form.Item>
+        )}
       </div>
     );
   };
@@ -522,7 +608,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     style={{ width: '100%' }}
                   >
                     <Option value="executor">버튼을 누른 사람</Option>
-                    <Option value="all">모든 사람</Option>
+                    <Option value="admin">관리자</Option>
                     <Option value="role">특정 역할의 모든 사용자</Option>
                     <Option value="specific">특정 사용자</Option>
                   </Select>
@@ -622,7 +708,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     onChange={(e) => updateAction(index, { 
                       result: { ...action.result, message: e.target.value }
                     })}
-                    placeholder="완료되었습니다! {user}님의 작업이 성공했습니다."
+                    placeholder="🎉 {username}님이 {channel}에서 작업을 완료했습니다!"
                     maxLength={200}
                   />
                 </Form.Item>
@@ -657,7 +743,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
             <div style={{ marginTop: 8, padding: 8, backgroundColor: '#f0f8ff', borderRadius: 4, fontSize: 12 }}>
               <Text type="secondary">
                 💡 <strong>사용 가능한 변수:</strong> {'{user}'} (사용자 멘션), {'{username}'} (사용자명), 
-                {'{guild}'} (서버명), {'{channel}'} (채널명), {'{button}'} (버튼명)
+                {'{guild}'} (서버명), {'{channel}'} (현재 채널명), {'{button}'} (버튼명)
               </Text>
             </div>
           </Card>
