@@ -1,6 +1,7 @@
 // Events/interaction/buttonClick.js
 const { Client, ButtonInteraction } = require('discord.js');
 const { decodeFromString } = require('../../Commands/utility/delimiterGeter');
+const { handleButtonAutomation } = require('../../Response/ButtonAutomationHandler');
 
 module.exports = {
     name: 'BUTTON_CLICK',
@@ -14,6 +15,13 @@ module.exports = {
         if (!interaction.isButton() || !interaction.customId) return;
 
         try {
+            // 자동화 버튼인지 확인
+            if (interaction.customId.startsWith('automation_')) {
+                await handleButtonAutomation(interaction);
+                return;
+            }
+
+            // 기존 버튼 처리 로직
             // 레디스에서 데이터 가져오기 시도
             let data = await client.redis.getValue(interaction.customId);
 
