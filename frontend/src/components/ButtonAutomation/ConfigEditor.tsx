@@ -277,7 +277,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
                         >
                           <option value="executor">버튼을 누른 사람</option>
                           <option value="specific">특정 사용자</option>
-                          <option value="all">모든 사람</option>
+                          <option value="admin">관리자</option>
                         </select>
                       </div>
                     </div>

@@ -188,5 +188,15 @@ export const ACTION_TYPES = {
     parameters: [],
     requiredPermissions: ['CONNECT', 'SPEAK'],
     category: 'music'
+  },
+  
+  // 버튼 설정
+  button_setting: {
+    label: '버튼 설정',
+    icon: '⚙️',
+    description: '액션 실행 후 버튼의 스타일, 라벨, 활성화 상태를 변경합니다',
+    parameters: ['buttonStyle', 'buttonLabel', 'buttonDisabled', 'buttonEmoji'],
+    requiredPermissions: [],
+    category: 'button'
   }
 } as const;

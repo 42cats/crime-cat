@@ -45,7 +45,7 @@ export interface TriggerConfig {
 export interface ActionConfig {
   type: ActionType;
   order: number;
-  target: 'executor' | 'specific' | 'all';
+  target: 'executor' | 'specific' | 'admin';
   targetValue?: string;
   parameters: Record<string, any>;
   conditions?: ActionConditions;
@@ -113,7 +113,8 @@ export type ActionType =
   | 'toggle_voice_deafen'
   | 'set_priority_speaker'
   | 'timeout_user'
-  | 'remove_timeout';
+  | 'remove_timeout'
+  | 'button_setting';
 
 // ===== 액션 타입별 파라미터 정의 =====
 

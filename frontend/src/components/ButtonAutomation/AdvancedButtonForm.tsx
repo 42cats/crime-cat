@@ -172,7 +172,8 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
       'remove_channel_permission': '채널 권한 제거',
       'override_channel_permission': '채널 권한 오버라이드',
       'reset_channel_permission': '채널 권한 초기화',
-      'remove_timeout': '타임아웃 해제'
+      'remove_timeout': '타임아웃 해제',
+      'button_setting': '버튼 설정'
     };
     return actionNames[actionType] || actionType;
   };
@@ -181,7 +182,7 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
   const getTargetDisplayName = (target: string) => {
     const targetNames: Record<string, string> = {
       'executor': '버튼을 누른 사람',
-      'all': '모든 사람',
+      'admin': '관리자',
       'specific': '특정 사용자',
       'role': '특정 역할의 모든 사용자'
     };
@@ -244,27 +245,12 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
                       </Form.Item>
                     </div>
 
-                    {/* 트리거 설정 */}
-                    <div>
-                      <Title level={5}>트리거 설정</Title>
-                      <Form.Item label="누가 버튼을 사용할 수 있나요?">
-                        <Select
-                          value={buttonConfig.trigger.type}
-                          onChange={(value) => handleTriggerChange('type', value)}
-                        >
-                          <Option value="everyone">모든 사람</Option>
-                          <Option value="role">특정 역할만</Option>
-                          <Option value="admin">관리자만</Option>
-                        </Select>
-                      </Form.Item>
-                    </div>
-
                     {/* 버튼 스타일 */}
                     <div>
-                      <Title level={5}>버튼 스타일</Title>
+                      <Title level={5}>기본 버튼 설정</Title>
                       <Row gutter={16}>
-                        <Col span={8}>
-                          <Form.Item label="버튼 색상">
+                        <Col span={12}>
+                          <Form.Item label="기본 버튼 색상">
                             <Select
                               value={buttonConfig.buttonSettings.style}
                               onChange={(value) => handleButtonSettingsChange('style', value)}
@@ -276,15 +262,7 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
                             </Select>
                           </Form.Item>
                         </Col>
-                        <Col span={8}>
-                          <Form.Item label="사용 후 비활성화">
-                            <Switch
-                              checked={buttonConfig.buttonSettings.disableAfterUse}
-                              onChange={(checked) => handleButtonSettingsChange('disableAfterUse', checked)}
-                            />
-                          </Form.Item>
-                        </Col>
-                        <Col span={8}>
+                        <Col span={12}>
                           <Form.Item label="로그 기록">
                             <Switch
                               checked={buttonConfig.options.logEnabled}
@@ -293,6 +271,9 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
                           </Form.Item>
                         </Col>
                       </Row>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        💡 트리거 설정과 사용 후 동작은 액션 설정 탭에서 구성할 수 있습니다.
+                      </Text>
                     </div>
                   </Space>
                 )
