@@ -1,6 +1,7 @@
 package com.crimecat.backend.messagemacro.service;
 
 import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.messagemacro.controller.BotButtonAutomationController;
 import com.crimecat.backend.messagemacro.domain.ButtonAutomation;
 import com.crimecat.backend.messagemacro.domain.ButtonAutomationGroup;
 import com.crimecat.backend.messagemacro.dto.*;
@@ -249,9 +250,28 @@ public class ButtonAutomationService {
 
     @Transactional(readOnly = true)
     public Optional<BotButtonAutomationResponseDto> getBotButtonData(UUID buttonId) {
-        return buttonRepository.findById(buttonId)
-                .filter(ButtonAutomation::getIsActive)
-                .map(this::toBotButtonDto);
+        log.info("🔍 [getBotButtonData] 버튼 조회 시작: buttonId={}", buttonId);
+        
+        Optional<ButtonAutomation> buttonOpt = buttonRepository.findById(buttonId);
+        if (buttonOpt.isEmpty()) {
+            log.warn("❌ [getBotButtonData] 버튼을 찾을 수 없음: buttonId={}", buttonId);
+            return Optional.empty();
+        }
+        
+        ButtonAutomation button = buttonOpt.get();
+        log.info("✅ [getBotButtonData] 버튼 조회 성공: buttonId={}, label={}, active={}", 
+                buttonId, button.getButtonLabel(), button.getIsActive());
+        log.info("📄 [getBotButtonData] 실제 config 내용: {}", button.getConfig());
+        
+        if (!button.getIsActive()) {
+            log.warn("⚠️ [getBotButtonData] 비활성화된 버튼: buttonId={}", buttonId);
+            return Optional.empty();
+        }
+        
+        BotButtonAutomationResponseDto dto = toBotButtonDto(button);
+        log.info("📤 [getBotButtonData] 반환할 DTO: {}", dto);
+        
+        return Optional.of(dto);
     }
 
     // ===== 통계 메서드 =====
@@ -308,5 +328,52 @@ public class ButtonAutomationService {
                 .config(button.getConfig())
                 .isActive(button.getIsActive())
                 .build();
+    }
+
+    /**
+     * 봇용 - 버튼 자동화 실행
+     * @param buttonId 버튼 ID
+     * @param request 실행 요청 정보
+     * @return 실행 성공 여부
+     */
+    @Transactional
+    public boolean executeButtonAutomation(UUID buttonId, BotButtonAutomationController.ButtonExecuteRequest request) {
+        try {
+            // 1. 버튼 존재 및 활성화 상태 확인
+            ButtonAutomation button = buttonRepository.findById(buttonId)
+                    .orElseThrow(ErrorStatus.BUTTON_ID_NOT_FOUND::asDomainException);
+            
+            if (!button.getIsActive()) {
+                log.warn("Attempted to execute inactive button: {}", buttonId);
+                return false;
+            }
+
+            // 2. 그룹 활성화 상태 확인
+            ButtonAutomationGroup group = groupRepository.findById(button.getGroupId())
+                    .orElseThrow(ErrorStatus.GROUP_NOT_FOUND::asDomainException);
+            
+            if (!group.getIsActive()) {
+                log.warn("Attempted to execute button from inactive group: {}", group.getId());
+                return false;
+            }
+
+            // 3. 버튼 설정 파싱 및 실행
+            String config = button.getConfig();
+            log.info("Executing button automation: {} with config: {}", buttonId, config);
+            
+            // 실제 자동화 로직 실행
+            // ButtonAutomationEngine을 통해 실행하거나
+            // 여기서 Discord 봇 API를 직접 호출하여 실행
+            // 현재는 기본 검증만 수행하고 실제 액션은 봇에서 처리
+            
+            log.info("Button automation executed successfully: {} by user: {} in guild: {}", 
+                    buttonId, request.getUserId(), request.getGuildId());
+            
+            return true;
+            
+        } catch (Exception e) {
+            log.error("Failed to execute button automation: {} - {}", buttonId, e.getMessage(), e);
+            return false;
+        }
     }
 }
