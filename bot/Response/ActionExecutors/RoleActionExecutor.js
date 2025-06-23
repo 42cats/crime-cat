@@ -88,8 +88,11 @@ class RoleActionExecutor extends BaseActionExecutor {
 
         console.log(`✅ [역할처리] 전체 처리 완료 - 성공: ${totalSuccessCount}, 건너뜀: ${totalSkipCount}, 실패: ${totalFailCount}`);
 
+        // 성공 조건: 실패가 없거나, 성공이나 건너뛰기가 있으면 성공
+        const isSuccess = totalFailCount === 0 || (totalSuccessCount > 0 || totalSkipCount > 0);
+        
         return this.formatResult(
-            totalSuccessCount > 0,
+            isSuccess,
             {
                 actionType: action.type,
                 processedRoles: allResults,
@@ -99,7 +102,7 @@ class RoleActionExecutor extends BaseActionExecutor {
                 totalFailCount
             },
             this.generateMultiRoleSummaryMessage(action.type, allResults, totalSuccessCount, totalSkipCount, totalFailCount),
-            totalSuccessCount === 0 && totalFailCount > 0 ? new Error('모든 역할에 대해 처리가 실패했습니다.') : null
+            !isSuccess ? new Error('모든 역할에 대해 처리가 실패했습니다.') : null
         );
     }
 
@@ -139,6 +142,24 @@ class RoleActionExecutor extends BaseActionExecutor {
 
         // 대상 멤버들 해석
         const targets = await this.resolveTargets(action, context);
+        
+        // 빈 대상 처리: BaseActionExecutor에서 빈 배열을 반환한 경우
+        if (targets.length === 0) {
+            console.log(`ℹ️ [역할처리] 대상이 될 사용자가 없어 건너뜀`);
+            return {
+                roleId: targetRole.id,
+                roleName: targetRole.name,
+                success: true,
+                successCount: 0,
+                skipCount: 1, // 건너뛴 것으로 처리
+                failCount: 0,
+                targetCount: 0,
+                results: [],
+                message: `역할 "${targetRole.name}"을 적용할 대상이 없어 건너뛰었습니다.`,
+                summary: `역할 "${targetRole.name}"을 적용할 대상이 없습니다.`
+            };
+        }
+        
         const results = [];
 
         for (const targetMember of targets) {

@@ -26,6 +26,19 @@ class NicknameActionExecutor extends BaseActionExecutor {
 
         // 대상 멤버들 해석
         const targets = await this.resolveTargets(action, context);
+        
+        // 빈 대상 처리
+        if (targets.length === 0) {
+            console.log(`ℹ️ [닉네임] 닉네임을 변경할 대상이 없어 건너뜀`);
+            return this.formatResult(true, {
+                targetCount: 0,
+                successCount: 0,
+                failCount: 0,
+                results: [],
+                summary: '닉네임을 변경할 대상이 없습니다.'
+            }, '닉네임을 변경할 대상이 없어 건너뛰었습니다.');
+        }
+        
         const results = [];
 
         for (const targetMember of targets) {
@@ -55,8 +68,11 @@ class NicknameActionExecutor extends BaseActionExecutor {
         const skipCount = results.filter(r => r.skipped).length;
         const failCount = results.filter(r => !r.success && !r.skipped).length;
 
+        // 성공 조건: 실패가 없거나, 성공이나 건너뛰기가 있으면 성공
+        const isSuccess = failCount === 0 || (successCount > 0 || skipCount > 0);
+        
         return this.formatResult(
-            successCount > 0,
+            isSuccess,
             {
                 actionType: action.type,
                 targetCount: targets.length,
