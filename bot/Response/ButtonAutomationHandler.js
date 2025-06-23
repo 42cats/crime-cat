@@ -184,15 +184,16 @@ class ButtonAutomationHandler {
             }
 
             // 4. 쿨다운 확인
-            if (conditions.cooldown && conditions.cooldown > 0) {
-                const cooldownKey = `${user.id}_${guild.id}_${buttonConfig.buttonId || 'unknown'}`;
+            if (conditions.cooldownSeconds && conditions.cooldownSeconds > 0) {
+                const cooldownKey = `${user.id}_${guild.id}_${buttonConfig.buttonId || buttonConfig.id || 'unknown'}`;
                 const lastUsed = this.cooldowns.get(cooldownKey);
                 
                 if (lastUsed) {
-                    const timePassed = (Date.now() - lastUsed) / 1000;
-                    const remaining = conditions.cooldown - timePassed;
+                    const timePassed = (Date.now() - lastUsed) / 1000; // 밀리초 → 초 변환
+                    const remaining = conditions.cooldownSeconds - timePassed;
                     
                     if (remaining > 0) {
+                        console.log(`⏰ [쿨다운] 사용자 ${user.tag} 쿨다운 중: ${Math.ceil(remaining)}초 남음`);
                         return {
                             passed: false,
                             reason: `쿨다운 중입니다. ${Math.ceil(remaining)}초 후에 다시 시도해주세요.`
@@ -203,10 +204,11 @@ class ButtonAutomationHandler {
 
             // 5. 사용 제한 확인
             if (conditions.maxUses && conditions.maxUses > 0) {
-                const usageKey = `${user.id}_${guild.id}_${buttonConfig.buttonId || 'unknown'}_uses`;
+                const usageKey = `${user.id}_${guild.id}_${buttonConfig.buttonId || buttonConfig.id || 'unknown'}_uses`;
                 const currentUses = this.executionHistory.get(usageKey) || 0;
                 
                 if (currentUses >= conditions.maxUses) {
+                    console.log(`🚫 [사용제한] 사용자 ${user.tag} 사용 횟수 초과: ${currentUses}/${conditions.maxUses}`);
                     return {
                         passed: false,
                         reason: `이 버튼의 사용 횟수를 초과했습니다. (최대 ${conditions.maxUses}회)`
@@ -466,14 +468,19 @@ class ButtonAutomationHandler {
      * 쿨다운 설정
      */
     setCooldown(userId, guildId, buttonConfig) {
-        if (buttonConfig.conditions?.cooldown && buttonConfig.conditions.cooldown > 0) {
-            const cooldownKey = `${userId}_${guildId}_${buttonConfig.buttonId || 'unknown'}`;
+        const cooldownSeconds = buttonConfig.conditions?.cooldownSeconds || buttonConfig.conditions?.cooldown;
+        
+        if (cooldownSeconds && cooldownSeconds > 0) {
+            const cooldownKey = `${userId}_${guildId}_${buttonConfig.buttonId || buttonConfig.id || 'unknown'}`;
             this.cooldowns.set(cooldownKey, Date.now());
+            
+            console.log(`⏰ [쿨다운 설정] 사용자 ${userId} 쿨다운 ${cooldownSeconds}초 설정`);
 
             // 쿨다운 만료 시 자동 삭제
             setTimeout(() => {
                 this.cooldowns.delete(cooldownKey);
-            }, buttonConfig.conditions.cooldown * 1000);
+                console.log(`⏰ [쿨다운 만료] 사용자 ${userId} 쿨다운 해제`);
+            }, cooldownSeconds * 1000); // 초 → 밀리초 변환
         }
     }
 
@@ -482,9 +489,12 @@ class ButtonAutomationHandler {
      */
     recordExecution(userId, guildId, buttonConfig) {
         if (buttonConfig.conditions?.maxUses && buttonConfig.conditions.maxUses > 0) {
-            const usageKey = `${userId}_${guildId}_${buttonConfig.buttonId || 'unknown'}_uses`;
+            const usageKey = `${userId}_${guildId}_${buttonConfig.buttonId || buttonConfig.id || 'unknown'}_uses`;
             const currentUses = this.executionHistory.get(usageKey) || 0;
-            this.executionHistory.set(usageKey, currentUses + 1);
+            const newUses = currentUses + 1;
+            this.executionHistory.set(usageKey, newUses);
+            
+            console.log(`📊 [사용기록] 사용자 ${userId} 사용 횟수: ${newUses}/${buttonConfig.conditions.maxUses}`);
         }
     }
 
@@ -584,11 +594,7 @@ class ButtonAutomationHandler {
                 console.log(`🎯 [엔진 실행] 액션 ${i + 1}/${buttonConfig.actions.length} 실행 중:`, action.type);
                 
                 try {
-                    // 지연 시간 적용
-                    if (action.delay && action.delay > 0) {
-                        console.log(`⏱️ [엔진 실행] ${action.delay}ms 대기 중...`);
-                        await new Promise(resolve => setTimeout(resolve, action.delay));
-                    }
+                    // 지연 시간은 ButtonAutomationEngine에서 처리되므로 여기서는 제거
                     
                     // 조건 확인 (간단한 구현)
                     if (action.conditions && action.conditions.length > 0) {
@@ -895,13 +901,27 @@ async function handleButtonAutomation(interaction) {
         const handler = new ButtonAutomationHandler();
         await handler.initialize();
         
-        // 1. 백엔드에서 버튼 설정만 조회
+        // 1. 백엔드에서 버튼 설정 조회
         const buttonConfig = await handler.getButtonConfig(buttonId, context.guildId);
         console.log("🔧 [핸들러] 버튼 설정 조회:", buttonConfig);
         
-        // 2. ButtonAutomationEngine으로 액션 실행
+        // 2. 조건 검증 (쿨타임, 사용 횟수 등)
+        const conditionResult = await handler.checkConditions(interaction, buttonConfig);
+        if (!conditionResult.passed) {
+            await interaction.editReply({
+                content: `❌ ${conditionResult.reason}`,
+            });
+            return;
+        }
+        
+        // 3. ButtonAutomationEngine으로 액션 실행
         const result = await handler.executeActionsWithEngine(buttonConfig, context);
         console.log("🎯 [핸들러] 버튼 자동화 실행 결과:", result);
+
+        // 4. 실행 완료 후 쿨타임 설정 및 사용 기록 (성공/실패 관계없이)
+        handler.setCooldown(context.userId, context.guildId, buttonConfig);
+        handler.recordExecution(context.userId, context.guildId, buttonConfig);
+        console.log("⏰ [핸들러] 쿨타임 설정 및 사용 기록 완료");
 
         if (result.success) {
             console.log("✅ [핸들러] 버튼 자동화 성공, 추가 액션 처리 중...");
