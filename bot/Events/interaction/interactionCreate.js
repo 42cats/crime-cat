@@ -2,9 +2,10 @@ const { InteractionType, ComponentType } = require('discord.js');
 const { traceCommand, traceEvent } = require('../../trace');
 
 module.exports = {
-	name: 'interactionHandeleder',
+	name: 'interactionCreate',
 	once: false,
-	execute: async (client, interaction) => {
+	execute: async (interaction) => {
+		const client = interaction.client;
 		try {
 			// Interaction 분기 처리
 			switch (interaction.type) {

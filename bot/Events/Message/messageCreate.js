@@ -3,10 +3,11 @@ const dotenv = require('dotenv');
 dotenv.config();
 const prefix = process.env.PRIFIX;
 module.exports = {
-	name: 'MessageHandler',
+	name: 'messageCreate',
 	once: false,
 
-	execute: async (client, message) => {
+	execute: async (message) => {
+		const client = message.client;
 		try {
 			if (!message.author.bot && message.channel.type === ChannelType.DM) {
 				const event = client.events.get("dmMessage");
