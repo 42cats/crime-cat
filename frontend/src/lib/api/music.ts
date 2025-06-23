@@ -20,12 +20,23 @@ interface YouTubeTrack {
 class MusicApi {
     private async request<T>(url: string): Promise<T[]> {
         try {
+            console.log(`Music API 요청: ${url}`);
             const response = await fetch(url);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             const data = await response.json();
-            return data.data || [];
+            console.log(`Music API 응답:`, data);
+            
+            // 응답이 배열인 경우 직접 반환, 객체인 경우 data 속성 확인
+            if (Array.isArray(data)) {
+                return data;
+            } else if (data.data && Array.isArray(data.data)) {
+                return data.data;
+            } else {
+                console.warn('예상치 못한 API 응답 형식:', data);
+                return [];
+            }
         } catch (error) {
             console.error('Music API 요청 실패:', error);
             return [];

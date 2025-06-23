@@ -223,6 +223,7 @@ export const DISCORD_LIMITS = {
   MAX_BUTTONS_PER_GROUP: 25, // Discord 한 메시지당 최대 버튼 수 (5행 x 5열)
   MAX_GROUPS_PER_GUILD: 50,  // 길드당 권장 최대 그룹 수
   MAX_ACTIONS_PER_BUTTON: 20, // 버튼당 최대 액션 수
+  MAX_BUTTON_LABEL_LENGTH: 80, // Discord 버튼 라벨 최대 길이
 } as const;
 
 // 그룹별 버튼 수 검증

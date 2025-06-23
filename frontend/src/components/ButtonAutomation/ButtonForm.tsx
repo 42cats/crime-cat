@@ -268,10 +268,10 @@ export const ButtonForm: React.FC<ButtonFormProps> = ({
               label="버튼 텍스트"
               rules={[
                 { required: true, message: '버튼 텍스트를 입력해주세요.' },
-                { max: 100, message: '버튼 텍스트는 100자 이하로 입력해주세요.' }
+                { max: 80, message: '버튼 텍스트는 80자 이하로 입력해주세요.' }
               ]}
             >
-              <Input placeholder="역할 받기" />
+              <Input placeholder="역할 받기" maxLength={80} showCount />
             </Form.Item>
           </Col>
           <Col span={12}>
