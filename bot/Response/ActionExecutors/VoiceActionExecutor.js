@@ -117,28 +117,36 @@ class VoiceActionExecutor extends BaseActionExecutor {
      * 개별 음성 액션 실행
      */
     async executeVoiceAction(action, context, targetMember, targetChannel) {
-        const { guild, member: botMember } = context;
+        const { guild } = context;
         const { enable } = action.parameters;
 
-        // 서버 소유자는 제외
-        if (targetMember.id === guild.ownerId) {
+        // 최신 정보로 fetch (권장 방법)
+        const botMember = await guild.members.fetch(guild.client.user.id);
+        const freshTarget = await guild.members.fetch(targetMember.id);
+
+        // 봇의 권한 확인
+        const requiredPermissions = this.getRequiredPermissions(action.type);
+        for (const permission of requiredPermissions) {
+            if (!botMember.permissions.has(permission)) {
+                throw new Error(`봇에게 필요한 권한이 없습니다: ${permission}`);
+            }
+        }
+
+        // manageable 프로퍼티로 관리 가능 여부 확인 (권장 방법)
+        if (!freshTarget.manageable) {
+            console.log(`  ⚠️ [음성] 봇이 멤버 "${freshTarget.displayName}"를 관리할 권한이 없으므로 건너뜀`);
+            console.log(`    └─ 서버 소유자: ${freshTarget.id === guild.ownerId}`);
+            console.log(`    └─ 봇 최고 역할: ${botMember.roles.highest.name}(${botMember.roles.highest.position})`);
+            console.log(`    └─ 대상 최고 역할: ${freshTarget.roles.highest.name}(${freshTarget.roles.highest.position})`);
+            
             return {
                 success: false,
-                message: '서버 소유자에게는 음성 액션을 적용할 수 없습니다.',
+                message: '봇이 이 멤버를 관리할 권한이 없습니다.',
                 skipped: true
             };
         }
 
-        // 봇보다 높은 권한의 멤버는 제외
-        if (targetMember.roles.highest.position >= botMember.roles.highest.position) {
-            return {
-                success: false,
-                message: '봇보다 높은 권한을 가진 멤버에게는 음성 액션을 적용할 수 없습니다.',
-                skipped: true
-            };
-        }
-
-        const voiceState = targetMember.voice;
+        const voiceState = freshTarget.voice;
         let success = false;
         let message = '';
         let previousState = {};
@@ -166,7 +174,7 @@ class VoiceActionExecutor extends BaseActionExecutor {
                 previousState.channelId = voiceState.channel.id;
                 
                 await this.safeDiscordApiCall(
-                    () => targetMember.voice.setChannel(targetChannel, 'ButtonAutomation: move_voice_channel'),
+                    () => freshTarget.voice.setChannel(targetChannel, 'ButtonAutomation: move_voice_channel'),
                     '음성 채널 이동'
                 );
 
@@ -189,7 +197,7 @@ class VoiceActionExecutor extends BaseActionExecutor {
                 previousState.connected = true;
 
                 await this.safeDiscordApiCall(
-                    () => targetMember.voice.disconnect('ButtonAutomation: disconnect_voice'),
+                    () => freshTarget.voice.disconnect('ButtonAutomation: disconnect_voice'),
                     '음성 채널 연결 해제'
                 );
 
@@ -220,7 +228,7 @@ class VoiceActionExecutor extends BaseActionExecutor {
                 }
 
                 await this.safeDiscordApiCall(
-                    () => targetMember.voice.setMute(muteState, 'ButtonAutomation: set_voice_mute'),
+                    () => freshTarget.voice.setMute(muteState, 'ButtonAutomation: set_voice_mute'),
                     '음성 음소거 설정'
                 );
 
@@ -242,7 +250,7 @@ class VoiceActionExecutor extends BaseActionExecutor {
                 const toggleMuteState = !previousState.muted;
 
                 await this.safeDiscordApiCall(
-                    () => targetMember.voice.setMute(toggleMuteState, 'ButtonAutomation: toggle_voice_mute'),
+                    () => freshTarget.voice.setMute(toggleMuteState, 'ButtonAutomation: toggle_voice_mute'),
                     '음성 음소거 토글'
                 );
 
@@ -273,7 +281,7 @@ class VoiceActionExecutor extends BaseActionExecutor {
                 }
 
                 await this.safeDiscordApiCall(
-                    () => targetMember.voice.setDeaf(deafenState, 'ButtonAutomation: set_voice_deafen'),
+                    () => freshTarget.voice.setDeaf(deafenState, 'ButtonAutomation: set_voice_deafen'),
                     '음성 스피커 차단 설정'
                 );
 
@@ -295,7 +303,7 @@ class VoiceActionExecutor extends BaseActionExecutor {
                 const toggleDeafenState = !previousState.deafened;
 
                 await this.safeDiscordApiCall(
-                    () => targetMember.voice.setDeaf(toggleDeafenState, 'ButtonAutomation: toggle_voice_deafen'),
+                    () => freshTarget.voice.setDeaf(toggleDeafenState, 'ButtonAutomation: toggle_voice_deafen'),
                     '음성 스피커 차단 토글'
                 );
 
@@ -318,7 +326,7 @@ class VoiceActionExecutor extends BaseActionExecutor {
                 const suppressState = enable === false;
 
                 await this.safeDiscordApiCall(
-                    () => targetMember.voice.setSuppressed(suppressState, 'ButtonAutomation: set_priority_speaker'),
+                    () => freshTarget.voice.setSuppressed(suppressState, 'ButtonAutomation: set_priority_speaker'),
                     '우선 발언권 설정'
                 );
 

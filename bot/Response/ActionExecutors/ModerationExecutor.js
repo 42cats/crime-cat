@@ -114,33 +114,41 @@ class ModerationExecutor extends BaseActionExecutor {
      * 개별 모더레이션 액션 실행
      */
     async executeModerationAction(action, context, targetMember) {
-        const { guild, member: botMember } = context;
+        const { guild } = context;
         const { reason, duration, deleteMessageDays } = action.parameters;
         const moderationReason = reason || `ButtonAutomation: ${action.type}`;
 
-        // 서버 소유자는 제외
-        if (targetMember.id === guild.ownerId) {
-            return {
-                success: false,
-                message: '서버 소유자에게는 모더레이션 액션을 적용할 수 없습니다.',
-                skipped: true
-            };
-        }
+        // 최신 정보로 fetch (권장 방법)
+        const botMember = await guild.members.fetch(guild.client.user.id);
+        const freshTarget = await guild.members.fetch(targetMember.id);
 
-        // 봇보다 높은 권한의 멤버는 제외
-        if (targetMember.roles.highest.position >= botMember.roles.highest.position) {
-            return {
-                success: false,
-                message: '봇보다 높은 권한을 가진 멤버에게는 모더레이션 액션을 적용할 수 없습니다.',
-                skipped: true
-            };
+        // 봇의 권한 확인
+        const requiredPermissions = this.getRequiredPermissions(action.type);
+        for (const permission of requiredPermissions) {
+            if (!botMember.permissions.has(permission)) {
+                throw new Error(`봇에게 필요한 권한이 없습니다: ${permission}`);
+            }
         }
 
         // 자기 자신에게는 적용 불가
-        if (targetMember.id === botMember.id) {
+        if (freshTarget.id === botMember.id) {
             return {
                 success: false,
                 message: '봇 자신에게는 모더레이션 액션을 적용할 수 없습니다.',
+                skipped: true
+            };
+        }
+
+        // manageable 프로퍼티로 관리 가능 여부 확인 (권장 방법)
+        if (!freshTarget.manageable) {
+            console.log(`  ⚠️ [모더레이션] 봇이 멤버 "${freshTarget.displayName}"를 관리할 권한이 없으므로 건너뜀`);
+            console.log(`    └─ 서버 소유자: ${freshTarget.id === guild.ownerId}`);
+            console.log(`    └─ 봇 최고 역할: ${botMember.roles.highest.name}(${botMember.roles.highest.position})`);
+            console.log(`    └─ 대상 최고 역할: ${freshTarget.roles.highest.name}(${freshTarget.roles.highest.position})`);
+            
+            return {
+                success: false,
+                message: '봇이 이 멤버를 관리할 권한이 없습니다.',
                 skipped: true
             };
         }
@@ -152,7 +160,7 @@ class ModerationExecutor extends BaseActionExecutor {
 
         switch (action.type) {
             case 'remove_timeout':
-                if (!targetMember.communicationDisabledUntil) {
+                if (!freshTarget.communicationDisabledUntil) {
                     return {
                         success: true,
                         message: '이미 타임아웃이 설정되어 있지 않습니다.',
@@ -162,10 +170,10 @@ class ModerationExecutor extends BaseActionExecutor {
                 }
 
                 previousState.timedOut = true;
-                previousState.timeoutUntil = targetMember.communicationDisabledUntil;
+                previousState.timeoutUntil = freshTarget.communicationDisabledUntil;
 
                 await this.safeDiscordApiCall(
-                    () => targetMember.timeout(null, moderationReason),
+                    () => freshTarget.timeout(null, moderationReason),
                     '타임아웃 해제'
                 );
 
@@ -183,12 +191,12 @@ class ModerationExecutor extends BaseActionExecutor {
                     throw new Error('타임아웃은 최대 28일까지 설정할 수 있습니다.');
                 }
 
-                previousState.timedOut = !!targetMember.communicationDisabledUntil;
-                previousState.timeoutUntil = targetMember.communicationDisabledUntil;
+                previousState.timedOut = !!freshTarget.communicationDisabledUntil;
+                previousState.timeoutUntil = freshTarget.communicationDisabledUntil;
 
                 const timeoutDuration = duration * 1000; // 초를 밀리초로 변환
                 await this.safeDiscordApiCall(
-                    () => targetMember.timeout(timeoutDuration, moderationReason),
+                    () => freshTarget.timeout(timeoutDuration, moderationReason),
                     '타임아웃 설정'
                 );
 
@@ -202,7 +210,7 @@ class ModerationExecutor extends BaseActionExecutor {
                 previousState.inGuild = true;
 
                 await this.safeDiscordApiCall(
-                    () => targetMember.kick(moderationReason),
+                    () => freshTarget.kick(moderationReason),
                     '멤버 킥'
                 );
 
@@ -217,7 +225,7 @@ class ModerationExecutor extends BaseActionExecutor {
                 previousState.banned = false;
 
                 await this.safeDiscordApiCall(
-                    () => guild.members.ban(targetMember, {
+                    () => guild.members.ban(freshTarget, {
                         reason: moderationReason,
                         deleteMessageDays: deleteMessageDaysParam
                     }),
@@ -236,7 +244,7 @@ class ModerationExecutor extends BaseActionExecutor {
                 
                 try {
                     await this.safeDiscordApiCall(
-                        () => targetMember.send(`⚠️ **경고**\n서버: ${guild.name}\n사유: ${warnMessage}`),
+                        () => freshTarget.send(`⚠️ **경고**\n서버: ${guild.name}\n사유: ${warnMessage}`),
                         '경고 DM 전송'
                     );
                     
