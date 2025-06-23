@@ -1724,3 +1724,100 @@ module.exports = {
 - **실제 운영 준비도**: 90% ✅
 
 **Discord 버튼 자동화 시스템이 실용적으로 사용 가능한 수준으로 완성되었습니다!**
+
+---
+
+## 🆕 **추가 개선 작업 (2025-06-23)**
+
+### ✅ **채널 권한 관리 개선**
+
+#### **1. Discord.js v14 권한 이름 수정**
+- **파일**: `/Users/byeonsanghun/goinfre/crime-cat/bot/Response/ActionExecutors/ChannelPermissionExecutor.js`
+- **변경사항**:
+  - `VIEW_CHANNEL` → `ViewChannel`
+  - `SEND_MESSAGES` → `SendMessages`
+  - `CONNECT` → `Connect`
+  - `SPEAK` → `Speak`
+  - `MANAGE_MESSAGES` → `ManageMessages`
+  - 모든 권한 이름을 Discord.js v14 형식으로 수정
+
+#### **2. 카테고리 채널 권한 자동 적용**
+- **기능**: 카테고리 채널 선택 시 하위 모든 채널에 권한 자동 적용
+- **구현**: 
+  ```javascript
+  if (channel.type === ChannelType.GuildCategory) {
+      const childChannels = channel.children.cache;
+      for (const childChannel of childChannels.values()) {
+          // 각 하위 채널에 동일한 권한 적용
+      }
+  }
+  ```
+
+#### **3. 권한 비교 개선**
+- **문제**: 봇보다 높은 권한의 사용자 수정 시 오류
+- **해결**: `member.manageable` 속성 사용
+- **적용 파일들**:
+  - RoleActionExecutor.js
+  - NicknameActionExecutor.js
+  - VoiceActionExecutor.js
+  - ModerationExecutor.js
+
+### ✅ **음악 재생 기능 개선**
+
+#### **1. MusicPlayerV4 통합**
+- **파일**: `/Users/byeonsanghun/goinfre/crime-cat/bot/Response/ActionExecutors/MusicActionExecutor.js`
+- **개선사항**:
+  - v4 플레이어 아키텍처 활용
+  - 현재 재생 중인 트랙 확인 로직 개선
+  - 사용자의 현재 음성 채널 감지
+
+#### **2. 한곡 재생 모드 추가**
+- **새로운 모드**: `single-track`
+- **동작**: 한 곡만 재생하고 자동 정지
+- **적용 파일들**:
+  - MusicPlayerV4.js: 기본 모드를 single-track으로 설정
+  - QueueManagerV4.js: single-track 모드 로직 추가
+  - UIManagerV4.js: 새 모드 아이콘(1️⃣) 및 텍스트("한곡 재생") 추가
+
+#### **3. 음성 채널 연결 개선**
+- **문제**: 봇이 다른 채널에 있을 때 이동하지 않음
+- **해결**: 버튼 클릭 시 사용자의 현재 음성 채널로 이동
+
+### ✅ **결과 메시지 시스템 개선**
+
+#### **1. Ephemeral(임시) 메시지 옵션 추가**
+- **파일**: `/Users/byeonsanghun/goinfre/crime-cat/frontend/src/components/ButtonAutomation/ActionEditor.tsx`
+- **새 옵션**: "개인에게만 (임시 메시지)"
+- **visibility 값**: `ephemeral`
+
+#### **2. 결과 메시지 처리 로직 구현**
+- **파일**: `/Users/byeonsanghun/goinfre/crime-cat/bot/Response/ButtonAutomationHandler.js`
+- **메서드**: `sendResultMessage()`
+- **지원 타입**:
+  - `none`: 메시지 없음
+  - `ephemeral`: 임시 메시지 (개인에게만)
+  - `private`: DM 전송
+  - `current_channel`: 현재 채널
+  - `specific_channel`: 특정 채널
+
+#### **3. 기본값 일관성 수정**
+- **문제**: visibility 기본값 불일치
+- **해결**: 
+  - ActionEditor.tsx: 기본값 `none`
+  - AdvancedButtonForm.tsx: 초기값 `none`으로 통일
+  - ActionResult 타입 정의 업데이트
+
+### ✅ **버튼 라벨 제한 적용**
+- **파일**: `/Users/byeonsanghun/goinfre/crime-cat/frontend/src/components/ButtonAutomation/AdvancedButtonForm.tsx`
+- **제한**: 최대 80자
+- **UI**: 글자 수 표시 (`showCount`)
+
+### 📊 **최종 개선 결과**
+- **채널 권한**: Discord.js v14 완벽 호환 ✅
+- **카테고리 권한**: 하위 채널 자동 적용 ✅
+- **권한 체크**: manageable 속성 활용 ✅
+- **음악 재생**: single-track 모드 기본값 ✅
+- **결과 메시지**: ephemeral 옵션 추가 ✅
+- **기본값 일관성**: 모든 컴포넌트 통일 ✅
+
+**모든 요청사항이 성공적으로 구현되었습니다!**
