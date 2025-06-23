@@ -113,10 +113,8 @@ process.on('uncaughtException', (err) => {
 	}
 });
 
-// 클라이언트 준비 완료 시 캐싱된 오류 전송
-client.once(Events.ClientReady, async (readyClient) => {
-	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
-
+// ClientReady 이벤트에서 캐싱된 오류 전송 로직 추가
+client.on(Events.ClientReady, async () => {
 	if (pendingErrors.length > 0) {
 		console.log(`[INFO] 초기화 전 발생한 오류 ${pendingErrors.length}개를 마스터에게 전송합니다.`);
 		for (const errMsg of pendingErrors) {

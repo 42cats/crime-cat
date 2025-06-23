@@ -18,7 +18,8 @@ function loadResponses(client, baseDir) {
 		const dirPath = path.join(baseDir, type);
 		const files = fs.readdirSync(dirPath).filter(file => file.endsWith('.js'));
 
-		const key = type.toLowerCase();
+		// camelCase 변환 (SelectMenus -> selectMenus)
+		const key = type.charAt(0).toLowerCase() + type.slice(1);
 		client.responses[key] = new Map();
 
 		for (const file of files) {
