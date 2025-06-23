@@ -2,6 +2,7 @@ const {decodeFromString} = require('../../Commands/utility/delimiterGeter');
 const { Client,ButtonInteraction } = require('discord.js');
 module.exports = {
     name: 'AUTO_COMPLETE',
+    once: false,
     /**
      * @param {Client} client
      * @param {StringSelectMenuInteraction} interaction

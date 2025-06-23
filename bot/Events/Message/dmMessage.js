@@ -4,6 +4,7 @@ dotenv.config();
 
 module.exports = {
 	name: "dmMessage",
+	once: false,
 	/**
 	 * 
 	 * @param {Client} client 

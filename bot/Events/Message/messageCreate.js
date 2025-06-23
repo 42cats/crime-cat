@@ -4,6 +4,7 @@ dotenv.config();
 const prefix = process.env.PRIFIX;
 module.exports = {
 	name: 'MessageHandler',
+	once: false,
 
 	execute: async (client, message) => {
 		try {

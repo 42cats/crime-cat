@@ -3,6 +3,7 @@ const { Client, ModalSubmitInteraction } = require('discord.js');
 
 module.exports = {
 	name: 'MODAL_SUBMIT',
+	once: false,
 	/**
 	 * @param {Client} client
 	 * @param {ModalSubmitInteraction} interaction
