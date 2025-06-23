@@ -48,7 +48,7 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
       target: 'executor',
       parameters: {},
       delay: 0,
-      result: { message: '', visibility: 'private' }
+      result: { message: '', visibility: 'none' }
     }],
     buttonSettings: { style: 'primary', disableAfterUse: false },
     options: { oncePerUser: false, logEnabled: true }

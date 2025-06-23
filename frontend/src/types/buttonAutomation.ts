@@ -61,13 +61,10 @@ export interface ActionConditions {
 }
 
 export interface ActionResult {
-  message?: {
-    type: 'none' | 'default' | 'custom';
-    content?: string;
-    visibility?: 'public' | 'private' | 'dm';
-    deleteAfter?: number;
-    emojis?: string[];
-  };
+  message?: string;
+  visibility?: 'none' | 'ephemeral' | 'private' | 'current_channel' | 'specific_channel';
+  channelId?: string;
+  deleteAfter?: number;
 }
 
 export interface OptionsConfig {
