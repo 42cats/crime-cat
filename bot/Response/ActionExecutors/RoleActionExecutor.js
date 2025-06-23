@@ -109,42 +109,33 @@ class RoleActionExecutor extends BaseActionExecutor {
     async processSingleRole(action, context, targetRole, botMember) {
         const { guild } = context;
 
-        // 봇의 모든 역할 정보 출력 (디버깅용)
-        console.log(`🔍 [역할권한] 봇의 모든 역할:`, {
-            botId: botMember.id,
-            botTag: guild.client.user.tag,
-            roles: botMember.roles.cache.map(role => ({
-                id: role.id,
-                name: role.name,
-                position: role.position,
-                permissions: role.permissions.toArray().slice(0, 5) // 처음 5개만
-            })),
-            highestRole: {
-                name: botMember.roles.highest.name,
-                position: botMember.roles.highest.position
-            }
-        });
+        // 최신 봇 멤버 정보 가져오기 (권장 방법)
+        const freshBotMember = await guild.members.fetch(guild.client.user.id);
 
         // 봇의 권한 확인
-        const botHighestRole = botMember.roles.highest;
+        if (!freshBotMember.permissions.has('ManageRoles')) {
+            throw new Error('봇에 MANAGE_ROLES 권한이 없습니다.');
+        }
+
+        const botHighestRole = freshBotMember.roles.highest;
         
-        if (targetRole.position >= botHighestRole.position) {
-            // 오류 시에만 상세한 디버그 정보 출력
+        // 역할 위치 비교 (같은 레벨 허용으로 > 사용)
+        if (targetRole.position > botHighestRole.position) {
             console.error(`❌ [역할권한] 권한 부족:`, {
                 botRole: { name: botHighestRole.name, position: botHighestRole.position },
                 targetRole: { name: targetRole.name, position: targetRole.position },
-                botAllRoles: botMember.roles.cache.map(r => `${r.name}(${r.position})`),
+                botAllRoles: freshBotMember.roles.cache.map(r => `${r.name}(${r.position})`),
                 solution: '봇에게 적절한 역할을 할당하거나 역할 위치를 조정해주세요'
             });
             
             const errorMsg = `봇보다 높은 위치의 역할은 관리할 수 없습니다.\n` +
                            `💡 해결방법: Discord 서버에서 봇에게 적절한 역할을 할당하고 "${targetRole.name}" 역할보다 위로 이동시켜주세요.\n` +
-                           `현재: 봇="${botHighestRole.name}"(${botHighestRole.position}) < 대상="${targetRole.name}"(${targetRole.position})\n` +
-                           `봇의 모든 역할: ${botMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`;
+                           `현재: 봇="${botHighestRole.name}"(${botHighestRole.position}) vs 대상="${targetRole.name}"(${targetRole.position})\n` +
+                           `봇의 모든 역할: ${freshBotMember.roles.cache.map(r => `${r.name}(${r.position})`).join(', ')}`;
             throw new Error(errorMsg);
         }
 
-        console.log(`✅ [역할권한] 권한 확인 완료: 봇="${botHighestRole.name}"(${botHighestRole.position}) > 대상="${targetRole.name}"(${targetRole.position})`);
+        console.log(`✅ [역할권한] 권한 확인 완료: 봇="${botHighestRole.name}"(${botHighestRole.position}) >= 대상="${targetRole.name}"(${targetRole.position})`);
 
         // 대상 멤버들 해석
         const targets = await this.resolveTargets(action, context);
@@ -152,31 +143,28 @@ class RoleActionExecutor extends BaseActionExecutor {
 
         for (const targetMember of targets) {
             try {
-                // 서버 소유자는 제외
-                if (targetMember.id === guild.ownerId) {
+                // 최신 타겟 멤버 정보 가져오기
+                const freshTargetMember = await guild.members.fetch(targetMember.id);
+
+                // manageable 프로퍼티로 관리 가능 여부 확인 (권장 방법)
+                if (!freshTargetMember.manageable) {
+                    console.log(`  ⚠️ [역할] 봇이 멤버 "${freshTargetMember.displayName}"를 관리할 권한이 없으므로 건너뜀`);
+                    console.log(`    └─ 서버 소유자: ${freshTargetMember.id === guild.ownerId}`);
+                    console.log(`    └─ 봇 최고 역할: ${freshBotMember.roles.highest.name}(${freshBotMember.roles.highest.position})`);
+                    console.log(`    └─ 대상 최고 역할: ${freshTargetMember.roles.highest.name}(${freshTargetMember.roles.highest.position})`);
+                    
                     results.push({
-                        memberId: targetMember.id,
+                        memberId: freshTargetMember.id,
                         success: false,
-                        message: '서버 소유자의 역할은 변경할 수 없습니다.',
+                        message: '봇이 이 멤버를 관리할 권한이 없습니다.',
                         skipped: true
                     });
                     continue;
                 }
 
-                // 봇보다 높은 권한의 멤버는 제외
-                if (targetMember.roles.highest.position >= botMember.roles.highest.position) {
-                    results.push({
-                        memberId: targetMember.id,
-                        success: false,
-                        message: '봇보다 높은 권한을 가진 멤버의 역할은 변경할 수 없습니다.',
-                        skipped: true
-                    });
-                    continue;
-                }
-
-                const result = await this.executeRoleAction(action.type, targetMember, targetRole);
+                const result = await this.executeRoleAction(action.type, freshTargetMember, targetRole);
                 results.push({
-                    memberId: targetMember.id,
+                    memberId: freshTargetMember.id,
                     success: result.success,
                     message: result.message,
                     previousState: result.previousState,

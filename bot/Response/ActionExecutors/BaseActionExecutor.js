@@ -132,7 +132,7 @@ class BaseActionExecutor {
                 // 관리자 권한을 가진 멤버들
                 const adminMembers = await context.guild.members.fetch();
                 adminMembers.forEach(member => {
-                    if (!member.user.bot && member.permissions.has('ADMINISTRATOR')) {
+                    if (!member.user.bot && member.permissions.has('Administrator')) {
                         targets.push(member);
                     }
                 });
