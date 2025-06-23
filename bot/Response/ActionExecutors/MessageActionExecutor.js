@@ -6,6 +6,8 @@ const { EmbedBuilder } = require('discord.js');
  * send_message, send_dm 액션 처리
  */
 class MessageActionExecutor extends BaseActionExecutor {
+    static name = 'message';
+    
     constructor(type) {
         super(type);
         this.requiredPermissions = type === 'send_message' ? ['SEND_MESSAGES'] : [];
