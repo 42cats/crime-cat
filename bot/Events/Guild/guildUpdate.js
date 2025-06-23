@@ -8,6 +8,7 @@ const baseUrl = process.env.BASE_URL;
 
 module.exports = {
     name: 'GuildUpdate',
+    once: false,
     async execute(oldGuild, newGuild) {
         try {
             // 길드 이름이 변경되었는지 확인

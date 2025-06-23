@@ -2,6 +2,7 @@ const { decodeFromString } = require('../../Commands/utility/delimiterGeter');
 const { Client, StringSelectMenuInteraction } = require('discord.js');
 module.exports = {
     name: 'SELECT_MENU',
+    once: false,
     /**
      * @param {Client} client
      * @param {StringSelectMenuInteraction} interaction

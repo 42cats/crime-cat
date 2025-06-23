@@ -3,6 +3,7 @@ const { traceCommand, traceEvent } = require('../../trace');
 
 module.exports = {
 	name: 'interactionHandeleder',
+	once: false,
 	execute: async (client, interaction) => {
 		try {
 			// Interaction 분기 처리
