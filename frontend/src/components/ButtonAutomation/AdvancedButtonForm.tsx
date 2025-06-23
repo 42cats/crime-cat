@@ -6,6 +6,7 @@ import { ActionEditor } from './ActionEditor';
 import { ConditionEditor } from './ConditionEditor';
 import { TestRunner } from './TestRunner';
 import { DISCORD_LIMITS } from '../../utils/validation';
+import { useChannels } from '../../hooks/useChannels';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -38,6 +39,30 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
   const [form] = Form.useForm();
   const [activeTab, setActiveTab] = useState('basic');
   const [showTestRunner, setShowTestRunner] = useState(false);
+  
+  // Discord 데이터 가져오기
+  const { channels } = useChannels();
+  const [roles, setRoles] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  
+  // 역할 데이터 가져오기
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await fetch(`/api/v1/discord/guilds/${guildId}/roles`);
+        if (response.ok) {
+          const rolesData = await response.json();
+          setRoles(rolesData);
+        }
+      } catch (error) {
+        console.error('Failed to fetch roles:', error);
+      }
+    };
+    
+    if (guildId) {
+      fetchRoles();
+    }
+  }, [guildId]);
   
   // 버튼 설정 상태
   const [buttonConfig, setButtonConfig] = useState<ButtonConfig>({
@@ -179,14 +204,35 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
   };
 
   // 대상 표시명 가져오기
-  const getTargetDisplayName = (target: string) => {
-    const targetNames: Record<string, string> = {
-      'executor': '버튼을 누른 사람',
-      'admin': '관리자',
-      'specific': '특정 사용자',
-      'role': '특정 역할의 모든 사용자'
-    };
-    return targetNames[target] || target;
+  const getTargetDisplayName = (action: ActionConfig) => {
+    const { target } = action;
+    
+    if (target === 'executor') return '버튼을 누른 사람';
+    if (target === 'admin') return '관리자';
+    if (target === 'specific') {
+      if (action.parameters?.userIds && action.parameters.userIds.length > 0) {
+        const userCount = action.parameters.userIds.length;
+        return `특정 사용자 ${userCount}명`;
+      }
+      return '특정 사용자';
+    }
+    if (target === 'role') {
+      if (action.parameters?.roleIds && action.parameters.roleIds.length > 0) {
+        const roleNames = action.parameters.roleIds.map((roleId: string) => {
+          const role = roles.find(r => r.id === roleId);
+          return role ? `"${role.name}"` : `역할(${roleId.slice(0, 8)}...)`;
+        });
+        
+        if (roleNames.length === 1) {
+          return `${roleNames[0]} 역할의 모든 사용자`;
+        } else {
+          return `${roleNames.join(', ')} 역할의 모든 사용자`;
+        }
+      }
+      return '특정 역할의 모든 사용자';
+    }
+    
+    return target;
   };
 
   return (
@@ -373,7 +419,7 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
                                 액션 {index + 1}: {getActionDisplayName(action.type)}
                               </div>
                               <div className="text-sm text-gray-600 mt-1">
-                                🎯 대상: {getTargetDisplayName(action.target)}
+                                🎯 대상: {getTargetDisplayName(action)}
                               </div>
                               {action.delay > 0 && (
                                 <div className="text-xs text-orange-500 mt-1">
@@ -383,8 +429,17 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
                               {action.result?.message && (
                                 <div className="text-xs text-blue-600 mt-1">
                                   💬 결과 메시지: "{action.result.message}"
-                                  ({action.result.visibility === 'private' ? '개인' : 
-                                    action.result.visibility === 'public' ? '공개' : '표시 안함'})
+                                  ({(() => {
+                                    switch (action.result.visibility) {
+                                      case 'ephemeral': return '개인에게만 (임시 메시지)';
+                                      case 'private': return '개인 DM';
+                                      case 'public': return '현재 채널';
+                                      case 'current_channel': return '현재 채널';
+                                      case 'specific_channel': return '특정 채널';
+                                      case 'none': return '표시 안함';
+                                      default: return '표시 안함';
+                                    }
+                                  })()})
                                 </div>
                               )}
                             </div>
@@ -506,6 +561,9 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
           } as ButtonAutomation}
           visible={showTestRunner}
           onClose={() => setShowTestRunner(false)}
+          roles={roles}
+          channels={channels}
+          users={users}
         />
       )}
     </>
