@@ -372,6 +372,9 @@ class MusicActionExecutor extends BaseActionExecutor {
                     }
                     
                     console.log(`▶️ 음악 재생 시작: ${currentTrack.title}`);
+                    // 버튼 자동화로 재생 시 single-track 모드로 설정 (한 곡만 재생하고 정지)
+                    await musicData.setMode('single-track');
+                    console.log(`🎵 재생 모드를 single-track으로 설정`);
                     // v4 AudioEngine은 트랙 객체와 사용자를 파라미터로 받음
                     await musicData.audio.play(currentTrack, member);
                     
