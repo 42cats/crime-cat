@@ -29,6 +29,7 @@ class UIManagerV4 {
                 mute: '🔇'
             },
             mode: {
+                'single-track': '1️⃣',
                 'normal': '➡️',
                 'repeat-one': '🔂',
                 'repeat-all': '🔁',
@@ -361,6 +362,7 @@ class UIManagerV4 {
      */
     getModeText(mode) {
         const modeTexts = {
+            'single-track': '한곡 재생',
             'normal': '순차 재생',
             'repeat-one': '한 곡 반복',
             'repeat-all': '전체 반복',

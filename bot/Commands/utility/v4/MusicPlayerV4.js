@@ -25,7 +25,7 @@ class MusicPlayerV4 extends EventEmitter {
             isPlaying: false,
             isPaused: false,
             volume: 0.5,
-            mode: 'normal',
+            mode: 'single-track', // 기본값을 single-track으로 변경
             currentIndex: -1,
             autoplay: true,
             isDirectSelection: false,  // 직접 선택 플래그 추가
@@ -411,6 +411,13 @@ class MusicPlayerV4 extends EventEmitter {
         }
 
         if (reason === 'finished' && this.state.autoplay) {
+            // single-track 모드면 자동재생 하지 않음
+            if (this.state.mode === 'single-track') {
+                this.logger.info('🎵 Single track completed - stopping playback');
+                await this.updateUI('Single track completed');
+                return;
+            }
+            
             this.logger.info('🔄 Auto-playing next track...');
             const success = await this.next();
             if (!success) {
@@ -485,7 +492,7 @@ class MusicPlayerV4 extends EventEmitter {
     async setMode(mode) {
         this.logger.trace('setMode', [mode]);
 
-        const validModes = ['normal', 'repeat-one', 'repeat-all', 'shuffle'];
+        const validModes = ['normal', 'repeat-one', 'repeat-all', 'shuffle', 'single-track'];
         if (!validModes.includes(mode)) {
             this.logger.warn('Invalid mode', { mode });
             return false;
@@ -507,7 +514,7 @@ class MusicPlayerV4 extends EventEmitter {
     }
 
     async toggleMode() {
-        const modes = ['normal', 'repeat-one', 'repeat-all', 'shuffle'];
+        const modes = ['single-track', 'normal', 'repeat-one', 'repeat-all', 'shuffle'];
         const currentIndex = modes.indexOf(this.state.mode);
         const nextIndex = (currentIndex + 1) % modes.length;
 

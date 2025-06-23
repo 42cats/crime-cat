@@ -377,6 +377,11 @@ class QueueManagerV4 extends EventEmitter {
 
         if (this.tracks.length === 0) return -1;
 
+        // single-track 모드는 다음 곡 없음 (한 곡만 재생하고 정지)
+        if (mode === 'single-track') {
+            return -1;
+        }
+
         // repeat-one 모드는 같은 인덱스 반환
         if (mode === 'repeat-one') {
             return currentIndex;
@@ -433,6 +438,11 @@ class QueueManagerV4 extends EventEmitter {
         this.logger.trace('getPreviousIndex', [currentIndex, mode]);
 
         if (this.tracks.length === 0) return -1;
+
+        // single-track 모드는 이전 곡 없음 (한 곡만 재생)
+        if (mode === 'single-track') {
+            return currentIndex; // 같은 곡 유지
+        }
 
         // repeat-one 모드는 같은 인덱스 반환
         if (mode === 'repeat-one') {
