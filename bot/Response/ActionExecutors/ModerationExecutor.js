@@ -5,6 +5,8 @@ const { BaseActionExecutor } = require('./BaseActionExecutor');
  * remove_timeout, kick_member, ban_member, warn_member 등 모더레이션 액션 처리
  */
 class ModerationExecutor extends BaseActionExecutor {
+    static name = 'moderation';
+    
     constructor(type) {
         super(type);
         this.requiredPermissions = this.getRequiredPermissions(type);

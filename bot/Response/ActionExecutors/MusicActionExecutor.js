@@ -19,11 +19,30 @@ class MusicActionExecutor extends BaseActionExecutor {
      */
     async performAction(action, context) {
         const { type } = action;
-        const { searchQuery, volume, seek, shuffle, loop } = action.parameters;
+        const { searchQuery, trackId, trackTitle, volume, seek, shuffle, loop } = action.parameters;
         const { member: executorMember, guild, channel } = context;
 
-        // 실행자가 음성 채널에 연결되어 있는지 확인
-        const voiceChannel = executorMember.voice.channel;
+        // 디버깅: member 정보 확인
+        console.log(`🔍 [음악] Member 정보:`, {
+            userId: executorMember.user.id,
+            username: executorMember.user.username,
+            voiceChannelId: executorMember.voice.channel?.id,
+            voiceChannelName: executorMember.voice.channel?.name,
+            hasVoiceChannel: !!executorMember.voice.channel
+        });
+
+        // 최신 멤버 정보로 다시 fetch (캐시된 정보가 오래된 경우)
+        const freshMember = await guild.members.fetch(executorMember.user.id);
+        console.log(`🔄 [음악] Fresh Member 정보:`, {
+            userId: freshMember.user.id,
+            username: freshMember.user.username,
+            voiceChannelId: freshMember.voice.channel?.id,
+            voiceChannelName: freshMember.voice.channel?.name,
+            hasVoiceChannel: !!freshMember.voice.channel
+        });
+
+        // 실행자가 음성 채널에 연결되어 있는지 확인 (fresh 정보 사용)
+        const voiceChannel = freshMember.voice.channel;
         if (!voiceChannel) {
             throw new Error('음성 채널에 연결된 후 사용해주세요.');
         }
@@ -40,11 +59,13 @@ class MusicActionExecutor extends BaseActionExecutor {
             switch (type) {
                 case 'play_music':
                     result = await this.playMusic(searchQuery, voiceChannel, channel, {
+                        trackId,
+                        trackTitle,
                         volume,
-                        seek,
+                        seek: action.parameters.duration,  // duration을 seek로 전달
                         shuffle,
                         loop
-                    });
+                    }, context);  // context 전달
                     break;
 
                 case 'stop_music':
@@ -88,66 +109,73 @@ class MusicActionExecutor extends BaseActionExecutor {
     /**
      * 음악 재생
      */
-    async playMusic(searchQuery, voiceChannel, textChannel, options = {}) {
-        if (!searchQuery) {
-            throw new Error('재생할 음악을 검색어로 입력해주세요.');
+    async playMusic(searchQuery, voiceChannel, textChannel, options = {}, context = null) {
+        // searchQuery, trackId, trackTitle 중 하나라도 있으면 됨
+        if (!searchQuery && !options.trackId && !options.trackTitle) {
+            throw new Error('재생할 음악을 검색어, 트랙 ID 또는 트랙 제목으로 지정해주세요.');
         }
 
         try {
-            // 기존 음악 시스템의 play 명령어 로직을 재사용
-            // 실제 구현에서는 기존 MusicService 또는 play 명령어와 연동
             const musicService = this.getMusicService();
             
             if (!musicService) {
                 throw new Error('음악 서비스를 사용할 수 없습니다.');
             }
 
-            // 큐에 음악 추가 및 재생
-            const track = await musicService.search(searchQuery);
-            if (!track) {
-                throw new Error('음악을 찾을 수 없습니다.');
+            // 음악 검색 또는 트랙 정보 사용
+            let track;
+            
+            if (options.trackId && options.trackTitle) {
+                // 트랙 ID와 제목이 있는 경우 바로 사용
+                track = {
+                    id: options.trackId,
+                    title: options.trackTitle,
+                    duration: '알 수 없음',
+                    url: `https://youtube.com/watch?v=${options.trackId.replace('yt_', '')}`
+                };
+                console.log(`🎵 [음악] 사전 선택된 트랙 사용: "${track.title}" (${track.id})`);
+            } else {
+                // searchQuery로 검색
+                const query = searchQuery || options.trackTitle;
+                track = await musicService.search(query);
+                if (!track) {
+                    throw new Error('음악을 찾을 수 없습니다.');
+                }
+                console.log(`🔍 [음악] 검색으로 트랙 발견: "${track.title}"`);
             }
 
-            const queue = musicService.getQueue(voiceChannel.guild.id);
-            const wasEmpty = !queue || queue.length === 0;
-
-            await musicService.addToQueue(voiceChannel.guild.id, track, {
-                voiceChannel,
-                textChannel,
-                requestedBy: textChannel.guild.members.me
+            // ButtonAutomationHandler의 playMusic 메서드 호출
+            let memberToUse;
+            if (context) {
+                // context가 있으면 이미 fresh member를 사용
+                const { member: executorMember, guild: contextGuild } = context;
+                memberToUse = await contextGuild.members.fetch(executorMember.user.id);
+            } else {
+                // 직접 호출인 경우 기본값 사용
+                memberToUse = textChannel.guild.members.me;
+            }
+            
+            const result = await musicService.playMusic(voiceChannel, textChannel, track, {
+                source: 'youtube',
+                duration: options.seek,  // 재생 시간 제한
+                volume: options.volume,
+                requestedBy: memberToUse
             });
 
-            // 옵션 적용
-            if (options.volume !== undefined) {
-                await musicService.setVolume(voiceChannel.guild.id, options.volume);
-            }
-
-            if (options.shuffle) {
-                await musicService.shuffle(voiceChannel.guild.id);
-            }
-
-            if (options.loop !== undefined) {
-                await musicService.setLoop(voiceChannel.guild.id, options.loop);
-            }
-
-            // 즉시 재생 (큐가 비어있었던 경우) 또는 큐에 추가
-            if (wasEmpty) {
-                await musicService.play(voiceChannel.guild.id);
+            if (!result.success) {
+                throw new Error(result.message);
             }
 
             return {
                 success: true,
-                message: wasEmpty ? 
-                    `🎵 **${track.title}** 재생을 시작했습니다.` :
-                    `🎵 **${track.title}** 을(를) 대기열에 추가했습니다.`,
+                message: result.message || `🎵 **${track.title}** 재생을 시작했습니다.`,
                 data: {
                     track: {
                         title: track.title,
                         duration: track.duration,
                         url: track.url
                     },
-                    queuePosition: wasEmpty ? 0 : queue.length,
-                    options
+                    ...result.data
                 }
             };
 
@@ -258,65 +286,239 @@ class MusicActionExecutor extends BaseActionExecutor {
 
     /**
      * 음악 서비스 인스턴스 가져오기
-     * 실제 구현에서는 기존 음악 시스템의 서비스 클래스와 연동
+     * 실제 MusicPlayerV4와 직접 연동
      */
     getMusicService() {
-        // 실제 구현 시 기존 음악 시스템과 연동
-        // 예: return require('../../../music/MusicService').getInstance();
+        const MusicPlayerV4 = require('../../Commands/utility/v4/MusicPlayerV4');
         
-        // 임시 모킹 (실제 구현 필요)
         return {
+            // 실제 음악 재생 로직 구현
+            playMusic: async (voiceChannel, textChannel, track, options) => {
+                try {
+                    const guild = voiceChannel.guild;
+                    const member = options.requestedBy;
+                    
+                    // client.serverMusicData 초기화
+                    if (!guild.client.serverMusicData) {
+                        guild.client.serverMusicData = new Map();
+                    }
+                    
+                    // 기존 플레이어 가져오기 또는 새로 생성
+                    let musicData = guild.client.serverMusicData.get(guild.id);
+                    
+                    if (!musicData) {
+                        console.log(`[자동화] 새 음악 플레이어 생성: ${guild.id}`);
+                        musicData = new MusicPlayerV4(guild.id, guild.client, member.user);
+                        guild.client.serverMusicData.set(guild.id, musicData);
+                        
+                        // 플레이리스트 로드
+                        const loaded = await musicData.queue.loadFromSource('youtube');
+                        if (!loaded) {
+                            console.warn(`[자동화] YouTube 플레이리스트 로드 실패`);
+                        }
+                    }
+                    
+                    // 기존 음악 정지
+                    if (musicData.state.isPlaying) {
+                        console.log('🛑 기존 음악 정지 후 새 음악 재생');
+                        await musicData.audio.stop();
+                    }
+                    
+                    // 음성 채널 연결
+                    if (!musicData.audio.connection || musicData.audio.connection.state.status !== 'ready') {
+                        console.log(`🔗 음성 채널 연결: ${voiceChannel.name}`);
+                        await musicData.audio.connectToVoice(member);
+                    }
+                    
+                    // 트랙 찾기 (trackTitle 우선, 그 다음 trackId)
+                    console.log(`🔍 [음악] 트랙 검색 중: "${track.title}" (ID: ${track.id})`);
+                    console.log(`📋 [음악] 사용 가능한 트랙들:`, musicData.queue.tracks.map(t => ({
+                        title: t.title,
+                        id: t.id,
+                        url: t.youtubeUrl || t.url
+                    })));
+                    
+                    let trackIndex = musicData.queue.tracks.findIndex(t => 
+                        t.title === track.title || t.title.includes(track.title) || track.title.includes(t.title)
+                    );
+                    
+                    // trackTitle로 못 찾았으면 trackId로 시도
+                    if (trackIndex === -1) {
+                        trackIndex = musicData.queue.tracks.findIndex(t => 
+                            t.id === track.id || (t.youtubeUrl && t.youtubeUrl.includes(track.id.replace('yt_', '')))
+                        );
+                    }
+                    
+                    // 그래도 못 찾았으면 첫 번째 트랙으로 대체 (안전장치)
+                    if (trackIndex === -1 && musicData.queue.tracks.length > 0) {
+                        console.warn(`⚠️ [음악] "${track.title}" 트랙을 찾을 수 없어 첫 번째 트랙으로 대체합니다.`);
+                        trackIndex = 0;
+                    }
+                    
+                    if (trackIndex === -1) {
+                        throw new Error('재생할 수 있는 음악이 없습니다. 먼저 음악을 등록해주세요.');
+                    }
+                    
+                    console.log(`✅ [음악] 트랙 찾음: 인덱스 ${trackIndex}, 제목: "${musicData.queue.tracks[trackIndex].title}"`);
+                    
+                    // 트랙 설정 및 재생
+                    musicData.state.currentIndex = trackIndex;
+                    musicData.state.isDirectSelection = true;
+                    
+                    // v4 플레이어에서는 tracks 배열에서 직접 트랙 가져오기
+                    const currentTrack = musicData.queue.tracks[trackIndex];
+                    if (!currentTrack) {
+                        throw new Error('현재 트랙 정보를 가져올 수 없습니다.');
+                    }
+                    
+                    console.log(`▶️ 음악 재생 시작: ${currentTrack.title}`);
+                    // v4 AudioEngine은 트랙 객체와 사용자를 파라미터로 받음
+                    await musicData.audio.play(currentTrack, member);
+                    
+                    // 재생 시간 제한 (duration)
+                    if (options.duration && options.duration > 0) {
+                        setTimeout(() => {
+                            if (musicData.state.isPlaying) {
+                                console.log(`⏰ 재생 시간 만료로 음악 정지: ${options.duration}초`);
+                                musicData.audio.stop();
+                            }
+                        }, options.duration * 1000);
+                    }
+                    
+                    // 볼륨 설정
+                    if (options.volume && options.volume !== musicData.state.volume) {
+                        musicData.audio.setVolume(options.volume / 100);
+                    }
+                    
+                    return {
+                        success: true,
+                        message: `음악이 재생되었습니다: ${currentTrack.title}`,
+                        data: {
+                            track: currentTrack,
+                            voiceChannel: voiceChannel.name,
+                            duration: options.duration
+                        }
+                    };
+                    
+                } catch (error) {
+                    console.error('음악 재생 오류:', error);
+                    return {
+                        success: false,
+                        message: error.message,
+                        data: {}
+                    };
+                }
+            },
+            
+            // 기본 음악 서비스 메서드들
             search: async (query) => {
-                // YouTube/Spotify 검색 로직
+                // 실제로는 사용되지 않음 (track이 이미 선택됨)
                 return {
                     title: query,
-                    duration: '3:30',
-                    url: 'https://example.com/music'
+                    duration: '알 수 없음',
+                    url: `https://youtube.com/results?search_query=${encodeURIComponent(query)}`
                 };
             },
+            
             getQueue: (guildId) => {
-                // 길드별 음악 큐 반환
-                return [];
+                const client = require('../../main').client;
+                const musicData = client.serverMusicData?.get(guildId);
+                return musicData?.queue?.tracks || [];
             },
+            
             addToQueue: async (guildId, track, options) => {
-                // 큐에 트랙 추가
+                // playMusic 메서드에서 처리
                 return true;
             },
+            
             play: async (guildId) => {
-                // 음악 재생 시작
+                // playMusic 메서드에서 처리
                 return true;
             },
+            
             stop: async (guildId) => {
-                // 음악 정지 및 큐 클리어
-                return true;
-            },
-            pause: async (guildId) => {
-                // 음악 일시정지
-                return true;
-            },
-            resume: async (guildId) => {
-                // 음악 재개
-                return true;
-            },
-            disconnect: async (guildId) => {
-                // 음성 채널 연결 해제
-                return true;
-            },
-            isPaused: (guildId) => {
-                // 일시정지 상태 확인
+                const client = require('../../main').client;
+                const musicData = client.serverMusicData?.get(guildId);
+                
+                if (musicData && musicData.audio) {
+                    await musicData.audio.stop();
+                    return true;
+                }
                 return false;
             },
+            
+            pause: async (guildId) => {
+                const client = require('../../main').client;
+                const musicData = client.serverMusicData?.get(guildId);
+                
+                if (musicData && musicData.audio) {
+                    musicData.audio.pause();
+                    return true;
+                }
+                return false;
+            },
+            
+            resume: async (guildId) => {
+                const client = require('../../main').client;
+                const musicData = client.serverMusicData?.get(guildId);
+                
+                if (musicData && musicData.audio) {
+                    musicData.audio.resume();
+                    return true;
+                }
+                return false;
+            },
+            
+            disconnect: async (guildId) => {
+                const client = require('../../main').client;
+                const musicData = client.serverMusicData?.get(guildId);
+                
+                if (musicData && musicData.audio) {
+                    musicData.audio.disconnect();
+                    musicData.destroy();
+                    client.serverMusicData.delete(guildId);
+                    return true;
+                }
+                return false;
+            },
+            
+            isPaused: (guildId) => {
+                const client = require('../../main').client;
+                const musicData = client.serverMusicData?.get(guildId);
+                return musicData?.state?.isPaused || false;
+            },
+            
             setVolume: async (guildId, volume) => {
-                // 볼륨 설정
-                return true;
+                const client = require('../../main').client;
+                const musicData = client.serverMusicData?.get(guildId);
+                
+                if (musicData && musicData.audio) {
+                    musicData.audio.setVolume(volume / 100);
+                    return true;
+                }
+                return false;
             },
+            
             shuffle: async (guildId) => {
-                // 큐 셔플
-                return true;
+                const client = require('../../main').client;
+                const musicData = client.serverMusicData?.get(guildId);
+                
+                if (musicData && musicData.queue) {
+                    musicData.queue.shuffle();
+                    return true;
+                }
+                return false;
             },
+            
             setLoop: async (guildId, mode) => {
-                // 반복 모드 설정
-                return true;
+                const client = require('../../main').client;
+                const musicData = client.serverMusicData?.get(guildId);
+                
+                if (musicData) {
+                    musicData.state.loopMode = mode;
+                    return true;
+                }
+                return false;
             }
         };
     }
@@ -344,9 +546,9 @@ class MusicActionExecutor extends BaseActionExecutor {
             throw new Error('음악 액션은 버튼을 누른 사람만 대상으로 할 수 있습니다.');
         }
 
-        // play_music 액션의 경우 검색어 필수
-        if (action.type === 'play_music' && !action.parameters.searchQuery) {
-            throw new Error('재생할 음악의 검색어가 필요합니다.');
+        // play_music 액션의 경우 검색어, 트랙 ID 또는 트랙 제목 중 하나 필수
+        if (action.type === 'play_music' && !action.parameters.searchQuery && !action.parameters.trackId && !action.parameters.trackTitle) {
+            throw new Error('재생할 음악의 검색어, 트랙 ID 또는 트랙 제목이 필요합니다.');
         }
     }
 }

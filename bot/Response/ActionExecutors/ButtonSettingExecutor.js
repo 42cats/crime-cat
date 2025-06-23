@@ -5,6 +5,8 @@ const { BaseActionExecutor } = require('./BaseActionExecutor');
  * 액션 실행 후 버튼의 스타일, 라벨, 비활성화 상태 등을 변경
  */
 class ButtonSettingExecutor extends BaseActionExecutor {
+    static name = 'button_setting';
+    
     constructor(type) {
         super(type);
         this.requiredPermissions = []; // 특별한 권한 불필요

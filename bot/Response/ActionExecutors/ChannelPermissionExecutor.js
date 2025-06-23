@@ -7,6 +7,8 @@ const { PermissionsBitField } = require('discord.js');
  * override_channel_permission, reset_channel_permission 액션 처리
  */
 class ChannelPermissionExecutor extends BaseActionExecutor {
+    static name = 'channel_permission';
+    
     constructor(type) {
         super(type);
         this.requiredPermissions = ['ManageChannels', 'ManageRoles'];

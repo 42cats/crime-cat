@@ -310,14 +310,42 @@ class ButtonAutomationHandler {
                 });
             }
 
-            // 2. 상세 결과 로깅
+            // 2. 상세 결과 로깅 및 실패한 액션 오류 메시지 처리
             console.log(`실행 결과 - 상태: ${status}, 성공: ${successCount}, 실패: ${failCount}, 소요시간: ${duration}ms`);
             
+            const failedActions = [];
             if (results && results.length > 0) {
                 results.forEach((result, index) => {
                     if (!result.success) {
                         console.warn(`액션 ${index + 1} 실패:`, result.error?.message);
+                        
+                        // 사용자에게 보여줄 오류 메시지 수집
+                        if (result.error?.message) {
+                            let userFriendlyError = result.error.message;
+                            
+                            // 음성채널 관련 오류를 사용자 친화적으로 변환
+                            if (result.error.message.includes('음성 채널에 연결된 후 사용해주세요')) {
+                                userFriendlyError = '🎵 음성 채널에 먼저 접속해주세요';
+                            } else if (result.error.message.includes('음성 채널') && result.error.message.includes('권한')) {
+                                userFriendlyError = '🔊 음성 채널 접근 권한이 없습니다';
+                            } else if (result.error.message.includes('음악을 찾을 수 없습니다')) {
+                                userFriendlyError = '🔍 선택한 음악을 찾을 수 없습니다';
+                            } else if (result.error.message.includes('음악 서비스를 사용할 수 없습니다')) {
+                                userFriendlyError = '🛠️ 음악 서비스가 일시적으로 사용 불가합니다';
+                            }
+                            
+                            failedActions.push(`${index + 1}번 액션: ${userFriendlyError}`);
+                        }
                     }
+                });
+            }
+            
+            // 실패한 액션이 있고 완료 메시지가 없는 경우 오류 메시지 전송
+            if (failedActions.length > 0 && !buttonConfig.completionMessage) {
+                const errorMessage = `⚠️ **일부 액션 실행 실패**\n${failedActions.join('\n')}`;
+                await interaction.followUp({
+                    content: errorMessage,
+                    ephemeral: true
                 });
             }
 
@@ -365,10 +393,16 @@ class ButtonAutomationHandler {
             
             // 구체적인 오류 정보 추가 (사용자에게 유용한 정보만)
             if (error.message) {
-                if (error.message.includes('권한') || error.message.includes('역할')) {
-                    userErrorMessage += '\n' + error.message;
+                if (error.message.includes('음성 채널에 연결된 후 사용해주세요')) {
+                    userErrorMessage = '🎵 **음성 채널 연결 필요**\n음성 채널에 먼저 접속한 후 음악 기능을 사용해주세요.';
+                } else if (error.message.includes('음성 채널') || error.message.includes('CONNECT') || error.message.includes('SPEAK')) {
+                    userErrorMessage = '🔊 **음성 채널 권한 부족**\n' + error.message;
+                } else if (error.message.includes('권한') || error.message.includes('역할')) {
+                    userErrorMessage = '🔒 **권한 오류**\n' + error.message;
                 } else if (error.message.includes('찾을 수 없')) {
-                    userErrorMessage += '\n' + error.message;
+                    userErrorMessage = '🔍 **리소스 오류**\n' + error.message;
+                } else if (error.message.includes('음악')) {
+                    userErrorMessage = '🎵 **음악 기능 오류**\n' + error.message;
                 } else {
                     userErrorMessage += '\n관리자에게 문의해주세요.';
                 }
@@ -575,7 +609,14 @@ class ButtonAutomationHandler {
                     } else {
                         const result = await executor.execute(action, context);
                         results.push(result);
-                        console.log(`✅ [엔진 실행] 액션 ${action.type} 실행 완료:`, result);
+                        
+                        // 액션 실행 결과 확인
+                        if (!result.success) {
+                            console.error(`❌ [엔진 실행] 액션 ${action.type} 실행 실패:`, result.message || result.error?.message);
+                            allSuccessful = false;
+                        } else {
+                            console.log(`✅ [엔진 실행] 액션 ${action.type} 실행 완료:`, result);
+                        }
                     }
                     
                 } catch (actionError) {
@@ -589,12 +630,21 @@ class ButtonAutomationHandler {
                 }
             }
             
+            // 실패한 액션 중 첫 번째 오류 메시지 찾기
+            let firstErrorMessage = '';
+            for (const result of results) {
+                if (!result.success && result.error) {
+                    firstErrorMessage = result.error;
+                    break;
+                }
+            }
+            
             const finalResult = {
                 success: allSuccessful,
                 executedActions: results,
                 message: allSuccessful ? 
                     `${results.length}개의 액션이 성공적으로 실행되었습니다.` : 
-                    `일부 액션 실행에 실패했습니다.`,
+                    (firstErrorMessage || `일부 액션 실행에 실패했습니다.`),
                 cooldownRemaining: 0
             };
             
@@ -900,13 +950,29 @@ async function handleErrorResponse(interaction, result) {
     let userMessage = '❌ 자동화 실행 실패\n';
     
     if (result.message) {
+        // result.message가 객체인 경우 message 속성 추출
+        const errorMessage = typeof result.message === 'string' ? result.message : 
+                            (result.message.message || JSON.stringify(result.message));
+        
         // 사용자에게 유용한 오류 메시지만 표시
-        if (result.message.includes('권한') || result.message.includes('역할')) {
-            userMessage += result.message;
-        } else if (result.message.includes('찾을 수 없')) {
-            userMessage += result.message;
-        } else if (result.message.includes('쿨다운') || result.message.includes('사용할 수 없습니다')) {
-            userMessage += result.message;
+        if (errorMessage.includes('음성 채널에 연결된 후 사용해주세요')) {
+            userMessage += '🎵 **음성 채널 연결 필요**\n음성 채널에 먼저 접속한 후 음악 기능을 사용해주세요.';
+        } else if (errorMessage.includes('음성 채널') && errorMessage.includes('권한')) {
+            userMessage += '🔊 **음성 채널 권한 부족**\n' + errorMessage;
+        } else if (errorMessage.includes('User is not in a voice channel')) {
+            userMessage += '🎵 **음성 채널 연결 필요**\n음성 채널에 먼저 접속한 후 음악 기능을 사용해주세요.';
+        } else if (errorMessage.includes('음악을 찾을 수 없습니다')) {
+            userMessage += '🔍 **음악 검색 실패**\n선택한 음악을 찾을 수 없습니다.';
+        } else if (errorMessage.includes('음악 서비스를 사용할 수 없습니다')) {
+            userMessage += '🛠️ **음악 서비스 오류**\n음악 서비스가 일시적으로 사용 불가합니다.';
+        } else if (errorMessage.includes('음악') || errorMessage.includes('재생')) {
+            userMessage += '🎵 **음악 기능 오류**\n' + errorMessage;
+        } else if (errorMessage.includes('권한') || errorMessage.includes('역할')) {
+            userMessage += '🔒 **권한 오류**\n' + errorMessage;
+        } else if (errorMessage.includes('찾을 수 없')) {
+            userMessage += '🔍 **리소스 오류**\n' + errorMessage;
+        } else if (errorMessage.includes('쿨다운') || errorMessage.includes('사용할 수 없습니다')) {
+            userMessage += errorMessage;
         } else {
             userMessage += '요청 처리 중 오류가 발생했습니다. 관리자에게 문의해주세요.';
         }
