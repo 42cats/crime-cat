@@ -155,7 +155,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
           if (hasVoice && hasText) {
             // 음성과 텍스트 채널이 섞여있으면 공통 권한만 표시 (채널 보기, 관리 등)
             relevantCategories = ['server_management'];
-            specificPermissions = ['VIEW_CHANNEL', 'MANAGE_CHANNELS', 'MANAGE_PERMISSIONS'];
+            specificPermissions = ['ViewChannel', 'ManageChannels', 'ManageRoles'];
           } else if (hasVoice) {
             // 음성 채널만 선택: 음성 관련 권한만
             relevantCategories = ['voice_channel'];
@@ -170,7 +170,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
           } else {
             // 알 수 없는 타입: 기본 채널 권한만
             relevantCategories = ['server_management'];
-            specificPermissions = ['VIEW_CHANNEL', 'MANAGE_CHANNELS'];
+            specificPermissions = ['ViewChannel', 'ManageChannels'];
           }
         } else {
           // 기본값: 모든 채널 권한
@@ -308,7 +308,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                   📝 텍스트: 메시지, 스레드, 이모지 관련 권한<br/>
                   🔊 음성: 연결, 말하기, 음소거 관련 권한<br/>
                   🎭 스테이지: 스테이지 채널 관련 권한<br/>
-                  📁 카테고리: 채널 보기, 관리 권한<br/>
+                  📁 <strong style={{ color: '#1890ff' }}>카테고리: 하위 모든 채널에 자동으로 적용됩니다</strong><br/>
                   📢 공지: 공지 채널 관련 권한<br/>
                   🔢 <strong>여러 채널 선택 가능:</strong> 한 번에 여러 채널에 같은 권한을 적용할 수 있습니다
                 </Text>
@@ -687,7 +687,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
               <Col span={12}>
                 <Form.Item label="결과 메시지 표시" style={{ marginBottom: 12 }}>
                   <Select
-                    value={action.result?.visibility || 'private'}
+                    value={action.result?.visibility || 'none'}
                     onChange={(value) => updateAction(index, { 
                       result: { ...action.result, visibility: value }
                     })}

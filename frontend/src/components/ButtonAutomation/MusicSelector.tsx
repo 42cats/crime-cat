@@ -57,35 +57,26 @@ export const MusicSelector: React.FC<MusicSelectorProps> = ({
     const tracks = source === 'youtube' ? youtubeTracks : localFiles;
     const isLoading = source === 'youtube' ? isLoadingYoutube : isLoadingLocal;
 
-    // 트랙 ID 형식 맞추기 (QueueManagerV4와 호환)
-    const formatTrackId = (track: any, sourceType: string, index: number): string => {
-        if (sourceType === 'youtube') {
-            return `yt_${index}`;
-        } else if (sourceType === 'local') {
-            return track.id || `local_${Math.abs(track.filename?.hashCode?.() || index)}`;
-        }
-        return `${sourceType}_${index}`;
-    };
-
     // 선택 처리
     const handleSelection = (trackId: string) => {
-        const trackIndex = tracks?.findIndex(track => {
-            if (source === 'youtube') {
-                return formatTrackId(track, source, tracks.indexOf(track)) === trackId;
-            }
-            return track.id === trackId;
-        });
-
-        if (trackIndex !== -1 && tracks) {
-            const track = tracks[trackIndex];
+        console.log('선택된 trackId:', trackId);
+        console.log('현재 tracks:', tracks);
+        
+        const track = tracks?.find(track => track.id === trackId);
+        
+        if (track) {
+            console.log('선택된 track:', track);
             const selection: MusicSelection = {
-                trackId: formatTrackId(track, source, trackIndex),
+                trackId: track.id,
                 source,
                 title: track.title,
                 duration: track.duration,
                 thumbnail: source === 'youtube' ? (track as YouTubeTrack).thumbnail : undefined
             };
+            console.log('생성된 selection:', selection);
             onChange?.(selection);
+        } else {
+            console.error('트랙을 찾을 수 없습니다:', trackId);
         }
     };
 
@@ -137,10 +128,8 @@ export const MusicSelector: React.FC<MusicSelectorProps> = ({
                         </SelectTrigger>
                         <SelectContent className="max-h-[300px]">
                             {tracks?.map((track, index) => {
-                                const trackId = formatTrackId(track, source, index);
-                                
                                 return (
-                                    <SelectItem key={trackId} value={trackId}>
+                                    <SelectItem key={track.id} value={track.id}>
                                         <div className="flex items-center gap-3 py-2 w-full">
                                             {/* 썸네일 또는 아이콘 */}
                                             <div className="flex-shrink-0">

@@ -24,13 +24,16 @@ export const MusicParameterEditor: React.FC<MusicParameterEditorProps> = ({
 
     // 음악 선택 처리
     const handleMusicSelection = (selection: any) => {
+        console.log('MusicParameterEditor - 음악 선택됨:', selection);
         if (selection) {
-            onChange({
+            const newParameters = {
                 ...parameters,
                 source: selection.source,
                 trackId: selection.trackId,
                 trackTitle: selection.title
-            });
+            };
+            console.log('MusicParameterEditor - 새 parameters:', newParameters);
+            onChange(newParameters);
         }
     };
 
