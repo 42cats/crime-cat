@@ -33,6 +33,20 @@ class MessageActionExecutor extends BaseActionExecutor {
 
         // 대상 멤버들 해석
         const targets = await this.resolveTargets(action, context);
+        
+        // 빈 대상 처리
+        if (targets.length === 0 && type === 'send_dm') {
+            console.log(`ℹ️ [메시지] DM을 전송할 대상이 없어 건너뜀`);
+            return this.formatResult(true, {
+                actionType: type,
+                targetCount: 0,
+                successCount: 0,
+                failCount: 0,
+                results: [],
+                summary: 'DM을 전송할 대상이 없습니다.'
+            }, 'DM을 전송할 대상이 없어 건너뛰었습니다.');
+        }
+        
         const results = [];
 
         if (type === 'send_message') {
@@ -51,8 +65,11 @@ class MessageActionExecutor extends BaseActionExecutor {
         const successCount = results.filter(r => r.success).length;
         const failCount = results.filter(r => !r.success).length;
 
+        // 성공 조건: 실패가 없거나, 성공이 있으면 성공
+        const isSuccess = failCount === 0 || successCount > 0;
+        
         return this.formatResult(
-            successCount > 0,
+            isSuccess,
             {
                 actionType: action.type,
                 targetCount: targets.length,

@@ -70,7 +70,14 @@ class ChannelPermissionExecutor extends BaseActionExecutor {
 
         // 유효한 채널이 없으면 에러
         if (validatedChannels.length === 0) {
-            throw new Error(`처리할 수 있는 유효한 채널이 없습니다. (${skippedChannels.length}개 채널 건너뜀)`);
+            console.log(`ℹ️ [채널권한] 처리할 수 있는 채널이 없음 (${skippedChannels.length}개 건너뜀)`);
+            return this.formatResult(true, {
+                requestedChannels: channelIds.length,
+                validChannels: 0,
+                skippedChannels: skippedChannels.length,
+                skippedDetails: skippedChannels,
+                summary: '처리할 수 있는 유효한 채널이 없습니다.'
+            }, `처리할 수 있는 유효한 채널이 없어 건너뛰었습니다. (요청: ${channelIds.length}개, 건너뜀: ${skippedChannels.length}개)`);
         }
 
         console.log(`📊 [채널권한] 검증 결과: 유효 ${validatedChannels.length}개, 건너뜀 ${skippedChannels.length}개`);
@@ -96,8 +103,11 @@ class ChannelPermissionExecutor extends BaseActionExecutor {
         const totalProcessedChannels = results.reduce((sum, r) => sum + (r.processedChannels || 1), 0);
         const categoryCount = results.filter(r => r.isCategory).length;
 
+        // 성공 조건: 실패가 없거나, 성공이나 건너뛰기가 있으면 성공
+        const isSuccess = failCount === 0 || successCount > 0;
+        
         return this.formatResult(
-            successCount > 0,
+            isSuccess,
             {
                 actionType: action.type,
                 channelCount: channelIds.length,
@@ -148,7 +158,15 @@ class ChannelPermissionExecutor extends BaseActionExecutor {
                     const targetRole = await context.guild.roles.fetch(roleId);
                     if (targetRole) {
                         targets.push({ type: 'role', target: targetRole });
+                    } else {
+                        console.log(`⚠️ [채널권한] 역할을 찾을 수 없음: ${roleId}`);
                     }
+                }
+                
+                // 유효한 역할이 없는 경우 처리
+                if (targets.length === 0) {
+                    console.log(`ℹ️ [채널권한] 유효한 대상 역할이 없어 건너뜀`);
+                    return [];
                 }
                 break;
 

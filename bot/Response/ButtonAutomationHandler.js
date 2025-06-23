@@ -617,6 +617,11 @@ class ButtonAutomationHandler {
                         } else {
                             console.log(`✅ [엔진 실행] 액션 ${action.type} 실행 완료:`, result);
                         }
+
+                        // 액션 성공 시 결과 메시지 전송
+                        if (result.success) {
+                            await this.sendResultMessage(context.interaction, action, context);
+                        }
                     }
                     
                 } catch (actionError) {
@@ -792,6 +797,62 @@ class ButtonAutomationHandler {
             .replace(/{date}/g, new Date().toISOString().split('T')[0])
             .replace(/{time}/g, new Date().toTimeString().split(' ')[0])
             .replace(/{datetime}/g, new Date().toLocaleString('ko-KR'));
+    }
+
+    /**
+     * 결과 메시지 전송
+     */
+    async sendResultMessage(interaction, action, context) {
+        if (!action.result?.message || !action.result?.visibility || action.result.visibility === 'none') {
+            return;
+        }
+
+        const message = this.replaceVariables(action.result.message, context);
+
+        try {
+            switch (action.result.visibility) {
+                case 'ephemeral':
+                    // 임시 메시지 (개인에게만 보임, 채널에 남지 않음)
+                    await interaction.followUp({
+                        content: message,
+                        ephemeral: true
+                    });
+                    break;
+
+                case 'private':
+                    // DM 전송
+                    try {
+                        await context.user.send(message);
+                    } catch (error) {
+                        console.warn('DM 전송 실패, ephemeral로 fallback:', error.message);
+                        // DM 실패 시 ephemeral로 fallback
+                        await interaction.followUp({
+                            content: `📩 DM 전송 실패. 메시지: ${message}`,
+                            ephemeral: true
+                        });
+                    }
+                    break;
+
+                case 'current_channel':
+                    // 현재 채널에 공개 메시지
+                    await context.channel.send(message);
+                    break;
+
+                case 'specific_channel':
+                    // 특정 채널에 메시지
+                    if (action.result.channelId) {
+                        const targetChannel = context.guild.channels.cache.get(action.result.channelId);
+                        if (targetChannel) {
+                            await targetChannel.send(message);
+                        } else {
+                            console.warn(`특정 채널 ${action.result.channelId}을 찾을 수 없습니다.`);
+                        }
+                    }
+                    break;
+            }
+        } catch (error) {
+            console.error('결과 메시지 전송 실패:', error);
+        }
     }
 }
 

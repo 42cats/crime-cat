@@ -142,8 +142,36 @@ class BaseActionExecutor {
                 throw new Error(`지원하지 않는 대상 타입: ${action.target}`);
         }
 
+        // 빈 대상 처리 개선: 에러 대신 빈 배열 반환하여 상위에서 처리
+        // 특정 경우들에 대해서는 예외 처리
         if (targets.length === 0) {
-            throw new Error('적용할 대상을 찾을 수 없습니다.');
+            switch (action.target) {
+                case 'role':
+                    // 역할 대상: 해당 역할을 가진 사용자가 없음 (정상적인 상황)
+                    console.log(`ℹ️ [대상해석] 역할 대상에 해당하는 사용자가 없습니다.`);
+                    return []; // 빈 배열 반환
+                
+                case 'admin':
+                    // 관리자 대상: 관리자가 없음 (정상적인 상황일 수 있음)
+                    console.log(`ℹ️ [대상해석] 관리자 권한을 가진 사용자가 없습니다.`);
+                    return []; // 빈 배열 반환
+                
+                case 'all':
+                    // 모든 사용자 대상: 봇만 있는 서버 (정상적인 상황일 수 있음)
+                    console.log(`ℹ️ [대상해석] 대상이 될 사용자가 없습니다 (봇 제외).`);
+                    return []; // 빈 배열 반환
+                
+                case 'specific':
+                    // 특정 사용자: 반드시 있어야 함
+                    throw new Error('지정된 사용자를 찾을 수 없습니다.');
+                
+                case 'executor':
+                    // 실행자: 반드시 있어야 함 (시스템 오류)
+                    throw new Error('버튼을 클릭한 사용자 정보를 찾을 수 없습니다.');
+                
+                default:
+                    throw new Error('적용할 대상을 찾을 수 없습니다.');
+            }
         }
 
         return targets;
