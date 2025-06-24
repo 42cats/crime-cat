@@ -10,7 +10,7 @@ const { getButtonGroup } = require('./api/automation/automationApi');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('자동화')
+        .setName('기능버튼')
         .setDescription('버튼 그룹을 현재 채널에 전송')
         .addStringOption(option =>
             option.setName('자동화_그룹')
@@ -60,7 +60,7 @@ module.exports = {
             // 2. 그룹 설정 파싱 (description 필드에서 messageConfig 추출)
             let groupSettings = {};
             let messageConfig = {};
-            
+
             try {
                 // settings 필드 파싱
                 groupSettings = JSON.parse(buttonGroupData.settings || '{}');
@@ -68,7 +68,7 @@ module.exports = {
             } catch (e) {
                 console.warn("⚠️ 그룹 설정 파싱 실패:", e.message);
             }
-            
+
             try {
                 // description 필드에서 messageConfig 파싱
                 const descriptionData = JSON.parse(buttonGroupData.description || '{}');
@@ -85,7 +85,7 @@ module.exports = {
             // 4. 실제 Discord 채널에 메시지 전송
             const sentMessage = await interaction.channel.send(messageData);
             console.log("✅ 메시지 전송 완료, ID:", sentMessage.id);
-            
+
             // 5. 이모지 반응 추가
             if (messageConfig.emojis && Array.isArray(messageConfig.emojis)) {
                 console.log("😊 이모지 반응 추가 중:", messageConfig.emojis);
@@ -141,7 +141,7 @@ async function createDiscordMessage(buttonGroupData, groupSettings, messageConfi
 
     console.log("🔧 메시지 생성 - messageConfig:", messageConfig);
     console.log("🔧 메시지 생성 - groupSettings:", groupSettings);
-    
+
     // 1. 메시지 내용 설정 (description의 messageConfig에서 가져오기)
     if (messageConfig.content) {
         messageData.content = messageConfig.content;

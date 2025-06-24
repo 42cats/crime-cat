@@ -40,47 +40,73 @@ class ButtonAutomationHandler {
         try {
             // 핸들러 초기화 확인
             if (!this.isInitialized) {
+                console.log("🔧 [핸들러] 초기화 중...");
                 await this.initialize();
             }
 
-            console.log(`버튼 자동화 실행 시작: ${buttonConfig.buttonLabel} (사용자: ${interaction.user.tag})`);
+            console.log(`🚀 [핸들러] 버튼 자동화 실행 시작: ${buttonConfig.buttonLabel} (사용자: ${interaction.user.tag})`);
 
             // 1. 기본 검증
+            console.log("✅ [핸들러] 1단계: 기본 검증 시작");
             const validationResult = await this.validateInteraction(interaction, buttonConfig);
+            console.log("✅ [핸들러] 기본 검증 완료:", validationResult);
             if (!validationResult.valid) {
+                console.log("❌ [핸들러] 기본 검증 실패:", validationResult.reason);
                 await this.sendErrorResponse(interaction, validationResult.reason);
                 return;
             }
 
             // 2. 조건 검증 (역할, 채널, 쿨다운 등)
+            console.log("✅ [핸들러] 2단계: 조건 검증 시작");
             const conditionResult = await this.checkConditions(interaction, buttonConfig);
+            console.log("✅ [핸들러] 조건 검증 완료:", conditionResult);
             if (!conditionResult.passed) {
+                console.log("❌ [핸들러] 조건 검증 실패:", conditionResult.reason);
                 await this.sendErrorResponse(interaction, conditionResult.reason);
                 return;
             }
 
             // 3. 실행 컨텍스트 구성
+            console.log("✅ [핸들러] 3단계: 실행 컨텍스트 구성 시작");
             const context = await this.buildExecutionContext(interaction, buttonConfig);
+            console.log("✅ [핸들러] 실행 컨텍스트 구성 완료:", {
+                buttonId: context.buttonId,
+                buttonLabel: context.buttonLabel,
+                guildId: context.guildId,
+                channelId: context.channelId,
+                userId: context.userId,
+                executionId: context.executionId
+            });
 
             // 4. 즉시 응답 (Discord 3초 제한 대응)
+            console.log("✅ [핸들러] 4단계: 즉시 응답 전송 시작");
             await this.sendImmediateResponse(interaction, buttonConfig);
+            console.log("✅ [핸들러] 즉시 응답 전송 완료");
 
-            // 5. 액션 실행
+            // 5. 액션 실행 (ButtonAutomationEngine 사용)
+            console.log("✅ [핸들러] 5단계: 액션 실행 시작");
+            console.log("🔧 [핸들러] 실행할 액션들:", JSON.stringify(buttonConfig.actions, null, 2));
             const executionResult = await this.engine.executeActions(
                 buttonConfig.actions || [],
                 context
             );
+            console.log("✅ [핸들러] 액션 실행 완료:", JSON.stringify(executionResult, null, 2));
 
             // 6. 실행 결과 처리
+            console.log("✅ [핸들러] 6단계: 실행 결과 처리 시작");
             await this.handleExecutionResult(interaction, buttonConfig, executionResult);
+            console.log("✅ [핸들러] 실행 결과 처리 완료");
 
             // 7. 쿨다운 설정
+            console.log("✅ [핸들러] 7단계: 쿨다운 설정 시작");
             this.setCooldown(interaction.user.id, interaction.guildId, buttonConfig);
+            console.log("✅ [핸들러] 쿨다운 설정 완료");
 
-            console.log(`버튼 자동화 실행 완료: ${executionResult.status} (${executionResult.duration}ms)`);
+            console.log(`🎉 [핸들러] 버튼 자동화 실행 완료: ${executionResult.status} (${executionResult.duration}ms)`);
 
         } catch (error) {
-            console.error('버튼 자동화 처리 오류:', error);
+            console.error('❌ [핸들러] 버튼 자동화 처리 오류:', error);
+            console.error('❌ [핸들러] 오류 스택:', error.stack);
             await this.handleError(interaction, error);
         }
     }
@@ -228,13 +254,13 @@ class ButtonAutomationHandler {
     }
 
     /**
-     * 실행 컨텍스트 구성
+     * 실행 컨텍스트 구성 (모든 Discord 객체 포함)
      */
     async buildExecutionContext(interaction, buttonConfig) {
         const { user, member, guild, channel } = interaction;
 
         return {
-            // Discord 객체들
+            // Discord 객체들 (모든 액션 실행기에서 사용)
             user,
             member,
             guild,
@@ -242,7 +268,7 @@ class ButtonAutomationHandler {
             interaction,
 
             // 버튼 정보
-            buttonId: buttonConfig.buttonId || 'unknown',
+            buttonId: buttonConfig.buttonId || buttonConfig.id || 'unknown',
             buttonLabel: buttonConfig.buttonLabel || '버튼',
             buttonConfig,
 
@@ -250,9 +276,12 @@ class ButtonAutomationHandler {
             executedAt: new Date(),
             executedBy: user.id,
             
-            // 길드 정보
+            // 길드 정보 (API 호출용)
             guildId: guild.id,
             channelId: channel.id,
+            userId: user.id,
+            messageId: interaction.message?.id,
+            customId: interaction.customId,
 
             // 추가 컨텍스트
             timestamp: Date.now(),
@@ -427,25 +456,41 @@ class ButtonAutomationHandler {
     }
 
     /**
-     * 메시지 변수 치환
+     * 메시지 변수 치환 (안전한 처리)
      */
     processMessageVariables(message, interaction, additionalVars = {}) {
-        if (!message) return '';
+        if (!message) {
+            console.log("⚠️ [변수치환] 메시지가 없음");
+            return '';
+        }
 
-        let processed = message
-            .replace(/{user}/g, `<@${interaction.user.id}>`)
-            .replace(/{username}/g, interaction.user.username)
-            .replace(/{guild}/g, interaction.guild?.name || '서버')
-            .replace(/{channel}/g, `<#${interaction.channel?.id}>`)
-            .replace(/{button}/g, '버튼');
+        if (!interaction) {
+            console.log("⚠️ [변수치환] interaction이 없음");
+            return message;
+        }
 
-        // 추가 변수 처리
-        Object.entries(additionalVars).forEach(([key, value]) => {
-            const regex = new RegExp(`{${key}}`, 'g');
-            processed = processed.replace(regex, value);
-        });
+        console.log("🔧 [변수치환] 메시지 변수 치환 시작:", { message, user: interaction.user?.username });
 
-        return processed;
+        try {
+            let processed = message
+                .replace(/{user}/g, interaction.user ? `<@${interaction.user.id}>` : '{user}')
+                .replace(/{username}/g, interaction.user?.username || '{username}')
+                .replace(/{guild}/g, interaction.guild?.name || '{guild}')
+                .replace(/{channel}/g, interaction.channel ? `<#${interaction.channel.id}>` : '{channel}')
+                .replace(/{button}/g, '버튼');
+
+            // 추가 변수 처리
+            Object.entries(additionalVars).forEach(([key, value]) => {
+                const regex = new RegExp(`{${key}}`, 'g');
+                processed = processed.replace(regex, value !== undefined ? value : `{${key}}`);
+            });
+
+            console.log("✅ [변수치환] 변수 치환 완료:", processed);
+            return processed;
+        } catch (error) {
+            console.error("❌ [변수치환] 변수 치환 실패:", error);
+            return message;
+        }
     }
 
     /**
@@ -673,16 +718,6 @@ class ButtonAutomationHandler {
         }
     }
 
-    /**
-     * 조건 확인 (간단한 구현)
-     * @param {Array} conditions 조건 배열
-     * @param {Object} context 실행 컨텍스트
-     * @returns {Promise<boolean>} 조건 만족 여부
-     */
-    async checkConditions(conditions, context) {
-        // TODO: 실제 조건 확인 로직 구현
-        return true; // 임시로 항상 true 반환
-    }
 
     /**
      * 액션 직접 실행 (엔진에 없는 액션들)
@@ -813,7 +848,8 @@ class ButtonAutomationHandler {
             return;
         }
 
-        const message = this.replaceVariables(action.result.message, context);
+        // processMessageVariables 사용으로 변경 (interaction 기반으로 안정적)
+        const message = this.processMessageVariables(action.result.message, interaction);
 
         try {
             switch (action.result.visibility) {
@@ -863,7 +899,7 @@ class ButtonAutomationHandler {
 }
 
 /**
- * 버튼 자동화 클릭 이벤트 처리
+ * 버튼 자동화 클릭 이벤트 처리 (통합된 실행 플로우)
  * @param {ButtonInteraction} interaction Discord 버튼 상호작용
  */
 async function handleButtonAutomation(interaction) {
@@ -878,92 +914,23 @@ async function handleButtonAutomation(interaction) {
     }
 
     try {
-        // 즉시 응답하여 3초 제한 회피
-        await interaction.deferReply({ ephemeral: true });
-
-        // 실행 컨텍스트 준비
-        const context = {
-            userId: interaction.user.id,
-            guildId: interaction.guild?.id,
-            channelId: interaction.channel?.id,
-            messageId: interaction.message?.id,
-            customId: interaction.customId, // button_setting 액션을 위해 추가
-            user: interaction.user,
-            member: interaction.member,
-            channel: interaction.channel,
-            guild: interaction.guild
-        };
-
-        // 버튼 자동화 실행
-        console.log("🎯 [핸들러] 버튼 자동화 실행 시작:", { buttonId, userId: context.userId, guildId: context.guildId });
+        console.log(`🎯 [통합핸들러] 버튼 자동화 실행 시작: ${buttonId} (사용자: ${interaction.user.tag})`);
         
-        // ButtonAutomationHandler 인스턴스 생성
+        // ButtonAutomationHandler 인스턴스 생성 및 초기화
         const handler = new ButtonAutomationHandler();
         await handler.initialize();
         
         // 1. 백엔드에서 버튼 설정 조회
-        const buttonConfig = await handler.getButtonConfig(buttonId, context.guildId);
-        console.log("🔧 [핸들러] 버튼 설정 조회:", buttonConfig);
+        const buttonConfig = await handler.getButtonConfig(buttonId, interaction.guild?.id);
+        console.log("🔧 [통합핸들러] 버튼 설정 조회 완료:", buttonConfig);
         
-        // 2. 조건 검증 (쿨타임, 사용 횟수 등)
-        const conditionResult = await handler.checkConditions(interaction, buttonConfig);
-        if (!conditionResult.passed) {
-            await interaction.editReply({
-                content: `❌ ${conditionResult.reason}`,
-            });
-            return;
-        }
+        // 2. ButtonAutomationHandler의 통합된 메서드 사용
+        await handler.handleButtonInteraction(interaction, buttonConfig);
         
-        // 3. ButtonAutomationEngine으로 액션 실행
-        const result = await handler.executeActionsWithEngine(buttonConfig, context);
-        console.log("🎯 [핸들러] 버튼 자동화 실행 결과:", result);
-
-        // 4. 실행 완료 후 쿨타임 설정 및 사용 기록 (성공/실패 관계없이)
-        handler.setCooldown(context.userId, context.guildId, buttonConfig);
-        handler.recordExecution(context.userId, context.guildId, buttonConfig);
-        console.log("⏰ [핸들러] 쿨타임 설정 및 사용 기록 완료");
-
-        if (result.success) {
-            console.log("✅ [핸들러] 버튼 자동화 성공, 추가 액션 처리 중...");
-            // 음악 액션이 포함된 경우 직접 처리
-            if (result.executedActions && result.executedActions.length > 0) {
-                const processedResults = [];
-                
-                for (const action of result.executedActions) {
-                    try {
-                        let actionResult;
-                        
-                        // 음악 액션 확인 및 처리
-                        if (['play_music', 'stop_music', 'pause_music'].includes(action.type)) {
-                            console.log(`[자동화] 음악 액션 실행: ${action.type}`);
-                            actionResult = await executeMusicAction(action, context);
-                        } else {
-                            // 기존 액션은 백엔드에서 처리된 결과 사용
-                            actionResult = action;
-                        }
-                        
-                        processedResults.push(actionResult);
-                    } catch (actionError) {
-                        console.error(`[자동화] 액션 실행 실패 (${action.type}):`, actionError);
-                        processedResults.push({
-                            success: false,
-                            description: `${action.type} 실행 실패: ${actionError.message}`,
-                            type: action.type
-                        });
-                    }
-                }
-                
-                // 결과에 처리된 액션들 반영
-                result.executedActions = processedResults;
-            }
-            
-            await handleSuccessResponse(interaction, result);
-        } else {
-            await handleErrorResponse(interaction, result);
-        }
+        console.log("✅ [통합핸들러] 버튼 자동화 처리 완료");
 
     } catch (error) {
-        console.error('버튼 자동화 처리 오류:', error);
+        console.error('❌ [통합핸들러] 버튼 자동화 처리 오류:', error);
         await handleCriticalError(interaction, error);
     }
 }

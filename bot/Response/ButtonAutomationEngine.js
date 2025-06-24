@@ -133,7 +133,19 @@ class ButtonAutomationEngine {
      * @returns {Object} 전체 실행 결과
      */
     async executeActions(actions, context) {
+        console.log("🚀 [엔진] executeActions 호출됨");
+        console.log("🔧 [엔진] 액션 개수:", actions.length);
+        console.log("🔧 [엔진] 컨텍스트:", {
+            buttonId: context.buttonId,
+            buttonLabel: context.buttonLabel,
+            guildId: context.guildId,
+            channelId: context.channelId,
+            userId: context.userId,
+            executionId: context.executionId
+        });
+
         if (!this.isInitialized) {
+            console.log("🔧 [엔진] 엔진 초기화 중...");
             await this.initialize();
         }
 
@@ -158,45 +170,52 @@ class ButtonAutomationEngine {
 
         try {
             execution.status = 'running';
-            console.log(`액션 실행 시작 (${executionId}): ${actions.length}개 액션`);
+            console.log(`🎯 [엔진] 액션 실행 시작 (${executionId}): ${actions.length}개 액션`);
 
             // 각 액션을 순차적으로 실행
             for (let i = 0; i < actions.length; i++) {
                 const action = actions[i];
+                console.log(`🔄 [엔진] 액션 ${i + 1}/${actions.length} 처리 시작:`, action.type);
                 
                 try {
                     // 지연 처리
                     if (action.delay && action.delay > 0) {
-                        console.log(`액션 ${i + 1} 지연 대기: ${action.delay}초`);
+                        console.log(`⏰ [엔진] 액션 ${i + 1} 지연 대기: ${action.delay}초`);
                         await this.delay(action.delay * 1000);
                     }
 
                     // 액션 실행
-                    console.log(`액션 ${i + 1} 실행 중: ${action.type}`);
+                    console.log(`▶️ [엔진] 액션 ${i + 1} 실행 중: ${action.type}`);
                     const result = await this.executeSingleAction(action, context, i);
+                    console.log(`📊 [엔진] 액션 ${i + 1} 실행 결과:`, result);
                     execution.results.push(result);
 
                     // 성공/실패 카운트
                     if (result.success) {
                         execution.successCount++;
+                        console.log(`✅ [엔진] 액션 ${i + 1} 성공`);
                     } else {
                         execution.failCount++;
+                        console.log(`❌ [엔진] 액션 ${i + 1} 실패:`, result.error?.message);
                     }
 
                     // 실패 시 중단 여부 결정
                     if (!result.success && !result.continuable) {
-                        console.log(`치명적 오류로 실행 중단: ${result.error?.message}`);
+                        console.log(`🛑 [엔진] 치명적 오류로 실행 중단: ${result.error?.message}`);
                         execution.status = 'failed';
                         break;
                     }
 
                     // 결과 메시지 전송
                     if (action.result && action.result.message && action.result.visibility !== 'none') {
+                        console.log(`📤 [엔진] 결과 메시지 전송 시작`);
                         await this.sendResultMessage(action.result, context, result);
+                        console.log(`📤 [엔진] 결과 메시지 전송 완료`);
                     }
 
                 } catch (error) {
-                    console.error(`액션 ${i + 1} 실행 오류:`, error);
+                    console.error(`❌ [엔진] 액션 ${i + 1} 실행 오류:`, error);
+                    console.error(`❌ [엔진] 액션 ${i + 1} 오류 스택:`, error.stack);
                     const errorResult = {
                         success: false,
                         actionType: action.type,
@@ -222,7 +241,8 @@ class ButtonAutomationEngine {
             }
 
         } catch (error) {
-            console.error('액션 실행 엔진 오류:', error);
+            console.error('❌ [엔진] 액션 실행 엔진 오류:', error);
+            console.error('❌ [엔진] 엔진 오류 스택:', error.stack);
             execution.status = 'engine_error';
             execution.error = {
                 message: error.message,
@@ -233,7 +253,7 @@ class ButtonAutomationEngine {
             execution.endTime = Date.now();
             execution.duration = execution.endTime - execution.startTime;
             
-            console.log(`액션 실행 완료 (${executionId}): ${execution.status}, 성공 ${execution.successCount}/${actions.length}, 소요시간 ${execution.duration}ms`);
+            console.log(`🏁 [엔진] 액션 실행 완료 (${executionId}): ${execution.status}, 성공 ${execution.successCount}/${actions.length}, 소요시간 ${execution.duration}ms`);
         }
 
         return execution;
