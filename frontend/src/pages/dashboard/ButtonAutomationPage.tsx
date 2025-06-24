@@ -30,7 +30,11 @@ import {
     GroupForm,
     GroupFormData,
 } from "@/components/ButtonAutomation/GroupForm";
+import { TestRunner } from "@/components/ButtonAutomation/TestRunner";
 import { buttonAutomationApi } from "@/lib/api/buttonAutomation";
+import { ChannelProvider } from "@/components/ButtonAutomation/ChannelContext";
+import { useChannels } from "@/hooks/useChannels";
+import { fetchChannels } from "@/api/misc/messageButtonService";
 
 const { Title, Text } = Typography;
 
@@ -54,6 +58,46 @@ const ButtonAutomationPage: React.FC = () => {
     // 그룹 관리 상태
     const [showGroupForm, setShowGroupForm] = useState(false);
     const [editingGroup, setEditingGroup] = useState<any>(null);
+
+    // 테스트 실행 상태
+    const [showTestRunner, setShowTestRunner] = useState(false);
+    const [testingButton, setTestingButton] = useState<any>(null);
+
+    // Discord 데이터 상태
+    const [roles, setRoles] = useState<any[]>([]);
+    const [channels, setChannels] = useState<any[]>([]);
+    const [users, setUsers] = useState<any[]>([]);
+
+    // Discord 역할 데이터 조회 (ActionEditor와 동일한 방식)
+    const { data: discordRoles } = useQuery({
+        queryKey: ["discord-roles", guildId],
+        queryFn: async () => {
+            const response = await fetch(`/api/v1/discord/guilds/${guildId}/roles`);
+            if (!response.ok) throw new Error('Failed to fetch roles');
+            return response.json();
+        },
+        enabled: !!guildId,
+    });
+
+    // Discord 채널 데이터 조회 (ChannelContext와 동일한 방식)
+    const { data: discordChannels } = useQuery({
+        queryKey: ["discord-channels", guildId],
+        queryFn: () => fetchChannels(guildId!),
+        enabled: !!guildId,
+    });
+
+    // Discord 데이터 상태 동기화
+    useEffect(() => {
+        if (discordRoles) {
+            setRoles(discordRoles);
+        }
+    }, [discordRoles]);
+
+    useEffect(() => {
+        if (discordChannels) {
+            setChannels(discordChannels);
+        }
+    }, [discordChannels]);
 
     // 버튼 그룹 목록 조회
     const { data: groups, isLoading: isLoadingGroups } = useQuery({
@@ -272,6 +316,12 @@ const ButtonAutomationPage: React.FC = () => {
         setShowGroupForm(true);
     };
 
+    // 버튼 테스트
+    const handleTestButton = (button: any) => {
+        setTestingButton(button);
+        setShowTestRunner(true);
+    };
+
     // 테이블 컬럼 정의
     const columns = [
         {
@@ -345,7 +395,7 @@ const ButtonAutomationPage: React.FC = () => {
                             type="text"
                             icon={<PlayCircleOutlined />}
                             size="small"
-                            disabled
+                            onClick={() => handleTestButton(record)}
                         />
                     </Tooltip>
                     <Popconfirm
@@ -625,6 +675,7 @@ const ButtonAutomationPage: React.FC = () => {
                                 </Space>
                             </div>
                         }
+                        className="pagination-center-container"
                     >
                         <Table
                             columns={columns}
@@ -634,7 +685,7 @@ const ButtonAutomationPage: React.FC = () => {
                             pagination={{
                                 pageSize: 10,
                                 showSizeChanger: false,
-                                showQuickJumper: true,
+                                showQuickJumper: false,
                             }}
                             locale={{
                                 emptyText: selectedGroupId
@@ -642,6 +693,16 @@ const ButtonAutomationPage: React.FC = () => {
                                     : "그룹을 선택해주세요.",
                             }}
                         />
+                        <style dangerouslySetInnerHTML={{
+                            __html: `
+                                .pagination-center-container .ant-pagination {
+                                    display: flex !important;
+                                    justify-content: center !important;
+                                    width: 100% !important;
+                                    margin-top: 16px !important;
+                                }
+                            `
+                        }} />
                     </Card>
                 )}
 
@@ -667,6 +728,21 @@ const ButtonAutomationPage: React.FC = () => {
                         loading={groupMutation.isPending}
                     />
                 </Modal>
+
+                {/* 테스트 실행 모달 */}
+                {testingButton && (
+                    <TestRunner
+                        button={testingButton}
+                        visible={showTestRunner}
+                        onClose={() => {
+                            setShowTestRunner(false);
+                            setTestingButton(null);
+                        }}
+                        roles={roles}
+                        channels={channels}
+                        users={users}
+                    />
+                )}
             </div>
         </PageTransition>
     );
