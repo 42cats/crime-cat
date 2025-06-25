@@ -48,14 +48,27 @@ const verifyToken = (socket, next) => {
       return next(new Error('Authentication error: No token provided'));
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // 백엔드와 동일하게 Base64 디코딩된 시크릿 키 사용
+    const base64Secret = process.env.JWT_SECRET;
+    const secretKey = Buffer.from(base64Secret, 'base64');
+    const decoded = jwt.verify(token, secretKey);
     
-    // 사용자 정보 추출
+    // 사용자 정보 추출 (안전장치 강화)
+    const userId = decoded.id || decoded.sub || `user_${Date.now()}`;
+    const username = decoded.username || decoded.preferred_username || decoded.name || decoded.nickname || `User_${userId.slice(-8)}`;
+    
     socket.user = {
-      id: decoded.id || decoded.sub,
-      username: decoded.username || decoded.preferred_username || decoded.name,
-      email: decoded.email
+      id: userId,
+      username: username,
+      email: decoded.email || ''
     };
+    
+    console.log(`🔍 JWT 디코딩 상세:`, {
+      originalFields: Object.keys(decoded),
+      extractedId: userId,
+      extractedUsername: username,
+      hasEmail: !!decoded.email
+    });
     
     socket.authToken = token;
     console.log(`✅ User authenticated: ${socket.user.username} (${socket.user.id})`);
