@@ -116,6 +116,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private boolean isExcludedPath(String uri) {
         return uri.startsWith("/bot/v1/")
             || uri.startsWith("/api/v1/signal/")    // Signal Server API (SignalServerTokenFilter에서 처리)
+            || uri.startsWith("/api/v1/cloudflare/") // Cloudflare Proxy API (인증 불필요)
             || uri.startsWith("/login")
             || uri.startsWith("/api/v1/auth/reissue")
             || uri.startsWith("/api/v1/auth/logout")

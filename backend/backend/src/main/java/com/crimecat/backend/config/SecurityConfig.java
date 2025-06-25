@@ -85,6 +85,7 @@ public class SecurityConfig {
                         "/api/v1/auth/reissue",
                         "/bot/v1/**", // 디스코드 봇 API 경로
                         "/api/v1/signal/**", // Signal Server API 경로
+                        "/api/v1/cloudflare/**", // Cloudflare Proxy API 경로
                         "/api/ssr/**", // SSR 엔드포인트 (크롤러용)
                         "/api/sitemap/**", // 동적 사이트맵 (크롤러용)
                         "/api/v1/csrf/token" // csrf 인증경로
@@ -104,6 +105,7 @@ public class SecurityConfig {
                         "/oauth2/**",
                         "/bot/v1/**",
                         "/api/v1/signal/**", // Signal Server API 경로
+                        "/api/v1/cloudflare/**", // Cloudflare Proxy API 경로
                         "/api/v1/auth/logout",
                         "/api/v1/auth/reissue",
                         "/api/v1/auth/block-status",
