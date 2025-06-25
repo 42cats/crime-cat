@@ -220,6 +220,31 @@ public class AuthController {
             return ResponseEntity.ok(BlockInfoResponse.notBlocked());
         }
     }
+
+    /**
+     * WebSocket 연결을 위한 JWT 토큰을 반환합니다.
+     */
+    @GetMapping("/websocket-token")
+    public ResponseEntity<Map<String, String>> getWebSocketToken(HttpServletRequest request) {
+        try {
+            String accessToken = TokenCookieUtil.getCookieValue(request, "Authorization");
+            
+            if (accessToken == null || !jwtTokenProvider.validateToken(accessToken)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "유효하지 않은 토큰입니다."));
+            }
+
+            Map<String, String> response = new HashMap<>();
+            response.put("token", accessToken);
+            response.put("type", "Bearer");
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("WebSocket 토큰 추출 실패: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "토큰 추출에 실패했습니다."));
+        }
+    }
     private static Map<String, String> getStringStringMap(WebUser user) {
         Map<String,String> resp  = new HashMap<>();
         // 필수 값
