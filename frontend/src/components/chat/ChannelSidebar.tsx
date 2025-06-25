@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { useServerChannel } from '../../hooks/useServerChannel';
+import { useVoiceChatSFU, useVoiceSessionCleanup } from '../../hooks/useVoiceChatSFU';
 import { ChannelInfo } from '../../services/websocketService';
 import websocketService from '../../services/websocketService';
 
@@ -20,33 +21,52 @@ export const ChannelSidebar: React.FC<ChannelSidebarProps> = ({ className = '' }
   } = useAppStore();
 
   const { joinChannel, leaveChannel } = useServerChannel();
+  const { joinVoiceChannel, leaveVoiceChannel } = useVoiceChatSFU();
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // 브라우저 종료 시 세션 정리 활성화
+  useVoiceSessionCleanup();
 
   const currentServerInfo = servers.find(s => s.id === currentServer);
   const serverChannels = currentServer ? channels[currentServer] || [] : [];
 
-  const handleChannelClick = (channelId: string) => {
+  const handleChannelClick = async (channelId: string) => {
     if (!currentServer) return;
     
-    if (currentChannel?.channelId === channelId) return;
+    // 클릭한 채널 정보 가져오기
+    const clickedChannel = serverChannels.find(c => c.id === channelId);
+    if (!clickedChannel) return;
 
-    console.log('🎯 Clicking channel:', channelId, 'in server:', currentServer);
-    console.log('🔌 WebSocket connected:', websocketService.isConnected());
+    console.log('🎯 Clicking channel:', channelId, 'type:', clickedChannel.type, 'in server:', currentServer);
 
     try {
-      // 이전 채널에서 나가기
-      if (currentChannel) {
-        console.log('👋 Leaving previous channel:', currentChannel.channelId);
-        leaveChannel(currentChannel.serverId, currentChannel.channelId);
-      }
+      if (clickedChannel.type === 'VOICE') {
+        // 음성 채널인 경우 바로 음성채널에 접속 (채팅방 전환 없음)
+        console.log('🎤 Joining voice channel:', channelId);
+        await joinVoiceChannel(currentServer, channelId);
+        // 음성 채널은 setCurrentChannel 호출하지 않음 (채팅방 전환 방지)
+        console.log('✅ Voice channel join request sent');
+      } else {
+        // 텍스트 채널인 경우 기존 로직
+        if (currentChannel?.channelId === channelId) return;
 
-      // 새 채널에 입장
-      console.log('🚀 Joining new channel:', channelId);
-      joinChannel(currentServer, channelId);
-      setCurrentChannel({ serverId: currentServer, channelId });
-      console.log('✅ Channel join request sent');
+        // 이전 채널에서 나가기
+        if (currentChannel) {
+          console.log('👋 Leaving previous channel:', currentChannel.channelId);
+          leaveChannel(currentChannel.serverId, currentChannel.channelId);
+        }
+
+        // 새 채널에 입장
+        console.log('🚀 Joining text channel:', channelId);
+        joinChannel(currentServer, channelId);
+        setCurrentChannel({ serverId: currentServer, channelId });
+        console.log('✅ Text channel join request sent');
+      }
     } catch (error) {
       console.error('❌ Failed to join channel:', error);
+      if (clickedChannel.type === 'VOICE') {
+        alert('음성 채널 연결에 실패했습니다. 마이크 권한을 확인해주세요.');
+      }
     }
   };
 
@@ -307,8 +327,19 @@ const VoiceChannelSection: React.FC<VoiceChannelSectionProps> = ({
   onChannelClick,
   icon
 }) => {
-  const { voiceUsers, isVoiceConnected, currentServer } = useAppStore();
+  const { voiceUsers, isVoiceConnected, currentServer, currentVoiceChannel } = useAppStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  // 디버그 로그
+  console.log('🔍 VoiceChannelSection 디버그:', {
+    voiceUsers: voiceUsers,
+    voiceUsersLength: voiceUsers?.length,
+    isVoiceConnected: isVoiceConnected,
+    currentServer,
+    currentVoiceChannel,
+    channels: channels.map(c => ({ id: c.id, name: c.name }))
+  });
+  
 
   return (
     <div className="mb-4">
@@ -335,12 +366,32 @@ const VoiceChannelSection: React.FC<VoiceChannelSectionProps> = ({
             <VoiceChannelItem
               key={channel.id}
               channel={channel}
-              isActive={currentChannelId === channel.id}
-              isConnected={isVoiceConnected && currentChannelId === channel.id}
-              voiceUsers={voiceUsers.filter(user => 
-                (user.channelId === channel.id || user.channelId === parseInt(channel.id)) && 
-                (user.serverId === currentServer || user.serverId === parseInt(currentServer || '0'))
-              )}
+              isActive={false}
+              isConnected={isVoiceConnected && currentVoiceChannel?.channelId === channel.id}
+              voiceUsers={Array.isArray(voiceUsers) ? voiceUsers.filter(user => {
+                // 실제로 음성 채널에 접속되어 있을 때만 사용자 표시
+                const isCurrentlyConnectedToVoice = isVoiceConnected && currentVoiceChannel?.channelId === channel.id;
+                
+                // 채널 ID 비교
+                const channelMatches = user.channelId === channel.id;
+                
+                // 서버 ID 비교
+                const serverMatches = user.serverId === currentServer;
+                
+                console.log(`🔍 사용자 필터링 ${user.username}:`, {
+                  userChannelId: user.channelId,
+                  targetChannelId: channel.id,
+                  channelMatches,
+                  userServerId: user.serverId,
+                  targetServerId: currentServer,
+                  serverMatches,
+                  isCurrentlyConnectedToVoice,
+                  result: channelMatches && serverMatches && isCurrentlyConnectedToVoice
+                });
+                
+                // 실제로 해당 음성 채널에 접속되어 있을 때만 사용자 표시
+                return channelMatches && serverMatches && isCurrentlyConnectedToVoice;
+              }) : []}
               onClick={() => onChannelClick(channel.id)}
             />
           ))}
@@ -367,6 +418,23 @@ const VoiceChannelItem: React.FC<VoiceChannelItemProps> = ({
   onClick 
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
+  
+  // 디버깅용 로그
+  console.log(`🎯 VoiceChannelItem [${channel.name}]:`, {
+    channelId: channel.id,
+    voiceUsers: voiceUsers,
+    voiceUsersLength: voiceUsers.length,
+    isActive,
+    isConnected,
+    userDetails: voiceUsers.map(u => ({ 
+      id: u.id, 
+      userId: u.userId, 
+      username: u.username, 
+      channelId: u.channelId, 
+      serverId: u.serverId 
+    }))
+  });
+  
 
   return (
     <div className="relative">
@@ -441,38 +509,55 @@ interface VoiceUserItemProps {
 
 const VoiceUserItem: React.FC<VoiceUserItemProps> = ({ user }) => {
   return (
-    <div className={`flex items-center px-2 py-1 text-sm transition-all duration-200 ${
+    <div className={`flex items-center px-2 py-1 text-sm transition-all duration-300 ${
       user.isSpeaking ? 'text-green-400' : 'text-gray-400'
     }`}>
       {/* 사용자 아바타 */}
-      <div className={`w-4 h-4 rounded-full mr-2 flex items-center justify-center text-xs transition-all duration-200 ${
+      <div className={`relative w-4 h-4 rounded-full mr-2 flex items-center justify-center text-xs transition-all duration-300 ${
         user.isSpeaking 
-          ? 'bg-green-400 text-white ring-2 ring-green-400 ring-opacity-50' 
+          ? 'bg-green-400 text-white ring-2 ring-green-400 ring-opacity-50 animate-pulse' 
           : 'bg-gray-600 text-gray-300'
       }`}>
         {user.username?.charAt(0).toUpperCase() || 'U'}
+        
+        {/* 말하는 중 애니메이션 파동 효과 */}
+        {user.isSpeaking && (
+          <>
+            <div className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-75"></div>
+            <div className="absolute inset-0 rounded-full bg-green-400 animate-pulse opacity-50"></div>
+          </>
+        )}
       </div>
 
       {/* 사용자명 */}
-      <span className="flex-1 truncate">
+      <span className={`flex-1 truncate transition-all duration-300 ${
+        user.isSpeaking ? 'font-medium' : ''
+      }`}>
         {user.username || 'Unknown User'}
       </span>
 
       {/* 상태 아이콘들 */}
       <div className="flex items-center space-x-1 ml-1">
         {user.isMuted && (
-          <svg className="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-3 h-3 text-red-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0017.542 11H16.5a8.002 8.002 0 01-11.532-2.226L3.707 2.293z" clipRule="evenodd" />
           </svg>
         )}
         {user.isDeafened && (
-          <svg className="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-3 h-3 text-red-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
             <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
           </svg>
         )}
         {user.isScreenSharing && (
-          <svg className="w-3 h-3 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-3 h-3 text-blue-400 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 3a1 1 0 000 2h.01a1 1 0 100-2H5zm0 3a1 1 0 000 2h6a1 1 0 100-2H5z" clipRule="evenodd" />
+          </svg>
+        )}
+        
+        {/* 말하는 중 마이크 아이콘 */}
+        {user.isSpeaking && !user.isMuted && (
+          <svg className="w-3 h-3 text-green-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
           </svg>
         )}
       </div>
@@ -481,11 +566,57 @@ const VoiceUserItem: React.FC<VoiceUserItemProps> = ({ user }) => {
 };
 
 const UserInfoBar: React.FC = () => {
+  const { isVoiceConnected, currentChannel, channels, currentServer, localMuted } = useAppStore();
+  const { leaveVoiceChannel, toggleMute, currentVoiceChannel } = useVoiceChatSFU();
   const [showSettings, setShowSettings] = useState(false);
+  const [speakerMuted, setSpeakerMuted] = useState(false);
+
+  // 현재 음성 채널 정보 가져오기
+  const voiceChannelInfo = currentServer && currentVoiceChannel && channels[currentServer]?.find(
+    c => c.id === currentVoiceChannel.channelId && c.type === 'VOICE'
+  );
+  const channelName = voiceChannelInfo?.name || currentVoiceChannel?.channelId || '음성 채널';
+
+  const handleLeaveVoice = () => {
+    leaveVoiceChannel();
+  };
+
+  const handleToggleSpeaker = () => {
+    setSpeakerMuted(!speakerMuted);
+    const audioElements = document.querySelectorAll('audio[data-remote-audio]');
+    audioElements.forEach((audio: any) => {
+      audio.volume = speakerMuted ? 1 : 0;
+    });
+  };
 
   return (
-    <div className="h-14 bg-gray-900 border-t border-gray-700 flex items-center px-2">
-      {/* 사용자 아바타 및 정보 */}
+    <div className="bg-gray-900 border-t border-gray-700">
+      {/* 음성채널 접속 상태 표시 */}
+      {isVoiceConnected && (
+        <div className="px-2 py-1 bg-green-600/20 border-b border-green-600/30 flex items-center justify-between">
+          <div className="flex items-center">
+            <svg className="w-4 h-4 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.824L4.168 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.168l4.215-3.824z" clipRule="evenodd" />
+              <path d="M11.5 7.5a2.5 2.5 0 000 5m2.5-7a5 5 0 000 10" />
+            </svg>
+            <span className="text-green-400 text-sm font-medium">음성에 연결됨</span>
+            <span className="text-gray-300 text-sm ml-1">— {channelName}</span>
+          </div>
+          <button
+            onClick={handleLeaveVoice}
+            className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-white hover:bg-red-600/30 rounded transition-colors"
+            title="음성 채널 나가기"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* 사용자 정보 바 */}
+      <div className="h-14 flex items-center px-2">
+        {/* 사용자 아바타 및 정보 */}
       <div className="flex items-center flex-1 min-w-0">
         <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
           U
@@ -500,8 +631,13 @@ const UserInfoBar: React.FC = () => {
       <div className="flex items-center space-x-1">
         {/* 마이크 토글 */}
         <button
-          className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 rounded"
-          title="마이크 토글"
+          onClick={toggleMute}
+          className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
+            localMuted 
+              ? 'text-red-400 hover:text-red-300 bg-red-600/20 hover:bg-red-600/30' 
+              : 'text-gray-400 hover:text-white hover:bg-gray-700'
+          }`}
+          title={localMuted ? '음소거 해제' : '음소거'}
         >
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
@@ -528,6 +664,7 @@ const UserInfoBar: React.FC = () => {
             <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
           </svg>
         </button>
+        </div>
       </div>
     </div>
   );

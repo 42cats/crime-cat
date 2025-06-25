@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useVoiceChatSFU } from '../hooks/useVoiceChatSFU';
-import cloudflareSFUService from '../services/cloudflareService';
+import cloudflareProxyService from '../services/cloudflareProxyService';
 import websocketService from '../services/websocketService';
 
 export const VoiceChatDemo: React.FC = () => {
@@ -25,7 +25,7 @@ export const VoiceChatDemo: React.FC = () => {
 
   useEffect(() => {
     // Cloudflare 서비스 상태 확인
-    const status = cloudflareSFUService.getStatus();
+    const status = cloudflareProxyService.getStatus();
     setServiceStatus(status);
 
     // WebSocket 연결 상태 체크

@@ -168,7 +168,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ className = '' }) => {
 };
 
 interface ChannelIconProps {
-  type: 'TEXT' | 'VOICE' | 'BOTH';
+  type: 'TEXT' | 'VOICE';  // Phase 1에서 BOTH 제거
 }
 
 const ChannelIcon: React.FC<ChannelIconProps> = ({ type }) => {
@@ -183,12 +183,6 @@ const ChannelIcon: React.FC<ChannelIconProps> = ({ type }) => {
       return (
         <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.824L4.168 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.168l4.215-3.824z" clipRule="evenodd" />
-        </svg>
-      );
-    case 'BOTH':
-      return (
-        <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
         </svg>
       );
     default:

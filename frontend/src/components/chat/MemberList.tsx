@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
+import { useWebSocket } from '../../hooks/useWebSocket';
 import { ServerRole } from '../../services/websocketService';
+import websocketService from '../../services/websocketService';
 
 interface Member {
   id: string;
@@ -32,6 +34,7 @@ export const MemberList: React.FC<MemberListProps> = ({ className = '' }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [showOffline, setShowOffline] = useState(true);
+  const [onlineMembers, setOnlineMembers] = useState<Set<string>>(new Set());
 
   const currentServerInfo = servers.find(s => s.id === currentServer);
   const currentChannelInfo = currentServer && currentChannel 
@@ -54,17 +57,22 @@ export const MemberList: React.FC<MemberListProps> = ({ className = '' }) => {
         console.log('✅ Loaded members:', membersData);
         
         // API 응답을 Member 인터페이스에 맞게 변환
-        const formattedMembers: Member[] = membersData.map((member: any) => ({
-          id: member.userId || member.id,
-          username: member.effectiveDisplayName || member.username || member.user?.username || 'Unknown User',
-          displayName: member.effectiveDisplayName || member.displayName || member.nickname,
-          status: 'online', // TODO: 실제 온라인 상태 구현
-          roles: member.roles || [],
-          joinedAt: new Date(member.joinedAt || member.createdAt),
-          isOwner: member.role === 'ADMIN' || member.isOwner,
-          isBot: false,
-          currentActivity: undefined
-        }));
+        const formattedMembers: Member[] = membersData.map((member: any) => {
+          const memberId = member.userId || member.id;
+          const isOnline = onlineMembers.has(memberId);
+          
+          return {
+            id: memberId,
+            username: member.effectiveDisplayName || member.username || member.user?.username || 'Unknown User',
+            displayName: member.effectiveDisplayName || member.displayName || member.nickname,
+            status: isOnline ? 'online' : 'offline',
+            roles: member.roles || [],
+            joinedAt: new Date(member.joinedAt || member.createdAt),
+            isOwner: member.role === 'ADMIN' || member.isOwner,
+            isBot: false,
+            currentActivity: undefined
+          };
+        });
         
         setMembers(formattedMembers);
       } catch (error) {
@@ -74,6 +82,58 @@ export const MemberList: React.FC<MemberListProps> = ({ className = '' }) => {
     };
 
     loadMembers();
+  }, [currentServer, onlineMembers]); // onlineMembers 변경 시에도 다시 로드
+
+  // WebSocket을 통한 실시간 온라인 상태 업데이트
+  useEffect(() => {
+    if (!currentServer) return;
+
+
+    // 온라인 사용자 목록 초기 요청
+    websocketService.requestOnlineUsers(currentServer);
+
+    // 온라인 상태 이벤트 핸들러
+    const handleUserOnline = (data: { userId: string; username: string; serverId: string }) => {
+      if (data.serverId === currentServer) {
+        console.log('✅ 사용자 온라인:', data.username);
+        setOnlineMembers(prev => new Set([...prev, data.userId]));
+      }
+    };
+
+    const handleUserOffline = (data: { userId: string; username: string; serverId: string }) => {
+      if (data.serverId === currentServer) {
+        console.log('❌ 사용자 오프라인:', data.username);
+        setOnlineMembers(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(data.userId);
+          return newSet;
+        });
+      }
+    };
+
+    const handleOnlineUsersList = (data: { serverId: string; users: string[] }) => {
+      if (data.serverId === currentServer) {
+        console.log('📋 온라인 사용자 목록 업데이트:', data.users);
+        setOnlineMembers(new Set(data.users));
+      }
+    };
+
+    // 이벤트 리스너 등록
+    websocketService.on('user:online', handleUserOnline);
+    websocketService.on('user:offline', handleUserOffline);
+    websocketService.on('users:online:list', handleOnlineUsersList);
+
+    // 서버 변경 시 온라인 목록 재요청
+    const refreshInterval = setInterval(() => {
+      websocketService.requestOnlineUsers(currentServer);
+    }, 30000); // 30초마다 갱신
+
+    return () => {
+      websocketService.off('user:online', handleUserOnline);
+      websocketService.off('user:offline', handleUserOffline);
+      websocketService.off('users:online:list', handleOnlineUsersList);
+      clearInterval(refreshInterval);
+    };
   }, [currentServer]);
 
   // 멤버 필터링

@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import websocketService, { VoiceUser } from '../services/websocketService';
 import { useAppStore } from '../store/useAppStore';
-import cloudflareSFUService from '../services/cloudflareService';
+import cloudflareProxyService from '../services/cloudflareProxyService';
 
 // Speaking Detection 유틸리티
 class SpeakingDetector {
@@ -150,13 +150,20 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
     voiceUsers,
     isVoiceConnected,
     localMuted,
+    currentVoiceChannel: globalCurrentVoiceChannel,
     setVoiceUsers,
+    addVoiceUser,
     setVoiceConnected,
     setLocalMuted,
-    user
+    setCurrentVoiceChannel: setGlobalCurrentVoiceChannel
   } = useAppStore();
+  
+  // TODO: 실제 사용자 정보를 가져오는 로직 추가 필요
+  const user = { id: 'current-user', username: '사용자' };
 
-  const [currentVoiceChannel, setCurrentVoiceChannel] = useState<{ serverId: string; channelId: string } | undefined>();
+  // 글로벌 상태 사용 (로컬 상태 제거)
+  const currentVoiceChannel = globalCurrentVoiceChannel;
+  const setCurrentVoiceChannel = setGlobalCurrentVoiceChannel;
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStreams, setRemoteStreams] = useState<{ [trackId: string]: MediaStream }>({});
   const [localSpeaking, setLocalSpeaking] = useState(false);
@@ -180,7 +187,7 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
       console.log('🔗 SFU RTCPeerConnection 생성 중...');
       
       // TURN 자격증명 가져오기
-      const turnCredentials = await cloudflareSFUService.generateTurnCredentials(userId);
+      const turnCredentials = await cloudflareProxyService.generateTurnCredentials(userId);
       
       console.log('🔧 TURN 자격증명 상세:', {
         provider: turnCredentials.provider,
@@ -261,11 +268,11 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
   /**
    * 로컬 스트림 발행 (SFU에 업로드)
    */
-  const publishLocalStream = useCallback(async (stream: MediaStream, sessionId: string) => {
+  const publishLocalStream = useCallback(async (stream: MediaStream, sessionId: string): Promise<string> => {
     try {
       if (!peerConnection.current) {
         console.error('❌ PeerConnection이 없습니다');
-        return;
+        throw new Error('PeerConnection not available');
       }
 
       console.log('📺 로컬 스트림 SFU 발행 시작...');
@@ -274,25 +281,51 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
       const currentOffer = peerConnection.current.localDescription;
       if (!currentOffer) {
         console.error('❌ LocalDescription이 설정되지 않았습니다');
-        return;
+        throw new Error('LocalDescription not set');
       }
 
       console.log('📤 트랙 발행용 Offer 사용:', currentOffer.type);
 
-      // Cloudflare SFU에 트랙 발행
-      const track = await cloudflareSFUService.publishTrack(sessionId, currentOffer);
+      // Cloudflare SFU에 트랙 발행 (재시도 로직 포함)
+      let track;
+      try {
+        track = await cloudflareProxyService.publishTrack(sessionId, currentOffer);
+      } catch (error: any) {
+        // 410 Gone 에러인 경우 세션 재생성 후 재시도
+        if (error.message?.includes('410')) {
+          console.log('🔄 세션 만료로 인한 재시도 중...');
+          
+          // 새로운 세션 생성
+          const newSession = await cloudflareProxyService.createSession(currentVoiceChannel?.channelId || '', currentOffer);
+          setSfuSessionId(newSession.sessionId);
+          
+          // 새 Answer 설정
+          if (newSession.sessionDescription && peerConnection.current) {
+            await peerConnection.current.setRemoteDescription(new RTCSessionDescription(newSession.sessionDescription));
+            console.log('✅ 새 세션 Answer 설정 완료');
+          }
+          
+          // 새 세션으로 트랙 발행 재시도
+          track = await cloudflareProxyService.publishTrack(newSession.sessionId, currentOffer);
+          console.log('✅ 새 세션으로 트랙 발행 재시도 성공');
+        } else {
+          throw error;
+        }
+      }
       
       // 트랙 발행의 Answer는 별도 처리하지 않음 (이미 세션 Answer로 처리됨)
       console.log('📥 트랙 발행 응답:', track.sessionDescription ? '포함' : '없음');
 
       setPublishedTrackId(track.trackId);
       console.log('✅ 로컬 스트림 SFU 발행 완료:', track.trackId);
+      
+      return track.trackId;
 
     } catch (error) {
       console.error('❌ 로컬 스트림 발행 실패:', error);
       throw error;
     }
-  }, []);
+  }, [currentVoiceChannel]);
 
   /**
    * 원격 트랙 구독
@@ -319,7 +352,7 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
       await peerConnection.current.setLocalDescription(offer);
 
       // Cloudflare SFU에서 트랙 구독
-      const track = await cloudflareSFUService.subscribeToTrack(sessionId, trackName, offer);
+      const track = await cloudflareProxyService.subscribeToTrack(sessionId, trackName, offer);
       
       // Answer 설정
       if (track.sessionDescription) {
@@ -427,7 +460,7 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
 
       // 5. SFU 세션 생성 (실제 SDP 포함)
       console.log('5️⃣ SFU 세션 생성 중...');
-      const session = await cloudflareSFUService.createSession(channelId, offer);
+      const session = await cloudflareProxyService.createSession(channelId, offer);
       setSfuSessionId(session.sessionId);
       console.log('✅ SFU 세션 생성 완료:', session.sessionId);
 
@@ -440,31 +473,70 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
         throw new Error('세션에서 Answer를 받지 못했습니다');
       }
 
-      // 7. WebRTC 연결 완료 대기 (중요!)
-      console.log('7️⃣ WebRTC 연결 완료 대기 중...');
-      await waitForConnection(pc);
-
-      // 8. 로컬 스트림 발행 (연결 완료 후)
-      console.log('8️⃣ 로컬 스트림 SFU 발행 중...');
-      await publishLocalStream(stream, session.sessionId);
-
-      // 9. Signal Server에 음성 참가 알림 (trackId 포함)
-      console.log('9️⃣ Signal Server 음성 참가 알림...');
-      websocketService.joinVoiceChannel(serverId, channelId, publishedTrackId);
-      
-      // 로컬 사용자 trackId 설정 (WebSocket 메시지에 포함될 수 있도록)
-      if (publishedTrackId && user) {
-        console.log(`✅ 로컬 사용자 트랙 ID 설정: ${user.username} (${publishedTrackId})`);
-      }
-
+      // 7. 상태 즉시 설정 (UI 응답성 향상)
+      console.log('7️⃣ 음성 채널 상태 즉시 설정...');
       setCurrentVoiceChannel({ serverId, channelId });
       setVoiceConnected(true);
+
+      // 8. 로컬 스트림 발행 (연결 대기 없이 진행)
+      console.log('8️⃣ 로컬 스트림 SFU 발행 중...');
+      const trackId = await publishLocalStream(stream, session.sessionId);
+      console.log('✅ 트랙 ID 획득:', trackId);
+
+      // 9. 현재 사용자를 즉시 voiceUsers에 추가
+      const currentUser: VoiceUser = {
+        id: user?.id || 'current-user',
+        userId: user?.id || 'current-user',
+        username: user?.username || '사용자',
+        serverId: serverId,
+        channelId: channelId,
+        volume: 50,
+        isMuted: false,
+        isConnected: true,
+        trackId: trackId,
+        isSpeaking: false,
+      };
+      
+      console.log('👤 현재 사용자를 voiceUsers에 즉시 추가:', currentUser);
+      addVoiceUser(currentUser);
+      
+      // 10. Signal Server 음성 참가 알림
+      console.log('🔟 Signal Server 음성 참가 알림...');
+      websocketService.joinVoiceChannel(serverId, channelId, trackId);
+
+      // WebRTC 연결 완료를 백그라운드에서 대기 (블로킹 없음)
+      waitForConnection(pc).then(() => {
+        console.log('✅ WebRTC 연결 완료 (백그라운드)');
+        
+        // 연결 완료 후 기존 사용자 트랙 강제 구독 시도
+        setTimeout(() => {
+          console.log('🔄 기존 사용자 트랙 강제 구독 시도...');
+          const currentUsers = voiceUsers.filter(u => 
+            u.trackId && 
+            u.trackId !== publishedTrackId && 
+            u.serverId === serverId && 
+            u.channelId === channelId
+          );
+          
+          currentUsers.forEach(user => {
+            console.log(`🎧 강제 구독 시도: ${user.username} (${user.trackId})`);
+            subscribeToRemoteTrack(user.trackId!, session.sessionId)
+              .catch(error => console.warn('⚠️ 강제 구독 실패:', error));
+          });
+        }, 2000);
+      }).catch((error) => {
+        console.warn('⚠️ WebRTC 연결 완료 대기 실패 (무시됨):', error);
+      });
 
       console.log('✅ ========== SFU 음성 채널 참가 완료 ==========');
       console.log('');
 
     } catch (error) {
       console.error('❌ SFU 음성 채널 참가 실패:', error);
+      
+      // 상태 롤백 (에러 발생 시 UI 상태 복원)
+      setVoiceConnected(false);
+      setCurrentVoiceChannel(undefined);
       
       // 정리 작업
       if (localStream) {
@@ -478,9 +550,10 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
       setSfuSessionId(null);
       setPublishedTrackId(null);
       
+      console.log('🔄 음성 채널 상태 롤백 완료');
       throw error;
     }
-  }, [createSFUPeerConnection, publishLocalStream, waitForConnection, localStream, setVoiceConnected, user]);
+  }, [createSFUPeerConnection, publishLocalStream, waitForConnection, localStream, setVoiceConnected, user, addVoiceUser]);
 
   /**
    * 음성 채널 퇴장
@@ -500,7 +573,7 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
 
       // 2. 발행된 트랙 종료
       if (publishedTrackId && sfuSessionId) {
-        cloudflareSFUService.closeTrack(sfuSessionId, publishedTrackId)
+        cloudflareProxyService.closeTrack(sfuSessionId, publishedTrackId)
           .catch(error => console.warn('⚠️ 트랙 종료 실패:', error));
         setPublishedTrackId(null);
       }
@@ -541,7 +614,7 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
 
       // 6. 세션 정리
       if (currentVoiceChannel && sfuSessionId) {
-        cloudflareSFUService.cleanupSession(currentVoiceChannel.channelId)
+        cloudflareProxyService.cleanupSession(currentVoiceChannel.channelId)
           .catch(error => console.warn('⚠️ 세션 정리 실패:', error));
       }
 
@@ -549,6 +622,7 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
       setCurrentVoiceChannel(undefined);
       setSfuSessionId(null);
       setVoiceConnected(false);
+      setVoiceUsers([]); // 음성 사용자 목록 초기화
 
       console.log('✅ SFU 음성 채널 퇴장 완료');
 
@@ -597,22 +671,44 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
     const handler = (data: any) => {
       console.log('🔔 음성 참가 성공:', data);
       
-      // 음성 사용자 목록을 앱 스토어에 업데이트
+      // 기존 사용자 목록 처리 (현재 사용자는 이미 추가됨)
       if (data.currentUsers && Array.isArray(data.currentUsers)) {
-        console.log('👥 음성 사용자 목록 업데이트:', data.currentUsers);
-        setVoiceUsers(data.currentUsers);
-      }
-      
-      // 기존 사용자들의 트랙 구독
-      if (data.currentUsers && sfuSessionId) {
-        data.currentUsers.forEach((user: any) => {
-          const trackId = user.trackId || `audio_${user.id || user.userId}`;
-          if (trackId && trackId !== publishedTrackId) {
-            console.log(`🎧 기존 사용자 트랙 구독: ${user.username} (${trackId})`);
-            subscribeToRemoteTrack(trackId, sfuSessionId)
-              .catch(error => console.warn('⚠️ 자동 트랙 구독 실패:', error));
+        console.log('👥 기존 음성 사용자 목록:', data.currentUsers);
+        
+        // 기존 사용자들을 voiceUsers에 추가 (채널 정보 정규화)
+        data.currentUsers.forEach((voiceUser: VoiceUser) => {
+          // 현재 사용자가 아닌 경우만 추가
+          const currentUserId = user?.id || 'current-user';
+          if (voiceUser.id !== currentUserId && 
+              voiceUser.userId !== currentUserId) {
+            
+            // 채널 정보가 누락된 경우 현재 채널 정보로 설정
+            const normalizedUser: VoiceUser = {
+              ...voiceUser,
+              serverId: voiceUser.serverId || data.serverId,
+              channelId: voiceUser.channelId || data.channelId
+            };
+            
+            console.log('👤 기존 사용자 정규화:', {
+              original: voiceUser,
+              normalized: normalizedUser
+            });
+            
+            addVoiceUser(normalizedUser);
           }
         });
+        
+        // 기존 사용자들의 트랙 구독
+        if (sfuSessionId) {
+          data.currentUsers.forEach((user: any) => {
+            const trackId = user.trackId || `audio_${user.id || user.userId}`;
+            if (trackId && trackId !== publishedTrackId) {
+              console.log(`🎧 기존 사용자 트랙 구독: ${user.username} (${trackId})`);
+              subscribeToRemoteTrack(trackId, sfuSessionId)
+                .catch(error => console.warn('⚠️ 자동 트랙 구독 실패:', error));
+            }
+          });
+        }
       }
       
       callback(data);
@@ -620,35 +716,69 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
     
     websocketService.on('voice:join:success', handler);
     return () => websocketService.off('voice:join:success', handler);
-  }, [sfuSessionId, publishedTrackId, subscribeToRemoteTrack, setVoiceUsers]);
+  }, [sfuSessionId, publishedTrackId, subscribeToRemoteTrack, addVoiceUser, user]);
 
   const onVoiceMemberJoined = useCallback((callback: (user: VoiceUser) => void) => {
     const handler = (user: VoiceUser) => {
       console.log('🔔 음성 사용자 참가:', user.username, 'TrackID:', user.trackId);
       
+      // 채널 정보가 누락된 경우 현재 채널 정보로 설정
+      const normalizedUser: VoiceUser = {
+        ...user,
+        serverId: user.serverId || currentVoiceChannel?.serverId || '',
+        channelId: user.channelId || currentVoiceChannel?.channelId || ''
+      };
+      
+      console.log('👤 신규 사용자 정규화:', {
+        original: user,
+        normalized: normalizedUser
+      });
+      
       // 음성 사용자 목록에 새 사용자 추가
       setVoiceUsers(prevUsers => {
-        const existingUser = prevUsers.find(u => u.userId === user.userId);
+        const existingUser = prevUsers.find(u => u.userId === normalizedUser.userId);
         if (!existingUser) {
-          console.log('👥 새 사용자를 음성 목록에 추가:', user.username);
-          return [...prevUsers, user];
+          console.log('👥 새 사용자를 음성 목록에 추가:', normalizedUser.username);
+          return [...prevUsers, normalizedUser];
         }
         return prevUsers;
       });
       
-      // 새 사용자의 트랙 자동 구독
-      if (user.trackId && sfuSessionId && user.trackId !== publishedTrackId) {
-        console.log(`🎧 신규 사용자 트랙 구독: ${user.username} (${user.trackId})`);
-        subscribeToRemoteTrack(user.trackId, sfuSessionId)
-          .catch(error => console.warn('⚠️ 신규 사용자 트랙 구독 실패:', error));
+      // 새 사용자의 트랙 자동 구독 (강화된 로직)
+      if (normalizedUser.trackId && sfuSessionId && normalizedUser.trackId !== publishedTrackId) {
+        console.log(`🎧 신규 사용자 트랙 구독: ${normalizedUser.username} (${normalizedUser.trackId})`);
+        console.log(`🔍 구독 조건 확인: trackId=${normalizedUser.trackId}, sessionId=${sfuSessionId}, publishedTrackId=${publishedTrackId}`);
+        
+        subscribeToRemoteTrack(normalizedUser.trackId, sfuSessionId)
+          .then(() => {
+            console.log(`✅ 신규 사용자 트랙 구독 성공: ${normalizedUser.username}`);
+          })
+          .catch(error => {
+            console.error(`❌ 신규 사용자 트랙 구독 실패: ${normalizedUser.username}`, error);
+            
+            // 재시도 로직
+            setTimeout(() => {
+              console.log(`🔄 트랙 구독 재시도: ${normalizedUser.username} (${normalizedUser.trackId})`);
+              subscribeToRemoteTrack(normalizedUser.trackId!, sfuSessionId)
+                .catch(retryError => console.error('❌ 트랙 구독 재시도 실패:', retryError));
+            }, 3000);
+          });
+      } else {
+        console.warn('⚠️ 트랙 구독 조건 불충족:', {
+          hasTrackId: !!normalizedUser.trackId,
+          hasSessionId: !!sfuSessionId,
+          isDifferentTrack: normalizedUser.trackId !== publishedTrackId,
+          userTrackId: normalizedUser.trackId,
+          publishedTrackId: publishedTrackId
+        });
       }
       
-      callback(user);
+      callback(normalizedUser);
     };
     
     websocketService.on('voice:user-joined', handler);
     return () => websocketService.off('voice:user-joined', handler);
-  }, [sfuSessionId, publishedTrackId, subscribeToRemoteTrack, setVoiceUsers]);
+  }, [sfuSessionId, publishedTrackId, subscribeToRemoteTrack, setVoiceUsers, currentVoiceChannel]);
 
   const onVoiceMemberLeft = useCallback((callback: (user: VoiceUser) => void) => {
     const handler = (user: VoiceUser) => {
@@ -804,4 +934,113 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
     onVoiceMemberJoined,
     onVoiceMemberLeft,
   };
+};
+
+/**
+ * 브라우저 종료/페이지 이탈 감지 및 세션 정리
+ */
+export const useVoiceSessionCleanup = () => {
+  const { leaveVoiceChannel, isVoiceConnected, currentVoiceChannel } = useVoiceChatSFU();
+
+  useEffect(() => {
+    // 즉시 실행 함수로 정리 로직 생성
+    const cleanupVoiceSession = () => {
+      console.log('🚨 브라우저 종료 감지 - 전체 세션 긴급 정리 시작');
+      
+      // 1. 음성 채널에서 나가기 (우선 순위 최고)
+      if (isVoiceConnected && currentVoiceChannel) {
+        console.log('🎤 음성 세션 정리 중...');
+        
+        // 동기적으로 WebSocket에 나가기 알림 전송
+        if (websocketService.isConnected()) {
+          websocketService.leaveVoiceChannel(
+            currentVoiceChannel.serverId, 
+            currentVoiceChannel.channelId
+          );
+        }
+        
+        // SFU 세션 정리 (비동기지만 최대한 시도)
+        try {
+          leaveVoiceChannel();
+        } catch (error) {
+          console.warn('⚠️ 종료 시 음성 세션 정리 중 오류:', error);
+        }
+      }
+      
+      // 2. WebSocket 연결 정리
+      if (websocketService.isConnected()) {
+        console.log('🔌 WebSocket 연결 정리 중...');
+        try {
+          // 서버에 연결 해제 알림 전송 후 연결 종료
+          websocketService.disconnect();
+          console.log('✅ WebSocket 연결 정리 완료');
+        } catch (error) {
+          console.warn('⚠️ WebSocket 연결 정리 중 오류:', error);
+        }
+      }
+      
+      console.log('✅ 전체 세션 긴급 정리 완료');
+    };
+
+    // 1. 브라우저 창 닫기 / 탭 닫기 감지
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (isVoiceConnected) {
+        console.log('🚨 beforeunload 이벤트 감지');
+        cleanupVoiceSession();
+        
+        // 사용자에게 경고 메시지 표시 (선택사항)
+        event.preventDefault();
+        event.returnValue = '음성 채팅을 종료하시겠습니까?';
+        return event.returnValue;
+      }
+    };
+
+    // 2. 페이지 숨김/나가기 감지 (모바일 포함)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && isVoiceConnected) {
+        console.log('🚨 페이지 숨김 감지 - 음성 세션 정리');
+        cleanupVoiceSession();
+      }
+    };
+
+    // 3. 페이지 언로드 감지 (최후의 수단)
+    const handleUnload = () => {
+      if (isVoiceConnected) {
+        console.log('🚨 unload 이벤트 감지');
+        cleanupVoiceSession();
+      }
+    };
+
+    // 4. popstate 이벤트 감지 (뒤로가기/앞으로가기)
+    const handlePopState = () => {
+      if (isVoiceConnected) {
+        console.log('🚨 브라우저 네비게이션 감지');
+        cleanupVoiceSession();
+      }
+    };
+
+    // 5. 온라인/오프라인 상태 변화 감지
+    const handleOffline = () => {
+      if (isVoiceConnected) {
+        console.log('🚨 오프라인 상태 감지');
+        cleanupVoiceSession();
+      }
+    };
+
+    // 이벤트 리스너 등록
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('unload', handleUnload);
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('offline', handleOffline);
+
+    // 정리 함수
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('unload', handleUnload);
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [isVoiceConnected, currentVoiceChannel, leaveVoiceChannel]);
 };

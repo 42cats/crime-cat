@@ -3,7 +3,6 @@ import { ServerSidebar } from './ServerSidebar';
 import { ChannelSidebar } from './ChannelSidebar';
 import { ChatArea } from './ChatArea';
 import { ChatInput } from './ChatInput';
-import { VoiceBar } from './VoiceBar';
 import { MemberList } from './MemberList';
 import { RemoteAudioPlayer } from '../voice/RemoteAudioPlayer';
 import { useWebSocket } from '../../hooks/useWebSocket';
@@ -16,7 +15,6 @@ interface ChatLayoutProps {
 
 export const ChatLayout: React.FC<ChatLayoutProps> = ({ className = '' }) => {
   const { isConnected } = useWebSocket();
-  const { isVoiceConnected } = useAppStore();
   const { remoteStreams } = useVoiceChatSFU();
 
   return (
@@ -38,7 +36,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ className = '' }) => {
       <ChannelSidebar />
 
       {/* 메인 채팅 영역 */}
-      <div className={`flex-1 flex flex-col ${isVoiceConnected ? 'pb-16' : ''}`}>
+      <div className="flex-1 flex flex-col">
         {/* 채팅 영역 */}
         <ChatArea className="flex-1" />
 
@@ -51,8 +49,6 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({ className = '' }) => {
       {/* 멤버 목록 */}
       <MemberList />
 
-      {/* Discord 스타일 VoiceBar (음성 채널 연결시 화면 하단 고정) */}
-      <VoiceBar />
 
       {/* 원격 오디오 재생 (UI 없음, 오디오만 처리) */}
       <RemoteAudioPlayer remoteStreams={remoteStreams} />

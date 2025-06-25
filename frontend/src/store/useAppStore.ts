@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { VoiceUser } from '../services/websocketService';
 
 export interface ChatMessage {
   id: string;
@@ -14,19 +15,6 @@ export interface ChatMessage {
     displayName: string;
   };
   buffered?: boolean;
-}
-
-export interface VoiceUser {
-  id: string;
-  username: string;
-  serverId?: number;
-  channelId?: number;
-  avatar?: string;
-  volume: number;
-  isMuted: boolean;
-  isConnected: boolean;
-  isDeafened?: boolean;
-  isScreenSharing?: boolean;
 }
 
 export interface ServerRole {
@@ -51,7 +39,7 @@ export interface ChannelInfo {
   serverId: string;
   name: string;
   description?: string;
-  type: 'TEXT' | 'VOICE' | 'BOTH';
+  type: 'TEXT' | 'VOICE';  // Phase 1에서 BOTH 제거
   memberCount: number;
   maxMembers: number;
 }
@@ -254,24 +242,52 @@ export const useAppStore = create<AppState>((set, get) => ({
   
   // Voice Actions
   setVoiceUsers: (users) => 
-    set({ voiceUsers: users }),
+    set({ voiceUsers: Array.isArray(users) ? users : [] }),
     
   addVoiceUser: (user) => 
-    set((state) => ({ 
-      voiceUsers: [...state.voiceUsers, user] 
-    })),
+    set((state) => {
+      const voiceUsers = Array.isArray(state.voiceUsers) ? state.voiceUsers : [];
+      // 중복 체크 (id 또는 userId로)
+      const exists = voiceUsers.some(u => 
+        u.id === user.id || 
+        (user.userId && (u.id === user.userId || u.userId === user.userId))
+      );
+      if (exists) {
+        return state; // 이미 존재하면 추가하지 않음
+      }
+      
+      // 필수 필드 기본값 설정
+      const normalizedUser: VoiceUser = {
+        id: user.id || user.userId || '',
+        username: user.username || 'Unknown',
+        serverId: user.serverId || '',
+        channelId: user.channelId || '',
+        volume: user.volume ?? 50,
+        isMuted: user.isMuted ?? false,
+        isConnected: user.isConnected ?? true,
+        ...user // 나머지 필드들
+      };
+      
+      return { voiceUsers: [...voiceUsers, normalizedUser] };
+    }),
     
   removeVoiceUser: (userId) => 
-    set((state) => ({ 
-      voiceUsers: state.voiceUsers.filter(u => u.id !== userId) 
-    })),
+    set((state) => {
+      const voiceUsers = Array.isArray(state.voiceUsers) ? state.voiceUsers : [];
+      return { 
+        voiceUsers: voiceUsers.filter(u => u.id !== userId && u.userId !== userId) 
+      };
+    }),
     
   updateUserVolume: (userId, volume) =>
-    set((state) => ({
-      voiceUsers: state.voiceUsers.map(user =>
-        user.id === userId ? { ...user, volume } : user
-      )
-    })),
+    set((state) => {
+      const voiceUsers = Array.isArray(state.voiceUsers) ? state.voiceUsers : [];
+      return {
+        voiceUsers: voiceUsers.map(user =>
+          (user.id === userId || user.userId === userId) ? { ...user, volume } : user
+        )
+      };
+    }),
     
   setVoiceConnected: (connected) => 
     set({ isVoiceConnected: connected }),

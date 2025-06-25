@@ -85,6 +85,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({ className = '' }) => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // IME 조합 중인지 확인 (한글 입력 처리)
+    if (e.nativeEvent.isComposing || e.keyCode === 229) {
+      return; // 한글 조합 중이면 아무것도 하지 않음
+    }
+    
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);

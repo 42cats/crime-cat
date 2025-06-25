@@ -1,6 +1,4 @@
-console.log('📥 Importing socket.io-client...');
 import { io, Socket } from 'socket.io-client';
-console.log('✅ socket.io-client imported successfully', { io, Socket });
 
 export interface ServerInfo {
   id: string;
@@ -46,18 +44,19 @@ export interface ChatMessage {
 }
 
 export interface VoiceUser {
-  id: string;  // useAppStore와 통일
-  userId: string;  // 하위 호환성을 위해 유지
+  id: string;  // 메인 ID (useAppStore와 통일)
+  userId?: string;  // 하위 호환성을 위해 선택적 유지
   username: string;
-  serverId: string;
-  channelId: string;
+  serverId: string;  // UUID 문자열
+  channelId: string;  // UUID 문자열
   trackId?: string;  // SFU 트랙 ID (Cloudflare Realtime)
-  volume?: number;
-  isMuted?: boolean;
+  avatar?: string;  // useAppStore와 통일
+  volume: number;  // useAppStore와 통일 (필수, 기본값 50)
+  isMuted: boolean;  // useAppStore와 통일 (필수, 기본값 false)
+  isConnected: boolean;  // useAppStore와 통일 (필수, 기본값 true)
   isDeafened?: boolean;
   isScreenSharing?: boolean;
   isSpeaking?: boolean;  // Phase 1에서 추가된 Speaking Detection
-  isConnected?: boolean;
   joinedAt?: Date;
   lastActivity?: Date;
 }
@@ -85,8 +84,8 @@ class WebSocketService {
     this.initializeConnection();
   }
 
-  private initializeConnection() {
-    const token = this.getAuthToken();
+  private async initializeConnection() {
+    const token = await this.getAuthToken();
     const signalServerUrl = import.meta.env.VITE_SIGNAL_SERVER_URL || 'http://localhost:4000';
     
     console.log('🔌 Initializing WebSocket connection...');
@@ -124,27 +123,43 @@ class WebSocketService {
     this.setupEventHandlers();
   }
 
-  private getAuthToken(): string | null {
-    console.log('🔑 Searching for auth token...');
-    console.log('🍪 All cookies:', document.cookie);
+  private async getAuthToken(): Promise<string | null> {
+    console.log('🔑 Fetching auth token from backend...');
     
-    // 쿠키에서 토큰 추출 (여러 가능한 토큰 이름 시도)
-    const cookies = document.cookie.split(';');
+    try {
+      // 백엔드 API를 통해 토큰 획득
+      const response = await fetch('/api/v1/auth/websocket-token', {
+        method: 'GET',
+        credentials: 'include', // 쿠키 포함
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Successfully retrieved token from backend');
+        return data.token;
+      } else {
+        console.warn('⚠️ Failed to get token from backend:', response.status, response.statusText);
+        
+        // 백엔드 실패 시 기존 방식으로 폴백
+        return this.getAuthTokenFallback();
+      }
+    } catch (error) {
+      console.error('❌ Error fetching token from backend:', error);
+      
+      // 에러 발생 시 기존 방식으로 폴백
+      return this.getAuthTokenFallback();
+    }
+  }
+
+  private getAuthTokenFallback(): string | null {
+    console.log('🔄 Falling back to client-side token search...');
+    
+    // localStorage에서 확인
     const possibleTokenNames = ['Authorization', 'RefreshToken', 'accessToken', 'access_token', 'jwt', 'token', 'authToken'];
     
-    console.log('🍪 Parsed cookies:', cookies.map(c => c.trim().split('=')));
-    
-    for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      console.log(`🔍 Checking cookie: ${name} = ${value ? '[PRESENT]' : '[EMPTY]'}`);
-      if (possibleTokenNames.includes(name)) {
-        console.log('✅ Found auth token in cookies:', name, value ? 'present' : 'empty');
-        return value;
-      }
-    }
-    
-    // localStorage에서도 확인
-    console.log('🗃️ Checking localStorage...');
     for (const tokenName of possibleTokenNames) {
       const token = localStorage.getItem(tokenName);
       if (token) {
@@ -153,8 +168,7 @@ class WebSocketService {
       }
     }
     
-    console.warn('⚠️ No auth token found in cookies or localStorage');
-    console.log('🔍 Available localStorage keys:', Object.keys(localStorage));
+    console.warn('⚠️ No auth token found');
     return null;
   }
 
@@ -267,33 +281,18 @@ class WebSocketService {
         channelId: data.channelId
       };
       
-      // 기존 참가자 목록 처리
-      if (data.currentUsers && data.currentUsers.length > 0) {
-        console.log('📋 Current voice users:', data.currentUsers);
-        // 각 기존 사용자를 store에 추가
-        data.currentUsers.forEach((user: VoiceUser) => {
-          this.emit('voice:member:joined', user);
-        });
-        
-        // 각 기존 사용자와 WebRTC 연결 시작을 위해 이벤트 발생
-        data.currentUsers.forEach((user: VoiceUser) => {
-          // VoiceArea 컴포넌트에서 처리하도록 이벤트 발생
-          this.emit('voice:init-connection', {
-            targetUserId: user.id || user.userId,
-            username: user.username
-          });
-        });
-      }
-      
-      this.emit('voice:joined', data);
+      // voice:join:success 이벤트를 그대로 전달
+      this.emit('voice:join:success', data);
     });
 
     this.socket.on('voice:user-joined', (data: VoiceUser) => {
-      this.emit('voice:member:joined', data);
+      console.log('🔔 Voice user joined:', data);
+      this.emit('voice:user-joined', data);
     });
 
     this.socket.on('voice:user-left', (data: VoiceUser) => {
-      this.emit('voice:member:left', data);
+      console.log('👋 Voice user left:', data);
+      this.emit('voice:user-left', data);
     });
 
     this.socket.on('voice:volume', (data) => {
@@ -317,21 +316,6 @@ class WebSocketService {
       this.emit('voice:users:received', data);
     });
 
-    this.socket.on('voice:joined', (data) => {
-      console.log('✅ Voice channel joined with users:', data);
-      this.connectionState.currentVoiceChannel = {
-        serverId: data.serverId,
-        channelId: data.channelId
-      };
-      
-      // Phase 2에서 업데이트된 사용자 목록 처리
-      if (data.users && data.users.length > 0) {
-        console.log('📋 Voice channel users:', data.users);
-        this.emit('voice:users:received', data);
-      }
-      
-      this.emit('voice:joined', data);
-    });
 
     // SFU 트랙 관리 이벤트 (P2P WebRTC 시그널링 대체)
     this.socket.on('sfu:track:published', (data) => {
@@ -364,6 +348,22 @@ class WebSocketService {
 
     this.socket.on('sfu:track:unpublish:error', (data) => {
       this.emit('sfu:track:unpublish:error', data);
+    });
+
+    // 사용자 온라인 상태 관련 이벤트
+    this.socket.on('user:online', (data) => {
+      console.log('✅ User came online:', data);
+      this.emit('user:online', data);
+    });
+
+    this.socket.on('user:offline', (data) => {
+      console.log('❌ User went offline:', data);
+      this.emit('user:offline', data);
+    });
+
+    this.socket.on('users:online:list', (data) => {
+      console.log('📋 Online users list:', data);
+      this.emit('users:online:list', data);
     });
 
     // 에러 처리
@@ -531,6 +531,14 @@ class WebSocketService {
       serverId,
       channelId
     });
+  }
+
+  // 서버 내 온라인 사용자 목록 요청
+  requestOnlineUsers(serverId: string) {
+    if (!this.socket?.connected) return;
+
+    console.log('📡 온라인 사용자 목록 요청:', serverId);
+    this.socket.emit('users:get-online', { serverId });
   }
 
   // SFU 트랙 관리 메서드 (P2P WebRTC 시그널링 대체)
