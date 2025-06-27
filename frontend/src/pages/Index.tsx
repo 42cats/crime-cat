@@ -31,10 +31,10 @@ const Index: React.FC = () => {
             />
             <div className="pt-20">
                 <GameAdsCarousel />
+                <LatestPostsSection />
                 <BotAddSection />
                 {/* <BotStatsSection /> */}
                 <AnnouncementSection />
-                <LatestPostsSection />
                 {/* <GameAdsSection />
                 <CurrentGamesSection /> */}
             </div>
