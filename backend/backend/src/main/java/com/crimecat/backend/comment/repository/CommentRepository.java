@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -20,6 +22,23 @@ public interface CommentRepository extends JpaRepository<Comment, UUID> {
 
     @EntityGraph(attributePaths = {"author", "gameTheme"})
     Page<Comment> findByGameThemeIdAndParentIdIsNull(UUID gameThemeId, Pageable pageable);
+    
+    // JOIN FETCH를 사용한 댓글 조회 (삭제되지 않은 댓글)
+    @Query("SELECT DISTINCT c FROM Comment c " +
+           "LEFT JOIN FETCH c.author " +
+           "LEFT JOIN FETCH c.gameTheme gt " +
+           "WHERE c.gameThemeId = :gameThemeId " +
+           "AND c.parentId IS NULL " +
+           "AND c.isDeleted = false")
+    Page<Comment> findCommentsWithGameTheme(@Param("gameThemeId") UUID gameThemeId, Pageable pageable);
+    
+    // JOIN FETCH를 사용한 댓글 조회 (모든 댓글)
+    @Query("SELECT DISTINCT c FROM Comment c " +
+           "LEFT JOIN FETCH c.author " +
+           "LEFT JOIN FETCH c.gameTheme gt " +
+           "WHERE c.gameThemeId = :gameThemeId " +
+           "AND c.parentId IS NULL")
+    Page<Comment> findAllCommentsWithGameTheme(@Param("gameThemeId") UUID gameThemeId, Pageable pageable);
 
     // 부모 댓글에 대한 대댓글 조회
     @EntityGraph(attributePaths = {"author"})

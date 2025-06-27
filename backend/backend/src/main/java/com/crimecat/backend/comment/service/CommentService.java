@@ -215,7 +215,7 @@ public class CommentService {
     //@Cacheable(value = "comment:list", key = "'theme:' + #gameThemeId + ':page:' + #page + ':size:' + #size + ':sort:' + #sortType")
     public Page<CommentResponse> getComments(UUID gameThemeId, UUID userId, int page, int size, CommentSortType sortType) {
         Pageable pageable = PageRequest.of(page, size, sortType.getSort());
-        Page<Comment> comments = commentRepository.findByGameThemeIdAndParentIdIsNull(
+        Page<Comment> comments = commentRepository.findAllCommentsWithGameTheme(
                 gameThemeId, pageable);
         
         boolean canViewSpoiler = hasPlayedGameTheme(userId, gameThemeId);
@@ -234,7 +234,7 @@ public class CommentService {
     //@Cacheable(value = "comment:public", key = "'theme:' + #gameThemeId + ':page:' + #page + ':size:' + #size + ':sort:' + #sortType")
     public Page<CommentResponse> getPublicComments(UUID gameThemeId, int page, int size, CommentSortType sortType) {
         Pageable pageable = PageRequest.of(page, size, sortType.getSort());
-        Page<Comment> comments = commentRepository.findByGameThemeIdAndParentIdIsNull(
+        Page<Comment> comments = commentRepository.findAllCommentsWithGameTheme(
                 gameThemeId, pageable);
         
         // 비로그인 사용자는 스포일러 내용을 볼 수 없음

@@ -82,7 +82,7 @@ class RedisManager {
 				if (!jsonData) {
 					return null;
 				}
-				console.log(`✅ String data retrieved from Redis: ${jsonData}`);
+				// console.log(`✅ String data retrieved from Redis: ${jsonData}`);
 				return JSON.parse(jsonData);
 			} else {
 				console.warn(`⚠️ Unsupported Redis data type (${type}) for key: ${key}`);

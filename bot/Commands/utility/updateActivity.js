@@ -76,21 +76,21 @@ async function getActiveThemeAdvertisements(redis) {
 
 		// 백엔드에서 설정한 캐시 키 사용
 		const cacheKey = "theme:ad:active";
-		
+
 		// RedisManager의 getValue 메서드 사용 (타입 체크와 JSON 파싱 자동 처리)
 		const activeAdsData = await redis.getValue(cacheKey);
-		
+
 		if (!activeAdsData) {
 			console.log('📢 No active theme advertisements found');
 			return [];
 		}
-		
+
 		if (!Array.isArray(activeAdsData)) {
 			console.warn('⚠️ Active ads data is not an array:', typeof activeAdsData);
 			return [];
 		}
-		
-		console.log(`📢 Found ${activeAdsData.length} active theme advertisements`);
+
+		// console.log(`📢 Found ${activeAdsData.length} active theme advertisements`);
 		return activeAdsData;
 
 	} catch (error) {
