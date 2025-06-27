@@ -13,16 +13,7 @@ module.exports = {
             // 오너 정보 가져오기
             const owner = await guild.client.users.fetch(guild.ownerId);
 
-            // 전송할 메시지 구성
-            const payload = {
-                type: 'NEW_GUILD_JOINED',
-                guildId: guild.id,
-                guildName: guild.name,
-                memberCount: guild.memberCount,
-                ownerId: guild.ownerId,
-                ownerTag: owner?.tag ?? '알 수 없음',
-                joinedAt: new Date().toISOString(),
-            };
+            // 로그용 데이터만 남기고 payload 변수 제거
 
             logger.info('🎉 [이벤트] 새 길드 참가 감지', {
                 guildId: guild.id,
@@ -34,13 +25,14 @@ module.exports = {
 
             // 마스터에게 전송
             if (guild.client.master) {
-                await guild.client.master.send(payload);
+                const message = `🎉 새 길드 참가: **${guild.name}** (ID: ${guild.id})\n멤버 수: ${guild.memberCount}명\n오너: ${owner?.tag ?? '알 수 없음'} (ID: ${guild.ownerId})`;
+                await guild.client.master.send({ content: message });
             }
 
             await guildAddProcess(guild.client, targetGuild);
             
             if (guild.client.master) {
-                await guild.client.master.send('길드 추가 프로세스 완료');
+                await guild.client.master.send({ content: '✅ 길드 추가 프로세스 완료' });
             }
 
             logger.info('✅ [길드 처리] 새 길드 추가 프로세스 완료', {

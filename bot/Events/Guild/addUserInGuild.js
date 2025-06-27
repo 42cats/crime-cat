@@ -4,7 +4,7 @@ const { getUserHistory, addUserHistory } = require('../../Commands/api/history/h
 const addObserverPemission = require('../../Commands/utility/addObserverPemission');
 const logger = require('../../Commands/utility/logger');
 module.exports = {
-    name: "GuildMemberAdd",
+    name: "guildMemberAdd",
     once: false,
 
     /**

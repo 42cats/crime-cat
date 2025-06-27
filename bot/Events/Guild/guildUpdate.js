@@ -7,7 +7,7 @@ const BEARER_TOKEN = process.env.DISCORD_CLIENT_SECRET;
 const baseUrl = process.env.BASE_URL;
 
 module.exports = {
-    name: 'GuildUpdate',
+    name: 'guildUpdate',
     once: false,
     async execute(oldGuild, newGuild) {
         try {
