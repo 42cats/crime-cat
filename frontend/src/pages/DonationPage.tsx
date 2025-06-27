@@ -14,8 +14,7 @@ const DonationPage: React.FC = () => {
             <section className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">💝 후원 방법</h2>
                 <p className="mb-4">
-                    냥이봇은 여러분의 후원으로 유지되고 발전합니다. 아래 방법을
-                    통해 후원해 주시면 감사의 의미로 포인트 쿠폰을 보내드립니다.
+                    냥이봇은 여러분의 후원으로 유지되고 발전합니다. 
                 </p>
                 <ul className="list-disc list-inside mb-6">
                     <li>
@@ -50,16 +49,16 @@ const DonationPage: React.FC = () => {
                     </a>
                 </div>
 
-                <p className="mt-4 text-muted-foreground">
+                {/* <p className="mt-4 text-muted-foreground">
                     📌 후원 후 <strong>디스코드 짭냥이 봇에게 DM</strong>으로{" "}
                     <strong>입금자명</strong>을 알려주세요.
                     <br />
                     📌 확인 후 포인트 코드(32자리 영문+숫자)를 보내드립니다.
-                </p>
+                </p> */}
             </section>
 
             {/* 리워드 포인트 안내 */}
-            <section className="mb-10">
+            {/* <section className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">
                     🎟️ 리워드 포인트란?
                 </h2>
@@ -86,10 +85,10 @@ const DonationPage: React.FC = () => {
                 <p className="mt-4 text-muted-foreground">
                     📌 이 코드는 타인에게 선물하거나 양도할 수 있습니다.
                 </p>
-            </section>
+            </section> */}
 
             {/* 후원 정책 안내 */}
-            <section className="mb-10">
+            {/* <section className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">🔄 후원 정책</h2>
                 <ul className="list-disc list-inside">
                     <li>현재는 전액 리워드 형식으로 포인트를 제공합니다.</li>
@@ -102,10 +101,10 @@ const DonationPage: React.FC = () => {
                         배정됩니다.
                     </li>
                 </ul>
-            </section>
+            </section> */}
 
             {/* 후원 후 절차 */}
-            <section className="mb-10">
+            {/* <section className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">
                     🎯 후원 이후 절차
                 </h2>
@@ -124,9 +123,9 @@ const DonationPage: React.FC = () => {
                     <li>
                         <code>/권한업글</code> 명령어로 원하는 기능 활성화
                     </li>
-                </ol>
+                </ol> */}
 
-                <p className="mt-4 text-muted-foreground">
+                {/* <p className="mt-4 text-muted-foreground">
                     📌 궁금한 점은{" "}
                     <Link to="/contact" className="underline text-primary">
                         문의하기
@@ -138,7 +137,7 @@ const DonationPage: React.FC = () => {
             <div className="mt-12 text-center font-semibold text-muted-foreground">
                 후원에 감사드리며, 냥이봇과 함께 더욱 즐거운 디스코드 생활을
                 누려보세요! 🐾😺💖
-            </div>
+            </div> */}
         </div>
     );
 };
