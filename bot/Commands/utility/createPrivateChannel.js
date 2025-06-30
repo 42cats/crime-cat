@@ -2,6 +2,27 @@ const { ChannelType, PermissionFlagsBits } = require('discord.js');
 const categoryManager = require('./categoryManager');
 
 /**
+ * 최상위 역할 이름 가져오기 헬퍼 함수
+ * @param {import('discord.js').GuildMember} member - 길드 멤버 객체
+ * @returns {string|null} 역할 이름 또는 null
+ */
+function getHighestRoleName(member) {
+    try {
+        const highestRole = member.roles.highest;
+
+        // @everyone 역할이면 null 반환 (unknown-role로 폴백)
+        if (!highestRole || highestRole.name === '@everyone') {
+            return null;
+        }
+
+        return highestRole.name;
+    } catch (error) {
+        console.error(`[채널명] 최상위 역할 가져오기 실패:`, error);
+        return null;
+    }
+}
+
+/**
  * 사용자 전용 채널 생성 함수
  * @param {import('discord.js').Guild} guild - 길드 객체
  * @param {import('discord.js').GuildMember} member - 길드 멤버 객체  
@@ -10,9 +31,29 @@ const categoryManager = require('./categoryManager');
  * @returns {Promise<import('discord.js').TextChannel>} 생성된 채널 객체
  */
 async function createPrivateChannel(guild, member, observerRoleId, roleId) {
-    // 역할 이름 가져오기
-    const role = guild.roles.cache.get(roleId);
-    const roleName = role ? role.name : 'unknown-role';
+    let roleName;
+
+    // 1순위: roleId가 있고 유효한 경우 해당 역할 이름 사용
+    if (roleId && roleId !== 'ALL') {
+        const role = guild.roles.cache.get(roleId);
+        if (role) {
+            roleName = role.name;
+            console.log(`[채널명] roleId 역할 사용: ${roleName}`);
+        } else {
+            console.warn(`[채널명] roleId ${roleId}를 찾을 수 없음, 최상위 역할로 폴백`);
+            roleName = getHighestRoleName(member);
+        }
+    } else {
+        // 2순위: roleId가 없으면 사용자의 최상위 역할 사용
+        roleName = getHighestRoleName(member);
+        console.log(`[채널명] 최상위 역할 사용: ${roleName}`);
+    }
+
+    // 3순위: 최상위 역할도 없으면 unknown-role로 폴백
+    if (!roleName) {
+        roleName = '';
+        console.warn(`[채널명] 역할을 찾을 수 없어 기본값 사용: ${roleName}`);
+    }
 
     // 채널명 생성 (사용자명-롤이름-사용자유저네임)
     const channelName = `${member.displayName || member.user.globalName}-${roleName}-${member.user.globalName}`.toLowerCase().replace(/[^a-z0-9가-힣\-]/g, '-');
