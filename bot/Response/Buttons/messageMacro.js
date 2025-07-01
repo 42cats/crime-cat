@@ -447,7 +447,7 @@ module.exports = {
 				hasPermissionForAnyContent = true;
 
 				// 역할옵션이 켜져 있고 역할 권한이 있는 경우
-				if (isRoleOption && roleId && roleId !== "ALL") {
+				if (isRoleOption && roleId) {
 					if (isDesignatedChannel) {
 						// 지정채널 모드: channelId로 직접 전송
 						try {
@@ -518,16 +518,19 @@ module.exports = {
 								const observerData = await getGuildObserverSet(interaction.guild.id);
 								const observerRoleId = observerData?.data?.roleSnowFlake;
 
-								console.log(`[역할옵션] 새 채널 생성 시작 - 사용자: ${interaction.user.tag}, 관전자 역할: ${observerRoleId || '없음'}`);
+								console.log(`[역할옵션] 새 채널 생성 시작 - 사용자: ${interaction.user.tag}, 관전자 역할: ${observerRoleId || '없음'}, roleId: ${roleId}`);
+
+								// roleId가 'ALL'이면 null로 전달 (사용자 최상위 역할 사용)
+								const actualRoleId = roleId === 'ALL' ? null : roleId;
 
 								targetChannel = await createPrivateChannel(
 									interaction.guild,
 									interaction.member,
 									observerRoleId,
-									roleId
+									actualRoleId
 								);
 
-								// Redis에 저장
+								// Redis에 저장 (actualRoleId 대신 원본 roleId 저장)
 								await channelManager.setUserPrivateChannel(
 									interaction.user.id,
 									interaction.guild.id,
@@ -551,11 +554,16 @@ module.exports = {
 									const observerData = await getGuildObserverSet(interaction.guild.id);
 									const observerRoleId = observerData?.data?.roleSnowFlake;
 
+									console.log(`[역할옵션] 복구 채널 생성 시작 - roleId: ${roleId}`);
+									
+									// roleId가 'ALL'이면 null로 전달 (사용자 최상위 역할 사용)
+									const actualRoleId = roleId === 'ALL' ? null : roleId;
+									
 									targetChannel = await createPrivateChannel(
 										interaction.guild,
 										interaction.member,
 										observerRoleId,
-										roleId
+										actualRoleId
 									);
 
 									await channelManager.setUserPrivateChannel(

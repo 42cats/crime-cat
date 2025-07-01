@@ -44,9 +44,9 @@ async function createPrivateChannel(guild, member, observerRoleId, roleId) {
             roleName = getHighestRoleName(member);
         }
     } else {
-        // 2순위: roleId가 없으면 사용자의 최상위 역할 사용
+        // 2순위: roleId가 없거나 'ALL'이면 사용자의 최상위 역할 사용
         roleName = getHighestRoleName(member);
-        console.log(`[채널명] 최상위 역할 사용: ${roleName}`);
+        console.log(`[채널명] 최상위 역할 사용: ${roleName} (roleId: ${roleId || 'null'})`);
     }
 
     // 3순위: 최상위 역할도 없으면 unknown-role로 폴백

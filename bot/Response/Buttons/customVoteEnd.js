@@ -1,9 +1,9 @@
 const { ButtonInteraction, Client, PermissionFlagsBits } = require('discord.js');
 const { decodeFromString } = require('../../Commands/utility/delimiterGeter');
-const { endVote } = require('../../Commands/복면투표');
+const { endVote } = require('../../Commands/커스텀투표');
 
 module.exports = {
-    name: "maskedVoteEnd",
+    name: "customVoteEnd",
     /**
      * @param {Client} client 
      * @param {ButtonInteraction} interaction 
@@ -23,14 +23,13 @@ module.exports = {
                 });
             }
             
-            // 권한 확인 (투표 생성자 또는 관리자만 종료 가능)
-            const isCreator = user.id === metaData.creatorId;
+            // 권한 확인 (관리자만 종료 가능)
             const isAdmin = member.permissions.has(PermissionFlagsBits.Administrator);
             const isOwner = guild.ownerId === user.id;
             
-            if (!isCreator && !isAdmin && !isOwner) {
+            if (!isAdmin && !isOwner) {
                 return await interaction.reply({
-                    content: '❌ 투표를 종료할 권한이 없습니다. (투표 생성자 또는 관리자만 가능)',
+                    content: '❌ 투표를 종료할 권한이 없습니다. (관리자 권한이 필요합니다)',
                     ephemeral: true
                 });
             }
