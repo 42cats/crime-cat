@@ -2,7 +2,7 @@ const { ButtonInteraction, Client } = require('discord.js');
 const { decodeFromString } = require('../../Commands/utility/delimiterGeter');
 
 module.exports = {
-    name: "maskedVoteChoice",
+    name: "customVoteChoice",
     /**
      * @param {Client} client 
      * @param {ButtonInteraction} interaction 

@@ -143,6 +143,6 @@ module.exports = {
 			}
 		}
 	},
-	upload: true,
+	upload: false,
 	permissionLevel: PermissionFlagsBits.Administrator
 };
