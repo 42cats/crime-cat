@@ -250,9 +250,44 @@ async function getButtons(guildId, groupName) {
 	}
 }
 
+/**
+ * 길드의 모든 그룹 목록 조회
+ * @param {string} guildId 길드 ID
+ * @returns {Promise<Array>} 그룹 목록 배열
+ * @throws {Error} 조회 실패 시 오류
+ */
+async function getGroups(guildId) {
+	try {
+		// 파라미터 검증
+		if (!guildId || typeof guildId !== 'string') {
+			throw new Error('유효하지 않은 길드 ID입니다.');
+		}
+
+		// API 요청 (새로운 그룹 목록 전용 엔드포인트 사용)
+		const endpoint = `/messageMacros/groups/${guildId}`;
+		const response = await safeApiRequest({ endpoint });
+
+		// 응답 검증
+		if (!response || !Array.isArray(response)) {
+			console.warn(`⚠️ 그룹 목록 조회 응답이 배열이 아님:`, response);
+			return [];
+		}
+
+		console.log(`✅ 그룹 목록 조회 성공: ${response.length}개 그룹 (길드: ${guildId})`);
+		return response;
+	} catch (error) {
+		console.error(`❌ 그룹 목록 조회 실패 (길드: ${guildId}):`, error.message);
+		
+		// 더 명확한 오류 메시지로 래핑
+		const errorMessage = error.message || '그룹 목록 조회 중 오류가 발생했습니다.';
+		throw new Error(`그룹 목록 조회 실패: ${errorMessage}`);
+	}
+}
+
 // 모듈 내보내기
 module.exports = {
 	getContents,
 	getCachedContents,
-	getButtons
+	getButtons,
+	getGroups
 };
