@@ -45,9 +45,19 @@ module.exports = {
 			});
 		}
 
-		if (options.length > 20) {
+		if (options.length > 24) {
 			return await interaction.reply({
-				content: '❌ 선택지는 최대 20개까지 가능합니다.',
+				content: `❌ 선택지는 최대 24개까지 가능합니다. (종료 버튼 포함하여 25개 제한)\n현재 입력: ${options.length}개`,
+				ephemeral: true
+			});
+		}
+
+		// 중복 선택지 검증
+		const duplicates = options.filter((option, index) => options.indexOf(option) !== index);
+		if (duplicates.length > 0) {
+			const uniqueDuplicates = [...new Set(duplicates)];
+			return await interaction.reply({
+				content: `❌ 중복된 선택지가 있습니다: ${uniqueDuplicates.join(', ')}\n각 선택지는 고유해야 합니다.`,
 				ephemeral: true
 			});
 		}
@@ -75,14 +85,19 @@ module.exports = {
 			// SET은 자동으로 생성되므로 초기화 불필요
 		}
 
-		// 버튼 생성
+		// 버튼 생성 (최대 24개 선택지 + 1개 종료 버튼 = 25개)
 		const rows = [];
 		let currentRow = new ActionRowBuilder();
+		let buttonCount = 0;
+		let rowIndex = 0;
 
 		options.forEach((option, index) => {
-			if (index > 0 && index % 5 === 0) {
+			// 5개 버튼마다 새 Row 생성
+			if (buttonCount === 5) {
 				rows.push(currentRow);
 				currentRow = new ActionRowBuilder();
+				buttonCount = 0;
+				rowIndex++;
 			}
 
 			currentRow.addComponents(
@@ -92,22 +107,29 @@ module.exports = {
 					.setStyle(ButtonStyle.Primary)
 					.setEmoji(getEmoji(index))
 			);
+			buttonCount++;
 		});
 
-		if (currentRow.components.length > 0) {
-			rows.push(currentRow);
-		}
+		// 종료 버튼 추가 로직
+		const endButton = new ButtonBuilder()
+			.setCustomId(encodeToString(voteId, "customVoteEnd"))
+			.setLabel('투표 종료')
+			.setStyle(ButtonStyle.Danger)
+			.setEmoji('🔚');
 
-		// 종료 버튼 추가
-		const endRow = new ActionRowBuilder()
-			.addComponents(
-				new ButtonBuilder()
-					.setCustomId(encodeToString(voteId, "customVoteEnd"))
-					.setLabel('투표 종료')
-					.setStyle(ButtonStyle.Danger)
-					.setEmoji('🔚')
-			);
-		rows.push(endRow);
+		// 마지막 Row에 공간이 있으면 (5개 미만) 거기에 추가
+		if (currentRow.components.length > 0 && currentRow.components.length < 5) {
+			currentRow.addComponents(endButton);
+			rows.push(currentRow);
+		} else {
+			// 마지막 Row가 가득 찼거나 비어있으면
+			if (currentRow.components.length > 0) {
+				rows.push(currentRow); // 기존 Row 추가
+			}
+			// 새 Row에 종료 버튼 추가
+			const endRow = new ActionRowBuilder().addComponents(endButton);
+			rows.push(endRow);
+		}
 
 		// 초기 메시지 생성
 		const embed = await createVoteEmbed(voteId, options, timeLimit, redis, showRealtime);
@@ -147,7 +169,7 @@ async function createVoteEmbed(voteId, options, timeLimit, redis, showRealtime =
 	for (const option of options) {
 		const voters = await redis.client.sCard(`vote:${voteId}:voters:${option}`) || 0;
 		totalVotes += voters;
-		
+
 		if (showRealtime) {
 			description += `${getEmoji(options.indexOf(option))} **${option}** - ${voters}표\n`;
 		} else {
@@ -177,10 +199,11 @@ async function createVoteEmbed(voteId, options, timeLimit, redis, showRealtime =
 	return embed;
 }
 
-// 이모지 헬퍼
+// 이모지 헬퍼 (24개까지 지원)
 function getEmoji(index) {
 	const emojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟',
-		'🅰️', '🅱️', '🆎', '🅾️', '🆑', '🆒', '🆓', '🆔', '🆕', '🆖'];
+		'🇦', '🇧', '🇨', '🇩', '🇪', '🇫', '🇬', '🇭', '🇮', '🇯',
+		'🇰', '🇱', '🇲', '🇳'];
 	return emojis[index] || '▪️';
 }
 
