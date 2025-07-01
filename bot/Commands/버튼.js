@@ -25,7 +25,8 @@ module.exports = {
 				.addStringOption(option =>
 					option.setName('groupname')
 						.setDescription('버튼 그룹 이름을 입력하세요')
-						.setRequired(true))
+						.setRequired(true)
+						.setAutocomplete(true))
 				.addBooleanOption(option =>
 					option.setName('한번만')
 						.setDescription('버튼을 1회만 누를 수 있도록 제한할까요? (기본값: false)'))
@@ -61,7 +62,8 @@ module.exports = {
 				.addStringOption(option =>
 					option.setName('groupnames')
 						.setDescription('버튼 그룹 이름들을 쉼표로 구분하여 입력하세요')
-						.setRequired(true))
+						.setRequired(true)
+						.setAutocomplete(true))
 				.addBooleanOption(option =>
 					option.setName('한번만')
 						.setDescription('버튼을 1회만 누를 수 있도록 제한할까요? (기본값: false)'))

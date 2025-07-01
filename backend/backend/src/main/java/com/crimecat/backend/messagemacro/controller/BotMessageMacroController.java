@@ -30,6 +30,25 @@ public class BotMessageMacroController {
     private final GroupRepository groupRepository;
     private final GroupItemRepository groupItemRepository;
     private final GuildRepository guildRepository;
+    
+    @GetMapping("/groups/{guildSnowflake}")
+    public ResponseEntity<List<GroupDto>> getGroups(
+        @PathVariable @NonNull String guildSnowflake) {
+
+        log.info("🔍 그룹 목록 조회 - guildSnowflake: {}", guildSnowflake);
+
+        if (!StringUtils.hasText(guildSnowflake)) {
+            throw ErrorStatus.GUILD_NOT_FOUND.asControllerException();
+        }
+
+        // 길드 존재 여부 확인
+        guildRepository.findGuildByGuildSnowflake(guildSnowflake)
+            .orElseThrow(ErrorStatus.GUILD_NOT_FOUND::asControllerException);
+
+        List<GroupDto> allGroups = messageMacroService.getAllGroups(guildSnowflake);
+        return ResponseEntity.ok(allGroups);
+    }
+    
     @GetMapping("/buttons/{guildSnowflake}/{targetGroupName}")
     public ResponseEntity<?> getGroupButtons(
         @PathVariable @NonNull String guildSnowflake,
