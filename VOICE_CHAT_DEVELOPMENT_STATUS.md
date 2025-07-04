@@ -601,3 +601,12 @@ dependencies {
 - **사이드바 참여자 실시간 표시**: WebSocket 이벤트 기반 voiceUsers 상태 동기화
 - **원격 오디오 수신/재생**: RemoteAudioPlayer 컴포넌트로 다중 사용자 오디오 처리
 - **TrackId 기반 SFU 관리**: Signal Server와 프론트엔드 간 trackId 동기화 완료
+
+### 🔧 Cloudflare SFU 백엔드 프록시 문제 해결 진행중 ⭐️ **IN PROGRESS**
+- **CORS 문제 해결 완료**: Spring Security 및 JWT 필터에서 `/api/v1/cloudflare/**` 경로 예외 처리
+- **백엔드 프록시 구현**: CloudflareProxyController로 Cloudflare API 호출 중계
+- **트랙 구독 500 에러 디버깅중**: 
+  - CloudflareProxyController에 에러 로깅 추가
+  - 프론트엔드에서 `location: 'remote'` 트랙 구독 시 백엔드 에러 발생
+  - Cloudflare API 응답 형식 불일치 또는 WebClient 설정 문제로 추정
+- **음성 사용자 목록 사라짐 문제**: 트랙 구독 실패 시 voiceUsers 상태 초기화 방지 필요

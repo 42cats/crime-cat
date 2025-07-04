@@ -50,6 +50,7 @@ export interface VoiceUser {
   serverId: string;  // UUID 문자열
   channelId: string;  // UUID 문자열
   trackId?: string;  // SFU 트랙 ID (Cloudflare Realtime)
+  sessionId?: string;  // SFU 세션 ID (원격 트랙 구독용)
   avatar?: string;  // useAppStore와 통일
   volume: number;  // useAppStore와 통일 (필수, 기본값 50)
   isMuted: boolean;  // useAppStore와 통일 (필수, 기본값 false)

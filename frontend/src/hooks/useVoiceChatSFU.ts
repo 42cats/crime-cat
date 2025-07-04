@@ -158,8 +158,9 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
     setCurrentVoiceChannel: setGlobalCurrentVoiceChannel
   } = useAppStore();
   
-  // TODO: 실제 사용자 정보를 가져오는 로직 추가 필요
-  const user = { id: 'current-user', username: '사용자' };
+  // 실제 사용자 정보 가져오기
+  const { currentUser } = useAppStore();
+  const user = currentUser || { id: 'guest-user', username: '게스트' };
 
   // 글로벌 상태 사용 (로컬 상태 제거)
   const currentVoiceChannel = globalCurrentVoiceChannel;
@@ -226,19 +227,47 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
         console.log('🔗 SFU 연결 상태:', pc.connectionState);
       };
 
-      // 원격 스트림 수신
+      // 향상된 원격 스트림 수신 처리
       pc.ontrack = (event) => {
-        console.log('📡 원격 트랙 수신:', event.track.kind);
+        console.log('📡 원격 트랙 수신:', {
+          kind: event.track.kind,
+          trackId: event.track.id,
+          enabled: event.track.enabled,
+          readyState: event.track.readyState,
+          muted: event.track.muted,
+          streamCount: event.streams.length
+        });
+        
         const [remoteStream] = event.streams;
-        if (remoteStream) {
-          const trackId = event.track.id;
-          setRemoteStreams(prev => ({
-            ...prev,
-            [trackId]: remoteStream
-          }));
+        if (remoteStream && event.track.readyState === 'live') {
+          // 스트림에 활성 오디오 트랙이 있는지 확인
+          const audioTracks = remoteStream.getAudioTracks();
+          const activeAudioTracks = audioTracks.filter(track => 
+            track.enabled && track.readyState === 'live' && !track.muted
+          );
           
-          // 원격 스트림 Speaking Detection 초기화
-          if (event.track.kind === 'audio') {
+          console.log('📊 스트림 트랙 분석:', {
+            totalAudioTracks: audioTracks.length,
+            activeAudioTracks: activeAudioTracks.length,
+            trackStates: audioTracks.map(t => ({
+              id: t.id,
+              enabled: t.enabled,
+              readyState: t.readyState,
+              muted: t.muted
+            }))
+          });
+          
+          // 활성 오디오 트랙이 있는 경우에만 스트림 등록
+          if (event.track.kind === 'audio' && activeAudioTracks.length > 0) {
+            const trackId = event.track.id;
+            console.log(`✅ 활성 오디오 스트림 등록: ${trackId}`);
+            
+            setRemoteStreams(prev => ({
+              ...prev,
+              [trackId]: remoteStream
+            }));
+            
+            // 원격 스트림 Speaking Detection 초기화
             const detector = new SpeakingDetector();
             detector.initialize(remoteStream, (isSpeaking) => {
               // 원격 사용자 speaking 상태 업데이트
@@ -252,11 +281,36 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
             
             remoteSpeakingDetectors.current[trackId] = detector;
             console.log('🎤 원격 Speaking Detection 초기화:', trackId);
+          } else if (event.track.kind === 'audio') {
+            console.warn('⚠️ 비활성 오디오 트랙 무시:', {
+              trackId: event.track.id,
+              enabled: event.track.enabled,
+              readyState: event.track.readyState,
+              muted: event.track.muted
+            });
           }
+        } else {
+          console.warn('⚠️ 유효하지 않은 원격 트랙:', {
+            hasStream: !!remoteStream,
+            trackReadyState: event.track.readyState,
+            trackId: event.track.id
+          });
         }
       };
 
-      console.log('✅ SFU RTCPeerConnection 생성 완료');
+      // 트랜시버 풀 사전 생성 (M-line 순서 일관성 보장)
+      console.log('🏊 트랜시버 풀 사전 생성 중...');
+      const maxUsers = 16; // 최대 16명까지 동시 음성 지원 (안정성 확보)
+      
+      for (let i = 0; i < maxUsers; i++) {
+        const transceiver = pc.addTransceiver('audio', {
+          direction: 'inactive',
+          streams: []
+        });
+        console.log(`🎱 트랜시버 풀 #${i + 1} 생성: mid=${transceiver.mid}`);
+      }
+      
+      console.log('✅ SFU RTCPeerConnection 생성 완료 (트랜시버 풀 포함)');
       return pc;
 
     } catch (error) {
@@ -330,10 +384,19 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
   /**
    * 원격 트랙 구독
    */
-  const subscribeToRemoteTrack = useCallback(async (trackName: string, sessionId: string) => {
+  const subscribeToRemoteTrack = useCallback(async (trackName: string, remoteSessionId: string) => {
     try {
       if (!peerConnection.current) {
         console.error('❌ PeerConnection이 없습니다');
+        return;
+      }
+
+      // 현재 sfuSessionId 상태를 직접 참조 (클로저 캡처 문제 해결)
+      const currentSfuSessionId = sfuSessionId;
+      console.log('🔍 세션ID 확인:', { currentSfuSessionId, remoteSessionId });
+      
+      if (!currentSfuSessionId) {
+        console.error('❌ SFU 세션 ID가 없습니다. 현재 상태:', { sfuSessionId: currentSfuSessionId });
         return;
       }
 
@@ -342,17 +405,57 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
         return;
       }
 
-      console.log('📡 원격 트랙 구독 시작:', trackName);
+      console.log('📡 원격 트랙 구독 시작:', trackName, '원격 세션:', remoteSessionId, '내 세션:', sfuSessionId);
 
-      // Transceiver 추가 (receive-only)
-      peerConnection.current.addTransceiver('audio', { direction: 'recvonly' });
+      // WebRTC m-line 순서 문제 해결: 트랜시버 풀 기반 관리
+      const existingTransceivers = peerConnection.current.getTransceivers();
+      console.log('🔍 기존 트랜시버 개수:', existingTransceivers.length);
+      console.log('🔍 트랜시버 상태 조사:', existingTransceivers.map(t => ({
+        mid: t.mid,
+        direction: t.direction,
+        kind: t.receiver.track?.kind,
+        readyState: t.receiver.track?.readyState
+      })));
 
-      // Offer 생성
-      const offer = await peerConnection.current.createOffer();
+      let transceiver;
+      
+      // 트랜시버 풀에서 재사용 가능한 것을 찾기 (완화된 조건)
+      const availableTransceiver = existingTransceivers.find(t => 
+        t.direction === 'inactive'
+      );
+      
+      if (availableTransceiver) {
+        console.log('🎱 트랜시버 풀에서 재사용:', availableTransceiver.mid);
+        // 기존 트랙 정리 (필요한 경우에만)
+        if (availableTransceiver.receiver.track && availableTransceiver.receiver.track.readyState !== 'ended') {
+          availableTransceiver.receiver.track.stop();
+        }
+        availableTransceiver.direction = 'recvonly';
+        transceiver = availableTransceiver;
+      } else {
+        // 트랜시버 풀 부족 시 연결 중단 (M-line 순서 보장)
+        console.error('🚨 트랜시버 풀 완전 고갈 - 연결을 중단합니다');
+        console.error('사용중 트랜시버:', existingTransceivers.filter(t => t.direction !== 'inactive').length);
+        console.error('전체 트랜시버:', existingTransceivers.length);
+        throw new Error('트랜시버 풀 부족으로 새로운 연결을 설정할 수 없습니다');
+      }
+
+      // 3. 트랜시버 준비 상태 확인
+      console.log('🔧 트랜시버 준비 완료:', {
+        mid: transceiver.mid,
+        direction: transceiver.direction,
+        kind: transceiver.receiver.track?.kind
+      });
+
+      // Offer 생성 - negotiationneeded 이벤트를 기다리지 않고 즉시 생성
+      const offer = await peerConnection.current.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: false
+      });
       await peerConnection.current.setLocalDescription(offer);
 
-      // Cloudflare SFU에서 트랙 구독
-      const track = await cloudflareProxyService.subscribeToTrack(sessionId, trackName, offer);
+      // Cloudflare SFU에서 트랙 구독 (자신의 세션 ID와 구독할 원격 세션 ID 구분)
+      const track = await cloudflareProxyService.subscribeToTrack(currentSfuSessionId, trackName, offer, remoteSessionId);
       
       // Answer 설정
       if (track.sessionDescription) {
@@ -367,8 +470,9 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
 
     } catch (error) {
       console.error('❌ 원격 트랙 구독 실패:', error);
+      // 트랙 구독 실패 시에도 사용자 목록은 유지 (subscribedTracks에만 추가하지 않음)
     }
-  }, []);
+  }, [sfuSessionId]);
 
   /**
    * WebRTC 연결 완료 대기
@@ -442,12 +546,23 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
       const pc = await createSFUPeerConnection(user?.id || 'current-user');
       peerConnection.current = pc;
 
-      // 3. 로컬 스트림 추가
+      // 3. 로컬 스트림을 첫 번째 트랜시버에 추가 (트랜시버 풀 활용)
       console.log('3️⃣ 로컬 스트림을 PeerConnection에 추가...');
-      stream.getTracks().forEach(track => {
-        pc.addTrack(track, stream);
-        console.log(`➕ 로컬 트랙 추가: ${track.kind}`);
-      });
+      const audioTrack = stream.getAudioTracks()[0];
+      if (audioTrack) {
+        const transceivers = pc.getTransceivers();
+        const firstTransceiver = transceivers[0]; // 첫 번째 트랜시버 사용 (send용)
+        
+        if (firstTransceiver) {
+          await firstTransceiver.sender.replaceTrack(audioTrack);
+          firstTransceiver.direction = 'sendonly';
+          console.log(`🎛️ 첫 번째 트랜시버를 send용으로 설정: mid=${firstTransceiver.mid}`);
+        } else {
+          // 백업: 트랜시버가 없으면 기존 방식 사용
+          pc.addTrack(audioTrack, stream);
+          console.log(`➕ 로컬 트랙 추가 (백업): ${audioTrack.kind}`);
+        }
+      }
 
       // 4. Offer 생성 (SDP)
       console.log('4️⃣ WebRTC Offer 생성 중...');
@@ -490,6 +605,7 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
         username: user?.username || '사용자',
         serverId: serverId,
         channelId: channelId,
+        sessionId: session.sessionId, // 세션ID 포함
         volume: 50,
         isMuted: false,
         isConnected: true,
@@ -520,6 +636,8 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
           
           currentUsers.forEach(user => {
             console.log(`🎧 강제 구독 시도: ${user.username} (${user.trackId})`);
+            // TODO: VoiceUser에 sessionId 추가하여 정확한 remoteSessionId 전달
+            // 현재는 임시로 같은 sessionId 사용 (SFU는 다중 세션 지원)
             subscribeToRemoteTrack(user.trackId!, session.sessionId)
               .catch(error => console.warn('⚠️ 강제 구독 실패:', error));
           });
@@ -562,13 +680,16 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
     try {
       console.log('🚪 SFU 음성 채널 퇴장 시작...');
 
-      // 1. 로컬 스트림 정리
+      // 1. 로컬 스트림 및 마이크 완전 정리
       if (localStream) {
         localStream.getTracks().forEach(track => {
-          track.stop();
-          console.log(`🛑 로컬 트랙 정지: ${track.kind}`);
+          console.log(`🛑 로컬 트랙 완전 정지: ${track.kind} (readyState: ${track.readyState})`);
+          track.stop(); // 마이크 사용 완전 중단
+          track.enabled = false;
         });
         setLocalStream(null);
+        setLocalMuted(true); // 마이크 상태 초기화
+        console.log('🎤 마이크 사용 완전 중단');
       }
 
       // 2. 발행된 트랙 종료
@@ -578,11 +699,21 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
         setPublishedTrackId(null);
       }
 
-      // 3. PeerConnection 정리
+      // 3. PeerConnection 완전 정리
       if (peerConnection.current) {
+        // 모든 트랜시버 완전 정리
+        peerConnection.current.getTransceivers().forEach(transceiver => {
+          if (transceiver.sender.track) {
+            transceiver.sender.track.stop();
+          }
+          if (transceiver.receiver.track) {
+            transceiver.receiver.track.stop();
+          }
+        });
+        
         peerConnection.current.close();
         peerConnection.current = null;
-        console.log('🔌 PeerConnection 종료');
+        console.log('🔌 PeerConnection 완전 종료');
       }
 
       // 4. Speaking Detection 정리
@@ -618,18 +749,19 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
           .catch(error => console.warn('⚠️ 세션 정리 실패:', error));
       }
 
-      // 7. 상태 초기화
+      // 7. 모든 상태 초기화
       setCurrentVoiceChannel(undefined);
       setSfuSessionId(null);
       setVoiceConnected(false);
       setVoiceUsers([]); // 음성 사용자 목록 초기화
+      setLocalMuted(true); // 마이크 상태 초기화
 
       console.log('✅ SFU 음성 채널 퇴장 완료');
 
     } catch (error) {
       console.error('❌ 음성 채널 퇴장 중 오류:', error);
     }
-  }, [localStream, publishedTrackId, sfuSessionId, currentVoiceChannel, setVoiceConnected]);
+  }, [localStream, publishedTrackId, sfuSessionId, currentVoiceChannel, setVoiceConnected, setLocalMuted]);
 
   /**
    * 음소거 토글
@@ -686,7 +818,8 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
             const normalizedUser: VoiceUser = {
               ...voiceUser,
               serverId: voiceUser.serverId || data.serverId,
-              channelId: voiceUser.channelId || data.channelId
+              channelId: voiceUser.channelId || data.channelId,
+              sessionId: voiceUser.sessionId || sfuSessionId // 세션ID 설정 추가
             };
             
             console.log('👤 기존 사용자 정규화:', {
@@ -702,9 +835,10 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
         if (sfuSessionId) {
           data.currentUsers.forEach((user: any) => {
             const trackId = user.trackId || `audio_${user.id || user.userId}`;
+            const remoteSessionId = user.sessionId || sfuSessionId; // 사용자의 세션 ID 사용
             if (trackId && trackId !== publishedTrackId) {
-              console.log(`🎧 기존 사용자 트랙 구독: ${user.username} (${trackId})`);
-              subscribeToRemoteTrack(trackId, sfuSessionId)
+              console.log(`🎧 기존 사용자 트랙 구독: ${user.username} (${trackId}) - Remote Session: ${remoteSessionId}`);
+              subscribeToRemoteTrack(trackId, remoteSessionId)
                 .catch(error => console.warn('⚠️ 자동 트랙 구독 실패:', error));
             }
           });
@@ -726,7 +860,8 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
       const normalizedUser: VoiceUser = {
         ...user,
         serverId: user.serverId || currentVoiceChannel?.serverId || '',
-        channelId: user.channelId || currentVoiceChannel?.channelId || ''
+        channelId: user.channelId || currentVoiceChannel?.channelId || '',
+        sessionId: user.sessionId || sfuSessionId // 세션ID 설정 추가
       };
       
       console.log('👤 신규 사용자 정규화:', {
@@ -749,18 +884,27 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
         console.log(`🎧 신규 사용자 트랙 구독: ${normalizedUser.username} (${normalizedUser.trackId})`);
         console.log(`🔍 구독 조건 확인: trackId=${normalizedUser.trackId}, sessionId=${sfuSessionId}, publishedTrackId=${publishedTrackId}`);
         
-        subscribeToRemoteTrack(normalizedUser.trackId, sfuSessionId)
+        // 사용자의 sessionId 또는 현재 sfuSessionId 사용
+        const remoteSessionId = normalizedUser.sessionId || sfuSessionId;
+        subscribeToRemoteTrack(normalizedUser.trackId, remoteSessionId)
           .then(() => {
             console.log(`✅ 신규 사용자 트랙 구독 성공: ${normalizedUser.username}`);
           })
           .catch(error => {
             console.error(`❌ 신규 사용자 트랙 구독 실패: ${normalizedUser.username}`, error);
             
+            // 구독 실패해도 사용자는 목록에 유지 (상태 보호)
+            console.log(`🛡️ 트랙 구독 실패했지만 사용자 ${normalizedUser.username}는 목록에 유지됩니다`);
+            
             // 재시도 로직
             setTimeout(() => {
               console.log(`🔄 트랙 구독 재시도: ${normalizedUser.username} (${normalizedUser.trackId})`);
-              subscribeToRemoteTrack(normalizedUser.trackId!, sfuSessionId)
-                .catch(retryError => console.error('❌ 트랙 구독 재시도 실패:', retryError));
+              const retryRemoteSessionId = normalizedUser.sessionId || sfuSessionId;
+              subscribeToRemoteTrack(normalizedUser.trackId!, retryRemoteSessionId)
+                .catch(retryError => {
+                  console.error('❌ 트랙 구독 재시도 실패:', retryError);
+                  console.log(`🛡️ 재시도 실패했지만 사용자 ${normalizedUser.username}는 계속 목록에 유지됩니다`);
+                });
             }, 3000);
           });
       } else {
@@ -784,16 +928,39 @@ export const useVoiceChatSFU = (): UseVoiceChatSFUReturn => {
     const handler = (user: VoiceUser) => {
       console.log('🔔 음성 사용자 퇴장:', user.username);
       
-      // 사용자의 트랙 정리
+      // 사용자의 트랙 및 트랜시버 정리
       const trackId = user.trackId || `audio_${user.id || user.userId}`;
       if (trackId) {
         console.log(`🧹 사용자 트랙 정리: ${user.username} (${trackId})`);
+        
+        // 1. 원격 스트림 정리
         setRemoteStreams(prev => {
           const updated = { ...prev };
           delete updated[trackId];
           return updated;
         });
+        
+        // 2. 구독 트랙 정리
         subscribedTracks.current.delete(trackId);
+        
+        // 3. 트랜시버 상태 정리 (inactive로 변경하여 재사용 가능하게 만듦)
+        if (peerConnection.current) {
+          const transceivers = peerConnection.current.getTransceivers();
+          const relatedTransceiver = transceivers.find(t => {
+            const track = t.receiver.track;
+            return track && (track.id === trackId || track.label.includes(trackId));
+          });
+          
+          if (relatedTransceiver) {
+            console.log(`♻️ 트랜시버 비활성화 (재사용 대기): mid=${relatedTransceiver.mid}`);
+            relatedTransceiver.direction = 'inactive';
+            
+            // 트랙 중지
+            if (relatedTransceiver.receiver.track) {
+              relatedTransceiver.receiver.track.stop();
+            }
+          }
+        }
       }
       
       callback(user);
@@ -943,43 +1110,56 @@ export const useVoiceSessionCleanup = () => {
   const { leaveVoiceChannel, isVoiceConnected, currentVoiceChannel } = useVoiceChatSFU();
 
   useEffect(() => {
-    // 즉시 실행 함수로 정리 로직 생성
+    // WebSocket 연결 완전 정리 (음성 및 채팅 채널 모두 퇴장)
+    const cleanupWebSocket = () => {
+      console.log('🔌 WebSocket 연결 완전 정리 시작...');
+      try {
+        // 1. 음성 채널 퇴장
+        if (currentVoiceChannel) {
+          websocketService.leaveVoiceChannel(currentVoiceChannel.serverId, currentVoiceChannel.channelId);
+          console.log('🎤 음성 채널 퇴장 완료');
+        }
+        
+        // 2. 채팅 채널 퇴장 (현재 채널이 있는 경우)
+        const currentChannel = useAppStore.getState().currentChannel;
+        if (currentChannel) {
+          websocketService.leaveChannel(currentChannel.serverId, currentChannel.channelId);
+          console.log('💬 채팅 채널 퇴장 완룄');
+        }
+        
+        // 3. 서버 퇴장
+        const currentServer = useAppStore.getState().currentServer;
+        if (currentServer) {
+          websocketService.leaveServer(currentServer);
+          console.log('🏭 서버 퇴장 완료');
+        }
+        
+        // 4. WebSocket 연결 완전 종료
+        websocketService.disconnect();
+        console.log('✅ WebSocket 연결 완전 정리 완료');
+      } catch (error) {
+        console.warn('⚠️ WebSocket 연결 완전 정리 오류:', error);
+      }
+    };
+    
+    // 음성 세션 완전 정리 (마이크 사용 중단 포함)
     const cleanupVoiceSession = () => {
-      console.log('🚨 브라우저 종료 감지 - 전체 세션 긴급 정리 시작');
+      console.log('🚨 브라우저 종료 감지 - 음성 세션 완전 정리 시작');
       
-      // 1. 음성 채널에서 나가기 (우선 순위 최고)
-      if (isVoiceConnected && currentVoiceChannel) {
-        console.log('🎤 음성 세션 정리 중...');
-        
-        // 동기적으로 WebSocket에 나가기 알림 전송
-        if (websocketService.isConnected()) {
-          websocketService.leaveVoiceChannel(
-            currentVoiceChannel.serverId, 
-            currentVoiceChannel.channelId
-          );
+      try {
+        // 1. 음성 채널 완전 정리 (마이크 중단 포함)
+        if (isVoiceConnected) {
+          console.log('🎤 음성 세션 완전 정리 중...');
+          leaveVoiceChannel(); // 마이크 사용 완전 중단 포함
         }
         
-        // SFU 세션 정리 (비동기지만 최대한 시도)
-        try {
-          leaveVoiceChannel();
-        } catch (error) {
-          console.warn('⚠️ 종료 시 음성 세션 정리 중 오류:', error);
-        }
+        // 2. WebSocket 완전 정리
+        cleanupWebSocket();
+        
+        console.log('✅ 음성 세션 완전 정리 완료');
+      } catch (error) {
+        console.error('❌ 음성 세션 완전 정리 오류:', error);
       }
-      
-      // 2. WebSocket 연결 정리
-      if (websocketService.isConnected()) {
-        console.log('🔌 WebSocket 연결 정리 중...');
-        try {
-          // 서버에 연결 해제 알림 전송 후 연결 종료
-          websocketService.disconnect();
-          console.log('✅ WebSocket 연결 정리 완료');
-        } catch (error) {
-          console.warn('⚠️ WebSocket 연결 정리 중 오류:', error);
-        }
-      }
-      
-      console.log('✅ 전체 세션 긴급 정리 완료');
     };
 
     // 1. 브라우저 창 닫기 / 탭 닫기 감지
@@ -995,11 +1175,17 @@ export const useVoiceSessionCleanup = () => {
       }
     };
 
-    // 2. 페이지 숨김/나가기 감지 (모바일 포함)
+    // 2. 페이지 숨김/나가기 감지 (모바일 포함) - 제한적 처리
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden' && isVoiceConnected) {
-        console.log('🚨 페이지 숨김 감지 - 음성 세션 정리');
-        cleanupVoiceSession();
+        console.log('🔄 페이지 숨김 감지 - 연결 유지 (브라우저 탭 전환 고려)');
+        // 즉시 정리하지 않고 5초 후에 확인
+        setTimeout(() => {
+          if (document.visibilityState === 'hidden' && isVoiceConnected) {
+            console.log('🚨 장시간 페이지 숨김 - 음성 세션 정리');
+            cleanupVoiceSession();
+          }
+        }, 5000);
       }
     };
 

@@ -75,9 +75,19 @@ export interface AudioFile {
   uploadedAt: Date;
 }
 
+export interface CurrentUser {
+  id: string;
+  username: string;
+  email?: string;
+  avatar?: string;
+}
+
 interface AppState {
   // Connection State
   isConnected: boolean;
+  
+  // User State
+  currentUser?: CurrentUser;
   
   // Server-Channel State
   currentServer?: string;
@@ -104,6 +114,9 @@ interface AppState {
   
   // Connection Actions
   setConnected: (connected: boolean) => void;
+  
+  // User Actions
+  setCurrentUser: (user?: CurrentUser) => void;
   
   // Server-Channel Actions
   setCurrentServer: (serverId?: string) => void;
@@ -141,6 +154,7 @@ interface AppState {
 export const useAppStore = create<AppState>((set, get) => ({
   // Initial State
   isConnected: false,
+  currentUser: undefined,
   currentServer: undefined,
   currentChannel: undefined,
   servers: [],
@@ -160,6 +174,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Connection Actions
   setConnected: (connected) => 
     set({ isConnected: connected }),
+  
+  // User Actions
+  setCurrentUser: (user) => 
+    set({ currentUser: user }),
   
   // Server-Channel Actions
   setCurrentServer: (serverId) => 

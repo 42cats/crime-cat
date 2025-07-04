@@ -359,7 +359,7 @@ const handleVoiceEvents = (socket) => {
         // 음성 세션 종료 로깅
         try {
           await axios.post(
-            `${process.env.BACKEND_URL}/api/v1/signal/voice-sessions/end`,
+            `${process.env.BACKEND_URL}/api/v1/signal/voice/sessions/end`,
             {
               userId: socket.user.id,
               serverId: serverId,

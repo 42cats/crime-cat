@@ -1,9 +1,14 @@
 services:
   db:
-    init: true
+    init: false
     container_name: cat_db
     env_file:
-      - .env
+      - config/.env.local
+    environment:
+      - MYSQL_USER=mysql
+      - PUID=100
+      - PGID=101
+      - TEMP_DIR=/tmp/migration_temp
     pull_policy: missing
     image: db
     build:
@@ -11,6 +16,10 @@ services:
       dockerfile: docker/mariadb/Dockerfile
     networks:
       - discord-network
+    user: "100:101"  # mysql:mysql
+    security_opt:
+      - no-new-privileges:true
+    privileged: false
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root"]
       interval: 10s
@@ -21,6 +30,10 @@ services:
       - "3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
+      - ./docker/mariadb/db/migrations:/var/lib/dbinit/migrations:ro
+    tmpfs:
+      - /tmp:rw,size=100m,uid=100,gid=101
+      - /var/tmp:rw,size=50m,uid=100,gid=101
     logging:
       driver: "json-file"
       options:
@@ -28,22 +41,17 @@ services:
         max-file: "3"
 
   redis:
-    build:
-      context: .
-      dockerfile: docker/redis/Dockerfile
-    image: redis
-    restart: on-failure
-    container_name: redis
-    init: true
+    container_name: dev_redis
+    image: redis:7-alpine
     ports:
       - "6379:6379"
     depends_on:
       db:
         condition: service_healthy
-    env_file:
-      - .env
     networks:
       - discord-network
+    env_file:
+      - config/.env.local
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -56,180 +64,58 @@ services:
         max-size: "5m"
         max-file: "3"
 
-  backend:
+  # Mystery Place Voice Chat Signal Server (Cloudflare Realtime SFU + TURN)
+  signal-server:
+    container_name: signal_server_local
     build:
-      context: .
-      dockerfile: docker/backend/Dockerfile
-    image: spring-backend
-    container_name: spring-backend
-    restart: on-failure
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mariadb://cat_db:3306/${DB_NAME}
-      - SPRING_DATASOURCE_USERNAME=${DB_USER}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASS}
-      - SERVER_PORT=8080
-      - DOMAIN=${DOMAIN}
-      - SPRING_SECRET_KEY=${SPRING_SECRET_KEY}
-      - TEST_DB=${TEST_DB}
-      - APP_ID=${APP_ID}
-      - SPRING_PROFILES_ACTIVE=${SPRING_ACTIVE_PROFILES}
-      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
-      - DISCORD_BOT_SECRET_TOKENS=${DISCORD_BOT_SECRET_TOKENS}
+      context: docker/signal-server
+      dockerfile: Dockerfile
     env_file:
-      - .env
-    volumes:
-      - web_data:/frontend
-      - image_data:/images
+      - config/.env.local
+    environment:
+      - NODE_ENV=development
+      - SIGNAL_PORT=4000
+      - FRONTEND_URL=http://localhost:5173
+      - BACKEND_URL=${SIGNAL_BACKEND_URL}
+      - REDIS_URL=redis://dev_redis:6379
+      - REDIS_HOST=${SIGNAL_REDIS_HOST:-dev_redis}
+      - REDIS_PORT=${SIGNAL_REDIS_PORT:-6379}
+      - JWT_SECRET=${JWT_SECRET}
+      # Cloudflare Realtime SFU 설정
+      - CF_ACCOUNT_ID=${CF_ACCOUNT_ID}
+      - CF_REALTIME_APP_ID=${CF_REALTIME_APP_ID}
+      - CF_REALTIME_API_TOKEN=${CF_REALTIME_API_TOKEN}
+      - CF_REALTIME_BASE_URL=${CF_REALTIME_BASE_URL}
+      # Cloudflare TURN 서버 설정 (로컬 TURN 완전 대체)
+      - CF_TURN_KEY_ID=${CF_TURN_KEY_ID}
+      - CF_TURN_API_TOKEN=${CF_TURN_API_TOKEN}
+      - CF_TURN_BASE_URL=${CF_TURN_BASE_URL}
+    ports:
+      - "4000:4000"
+    networks:
+      - discord-network
     depends_on:
-      frontend:
-        condition: service_completed_successfully
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks:
-      - discord-network
-    ports:
-      - "8080:8080"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
-
-  discord-app:
-    init: true
-    build:
-      context: .
-      dockerfile: docker/discord/Dockerfile
-    container_name: discord-app
-    image: discord-app
-    env_file:
-      - .env
-    networks:
-      - discord-network
-    volumes:
-      - app_data:/root/bot
-    depends_on:
-      backend:
-        condition: service_healthy
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    command: >
-      tunnel --no-autoupdate run
-      --protocol quic
-      --token ${CF_TUNNEL_TOKEN}
-    container_name: cloudflared
     restart: unless-stopped
-    networks:
-      - discord-network
     healthcheck:
-      test: ["CMD", "curl", "-fs", "http://localhost:2000/ready"]
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
       interval: 30s
+      timeout: 10s
       retries: 3
-
-  frontend:
-    build:
-      context: .
-      dockerfile: docker/frontend/Dockerfile
-    image: frontend
-    container_name: frontend
-    networks:
-      - discord-network
-    env_file:
-      - .env
-    volumes:
-      - frontend_data:/app
+      start_period: 40s
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
-        max-file: "5"
-
-  nginx:
-    container_name: nginx
-    image: nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    restart: on-failure
-    build:
-      context: .
-      dockerfile: docker/nginx/Dockerfile
-    env_file:
-      - .env
-    networks:
-      - discord-network
-    volumes:
-      - web_data:/usr/share/nginx/html:ro
-      - cert:/etc/nginx/certs:ro
-      - image_data:/images:ro
-    extra_hosts:
-      - "dev.crimecat.org:127.0.0.1"
-    depends_on:
-      frontend:
-        condition: service_completed_successfully
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
-  smtp-server:
-    build:
-      context: .
-      dockerfile: docker/smtp/Dockerfile
-    image: smtp-server
-    container_name: smtp-server
-    restart: unless-stopped
-    environment:
-      - MAIL_HOSTNAME=mail.mystery-place.com
-      - MAIL_DOMAIN=mystery-place.com
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
-      - SMTP_USERNAME=${SMTP_USERNAME}
-    env_file:
-      - .env
-    ports:
-      - "25:25"
-      - "587:587"
-      - "465:465"
-    volumes:
-      - smtp_data:/var/spool/postfix
-      - smtp_config:/etc/postfix
-      - cert:/etc/ssl/certs:ro
-    networks:
-      - discord-network
-    depends_on:
-      - db
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
         max-file: "3"
 
-  # db-backup:
-  #   image: alpine:latest
-  #   container_name: db-backup
-  #   volumes:
-  #     - backup:/backup              # 백업 스크립트 + 결과 저장
-  #   depends_on:
-  #     - db
-  #   networks:
-  #     - discord-network
-  #   entrypoint: ["/bin/sh", "-c", "while true; do /backup/backup.sh && sleep 86400; done"]
-  #   restart: unless-stopped
-
+  # 로컬 TURN 서버 완전 제거 - Cloudflare TURN 서버로 완전 대체
+  # turn-server:
+  #   container_name: turn_server_local
+  #   # 더 이상 사용하지 않음 - Cloudflare TURN 서버 사용
 
 networks:
   discord-network:
@@ -237,63 +123,15 @@ networks:
 
 volumes:
   mariadb_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/database/mariadb/data
-  app_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/bot
-  web_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/frontend/dist
-  backend_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/backend
-  frontend_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/frontend
-  cert:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/docker/nginx/certs
-  backup:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/backup
   image_data:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: ${PWD}/images
-  smtp_data:
+  audio_uploads:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${PWD}/smtp/data
-  smtp_config:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${PWD}/smtp/config
-
+      device: ${PWD}/uploads/audio

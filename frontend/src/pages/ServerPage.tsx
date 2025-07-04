@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import { useServerChannel } from '../hooks/useServerChannel';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { useChannelLeaveCleanup } from '../hooks/useChannelLeaveCleanup';
+import { useVoiceSessionCleanup } from '../hooks/useVoiceChatSFU';
 import { ChatLayout } from '../components/chat/ChatLayout';
 import { serverApiService } from '../services/serverApi';
 
@@ -21,6 +23,12 @@ export const ServerPage: React.FC<ServerPageProps> = () => {
   
   const { joinServer, leaveServer, joinChannel } = useServerChannel();
   const { isConnected } = useWebSocket();
+  
+  // 채널/서버 이탈 시 음성 세션 자동 정리
+  useChannelLeaveCleanup();
+  
+  // 브라우저 종료/페이지 이탈 시 음성 세션 정리
+  useVoiceSessionCleanup();
   
   const [isLoading, setIsLoading] = useState(true);
   const [showPasswordModal, setShowPasswordModal] = useState(false);

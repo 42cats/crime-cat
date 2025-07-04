@@ -241,14 +241,15 @@ class CloudflareProxyService {
   /**
    * 트랙 구독 (Backend 프록시 경유)
    */
-  async subscribeToTrack(sessionId: string, trackName: string, offer: RTCSessionDescriptionInit): Promise<CloudflareTrack> {
+  async subscribeToTrack(sessionId: string, trackName: string, offer: RTCSessionDescriptionInit, remoteSessionId?: string): Promise<CloudflareTrack> {
     try {
-      console.log(`📡 트랙 구독 (Backend 프록시) - Session: ${sessionId}, Track: ${trackName}`);
+      console.log(`📡 트랙 구독 (Backend 프록시) - Session: ${sessionId}, Track: ${trackName}, RemoteSession: ${remoteSessionId}`);
 
       const requestBody = {
         sessionDescription: offer,
         tracks: [{
           location: 'remote',
+          sessionId: remoteSessionId || sessionId, // OpenAPI 스펙에 따른 필수 필드
           trackName: trackName
         }]
       };

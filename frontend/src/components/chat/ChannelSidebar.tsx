@@ -15,6 +15,7 @@ export const ChannelSidebar: React.FC<ChannelSidebarProps> = ({ className = '' }
     currentChannel,
     channels,
     servers,
+    currentUser,
     setCurrentChannel,
     addChannel,
     setChannels
@@ -369,9 +370,6 @@ const VoiceChannelSection: React.FC<VoiceChannelSectionProps> = ({
               isActive={false}
               isConnected={isVoiceConnected && currentVoiceChannel?.channelId === channel.id}
               voiceUsers={Array.isArray(voiceUsers) ? voiceUsers.filter(user => {
-                // 실제로 음성 채널에 접속되어 있을 때만 사용자 표시
-                const isCurrentlyConnectedToVoice = isVoiceConnected && currentVoiceChannel?.channelId === channel.id;
-                
                 // 채널 ID 비교
                 const channelMatches = user.channelId === channel.id;
                 
@@ -385,12 +383,11 @@ const VoiceChannelSection: React.FC<VoiceChannelSectionProps> = ({
                   userServerId: user.serverId,
                   targetServerId: currentServer,
                   serverMatches,
-                  isCurrentlyConnectedToVoice,
-                  result: channelMatches && serverMatches && isCurrentlyConnectedToVoice
+                  result: channelMatches && serverMatches
                 });
                 
-                // 실제로 해당 음성 채널에 접속되어 있을 때만 사용자 표시
-                return channelMatches && serverMatches && isCurrentlyConnectedToVoice;
+                // 채널과 서버가 일치하는 사용자들을 모두 표시 (자신의 연결 상태와 무관하게)
+                return channelMatches && serverMatches;
               }) : []}
               onClick={() => onChannelClick(channel.id)}
             />
@@ -566,7 +563,7 @@ const VoiceUserItem: React.FC<VoiceUserItemProps> = ({ user }) => {
 };
 
 const UserInfoBar: React.FC = () => {
-  const { isVoiceConnected, currentChannel, channels, currentServer, localMuted } = useAppStore();
+  const { isVoiceConnected, currentChannel, channels, currentServer, localMuted, currentUser } = useAppStore();
   const { leaveVoiceChannel, toggleMute, currentVoiceChannel } = useVoiceChatSFU();
   const [showSettings, setShowSettings] = useState(false);
   const [speakerMuted, setSpeakerMuted] = useState(false);
@@ -622,8 +619,12 @@ const UserInfoBar: React.FC = () => {
           U
         </div>
         <div className="ml-2 min-w-0">
-          <div className="text-white text-sm font-medium truncate">사용자명</div>
-          <div className="text-gray-400 text-xs truncate">#1234</div>
+          <div className="text-white text-sm font-medium truncate">
+            {currentUser?.username || '게스트'}
+          </div>
+          <div className="text-gray-400 text-xs truncate">
+            #{currentUser?.id?.slice(-4) || '0000'}
+          </div>
         </div>
       </div>
 
