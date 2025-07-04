@@ -39,6 +39,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -152,7 +153,7 @@ public class GameThemeService {
         }
     }
 
-    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
+    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_ENTITY, CacheType.GAME_THEME_RESPONSE, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
     @Transactional
     public void deleteGameTheme(UUID themeId) {
         GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
@@ -176,23 +177,81 @@ public class GameThemeService {
     }
 
 
-    //@Cacheable(value = "game:theme", key = "#themeId.toString()")
-    @Transactional(readOnly = true)
+//    @Cacheable(value = CacheType.GAME_THEME_RESPONSE, key = "#themeId.toString()")
+    @Transactional()
     public GetGameThemeResponse getGameTheme(UUID themeId) {
-        GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        log.debug("📖 테마 조회 시작 - ID: {}", themeId);
+        
+        // 1. 엔티티 조회 (캐시됨)
+        GameTheme gameTheme = getGameThemeEntity(themeId);
+        log.debug("✅ 테마 엔티티 조회 완료 - 제목: {}", gameTheme.getTitle());
+        
+        // 2. IP 추출 (캐시와 무관)
+        String clientIp = extractClientIp();
+        log.debug("🌐 클라이언트 IP 추출: {}", clientIp);
+        
+        // 3. 조회수 증가 - 별도 트랜잭션으로 처리 (IP별 캐시로 중복 방지)
+        incrementViewCount(gameTheme, clientIp);
+        
+        // 4. 응답 생성 (이 부분만 캐시됨)
+        GetGameThemeResponse response = GetGameThemeResponse.builder()
+                .theme(GameThemeDetailDto.of(gameTheme))
+                .build();
+        
+        log.debug("✅ 테마 조회 완료 - ID: {}", themeId);
+        return response;
+    }
+    
+    /**
+     * 게임 테마 엔티티 조회 (캐시됨)
+     * @param themeId 테마 ID
+     * @return 게임 테마 엔티티
+     */
+    @Cacheable(value = CacheType.GAME_THEME_ENTITY, key = "#themeId.toString()")
+    public GameTheme getGameThemeEntity(UUID themeId) {
+        log.debug("🔍 테마 엔티티 조회 (캐시 체크) - ID: {}", themeId);
+        
+        GameTheme gameTheme = themeRepository.findById(themeId)
+                .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        
+        // 권한 검증 로직
         UUID webUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
         if (gameTheme.isDeleted() || (!gameTheme.isPublicStatus() && !gameTheme.isAuthor(webUserId))) {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
-        String clientIp = (String) ((ServletRequestAttributes) Objects.requireNonNull(
-                RequestContextHolder
-                        .getRequestAttributes()))
-                .getRequest()
-                .getAttribute("clientIp");
-        viewCountService.themeIncrement(gameTheme, clientIp);
-        return GetGameThemeResponse.builder()
-                .theme(GameThemeDetailDto.of(gameTheme))
-                .build();
+        
+        log.debug("✅ 테마 엔티티 조회 성공 - 제목: {}, 조회수: {}", 
+            gameTheme.getTitle(), gameTheme.getViews());
+        return gameTheme;
+    }
+    
+    /**
+     * 클라이언트 IP 추출
+     * @return 클라이언트 IP 주소
+     */
+    private String extractClientIp() {
+        ServletRequestAttributes attributes = 
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return "unknown";
+        }
+        Object clientIp = attributes.getRequest().getAttribute("clientIp");
+        return clientIp != null ? clientIp.toString() : "unknown";
+    }
+    
+    /**
+     * 조회수 증가 처리 (별도 트랜잭션)
+     * @param gameTheme 게임 테마
+     * @param clientIp 클라이언트 IP
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    protected void incrementViewCount(GameTheme gameTheme, String clientIp) {
+        try {
+            viewCountService.themeIncrement(gameTheme, clientIp);
+        } catch (Exception e) {
+            // 조회수 증가 실패는 메인 로직에 영향을 주지 않도록 로그만 남김
+            log.warn("Failed to increment view count for theme: {} from IP: {}", gameTheme.getId(), clientIp, e);
+        }
     }
 
     // ================================
@@ -200,7 +259,7 @@ public class GameThemeService {
     // ================================
 
     @Transactional
-    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
+    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_ENTITY, CacheType.GAME_THEME_RESPONSE, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
     public void updateCrimesceneTheme(UUID themeId, MultipartFile file, UpdateCrimesceneThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
 
@@ -238,7 +297,7 @@ public class GameThemeService {
     // ================================
 
     @Transactional
-    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
+    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_ENTITY, CacheType.GAME_THEME_RESPONSE, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
     public void updateEscapeRoomTheme(UUID themeId, MultipartFile file, UpdateEscapeRoomThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
 
@@ -257,7 +316,7 @@ public class GameThemeService {
     // ================================
 
     @Transactional
-    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
+    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_ENTITY, CacheType.GAME_THEME_RESPONSE, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
     public void updateMurderMysteryTheme(UUID themeId, MultipartFile file, UpdateGameThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
 
@@ -279,7 +338,7 @@ public class GameThemeService {
     // ================================
 
     @Transactional
-    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
+    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_ENTITY, CacheType.GAME_THEME_RESPONSE, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
     public void updateRealWorldTheme(UUID themeId, MultipartFile file, UpdateGameThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
 
@@ -301,6 +360,20 @@ public class GameThemeService {
     // ================================
 
     private GameTheme getThemeForUpdate(UUID themeId) {
+        // 캐시된 엔티티 조회 메서드 사용
+        GameTheme gameTheme = getGameThemeEntityForUpdate(themeId);
+        
+        // 작성자 권한 검증
+        AuthenticationUtil.validateCurrentUserMatches(gameTheme.getAuthorId());
+        return gameTheme;
+    }
+    
+    /**
+     * 업데이트용 게임 테마 엔티티 조회 (삭제된 테마 포함 체크)
+     * @param themeId 테마 ID
+     * @return 게임 테마 엔티티
+     */
+    private GameTheme getGameThemeEntityForUpdate(UUID themeId) {
         GameTheme gameTheme = themeRepository.findById(themeId)
             .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
 
@@ -308,7 +381,6 @@ public class GameThemeService {
             throw ErrorStatus.GAME_THEME_NOT_FOUND.asServiceException();
         }
 
-        AuthenticationUtil.validateCurrentUserMatches(gameTheme.getAuthorId());
         return gameTheme;
     }
 
