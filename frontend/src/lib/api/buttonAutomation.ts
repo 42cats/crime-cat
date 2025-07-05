@@ -26,6 +26,16 @@ export interface ButtonRequestDto {
   isActive?: boolean;
 }
 
+// 복사 요청 DTO
+export interface CopyGroupRequestDto {
+  newName?: string; // 선택사항, null이면 자동 생성
+}
+
+export interface CopyButtonRequestDto {
+  targetGroupId?: string; // 선택사항, null이면 원본과 동일 그룹
+  newLabel?: string; // 선택사항, null이면 자동 생성
+}
+
 export const buttonAutomationApi = {
   // ===== 그룹 관리 =====
 
@@ -125,6 +135,22 @@ export const buttonAutomationApi = {
    */
   deleteButton: (guildId: string, buttonId: string): Promise<void> => {
     return apiClient.delete(`/automations/${guildId}/buttons/${buttonId}`);
+  },
+
+  // ===== 복사 기능 =====
+
+  /**
+   * 그룹 복사 (모든 버튼 포함)
+   */
+  copyGroup: (guildId: string, groupId: string, data?: CopyGroupRequestDto): Promise<ButtonAutomationGroup> => {
+    return apiClient.post(`/automations/${guildId}/groups/${groupId}/copy`, data || {});
+  },
+
+  /**
+   * 버튼 복사
+   */
+  copyButton: (guildId: string, buttonId: string, data?: CopyButtonRequestDto): Promise<ButtonAutomation> => {
+    return apiClient.post(`/automations/${guildId}/buttons/${buttonId}/copy`, data || {});
   },
 
   // ===== 통계 =====

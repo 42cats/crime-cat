@@ -22,6 +22,7 @@ import {
     ArrowLeftOutlined,
     SettingOutlined,
     MoreOutlined,
+    CopyOutlined,
 } from "@ant-design/icons";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageTransition from "@/components/PageTransition";
@@ -242,6 +243,47 @@ const ButtonAutomationPage: React.FC = () => {
         },
     });
 
+    // 그룹 복사 뮤테이션
+    const copyGroupMutation = useMutation({
+        mutationFn: (data: { groupId: string; newName?: string }) =>
+            buttonAutomationApi.copyGroup(guildId!, data.groupId, data.newName ? { newName: data.newName } : undefined),
+        onSuccess: () => {
+            // 관련된 쿼리들 무효화
+            queryClient.invalidateQueries({
+                queryKey: ["button-automation-groups", guildId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["button-automation-buttons", guildId],
+            });
+            message.success("그룹이 복사되었습니다.");
+        },
+        onError: (error: any) => {
+            message.error(error.message || "그룹 복사 중 오류가 발생했습니다.");
+        },
+    });
+
+    // 버튼 복사 뮤테이션
+    const copyButtonMutation = useMutation({
+        mutationFn: (data: { buttonId: string; newLabel?: string; targetGroupId?: string }) =>
+            buttonAutomationApi.copyButton(guildId!, data.buttonId, {
+                newLabel: data.newLabel,
+                targetGroupId: data.targetGroupId,
+            }),
+        onSuccess: () => {
+            // 관련된 쿼리들 무효화
+            queryClient.invalidateQueries({
+                queryKey: ["button-automation-buttons", guildId, selectedGroupId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["button-automation-groups", guildId],
+            });
+            message.success("버튼이 복사되었습니다.");
+        },
+        onError: (error: any) => {
+            message.error(error.message || "버튼 복사 중 오류가 발생했습니다.");
+        },
+    });
+
     // 기본 그룹 선택 및 상태 동기화
     useEffect(() => {
         if (groups && groups.length > 0) {
@@ -322,6 +364,21 @@ const ButtonAutomationPage: React.FC = () => {
         setShowTestRunner(true);
     };
 
+    // 그룹 복사
+    const handleCopyGroup = (group: any) => {
+        copyGroupMutation.mutate({
+            groupId: group.id,
+        });
+    };
+
+    // 버튼 복사
+    const handleCopyButton = (button: any) => {
+        copyButtonMutation.mutate({
+            buttonId: button.id,
+            targetGroupId: selectedGroupId,
+        });
+    };
+
     // 테이블 컬럼 정의
     const columns = [
         {
@@ -379,7 +436,7 @@ const ButtonAutomationPage: React.FC = () => {
         {
             title: "작업",
             key: "actions",
-            width: 120,
+            width: 150,
             render: (_, record: any) => (
                 <Space size="small">
                     <Tooltip title="편집">
@@ -396,6 +453,14 @@ const ButtonAutomationPage: React.FC = () => {
                             icon={<PlayCircleOutlined />}
                             size="small"
                             onClick={() => handleTestButton(record)}
+                        />
+                    </Tooltip>
+                    <Tooltip title="복사">
+                        <Button
+                            type="text"
+                            icon={<CopyOutlined />}
+                            size="small"
+                            onClick={() => handleCopyButton(record)}
                         />
                     </Tooltip>
                     <Popconfirm
@@ -530,6 +595,17 @@ const ButtonAutomationPage: React.FC = () => {
                                                         onClick: (e) => {
                                                             e.domEvent.stopPropagation();
                                                             handleEditGroup(
+                                                                group
+                                                            );
+                                                        },
+                                                    },
+                                                    {
+                                                        key: "copy",
+                                                        label: "그룹 복사",
+                                                        icon: <CopyOutlined />,
+                                                        onClick: (e) => {
+                                                            e.domEvent.stopPropagation();
+                                                            handleCopyGroup(
                                                                 group
                                                             );
                                                         },

@@ -179,6 +179,46 @@ public class ButtonAutomationController {
         return ResponseEntity.noContent().build();
     }
 
+    // ===== 복사 엔드포인트 =====
+
+    @PostMapping("/{guildId}/groups/{groupId}/copy")
+    public ResponseEntity<ButtonAutomationGroupDto> copyGroup(
+            @PathVariable @NonNull String guildId,
+            @PathVariable @NonNull UUID groupId,
+            @Valid @RequestBody(required = false) CopyGroupRequestDto request) {
+        
+        WebUser webUser = AuthenticationUtil.getCurrentWebUser();
+        validateGuildAccess(webUser, guildId);
+        
+        String newName = request != null ? request.getNewName() : null;
+        ButtonAutomationGroupDto copiedGroup = buttonAutomationService.copyGroup(groupId, guildId, newName);
+        
+        log.info("Copied automation group: {} -> {} for guild: {} by user: {}", 
+                groupId, copiedGroup.getId(), guildId, webUser.getId());
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(copiedGroup);
+    }
+
+    @PostMapping("/{guildId}/buttons/{buttonId}/copy")
+    public ResponseEntity<ButtonAutomationDto> copyButton(
+            @PathVariable @NonNull String guildId,
+            @PathVariable @NonNull UUID buttonId,
+            @Valid @RequestBody(required = false) CopyButtonRequestDto request) {
+        
+        WebUser webUser = AuthenticationUtil.getCurrentWebUser();
+        validateGuildAccess(webUser, guildId);
+        
+        UUID targetGroupId = request != null ? request.getTargetGroupId() : null;
+        String newLabel = request != null ? request.getNewLabel() : null;
+        
+        ButtonAutomationDto copiedButton = buttonAutomationService.copyButton(buttonId, targetGroupId, newLabel);
+        
+        log.info("Copied automation button: {} -> {} for guild: {} by user: {}", 
+                buttonId, copiedButton.getId(), guildId, webUser.getId());
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(copiedButton);
+    }
+
     // ===== 통계 엔드포인트 =====
 
     @GetMapping("/{guildId}/stats")
@@ -215,5 +255,24 @@ public class ButtonAutomationController {
     public static class StatsResponse {
         private long groupCount;
         private long buttonCount;
+    }
+
+    // ===== 복사 요청 DTO =====
+
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class CopyGroupRequestDto {
+        private String newName;  // 선택사항, null이면 자동 생성 ("원본명 복사본")
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class CopyButtonRequestDto {
+        private UUID targetGroupId;  // 선택사항, null이면 원본과 동일 그룹
+        private String newLabel;     // 선택사항, null이면 자동 생성 ("원본명 복사본")
     }
 }
