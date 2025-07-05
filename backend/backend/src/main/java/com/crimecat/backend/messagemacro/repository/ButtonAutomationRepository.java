@@ -42,4 +42,7 @@ public interface ButtonAutomationRepository extends JpaRepository<ButtonAutomati
 
     @Query("SELECT COUNT(b) FROM ButtonAutomation b WHERE b.groupId = :groupId AND b.isActive = true")
     long countActiveButtonsByGroupId(@Param("groupId") UUID groupId);
+
+    // 그룹 내 버튼명 중복 확인 (마이그레이션 V1.4.5 이후 사용)
+    boolean existsByGroupIdAndButtonLabel(UUID groupId, String buttonLabel);
 }
