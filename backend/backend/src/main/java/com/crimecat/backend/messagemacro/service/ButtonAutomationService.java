@@ -361,10 +361,10 @@ public class ButtonAutomationService {
         ButtonAutomationGroup savedGroup = groupRepository.save(newGroup);
         log.info("Copied group: {} -> {} with name: {}", sourceGroupId, savedGroup.getId(), newGroupName);
         
-        // 4. 그룹 내 모든 버튼 복사
+        // 4. 그룹 내 모든 버튼 복사 (V1.4.5: 그룹 복사 시 원본명 보존 시도)
         List<ButtonAutomation> sourceButtons = buttonRepository.findAllByGroupIdOrderByDisplayOrder(sourceGroupId);
         for (ButtonAutomation sourceButton : sourceButtons) {
-            copyButtonInternal(sourceButton, savedGroup.getId(), null);
+            copyButtonInternal(sourceButton, savedGroup.getId(), null, true); // preserveOriginalName = true
         }
         
         log.info("Copied {} buttons for group: {}", sourceButtons.size(), savedGroup.getId());
@@ -394,11 +394,24 @@ public class ButtonAutomationService {
     }
 
     /**
-     * 버튼 복사 내부 로직
+     * 버튼 복사 내부 로직 (하위 호환성)
      */
     private ButtonAutomationDto copyButtonInternal(ButtonAutomation source, UUID groupId, String customLabel) {
-        String newLabel = customLabel != null ? customLabel :
-            generateUniqueName(source.getButtonLabel(), source.getGuildId(), "button");
+        return copyButtonInternal(source, groupId, customLabel, false);
+    }
+
+    /**
+     * 버튼 복사 내부 로직 (V1.4.5 이후 - 그룹 범위 검증)
+     */
+    private ButtonAutomationDto copyButtonInternal(ButtonAutomation source, UUID groupId, String customLabel, boolean preserveOriginalName) {
+        String newLabel;
+        
+        if (customLabel != null) {
+            newLabel = customLabel;
+        } else {
+            // V1.4.5 이후: 그룹 범위에서 중복 검증
+            newLabel = generateUniqueButtonNameInGroup(source.getButtonLabel(), groupId, preserveOriginalName);
+        }
         
         ButtonAutomation newButton = ButtonAutomation.builder()
                 .guildId(source.getGuildId())
@@ -410,13 +423,14 @@ public class ButtonAutomationService {
                 .build();
         
         ButtonAutomation savedButton = buttonRepository.save(newButton);
-        log.info("Copied button: {} -> {} with label: {}", source.getId(), savedButton.getId(), newLabel);
+        log.info("Copied button: {} -> {} with label: {} (preserveOriginal: {})", 
+                source.getId(), savedButton.getId(), newLabel, preserveOriginalName);
         
         return toButtonDto(savedButton);
     }
 
     /**
-     * 고유한 이름 생성 (중복 방지)
+     * 고유한 이름 생성 (길드 범위 중복 방지 - 하위 호환성)
      */
     private String generateUniqueName(String originalName, String guildId, String type) {
         String baseName = originalName + " 복사본";
@@ -431,7 +445,28 @@ public class ButtonAutomationService {
     }
 
     /**
-     * 이름 중복 확인
+     * 고유한 버튼명 생성 (그룹 범위 중복 방지 - V1.4.5 이후)
+     */
+    private String generateUniqueButtonNameInGroup(String originalName, UUID groupId, boolean preserveOriginalName) {
+        // 그룹 복사 시 원본명 보존 시도
+        if (preserveOriginalName && !isNameExistsInGroup(originalName, groupId)) {
+            return originalName;
+        }
+        
+        // 중복되거나 개별 복사인 경우 복사본 생성
+        String baseName = originalName + " 복사본";
+        int counter = 1;
+        
+        while (isNameExistsInGroup(baseName, groupId)) {
+            counter++;
+            baseName = originalName + " 복사본" + counter;
+        }
+        
+        return baseName;
+    }
+
+    /**
+     * 이름 중복 확인 (길드 범위 - 하위 호환성)
      */
     private boolean isNameExists(String name, String guildId, String type) {
         if ("group".equals(type)) {
@@ -439,6 +474,16 @@ public class ButtonAutomationService {
         } else {
             return buttonRepository.existsByGuildIdAndButtonLabel(guildId, name);
         }
+    }
+
+    /**
+     * 이름 중복 확인 (그룹 범위 - V1.4.5 이후)
+     */
+    private boolean isNameExistsInGroup(String name, UUID groupId) {
+        if (groupId == null) {
+            return false; // 그룹이 없으면 중복 검사하지 않음
+        }
+        return buttonRepository.existsByGroupIdAndButtonLabel(groupId, name);
     }
 
     /**
