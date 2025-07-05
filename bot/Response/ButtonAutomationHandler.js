@@ -85,12 +85,14 @@ class ButtonAutomationHandler {
 
             // 5. 액션 실행 (ButtonAutomationEngine 사용)
             console.log("✅ [핸들러] 5단계: 액션 실행 시작");
-            console.log("🔧 [핸들러] 실행할 액션들:", JSON.stringify(buttonConfig.actions, null, 2));
+            console.log("🔧 [핸들러] 실행할 액션들:", JSON.stringify(buttonConfig.actions, (key, value) => 
+                typeof value === 'bigint' ? value.toString() : value, 2));
             const executionResult = await this.engine.executeActions(
                 buttonConfig.actions || [],
                 context
             );
-            console.log("✅ [핸들러] 액션 실행 완료:", JSON.stringify(executionResult, null, 2));
+            console.log("✅ [핸들러] 액션 실행 완료:", JSON.stringify(executionResult, (key, value) => 
+                typeof value === 'bigint' ? value.toString() : value, 2));
 
             // 6. 실행 결과 처리
             console.log("✅ [핸들러] 6단계: 실행 결과 처리 시작");
@@ -1000,7 +1002,8 @@ async function handleErrorResponse(interaction, result) {
     if (result.message) {
         // result.message가 객체인 경우 message 속성 추출
         const errorMessage = typeof result.message === 'string' ? result.message : 
-                            (result.message.message || JSON.stringify(result.message));
+                            (result.message.message || JSON.stringify(result.message, (key, value) => 
+                                typeof value === 'bigint' ? value.toString() : value));
         
         // 사용자에게 유용한 오류 메시지만 표시
         if (errorMessage.includes('음성 채널에 연결된 후 사용해주세요')) {

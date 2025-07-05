@@ -80,7 +80,8 @@ module.exports = {
 
             // 3. Discord 컴포넌트 생성
             const messageData = await createDiscordMessage(buttonGroupData, groupSettings, messageConfig, activeButtons);
-            console.log("📝 생성된 메시지 데이터:", JSON.stringify(messageData, null, 2));
+            console.log("📝 생성된 메시지 데이터:", JSON.stringify(messageData, (key, value) => 
+                typeof value === 'bigint' ? value.toString() : value, 2));
 
             // 4. 실제 Discord 채널에 메시지 전송
             const sentMessage = await interaction.channel.send(messageData);
