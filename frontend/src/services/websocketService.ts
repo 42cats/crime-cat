@@ -62,26 +62,48 @@ export interface VoiceUser {
   lastActivity?: Date;
 }
 
+export interface NetworkQuality {
+  latency: number;
+  lastPing: number;
+  connectionQuality: 'excellent' | 'good' | 'poor' | 'disconnected';
+  packetLoss: number;
+}
+
 export interface ConnectionState {
   isConnected: boolean;
   currentServer?: string;
   currentChannel?: { serverId: string; channelId: string };
   currentVoiceChannel?: { serverId: string; channelId: string };
   serverRoles: ServerRole[];
+  networkQuality: NetworkQuality;
+  reconnectAttempts: number;
+  lastReconnect?: Date;
 }
 
 class WebSocketService {
   private socket: Socket | null = null;
   private connectionState: ConnectionState = {
     isConnected: false,
-    serverRoles: []
+    serverRoles: [],
+    networkQuality: {
+      latency: 0,
+      lastPing: 0,
+      connectionQuality: 'disconnected',
+      packetLoss: 0
+    },
+    reconnectAttempts: 0
   };
   
   // Event listeners
   private eventListeners: { [event: string]: ((...args: unknown[]) => void)[] } = {};
+  
+  // 네트워크 모니터링 관련
+  private pingInterval: NodeJS.Timeout | null = null;
+  private messageBuffer: Array<{ event: string; data: any; timestamp: number }> = [];
 
   constructor() {
     console.log('🏗️ WebSocketService constructor called');
+    this.setupNetworkMonitoring();
     this.initializeConnection();
   }
 
@@ -122,6 +144,112 @@ class WebSocketService {
     console.log('Socket disconnected:', this.socket.disconnected);
 
     this.setupEventHandlers();
+    this.startPingMonitoring();
+  }
+
+  /**
+   * 네트워크 상태 변화 감지 설정
+   */
+  private setupNetworkMonitoring() {
+    // 네트워크 온라인/오프라인 감지
+    window.addEventListener('online', () => {
+      console.log('🌐 Network online, attempting reconnect...');
+      this.connectionState.networkQuality.connectionQuality = 'good';
+      this.reconnect();
+      this.emit('connection:online');
+    });
+
+    window.addEventListener('offline', () => {
+      console.log('🚫 Network offline detected');
+      this.connectionState.networkQuality.connectionQuality = 'disconnected';
+      this.emit('connection:offline');
+    });
+
+    // 페이지 가시성 변화 감지 (백그라운드에서 복귀 시 재연결)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && this.socket && !this.socket.connected) {
+        console.log('👀 Page visible again, checking connection...');
+        setTimeout(() => {
+          if (!this.socket?.connected) {
+            this.reconnect();
+          }
+        }, 1000);
+      }
+    });
+  }
+
+  /**
+   * 주기적 핑 모니터링 시작
+   */
+  private startPingMonitoring() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+    }
+
+    this.pingInterval = setInterval(() => {
+      if (this.socket?.connected) {
+        const startTime = Date.now();
+        this.socket.emit('ping', startTime, (response: any) => {
+          const latency = Date.now() - startTime;
+          this.updateNetworkQuality(latency);
+        });
+      }
+    }, 30000); // 30초마다 핑 체크
+  }
+
+  /**
+   * 네트워크 품질 업데이트
+   */
+  private updateNetworkQuality(latency: number) {
+    this.connectionState.networkQuality.latency = latency;
+    this.connectionState.networkQuality.lastPing = Date.now();
+
+    // 연결 품질 계산
+    if (latency < 100) {
+      this.connectionState.networkQuality.connectionQuality = 'excellent';
+    } else if (latency < 300) {
+      this.connectionState.networkQuality.connectionQuality = 'good';
+    } else {
+      this.connectionState.networkQuality.connectionQuality = 'poor';
+    }
+
+    console.log('🏃‍♂️ Network latency:', latency + 'ms', 
+                'Quality:', this.connectionState.networkQuality.connectionQuality);
+    
+    this.emit('connection:quality-update', this.connectionState.networkQuality);
+  }
+
+  /**
+   * 메시지 버퍼링 (연결 실패 시 사용)
+   */
+  private bufferMessage(event: string, data: any) {
+    this.messageBuffer.push({
+      event,
+      data,
+      timestamp: Date.now()
+    });
+
+    // 5분 이상 된 메시지는 제거
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+    this.messageBuffer = this.messageBuffer.filter(msg => msg.timestamp > fiveMinutesAgo);
+  }
+
+  /**
+   * 버퍼된 메시지 전송
+   */
+  private flushMessageBuffer() {
+    console.log('📤 Flushing', this.messageBuffer.length, 'buffered messages');
+    this.messageBuffer.forEach(({ event, data }) => {
+      this.socket?.emit(event, data);
+    });
+    this.messageBuffer = [];
+  }
+
+  /**
+   * 지수 백오프 재연결 지연 계산
+   */
+  private getReconnectionDelay(attemptNumber: number): number {
+    return Math.min(1000 * Math.pow(2, attemptNumber), 30000); // 최대 30초
   }
 
   private async getAuthToken(): Promise<string | null> {
@@ -181,15 +309,20 @@ class WebSocketService {
       console.log('✅ WebSocket connected to Signal Server');
       console.log('Socket ID:', this.socket?.id);
       this.connectionState.isConnected = true;
+      this.connectionState.reconnectAttempts = 0;
+      this.connectionState.networkQuality.connectionQuality = 'good';
+      
+      // 버퍼된 메시지 전송
+      this.flushMessageBuffer();
+      
       this.emit('connection:status', { connected: true });
     });
 
     this.socket.on('disconnect', (reason) => {
       console.log('❌ WebSocket disconnected:', reason);
-      this.connectionState = {
-        isConnected: false,
-        serverRoles: []
-      };
+      this.connectionState.isConnected = false;
+      this.connectionState.networkQuality.connectionQuality = 'disconnected';
+      
       this.emit('connection:status', { connected: false, reason });
     });
 
@@ -204,21 +337,41 @@ class WebSocketService {
       this.emit('connection:error', error);
     });
 
-    // 추가 디버깅 이벤트들
+    // 재연결 관련 이벤트들 (개선된 로직)
     this.socket.on('reconnect', (attemptNumber) => {
       console.log('🔄 WebSocket reconnected after', attemptNumber, 'attempts');
+      this.connectionState.reconnectAttempts = attemptNumber;
+      this.connectionState.lastReconnect = new Date();
+      this.connectionState.networkQuality.connectionQuality = 'good';
+      
+      // 재연결 성공 후 버퍼된 메시지 전송
+      this.flushMessageBuffer();
+      
+      this.emit('connection:reconnected', { attempts: attemptNumber });
     });
 
     this.socket.on('reconnect_attempt', (attemptNumber) => {
       console.log('🔄 WebSocket reconnection attempt:', attemptNumber);
+      this.connectionState.reconnectAttempts = attemptNumber;
+      this.emit('connection:reconnecting', { attempt: attemptNumber });
     });
 
     this.socket.on('reconnect_error', (error) => {
       console.error('❌ WebSocket reconnection error:', error);
+      this.connectionState.networkQuality.connectionQuality = 'poor';
+      this.emit('connection:reconnect-error', error);
     });
 
     this.socket.on('reconnect_failed', () => {
-      console.error('❌ WebSocket reconnection failed');
+      console.error('❌ WebSocket reconnection failed - all attempts exhausted');
+      this.connectionState.networkQuality.connectionQuality = 'disconnected';
+      this.emit('connection:reconnect-failed');
+    });
+
+    // 핑/퐁 응답 처리
+    this.socket.on('pong', (timestamp: number) => {
+      const latency = Date.now() - timestamp;
+      this.updateNetworkQuality(latency);
     });
 
     // 서버 연결 실패 이벤트 추가
@@ -413,7 +566,11 @@ class WebSocketService {
   }
 
   leaveServer(serverId: string) {
-    if (!this.socket?.connected) return;
+    if (!this.socket?.connected) {
+      // 중요한 메시지는 버퍼링
+      this.bufferMessage('server:leave', { serverId });
+      return;
+    }
     
     console.log('👋 Leaving server:', serverId);
     this.socket.emit('server:leave', { serverId });
@@ -437,7 +594,11 @@ class WebSocketService {
   }
 
   leaveChannel(serverId: string, channelId: string) {
-    if (!this.socket?.connected) return;
+    if (!this.socket?.connected) {
+      // 중요한 메시지는 버퍼링
+      this.bufferMessage('channel:leave', { serverId, channelId });
+      return;
+    }
     
     console.log('👋 Leaving channel:', serverId, channelId);
     this.socket.emit('channel:leave', { serverId, channelId });
@@ -469,7 +630,11 @@ class WebSocketService {
   }
 
   sendTyping(serverId: string, channelId: string, isTyping: boolean) {
-    if (!this.socket?.connected) return;
+    if (!this.socket?.connected) {
+      // 중요한 메시지는 버퍼링
+      this.bufferMessage('chat:typing', { serverId, channelId, isTyping });
+      return;
+    }
 
     this.socket.emit('chat:typing', {
       serverId,
@@ -489,7 +654,11 @@ class WebSocketService {
   }
 
   leaveVoiceChannel(serverId?: string, channelId?: string) {
-    if (!this.socket?.connected) return;
+    if (!this.socket?.connected) {
+      // 중요한 메시지는 버퍼링
+      this.bufferMessage('voice:leave', { serverId, channelId });
+      return;
+    }
 
     console.log('🔇 Leaving voice channel');
     this.socket.emit('voice:leave', { serverId, channelId });
@@ -502,7 +671,11 @@ class WebSocketService {
     isDeafened?: boolean;
     isScreenSharing?: boolean;
   }) {
-    if (!this.socket?.connected) return;
+    if (!this.socket?.connected) {
+      // 중요한 메시지는 버퍼링
+      this.bufferMessage('voice:status', { serverId, channelId, ...status });
+      return;
+    }
 
     this.socket.emit('voice:status', {
       serverId,
@@ -515,7 +688,11 @@ class WebSocketService {
   
   // Speaking Detection 상태 전송
   updateSpeakingStatus(serverId: string, channelId: string, isSpeaking: boolean) {
-    if (!this.socket?.connected) return;
+    if (!this.socket?.connected) {
+      // 중요한 메시지는 버퍼링
+      this.bufferMessage('voice:speaking', { serverId, channelId, isSpeaking });
+      return;
+    }
 
     this.socket.emit('voice:speaking', {
       serverId,
@@ -526,7 +703,11 @@ class WebSocketService {
 
   // 음성 채널 사용자 목록 요청
   requestVoiceUsers(serverId: string, channelId: string) {
-    if (!this.socket?.connected) return;
+    if (!this.socket?.connected) {
+      // 중요한 메시지는 버퍼링
+      this.bufferMessage('voice:get-users', { serverId, channelId });
+      return;
+    }
 
     this.socket.emit('voice:get-users', {
       serverId,
@@ -536,7 +717,11 @@ class WebSocketService {
 
   // 서버 내 온라인 사용자 목록 요청
   requestOnlineUsers(serverId: string) {
-    if (!this.socket?.connected) return;
+    if (!this.socket?.connected) {
+      // 중요한 메시지는 버퍼링
+      this.bufferMessage('users:get-online', { serverId });
+      return;
+    }
 
     console.log('📡 온라인 사용자 목록 요청:', serverId);
     this.socket.emit('users:get-online', { serverId });
@@ -544,7 +729,11 @@ class WebSocketService {
 
   // SFU 트랙 관리 메서드 (P2P WebRTC 시그널링 대체)
   publishTrack(offer: RTCSessionDescriptionInit, serverId: string, channelId: string) {
-    if (!this.socket?.connected) return;
+    if (!this.socket?.connected) {
+      // 중요한 메시지는 버퍼링
+      this.bufferMessage('sfu:track:publish', { offer, serverId, channelId });
+      return;
+    }
 
     console.log('📤 SFU 트랙 발행 요청 전송:', serverId, channelId);
     this.socket.emit('sfu:track:publish', {
@@ -555,7 +744,11 @@ class WebSocketService {
   }
 
   subscribeToTrack(trackId: string, offer: RTCSessionDescriptionInit, serverId: string, channelId: string) {
-    if (!this.socket?.connected) return;
+    if (!this.socket?.connected) {
+      // 중요한 메시지는 버퍼링
+      this.bufferMessage('sfu:track:subscribe', { trackId, offer, serverId, channelId });
+      return;
+    }
 
     console.log('📤 SFU 트랙 구독 요청 전송:', trackId, serverId, channelId);
     this.socket.emit('sfu:track:subscribe', {
@@ -567,7 +760,11 @@ class WebSocketService {
   }
 
   unpublishTrack(serverId: string, channelId: string) {
-    if (!this.socket?.connected) return;
+    if (!this.socket?.connected) {
+      // 중요한 메시지는 버퍼링
+      this.bufferMessage('sfu:track:unpublish', { serverId, channelId });
+      return;
+    }
 
     console.log('📤 SFU 트랙 발행 중단 요청 전송:', serverId, channelId);
     this.socket.emit('sfu:track:unpublish', {
@@ -585,15 +782,57 @@ class WebSocketService {
     return this.socket?.connected || false;
   }
 
-  // 연결 해제
+  // 연결 해제 및 리소스 정리
   disconnect() {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
     }
+    
+    // 리소스 정리
+    this.cleanup();
+    
     this.connectionState = {
       isConnected: false,
-      serverRoles: []
+      serverRoles: [],
+      networkQuality: {
+        latency: 0,
+        lastPing: 0,
+        connectionQuality: 'disconnected',
+        packetLoss: 0
+      },
+      reconnectAttempts: 0
+    };
+  }
+
+  /**
+   * 리소스 정리
+   */
+  private cleanup() {
+    // 핑 모니터링 정리
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+    
+    // 메시지 버퍼 정리
+    this.messageBuffer = [];
+    
+    // 이벤트 리스너 정리
+    this.eventListeners = {};
+    
+    console.log('🧹 WebSocket service resources cleaned up');
+  }
+
+  /**
+   * 연결 상태 정보 반환
+   */
+  getConnectionInfo() {
+    return {
+      ...this.connectionState,
+      bufferedMessages: this.messageBuffer.length,
+      socketId: this.socket?.id,
+      connected: this.socket?.connected || false
     };
   }
 

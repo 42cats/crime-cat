@@ -1,9 +1,13 @@
 package com.crimecat.backend.voice.controller;
 
 import com.crimecat.backend.voice.service.CloudflareApiService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+
+import java.util.Map;
 
 /**
  * Cloudflare API 프록시 컨트롤러
@@ -19,6 +23,8 @@ import reactor.core.publisher.Mono;
 )
 public class CloudflareProxyController {
 
+    private static final Logger log = LoggerFactory.getLogger(CloudflareProxyController.class);
+    
     private final CloudflareApiService cloudflareApiService;
 
     public CloudflareProxyController(CloudflareApiService cloudflareApiService) {
@@ -43,12 +49,26 @@ public class CloudflareProxyController {
      * POST /api/v1/cloudflare/sessions/new
      */
     @PostMapping("/sessions/new")
-    public Mono<ResponseEntity<CloudflareApiService.SfuSessionResponse>> createSession(
+    public Mono<ResponseEntity<Object>> createSession(
             @RequestBody CloudflareApiService.SfuSessionRequest request) {
         
+        log.info("🌐 SFU 세션 생성 프록시 요청 수신");
+        
         return cloudflareApiService.createSession(request)
-                .map(ResponseEntity::ok)
-                .onErrorReturn(ResponseEntity.status(500).build());
+                .map(response -> {
+                    log.info("✅ SFU 세션 생성 성공 - 프록시 응답 전달");
+                    return ResponseEntity.ok((Object) response);
+                })
+                .onErrorResume(error -> {
+                    log.error("❌ SFU 세션 생성 실패 - 프록시 에러 처리", error);
+                    return Mono.just(ResponseEntity.status(500).body(
+                        (Object) Map.of(
+                            "error", "SFU_SESSION_CREATION_FAILED", 
+                            "message", error.getMessage(),
+                            "timestamp", System.currentTimeMillis()
+                        )
+                    ));
+                });
     }
 
     /**

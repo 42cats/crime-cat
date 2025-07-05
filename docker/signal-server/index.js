@@ -1,6 +1,9 @@
 const express = require('express');
 const { createServer } = require('http');
+const { createServer: createHttpsServer } = require('https');
 const { Server } = require('socket.io');
+const fs = require('fs');
+const path = require('path');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
@@ -10,11 +13,78 @@ const VoiceStateManager = require('./services/VoiceStateManager');
 require('dotenv').config();
 
 const app = express();
-const server = createServer(app);
 
-// CORS 설정
+// SSL 인증서 설정 (개발 환경용 자체 서명 인증서)
+let server;
+const useSSL = process.env.SIGNAL_USE_SSL === 'true';
+
+if (useSSL) {
+  try {
+    // 자체 서명 인증서 생성 또는 기존 인증서 사용
+    const certDir = path.join(__dirname, 'certs');
+    const keyPath = path.join(certDir, 'key.pem');
+    const certPath = path.join(certDir, 'cert.pem');
+    
+    // 인증서 파일이 없으면 생성
+    if (!fs.existsSync(certDir)) {
+      fs.mkdirSync(certDir, { recursive: true });
+    }
+    
+    if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
+      console.log('🔧 자체 서명 SSL 인증서 생성 중...');
+      const { execSync } = require('child_process');
+      
+      // OpenSSL로 자체 서명 인증서 생성
+      try {
+        execSync(`openssl req -x509 -newkey rsa:4096 -keyout "${keyPath}" -out "${certPath}" -days 365 -nodes -subj "/C=KR/ST=Seoul/L=Seoul/O=CrimeCat/OU=Dev/CN=10.19.202.74"`, { stdio: 'inherit' });
+        console.log('✅ SSL 인증서 생성 완료');
+      } catch (opensslError) {
+        console.warn('⚠️ OpenSSL을 사용한 인증서 생성 실패, HTTP로 폴백:', opensslError.message);
+        server = createServer(app);
+      }
+    }
+    
+    if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+      const httpsOptions = {
+        key: fs.readFileSync(keyPath),
+        cert: fs.readFileSync(certPath)
+      };
+      
+      server = createHttpsServer(httpsOptions, app);
+      console.log('🔒 HTTPS Signal Server 모드 활성화');
+    } else {
+      server = createServer(app);
+      console.log('📡 HTTP Signal Server 모드 (인증서 없음)');
+    }
+  } catch (error) {
+    console.warn('⚠️ SSL 설정 실패, HTTP로 폴백:', error.message);
+    server = createServer(app);
+  }
+} else {
+  server = createServer(app);
+  console.log('📡 HTTP Signal Server 모드');
+}
+
+// CORS 설정 (외부 IP 접속 지원)
+const getAllowedOrigins = () => {
+  const defaultOrigins = [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'http://localhost:5173',
+    'https://localhost:5173'
+  ];
+  
+  // 환경변수에서 추가 Origin 가져오기
+  const signalAllowedOrigins = process.env.SIGNAL_ALLOWED_ORIGINS;
+  if (signalAllowedOrigins) {
+    const additionalOrigins = signalAllowedOrigins.split(',').map(origin => origin.trim());
+    return [...defaultOrigins, ...additionalOrigins];
+  }
+  
+  return defaultOrigins;
+};
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: getAllowedOrigins(),
   credentials: true,
   methods: ['GET', 'POST'],
 };
@@ -132,29 +202,9 @@ const handleChatEvents = (socket) => {
     try {
       const { serverId, channelId } = data;
 
-      // 채널 멤버십 확인 또는 자동 입장
-      try {
-        await axios.post(
-          `${process.env.BACKEND_URL}/api/v1/signal/servers/${serverId}/channels/${channelId}/join`,
-          {
-            userId: socket.user.id,
-            username: socket.user.username
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${process.env.SIGNAL_SERVER_SECRET_TOKEN}`,
-              'X-User-ID': socket.user.id,
-              'X-User-Token': socket.authToken,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-      } catch (joinError) {
-        // 이미 멤버인 경우 무시
-        if (joinError.response?.status !== 409) {
-          throw joinError;
-        }
-      }
+      // Phase 1: 채널 멤버십 확인을 메모리 기반으로 단순화
+      // Signal Server가 단일 진실 소스이므로 별도 Backend 검증 불필요
+      console.log(`🎯 [Phase 1] Direct channel join: ${socket.user.username} → ${serverId}/${channelId}`);
 
       const channelRoom = `server:${serverId}:channel:${channelId}`;
       socket.join(channelRoom);
@@ -270,29 +320,9 @@ const handleVoiceEvents = (socket) => {
     try {
       const { serverId, channelId, trackId } = data;
 
-      // 채널 멤버십 확인 (백엔드 API 호출)
-      try {
-        await axios.post(
-          `${process.env.BACKEND_URL}/api/v1/signal/servers/${serverId}/channels/${channelId}/join`,
-          {
-            userId: socket.user.id,
-            username: socket.user.username
-          },
-          {
-            headers: {
-              'Authorization': `Bearer ${process.env.SIGNAL_SERVER_SECRET_TOKEN}`,
-              'X-User-ID': socket.user.id,
-              'X-User-Token': socket.authToken,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-      } catch (joinError) {
-        if (joinError.response?.status !== 409) {
-          console.error('Voice channel join failed:', joinError.message);
-          throw joinError;
-        }
-      }
+      // Phase 1: 음성 채널 멤버십을 메모리 기반으로 단순화
+      // Signal Server가 단일 진실 소스이므로 Backend 검증 제거
+      console.log(`🎯 [Phase 1] Direct voice join: ${socket.user.username} → ${serverId}/${channelId}`);
 
       // VoiceStateManager에 사용자 추가 (trackId 포함)
       const channelUsers = voiceStateManager.joinVoiceChannel(
@@ -328,11 +358,18 @@ const handleVoiceEvents = (socket) => {
         isSpeaking: false
       });
 
-      // 현재 사용자에게 성공 메시지 전송 (trackId가 포함된 사용자 목록)
+      // Phase 1-5: 상태 업데이트를 포함한 성공 메시지 전송
       socket.emit('voice:join:success', { 
         serverId, 
         channelId,
         currentUsers: channelUsers
+      });
+      
+      // 전체 채널 상태 업데이트 브로드캐스트 (자신 포함)
+      io.to(voiceRoom).emit('voice:state:updated', {
+        serverId,
+        channelId,
+        users: channelUsers
       });
 
       console.log(`✅ ${socket.user.username} 음성 채널 참가 완료: ${serverId}/${channelId}`);
@@ -356,28 +393,9 @@ const handleVoiceEvents = (socket) => {
         const { serverId, channelId } = leftChannel;
         const voiceRoom = `voice:server:${serverId}:channel:${channelId}`;
 
-        // 음성 세션 종료 로깅
-        try {
-          await axios.post(
-            `${process.env.BACKEND_URL}/api/v1/signal/voice/sessions/end`,
-            {
-              userId: socket.user.id,
-              serverId: serverId,
-              channelId: channelId,
-              endTime: new Date().toISOString()
-            },
-            {
-              headers: {
-                'Authorization': `Bearer ${process.env.SIGNAL_SERVER_SECRET_TOKEN}`,
-                'X-User-ID': socket.user.id,
-                'X-User-Token': socket.authToken,
-                'Content-Type': 'application/json'
-              }
-            }
-          );
-        } catch (logError) {
-          console.warn('Voice session end logging failed:', logError.message);
-        }
+        // Phase 1: 음성 세션 로깅을 메모리 기반으로 단순화
+        // Signal Server가 단일 진실 소스이므로 Backend 로깅 제거
+        console.log(`🎯 [Phase 1] Voice session ended: ${socket.user.username} left ${serverId}/${channelId}`);
 
         // 다른 사용자들에게 퇴장 알림
         socket.to(voiceRoom).emit('voice:user-left', {

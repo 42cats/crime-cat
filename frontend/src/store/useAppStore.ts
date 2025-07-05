@@ -258,23 +258,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     return state.messagesByChannel[channelKey] || [];
   },
   
-  // Voice Actions
-  setVoiceUsers: (users) => 
-    set({ voiceUsers: Array.isArray(users) ? users : [] }),
+  // Phase 1-3: Signal Server 우선 음성 사용자 관리
+  setVoiceUsers: (users) => {
+    console.log('🎯 [Phase 1-3] Signal Server 사용자 목록 설정:', users.length, '명');
+    // Signal Server가 단일 진실 소스이므로 무조건 덮어쓰기
+    set({ voiceUsers: Array.isArray(users) ? users : [] });
+  },
     
   addVoiceUser: (user) => 
     set((state) => {
+      console.log('➕ [Phase 1-3] Signal Server 사용자 추가:', user.username);
       const voiceUsers = Array.isArray(state.voiceUsers) ? state.voiceUsers : [];
-      // 중복 체크 (id 또는 userId로)
-      const exists = voiceUsers.some(u => 
-        u.id === user.id || 
-        (user.userId && (u.id === user.userId || u.userId === user.userId))
-      );
-      if (exists) {
-        return state; // 이미 존재하면 추가하지 않음
-      }
       
-      // 필수 필드 기본값 설정
+      // Signal Server에서 오는 데이터를 무조건 신뢰하되 중복 방지
       const normalizedUser: VoiceUser = {
         id: user.id || user.userId || '',
         username: user.username || 'Unknown',
@@ -283,15 +279,28 @@ export const useAppStore = create<AppState>((set, get) => ({
         volume: user.volume ?? 50,
         isMuted: user.isMuted ?? false,
         isConnected: user.isConnected ?? true,
-        ...user // 나머지 필드들
+        ...user // Signal Server 데이터 우선
       };
+      
+      // Phase 1-3: 중복 확인 후 추가 (React 키 오류 방지)
+      const exists = voiceUsers.some(u => 
+        u.id === normalizedUser.id || 
+        (normalizedUser.userId && (u.id === normalizedUser.userId || u.userId === normalizedUser.userId))
+      );
+      
+      if (exists) {
+        console.log('⚠️ [Phase 1-3] 중복 사용자 감지, 추가 생략:', normalizedUser.username);
+        return state;
+      }
       
       return { voiceUsers: [...voiceUsers, normalizedUser] };
     }),
     
   removeVoiceUser: (userId) => 
     set((state) => {
+      console.log('➖ [Phase 1-3] Signal Server 사용자 제거:', userId);
       const voiceUsers = Array.isArray(state.voiceUsers) ? state.voiceUsers : [];
+      // Signal Server에서 오는 제거 명령을 무조건 신뢰
       return { 
         voiceUsers: voiceUsers.filter(u => u.id !== userId && u.userId !== userId) 
       };
@@ -344,3 +353,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       audioFiles: [...state.audioFiles, file]
     })),
 }));
+
+// 디버깅을 위한 전역 스토어 노출
+if (typeof window !== 'undefined') {
+  (window as any).useAppStore = useAppStore;
+  console.log('🌐 Zustand 스토어가 전역으로 노출되었습니다: window.useAppStore');
+}

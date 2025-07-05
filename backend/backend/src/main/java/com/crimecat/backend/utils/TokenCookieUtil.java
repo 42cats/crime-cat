@@ -20,17 +20,23 @@ public class TokenCookieUtil {
     private static String appDomain;
     private static int accessTokenExpireMinutes;
     private static int refreshTokenExpireDays;
+    private static boolean cookieDomainEnabled;
+    private static String sameSitePolicy;
 
     public TokenCookieUtil(
         Environment env,
         @Value("${spring.domain}") String domain,
         @Value("${spring.oauth.access-token-expire-minutes}") int accessExpire,
-        @Value("${spring.oauth.refresh-token-expire-days}") int refreshExpire
+        @Value("${spring.oauth.refresh-token-expire-days}") int refreshExpire,
+        @Value("${app.cookie.domain-enabled:${SPRING_COOKIE_DOMAIN_ENABLED:true}}") boolean domainEnabled,
+        @Value("${app.cookie.samesite-policy:${SPRING_COOKIE_SAMESITE_POLICY:Strict}}") String samesite
     ) {
         this.env = env;
         appDomain = domain;
         accessTokenExpireMinutes = accessExpire;
         refreshTokenExpireDays = refreshExpire;
+        cookieDomainEnabled = domainEnabled;
+        sameSitePolicy = samesite;
     }
 
     @PostConstruct
@@ -57,10 +63,14 @@ public class TokenCookieUtil {
 
         if (isProd) {
             builder
-                .domain(appDomain)
                 .httpOnly(true)
                 .secure(true)
-                .sameSite("Strict");
+                .sameSite(sameSitePolicy);
+            
+            // 외부 IP 접속시 도메인 설정 조건부 적용
+            if (cookieDomainEnabled) {
+                builder.domain(appDomain);
+            }
         }
 
         response.addHeader(HttpHeaders.SET_COOKIE, builder.build().toString());
@@ -76,8 +86,12 @@ public class TokenCookieUtil {
             builder
                 .httpOnly(true)
                 .secure(true)
-                .domain(appDomain)
-                .sameSite("Strict");
+                .sameSite(sameSitePolicy);
+            
+            // 외부 IP 접속시 도메인 설정 조건부 적용
+            if (cookieDomainEnabled) {
+                builder.domain(appDomain);
+            }
         }
 
         return builder.build().toString();
@@ -93,8 +107,12 @@ public class TokenCookieUtil {
             builder
                 .httpOnly(true)
                 .secure(true)
-                .domain(appDomain)
-                .sameSite("Strict");
+                .sameSite(sameSitePolicy);
+            
+            // 외부 IP 접속시 도메인 설정 조건부 적용
+            if (cookieDomainEnabled) {
+                builder.domain(appDomain);
+            }
         }
 
         return builder.build().toString();

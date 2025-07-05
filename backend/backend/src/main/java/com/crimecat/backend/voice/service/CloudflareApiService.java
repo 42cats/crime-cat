@@ -1,12 +1,16 @@
 package com.crimecat.backend.voice.service;
 
 import com.crimecat.backend.api.AbstractApiService;
+import jakarta.annotation.PostConstruct;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-
-import java.util.Map;
 
 /**
  * Cloudflare API 프록시 서비스
@@ -15,6 +19,8 @@ import java.util.Map;
  */
 @Service
 public class CloudflareApiService extends AbstractApiService {
+
+    private static final Logger log = LoggerFactory.getLogger(CloudflareApiService.class);
 
     @Value("${cloudflare.realtime.app-id}")
     private String cfAppId;
@@ -32,6 +38,33 @@ public class CloudflareApiService extends AbstractApiService {
 
     public CloudflareApiService(WebClient.Builder webClientBuilder) {
         super(CLOUDFLARE_RTC_BASE_URL, webClientBuilder);
+    }
+
+    /**
+     * 환경변수 검증
+     */
+    @PostConstruct
+    public void validateCloudflareConfig() {
+        log.info("🔧 Cloudflare API 설정 검증 중...");
+        
+        if (!StringUtils.hasText(cfAppId)) {
+            throw new IllegalStateException("❌ CF_REALTIME_APP_ID 환경변수가 설정되지 않았습니다");
+        }
+        if (!StringUtils.hasText(cfApiToken)) {
+            throw new IllegalStateException("❌ CF_REALTIME_API_TOKEN 환경변수가 설정되지 않았습니다");
+        }
+        if (!StringUtils.hasText(cfTurnKeyId)) {
+            throw new IllegalStateException("❌ CF_TURN_KEY_ID 환경변수가 설정되지 않았습니다");
+        }
+        if (!StringUtils.hasText(cfTurnApiToken)) {
+            throw new IllegalStateException("❌ CF_TURN_API_TOKEN 환경변수가 설정되지 않았습니다");
+        }
+        
+        log.info("✅ Cloudflare 설정 검증 완료");
+        log.info("🆔 App ID: {}", cfAppId);
+        log.info("🔑 API Token: {}***", cfApiToken.substring(0, Math.min(8, cfApiToken.length())));
+        log.info("🗝️ TURN Key ID: {}", cfTurnKeyId);
+        log.info("🔐 TURN Token: {}***", cfTurnApiToken.substring(0, Math.min(8, cfTurnApiToken.length())));
     }
 
     /**
@@ -54,13 +87,34 @@ public class CloudflareApiService extends AbstractApiService {
      * SFU 세션 생성
      */
     public Mono<SfuSessionResponse> createSession(SfuSessionRequest request) {
+        log.info("🌐 Cloudflare SFU 세션 생성 시작");
+        log.debug("📋 요청 SDP: {}", request.getSessionDescription());
+        
         return webClient.post()
                 .uri("/apps/{appId}/sessions/new", cfAppId)
                 .header("Authorization", "Bearer " + cfApiToken)
                 .header("Content-Type", "application/json")
                 .bodyValue(request)
                 .retrieve()
-                .bodyToMono(SfuSessionResponse.class);
+                .onStatus(HttpStatusCode::isError, response -> {
+                    log.error("🚨 Cloudflare SFU API 에러 - Status: {}", response.statusCode());
+                    return response.bodyToMono(String.class)
+                            .map(body -> {
+                                log.error("🚨 Cloudflare API 에러 응답: {}", body);
+                                return new RuntimeException(String.format(
+                                    "Cloudflare SFU API 실패: %s - %s", 
+                                    response.statusCode().value(),
+                                    body
+                                ));
+                            });
+                })
+                .bodyToMono(SfuSessionResponse.class)
+                .doOnSuccess(response -> {
+                    log.info("✅ SFU 세션 생성 성공: {}", response.getSessionId());
+                })
+                .doOnError(error -> {
+                    log.error("❌ SFU 세션 생성 실패", error);
+                });
     }
 
     /**

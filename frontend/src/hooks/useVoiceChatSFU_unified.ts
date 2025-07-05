@@ -174,15 +174,11 @@ export const useVoiceChatSFU = () => {
 
     // 1. voice:join:success - 음성 채널 참가 성공
     const joinSuccessHandler = (data: any) => {
-      console.log('🎯 [Phase 1-5] Voice join success:', data);
-      
-      // Phase 1-5: 상태 업데이트는 Signal Server가 주도
-      setCurrentVoiceChannel({ serverId: data.serverId, channelId: data.channelId });
-      setVoiceConnected(true);
+      console.log('🎯 [Phase 1] Voice join success:', data);
       
       // Signal Server가 제공하는 사용자 목록을 단일 진실 소스로 사용
       if (data.currentUsers && Array.isArray(data.currentUsers)) {
-        console.log('👥 [Phase 1-5] Signal Server 사용자 목록 수신:', data.currentUsers.length, '명');
+        console.log('👥 [Phase 1] Signal Server 사용자 목록 수신:', data.currentUsers.length, '명');
         setVoiceUsers(data.currentUsers); // 상태 덮어쓰기 (Signal Server가 진실 소스)
         
         // 원격 트랙 구독
@@ -209,7 +205,7 @@ export const useVoiceChatSFU = () => {
 
     // 3. voice:user-left - 사용자 퇴장
     const userLeftHandler = (user: VoiceUser) => {
-      console.log('👋 [Phase 1-5] 사용자 퇴장:', user.username);
+      console.log('👋 [Phase 1] 사용자 퇴장:', user.username);
       
       // 트랙 정리
       if (user.trackId) {
@@ -219,13 +215,6 @@ export const useVoiceChatSFU = () => {
           return updated;
         });
         subscribedTracks.current.delete(user.trackId);
-      }
-      
-      // Phase 1-5: 자신이 퇴장한 경우 상태 정리
-      if (user.id === user.id || user.userId === user.id) {
-        console.log('🚪 [Phase 1-5] 본인 퇴장 - 상태 정리');
-        setCurrentVoiceChannel(undefined);
-        setVoiceConnected(false);
       }
       
       // Signal Server에서 오는 이벤트를 그대로 신뢰
@@ -286,13 +275,13 @@ export const useVoiceChatSFU = () => {
   // (RTCPeerConnection, SFU 관련 로직 등)
 
   /**
-   * 음성 채널 참가 (Phase 1-5: 구독 전용)
+   * 음성 채널 참가
    */
   const joinVoiceChannel = useCallback(async (serverId: string, channelId: string) => {
     try {
-      console.log('🎤 [Phase 1-5] 음성 채널 참가 시작 (구독 전용):', serverId, channelId);
+      console.log('🎤 [Phase 1] 음성 채널 참가 시작:', serverId, channelId);
       
-      // 1. 로컬 스트림 생성 (로컬 리소스만 관리)
+      // 1. 로컬 스트림 생성
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -302,45 +291,44 @@ export const useVoiceChatSFU = () => {
       });
       
       setLocalStream(stream);
+      setCurrentVoiceChannel({ serverId, channelId });
+      setVoiceConnected(true);
       
-      // 2. WebSocket을 통해 Signal Server에 참가 알림만 전송
+      // 2. WebSocket을 통해 Signal Server에 참가 알림
       websocketService.joinVoiceChannel(serverId, channelId);
       
-      // 3. Phase 1-5: 상태는 Signal Server에서 오는 이벤트로만 변경
-      // setCurrentVoiceChannel, setVoiceConnected 제거
-      // Signal Server에서 voice:join:success 이벤트로 상태 업데이트
-      
-      console.log('✅ [Phase 1-5] 음성 채널 참가 신호 전송 완료 (상태는 Signal Server 구독으로 처리)');
+      console.log('✅ [Phase 1] 음성 채널 참가 완료');
       
     } catch (error) {
-      console.error('❌ [Phase 1-5] 음성 채널 참가 실패:', error);
+      console.error('❌ [Phase 1] 음성 채널 참가 실패:', error);
       throw error;
     }
-  }, []);
+  }, [setCurrentVoiceChannel, setVoiceConnected]);
 
   /**
-   * 음성 채널 퇴장 (Phase 1-5: 구독 전용)
+   * 음성 채널 퇴장
    */
   const leaveVoiceChannel = useCallback(() => {
-    console.log('🚪 [Phase 1-5] 음성 채널 퇴장 시작 (구독 전용)');
+    console.log('🚪 [Phase 1] 음성 채널 퇴장 시작');
     
-    // 1. 로컬 스트림 정리 (로컬 리소스만 정리)
+    // 1. 로컬 스트림 정리
     if (localStream) {
       localStream.getTracks().forEach(track => track.stop());
       setLocalStream(null);
     }
     
-    // 2. WebSocket을 통해 Signal Server에 퇴장 알림만 전송
+    // 2. WebSocket을 통해 Signal Server에 퇴장 알림
     if (currentVoiceChannel) {
       websocketService.leaveVoiceChannel(currentVoiceChannel.serverId, currentVoiceChannel.channelId);
     }
     
-    // 3. Phase 1-5: 상태는 Signal Server에서 오는 이벤트로만 변경
-    // setCurrentVoiceChannel, setVoiceConnected, setVoiceUsers 제거
-    // Signal Server에서 voice:user-left, voice:state:updated 이벤트로 상태 업데이트
+    // 3. 상태 정리
+    setCurrentVoiceChannel(undefined);
+    setVoiceConnected(false);
+    setVoiceUsers([]); // 로컬 상태 정리
     
-    console.log('✅ [Phase 1-5] 음성 채널 퇴장 신호 전송 완료 (상태는 Signal Server 구독으로 처리)');
-  }, [localStream, currentVoiceChannel]);
+    console.log('✅ [Phase 1] 음성 채널 퇴장 완료');
+  }, [localStream, currentVoiceChannel, setCurrentVoiceChannel, setVoiceConnected, setVoiceUsers]);
 
   /**
    * 음소거 토글
@@ -393,63 +381,6 @@ export const useVoiceChatSFU = () => {
     sfuSessionId,
     publishedTrackId,
   };
-};
-
-/**
- * 브라우저 종료/페이지 이탈 감지 및 세션 정리
- */
-export const useVoiceSessionCleanup = () => {
-  const { leaveVoiceChannel, isVoiceConnected, currentVoiceChannel } = useVoiceChatSFU();
-
-  useEffect(() => {
-    // WebSocket 연결 완전 정리 (음성 및 채팅 채널 모두 퇴장)
-    const cleanupWebSocket = () => {
-      console.log('🔌 [Phase 1] WebSocket 연결 완전 정리 시작...');
-      try {
-        // 1. 음성 채널 퇴장
-        if (currentVoiceChannel) {
-          websocketService.leaveVoiceChannel(currentVoiceChannel.serverId, currentVoiceChannel.channelId);
-          console.log('🎤 [Phase 1] 음성 채널 퇴장 완료');
-        }
-      } catch (error) {
-        console.error('❌ [Phase 1] WebSocket 정리 중 오류:', error);
-      }
-    };
-
-    // 1. 브라우저 창 닫기/새로고침 감지
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (isVoiceConnected || currentVoiceChannel) {
-        console.log('🚨 [Phase 1] 브라우저 종료 감지 - 음성 세션 정리');
-        cleanupWebSocket();
-        
-        // 브라우저에게 확인 메시지 표시 (선택사항)
-        const message = '음성 채팅에 연결되어 있습니다. 정말 나가시겠습니까?';
-        event.returnValue = message;
-        return message;
-      }
-    };
-
-    // 2. 페이지 가시성 변화 감지 (백그라운드 전환)
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        console.log('👀 [Phase 1] 페이지가 백그라운드로 전환됨');
-        // 백그라운드에서는 연결 유지 (Phase 1에서는 단순화)
-      } else {
-        console.log('👀 [Phase 1] 페이지가 포그라운드로 복귀됨');
-        // 필요시 연결 상태 확인
-      }
-    };
-
-    // 이벤트 리스너 등록
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // 정리 함수
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [isVoiceConnected, currentVoiceChannel, leaveVoiceChannel]);
 };
 
 export default useVoiceChatSFU;

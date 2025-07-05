@@ -56,9 +56,50 @@ export const RemoteAudioPlayer: React.FC<RemoteAudioPlayerProps> = ({
           });
         }
         
+        // 트랙 활성화 상태 모니터링
+        const monitorTrackState = () => {
+          const audioTracks = stream.getAudioTracks();
+          if (audioTracks.length > 0) {
+            const track = audioTracks[0];
+            
+            // 트랙 상태 변경 이벤트 리스너
+            track.addEventListener('mute', () => {
+              console.log(`🔇 트랙 음소거됨: ${trackId}`);
+            });
+            
+            track.addEventListener('unmute', () => {
+              console.log(`🔊 트랙 음소거 해제됨: ${trackId}`);
+              // 음소거 해제 시 재생 재시도
+              attemptPlayback();
+            });
+            
+            track.addEventListener('ended', () => {
+              console.log(`🔚 트랙 종료됨: ${trackId}`);
+            });
+          }
+        };
+        
         // 향상된 오디오 재생 로직
         const attemptPlayback = async () => {
           try {
+            // 트랙 상태 재확인
+            const audioTracks = stream.getAudioTracks();
+            if (audioTracks.length === 0) {
+              console.warn(`⚠️ 오디오 트랙이 없음: ${trackId}`);
+              return;
+            }
+            
+            const track = audioTracks[0];
+            if (!track.enabled || track.readyState !== 'live') {
+              console.warn(`⚠️ 트랙이 비활성 상태: ${trackId}`, {
+                enabled: track.enabled,
+                readyState: track.readyState
+              });
+              // 3초 후 재시도
+              setTimeout(attemptPlayback, 3000);
+              return;
+            }
+            
             await audio.play();
             console.log(`✅ 원격 오디오 재생 시작: ${trackId}`);
             setNeedsUserInteraction(false);
@@ -98,6 +139,7 @@ export const RemoteAudioPlayer: React.FC<RemoteAudioPlayerProps> = ({
           }
         };
         
+        monitorTrackState();
         attemptPlayback();
         audioRefs.current[trackId] = audio;
       }

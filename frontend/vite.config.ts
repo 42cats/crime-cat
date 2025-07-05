@@ -16,13 +16,13 @@ export default defineConfig({
     assetsInlineLimit: 4096, // 4KB 이하 파일은 base64로 인라인화
     
     server: {
-        host: "::",
+        host: "0.0.0.0", // 외부 IP 접속 허용
         port: 5173,
 
-        // HMR용 WSS 프로토콜 명시
+        // HMR용 HTTPS 프로토콜
         hmr: {
             protocol: "wss",
-            host: "localhost",
+            host: "10.19.202.74", // 외부 IP 사용
             port: 5173,
         },
 
@@ -65,16 +65,20 @@ export default defineConfig({
             },
             // Voice Chat Signal Server WebSocket proxy
             "/socket.io": {
-                target: "http://localhost:4000",
+                target: process.env.VITE_SIGNAL_SERVER_URL || "http://localhost:4000",
                 changeOrigin: true,
                 ws: true, // WebSocket 지원
                 configure(proxy) {
+                    const origin = process.env.NODE_ENV === 'production' 
+                        ? `https://${process.env.SUBDOMAINS || 'localhost:5173'}`
+                        : `http://${process.env.SUBDOMAINS || 'localhost:5173'}`;
+                    
                     proxy.on("proxyReq", (pr) => {
-                        pr.setHeader("X-Forwarded-Host", "localhost:5173");
-                        pr.setHeader("Origin", "http://localhost:5173");
+                        pr.setHeader("X-Forwarded-Host", process.env.SUBDOMAINS || "localhost:5173");
+                        pr.setHeader("Origin", origin);
                     });
                     proxy.on("proxyReqWs", (proxyReq, req, socket) => {
-                        proxyReq.setHeader("Origin", "http://localhost:5173");
+                        proxyReq.setHeader("Origin", origin);
                     });
                 },
             },
