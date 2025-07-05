@@ -330,6 +330,134 @@ public class ButtonAutomationService {
                 .build();
     }
 
+    // ===== 복사 기능 =====
+
+    /**
+     * 그룹 복사 (모든 버튼 포함)
+     * @param sourceGroupId 원본 그룹 ID
+     * @param targetGuildId 대상 길드 ID
+     * @param customName 사용자 지정 그룹명 (null이면 자동 생성)
+     * @return 복사된 그룹 정보
+     */
+    @Transactional
+    public ButtonAutomationGroupDto copyGroup(UUID sourceGroupId, String targetGuildId, String customName) {
+        // 1. 원본 그룹 조회
+        ButtonAutomationGroup sourceGroup = groupRepository.findById(sourceGroupId)
+                .orElseThrow(ErrorStatus.GROUP_NOT_FOUND::asDomainException);
+        
+        // 2. 새 그룹명 생성
+        String newGroupName = customName != null ? customName : 
+            generateUniqueName(sourceGroup.getName(), targetGuildId, "group");
+        
+        // 3. 그룹 복사
+        ButtonAutomationGroup newGroup = ButtonAutomationGroup.builder()
+                .guildId(targetGuildId)
+                .name(newGroupName)
+                .displayOrder(getNextDisplayOrder(targetGuildId, "group"))
+                .settings(sourceGroup.getSettings())  // JSON 설정 복사
+                .isActive(sourceGroup.getIsActive())
+                .build();
+        
+        ButtonAutomationGroup savedGroup = groupRepository.save(newGroup);
+        log.info("Copied group: {} -> {} with name: {}", sourceGroupId, savedGroup.getId(), newGroupName);
+        
+        // 4. 그룹 내 모든 버튼 복사
+        List<ButtonAutomation> sourceButtons = buttonRepository.findAllByGroupIdOrderByDisplayOrder(sourceGroupId);
+        for (ButtonAutomation sourceButton : sourceButtons) {
+            copyButtonInternal(sourceButton, savedGroup.getId(), null);
+        }
+        
+        log.info("Copied {} buttons for group: {}", sourceButtons.size(), savedGroup.getId());
+        
+        // 5. DTO 변환 후 반환
+        return toGroupDto(savedGroup);
+    }
+
+    /**
+     * 버튼 복사
+     * @param sourceButtonId 원본 버튼 ID
+     * @param targetGroupId 대상 그룹 ID (null이면 원본과 동일 그룹)
+     * @param customLabel 사용자 지정 버튼 라벨 (null이면 자동 생성)
+     * @return 복사된 버튼 정보
+     */
+    @Transactional
+    public ButtonAutomationDto copyButton(UUID sourceButtonId, UUID targetGroupId, String customLabel) {
+        // 1. 원본 버튼 조회
+        ButtonAutomation sourceButton = buttonRepository.findById(sourceButtonId)
+                .orElseThrow(ErrorStatus.BUTTON_ID_NOT_FOUND::asDomainException);
+        
+        // 2. 대상 그룹 결정
+        UUID finalGroupId = targetGroupId != null ? targetGroupId : sourceButton.getGroupId();
+        
+        // 3. 버튼 복사
+        return copyButtonInternal(sourceButton, finalGroupId, customLabel);
+    }
+
+    /**
+     * 버튼 복사 내부 로직
+     */
+    private ButtonAutomationDto copyButtonInternal(ButtonAutomation source, UUID groupId, String customLabel) {
+        String newLabel = customLabel != null ? customLabel :
+            generateUniqueName(source.getButtonLabel(), source.getGuildId(), "button");
+        
+        ButtonAutomation newButton = ButtonAutomation.builder()
+                .guildId(source.getGuildId())
+                .groupId(groupId)
+                .buttonLabel(newLabel)
+                .displayOrder(getNextDisplayOrder(source.getGuildId(), "button", groupId))
+                .config(source.getConfig())  // JSON 설정 복사
+                .isActive(source.getIsActive())
+                .build();
+        
+        ButtonAutomation savedButton = buttonRepository.save(newButton);
+        log.info("Copied button: {} -> {} with label: {}", source.getId(), savedButton.getId(), newLabel);
+        
+        return toButtonDto(savedButton);
+    }
+
+    /**
+     * 고유한 이름 생성 (중복 방지)
+     */
+    private String generateUniqueName(String originalName, String guildId, String type) {
+        String baseName = originalName + " 복사본";
+        int counter = 1;
+        
+        while (isNameExists(baseName, guildId, type)) {
+            counter++;
+            baseName = originalName + " 복사본" + counter;
+        }
+        
+        return baseName;
+    }
+
+    /**
+     * 이름 중복 확인
+     */
+    private boolean isNameExists(String name, String guildId, String type) {
+        if ("group".equals(type)) {
+            return groupRepository.existsByGuildIdAndName(guildId, name);
+        } else {
+            return buttonRepository.existsByGuildIdAndButtonLabel(guildId, name);
+        }
+    }
+
+    /**
+     * 다음 표시 순서 계산
+     */
+    private Integer getNextDisplayOrder(String guildId, String type, UUID... groupId) {
+        if ("group".equals(type)) {
+            Integer maxOrder = groupRepository.findMaxDisplayOrderByGuildId(guildId);
+            return (maxOrder != null ? maxOrder : 0) + 1;
+        } else {
+            UUID targetGroupId = groupId.length > 0 ? groupId[0] : null;
+            if (targetGroupId != null) {
+                Integer maxOrder = buttonRepository.findMaxDisplayOrderByGroupId(targetGroupId);
+                return (maxOrder != null ? maxOrder : 0) + 1;
+            }
+            return 1;
+        }
+    }
+
     /**
      * 봇용 - 버튼 자동화 실행
      * @param buttonId 버튼 ID
