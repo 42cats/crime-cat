@@ -121,9 +121,10 @@ function parseCustomEmbedSyntax(content) {
  * @param {import('discord.js').ButtonInteraction} options.interaction - 상호작용 객체
  * @param {boolean} options.ephemeral - 임시 메시지 여부
  * @param {string} options.channelId - 채널 ID (로깅용)
+ * @param {string} options.emoji - 자동 리액션 이모지 (선택적)
  * @returns {Promise<boolean>} 성공 여부
  */
-async function safeSendMessage({ channel, content, interaction, ephemeral = false, channelId = 'unknown' }) {
+async function safeSendMessage({ channel, content, interaction, ephemeral = false, channelId = 'unknown', emoji = null }) {
 	try {
 		if (!channel) throw new Error('채널이 유효하지 않습니다');
 		if (!channel.isTextBased()) throw new Error('텍스트 채널이 아닙니다');
@@ -162,19 +163,34 @@ async function safeSendMessage({ channel, content, interaction, ephemeral = fals
 					throw new Error('임베드 데이터가 비어있습니다.');
 				}
 				
+				let sentMessage;
 				if (ephemeral && interaction) {
-					await interaction.followUp({
+					sentMessage = await interaction.followUp({
 						content: textContent || undefined,
 						embeds: embedBuilders,
 						ephemeral: true,
 						...otherOptions
 					});
 				} else {
-					await channel.send({
+					sentMessage = await channel.send({
 						content: textContent || undefined,
 						embeds: embedBuilders,
 						...otherOptions
 					});
+				}
+
+				// 이모지 리액션 추가 (ephemeral 메시지가 아닌 경우에만)
+				if (emoji && emoji.trim() && !ephemeral && sentMessage) {
+					// 콤마로 구분된 이모지 문자열 처리
+					const emojis = emoji.split(',').map(e => e.trim()).filter(Boolean);
+					for (const singleEmoji of emojis) {
+						try {
+							await sentMessage.react(singleEmoji);
+							console.log(`✅ 자동 리액션 추가 성공 (embed): ${singleEmoji}`);
+						} catch (reactionError) {
+							console.warn(`⚠️ 자동 리액션 추가 실패 (embed): ${singleEmoji} - ${reactionError.message}`);
+						}
+					}
 				}
 			} catch (embedError) {
 				console.warn('임베드 생성 실패, 일반 텍스트로 폴백:', embedError.message);
@@ -195,10 +211,25 @@ async function safeSendMessage({ channel, content, interaction, ephemeral = fals
 					throw new Error('임베드에 표시할 내용이 없습니다.');
 				}
 				
+				let sentMessage;
 				if (ephemeral && interaction) {
-					await interaction.followUp({ embeds: [embed], ephemeral: true });
+					sentMessage = await interaction.followUp({ embeds: [embed], ephemeral: true });
 				} else {
-					await channel.send({ embeds: [embed] });
+					sentMessage = await channel.send({ embeds: [embed] });
+				}
+
+				// 이모지 리액션 추가 (ephemeral 메시지가 아닌 경우에만)
+				if (emoji && emoji.trim() && !ephemeral && sentMessage) {
+					// 콤마로 구분된 이모지 문자열 처리
+					const emojis = emoji.split(',').map(e => e.trim()).filter(Boolean);
+					for (const singleEmoji of emojis) {
+						try {
+							await sentMessage.react(singleEmoji);
+							console.log(`✅ 자동 리액션 추가 성공 (custom embed): ${singleEmoji}`);
+						} catch (reactionError) {
+							console.warn(`⚠️ 자동 리액션 추가 실패 (custom embed): ${singleEmoji} - ${reactionError.message}`);
+						}
+					}
 				}
 			} catch (customEmbedError) {
 				console.warn('커스텀 임베드 생성 실패, 일반 텍스트로 폴백:', customEmbedError.message);
@@ -211,10 +242,25 @@ async function safeSendMessage({ channel, content, interaction, ephemeral = fals
 			}
 		} else {
 			// 일반 텍스트 처리 (기존 방식)
+			let sentMessage;
 			if (ephemeral && interaction) {
-				await interaction.followUp({ content, ephemeral: true });
+				sentMessage = await interaction.followUp({ content, ephemeral: true });
 			} else {
-				await channel.send(content);
+				sentMessage = await channel.send(content);
+			}
+
+			// 이모지 리액션 추가 (ephemeral 메시지가 아닌 경우에만)
+			if (emoji && emoji.trim() && !ephemeral && sentMessage) {
+				// 콤마로 구분된 이모지 문자열 처리
+				const emojis = emoji.split(',').map(e => e.trim()).filter(Boolean);
+				for (const singleEmoji of emojis) {
+					try {
+						await sentMessage.react(singleEmoji);
+						console.log(`✅ 자동 리액션 추가 성공: ${singleEmoji}`);
+					} catch (reactionError) {
+						console.warn(`⚠️ 자동 리액션 추가 실패: ${singleEmoji} - ${reactionError.message}`);
+					}
+				}
 			}
 		}
 
@@ -426,6 +472,7 @@ module.exports = {
 				const text = content.text;
 				const channelId = content.channelId;
 				const roleId = content.roleId;
+				const emoji = content.emoji;
 
 				// 빈 콘텐츠 건너뛰기
 				if (!text || text.trim().length === 0) continue;
@@ -483,7 +530,8 @@ module.exports = {
 								channel: targetChannel,
 								content: text,
 								interaction,
-								channelId
+								channelId,
+								emoji
 							});
 
 							if (success) successCount++;
@@ -582,7 +630,8 @@ module.exports = {
 								channel: targetChannel,
 								content: text,
 								interaction,
-								channelId: targetChannel.id
+								channelId: targetChannel.id,
+								emoji
 							});
 
 							if (success) successCount++;
@@ -642,7 +691,8 @@ module.exports = {
 						channel: interaction.channel,
 						content: text,
 						interaction,
-						channelId: interaction.channel?.id || 'unknown'
+						channelId: interaction.channel?.id || 'unknown',
+						emoji
 					});
 
 					if (success) successCount++;
@@ -671,7 +721,8 @@ module.exports = {
 						channel,
 						content: text,
 						interaction,
-						channelId
+						channelId,
+						emoji
 					});
 
 					if (success) successCount++;

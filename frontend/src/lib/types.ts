@@ -122,6 +122,7 @@ export interface ContentData {
     channelId: string;
     roleId?: string;
     text: string;
+    emoji?: string;
     index: number;
     buttonId?: string;
 }

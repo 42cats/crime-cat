@@ -56,6 +56,11 @@ public class GroupItemRequestDto {
     private String roleId;
 
     /**
+     * 이모지 (Unicode 또는 Discord 커스텀 이모지)
+     */
+    private String emoji;
+
+    /**
      * 아이템 정렬 인덱스
      */
     @Min(0)

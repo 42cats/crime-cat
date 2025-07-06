@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ChannelSelect } from "@/components/ui/channel-select";
 import { RoleSelect } from "@/components/ui/role-select";
+import { EmojiPicker } from "@/components/ui/EmojiPicker";
 import { Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -214,6 +215,29 @@ export function ContentList({
                     className="min-h-[120px] resize-none"
                     maxLength={2000}
                   />
+                </div>
+                
+                <div>
+                  <Label htmlFor={`emoji-${content.id}`} className="text-sm font-medium mb-2 block">
+                    자동 리액션 이모지
+                  </Label>
+                  <EmojiPicker
+                    value={content.emoji ? content.emoji.split(',').filter(Boolean) : []}
+                    onChange={(emojis) => onChange(content.id, { emoji: emojis.join(',') })}
+                    maxCount={5}
+                    placeholder="메시지 전송 후 자동으로 추가할 이모지를 선택하세요 (최대 5개)"
+                  />
+                  {content.emoji && (
+                    <div className="mt-2 p-2 bg-muted/50 rounded-md">
+                      <span className="text-xs text-muted-foreground">리액션 미리보기: </span>
+                      {content.emoji.split(',').filter(Boolean).map((emoji, index) => (
+                        <span key={index} className="text-lg mr-1">{emoji}</span>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    💡 선택한 이모지는 메시지 전송 후 자동으로 리액션으로 추가됩니다
+                  </p>
                 </div>
               </div>
             </div>
