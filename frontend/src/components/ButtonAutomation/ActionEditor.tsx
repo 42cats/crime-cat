@@ -36,6 +36,7 @@ import {
 } from "../../constants/discordPermissions";
 import { MultiChannelSelect } from "../ui/multi-channel-select";
 import { MultiRoleSelect } from "../ui/multi-role-select";
+import { EmojiPicker } from "../ui/EmojiPicker";
 import { ChannelProvider } from "../../contexts/ChannelContext";
 import { useChannels } from "../../hooks/useChannels";
 import { ACTION_TYPES } from "../../constants/actionTypes";
@@ -549,6 +550,35 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                 (사용자 멘션), {"{username}"} (사용자명),
                                 {"{guild}"} (서버명), {"{channel}"} (현재
                                 채널명), {"{button}"} (버튼명)
+                            </Text>
+                        </div>
+                    </Form.Item>
+                )}
+
+                {actionType.parameters.includes("reactions") && (
+                    <Form.Item label="이모지 반응" style={{ marginBottom: 12 }}>
+                        <EmojiPicker
+                            value={action.parameters.reactions || []}
+                            onChange={(value) =>
+                                updateActionParameter(index, "reactions", value)
+                            }
+                            maxCount={10}
+                            placeholder="이모지를 선택하세요"
+                        />
+                        <div
+                            style={{
+                                marginTop: 4,
+                                padding: 6,
+                                backgroundColor: "#f0f8ff",
+                                borderRadius: 4,
+                                fontSize: 11,
+                            }}
+                        >
+                            <Text type="secondary">
+                                💡 <strong>이모지 반응 기능:</strong><br/>
+                                • 메시지 전송 후 자동으로 선택한 이모지가 반응으로 추가됩니다<br/>
+                                • 최대 10개까지 선택 가능<br/>
+                                • 이모지를 클릭하여 쉽게 선택하고 관리할 수 있습니다
                             </Text>
                         </div>
                     </Form.Item>

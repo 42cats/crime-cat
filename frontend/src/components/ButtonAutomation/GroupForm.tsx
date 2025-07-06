@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, InputNumber, Switch, Button, Space, Card, Typography, message } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { EmojiPicker } from '../ui/EmojiPicker';
 import { ButtonAutomationGroup } from '../../types/buttonAutomation';
 
 const { Title, Text } = Typography;
@@ -104,19 +105,6 @@ export const GroupForm: React.FC<GroupFormProps> = ({
     }
   };
 
-  const addEmoji = () => {
-    setEmojis([...emojis, '']);
-  };
-
-  const updateEmoji = (index: number, value: string) => {
-    const newEmojis = [...emojis];
-    newEmojis[index] = value;
-    setEmojis(newEmojis);
-  };
-
-  const removeEmoji = (index: number) => {
-    setEmojis(emojis.filter((_, i) => i !== index));
-  };
 
   return (
     <Card title={group ? '그룹 수정' : '새 그룹 생성'} style={{ maxWidth: 600 }}>
@@ -194,32 +182,12 @@ export const GroupForm: React.FC<GroupFormProps> = ({
 
             {/* 이모지 설정 */}
             <Form.Item label="이모지">
-              <Space direction="vertical" style={{ width: '100%' }}>
-                {emojis.map((emoji, index) => (
-                  <Space key={index}>
-                    <Input
-                      value={emoji}
-                      onChange={(e) => updateEmoji(index, e.target.value)}
-                      placeholder="🎮"
-                      style={{ width: 100 }}
-                    />
-                    <Button 
-                      type="text" 
-                      danger 
-                      icon={<DeleteOutlined />}
-                      onClick={() => removeEmoji(index)}
-                    />
-                  </Space>
-                ))}
-                <Button 
-                  type="dashed" 
-                  icon={<PlusOutlined />}
-                  onClick={addEmoji}
-                  style={{ width: '100%' }}
-                >
-                  이모지 추가
-                </Button>
-              </Space>
+              <EmojiPicker
+                value={emojis}
+                onChange={setEmojis}
+                maxCount={10}
+                placeholder="그룹 메시지에 표시할 이모지를 선택하세요"
+              />
             </Form.Item>
 
             {/* 임베드 설정 */}

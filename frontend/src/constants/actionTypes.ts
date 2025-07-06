@@ -44,8 +44,8 @@ export const ACTION_TYPES = {
     label: '메시지 전송',
     icon: '💬',
     description: '지정된 채널에 메시지를 전송합니다',
-    parameters: ['channelId', 'message'],
-    requiredPermissions: ['SEND_MESSAGES']
+    parameters: ['channelId', 'message', 'reactions'],
+    requiredPermissions: ['SEND_MESSAGES', 'ADD_REACTIONS']
   },
   send_dm: {
     label: 'DM 전송',
