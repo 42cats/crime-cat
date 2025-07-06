@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, InputNumber, Select, Switch, Card, Row, Col, Typography, Slider, Alert } from 'antd';
-import { Music, Volume2, Clock, Settings } from 'lucide-react';
+import { Input, InputNumber, Select, Switch, Card, Row, Col, Typography, Slider, Alert } from 'antd';
+import { Music, Volume2, Clock, Settings, Repeat, Shuffle } from 'lucide-react';
 import { MusicSelector } from '../MusicSelector';
 
 const { Title, Text } = Typography;
@@ -19,7 +19,6 @@ export const MusicParameterEditor: React.FC<MusicParameterEditorProps> = ({
     guildId,
     userId
 }) => {
-    const [form] = Form.useForm();
     const parameters = action.parameters || {};
 
     // 음악 선택 처리
@@ -41,7 +40,6 @@ export const MusicParameterEditor: React.FC<MusicParameterEditorProps> = ({
     const updateParameter = (key: string, value: any) => {
         const newParameters = { ...parameters, [key]: value };
         onChange(newParameters);
-        form.setFieldsValue({ [key]: value });
     };
 
     // 액션 타입별 렌더링
@@ -85,10 +83,11 @@ export const MusicParameterEditor: React.FC<MusicParameterEditorProps> = ({
                                 <span>재생 설정</span>
                             </div>
                         }>
-                            <Row gutter={16}>
-                                <Col span={12}>
-                                    <Form.Item label="재생 시간 (초)">
+                            <div className="space-y-4">
+                                <Row gutter={[16, 16]}>
+                                    <Col xs={24} sm={12}>
                                         <div className="space-y-2">
+                                            <label className="block text-sm font-medium text-gray-700">재생 시간 (초)</label>
                                             <InputNumber
                                                 min={0}
                                                 max={3600}
@@ -102,11 +101,10 @@ export const MusicParameterEditor: React.FC<MusicParameterEditorProps> = ({
                                                 0이면 음악이 끝날 때까지 재생
                                             </Text>
                                         </div>
-                                    </Form.Item>
-                                </Col>
-                                <Col span={12}>
-                                    <Form.Item label="볼륨">
+                                    </Col>
+                                    <Col xs={24} sm={12}>
                                         <div className="space-y-2">
+                                            <label className="block text-sm font-medium text-gray-700">볼륨</label>
                                             <div className="flex items-center gap-3">
                                                 <Volume2 className="w-4 h-4 text-gray-400" />
                                                 <Slider
@@ -121,42 +119,116 @@ export const MusicParameterEditor: React.FC<MusicParameterEditorProps> = ({
                                                 </span>
                                             </div>
                                         </div>
-                                    </Form.Item>
-                                </Col>
-                            </Row>
+                                    </Col>
+                                </Row>
+                            </div>
                         </Card>
 
                         {/* 기존 음악 처리 */}
                         <Card size="small" title={
                             <div className="flex items-center gap-2">
                                 <Clock className="w-4 h-4" />
-                                <span>기존 재생 중인 음악 처리</span>
+                                <span>기존 음악 처리</span>
                             </div>
                         }>
                             <Select
                                 value={parameters.stopBehavior || 'stop_current'}
                                 onChange={(value) => updateParameter('stopBehavior', value)}
                                 style={{ width: '100%' }}
+                                optionLabelProp="label"
                             >
-                                <Option value="stop_current">
-                                    <div>
+                                <Option value="stop_current" label="정지하고 재생">
+                                    <div className="py-2">
                                         <div className="font-medium">정지하고 재생</div>
-                                        <div className="text-xs text-gray-500">기존 음악을 정지하고 새 음악을 재생합니다</div>
+                                        <div className="text-xs text-gray-500 mt-1">기존 음악을 정지하고 새 음악을 재생합니다</div>
                                     </div>
                                 </Option>
-                                <Option value="skip_if_playing">
-                                    <div>
+                                <Option value="skip_if_playing" label="재생 중이면 건너뛰기">
+                                    <div className="py-2">
                                         <div className="font-medium">재생 중이면 건너뛰기</div>
-                                        <div className="text-xs text-gray-500">다른 음악이 재생 중이면 이 액션을 건너뜁니다</div>
+                                        <div className="text-xs text-gray-500 mt-1">다른 음악이 재생 중이면 이 액션을 건너뜁니다</div>
                                     </div>
                                 </Option>
-                                <Option value="queue_after" disabled>
-                                    <div>
+                                <Option value="queue_after" label="대기열에 추가 (준비 중)" disabled>
+                                    <div className="py-2">
                                         <div className="font-medium text-gray-400">대기열에 추가 (준비 중)</div>
-                                        <div className="text-xs text-gray-400">현재 음악 후에 재생하도록 대기열에 추가합니다</div>
+                                        <div className="text-xs text-gray-400 mt-1">현재 음악 후에 재생하도록 대기열에 추가합니다</div>
                                     </div>
                                 </Option>
                             </Select>
+                        </Card>
+
+                        {/* 재생 모드 선택 */}
+                        <Card size="small" title={
+                            <div className="flex items-center gap-2">
+                                <Repeat className="w-4 h-4" />
+                                <span>재생 모드</span>
+                            </div>
+                        }>
+                            <Select
+                                value={parameters.playMode || 'single-track'}
+                                onChange={(value) => updateParameter('playMode', value)}
+                                style={{ width: '100%' }}
+                                optionLabelProp="label"
+                            >
+                                <Option value="single-track" label="1회 재생">
+                                    <div className="py-2">
+                                        <div className="font-medium">1회 재생</div>
+                                        <div className="text-xs text-gray-500 mt-1">한 번만 재생하고 정지합니다</div>
+                                    </div>
+                                </Option>
+                                <Option value="normal" label="일반 재생">
+                                    <div className="py-2">
+                                        <div className="font-medium">일반 재생</div>
+                                        <div className="text-xs text-gray-500 mt-1">일반적인 재생 모드입니다</div>
+                                    </div>
+                                </Option>
+                                <Option value="repeat-one" label="한 곡 반복">
+                                    <div className="flex items-start gap-2 py-2">
+                                        <Repeat className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                        <div className="flex-1">
+                                            <div className="font-medium">한 곡 반복</div>
+                                            <div className="text-xs text-gray-500 mt-1">현재 곡을 계속 반복 재생합니다</div>
+                                        </div>
+                                    </div>
+                                </Option>
+                                <Option value="repeat-all" label="전체 반복">
+                                    <div className="flex items-start gap-2 py-2">
+                                        <Repeat className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                        <div className="flex-1">
+                                            <div className="font-medium">전체 반복</div>
+                                            <div className="text-xs text-gray-500 mt-1">재생 목록 전체를 반복 재생합니다</div>
+                                        </div>
+                                    </div>
+                                </Option>
+                                <Option value="shuffle" label="셔플 재생">
+                                    <div className="flex items-start gap-2 py-2">
+                                        <Shuffle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                        <div className="flex-1">
+                                            <div className="font-medium">셔플 재생</div>
+                                            <div className="text-xs text-gray-500 mt-1">무작위 순서로 재생합니다</div>
+                                        </div>
+                                    </div>
+                                </Option>
+                            </Select>
+                            
+                            {parameters.playMode && parameters.playMode !== 'single-track' && (
+                                <Alert
+                                    type="info"
+                                    message={
+                                        parameters.playMode === 'repeat-one' 
+                                            ? "한 곡 반복 모드로 설정됨"
+                                            : parameters.playMode === 'repeat-all'
+                                            ? "전체 반복 모드로 설정됨"
+                                            : parameters.playMode === 'shuffle'
+                                            ? "셔플 재생 모드로 설정됨"
+                                            : "일반 재생 모드로 설정됨"
+                                    }
+                                    className="mt-3"
+                                    showIcon
+                                    size="small"
+                                />
+                            )}
                         </Card>
 
                         {/* 주의사항 */}
@@ -209,12 +281,8 @@ export const MusicParameterEditor: React.FC<MusicParameterEditorProps> = ({
     };
 
     return (
-        <Form
-            form={form}
-            layout="vertical"
-            initialValues={parameters}
-        >
+        <div>
             {renderParameterFields()}
-        </Form>
+        </div>
     );
 };
