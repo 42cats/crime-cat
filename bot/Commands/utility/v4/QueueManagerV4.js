@@ -93,7 +93,7 @@ class QueueManagerV4 extends EventEmitter {
             // 파일 목록 읽기
             const files = await fs.readdir(musicDir);
             const musicFiles = files.filter(file =>
-                ['.mp3', '.wav', '.ogg', '.flac', '.m4a'].some(ext =>
+                ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.opus'].some(ext =>
                     file.toLowerCase().endsWith(ext)
                 )
             );
