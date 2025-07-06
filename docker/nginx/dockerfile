@@ -9,6 +9,8 @@ RUN mkdir -p /usr/share/nginx/html
 
 RUN mkdir -p /images
 
+RUN mkdir -p /var/cache/nginx/sitemap
+
 # COPY frontend/dist /usr/share/nginx/html
 
 # RUN chmod +rwx /etc/nginx/tools/nginx.sh
