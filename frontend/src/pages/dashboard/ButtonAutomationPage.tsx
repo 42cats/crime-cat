@@ -135,7 +135,7 @@ const ButtonAutomationPage: React.FC = () => {
         onSuccess: () => {
             // 관련된 쿼리들만 정확하게 무효화
             queryClient.invalidateQueries({
-                queryKey: ["button-automation-buttons", guildId],
+                queryKey: ["button-automation-buttons", guildId, selectedGroupId],
             });
             queryClient.invalidateQueries({
                 queryKey: ["button-automation-groups", guildId],
@@ -161,7 +161,7 @@ const ButtonAutomationPage: React.FC = () => {
         onSuccess: () => {
             // 관련된 쿼리들만 정확하게 무효화
             queryClient.invalidateQueries({
-                queryKey: ["button-automation-buttons", guildId],
+                queryKey: ["button-automation-buttons", guildId, selectedGroupId],
             });
             queryClient.invalidateQueries({
                 queryKey: ["button-automation-groups", guildId],
@@ -219,7 +219,7 @@ const ButtonAutomationPage: React.FC = () => {
                 queryKey: ["button-automation-groups", guildId],
             });
             queryClient.invalidateQueries({
-                queryKey: ["button-automation-buttons", guildId],
+                queryKey: ["button-automation-buttons", guildId, selectedGroupId],
             });
 
             // 삭제된 그룹이 선택되어 있었다면 다른 그룹으로 자동 전환
@@ -253,7 +253,7 @@ const ButtonAutomationPage: React.FC = () => {
                 queryKey: ["button-automation-groups", guildId],
             });
             queryClient.invalidateQueries({
-                queryKey: ["button-automation-buttons", guildId],
+                queryKey: ["button-automation-buttons", guildId, selectedGroupId],
             });
             message.success("그룹이 복사되었습니다.");
         },
