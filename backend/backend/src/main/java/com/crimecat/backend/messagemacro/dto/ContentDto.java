@@ -19,6 +19,7 @@ public class ContentDto {
     @NotBlank
     private String channelId;
     private String roleId;
+    private String emoji;
     @Min(0)
     private int index;
 }

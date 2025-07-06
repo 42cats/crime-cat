@@ -130,18 +130,27 @@ class MessageActionExecutor extends BaseActionExecutor {
                 '채널 메시지 전송'
             );
 
-            // 이모지 반응 추가
-            if (reactions && Array.isArray(reactions) && reactions.length > 0) {
-                for (const reaction of reactions) {
-                    if (reaction && reaction.trim()) {
-                        try {
-                            await this.safeDiscordApiCall(
-                                () => sentMessage.react(reaction.trim()),
-                                `이모지 반응 추가: ${reaction}`
-                            );
-                        } catch (reactionError) {
-                            console.warn(`⚠️ [메시지] 이모지 반응 추가 실패: ${reaction} - ${reactionError.message}`);
-                        }
+            // 이모지 반응 추가 (콤마로 구분된 문자열 또는 배열 지원)
+            let processedReactions = [];
+            if (reactions) {
+                if (typeof reactions === 'string') {
+                    // 문자열인 경우 콤마로 분리
+                    processedReactions = reactions.split(',').map(r => r.trim()).filter(Boolean);
+                } else if (Array.isArray(reactions)) {
+                    // 배열인 경우 그대로 사용
+                    processedReactions = reactions.filter(r => r && r.trim());
+                }
+            }
+
+            if (processedReactions.length > 0) {
+                for (const reaction of processedReactions) {
+                    try {
+                        await this.safeDiscordApiCall(
+                            () => sentMessage.react(reaction.trim()),
+                            `이모지 반응 추가: ${reaction}`
+                        );
+                    } catch (reactionError) {
+                        console.warn(`⚠️ [메시지] 이모지 반응 추가 실패: ${reaction} - ${reactionError.message}`);
                     }
                 }
             }
@@ -152,7 +161,7 @@ class MessageActionExecutor extends BaseActionExecutor {
                 channelName: targetChannel.name,
                 messageId: sentMessage.id,
                 targetCount: targets.length,
-                reactionsAdded: reactions ? reactions.filter(r => r && r.trim()).length : 0,
+                reactionsAdded: processedReactions.length,
                 message: `${targetChannel.name} 채널에 메시지를 전송했습니다.`
             };
 

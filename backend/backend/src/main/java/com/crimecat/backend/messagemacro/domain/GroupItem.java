@@ -50,6 +50,9 @@ public class GroupItem {
     @Column(name = "role_id", length = 255)
     private String roleId;
 
+    @Column(length = 500)
+    private String emoji;
+
     @Column(name = "`index`", nullable = false)
     private int index;
 

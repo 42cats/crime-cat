@@ -12,10 +12,12 @@ import java.util.*;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MessageMacroService {
@@ -120,6 +122,8 @@ public class MessageMacroService {
                     .index(btn.getIndex())
                     .build());
             for (ContentDto ct : btn.getContents()) {
+                log.info("💾 [이모지 저장] 컨텐츠 ID: {}, 이모지: '{}', 텍스트: '{}'", 
+                    ct.getId(), ct.getEmoji(), ct.getText());
                 items.add(GroupItem.builder()
                         .id(ct.getId())
                         .group(group)
@@ -128,6 +132,7 @@ public class MessageMacroService {
                         .text(ct.getText())
                         .channelId(ct.getChannelId())
                         .roleId(ct.getRoleId())
+                        .emoji(ct.getEmoji())
                         .index(ct.getIndex())
                         .build());
             }
@@ -170,6 +175,7 @@ public class MessageMacroService {
                                         .text(c.getText())
                                         .channelId(c.getChannelId())
                                         .roleId(c.getRoleId())
+                                        .emoji(c.getEmoji())
                                         .index(c.getIndex())
                                         .build())
                                 .collect(Collectors.toList()))
@@ -210,6 +216,7 @@ public class MessageMacroService {
                 .map(content -> ContentDto.builder()
                         .channelId(content.getChannelId())
                         .roleId(content.getRoleId())
+                        .emoji(content.getEmoji())
                         .index(content.getIndex())
                         .text(content.getText())
                         .build())
