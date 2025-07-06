@@ -9,6 +9,8 @@ RUN chmod +x gradlew && ./gradlew clean build -x test
 FROM eclipse-temurin:21-jdk-alpine
 RUN apk update && apk add --no-cache curl
 WORKDIR /app
+# 음악 파일 디렉토리 생성
+RUN mkdir -p /app/bot/MusicData
 COPY --from=builder /app/backend/build/libs/*.jar app.jar
 #RUN #chmod +x app.jar
 EXPOSE 8080

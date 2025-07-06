@@ -19,7 +19,7 @@ class MusicActionExecutor extends BaseActionExecutor {
      */
     async performAction(action, context) {
         const { type } = action;
-        const { searchQuery, trackId, trackTitle, volume, seek, shuffle, loop } = action.parameters;
+        const { searchQuery, trackId, trackTitle, volume, seek, shuffle, loop, playMode } = action.parameters;
         const { member: executorMember, guild, channel } = context;
 
         // 디버깅: member 정보 확인
@@ -64,7 +64,8 @@ class MusicActionExecutor extends BaseActionExecutor {
                         volume,
                         seek: action.parameters.duration,  // duration을 seek로 전달
                         shuffle,
-                        loop
+                        loop,
+                        playMode  // playMode 파라미터 추가
                     }, context);  // context 전달
                     break;
 
@@ -156,9 +157,10 @@ class MusicActionExecutor extends BaseActionExecutor {
             }
             
             const result = await musicService.playMusic(voiceChannel, textChannel, track, {
-                source: 'youtube',
+                source: options.source || 'youtube',  // 파라미터에서 받은 소스 사용
                 duration: options.seek,  // 재생 시간 제한
                 volume: options.volume,
+                playMode: options.playMode,  // 재생 모드 추가
                 requestedBy: memberToUse
             });
 
@@ -310,12 +312,22 @@ class MusicActionExecutor extends BaseActionExecutor {
                         console.log(`[자동화] 새 음악 플레이어 생성: ${guild.id}`);
                         musicData = new MusicPlayerV4(guild.id, guild.client, member.user);
                         guild.client.serverMusicData.set(guild.id, musicData);
-                        
-                        // 플레이리스트 로드
-                        const loaded = await musicData.queue.loadFromSource('youtube');
-                        if (!loaded) {
-                            console.warn(`[자동화] YouTube 플레이리스트 로드 실패`);
-                        }
+                    }
+                    
+                    // 플레이리스트 소스 확인 및 로드 (기존/신규 플레이어 모두)
+                    const sourceToLoad = options.source || 'youtube';
+                    if (musicData.queue.source !== sourceToLoad) {
+                        console.log(`[자동화] 소스 전환: ${musicData.queue.source || 'none'} -> ${sourceToLoad}`);
+                    } else {
+                        console.log(`[자동화] 소스 재확인: ${sourceToLoad}`);
+                    }
+                    
+                    // 항상 지정된 소스로 로드 (캐시된 데이터가 있어도 새로 로드)
+                    console.log(`[자동화] ${sourceToLoad} 소스 강제 로드 시작`);
+                    const loaded = await musicData.queue.loadFromSource(sourceToLoad, member.user.id);
+                    if (!loaded) {
+                        console.warn(`[자동화] ${sourceToLoad} 플레이리스트 로드 실패`);
+                        throw new Error(`${sourceToLoad} 음악 목록을 불러올 수 없습니다.`);
                     }
                     
                     // 기존 음악 정지
@@ -363,7 +375,9 @@ class MusicActionExecutor extends BaseActionExecutor {
                     
                     // 트랙 설정 및 재생
                     musicData.state.currentIndex = trackIndex;
-                    musicData.state.isDirectSelection = true;
+                    // 재생 모드가 single-track이 아닌 경우 자동재생 허용
+                    const selectedPlayMode = options.playMode || 'single-track';
+                    musicData.state.isDirectSelection = (selectedPlayMode === 'single-track');
                     
                     // v4 플레이어에서는 tracks 배열에서 직접 트랙 가져오기
                     const currentTrack = musicData.queue.tracks[trackIndex];
@@ -372,9 +386,11 @@ class MusicActionExecutor extends BaseActionExecutor {
                     }
                     
                     console.log(`▶️ 음악 재생 시작: ${currentTrack.title}`);
-                    // 버튼 자동화로 재생 시 single-track 모드로 설정 (한 곡만 재생하고 정지)
-                    await musicData.setMode('single-track');
-                    console.log(`🎵 재생 모드를 single-track으로 설정`);
+                    
+                    // 재생 모드 설정 (파라미터로 받은 값 또는 기본값 single-track)
+                    const selectedPlayMode = options.playMode || 'single-track';
+                    await musicData.setMode(selectedPlayMode);
+                    console.log(`🎵 재생 모드를 ${selectedPlayMode}로 설정`);
                     // v4 AudioEngine은 트랙 객체와 사용자를 파라미터로 받음
                     await musicData.audio.play(currentTrack, member);
                     

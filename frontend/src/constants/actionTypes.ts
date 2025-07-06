@@ -169,7 +169,7 @@ export const ACTION_TYPES = {
     label: '음악 재생',
     icon: '🎵',
     description: '선택한 음악을 재생합니다',
-    parameters: ['source', 'trackId', 'trackTitle', 'duration', 'stopBehavior', 'volume'],
+    parameters: ['source', 'trackId', 'trackTitle', 'duration', 'stopBehavior', 'volume', 'playMode'],
     requiredPermissions: ['CONNECT', 'SPEAK'],
     category: 'music'
   },

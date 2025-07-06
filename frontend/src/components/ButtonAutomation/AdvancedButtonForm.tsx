@@ -7,6 +7,7 @@ import { ConditionEditor } from './ConditionEditor';
 import { TestRunner } from './TestRunner';
 import { DISCORD_LIMITS } from '../../utils/validation';
 import { useChannels } from '../../hooks/useChannels';
+import { useAuth } from '../../hooks/useAuth';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -42,6 +43,7 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
   
   // Discord 데이터 가져오기
   const { channels } = useChannels();
+  const { user } = useAuth();
   const [roles, setRoles] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   
@@ -344,6 +346,7 @@ export const AdvancedButtonForm: React.FC<AdvancedButtonFormProps> = ({
                     onChange={handleActionsChange}
                     maxActions={DISCORD_LIMITS.MAX_ACTIONS_PER_BUTTON}
                     guildId={guildId}
+                    userId={user?.snowflake}
                   />
                 )
               },
