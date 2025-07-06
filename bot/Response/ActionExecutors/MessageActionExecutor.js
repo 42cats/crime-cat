@@ -86,13 +86,19 @@ class MessageActionExecutor extends BaseActionExecutor {
      * 채널 메시지 전송
      */
     async sendChannelMessage(action, context, targets) {
-        const { guild } = context;
-        const { channelId, message, embed } = action.parameters;
+        const { guild, channel: currentChannel } = context;
+        const { channelId, message, embed, reactions } = action.parameters;
 
         try {
+            // 채널 ID 검증 및 기본값 설정
+            let resolvedChannelId = channelId;
+            if (!channelId || channelId === 'none' || channelId === 'current') {
+                resolvedChannelId = currentChannel.id;
+            }
+
             // 대상 채널 조회
             const targetChannel = await this.safeDiscordApiCall(
-                () => guild.channels.fetch(channelId),
+                () => guild.channels.fetch(resolvedChannelId),
                 '대상 채널 조회'
             );
 
@@ -124,12 +130,29 @@ class MessageActionExecutor extends BaseActionExecutor {
                 '채널 메시지 전송'
             );
 
+            // 이모지 반응 추가
+            if (reactions && Array.isArray(reactions) && reactions.length > 0) {
+                for (const reaction of reactions) {
+                    if (reaction && reaction.trim()) {
+                        try {
+                            await this.safeDiscordApiCall(
+                                () => sentMessage.react(reaction.trim()),
+                                `이모지 반응 추가: ${reaction}`
+                            );
+                        } catch (reactionError) {
+                            console.warn(`⚠️ [메시지] 이모지 반응 추가 실패: ${reaction} - ${reactionError.message}`);
+                        }
+                    }
+                }
+            }
+
             return {
                 success: true,
                 channelId: targetChannel.id,
                 channelName: targetChannel.name,
                 messageId: sentMessage.id,
                 targetCount: targets.length,
+                reactionsAdded: reactions ? reactions.filter(r => r && r.trim()).length : 0,
                 message: `${targetChannel.name} 채널에 메시지를 전송했습니다.`
             };
 
