@@ -388,6 +388,7 @@ class MusicActionExecutor extends BaseActionExecutor {
                     console.log(`▶️ 음악 재생 시작: ${currentTrack.title}`);
                     
                     // 재생 모드 설정 (파라미터로 받은 값 또는 기본값 single-track)
+                    const selectedPlayMode = options.playMode || 'single-track';
                     await musicData.setMode(selectedPlayMode);
                     console.log(`🎵 재생 모드를 ${selectedPlayMode}로 설정`);
                     // v4 AudioEngine은 트랙 객체와 사용자를 파라미터로 받음
