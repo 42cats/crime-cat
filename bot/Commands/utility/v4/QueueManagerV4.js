@@ -3,7 +3,6 @@ const DebugLogger = require('./DebugLogger');
 const { getGuildMusic } = require('../../api/guild/music');
 const fs = require('fs').promises;
 const path = require('path');
-const crypto = require('crypto');
 
 /**
  * Queue Manager v4
@@ -106,19 +105,16 @@ class QueueManagerV4 extends EventEmitter {
             }
 
             // 트랙 생성
-            this.tracks = musicFiles.map((file, index) => {
-                const fileHash = crypto.createHash('md5').update(file).digest('hex').slice(0, 8);
-                return {
-                    id: `local_${userId}_${fileHash}`,
-                    title: path.parse(file).name,
-                    url: path.join(musicDir, file),
-                    thumbnail: null,
-                    duration: '00:00',
-                    source: 'local',
-                    createdAt: new Date().toISOString(),
-                    originalIndex: index
-                };
-            });
+            this.tracks = musicFiles.map((file, index) => ({
+                id: `local_${index}`,
+                title: path.parse(file).name,
+                url: path.join(musicDir, file),
+                thumbnail: null,
+                duration: '00:00',
+                source: 'local',
+                createdAt: new Date().toISOString(),
+                originalIndex: index
+            }));
 
             this.originalOrder = [...this.tracks];
 

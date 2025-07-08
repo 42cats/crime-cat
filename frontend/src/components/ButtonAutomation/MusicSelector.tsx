@@ -41,10 +41,7 @@ export const MusicSelector: React.FC<MusicSelectorProps> = ({
     // 로컬 파일 조회
     const { data: localFiles, isLoading: isLoadingLocal } = useQuery({
         queryKey: ['local-files', guildId, userId],
-        queryFn: () => {
-            console.log('🎵 로컬 음악 API 호출:', { guildId, userId, source });
-            return musicApi.getLocalFiles(guildId, userId || '');
-        },
+        queryFn: () => musicApi.getLocalFiles(guildId, userId || ''),
         enabled: !!userId && source === 'local',
         staleTime: 5 * 60 * 1000, // 5분 캐시
     });
