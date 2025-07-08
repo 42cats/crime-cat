@@ -21,6 +21,14 @@ class MusicActionExecutor extends BaseActionExecutor {
         const { type } = action;
         const { searchQuery, trackId, trackTitle, volume, seek, shuffle, loop, playMode } = action.parameters;
         const { member: executorMember, guild, channel } = context;
+        
+        console.log('🐛 [DEBUG] 액션 파라미터 확인:', {
+            type,
+            source: action.parameters.source,
+            trackId,
+            trackTitle,
+            playMode
+        });
 
         // 디버깅: member 정보 확인
         console.log(`🔍 [음악] Member 정보:`, {
@@ -58,7 +66,14 @@ class MusicActionExecutor extends BaseActionExecutor {
 
             switch (type) {
                 case 'play_music':
+                    console.log('🐛 [DEBUG] playMusic 호출 options:', {
+                        source: action.parameters.source,
+                        trackId,
+                        trackTitle,
+                        playMode
+                    });
                     result = await this.playMusic(searchQuery, voiceChannel, channel, {
+                        source: action.parameters.source,  // source 파라미터 추가
                         trackId,
                         trackTitle,
                         volume,
@@ -111,6 +126,13 @@ class MusicActionExecutor extends BaseActionExecutor {
      * 음악 재생
      */
     async playMusic(searchQuery, voiceChannel, textChannel, options = {}, context = null) {
+        console.log('🐛 [DEBUG] playMusic 메서드 시작 - options:', {
+            source: options.source,
+            trackId: options.trackId,
+            trackTitle: options.trackTitle,
+            playMode: options.playMode
+        });
+        
         // searchQuery, trackId, trackTitle 중 하나라도 있으면 됨
         if (!searchQuery && !options.trackId && !options.trackTitle) {
             throw new Error('재생할 음악을 검색어, 트랙 ID 또는 트랙 제목으로 지정해주세요.');
@@ -155,6 +177,13 @@ class MusicActionExecutor extends BaseActionExecutor {
                 // 직접 호출인 경우 기본값 사용
                 memberToUse = textChannel.guild.members.me;
             }
+            
+            console.log('🐛 [DEBUG] musicService.playMusic 호출 전 - 최종 options:', {
+                source: options.source || 'youtube',
+                trackTitle: track.title,
+                trackId: track.id,
+                playMode: options.playMode
+            });
             
             const result = await musicService.playMusic(voiceChannel, textChannel, track, {
                 source: options.source || 'youtube',  // 파라미터에서 받은 소스 사용
@@ -316,6 +345,13 @@ class MusicActionExecutor extends BaseActionExecutor {
                     
                     // 플레이리스트 소스 확인 및 로드 (기존/신규 플레이어 모두)
                     const sourceToLoad = options.source || 'youtube';
+                    console.log('🐛 [DEBUG] 소스 로드 시작:', {
+                        요청된소스: options.source,
+                        최종소스: sourceToLoad,
+                        현재큐소스: musicData.queue.source,
+                        사용자ID: member.user.id
+                    });
+                    
                     if (musicData.queue.source !== sourceToLoad) {
                         console.log(`[자동화] 소스 전환: ${musicData.queue.source || 'none'} -> ${sourceToLoad}`);
                     } else {
@@ -325,6 +361,12 @@ class MusicActionExecutor extends BaseActionExecutor {
                     // 항상 지정된 소스로 로드 (캐시된 데이터가 있어도 새로 로드)
                     console.log(`[자동화] ${sourceToLoad} 소스 강제 로드 시작`);
                     const loaded = await musicData.queue.loadFromSource(sourceToLoad, member.user.id);
+                    console.log('🐛 [DEBUG] 소스 로드 결과:', {
+                        성공: loaded,
+                        최종큐소스: musicData.queue.source,
+                        트랙개수: musicData.queue.tracks.length
+                    });
+                    
                     if (!loaded) {
                         console.warn(`[자동화] ${sourceToLoad} 플레이리스트 로드 실패`);
                         throw new Error(`${sourceToLoad} 음악 목록을 불러올 수 없습니다.`);
@@ -347,28 +389,44 @@ class MusicActionExecutor extends BaseActionExecutor {
                     console.log(`📋 [음악] 사용 가능한 트랙들:`, musicData.queue.tracks.map(t => ({
                         title: t.title,
                         id: t.id,
+                        source: t.source,
                         url: t.youtubeUrl || t.url
                     })));
                     
+                    console.log('🐛 [DEBUG] 트랙 검색 상세:', {
+                        찾는트랙제목: track.title,
+                        찾는트랙ID: track.id,
+                        큐의소스: musicData.queue.source,
+                        큐의트랙수: musicData.queue.tracks.length,
+                        첫번째트랙: musicData.queue.tracks[0] ? {
+                            title: musicData.queue.tracks[0].title,
+                            id: musicData.queue.tracks[0].id,
+                            source: musicData.queue.tracks[0].source
+                        } : 'none'
+                    });
+                    
+                    // 제목으로만 검색 (정확히 일치하는 것 우선)
                     let trackIndex = musicData.queue.tracks.findIndex(t => 
-                        t.title === track.title || t.title.includes(track.title) || track.title.includes(t.title)
+                        t.title === track.title
                     );
                     
-                    // trackTitle로 못 찾았으면 trackId로 시도
+                    // 정확히 일치하는 것이 없으면 부분 일치 검색
                     if (trackIndex === -1) {
                         trackIndex = musicData.queue.tracks.findIndex(t => 
-                            t.id === track.id || (t.youtubeUrl && t.youtubeUrl.includes(track.id.replace('yt_', '')))
+                            t.title.includes(track.title) || track.title.includes(t.title)
                         );
                     }
                     
-                    // 그래도 못 찾았으면 첫 번째 트랙으로 대체 (안전장치)
-                    if (trackIndex === -1 && musicData.queue.tracks.length > 0) {
-                        console.warn(`⚠️ [음악] "${track.title}" 트랙을 찾을 수 없어 첫 번째 트랙으로 대체합니다.`);
-                        trackIndex = 0;
-                    }
+                    console.log('🐛 [DEBUG] 제목으로 찾기 결과:', { 
+                        trackIndex, 
+                        검색한제목: track.title,
+                        찾은트랙: trackIndex >= 0 ? musicData.queue.tracks[trackIndex].title : 'NOT FOUND'
+                    });
                     
+                    // 트랙을 찾지 못한 경우 에러 발생 (다른 곡 재생하지 않음)
                     if (trackIndex === -1) {
-                        throw new Error('재생할 수 있는 음악이 없습니다. 먼저 음악을 등록해주세요.');
+                        const sourceType = musicData.queue.source === 'local' ? '로컬 음악' : 'YouTube 음악';
+                        throw new Error(`"${track.title}" 제목의 음악을 찾을 수 없습니다.\n현재 ${sourceType} 목록에서 해당 곡이 없습니다.`);
                     }
                     
                     console.log(`✅ [음악] 트랙 찾음: 인덱스 ${trackIndex}, 제목: "${musicData.queue.tracks[trackIndex].title}"`);
