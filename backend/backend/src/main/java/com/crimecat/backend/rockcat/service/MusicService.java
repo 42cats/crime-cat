@@ -86,7 +86,8 @@ public class MusicService {
         String lower = filename.toLowerCase();
         return lower.endsWith(".mp3") || lower.endsWith(".wav") || 
                lower.endsWith(".ogg") || lower.endsWith(".flac") || 
-               lower.endsWith(".m4a") || lower.endsWith(".aac");
+               lower.endsWith(".m4a") || lower.endsWith(".aac") ||
+                lower.endsWith(".opus");
     }
     
     /**
