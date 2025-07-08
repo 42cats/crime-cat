@@ -337,53 +337,59 @@ module.exports = {
 				});
 			}
 
-			// 로그 남기기
+			// 로그 남기기 (Redis 원자적 카운터 사용)
 			if (showPressDetail) {
 				try {
 					let messageToUpdate;
+					let messageId;
 
 					// 멀티 모드이고 통계 메시지 ID가 있으면 해당 메시지 업데이트
 					if (isMulti && otherOption) {
 						try {
 							// 통계 메시지 가져오기
 							messageToUpdate = await interaction.channel.messages.fetch(otherOption);
+							messageId = otherOption;
 							console.log(`통계 메시지 가져오기 성공 (메시지 ID: ${otherOption})`);
 						} catch (fetchError) {
 							console.error(`통계 메시지 가져오기 실패 (메시지 ID: ${otherOption}):`, fetchError.message);
 							// 통계 메시지를 가져올 수 없으면 현재 메시지 사용
 							messageToUpdate = interaction.message;
+							messageId = interaction.message.id;
 						}
 					} else {
 						// 단일 모드이거나 통계 메시지 ID가 없으면 현재 메시지 사용
 						messageToUpdate = interaction.message;
+						messageId = interaction.message.id;
 					}
 
+					const userName = interaction.member.displayName;
+					const redisKey = `button_counter:${messageId}`;
+					
+					// Redis를 통한 원자적 카운터 증가
+					const redis = interaction.client.redis;
+					const newCount = await redis.incrementHashCounter(redisKey, userName, 1, 3600 * 24 * 7); // 7일 TTL
+					
+					console.log(`✅ [원자적 카운터] ${userName}: ${newCount} (메시지 ID: ${messageId})`);
+					
+					// 모든 카운터 가져와서 메시지 업데이트
+					const allCounters = await redis.getHashCounters(redisKey);
+					
+					// 메시지 내용 재구성
 					const originalContent = messageToUpdate.content || '';
 					const lines = originalContent.split('\n');
-					const userName = interaction.member.displayName;
-					const userLogLines = lines.filter(line => line.startsWith('👤'));
-
-					let updated = false;
-					const updatedLogLines = userLogLines.map(line => {
-						if (line.includes(userName)) {
-							const match = line.match(/: (\d+)/);
-							const count = match ? parseInt(match[1]) + 1 : 1;
-							updated = true;
-							return `👤 ${userName}: ${count}`;
-						}
-						return line;
-					});
-
-					if (!updated) {
-						updatedLogLines.push(`👤 ${userName}: 1`);
-					}
-
 					const headerLine = lines.find(line => !line.startsWith('👤')) || '**버튼 로그**';
-					const newContent = [headerLine, ...updatedLogLines].join('\n');
+					
+					// 카운터를 정렬된 형태로 표시 (카운트 높은 순)
+					const sortedCounters = Object.entries(allCounters)
+						.sort(([,a], [,b]) => b - a)
+						.map(([user, count]) => `👤 ${user}: ${count}`);
+					
+					const newContent = [headerLine, ...sortedCounters].join('\n');
 
 					await messageToUpdate.edit({ content: newContent }).catch(err => {
 						console.warn(`버튼 로그 업데이트 실패:`, err.message);
 					});
+					
 				} catch (logError) {
 					console.error("버튼 로그 업데이트 오류:", logError);
 					// 로그 업데이트는 중요하지 않으므로 실패해도 계속 진행

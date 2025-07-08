@@ -113,6 +113,55 @@ class RedisManager {
 		}
 	}
 
+	/**
+	 * 원자적 카운터 증가 (Hash 필드)
+	 * @param {string} key Redis 키
+	 * @param {string} field Hash 필드 (사용자 이름)
+	 * @param {number} increment 증가값 (기본값: 1)
+	 * @param {number} ttl TTL (기본값: 24시간)
+	 * @returns {number} 증가 후 값
+	 */
+	async incrementHashCounter(key, field, increment = 1, ttl = 3600 * 24) {
+		try {
+			// HINCRBY는 원자적 연산
+			const newValue = await this.client.hIncrBy(key, field, increment);
+			
+			// TTL 설정 (키가 새로 생성되었을 때만)
+			const keyExists = await this.client.exists(key);
+			if (keyExists === 1) {
+				await this.client.expire(key, ttl);
+			}
+			
+			console.log(`✅ Atomic counter incremented: ${key}.${field} = ${newValue}`);
+			return newValue;
+		} catch (error) {
+			console.error('❌ Redis HINCRBY Error:', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Hash의 모든 카운터 값 가져오기
+	 * @param {string} key Redis 키
+	 * @returns {Object} 필드별 카운트 객체
+	 */
+	async getHashCounters(key) {
+		try {
+			const data = await this.client.hGetAll(key);
+			
+			// 숫자로 변환
+			const counters = {};
+			for (const [field, value] of Object.entries(data)) {
+				counters[field] = parseInt(value) || 0;
+			}
+			
+			return counters;
+		} catch (error) {
+			console.error('❌ Redis HGETALL Error:', error);
+			return {};
+		}
+	}
+
 	async setHash(key, field, value, ttl = 3600 * 24) {
 		try {
 			if (typeof value === 'object') value = JSON.stringify(value);
