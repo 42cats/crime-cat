@@ -28,7 +28,7 @@ import {
     ConditionConfig,
 } from "../../types/buttonAutomation";
 import { DISCORD_LIMITS, validateActionCount } from "../../utils/validation";
-import { ChannelSelector } from "./ActionParameters/ChannelSelector";
+import { MultiChannelSelect } from "../ui/multi-channel-select";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -55,7 +55,8 @@ interface SimpleActionConfig {
     target: string;
     parameters: {
         roleId?: string;
-        channelId?: string;
+        channelId?: string; // 하위 호환성
+        channelIds?: string[]; // 멀티 채널 지원
         message?: string;
         nickname?: string;
     };
@@ -77,7 +78,9 @@ export const ButtonForm: React.FC<ButtonFormProps> = ({
         {
             type: "add_role",
             target: "executor",
-            parameters: {},
+            parameters: {
+                channelIds: [] // 멀티 채널 기본값
+            },
             delay: 0,
             resultMessage: "",
             resultVisibility: "private",
@@ -118,14 +121,22 @@ export const ButtonForm: React.FC<ButtonFormProps> = ({
 
             // 액션 데이터 변환
             if (config.actions && config.actions.length > 0) {
-                const simpleActions = config.actions.map((action) => ({
-                    type: action.type,
-                    target: action.target || "executor",
-                    parameters: action.parameters || {},
-                    delay: action.delay || 0,
-                    resultMessage: action.result?.message || "",
-                    resultVisibility: action.result?.visibility || "private",
-                }));
+                const simpleActions = config.actions.map((action) => {
+                    // 하위 호환성: channelId → channelIds 변환
+                    const parameters = { ...action.parameters };
+                    if (parameters.channelId && !parameters.channelIds) {
+                        parameters.channelIds = [parameters.channelId];
+                    }
+                    
+                    return {
+                        type: action.type,
+                        target: action.target || "executor",
+                        parameters: parameters,
+                        delay: action.delay || 0,
+                        resultMessage: action.result?.message || "",
+                        resultVisibility: action.result?.visibility || "private",
+                    };
+                });
                 setActions(simpleActions);
             }
         } else if (groupId) {
@@ -148,16 +159,28 @@ export const ButtonForm: React.FC<ButtonFormProps> = ({
                     requiredChannel: null,
                     cooldown: values.cooldown || 0,
                 },
-                actions: actions.map((action, index) => ({
-                    type: action.type,
-                    target: action.target,
-                    parameters: action.parameters,
-                    delay: action.delay || 0,
-                    result: {
-                        message: action.resultMessage,
-                        visibility: action.resultVisibility || "private",
-                    },
-                })),
+                actions: actions.map((action, index) => {
+                    // 저장 시 데이터 정리: channelIds → channelId (단일) 또는 channelIds (멀티)
+                    const parameters = { ...action.parameters };
+                    if (parameters.channelIds) {
+                        if (parameters.channelIds.length === 1) {
+                            // 단일 채널인 경우 하위 호환성을 위해 channelId로도 저장
+                            parameters.channelId = parameters.channelIds[0];
+                        }
+                        // 멀티 채널인 경우 channelIds만 사용
+                    }
+                    
+                    return {
+                        type: action.type,
+                        target: action.target,
+                        parameters: parameters,
+                        delay: action.delay || 0,
+                        result: {
+                            message: action.resultMessage,
+                            visibility: action.resultVisibility || "private",
+                        },
+                    };
+                }),
                 buttonSettings: {
                     style: values.buttonStyle || "primary",
                     disableAfterUse: values.disableAfterUse || false,
@@ -201,7 +224,9 @@ export const ButtonForm: React.FC<ButtonFormProps> = ({
             {
                 type: "add_role",
                 target: "executor",
-                parameters: {},
+                parameters: {
+                    channelIds: [] // 멀티 채널 기본값
+                },
                 delay: 0,
                 resultMessage: "",
                 resultVisibility: "private",
@@ -274,18 +299,18 @@ export const ButtonForm: React.FC<ButtonFormProps> = ({
                     <>
                         {action.type === "send_message" && (
                             <Form.Item label="대상 채널">
-                                <ChannelSelector
-                                    value={action.parameters.channelId || ""}
+                                <MultiChannelSelect
+                                    value={action.parameters.channelIds || []}
                                     onChange={(value) => {
                                         updateAction(
                                             index,
-                                            "parameters.channelId",
+                                            "parameters.channelIds",
                                             value
                                         );
                                     }}
-                                    placeholder="채널을 선택하거나 ID를 입력하세요"
-                                    guildId={guildId}
-                                    channelTypes={['text', 'announcement']}
+                                    placeholder="채널을 선택하세요"
+                                    channelTypes={['text', 'announcement', 'category']}
+                                    maxSelections={10}
                                 />
                             </Form.Item>
                         )}
