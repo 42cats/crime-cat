@@ -300,6 +300,7 @@ export const ButtonAutomationEditor: React.FC<ButtonAutomationEditorProps> = () 
       >
         <ButtonForm 
           groupId={selectedGroup?.id}
+          guildId={guildId}
           onSubmit={handleCreateButton}
           onCancel={() => setIsButtonModalVisible(false)}
           loading={saving}

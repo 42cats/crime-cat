@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Select, Input, Space, Typography, Spin, message, Tag } from 'antd';
-import { SearchOutlined, HashtagOutlined, VolumeUpOutlined, MessageOutlined } from '@ant-design/icons';
+import { SearchOutlined, HashtagOutlined, VolumeUpOutlined, MessageOutlined, TeamOutlined } from '@ant-design/icons';
 import { isValidDiscordId } from '../../../utils/validation';
+import { apiClient } from '../../../lib/api';
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -9,9 +10,12 @@ const { Text } = Typography;
 interface Channel {
   id: string;
   name: string;
-  type: 'text' | 'voice' | 'category' | 'announcement' | 'stage';
+  type: 'text' | 'voice' | 'category' | 'announcement' | 'stage' | 'special';
+  typeKey?: string;
   position: number;
-  parent?: string;
+  parentId?: string;
+  displayName?: string;
+  emoji?: string;
 }
 
 interface ChannelSelectorProps {
@@ -21,6 +25,27 @@ interface ChannelSelectorProps {
   guildId?: string;
   channelTypes?: Channel['type'][];
 }
+
+// 특수 채널 옵션
+const SPECIAL_CHANNELS = [
+  {
+    id: 'ROLE_CHANNEL',
+    name: '역할별 채널 (자동 생성)',
+    type: 'special',
+    icon: <TeamOutlined />,
+    color: '#f39c12',
+    description: '사용자의 역할에 따라 자동으로 채널을 생성하여 전송'
+  }
+];
+
+// Discord 채널 타입 매핑 (Discord API 타입 번호 → 문자열)
+const DISCORD_CHANNEL_TYPES: { [key: number]: 'text' | 'voice' | 'category' | 'announcement' | 'stage' } = {
+  0: 'text',        // GUILD_TEXT
+  2: 'voice',       // GUILD_VOICE
+  4: 'category',    // GUILD_CATEGORY
+  5: 'announcement', // GUILD_ANNOUNCEMENT
+  13: 'stage'       // GUILD_STAGE_VOICE
+};
 
 // 채널 타입별 아이콘 및 설명
 const CHANNEL_TYPE_CONFIG = {
@@ -48,6 +73,11 @@ const CHANNEL_TYPE_CONFIG = {
     icon: <MessageOutlined />,
     label: '카테고리',
     color: '#99aab5'
+  },
+  special: {
+    icon: <TeamOutlined />,
+    label: '특수',
+    color: '#f39c12'
   }
 };
 
@@ -63,39 +93,44 @@ export const ChannelSelector: React.FC<ChannelSelectorProps> = ({
   const [searchValue, setSearchValue] = useState('');
   const [inputMode, setInputMode] = useState(false);
 
-  // 채널 목록 로드 (실제 구현에서는 Discord API 연동)
+  // 채널 목록 로드 (실제 Discord API 연동)
   const loadChannels = async () => {
-    if (!guildId) return;
+    if (!guildId) {
+      return;
+    }
     
     setLoading(true);
     try {
-      // TODO: 실제 Discord API 연동
-      // const response = await discordApi.getGuildChannels(guildId);
+      // 실제 Discord API 연동
+      const response = await apiClient.get<any[]>(`/auth/guilds/channels/${guildId}`);
       
-      // 임시 더미 데이터
-      const dummyChannels: Channel[] = [
-        { id: '123456789012345678', name: '일반', type: 'text', position: 0 },
-        { id: '234567890123456789', name: '공지사항', type: 'announcement', position: 1 },
-        { id: '345678901234567890', name: '게임-토크', type: 'text', position: 2 },
-        { id: '456789012345678901', name: '음성채널', type: 'voice', position: 3 },
-        { id: '567890123456789012', name: '스테이지', type: 'stage', position: 4 },
-        { id: '678901234567890123', name: '자유수다', type: 'text', position: 5 },
-        { id: '789012345678901234', name: '로비', type: 'voice', position: 6 },
-      ];
+      // API 응답을 Channel 인터페이스에 맞게 변환
+      const apiChannels: Channel[] = response.map((apiChannel: any) => ({
+        id: apiChannel.id,
+        name: apiChannel.name,
+        type: DISCORD_CHANNEL_TYPES[apiChannel.type] || 'text',
+        typeKey: apiChannel.typeKey,
+        position: apiChannel.position || 0,
+        parentId: apiChannel.parentId,
+        displayName: apiChannel.displayName,
+        emoji: apiChannel.emoji
+      }));
       
-      let filteredChannels = dummyChannels;
+      let filteredChannels = apiChannels;
       
       // 채널 타입 필터링
       if (channelTypes && channelTypes.length > 0) {
-        filteredChannels = dummyChannels.filter(channel => 
+        filteredChannels = apiChannels.filter(channel => 
           channelTypes.includes(channel.type)
         );
       }
       
-      setChannels(filteredChannels.sort((a, b) => a.position - b.position));
+      const sortedChannels = filteredChannels.sort((a, b) => a.position - b.position);
+      setChannels(sortedChannels);
     } catch (error) {
-      console.error('Failed to load channels:', error);
+      console.error('[ChannelSelector] 채널 로드 실패:', error);
       message.error('채널 목록을 불러오는데 실패했습니다.');
+      setChannels([]);
     } finally {
       setLoading(false);
     }
@@ -163,6 +198,7 @@ export const ChannelSelector: React.FC<ChannelSelectorProps> = ({
       onSearch={setSearchValue}
       filterOption={false}
       loading={loading}
+      notFoundContent={loading ? <Spin size="small" /> : '옵션이 없습니다'}
       dropdownRender={(menu) => (
         <div>
           {menu}
@@ -177,7 +213,28 @@ export const ChannelSelector: React.FC<ChannelSelectorProps> = ({
         </div>
       )}
     >
-      {filteredChannels.map(channel => {
+      {/* 특수 채널 옵션들 - 직접 하드코딩 테스트 */}
+      <Option key="ROLE_CHANNEL" value="ROLE_CHANNEL">
+        <Space align="center">
+          <span style={{ color: '#f39c12' }}>
+            <TeamOutlined />
+          </span>
+          <span style={{ fontWeight: 'bold' }}>역할별 채널 (자동 생성)</span>
+          <Tag color="#f39c12" size="small">
+            특수
+          </Tag>
+        </Space>
+      </Option>
+
+      {/* 구분선 (특수 채널이 있고 일반 채널도 있을 때) */}
+      {filteredChannels.length > 0 && (
+        <Option disabled value="divider" style={{ borderTop: '1px solid #f0f0f0', margin: '4px 0' }}>
+          <Text type="secondary" style={{ fontSize: 12 }}>일반 채널</Text>
+        </Option>
+      )}
+
+      {/* 일반 채널들 */}
+      {filteredChannels.map((channel, index) => {
         const typeConfig = CHANNEL_TYPE_CONFIG[channel.type];
         
         return (

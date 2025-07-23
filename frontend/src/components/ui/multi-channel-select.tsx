@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Check, ChevronsUpDown, Hash, Users, X, Volume2 } from "lucide-react";
+import { Check, ChevronsUpDown, Hash, Users, X, Volume2, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,18 @@ import {
 } from "@/components/ui/popover";
 import { Channel } from "@/lib/types";
 import { useChannels } from "@/hooks/useChannels";
+
+// 특수 채널 옵션
+const SPECIAL_CHANNELS = [
+    {
+        id: 'ROLE_CHANNEL',
+        name: '역할별 채널 (자동 생성)',
+        typeKey: 'special',
+        emoji: '🎭',
+        displayName: '역할별 채널 (자동 생성)',
+        description: '사용자의 역할에 따라 자동으로 채널을 생성하여 전송'
+    }
+];
 
 interface MultiChannelSelectProps {
     value: string[];
@@ -54,15 +66,20 @@ export function MultiChannelSelect({
         );
     };
 
-    // 채널 타입에 따른 필터링
+    // 채널 타입에 따른 필터링 (특수 채널 포함)
     const getFilteredChannels = () => {
+        // 일반 채널 필터링
         let filtered = channels;
-        
-        // 채널 타입 필터링
         if (channelTypes && channelTypes.length > 0) {
             filtered = channels.filter(channel => 
                 channelTypes.includes(channel.typeKey || 'text')
             );
+        }
+        
+        // 특수 채널 추가 (메시지 전송용 채널 타입일 때만)
+        let specialChannels: any[] = [];
+        if (!channelTypes || channelTypes.includes('text') || channelTypes.includes('announcement')) {
+            specialChannels = SPECIAL_CHANNELS;
         }
         
         // 검색 필터링
@@ -70,21 +87,27 @@ export function MultiChannelSelect({
             filtered = filtered.filter(channel => 
                 matches(channel.name, searchQuery)
             );
+            specialChannels = specialChannels.filter(channel => 
+                matches(channel.name, searchQuery)
+            );
         }
         
-        return filtered;
+        // 특수 채널을 맨 앞에 배치
+        return [...specialChannels, ...filtered];
     };
 
     const filteredChannels = getFilteredChannels();
 
     // 채널 타입별 아이콘 (백엔드 이모지 우선 사용)
-    const getChannelIcon = (channel?: Channel) => {
+    const getChannelIcon = (channel?: Channel | any) => {
         if (channel?.emoji) {
             return <span className="text-sm">{channel.emoji}</span>;
         }
         
         const type = channel?.typeKey;
         switch (type) {
+            case 'special':
+                return <UserCheck className="h-4 w-4 text-orange-500" />;
             case 'voice':
             case 'stage':
                 return <Volume2 className="h-4 w-4 text-green-500" />;
@@ -99,8 +122,9 @@ export function MultiChannelSelect({
         }
     };
 
-    // 선택된 채널 정보 가져오기
-    const selectedChannels = channels.filter(channel => value.includes(channel.id));
+    // 선택된 채널 정보 가져오기 (특수 채널 포함)
+    const allChannels = [...SPECIAL_CHANNELS, ...channels];
+    const selectedChannels = allChannels.filter(channel => value.includes(channel.id));
 
     // 채널 선택/해제 토글
     const handleToggle = (channelId: string) => {
