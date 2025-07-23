@@ -69,7 +69,10 @@ module.exports = {
         }
     },
     upload: true,
-    permissionLevel: PermissionFlagsBits.DeafenMembers
+    permissionLevel: PermissionFlagsBits.DeafenMembers,
+    
+    // 다른 모듈에서 사용할 수 있도록 diceSimulator 함수 내보내기
+    diceSimulator: diceSimulator
 };
 
 function diceSimulator(point, dice) {
