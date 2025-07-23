@@ -501,6 +501,9 @@ class MusicPlayerV4 extends EventEmitter {
         const oldMode = this.state.mode;
         this.state.mode = mode;
 
+        // 모드 변경 시 Direct Selection 플래그 초기화 (사용자 의도 변경으로 간주)
+        this.state.isDirectSelection = false;
+
         if (mode === 'shuffle' && oldMode !== 'shuffle') {
             this.queue.enableShuffle(this.state.currentIndex);
         } else if (mode !== 'shuffle' && oldMode === 'shuffle') {
@@ -508,6 +511,11 @@ class MusicPlayerV4 extends EventEmitter {
         }
 
         this.logger.stateChange('mode', mode);
+        this.logger.debug('Direct selection flag reset due to mode change', {
+            oldMode,
+            newMode: mode,
+            directSelectionReset: true
+        });
         await this.updateUI('Mode changed');
 
         return true;
