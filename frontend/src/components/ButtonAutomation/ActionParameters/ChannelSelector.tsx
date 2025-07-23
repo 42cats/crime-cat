@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Select, Input, Space, Typography, Spin, message, Tag } from 'antd';
-import { SearchOutlined, HashtagOutlined, VolumeUpOutlined, MessageOutlined, TeamOutlined } from '@ant-design/icons';
+import { SearchOutlined, TagOutlined, MessageOutlined, TeamOutlined } from '@ant-design/icons';
 import { isValidDiscordId } from '../../../utils/validation';
 import { apiClient } from '../../../lib/api';
 
@@ -50,12 +50,12 @@ const DISCORD_CHANNEL_TYPES: { [key: number]: 'text' | 'voice' | 'category' | 'a
 // 채널 타입별 아이콘 및 설명
 const CHANNEL_TYPE_CONFIG = {
   text: {
-    icon: <HashtagOutlined />,
+    icon: <TagOutlined />,
     label: '텍스트',
     color: '#5865f2'
   },
   voice: {
-    icon: <VolumeUpOutlined />,
+    icon: <MessageOutlined />,
     label: '음성',
     color: '#57f287'
   },
@@ -65,7 +65,7 @@ const CHANNEL_TYPE_CONFIG = {
     color: '#fee75c'
   },
   stage: {
-    icon: <VolumeUpOutlined />,
+    icon: <MessageOutlined />,
     label: '스테이지',
     color: '#eb459e'
   },

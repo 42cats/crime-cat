@@ -78,7 +78,7 @@ export function MultiChannelSelect({
         
         // 특수 채널 추가 (메시지 전송용 채널 타입일 때만)
         let specialChannels: any[] = [];
-        if (!channelTypes || channelTypes.includes('text') || channelTypes.includes('announcement')) {
+        if (!channelTypes || channelTypes.includes('text') || channelTypes.includes('announcement') || channelTypes.includes('category')) {
             specialChannels = SPECIAL_CHANNELS;
         }
         

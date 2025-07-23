@@ -402,27 +402,34 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                         <ChannelProvider guildId={guildId}>
                             <MultiChannelSelect
                                 value={
-                                    action.parameters.channelId
-                                        ? Array.isArray(
-                                              action.parameters.channelId
-                                          )
+                                    // 먼저 channelIds를 확인하고, 없으면 channelId 사용 (하위 호환성)
+                                    action.parameters.channelIds 
+                                        ? action.parameters.channelIds
+                                        : action.parameters.channelId
+                                        ? Array.isArray(action.parameters.channelId)
                                             ? action.parameters.channelId
                                             : [action.parameters.channelId]
                                         : []
                                 }
                                 onChange={(channels) => {
-                                    // 채널 권한 액션의 경우 여러 채널 선택 가능, 그 외는 단일 채널만 선택
+                                    // 채널 권한 액션과 메시지 전송 액션은 여러 채널 선택 가능
                                     if (
-                                        action.type.includes(
-                                            "channel_permission"
-                                        )
+                                        action.type.includes("channel_permission") ||
+                                        action.type === "send_message"
                                     ) {
-                                        updateActionParameter(
-                                            index,
-                                            "channelId",
-                                            channels
-                                        );
+                                        // 멀티 채널 지원: channelIds와 channelId 모두 업데이트
+                                        const newActions = [...actions];
+                                        newActions[index] = {
+                                            ...newActions[index],
+                                            parameters: {
+                                                ...newActions[index].parameters,
+                                                channelIds: channels,
+                                                channelId: channels.length === 1 ? channels[0] : (channels.length > 0 ? channels : "") // 하위 호환성
+                                            },
+                                        };
+                                        onChange(newActions);
                                     } else {
+                                        // 기타 액션은 단일 채널만 선택
                                         updateActionParameter(
                                             index,
                                             "channelId",
@@ -432,7 +439,8 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                 }}
                                 placeholder="채널을 선택하세요"
                                 maxSelections={
-                                    action.type.includes("channel_permission")
+                                    action.type.includes("channel_permission") ||
+                                    action.type === "send_message"
                                         ? undefined
                                         : 1
                                 }
@@ -444,6 +452,12 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                               "category",
                                               "announcement",
                                               "stage",
+                                          ]
+                                        : action.type === "send_message"
+                                        ? [
+                                              "text",
+                                              "announcement", 
+                                              "category"
                                           ]
                                         : undefined
                                 }
@@ -480,6 +494,37 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                     🔢 <strong>여러 채널 선택 가능:</strong> 한
                                     번에 여러 채널에 같은 권한을 적용할 수
                                     있습니다
+                                </Text>
+                            </div>
+                        )}
+                        
+                        {/* 메시지 전송 액션 안내 */}
+                        {action.type === "send_message" && (
+                            <div
+                                style={{
+                                    marginTop: 8,
+                                    padding: 8,
+                                    backgroundColor: "#f0fff0",
+                                    borderRadius: 4,
+                                }}
+                            >
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                    💡 <strong>멀티 채널 메시지 전송:</strong>
+                                    <br />
+                                    📝 <strong>텍스트 채널:</strong> 일반 메시지 전송
+                                    <br />
+                                    📢 <strong>공지 채널:</strong> 공지 메시지 전송
+                                    <br />
+                                    📁 <strong style={{ color: "#52c41a" }}>
+                                        카테고리 채널: 카테고리 내 모든 텍스트 채널에 
+                                        자동으로 메시지를 전송합니다
+                                    </strong>
+                                    <br />
+                                    🎭 <strong>역할별 채널:</strong> 사용자 역할에 따라 
+                                    자동 생성된 채널에 전송
+                                    <br />
+                                    📤 <strong>여러 채널 선택 가능:</strong> 한 번에 
+                                    여러 채널에 같은 메시지를 전송할 수 있습니다
                                 </Text>
                             </div>
                         )}
