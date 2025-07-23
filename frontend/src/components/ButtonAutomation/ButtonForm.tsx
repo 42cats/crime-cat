@@ -28,6 +28,7 @@ import {
     ConditionConfig,
 } from "../../types/buttonAutomation";
 import { DISCORD_LIMITS, validateActionCount } from "../../utils/validation";
+import { ChannelSelector } from "./ActionParameters/ChannelSelector";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -35,6 +36,7 @@ const { Option } = Select;
 interface ButtonFormProps {
     button?: ButtonAutomation;
     groupId?: string;
+    guildId?: string;
     onSubmit: (data: ButtonFormData) => Promise<void>;
     onCancel: () => void;
     loading?: boolean;
@@ -65,6 +67,7 @@ interface SimpleActionConfig {
 export const ButtonForm: React.FC<ButtonFormProps> = ({
     button,
     groupId,
+    guildId,
     onSubmit,
     onCancel,
     loading = false,
@@ -270,17 +273,19 @@ export const ButtonForm: React.FC<ButtonFormProps> = ({
                 return (
                     <>
                         {action.type === "send_message" && (
-                            <Form.Item label="채널 ID">
-                                <Input
+                            <Form.Item label="대상 채널">
+                                <ChannelSelector
                                     value={action.parameters.channelId || ""}
-                                    onChange={(e) =>
+                                    onChange={(value) => {
                                         updateAction(
                                             index,
                                             "parameters.channelId",
-                                            e.target.value
-                                        )
-                                    }
-                                    placeholder="123456789012345678"
+                                            value
+                                        );
+                                    }}
+                                    placeholder="채널을 선택하거나 ID를 입력하세요"
+                                    guildId={guildId}
+                                    channelTypes={['text', 'announcement']}
                                 />
                             </Form.Item>
                         )}
