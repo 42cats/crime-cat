@@ -42,6 +42,9 @@ const { loadEvents } = require('./Commands/utility/loadEvent');
 const { guildAddProcess } = require('./Commands/api/guild/guild');
 const categoryCleanupScheduler = require('./Commands/utility/categoryCleanupScheduler');
 
+// TTS 시스템 초기화
+const { getInstance: getTTSSystemManager } = require('./Commands/utility/ttsSystemManager');
+
 initClientVariables(client);
 loadSlashAndPrefixCommands(client, path.join(__dirname, 'Commands'));
 loadResponses(client, path.join(__dirname, 'Response'));
@@ -56,6 +59,15 @@ client.once(Events.ClientReady, async (readyClient) => {
 	// 카테고리 정리 스케줄러 시작 (24시간마다, 7일 이상 된 빈 카테고리 삭제)
 	categoryCleanupScheduler.start(client, 24, 7);
 	console.log('✅ 카테고리 자동 정리 스케줄러가 시작되었습니다.');
+
+	// TTS 시스템 매니저 시작
+	try {
+		const ttsSystemManager = getTTSSystemManager();
+		ttsSystemManager.start();
+		console.log('✅ TTS 시스템 매니저가 시작되었습니다.');
+	} catch (error) {
+		console.error('❌ TTS 시스템 매니저 시작 실패:', error.message);
+	}
 });
 
 
@@ -163,6 +175,22 @@ const handleExit = async (signal) => {
 			console.log('[EXIT] 카테고리 정리 스케줄러가 중지되었습니다.');
 		} catch (schedulerErr) {
 			console.error('[EXIT] 스케줄러 중지 중 오류:', schedulerErr);
+		}
+
+		// TTS 시스템 정리
+		try {
+			const ttsSystemManager = getTTSSystemManager();
+			ttsSystemManager.stop();
+			
+			// TTS 명령어 정리
+			const ttsCommand = require('./Commands/tts');
+			if (ttsCommand.cleanup) {
+				ttsCommand.cleanup();
+			}
+			
+			console.log('[EXIT] TTS 시스템이 정리되었습니다.');
+		} catch (ttsErr) {
+			console.error('[EXIT] TTS 시스템 정리 중 오류:', ttsErr);
 		}
 
 		// Redis 연결 종료 (있는 경우)
