@@ -94,5 +94,5 @@ function diceSimulator(point, dice, label = null) {
         resultStr = `${results.join(' + ')} = **${total}**`;
     }
 
-    return `${label ? `${label} ` : '🎲 '}주사위 결과: ${resultStr} (${dice}D${point})`;
+    return `${label ? `${label} ` : '🎲 '} 결과: ${resultStr} (${dice}D${point})`;
 }
