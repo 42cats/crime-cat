@@ -25,11 +25,10 @@ module.exports = {
                 });
                 return;
             }
-
             console.log(`[DiceRollButton] Rolling ${diceCount}D${diceEyes} for ${interaction.user.displayName}`);
 
             // 기존 diceSimulator 함수 사용
-            const result = diceSimulator(diceEyes, diceCount);
+            const result = diceSimulator(diceEyes, diceCount, interaction.component.label);
             const userName = interaction.user.displayName ?? interaction.user.globalName;
 
             await interaction.reply({
