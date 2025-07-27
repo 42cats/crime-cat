@@ -5,6 +5,8 @@ const redisManager = require('./utility/redis');
 const nameOfCommand = "슬립타이머";
 const description = "지정한 시간(분) 후 음성 채널에서 자동으로 연결을 해제합니다";
 
+const MAX_SLEEP_TIMER_MINUTES = 1440;
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName(nameOfCommand)
@@ -14,7 +16,7 @@ module.exports = {
                 .setName('분')
                 .setDescription('연결을 해제할 시간(분 단위)')
                 .setMinValue(1)
-                .setMaxValue(1440) // 24시간
+                .setMaxValue(MAX_SLEEP_TIMER_MINUTES) // 24시간
                 .setRequired(true)
         ),
     /**

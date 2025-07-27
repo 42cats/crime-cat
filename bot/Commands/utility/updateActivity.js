@@ -1,71 +1,76 @@
-
 const { Client, ActivityType } = require('discord.js')
 const { recordAdExposureFromData } = require('../api/themeAd/themeAd');
 
+// 기본 메시지 배열을 상수로 선언
+const DEFAULT_MESSAGES = [
+	"mystery-place.com",
+	"모든기능 완전 무료",
+];
+// 기본 메시지 개수를 상수로
+const DEFAULT_MESSAGE_COUNT = DEFAULT_MESSAGES.length;
+
+/**
+ * Activity 메시지 변경
+ */
 async function ActivityMessage(bot, msg, type) {
 	bot.user.setActivity(msg, { type });
 }
 
 /**
  * 최적화된 Activity 업데이트 시스템
- * Redis Pub/Sub을 통한 광고 실시간 동기화 + 인메모리 캐시 활용
- * 
- * @param {Client} client 
- * @param {*} messege 
- * @param {*} currentIndex 
+ * Redis Pub/Sub + 인메모리 캐시 활용
  */
 module.exports = async (client, messege, currentIndex) => {
-	// 🚀 광고 업데이트 콜백 설정 (한 번만 실행, main.js에서 이미 초기화됨)
+	// 콜백 중복 설정 방지
 	if (client.advertisementManager && !client.advertisementManager.onUpdateCallback) {
 		client.advertisementManager.setUpdateCallback((newAds) => {
 			console.log(`📢 Activity 메시지 재구성 트리거: ${newAds.length}건의 광고 업데이트`);
-			// 광고 변경 시 즉시 메시지 재구성은 다음 interval에서 반영됨
 		});
-		
 		console.log('✅ Advertisement Manager 콜백 설정 완료');
 	}
 
-	// 🎡 Activity 로테이션 시작 (6초 간격 유지)
 	setInterval(async () => {
 		const ownerSet = new Set();
-		messege = [];
-		client.guilds.valueOf().map(v => ownerSet.add(v.ownerId));
-		messege.push(`mystery-place.com`);
-		messege.push(`모든기능 완전 무료`);
+		let messege = [...DEFAULT_MESSAGES]; // 항상 새 배열로 시작
 
-		// 기존 게임 플레이 정보 가져오기 (기존 로직 유지)
+		client.guilds.valueOf().map(v => ownerSet.add(v.ownerId));
+
+		// 게임 플레이 길드 정보 가져오기
 		const gameData = await client.redis?.getAllHashFields("players") || {};
 		const gamePlayGuildList = Object.values(gameData || {})
 			.flatMap(players => players)
 			.map(player => `now!! ${player.guildName}`) || [];
 
-		// 🚀 광고 정보 - 인메모리 캐시에서 조회 (Redis API 호출 없음!)
+		// 광고 정보 인메모리 캐시에서 조회
 		const activeAds = client.advertisementManager?.getActiveAds() || [];
 		const adMessages = activeAds.map(ad => `추천! ${ad.themeName}`);
 
 		// 모든 메시지 병합
-		messege = [...messege, ...gamePlayGuildList, ...adMessages];
+		messege = [
+			...DEFAULT_MESSAGES,
+			...gamePlayGuildList,
+			...adMessages
+		];
 
-		// 메시지가 없으면 기본 메시지 추가
+		// 메시지가 없으면 기본 메시지
 		if (messege.length === 0) {
-			messege.push('mystery-place.com');
+			messege = [...DEFAULT_MESSAGES];
 		}
 
 		currentIndex = (currentIndex + 1) % messege.length;
 
-		// 활동 타입 결정
+		// 활동 타입
 		let activityType = ActivityType.Watching;
 
-		// 광고 노출 통계 기록
-		const adStartIndex = 2 + gamePlayGuildList.length; // 기본 메시지 2개
+		// 광고 노출 통계 기록 (상수 활용)
+		const adStartIndex = DEFAULT_MESSAGE_COUNT + gamePlayGuildList.length;
 		if (currentIndex >= adStartIndex && activeAds.length > 0) {
 			const adIndex = currentIndex - adStartIndex;
 			if (adIndex < activeAds.length) {
-				// 광고가 표시될 때 노출 기록
 				recordAdExposureFromData(activeAds[adIndex]);
 				activityType = ActivityType.Custom;
 			}
-		} else if (currentIndex >= 2 && currentIndex < adStartIndex) {
+		} else if (currentIndex >= DEFAULT_MESSAGE_COUNT && currentIndex < adStartIndex) {
 			activityType = ActivityType.Playing;
 		}
 
@@ -88,7 +93,7 @@ module.exports = async (client, messege, currentIndex) => {
  */
 async function getActiveThemeAdvertisements(redis) {
 	console.warn('⚠️ getActiveThemeAdvertisements is deprecated. Use AdvertisementPubSubManager.getActiveAds() instead.');
-	
+
 	try {
 		if (!redis) {
 			console.warn('⚠️ Redis client not available for theme advertisements');

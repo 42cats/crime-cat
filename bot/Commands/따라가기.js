@@ -5,6 +5,9 @@ const redisManager = require('./utility/redis');
 const nameOfCommand = "따라가기";
 const description = "특정 유저를 5시간 동안 자동으로 따라갑니다";
 
+const FOLLOW_TIMER_TTL = 18000; // 5시간
+const NO_TTL = 0;
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName(nameOfCommand)
@@ -72,10 +75,10 @@ module.exports = {
                 createdAt: new Date().toISOString()
             };
             const followerKey = `follower:${guildId}:${followerId}`;
-            await redisManager.setValue(followerData, 18000, followerKey); // 5시간 TTL
+            await redisManager.setValue(followerData, FOLLOW_TIMER_TTL, followerKey); // 5시간 TTL
 
             await interaction.reply({
-                content: `🎯 **${targetMember.displayName}**님을 5시간 동안 따라갑니다!\n⏰ 자동 해제: <t:${Math.floor(Date.now() / 1000) + 18000}:R>`,
+                content: `🎯 **${targetMember.displayName}**님을 5시간 동안 따라갑니다!\n⏰ 자동 해제: <t:${Math.floor(Date.now() / 1000) + FOLLOW_TIMER_TTL}:R>`,
                 ephemeral: true
             });
 
@@ -152,9 +155,9 @@ module.exports = {
                     createdAt: new Date().toISOString()
                 };
                 const followerKey = `follower:${guildId}:${followerId}`;
-                await redisManager.setValue(followerData, 18000, followerKey);
+                await redisManager.setValue(followerData, FOLLOW_TIMER_TTL, followerKey);
 
-                await message.channel.send(`🎯 **${targetMember.displayName}**님을 5시간 동안 따라갑니다!\n⏰ 자동 해제: <t:${Math.floor(Date.now() / 1000) + 18000}:R>`);
+                await message.channel.send(`🎯 **${targetMember.displayName}**님을 5시간 동안 따라갑니다!\n⏰ 자동 해제: <t:${Math.floor(Date.now() / 1000) + FOLLOW_TIMER_TTL}:R>`);
                 
                 console.log(`✅ Follow tracking started: ${followerMember.displayName} → ${targetMember.displayName} in ${message.guild.name}`);
 
@@ -184,7 +187,7 @@ async function addFollowerToTarget(guildId, targetUserId, followerId) {
     if (!followers.includes(followerId)) {
         followers.push(followerId);
         // TTL 없이 저장 - 개별 팔로워 TTL로 관리
-        await redisManager.setValue(followers, 0, targetKey); // TTL 없음
+        await redisManager.setValue(followers, NO_TTL, targetKey); // TTL 없음
     }
 }
 
@@ -221,6 +224,6 @@ async function removeFollowerFromTarget(guildId, targetUserId, followerId) {
         await redisManager.delete(targetKey);
     } else {
         // 업데이트된 팔로워 목록 저장 (TTL 없음)
-        await redisManager.setValue(updatedFollowers, 0, targetKey);
+        await redisManager.setValue(updatedFollowers, NO_TTL, targetKey);
     }
 }

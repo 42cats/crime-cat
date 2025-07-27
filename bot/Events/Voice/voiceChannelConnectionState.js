@@ -3,6 +3,7 @@ const { Events, ChannelType } = require('discord.js');
 const { getVoiceConnection } = require('@discordjs/voice');
 const redisManager = require('../../Commands/utility/redis');
 
+const NO_TTL = 0;
 module.exports = {
 	name: "voiceStateUpdate",
 	once: false, // 매 이벤트마다 실행
@@ -190,7 +191,7 @@ async function removeFollowerFromTarget(guildId, targetUserId, followerId) {
 		console.log(`🗑️ Removed empty target key: ${targetKey}`);
 	} else {
 		// 업데이트된 팔로워 목록 저장 (TTL 없음)
-		await redisManager.setValue(updatedFollowers, 0, targetKey);
+		await redisManager.setValue(updatedFollowers, NO_TTL, targetKey);
 		console.log(`🔄 Updated followers for ${targetKey}: ${updatedFollowers.length} remaining`);
 	}
 }
