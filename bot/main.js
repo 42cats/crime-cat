@@ -24,9 +24,22 @@ const client = new Client({
 });
 
 client.redis = require('./Commands/utility/redis');
+// Discord 클라이언트를 전역으로 설정 (Redis Pub/Sub에서 사용)
+global.discordClient = client;
+
 (async () => {
 	await client.redis.connect();
-
+	
+	// Redis Pub/Sub 구독자 초기화
+	await client.redis.initializeSubscriber();
+	
+	// Redis 키스페이스 이벤트 활성화
+	try {
+		await client.redis.client.configSet('notify-keyspace-events', 'Ex');
+		console.log('✅ Redis keyspace notifications enabled');
+	} catch (error) {
+		console.error('❌ Failed to enable Redis notifications:', error);
+	}
 })();
 
 const { loadResponses } = require('./Commands/utility/loadResponse');
