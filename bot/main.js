@@ -23,15 +23,25 @@ const client = new Client({
 	partials: [Partials.Channel]
 });
 
+// Redis 매니저 및 통합 Pub/Sub 시스템 초기화
 client.redis = require('./Commands/utility/redis');
-// Discord 클라이언트를 전역으로 설정 (Redis Pub/Sub에서 사용)
+const UnifiedPubSubManager = require('./Commands/utility/unifiedPubSub');
+const AdvertisementPubSubManager = require('./Commands/utility/advertisementPubSub');
+
+// Discord 클라이언트를 전역으로 설정 (Pub/Sub에서 사용)
 global.discordClient = client;
 
 (async () => {
+	// Redis 기본 연결
 	await client.redis.connect();
 	
-	// Redis Pub/Sub 구독자 초기화
-	await client.redis.initializeSubscriber();
+	// 통합 Pub/Sub 매니저 초기화
+	client.unifiedPubSub = new UnifiedPubSubManager(client);
+	await client.unifiedPubSub.initialize();
+	
+	// 광고 매니저 초기화 (통합 Pub/Sub 연동)
+	client.advertisementManager = new AdvertisementPubSubManager(client);
+	await client.advertisementManager.initialize();
 	
 	// Redis 키스페이스 이벤트 활성화
 	try {
@@ -40,6 +50,8 @@ global.discordClient = client;
 	} catch (error) {
 		console.error('❌ Failed to enable Redis notifications:', error);
 	}
+	
+	console.log('✅ 통합 Pub/Sub 시스템 초기화 완료');
 })();
 
 const { loadResponses } = require('./Commands/utility/loadResponse');
@@ -63,7 +75,7 @@ loadEvents(client, path.join(__dirname, 'Events'));
 // It makes some properties non-nullable.
 client.once(Events.ClientReady, async (readyClient) => {
 	console.log(`Ready! Logged in as !!${readyClient.user.tag}`);
-	updateActivity(client, messege, currentIndex);
+	await updateActivity(client, messege, currentIndex);
 	client.master = await client.users.fetch('317655426868969482');
 
 	// 카테고리 정리 스케줄러 시작 (24시간마다, 7일 이상 된 빈 카테고리 삭제)
@@ -178,7 +190,17 @@ const handleExit = async (signal) => {
 			console.error('[EXIT] 스케줄러 중지 중 오류:', schedulerErr);
 		}
 
-		// Redis 연결 종료 (있는 경우)
+		// 통합 Pub/Sub 시스템 종료
+		if (client && client.unifiedPubSub) {
+			try {
+				await client.unifiedPubSub.disconnect();
+				console.log('[EXIT] 통합 Pub/Sub 시스템이 종료되었습니다.');
+			} catch (pubsubErr) {
+				console.error('[EXIT] Pub/Sub 시스템 종료 중 오류:', pubsubErr);
+			}
+		}
+		
+		// Redis 연결 종료
 		if (client && client.redis) {
 			try {
 				await client.redis.disconnect();

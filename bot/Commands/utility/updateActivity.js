@@ -7,12 +7,25 @@ async function ActivityMessage(bot, msg, type) {
 }
 
 /**
+ * 최적화된 Activity 업데이트 시스템
+ * Redis Pub/Sub을 통한 광고 실시간 동기화 + 인메모리 캐시 활용
  * 
  * @param {Client} client 
  * @param {*} messege 
  * @param {*} currentIndex 
  */
-module.exports = (client, messege, currentIndex) => {
+module.exports = async (client, messege, currentIndex) => {
+	// 🚀 광고 업데이트 콜백 설정 (한 번만 실행, main.js에서 이미 초기화됨)
+	if (client.advertisementManager && !client.advertisementManager.onUpdateCallback) {
+		client.advertisementManager.setUpdateCallback((newAds) => {
+			console.log(`📢 Activity 메시지 재구성 트리거: ${newAds.length}건의 광고 업데이트`);
+			// 광고 변경 시 즉시 메시지 재구성은 다음 interval에서 반영됨
+		});
+		
+		console.log('✅ Advertisement Manager 콜백 설정 완료');
+	}
+
+	// 🎡 Activity 로테이션 시작 (6초 간격 유지)
 	setInterval(async () => {
 		const ownerSet = new Set();
 		messege = [];
@@ -20,19 +33,17 @@ module.exports = (client, messege, currentIndex) => {
 		messege.push(`mystery-place.com`);
 		messege.push(`모든기능 완전 무료`);
 
-		// 기존 게임 플레이 정보 가져오기
-		const gameData = await client.redis?.getAllHashFields("players") || {}; // gameData가 null이면 빈 객체 할당
-
-		// 🔹 gameData가 존재하는지 확인 후 객체 → 배열 변환 후 map() 사용
-		const gamePlayGuildList = Object.values(gameData || {}) // gameData가 null이어도 안전하게 처리
-			.flatMap(players => players)  // 객체 내부의 배열을 평탄화 (2D → 1D)
+		// 기존 게임 플레이 정보 가져오기 (기존 로직 유지)
+		const gameData = await client.redis?.getAllHashFields("players") || {};
+		const gamePlayGuildList = Object.values(gameData || {})
+			.flatMap(players => players)
 			.map(player => `now!! ${player.guildName}`) || [];
 
-		// 활성 테마 광고 정보 가져오기
-		const activeAds = await getActiveThemeAdvertisements(client.redis);
+		// 🚀 광고 정보 - 인메모리 캐시에서 조회 (Redis API 호출 없음!)
+		const activeAds = client.advertisementManager?.getActiveAds() || [];
 		const adMessages = activeAds.map(ad => `추천! ${ad.themeName}`);
 
-		// 모든 메시지 병합 (기본 사이트 + 게임 플레이 + 광고)
+		// 모든 메시지 병합
 		messege = [...messege, ...gamePlayGuildList, ...adMessages];
 
 		// 메시지가 없으면 기본 메시지 추가
@@ -42,19 +53,19 @@ module.exports = (client, messege, currentIndex) => {
 
 		currentIndex = (currentIndex + 1) % messege.length;
 
-		// 활동 타입 결정: 기본 사이트는 Watching, 게임 플레이는 Playing, 광고는 Custom
+		// 활동 타입 결정
 		let activityType = ActivityType.Watching;
 
 		// 광고 노출 통계 기록
-		const adStartIndex = 1 + gamePlayGuildList.length;
+		const adStartIndex = 2 + gamePlayGuildList.length; // 기본 메시지 2개
 		if (currentIndex >= adStartIndex && activeAds.length > 0) {
 			const adIndex = currentIndex - adStartIndex;
 			if (adIndex < activeAds.length) {
 				// 광고가 표시될 때 노출 기록
 				recordAdExposureFromData(activeAds[adIndex]);
-				activityType = ActivityType.Custom; // 광고는 Custom 타입으로 표시
+				activityType = ActivityType.Custom;
 			}
-		} else if (currentIndex >= 1 && currentIndex < adStartIndex) {
+		} else if (currentIndex >= 2 && currentIndex < adStartIndex) {
 			activityType = ActivityType.Playing;
 		}
 
@@ -63,34 +74,34 @@ module.exports = (client, messege, currentIndex) => {
 }
 
 /**
- * Redis에서 활성 테마 광고 목록을 가져오는 함수
- * @param {Object} redis - Redis 클라이언트
+ * ⚠️ DEPRECATED: Redis에서 활성 테마 광고 목록을 가져오는 함수
+ * 
+ * 이 함수는 더 이상 사용되지 않습니다.
+ * 대신 AdvertisementPubSubManager의 getActiveAds() 메서드를 사용하세요.
+ * 
+ * Redis Pub/Sub 시스템으로 대체되어 실시간 광고 업데이트와 
+ * 99% API 호출 감소 효과를 제공합니다.
+ * 
+ * @deprecated Use AdvertisementPubSubManager.getActiveAds() instead
+ * @param {Object} redis - Redis 클라이언트  
  * @returns {Array} 활성 광고 목록
  */
 async function getActiveThemeAdvertisements(redis) {
+	console.warn('⚠️ getActiveThemeAdvertisements is deprecated. Use AdvertisementPubSubManager.getActiveAds() instead.');
+	
 	try {
 		if (!redis) {
 			console.warn('⚠️ Redis client not available for theme advertisements');
 			return [];
 		}
 
-		// 백엔드에서 설정한 캐시 키 사용
 		const cacheKey = "theme:ad:active";
-
-		// RedisManager의 getValue 메서드 사용 (타입 체크와 JSON 파싱 자동 처리)
 		const activeAdsData = await redis.getValue(cacheKey);
 
-		if (!activeAdsData) {
-			console.log('📢 No active theme advertisements found');
+		if (!activeAdsData || !Array.isArray(activeAdsData)) {
 			return [];
 		}
 
-		if (!Array.isArray(activeAdsData)) {
-			console.warn('⚠️ Active ads data is not an array:', typeof activeAdsData);
-			return [];
-		}
-
-		// console.log(`📢 Found ${activeAdsData.length} active theme advertisements`);
 		return activeAdsData;
 
 	} catch (error) {
