@@ -34,7 +34,7 @@ module.exports = {
 
             await interaction.reply({
                 content: `✅ 슬립타이머가 해제되었습니다! (${timerData.minutes}분 타이머 취소됨)`,
-                ephemeral: false
+                ephemeral: true
             });
 
             console.log(`💤 Sleep timer cancelled: ${interaction.user.displayName} in ${interaction.guild.name}`);
@@ -84,5 +84,5 @@ module.exports = {
         }
     },
     upload: true,
-    permissionLevel: PermissionFlagsBits.Connect,
+    permissionLevel: PermissionFlagsBits.DeafenMembers
 };
