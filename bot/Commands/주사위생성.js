@@ -9,15 +9,17 @@ module.exports = {
         .setName(nameOfCommand)
         .setDescription(description)
         .addIntegerOption(option =>
-            option.setName('눈')
-                .setDescription('주사위 눈 개수 (기본: 6개)')
-                .setMinValue(1)
-                .setRequired(false)
-        )
-        .addIntegerOption(option =>
             option.setName('개수')
                 .setDescription('주사위 개수 (기본: 1개)')
                 .setMinValue(1)
+                .setMaxValue(10)
+                .setRequired(false)
+        )
+        .addIntegerOption(option =>
+            option.setName('눈')
+                .setDescription('주사위 눈 개수 (기본: 6개)')
+                .setMinValue(2)
+                .setMaxValue(100)
                 .setRequired(false)
         )
         .addBooleanOption(option =>
