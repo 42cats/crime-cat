@@ -56,7 +56,7 @@ module.exports = {
             const endTimeUnix = Math.floor(endTime / 1000);
             await interaction.reply({
                 content: `💤 **${minutes}분** 후에 음성 채널에서 연결이 해제됩니다.\n⏰ 해제 시간: <t:${endTimeUnix}:T> (<t:${endTimeUnix}:R>)`,
-                ephemeral: false
+                ephemeral: true
             });
 
             console.log(`💤 Sleep timer set: ${member.displayName} in ${interaction.guild.name} for ${minutes} minutes`);
@@ -129,5 +129,5 @@ module.exports = {
         }
     },
     upload: true,
-    permissionLevel: PermissionFlagsBits.Connect,
+    permissionLevel: PermissionFlagsBits.DeafenMembers
 };

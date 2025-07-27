@@ -92,7 +92,7 @@ module.exports = {
         }
     },
     upload: true,
-    permissionLevel: PermissionFlagsBits.Connect,
+    permissionLevel: PermissionFlagsBits.DeafenMembers
 };
 
 /**
