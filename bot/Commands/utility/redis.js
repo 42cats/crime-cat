@@ -51,9 +51,15 @@ class RedisManager {
 			key = uuidv4();
 
 		try {
-			// Redis에 비동기 저장 + TTL 설정 (기본 1시간)
-			await this.client.setEx(key, ttl, JSON.stringify(dataObject));
-			console.log(`✅ Data stored in Redis with key: ${key} (TTL: ${ttl}s)`);
+			if (ttl === 0) {
+				// TTL이 0이면 무제한 저장 (PERSIST 효과)
+				await this.client.set(key, JSON.stringify(dataObject));
+				console.log(`✅ Data stored in Redis with key: ${key} (TTL: unlimited)`);
+			} else {
+				// TTL이 있으면 setEx 사용
+				await this.client.setEx(key, ttl, JSON.stringify(dataObject));
+				console.log(`✅ Data stored in Redis with key: ${key} (TTL: ${ttl}s)`);
+			}
 		} catch (error) {
 			console.error(`❌ Redis set error: ${error}`);
 		}
@@ -266,6 +272,30 @@ class RedisManager {
 		}
 	}
 
+	/**
+	 * 여러 키를 한 번에 조회 (MGET)
+	 * @param {Array<string>} keys 조회할 키 배열
+	 * @returns {Array} 조회 결과 배열 (null 포함)
+	 */
+	async getMultipleValues(keys) {
+		try {
+			if (keys.length === 0) return [];
+			
+			const values = await this.client.mGet(keys);
+			return values.map(value => {
+				if (value === null) return null;
+				try {
+					return JSON.parse(value);
+				} catch (e) {
+					return value; // JSON이 아니면 원본 반환
+				}
+			});
+		} catch (error) {
+			console.error('❌ Redis MGET Error:', error);
+			return new Array(keys.length).fill(null);
+		}
+	}
+
 	async getNowPlaying(client) {
 		const maps = await this.getValue("nowPlaying");
 		const gamePlayGuildList = [];
@@ -280,6 +310,128 @@ class RedisManager {
 			}
 		}
 		return gamePlayGuildList;
+	}
+
+	/**
+	 * Pub/Sub 구독자 초기화
+	 */
+	async initializeSubscriber() {
+		try {
+			// 별도의 구독 전용 클라이언트 생성
+			this.subscriber = this.client.duplicate();
+			await this.subscriber.connect();
+			
+			// 연결 에러 처리
+			this.subscriber.on('error', (error) => {
+				console.error('❌ Redis subscriber error:', error);
+				this.reconnectSubscriber();
+			});
+
+			// 연결 해제 처리
+			this.subscriber.on('end', () => {
+				console.warn('⚠️ Redis subscriber disconnected');
+				this.reconnectSubscriber();
+			});
+			
+			// 만료 이벤트 구독
+			await this.subscriber.subscribe('__keyevent@0__:expired', (message) => {
+				this.handleKeyExpired(message);
+			});
+			
+			console.log('✅ Redis Pub/Sub subscriber initialized');
+		} catch (error) {
+			console.error('❌ Failed to initialize Redis subscriber:', error);
+			// 5초 후 재시도
+			setTimeout(() => this.initializeSubscriber(), 5000);
+		}
+	}
+
+	/**
+	 * Pub/Sub 재연결 로직
+	 */
+	async reconnectSubscriber() {
+		if (this.reconnecting) return;
+		this.reconnecting = true;
+
+		try {
+			console.log('🔄 Attempting to reconnect Redis subscriber...');
+			
+			// 기존 연결 정리
+			if (this.subscriber) {
+				try {
+					await this.subscriber.quit();
+				} catch (e) {
+					// 이미 연결이 끊어진 상태일 수 있음
+				}
+			}
+
+			// 3초 대기 후 재연결
+			await new Promise(resolve => setTimeout(resolve, 3000));
+			
+			// 재초기화
+			await this.initializeSubscriber();
+			
+			console.log('✅ Redis subscriber reconnected successfully');
+		} catch (error) {
+			console.error('❌ Failed to reconnect Redis subscriber:', error);
+			// 10초 후 재시도
+			setTimeout(() => this.reconnectSubscriber(), 10000);
+		} finally {
+			this.reconnecting = false;
+		}
+	}
+
+	/**
+	 * 키 만료 이벤트 처리
+	 * @param {string} expiredKey 만료된 키
+	 */
+	handleKeyExpired(expiredKey) {
+		// 슬립타이머 키인지 확인
+		if (expiredKey.startsWith('sleepTimer:')) {
+			this.processSleepTimerExpired(expiredKey);
+		}
+	}
+
+	/**
+	 * 슬립타이머 만료 처리
+	 * @param {string} expiredKey 만료된 슬립타이머 키
+	 */
+	async processSleepTimerExpired(expiredKey) {
+		try {
+			// 키 파싱: sleepTimer:guildId:userId
+			const parts = expiredKey.split(':');
+			if (parts.length !== 3) return;
+			
+			const [, guildId, userId] = parts;
+			
+			// Discord 클라이언트를 통해 유저 연결 해제
+			if (global.discordClient) {
+				const guild = global.discordClient.guilds.cache.get(guildId);
+				if (guild) {
+					const member = guild.members.cache.get(userId);
+					if (member && member.voice.channel) {
+						await member.voice.disconnect('Sleep timer expired');
+						console.log(`💤 Sleep timer: Disconnected ${member.displayName} from voice channel`);
+					}
+				}
+			}
+		} catch (error) {
+			console.error('❌ Error processing sleep timer expiry:', error);
+		}
+	}
+
+	/**
+	 * 구독자 연결 해제
+	 */
+	async disconnectSubscriber() {
+		try {
+			if (this.subscriber) {
+				await this.subscriber.quit();
+				console.log('🚪 Redis subscriber disconnected');
+			}
+		} catch (error) {
+			console.error('❌ Error disconnecting Redis subscriber:', error);
+		}
 	}
 }
 
