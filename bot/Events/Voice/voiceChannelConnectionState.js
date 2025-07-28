@@ -153,6 +153,15 @@ async function handleFollowSystem(newState, guild) {
 			
 			// 팔로워가 현재 음성 채널에 있는지 확인
 			if (follower.voice.channel) {
+				// 타깃 채널에 대한 접근 권한 확인
+				const canViewChannel = targetChannel.permissionsFor(follower).has('ViewChannel');
+				const canConnect = targetChannel.permissionsFor(follower).has('Connect');
+				
+				if (!canViewChannel || !canConnect) {
+					console.log(`⚠️ Follow blocked: ${follower.displayName} lacks permission to join ${targetChannel.name}`);
+					continue; // 권한이 없으면 이동시키지 않음
+				}
+				
 				try {
 					// 팔로워를 타깃의 새 채널로 이동
 					await follower.voice.setChannel(targetChannel);
