@@ -1,5 +1,5 @@
 const { BaseActionExecutor } = require('./BaseActionExecutor');
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, ChannelType } = require('discord.js');
 
 /**
  * 메시지 전송 액션 실행기
@@ -106,10 +106,6 @@ class MessageActionExecutor extends BaseActionExecutor {
                 throw new Error(`채널을 찾을 수 없습니다: ${channelId}`);
             }
 
-            if (!targetChannel.isTextBased()) {
-                throw new Error('텍스트 채널이 아닙니다.');
-            }
-
             // 메시지 내용 처리
             const processedMessage = this.processMessageVariables(message || '', context);
             
@@ -122,6 +118,15 @@ class MessageActionExecutor extends BaseActionExecutor {
 
             if (embed) {
                 messageOptions.embeds = [this.createEmbed(embed, context)];
+            }
+
+            // 카테고리 채널인 경우 하위 채널들에 메시지 전송
+            if (targetChannel.type === ChannelType.GuildCategory) {
+                return await this.sendToCategoryChannels(targetChannel, messageOptions, context);
+            }
+
+            if (!targetChannel.isTextBased()) {
+                throw new Error('텍스트 채널이 아닙니다.');
             }
 
             // 메시지 전송
@@ -319,6 +324,112 @@ class MessageActionExecutor extends BaseActionExecutor {
             if (failCount > 0) parts.push(`실패 ${failCount}명`);
 
             return message + parts.join(', ') + ` (총 ${totalCount}명)`;
+        }
+    }
+
+    /**
+     * 카테고리 채널의 하위 채널들에 메시지 전송
+     */
+    async sendToCategoryChannels(categoryChannel, messageOptions, context) {
+        const { guild } = context;
+        const { reactions } = messageOptions;
+
+        try {
+            // 카테고리 하위의 텍스트 채널들 수집
+            const childChannels = guild.channels.cache
+                .filter(ch => ch.parentId === categoryChannel.id && ch.isTextBased())
+                .values();
+
+            const childChannelArray = Array.from(childChannels);
+
+            if (childChannelArray.length === 0) {
+                return {
+                    success: false,
+                    channelId: categoryChannel.id,
+                    channelName: categoryChannel.name,
+                    error: '카테고리에 텍스트 채널이 없습니다.',
+                    message: `카테고리 "${categoryChannel.name}"에 메시지를 전송할 텍스트 채널이 없습니다.`
+                };
+            }
+
+            const results = [];
+            let totalSuccessCount = 0;
+            let totalFailCount = 0;
+
+            // 각 하위 채널에 메시지 전송
+            for (const channel of childChannelArray) {
+                try {
+                    // 메시지 전송
+                    const sentMessage = await this.safeDiscordApiCall(
+                        () => channel.send(messageOptions),
+                        `하위 채널 메시지 전송: ${channel.name}`
+                    );
+
+                    // 이모지 반응 추가
+                    let processedReactions = [];
+                    if (reactions) {
+                        if (typeof reactions === 'string') {
+                            processedReactions = reactions.split(',').map(r => r.trim()).filter(Boolean);
+                        } else if (Array.isArray(reactions)) {
+                            processedReactions = reactions.filter(r => r && r.trim());
+                        }
+                    }
+
+                    if (processedReactions.length > 0) {
+                        for (const reaction of processedReactions) {
+                            try {
+                                await this.safeDiscordApiCall(
+                                    () => sentMessage.react(reaction.trim()),
+                                    `이모지 반응 추가: ${reaction}`
+                                );
+                            } catch (reactionError) {
+                                console.warn(`⚠️ [메시지] 이모지 반응 추가 실패: ${reaction} - ${reactionError.message}`);
+                            }
+                        }
+                    }
+
+                    results.push({
+                        success: true,
+                        channelId: channel.id,
+                        channelName: channel.name,
+                        messageId: sentMessage.id,
+                        reactionsAdded: processedReactions.length
+                    });
+
+                    totalSuccessCount++;
+
+                } catch (error) {
+                    results.push({
+                        success: false,
+                        channelId: channel.id,
+                        channelName: channel.name,
+                        error: error.message
+                    });
+
+                    totalFailCount++;
+                }
+            }
+
+            return {
+                success: totalSuccessCount > 0,
+                channelId: categoryChannel.id,
+                channelName: categoryChannel.name,
+                categoryChannel: true,
+                targetCount: childChannelArray.length,
+                successCount: totalSuccessCount,
+                failCount: totalFailCount,
+                results: results,
+                message: `카테고리 "${categoryChannel.name}"의 ${childChannelArray.length}개 채널 중 ${totalSuccessCount}개 채널에 메시지를 전송했습니다.`
+            };
+
+        } catch (error) {
+            return {
+                success: false,
+                channelId: categoryChannel.id,
+                channelName: categoryChannel.name,
+                error: error.message,
+                message: `카테고리 채널 처리 실패: ${error.message}`
+            };
         }
     }
 
