@@ -38,6 +38,14 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
   onSave,
   className = ''
 }) => {
+  console.log('🚀 [Debug] ConfigEditor 렌더링 시작:', {
+    config,
+    buttonLabel,
+    hasActions: !!config.actions,
+    actionsCount: config.actions?.length || 0,
+    firstActionType: config.actions?.[0]?.type
+  });
+  
   const [activeTab, setActiveTab] = useState<'editor' | 'preview' | 'json'>('editor');
   const [jsonText, setJsonText] = useState('');
   const [botCommands, setBotCommands] = useState<BotCommand[]>([]);
@@ -77,6 +85,12 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
 
   // 컴포넌트 마운트 시 봇 커맨드 로드
   useEffect(() => {
+    console.log('🚀 [Debug] ConfigEditor 마운트됨');
+    console.log('📋 [Debug] ACTION_TYPE_CONFIGS 확인:', {
+      configs: ACTION_TYPE_CONFIGS,
+      keys: Object.keys(ACTION_TYPE_CONFIGS),
+      hasBotCommand: 'execute_bot_command' in ACTION_TYPE_CONFIGS
+    });
     loadBotCommands();
   }, []);
 
@@ -122,8 +136,23 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
 
   // 액션 업데이트
   const updateAction = (index: number, updates: Partial<ActionConfig>) => {
+    console.log('🔄 [Debug] updateAction 호출됨:', {
+      index,
+      updates,
+      currentAction: config.actions?.[index],
+      newType: updates.type
+    });
+    
     const newActions = [...(config.actions || [])];
     newActions[index] = { ...newActions[index], ...updates };
+    
+    console.log('📝 [Debug] 액션 업데이트 후:', {
+      index,
+      oldAction: config.actions?.[index],
+      newAction: newActions[index],
+      allActions: newActions
+    });
+    
     onChange({
       ...config,
       actions: newActions
@@ -162,11 +191,56 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
 
   // 봇 커맨드 파라미터 렌더링
   const renderBotCommandParameters = (action: ActionConfig, actionIndex: number) => {
+    console.log('🔍 [Debug] renderBotCommandParameters 호출됨', {
+      actionIndex,
+      commandName: action.parameters?.commandName,
+      botCommandsCount: botCommands.length,
+      actionParameters: action.parameters,
+      botCommandsLoaded: botCommands.length > 0
+    });
+
     const selectedCommandName = action.parameters?.commandName;
-    if (!selectedCommandName) return null;
+    if (!selectedCommandName) {
+      console.log('❌ [Debug] selectedCommandName이 없음');
+      return null;
+    }
+
+    console.log('🔍 [Debug] 선택된 커맨드명:', selectedCommandName);
+    console.log('🔍 [Debug] 사용 가능한 커맨드들:', botCommands.map(cmd => ({ name: cmd.name, hasParams: !!cmd.parameters, paramCount: cmd.parameters?.length || 0 })));
 
     const selectedCommand = getSelectedCommand(selectedCommandName);
-    if (!selectedCommand?.parameters) return null;
+    console.log('🔍 [Debug] getSelectedCommand 결과:', {
+      selectedCommandName,
+      found: !!selectedCommand,
+      selectedCommand: selectedCommand ? {
+        name: selectedCommand.name,
+        description: selectedCommand.description,
+        hasParameters: !!selectedCommand.parameters,
+        parametersCount: selectedCommand.parameters?.length || 0,
+        parameters: selectedCommand.parameters
+      } : null
+    });
+
+    if (!selectedCommand) {
+      console.log('❌ [Debug] selectedCommand가 null임');
+      return null;
+    }
+
+    if (!selectedCommand.parameters) {
+      console.log('❌ [Debug] selectedCommand.parameters가 없음');
+      return null;
+    }
+
+    if (selectedCommand.parameters.length === 0) {
+      console.log('❌ [Debug] selectedCommand.parameters가 빈 배열임');
+      return null;
+    }
+
+    console.log('✅ [Debug] 파라미터 폼 렌더링 시작', {
+      commandName: selectedCommand.name,
+      parameterCount: selectedCommand.parameters.length,
+      parameters: selectedCommand.parameters.map(p => ({ name: p.name, type: p.type, required: p.required }))
+    });
 
     return (
       <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
@@ -430,10 +504,17 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
                         </label>
                         <select
                           value={action.type}
-                          onChange={(e) => updateAction(index, { 
-                            type: e.target.value as any,
-                            parameters: {} // 타입 변경 시 파라미터 초기화
-                          })}
+                          onChange={(e) => {
+                            console.log('🎯 [Debug] 액션 타입 선택됨:', {
+                              selectedValue: e.target.value,
+                              currentType: action.type,
+                              actionIndex: index
+                            });
+                            updateAction(index, { 
+                              type: e.target.value as any,
+                              parameters: {} // 타입 변경 시 파라미터 초기화
+                            });
+                          }}
                           className="w-full border border-gray-300 rounded-md px-3 py-2"
                         >
                           {Object.entries(ACTION_TYPE_CONFIGS).map(([type, config]) => (
