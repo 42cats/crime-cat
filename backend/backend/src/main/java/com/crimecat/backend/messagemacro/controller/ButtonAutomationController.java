@@ -219,6 +219,37 @@ public class ButtonAutomationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(copiedButton);
     }
 
+    // ===== 봇 커맨드 스캔 엔드포인트 =====
+
+    @GetMapping("/bot-commands")
+    public ResponseEntity<BotCommandsResponse> getBotCommands() {
+        WebUser webUser = AuthenticationUtil.getCurrentWebUser();
+        
+        try {
+            List<BotCommandDto> commands = buttonAutomationService.getBotCommands();
+            
+            BotCommandsResponse response = BotCommandsResponse.builder()
+                    .success(true)
+                    .commands(commands)
+                    .count(commands.size())
+                    .build();
+            
+            log.info("Retrieved {} bot commands for user: {}", commands.size(), webUser.getId());
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("Failed to retrieve bot commands for user: {}", webUser.getId(), e);
+            
+            BotCommandsResponse errorResponse = BotCommandsResponse.builder()
+                    .success(false)
+                    .commands(List.of())
+                    .error("봇 커맨드를 불러올 수 없습니다: " + e.getMessage())
+                    .build();
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
     // ===== 통계 엔드포인트 =====
 
     @GetMapping("/{guildId}/stats")
@@ -255,6 +286,50 @@ public class ButtonAutomationController {
     public static class StatsResponse {
         private long groupCount;
         private long buttonCount;
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class BotCommandsResponse {
+        private boolean success;
+        private List<BotCommandDto> commands;
+        private int count;
+        private String error;
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class BotCommandDto {
+        private String name;
+        private String description;
+        private String type; // 'slash' or 'prefix'
+        private String category; // 커맨드 카테고리 (예: 'utility', 'moderation')
+        private List<BotCommandParameterDto> parameters;
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class BotCommandParameterDto {
+        private String name;
+        private String type; // 'string', 'number', 'boolean', 'user', 'channel', 'role'
+        private String description;
+        private boolean required;
+        private List<BotCommandChoiceDto> choices;
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class BotCommandChoiceDto {
+        private String name;
+        private String value;
     }
 
     // ===== 복사 요청 DTO =====

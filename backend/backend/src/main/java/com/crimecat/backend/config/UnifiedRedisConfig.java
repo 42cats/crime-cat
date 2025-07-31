@@ -290,6 +290,10 @@ public class UnifiedRedisConfig {
         cacheConfigurations.put(CacheType.SITEMAP_GAME_THEMES, 
                 defaultConfig.entryTtl(Duration.ofMinutes(30))); // 게임테마 사이트맵 - 30분
         
+        // 봇 커맨드 목록 캐시 - 1시간 (봇 재시작 시에도 유효한 캐시 유지)
+        cacheConfigurations.put("botCommands", 
+                defaultConfig.entryTtl(Duration.ofHours(1))); // 봇 커맨드 - 1시간
+        
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)
