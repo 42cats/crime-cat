@@ -17,10 +17,14 @@ module.exports = {
         const isRateLimited = await redis.exists(rateLimitKey);
         
         if (isRateLimited) {
-            return await interaction.reply({
-                content: '⏱️ 너무 빠른 요청입니다. 3초 후 다시 시도해주세요.',
-                ephemeral: true
-            });
+            // 인터랙션 상태 확인 후 안전하게 응답
+            if (!interaction.replied && !interaction.deferred) {
+                return await interaction.reply({
+                    content: '⏱️ 너무 빠른 요청입니다. 3초 후 다시 시도해주세요.',
+                    ephemeral: true
+                });
+            }
+            return;
         }
         
         // Rate limit 설정 (3초)
@@ -28,20 +32,40 @@ module.exports = {
         
         try {
             // 투표 메타데이터 확인
-            const metaData = await redis.getHash(`vote:${voteId}:meta`, 'data');
+            let metaData;
+            try {
+                metaData = await redis.getHash(`vote:${voteId}:meta`, 'data');
+            } catch (redisError) {
+                console.error('Redis 투표 메타데이터 조회 실패:', redisError);
+                if (!interaction.replied && !interaction.deferred) {
+                    return await interaction.reply({
+                        content: '❌ 투표 데이터 조회 중 오류가 발생했습니다.',
+                        ephemeral: true
+                    });
+                }
+                return;
+            }
+            
             if (!metaData) {
-                return await interaction.reply({
-                    content: '❌ 종료되었거나 존재하지 않는 투표입니다.',
-                    ephemeral: true
-                });
+                console.log(`⚠️ 투표 메타데이터 없음: vote:${voteId}:meta`);
+                if (!interaction.replied && !interaction.deferred) {
+                    return await interaction.reply({
+                        content: '❌ 종료되었거나 존재하지 않는 투표입니다.',
+                        ephemeral: true
+                    });
+                }
+                return;
             }
             
             // 시간 제한 확인
             if (metaData.endTime && Date.now() > metaData.endTime) {
-                return await interaction.reply({
-                    content: '⏰ 투표 시간이 종료되었습니다.',
-                    ephemeral: true
-                });
+                if (!interaction.replied && !interaction.deferred) {
+                    return await interaction.reply({
+                        content: '⏰ 투표 시간이 종료되었습니다.',
+                        ephemeral: true
+                    });
+                }
+                return;
             }
             
             // 이전 투표 확인
@@ -72,17 +96,27 @@ module.exports = {
                 responseMsg = `✅ **${choice}**에 투표하셨습니다!`;
             }
             
-            await interaction.reply({
-                content: responseMsg,
-                ephemeral: true
-            });
+            // 인터랙션 상태 확인 후 안전하게 응답
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.reply({
+                    content: responseMsg,
+                    ephemeral: true
+                });
+            }
             
         } catch (error) {
             console.error('Vote choice error:', error);
-            await interaction.reply({
-                content: '❌ 투표 처리 중 오류가 발생했습니다.',
-                ephemeral: true
-            });
+            // 에러 응답도 안전하게 처리
+            if (!interaction.replied && !interaction.deferred) {
+                try {
+                    await interaction.reply({
+                        content: '❌ 투표 처리 중 오류가 발생했습니다.',
+                        ephemeral: true
+                    });
+                } catch (replyError) {
+                    console.error('Error reply failed:', replyError);
+                }
+            }
         }
     }
 };

@@ -23,13 +23,24 @@ module.exports = {
 
             // 기존 버튼 처리 로직
             // 레디스에서 데이터 가져오기 시도
-            let data = await client.redis.getValue(interaction.customId);
+            let data = null;
+            try {
+                data = await client.redis.getValue(interaction.customId);
+            } catch (redisError) {
+                console.warn('⚠️ Redis 조회 실패:', redisError.message);
+            }
 
             // 레디스에 데이터가 없으면 fallback으로 커스텀ID 직접 파싱
             if (!data) {
-                data = decodeFromString(interaction.customId); // fallback 방식
-                if (!data?.command) {
-                    console.log('❌ Unknown or expired button:', interaction.customId);
+                try {
+                    data = decodeFromString(interaction.customId); // fallback 방식
+                    if (!data?.command) {
+                        console.log('❌ Unknown or expired button:', interaction.customId);
+                        return;
+                    }
+                    console.log('📦 Fallback 파싱 성공:', data);
+                } catch (parseError) {
+                    console.error('❌ 커스텀ID 파싱 실패:', parseError.message);
                     return;
                 }
             }
@@ -39,6 +50,13 @@ module.exports = {
             // 해당 커맨드에 맞는 핸들러 찾기
             const handler = client.responses.buttons.get(data.command);
             if (handler) {
+                // 인터랙션 만료 확인 (15분 = 900초)
+                const interactionAge = Date.now() - interaction.createdTimestamp;
+                if (interactionAge > 890000) { // 14분 50초로 안전 마진
+                    console.warn(`⚠️ 인터랙션 만료 임박: ${Math.floor(interactionAge/1000)}초 경과`);
+                    return;
+                }
+                
                 await handler.execute(client, interaction, data); // Redis에 저장된 데이터 전달
             } else {
                 console.log('❌ Unknown button command:', data.command);

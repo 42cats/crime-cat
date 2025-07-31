@@ -78,6 +78,17 @@ module.exports = {
 			showRealtime: showRealtime
 		};
 
+		console.log(`📊 [커스텀투표] 투표 메타데이터 저장:`, {
+			voteId,
+			guildId: interaction.guildId,
+			guildName: interaction.guild?.name,
+			channelId: interaction.channelId,
+			channelName: interaction.channel?.name,
+			creatorId: interaction.user.id,
+			creatorName: interaction.user.username,
+			isVirtualInteraction: !interaction.replied && !interaction.deferred && interaction.id && interaction.id.startsWith('virtual_')
+		});
+
 		await redis.setHash(`vote:${voteId}:meta`, 'data', voteData, timeLimit ? timeLimit + 3600 : 86400);
 
 		// 각 선택지별 투표자 SET 초기화
