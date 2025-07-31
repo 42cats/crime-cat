@@ -248,27 +248,39 @@ class BotCommandExecutor extends BaseActionExecutor {
                 const messageOptions = {
                     content: messageContent,
                     embeds: options.embeds || [],
+                    components: options.components || [],
                 };
                 
                 try {
                     // 실제 Discord 채널에 메시지 전송
+                    console.log(`📤 [VirtualInteraction] Reply 전송 시도:`, {
+                        channelName: executionChannel.name,
+                        channelId: executionChannel.id,
+                        content: messageContent?.substring(0, 100) + (messageContent?.length > 100 ? '...' : ''),
+                        hasEmbeds: (options.embeds || []).length > 0,
+                        hasComponents: (options.components || []).length > 0,
+                        componentsCount: (options.components || []).length
+                    });
+                    
                     const sentMessage = await executionChannel.send(messageOptions);
                     
                     const response = {
                         type: 'reply',
                         content: messageContent,
                         embeds: options.embeds || [],
+                        components: options.components || [],
                         ephemeral: options.ephemeral || false,
                         timestamp: new Date().toISOString(),
                         messageId: sentMessage.id
                     };
                     responses.push(response);
                     
-                    console.log(`📤 [VirtualInteraction] Reply 전송 완료:`, {
+                    console.log(`✅ [VirtualInteraction] Reply 전송 완료:`, {
                         channelName: executionChannel.name,
                         channelId: executionChannel.id,
                         messageId: sentMessage.id,
-                        content: messageContent
+                        content: messageContent?.substring(0, 100) + (messageContent?.length > 100 ? '...' : ''),
+                        componentsInMessage: sentMessage.components?.length || 0
                     });
                     
                     return sentMessage;
@@ -285,6 +297,7 @@ class BotCommandExecutor extends BaseActionExecutor {
                 const messageOptions = {
                     content: messageContent,
                     embeds: options.embeds || [],
+                    components: options.components || [],
                 };
                 
                 try {
@@ -299,6 +312,7 @@ class BotCommandExecutor extends BaseActionExecutor {
                             type: 'editReply',
                             content: messageContent,
                             embeds: options.embeds || [],
+                            components: options.components || [],
                             timestamp: new Date().toISOString(),
                             messageId: sentMessage.id
                         };
@@ -321,6 +335,7 @@ class BotCommandExecutor extends BaseActionExecutor {
                         type: 'editReply',
                         content: messageContent,
                         embeds: options.embeds || [],
+                        components: options.components || [],
                         timestamp: new Date().toISOString(),
                         messageId: editedMessage.id
                     };
@@ -346,6 +361,7 @@ class BotCommandExecutor extends BaseActionExecutor {
                 const messageOptions = {
                     content: messageContent,
                     embeds: options.embeds || [],
+                    components: options.components || [],
                 };
                 
                 try {
@@ -356,6 +372,7 @@ class BotCommandExecutor extends BaseActionExecutor {
                         type: 'followUp',
                         content: messageContent,
                         embeds: options.embeds || [],
+                        components: options.components || [],
                         ephemeral: options.ephemeral || false,
                         timestamp: new Date().toISOString(),
                         messageId: sentMessage.id
