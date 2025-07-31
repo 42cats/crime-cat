@@ -22,7 +22,12 @@ import {
     CopyOutlined,
 } from "@ant-design/icons";
 import { RefreshCw } from "lucide-react";
-import { ActionConfig, ActionType, ACTION_TYPE_CONFIGS, BotCommand } from "../../types/buttonAutomation";
+import {
+    ActionConfig,
+    ActionType,
+    ACTION_TYPE_CONFIGS,
+    BotCommand,
+} from "../../types/buttonAutomation";
 import {
     DISCORD_LIMITS,
     validateActionCount,
@@ -47,34 +52,41 @@ const { TextArea } = Input;
 
 // 아이콘 매핑 헬퍼 함수 (유니코드 이모지)
 const getActionIcon = (iconName: string) => {
-  const iconMap: Record<string, string> = {
-    'Terminal': '🤖',
-    'UserPlus': '👥',
-    'UserMinus': '👤',
-    'Edit': '✏️',
-    'MessageSquare': '💬',
-    'Clock': '⏰',
-    'ToggleRight': '🔄',
-    'RotateCcw': '🔄',
-    'RefreshCw': '🔄',
-    'Shield': '🛡️',
-    'ShieldOff': '🚫',
-    'ShieldCheck': '✅',
-    'Mail': '📨',
-    'ArrowRightLeft': '↔️',
-    'PhoneOff': '📞',
-    'MicOff': '🔇',
-    'MicToggle': '🔊',
-    'HeadphonesOff': '🔊',
-    'HeadphonesToggle': '🎧',
-    'Megaphone': '📢',
-    'UserCheck': '✅',
-    'Settings': '⚙️',
-  };
-  
-  return <span>{iconMap[iconName] || iconName}</span>;
-};
+    const iconMap: Record<string, string> = {
+        Terminal: "🤖",
+        UserPlus: "👥",
+        UserMinus: "👤",
+        Edit: "✏️",
+        MessageSquare: "💬",
+        Clock: "⏰",
+        ToggleRight: "🔄",
+        RotateCcw: "🔄",
+        RefreshCw: "🔄",
+        Shield: "🛡️",
+        ShieldOff: "🚫",
+        ShieldCheck: "✅",
+        Mail: "📨",
+        ArrowRightLeft: "↔️",
+        PhoneOff: "📞",
+        MicOff: "🔇",
+        MicToggle: "🔊",
+        HeadphonesOff: "🔊",
+        HeadphonesToggle: "🎧",
+        Megaphone: "📢",
+        UserCheck: "✅",
+        Settings: "⚙️",
+        // 서버 권한 관련 아이콘들
+        Key: "🔑",
+        // 음악 관련 아이콘들
+        Music: "🎵",
+        Square: "⏹️",
+        Pause: "⏸️",
+        Play: "▶️",
+        Stop: "⏹️",
+    };
 
+    return <span>{iconMap[iconName] || iconName}</span>;
+};
 
 interface ActionEditorProps {
     actions: ActionConfig[];
@@ -93,41 +105,117 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
 }) => {
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const { channels } = useChannels();
-    
+
     // 봇 커맨드 상태
     const [botCommands, setBotCommands] = useState<BotCommand[]>([]);
     const [loadingCommands, setLoadingCommands] = useState(false);
     const [commandsError, setCommandsError] = useState<string | null>(null);
-    
+
     // 봇 커맨드 로드
     const loadBotCommands = async () => {
+        console.log("🔄 봇 커맨드 로딩 시작...");
         setLoadingCommands(true);
         setCommandsError(null);
-        
+
         try {
-            const response = await fetch('/api/v1/automations/bot-commands');
+            const response = await fetch("/api/v1/automations/bot-commands");
+            console.log(
+                "📡 API 응답 상태:",
+                response.status,
+                response.statusText
+            );
+
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                throw new Error(
+                    `HTTP ${response.status}: ${response.statusText}`
+                );
             }
-            
+
             const data = await response.json();
+            console.log("📦 API 응답 데이터:", data);
+
             if (data.success) {
+                console.log(
+                    `✅ 봇 커맨드 ${data.commands.length}개 로드 성공:`,
+                    data.commands.map((cmd) => cmd.name)
+                );
                 setBotCommands(data.commands);
             } else {
-                throw new Error(data.error || '알 수 없는 오류가 발생했습니다');
+                throw new Error(data.error || "알 수 없는 오류가 발생했습니다");
             }
         } catch (error) {
-            console.error('봇 커맨드 로드 실패:', error);
-            setCommandsError(error instanceof Error ? error.message : '커맨드를 불러올 수 없습니다');
+            console.error("❌ 봇 커맨드 로드 실패:", error);
+            setCommandsError(
+                error instanceof Error
+                    ? error.message
+                    : "커맨드를 불러올 수 없습니다"
+            );
             setBotCommands([]);
         } finally {
             setLoadingCommands(false);
+            console.log("🏁 봇 커맨드 로딩 완료");
         }
     };
-    
+
+    // 봇 커맨드 액션의 파라미터 형식을 정규화하는 함수 (기존 데이터 마이그레이션용)
+    const normalizeAction = (action: ActionConfig): ActionConfig => {
+        if (action.type !== 'execute_bot_command') {
+            return action;
+        }
+        
+        // 기존 commandParam_ 접두사를 가진 파라미터들을 찾아서 변환
+        const commandParams: Record<string, any> = {};
+        const otherParams: Record<string, any> = {};
+        let hasLegacyParams = false;
+        
+        for (const [key, value] of Object.entries(action.parameters)) {
+            if (key.startsWith('commandParam_')) {
+                const actualParamName = key.replace('commandParam_', '');
+                commandParams[actualParamName] = value;
+                hasLegacyParams = true;
+                console.log('🔄 레거시 파라미터 발견 및 변환:', { key, actualParamName, value });
+            } else {
+                otherParams[key] = value;
+            }
+        }
+        
+        // 이미 중첩된 parameters가 있다면 병합 (기존 새 형식 + 레거시 형식 혼재 대응)
+        if (action.parameters.parameters) {
+            Object.assign(commandParams, action.parameters.parameters);
+        }
+        
+        // commandParam_ 형식이 있었다면 변환하여 중첩된 구조로 저장
+        if (hasLegacyParams || Object.keys(commandParams).length > 0) {
+            otherParams.parameters = commandParams;
+            console.log('✅ 레거시 파라미터 마이그레이션 완료:', {
+                commandParams,
+                finalParams: otherParams
+            });
+        }
+        
+        return {
+            ...action,
+            parameters: otherParams
+        };
+    };
+
     // 컴포넌트 마운트 시 봇 커맨드 로드
     useEffect(() => {
         loadBotCommands();
+    }, []);
+
+    // 액션이 변경될 때 봇 커맨드 액션들을 정규화
+    useEffect(() => {
+        const normalizedActions = actions.map(normalizeAction);
+        const hasChanges = JSON.stringify(normalizedActions) !== JSON.stringify(actions);
+        
+        if (hasChanges) {
+            console.log('🔄 기존 액션들을 정규화합니다:', {
+                before: actions,
+                after: normalizedActions
+            });
+            onChange(normalizedActions);
+        }
     }, []);
 
     // 액션 추가
@@ -187,13 +275,56 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
         value: any
     ) => {
         const newActions = [...actions];
-        newActions[index] = {
-            ...newActions[index],
-            parameters: {
-                ...newActions[index].parameters,
-                [paramKey]: value,
-            },
-        };
+        
+        // 봇 커맨드 파라미터인 경우 특별 처리
+        if (actions[index].type === 'execute_bot_command' && paramKey.startsWith('commandParam_')) {
+            const actualParamName = paramKey.replace('commandParam_', '');
+            
+            console.log('🎯 봇 커맨드 파라미터 업데이트:', {
+                actionIndex: index,
+                paramKey,
+                actualParamName,
+                value,
+                actionType: actions[index]?.type
+            });
+            
+            // 기존 중첩된 parameters 객체 가져오기 (없으면 빈 객체)
+            const existingParams = newActions[index].parameters.parameters || {};
+            
+            // 새로운 parameters 객체 생성
+            const updatedParams = {
+                ...existingParams,
+                [actualParamName]: value
+            };
+            
+            // 전체 parameters 업데이트 (중첩된 구조로 바로 저장)
+            newActions[index] = {
+                ...newActions[index],
+                parameters: {
+                    ...newActions[index].parameters,
+                    parameters: updatedParams  // 중첩된 parameters 객체에 직접 저장
+                }
+            };
+            
+            console.log('✅ 봇 커맨드 파라미터 직접 저장 완료:', {
+                actionIndex: index,
+                actualParamName,
+                value,
+                finalNestedParams: updatedParams,
+                allParameters: newActions[index].parameters
+            });
+            
+        } else {
+            // 일반 파라미터는 기존 방식으로 처리
+            newActions[index] = {
+                ...newActions[index],
+                parameters: {
+                    ...newActions[index].parameters,
+                    [paramKey]: value,
+                },
+            };
+        }
+        
         onChange(newActions);
     };
 
@@ -400,12 +531,18 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
     // 액션 타입별 파라미터 렌더링
     const renderActionParameters = (action: ActionConfig, index: number) => {
         const actionType =
-            ACTION_TYPE_CONFIGS[action.type as keyof typeof ACTION_TYPE_CONFIGS];
+            ACTION_TYPE_CONFIGS[
+                action.type as keyof typeof ACTION_TYPE_CONFIGS
+            ];
         if (!actionType) return null;
 
         // 음악 액션인 경우 전용 에디터 사용
         // ACTION_TYPE_CONFIGS에는 category 필드가 없으므로 music 액션 확인을 다른 방식으로 해야 함
-        if (action.type === 'play_music' || action.type === 'stop_music' || action.type === 'pause_music') {
+        if (
+            action.type === "play_music" ||
+            action.type === "stop_music" ||
+            action.type === "pause_music"
+        ) {
             return (
                 <div style={{ marginTop: 16 }}>
                     <MusicParameterEditor
@@ -423,22 +560,42 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
         }
 
         // 봇 커맨드 실행 액션인 경우 특별 처리
-        if (action.type === 'execute_bot_command') {
+        if (action.type === "execute_bot_command") {
             return (
                 <div style={{ marginTop: 16 }}>
                     {/* 커맨드 선택 */}
-                    <Form.Item label="실행할 커맨드" style={{ marginBottom: 12 }}>
-                        <div style={{ display: 'flex', gap: 8 }}>
+                    <Form.Item
+                        label="실행할 커맨드"
+                        style={{ marginBottom: 12 }}
+                    >
+                        <div style={{ display: "flex", gap: 8 }}>
                             <Select
-                                value={action.parameters?.commandName || ''}
-                                onChange={(value) => updateActionParameter(index, 'commandName', value)}
+                                value={action.parameters?.commandName || ""}
+                                onChange={(value) => {
+                                    console.log("🎯 커맨드 선택됨:", value);
+                                    const selectedCmd = botCommands.find(
+                                        (cmd) => cmd.name === value
+                                    );
+                                    console.log(
+                                        "🔍 선택된 커맨드 정보:",
+                                        selectedCmd
+                                    );
+                                    updateActionParameter(
+                                        index,
+                                        "commandName",
+                                        value
+                                    );
+                                }}
                                 placeholder="커맨드를 선택하세요"
                                 style={{ flex: 1 }}
                                 loading={loadingCommands}
                                 disabled={loadingCommands}
                             >
                                 {botCommands.map((command) => (
-                                    <Option key={command.name} value={command.name}>
+                                    <Option
+                                        key={command.name}
+                                        value={command.name}
+                                    >
                                         /{command.name} - {command.description}
                                     </Option>
                                 ))}
@@ -448,58 +605,540 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                 onClick={loadBotCommands}
                                 disabled={loadingCommands}
                                 title="커맨드 목록 새로고침"
-                                icon={loadingCommands ? '🔄' : <RefreshCw size={16} />}
+                                icon={
+                                    loadingCommands ? (
+                                        "🔄"
+                                    ) : (
+                                        <RefreshCw size={16} />
+                                    )
+                                }
                             />
                         </div>
                         {loadingCommands && (
-                            <p style={{ fontSize: 12, color: '#1890ff', margin: '4px 0 0 0' }}>🔄 커맨드 목록을 불러오는 중...</p>
+                            <p
+                                style={{
+                                    fontSize: 12,
+                                    color: "#1890ff",
+                                    margin: "4px 0 0 0",
+                                }}
+                            >
+                                🔄 커맨드 목록을 불러오는 중...
+                            </p>
                         )}
                         {commandsError && (
-                            <p style={{ fontSize: 12, color: '#ff4d4f', margin: '4px 0 0 0' }}>❌ {commandsError}</p>
+                            <p
+                                style={{
+                                    fontSize: 12,
+                                    color: "#ff4d4f",
+                                    margin: "4px 0 0 0",
+                                }}
+                            >
+                                ❌ {commandsError}
+                            </p>
                         )}
-                        {!loadingCommands && !commandsError && botCommands.length === 0 && (
-                            <p style={{ fontSize: 12, color: '#faad14', margin: '4px 0 0 0' }}>⚠️ 사용 가능한 커맨드가 없습니다</p>
-                        )}
-                        <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: "block" }}>
+                        {!loadingCommands &&
+                            !commandsError &&
+                            botCommands.length === 0 && (
+                                <p
+                                    style={{
+                                        fontSize: 12,
+                                        color: "#faad14",
+                                        margin: "4px 0 0 0",
+                                    }}
+                                >
+                                    ⚠️ 사용 가능한 커맨드가 없습니다
+                                </p>
+                            )}
+                        <Text
+                            type="secondary"
+                            style={{
+                                fontSize: 12,
+                                marginTop: 4,
+                                display: "block",
+                            }}
+                        >
                             봇에서 사용 가능한 커맨드를 선택하세요
                         </Text>
                     </Form.Item>
-                    
-                    {/* 타임아웃 설정 */}
-                    <Form.Item label="실행 타임아웃 (초)" style={{ marginBottom: 12 }}>
+
+                    {/* 지연 시간 설정 */}
+                    <Form.Item
+                        label="실행 지연 시간 (초)"
+                        style={{ marginBottom: 12 }}
+                    >
                         <InputNumber
-                            value={action.parameters?.timeout || 30}
-                            onChange={(value) => updateActionParameter(index, 'timeout', value || 30)}
-                            min={1}
-                            max={300}
+                            value={action.parameters?.delay !== undefined ? action.parameters.delay : 0}
+                            onChange={(value) => {
+                                console.log('⏱️ 지연 시간 값 변경:', value);
+                                updateActionParameter(index, "delay", value !== null ? value : 0);
+                            }}
+                            min={0}
+                            max={60}
                             style={{ width: "100%" }}
-                            placeholder="30"
+                            placeholder="0"
                         />
-                        <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: "block" }}>
-                            커맨드 실행 제한 시간 (1-300초)
+                        <Text
+                            type="secondary"
+                            style={{
+                                fontSize: 12,
+                                marginTop: 4,
+                                display: "block",
+                            }}
+                        >
+                            ⏱️ 커맨드 실행 전 대기 시간 (0=즉시 실행, 1-60초)
+                        </Text>
+                        <div style={{
+                            marginTop: 4,
+                            padding: 6,
+                            backgroundColor: '#f0f8ff',
+                            borderRadius: 4,
+                            fontSize: 11
+                        }}>
+                            <Text type="secondary">
+                                ⏱️ <strong>현재 설정:</strong> {action.parameters?.delay !== undefined ? (action.parameters.delay === 0 ? '즉시 실행' : action.parameters.delay + '초 후 실행') : '0초(즉시 실행)'}
+                            </Text>
+                        </div>
+                    </Form.Item>
+
+                    {/* 실행 채널 선택 */}
+                    <Form.Item label="실행 채널" style={{ marginBottom: 12 }}>
+                        <ChannelProvider guildId={guildId}>
+                            <MultiChannelSelect
+                                value={action.parameters?.channelId ? [action.parameters.channelId] : []}
+                                onChange={(channels) => {
+                                    updateActionParameter(index, "channelId", channels[0] || "");
+                                    console.log('📍 봇 커맨드 실행 채널 변경:', {
+                                        actionIndex: index,
+                                        selectedChannelId: channels[0],
+                                        allChannels: channels
+                                    });
+                                }}
+                                placeholder="커맨드를 실행할 채널을 선택하세요 (선택하지 않으면 현재 채널에서 실행)"
+                                maxSelections={1}
+                                channelTypes={['text', 'announcement']} // 텍스트 채널만
+                            />
+                        </ChannelProvider>
+                        <Text
+                            type="secondary"
+                            style={{
+                                fontSize: 12,
+                                marginTop: 4,
+                                display: "block",
+                            }}
+                        >
+                            {action.parameters?.channelId
+                                ? "💬 지정된 채널에서 커맨드가 실행됩니다"
+                                : "📍 채널을 선택하지 않으면 버튼이 클릭된 채널에서 실행됩니다"}
                         </Text>
                     </Form.Item>
-                    
+
                     {/* 조용히 실행 설정 */}
                     <Form.Item label="조용히 실행" style={{ marginBottom: 12 }}>
                         <Switch
                             checked={action.parameters?.silent || false}
-                            onChange={(checked) => updateActionParameter(index, 'silent', checked)}
+                            onChange={(checked) =>
+                                updateActionParameter(index, "silent", checked)
+                            }
                             checkedChildren="ON"
                             unCheckedChildren="OFF"
                         />
-                        <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: "block" }}>
+                        <Text
+                            type="secondary"
+                            style={{
+                                fontSize: 12,
+                                marginTop: 4,
+                                display: "block",
+                            }}
+                        >
                             실패해도 오류 메시지를 표시하지 않습니다
                         </Text>
                     </Form.Item>
+
+                    {/* 선택된 커맨드의 동적 파라미터들 */}
+                    {action.parameters?.commandName &&
+                        (() => {
+                            const selectedCommand = botCommands.find(
+                                (cmd) =>
+                                    cmd.name === action.parameters.commandName
+                            );
+                            console.log("선택된 커맨드:", selectedCommand);
+                            console.log(
+                                "커맨드 파라미터들:",
+                                selectedCommand?.parameters
+                            );
+
+                            if (
+                                !selectedCommand ||
+                                !selectedCommand.parameters ||
+                                selectedCommand.parameters.length === 0
+                            ) {
+                                return (
+                                    <div
+                                        style={{
+                                            marginTop: 16,
+                                            padding: 12,
+                                            backgroundColor: "#f0f8ff",
+                                            borderRadius: 4,
+                                            border: "1px dashed #1890ff",
+                                        }}
+                                    >
+                                        <Text
+                                            type="secondary"
+                                            style={{ fontSize: 12 }}
+                                        >
+                                            ℹ️ 선택된 커맨드 "/
+                                            {selectedCommand?.name ||
+                                                action.parameters.commandName}
+                                            "는 추가 파라미터가 필요하지
+                                            않습니다.
+                                        </Text>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div
+                                    style={{
+                                        marginTop: 16,
+                                        padding: 16,
+                                        backgroundColor: "#f8f9fa",
+                                        borderRadius: 6,
+                                        border: "2px solid #e3f2fd",
+                                    }}
+                                >
+                                    <Title
+                                        level={5}
+                                        style={{
+                                            marginBottom: 12,
+                                            color: "#1976d2",
+                                        }}
+                                    >
+                                        🤖 /{selectedCommand.name} 커맨드
+                                        파라미터
+                                    </Title>
+                                    <Text
+                                        type="secondary"
+                                        style={{
+                                            fontSize: 12,
+                                            marginBottom: 16,
+                                            display: "block",
+                                        }}
+                                    >
+                                        {selectedCommand.description}
+                                    </Text>
+
+                                    {selectedCommand.parameters.map(
+                                        (param, paramIndex) => (
+                                            <div
+                                                key={paramIndex}
+                                                style={{ marginBottom: 16 }}
+                                            >
+                                                <Form.Item
+                                                    label={
+                                                        <span>
+                                                            {param.name}
+                                                            {param.required && (
+                                                                <span
+                                                                    style={{
+                                                                        color: "#ff4d4f",
+                                                                    }}
+                                                                >
+                                                                    {" "}
+                                                                    *
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                    }
+                                                    style={{ marginBottom: 8 }}
+                                                >
+                                                    {(() => {
+                                                        const paramKey = `commandParam_${param.name}`;
+                                                        // 봇 커맨드 파라미터는 중첩된 parameters 객체에서 읽어오기
+                                                        const currentValue = action.parameters.parameters?.[param.name] || 
+                                                                           action.parameters[paramKey] || "";
+                                                        
+                                                        console.log(`🔧 봇 커맨드 파라미터 렌더링 - ${param.name}:`, {
+                                                            paramKey,
+                                                            currentValue,
+                                                            nestedParams: action.parameters.parameters,
+                                                            allParameters: action.parameters
+                                                        });
+
+                                                        switch (param.type) {
+                                                            case "string":
+                                                                if (
+                                                                    param.choices &&
+                                                                    param
+                                                                        .choices
+                                                                        .length >
+                                                                        0
+                                                                ) {
+                                                                    return (
+                                                                        <Select
+                                                                            value={
+                                                                                currentValue
+                                                                            }
+                                                                            onChange={(
+                                                                                value
+                                                                            ) =>
+                                                                                updateActionParameter(
+                                                                                    index,
+                                                                                    paramKey,
+                                                                                    value
+                                                                                )
+                                                                            }
+                                                                            placeholder={
+                                                                                param.description
+                                                                            }
+                                                                            style={{
+                                                                                width: "100%",
+                                                                            }}
+                                                                            allowClear
+                                                                        >
+                                                                            {param.choices.map(
+                                                                                (
+                                                                                    choice
+                                                                                ) => (
+                                                                                    <Option
+                                                                                        key={
+                                                                                            choice.value
+                                                                                        }
+                                                                                        value={
+                                                                                            choice.value
+                                                                                        }
+                                                                                    >
+                                                                                        {
+                                                                                            choice.name
+                                                                                        }
+                                                                                    </Option>
+                                                                                )
+                                                                            )}
+                                                                        </Select>
+                                                                    );
+                                                                } else {
+                                                                    return (
+                                                                        <Input
+                                                                            value={
+                                                                                currentValue
+                                                                            }
+                                                                            onChange={(
+                                                                                e
+                                                                            ) =>
+                                                                                updateActionParameter(
+                                                                                    index,
+                                                                                    paramKey,
+                                                                                    e
+                                                                                        .target
+                                                                                        .value
+                                                                                )
+                                                                            }
+                                                                            placeholder={
+                                                                                param.description
+                                                                            }
+                                                                            maxLength={
+                                                                                2000
+                                                                            }
+                                                                        />
+                                                                    );
+                                                                }
+                                                            case "number":
+                                                                return (
+                                                                    <InputNumber
+                                                                        value={
+                                                                            currentValue
+                                                                        }
+                                                                        onChange={(
+                                                                            value
+                                                                        ) =>
+                                                                            updateActionParameter(
+                                                                                index,
+                                                                                paramKey,
+                                                                                value
+                                                                            )
+                                                                        }
+                                                                        placeholder={
+                                                                            param.description
+                                                                        }
+                                                                        style={{
+                                                                            width: "100%",
+                                                                        }}
+                                                                    />
+                                                                );
+                                                            case "boolean":
+                                                                return (
+                                                                    <Switch
+                                                                        checked={
+                                                                            currentValue ===
+                                                                                true ||
+                                                                            currentValue ===
+                                                                                "true"
+                                                                        }
+                                                                        onChange={(
+                                                                            checked
+                                                                        ) =>
+                                                                            updateActionParameter(
+                                                                                index,
+                                                                                paramKey,
+                                                                                checked
+                                                                            )
+                                                                        }
+                                                                        checkedChildren="예"
+                                                                        unCheckedChildren="아니오"
+                                                                    />
+                                                                );
+                                                            case "user":
+                                                                return (
+                                                                    <Input
+                                                                        value={
+                                                                            currentValue
+                                                                        }
+                                                                        onChange={(
+                                                                            e
+                                                                        ) =>
+                                                                            updateActionParameter(
+                                                                                index,
+                                                                                paramKey,
+                                                                                e
+                                                                                    .target
+                                                                                    .value
+                                                                            )
+                                                                        }
+                                                                        placeholder="@사용자명 또는 사용자 ID"
+                                                                        addonBefore="👤"
+                                                                    />
+                                                                );
+                                                            case "channel":
+                                                                return (
+                                                                    <Input
+                                                                        value={
+                                                                            currentValue
+                                                                        }
+                                                                        onChange={(
+                                                                            e
+                                                                        ) =>
+                                                                            updateActionParameter(
+                                                                                index,
+                                                                                paramKey,
+                                                                                e
+                                                                                    .target
+                                                                                    .value
+                                                                            )
+                                                                        }
+                                                                        placeholder="#채널명 또는 채널 ID"
+                                                                        addonBefore="📝"
+                                                                    />
+                                                                );
+                                                            case "role":
+                                                                return (
+                                                                    <Input
+                                                                        value={
+                                                                            currentValue
+                                                                        }
+                                                                        onChange={(
+                                                                            e
+                                                                        ) =>
+                                                                            updateActionParameter(
+                                                                                index,
+                                                                                paramKey,
+                                                                                e
+                                                                                    .target
+                                                                                    .value
+                                                                            )
+                                                                        }
+                                                                        placeholder="@역할명 또는 역할 ID"
+                                                                        addonBefore="🏷️"
+                                                                    />
+                                                                );
+                                                            default:
+                                                                return (
+                                                                    <Input
+                                                                        value={
+                                                                            currentValue
+                                                                        }
+                                                                        onChange={(
+                                                                            e
+                                                                        ) =>
+                                                                            updateActionParameter(
+                                                                                index,
+                                                                                paramKey,
+                                                                                e
+                                                                                    .target
+                                                                                    .value
+                                                                            )
+                                                                        }
+                                                                        placeholder={
+                                                                            param.description
+                                                                        }
+                                                                    />
+                                                                );
+                                                        }
+                                                    })()}
+                                                    <Text
+                                                        type="secondary"
+                                                        style={{
+                                                            fontSize: 11,
+                                                            marginTop: 4,
+                                                            display: "block",
+                                                        }}
+                                                    >
+                                                        📋 {param.description}
+                                                        {param.required &&
+                                                            " (필수)"}
+                                                    </Text>
+                                                </Form.Item>
+                                            </div>
+                                        )
+                                    )}
+
+                                    <div
+                                        style={{
+                                            marginTop: 12,
+                                            padding: 8,
+                                            backgroundColor: "#e8f5e8",
+                                            borderRadius: 4,
+                                            fontSize: 11,
+                                        }}
+                                    >
+                                        <Text type="secondary">
+                                            💡{" "}
+                                            <strong>
+                                                커맨드 실행 시 사용될 값:
+                                            </strong>{" "}
+                                            /{selectedCommand.name}
+                                            {selectedCommand.parameters
+                                                .filter((p) => {
+                                                    const value =
+                                                        action.parameters[
+                                                            `commandParam_${p.name}`
+                                                        ];
+                                                    return (
+                                                        value !== undefined &&
+                                                        value !== ""
+                                                    );
+                                                })
+                                                .map((p) => {
+                                                    const value =
+                                                        action.parameters[
+                                                            `commandParam_${p.name}`
+                                                        ];
+                                                    return ` ${p.name}:${value}`;
+                                                })
+                                                .join("")}
+                                        </Text>
+                                    </div>
+                                </div>
+                            );
+                        })()}
                 </div>
             );
         }
-        
+
         // 기존 액션들의 파라미터 렌더링
         return (
             <div style={{ marginTop: 16 }}>
-                {actionType.parameters.some(param => param.name === "roleId") && (
+                {actionType.parameters.some(
+                    (param) => param.name === "roleId"
+                ) && (
                     <Form.Item label="대상 역할" style={{ marginBottom: 12 }}>
                         <MultiRoleSelect
                             value={
@@ -539,16 +1178,20 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.some(param => param.name === "channelId") && (
+                {actionType.parameters.some(
+                    (param) => param.name === "channelId"
+                ) && (
                     <Form.Item label="대상 채널" style={{ marginBottom: 12 }}>
                         <ChannelProvider guildId={guildId}>
                             <MultiChannelSelect
                                 value={
                                     // 먼저 channelIds를 확인하고, 없으면 channelId 사용 (하위 호환성)
-                                    action.parameters.channelIds 
+                                    action.parameters.channelIds
                                         ? action.parameters.channelIds
                                         : action.parameters.channelId
-                                        ? Array.isArray(action.parameters.channelId)
+                                        ? Array.isArray(
+                                              action.parameters.channelId
+                                          )
                                             ? action.parameters.channelId
                                             : [action.parameters.channelId]
                                         : []
@@ -556,7 +1199,9 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                 onChange={(channels) => {
                                     // 채널 권한 액션과 메시지 전송 액션은 여러 채널 선택 가능
                                     if (
-                                        action.type.includes("channel_permission") ||
+                                        action.type.includes(
+                                            "channel_permission"
+                                        ) ||
                                         action.type === "send_message"
                                     ) {
                                         // 멀티 채널 지원: channelIds와 channelId 모두 업데이트
@@ -566,7 +1211,12 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                             parameters: {
                                                 ...newActions[index].parameters,
                                                 channelIds: channels,
-                                                channelId: channels.length === 1 ? channels[0] : (channels.length > 0 ? channels : "") // 하위 호환성
+                                                channelId:
+                                                    channels.length === 1
+                                                        ? channels[0]
+                                                        : channels.length > 0
+                                                        ? channels
+                                                        : "", // 하위 호환성
                                             },
                                         };
                                         onChange(newActions);
@@ -581,8 +1231,9 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                 }}
                                 placeholder="채널을 선택하세요"
                                 maxSelections={
-                                    action.type.includes("channel_permission") ||
-                                    action.type === "send_message"
+                                    action.type.includes(
+                                        "channel_permission"
+                                    ) || action.type === "send_message"
                                         ? undefined
                                         : 1
                                 }
@@ -596,11 +1247,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                               "stage",
                                           ]
                                         : action.type === "send_message"
-                                        ? [
-                                              "text",
-                                              "announcement", 
-                                              "category"
-                                          ]
+                                        ? ["text", "announcement", "category"]
                                         : undefined
                                 }
                             />
@@ -639,7 +1286,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                 </Text>
                             </div>
                         )}
-                        
+
                         {/* 메시지 전송 액션 안내 */}
                         {action.type === "send_message" && (
                             <div
@@ -653,27 +1300,33 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                 <Text type="secondary" style={{ fontSize: 12 }}>
                                     💡 <strong>멀티 채널 메시지 전송:</strong>
                                     <br />
-                                    📝 <strong>텍스트 채널:</strong> 일반 메시지 전송
+                                    📝 <strong>텍스트 채널:</strong> 일반 메시지
+                                    전송
                                     <br />
-                                    📢 <strong>공지 채널:</strong> 공지 메시지 전송
+                                    📢 <strong>공지 채널:</strong> 공지 메시지
+                                    전송
                                     <br />
-                                    📁 <strong style={{ color: "#52c41a" }}>
-                                        카테고리 채널: 카테고리 내 모든 텍스트 채널에 
-                                        자동으로 메시지를 전송합니다
+                                    📁{" "}
+                                    <strong style={{ color: "#52c41a" }}>
+                                        카테고리 채널: 카테고리 내 모든 텍스트
+                                        채널에 자동으로 메시지를 전송합니다
                                     </strong>
                                     <br />
-                                    🎭 <strong>역할별 채널:</strong> 사용자 역할에 따라 
-                                    자동 생성된 채널에 전송
+                                    🎭 <strong>역할별 채널:</strong> 사용자
+                                    역할에 따라 자동 생성된 채널에 전송
                                     <br />
-                                    📤 <strong>여러 채널 선택 가능:</strong> 한 번에 
-                                    여러 채널에 같은 메시지를 전송할 수 있습니다
+                                    📤 <strong>여러 채널 선택 가능:</strong> 한
+                                    번에 여러 채널에 같은 메시지를 전송할 수
+                                    있습니다
                                 </Text>
                             </div>
                         )}
                     </Form.Item>
                 )}
 
-                {actionType.parameters.some(param => param.name === "nickname") && (
+                {actionType.parameters.some(
+                    (param) => param.name === "nickname"
+                ) && (
                     <Form.Item label="새 닉네임" style={{ marginBottom: 12 }}>
                         <Input
                             value={action.parameters.nickname || ""}
@@ -707,13 +1360,25 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.some(param => param.name === "message" || param.name === "messageContent") && (
+                {actionType.parameters.some(
+                    (param) =>
+                        param.name === "message" ||
+                        param.name === "messageContent"
+                ) && (
                     <Form.Item label="메시지 내용" style={{ marginBottom: 12 }}>
                         <TextArea
-                            value={action.parameters.message || action.parameters.messageContent || ""}
+                            value={
+                                action.parameters.message ||
+                                action.parameters.messageContent ||
+                                ""
+                            }
                             onChange={(e) => {
                                 // message 또는 messageContent 필드에 저장
-                                const paramName = actionType.parameters.find(p => p.name === "messageContent") ? "messageContent" : "message";
+                                const paramName = actionType.parameters.find(
+                                    (p) => p.name === "messageContent"
+                                )
+                                    ? "messageContent"
+                                    : "message";
                                 updateActionParameter(
                                     index,
                                     paramName,
@@ -744,7 +1409,9 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.some(param => param.name === "reactions") && (
+                {actionType.parameters.some(
+                    (param) => param.name === "reactions"
+                ) && (
                     <Form.Item label="이모지 반응" style={{ marginBottom: 12 }}>
                         <EmojiPicker
                             value={action.parameters.reactions || []}
@@ -764,16 +1431,22 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                             }}
                         >
                             <Text type="secondary">
-                                💡 <strong>이모지 반응 기능:</strong><br/>
-                                • 메시지 전송 후 자동으로 선택한 이모지가 반응으로 추가됩니다<br/>
-                                • 최대 10개까지 선택 가능<br/>
-                                • 이모지를 클릭하여 쉽게 선택하고 관리할 수 있습니다
+                                💡 <strong>이모지 반응 기능:</strong>
+                                <br />
+                                • 메시지 전송 후 자동으로 선택한 이모지가
+                                반응으로 추가됩니다
+                                <br />
+                                • 최대 10개까지 선택 가능
+                                <br />• 이모지를 클릭하여 쉽게 선택하고 관리할
+                                수 있습니다
                             </Text>
                         </div>
                     </Form.Item>
                 )}
 
-                {actionType.parameters.some(param => param.name === "seconds") && (
+                {actionType.parameters.some(
+                    (param) => param.name === "seconds"
+                ) && (
                     <Form.Item label="시간 (초)" style={{ marginBottom: 12 }}>
                         <InputNumber
                             value={action.parameters.seconds || 0}
@@ -791,7 +1464,9 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.some(param => param.name === "duration") && (
+                {actionType.parameters.some(
+                    (param) => param.name === "duration"
+                ) && (
                     <Form.Item
                         label="지속 시간 (초)"
                         style={{ marginBottom: 12 }}
@@ -817,7 +1492,10 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.some(param => param.name === "enable" || param.name === "enabled") && (
+                {actionType.parameters.some(
+                    (param) =>
+                        param.name === "enable" || param.name === "enabled"
+                ) && (
                     <Form.Item label="활성화" style={{ marginBottom: 12 }}>
                         <Switch
                             checked={action.parameters.enable !== false}
@@ -830,7 +1508,11 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.some(param => param.name === "permissions" || param.name === "permission") && (
+                {actionType.parameters.some(
+                    (param) =>
+                        param.name === "permissions" ||
+                        param.name === "permission"
+                ) && (
                     <Form.Item label="권한 설정" style={{ marginBottom: 12 }}>
                         <div>
                             <Select
@@ -973,7 +1655,9 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                 )}
 
                 {/* 버튼 설정 파라미터들 */}
-                {actionType.parameters.some(param => param.name === "buttonStyle") && (
+                {actionType.parameters.some(
+                    (param) => param.name === "buttonStyle"
+                ) && (
                     <Form.Item label="버튼 스타일" style={{ marginBottom: 12 }}>
                         <Select
                             value={action.parameters.buttonStyle || "primary"}
@@ -1004,7 +1688,9 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.some(param => param.name === "buttonLabel") && (
+                {actionType.parameters.some(
+                    (param) => param.name === "buttonLabel"
+                ) && (
                     <Form.Item
                         label="새 버튼 라벨"
                         style={{ marginBottom: 12 }}
@@ -1052,7 +1738,9 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.some(param => param.name === "buttonDisabled") && (
+                {actionType.parameters.some(
+                    (param) => param.name === "buttonDisabled"
+                ) && (
                     <Form.Item
                         label="버튼 비활성화"
                         style={{ marginBottom: 12 }}
@@ -1082,7 +1770,9 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.some(param => param.name === "buttonEmoji") && (
+                {actionType.parameters.some(
+                    (param) => param.name === "buttonEmoji"
+                ) && (
                     <Form.Item label="버튼 이모지" style={{ marginBottom: 12 }}>
                         <Input
                             value={action.parameters.buttonEmoji || ""}
@@ -1133,7 +1823,9 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
 
             {actions.map((action, index) => {
                 const actionType =
-                    ACTION_TYPE_CONFIGS[action.type as keyof typeof ACTION_TYPE_CONFIGS];
+                    ACTION_TYPE_CONFIGS[
+                        action.type as keyof typeof ACTION_TYPE_CONFIGS
+                    ];
 
                 return (
                     <Card
@@ -1153,7 +1845,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                 }}
                             >
                                 <DragOutlined style={{ cursor: "grab" }} />
-                                {getActionIcon(actionType?.icon || '')}
+                                {getActionIcon(actionType?.icon || "")}
                                 <span>
                                     액션 {index + 1}: {actionType?.label}
                                 </span>
@@ -1201,20 +1893,20 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                         }
                                         style={{ width: "100%" }}
                                     >
-                                        {Object.entries(ACTION_TYPE_CONFIGS).map(
-                                            ([key, config]) => (
-                                                <Option key={key} value={key}>
-                                                    <Space>
-                                                        <span>
-                                                            {getActionIcon(config.icon)}
-                                                        </span>
-                                                        <span>
-                                                            {config.label}
-                                                        </span>
-                                                    </Space>
-                                                </Option>
-                                            )
-                                        )}
+                                        {Object.entries(
+                                            ACTION_TYPE_CONFIGS
+                                        ).map(([key, config]) => (
+                                            <Option key={key} value={key}>
+                                                <Space>
+                                                    <span>
+                                                        {getActionIcon(
+                                                            config.icon
+                                                        )}
+                                                    </span>
+                                                    <span>{config.label}</span>
+                                                </Space>
+                                            </Option>
+                                        ))}
                                     </Select>
                                 </Form.Item>
                             </Col>

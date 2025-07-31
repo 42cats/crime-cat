@@ -13,9 +13,16 @@ class BotCommandExecutor extends BaseActionExecutor {
     }
 
     async performAction(action, context) {
-        const { commandName, parameters = {}, timeout = 30, silent = false } = action.parameters;
+        const { commandName, parameters = {}, delay = 0, silent = false, channelId } = action.parameters;
         
         console.log(`🤖 [BotCommand] 실행 시작: ${commandName}`, parameters);
+        
+        // 지연 시간이 설정된 경우 대기
+        if (delay > 0) {
+            console.log(`⏱️ [BotCommand] ${delay}초 지연 실행 대기 중...`);
+            await this.sleep(delay * 1000);
+            console.log(`✅ [BotCommand] 지연 완료, 커맨드 실행 시작`);
+        }
         
         try {
             // 1. 클라이언트에서 이미 로드된 커맨드 가져오기
@@ -32,16 +39,13 @@ class BotCommandExecutor extends BaseActionExecutor {
                 }
             }
 
-            // 3. 가상 인터랙션 생성
+            // 3. 가상 인터랙션 생성 (채널 지정 지원)
             const virtualInteraction = this.createVirtualInteraction(
-                context, commandName, parameters
+                context, commandName, parameters, channelId
             );
 
-            // 4. 타임아웃과 함께 커맨드 실행
-            const result = await this.executeWithTimeout(
-                () => command.execute(virtualInteraction),
-                timeout * 1000
-            );
+            // 4. 커맨드 실행 (타임아웃 제거)
+            const result = await command.execute(virtualInteraction);
 
             console.log(`✅ [BotCommand] 실행 완료: ${commandName}`);
             
@@ -105,8 +109,22 @@ class BotCommandExecutor extends BaseActionExecutor {
     /**
      * 가상 Discord 인터랙션 생성
      */
-    createVirtualInteraction(context, commandName, parameters) {
+    createVirtualInteraction(context, commandName, parameters, targetChannelId) {
         const { interaction, user, member, guild, channel } = context;
+        
+        // 지정된 채널이 있으면 해당 채널 사용, 없으면 기본 채널 사용
+        let executionChannel = channel;
+        if (targetChannelId) {
+            const specifiedChannel = guild.channels.cache.get(targetChannelId);
+            if (specifiedChannel) {
+                executionChannel = specifiedChannel;
+                console.log(`📍 [BotCommand] 채널 지정됨: ${specifiedChannel.name} (${targetChannelId})`);
+            } else {
+                console.warn(`⚠️ [BotCommand] 지정된 채널을 찾을 수 없음: ${targetChannelId}. 기본 채널 사용.`);
+            }
+        } else {
+            console.log(`📍 [BotCommand] 기본 채널에서 실행: ${channel.name} (${channel.id})`);
+        }
         
         // 응답 추적을 위한 상태
         let hasReplied = false;
@@ -118,7 +136,7 @@ class BotCommandExecutor extends BaseActionExecutor {
             user,
             member,
             guild,
-            channel,
+            channel: executionChannel, // 지정된 채널 또는 기본 채널
             client: interaction.client,
             
             // 인터랙션 메타데이터
@@ -221,53 +239,140 @@ class BotCommandExecutor extends BaseActionExecutor {
                 }
             },
             
-            // 응답 메서드들 (실제 봇 커맨드가 사용)
+            // 응답 메서드들 (실제 Discord 메시지 전송)
             reply: async (options) => {
                 if (hasReplied) throw new Error('이미 응답했습니다.');
                 hasReplied = true;
                 
-                const response = {
-                    type: 'reply',
-                    content: typeof options === 'string' ? options : options.content,
+                const messageContent = typeof options === 'string' ? options : options.content;
+                const messageOptions = {
+                    content: messageContent,
                     embeds: options.embeds || [],
-                    ephemeral: options.ephemeral || false,
-                    timestamp: new Date().toISOString()
                 };
-                responses.push(response);
                 
-                console.log(`📤 [VirtualInteraction] Reply:`, response);
-                return { id: `reply_${Date.now()}`, ...response };
+                try {
+                    // 실제 Discord 채널에 메시지 전송
+                    const sentMessage = await executionChannel.send(messageOptions);
+                    
+                    const response = {
+                        type: 'reply',
+                        content: messageContent,
+                        embeds: options.embeds || [],
+                        ephemeral: options.ephemeral || false,
+                        timestamp: new Date().toISOString(),
+                        messageId: sentMessage.id
+                    };
+                    responses.push(response);
+                    
+                    console.log(`📤 [VirtualInteraction] Reply 전송 완료:`, {
+                        channelName: executionChannel.name,
+                        channelId: executionChannel.id,
+                        messageId: sentMessage.id,
+                        content: messageContent
+                    });
+                    
+                    return sentMessage;
+                } catch (error) {
+                    console.error(`❌ [VirtualInteraction] Reply 전송 실패:`, error);
+                    throw error;
+                }
             },
             
             editReply: async (options) => {
                 if (!hasReplied && !hasDeferred) throw new Error('편집할 응답이 없습니다.');
                 
-                const response = {
-                    type: 'editReply',
-                    content: typeof options === 'string' ? options : options.content,
+                const messageContent = typeof options === 'string' ? options : options.content;
+                const messageOptions = {
+                    content: messageContent,
                     embeds: options.embeds || [],
-                    timestamp: new Date().toISOString()
                 };
-                responses.push(response);
                 
-                console.log(`📝 [VirtualInteraction] EditReply:`, response);
-                return { id: `edit_${Date.now()}`, ...response };
+                try {
+                    // 마지막 전송된 메시지 찾기
+                    const lastResponse = responses.find(r => r.messageId);
+                    if (!lastResponse || !lastResponse.messageId) {
+                        console.warn(`⚠️ [VirtualInteraction] 편집할 메시지를 찾을 수 없음, 새 메시지 전송`);
+                        // 편집할 메시지가 없으면 새 메시지 전송
+                        const sentMessage = await executionChannel.send(messageOptions);
+                        
+                        const response = {
+                            type: 'editReply',
+                            content: messageContent,
+                            embeds: options.embeds || [],
+                            timestamp: new Date().toISOString(),
+                            messageId: sentMessage.id
+                        };
+                        responses.push(response);
+                        
+                        console.log(`📝 [VirtualInteraction] EditReply (새 메시지) 전송 완료:`, {
+                            channelName: executionChannel.name,
+                            messageId: sentMessage.id,
+                            content: messageContent
+                        });
+                        
+                        return sentMessage;
+                    }
+                    
+                    // 기존 메시지 편집
+                    const message = await executionChannel.messages.fetch(lastResponse.messageId);
+                    const editedMessage = await message.edit(messageOptions);
+                    
+                    const response = {
+                        type: 'editReply',
+                        content: messageContent,
+                        embeds: options.embeds || [],
+                        timestamp: new Date().toISOString(),
+                        messageId: editedMessage.id
+                    };
+                    responses.push(response);
+                    
+                    console.log(`📝 [VirtualInteraction] EditReply 편집 완료:`, {
+                        channelName: executionChannel.name,
+                        messageId: editedMessage.id,
+                        content: messageContent
+                    });
+                    
+                    return editedMessage;
+                } catch (error) {
+                    console.error(`❌ [VirtualInteraction] EditReply 실패:`, error);
+                    throw error;
+                }
             },
             
             followUp: async (options) => {
                 if (!hasReplied && !hasDeferred) throw new Error('첫 응답이 필요합니다.');
                 
-                const response = {
-                    type: 'followUp',
-                    content: typeof options === 'string' ? options : options.content,
+                const messageContent = typeof options === 'string' ? options : options.content;
+                const messageOptions = {
+                    content: messageContent,
                     embeds: options.embeds || [],
-                    ephemeral: options.ephemeral || false,
-                    timestamp: new Date().toISOString()
                 };
-                responses.push(response);
                 
-                console.log(`📨 [VirtualInteraction] FollowUp:`, response);
-                return { id: `followup_${Date.now()}`, ...response };
+                try {
+                    // 새 메시지로 followUp 전송
+                    const sentMessage = await executionChannel.send(messageOptions);
+                    
+                    const response = {
+                        type: 'followUp',
+                        content: messageContent,
+                        embeds: options.embeds || [],
+                        ephemeral: options.ephemeral || false,
+                        timestamp: new Date().toISOString(),
+                        messageId: sentMessage.id
+                    };
+                    responses.push(response);
+                    
+                    console.log(`📨 [VirtualInteraction] FollowUp 전송 완료:`, {
+                        channelName: executionChannel.name,
+                        messageId: sentMessage.id,
+                        content: messageContent
+                    });
+                    
+                    return sentMessage;
+                } catch (error) {
+                    console.error(`❌ [VirtualInteraction] FollowUp 전송 실패:`, error);
+                    throw error;
+                }
             },
             
             deferReply: async (options = {}) => {
@@ -276,6 +381,66 @@ class BotCommandExecutor extends BaseActionExecutor {
                 
                 console.log(`⏳ [VirtualInteraction] DeferReply:`, options);
                 return;
+            },
+            
+            // 타이머 등 일부 커맨드에서 필요한 fetchReply 메서드 추가
+            fetchReply: async () => {
+                if (!hasReplied && !hasDeferred) {
+                    throw new Error('아직 응답하지 않았습니다.');
+                }
+                
+                try {
+                    // 가장 최근 응답에서 실제 메시지 ID 찾기
+                    const lastResponse = responses.find(r => r.messageId);
+                    if (!lastResponse || !lastResponse.messageId) {
+                        console.warn(`⚠️ [VirtualInteraction] FetchReply: 실제 메시지를 찾을 수 없음`);
+                        
+                        // 가상 메시지 객체 반환 (후방 호환성)
+                        const virtualResponse = responses[responses.length - 1];
+                        return {
+                            id: virtualResponse?.id || `msg_${Date.now()}`,
+                            content: virtualResponse?.content || '',
+                            embeds: virtualResponse?.embeds || [],
+                            author: user,
+                            channel: executionChannel,
+                            guild,
+                            createdTimestamp: Date.now(),
+                            editedTimestamp: null,
+                            edit: async (options) => {
+                                return virtualInteraction.editReply(options);
+                            }
+                        };
+                    }
+                    
+                    // 실제 Discord 메시지 fetch
+                    const actualMessage = await executionChannel.messages.fetch(lastResponse.messageId);
+                    
+                    console.log(`🔍 [VirtualInteraction] FetchReply 완료:`, {
+                        channelName: executionChannel.name,
+                        messageId: actualMessage.id,
+                        content: actualMessage.content.substring(0, 100) + (actualMessage.content.length > 100 ? '...' : '')
+                    });
+                    
+                    return actualMessage;
+                } catch (error) {
+                    console.error(`❌ [VirtualInteraction] FetchReply 실패:`, error);
+                    
+                    // 에러 시 가상 메시지 객체 반환 (후방 호환성)
+                    const lastResponse = responses[responses.length - 1];
+                    return {
+                        id: lastResponse?.id || `msg_${Date.now()}`,
+                        content: lastResponse?.content || '',
+                        embeds: lastResponse?.embeds || [],
+                        author: user,
+                        channel: executionChannel,
+                        guild,
+                        createdTimestamp: Date.now(),
+                        editedTimestamp: null,
+                        edit: async (options) => {
+                            return virtualInteraction.editReply(options);
+                        }
+                    };
+                }
             },
             
             // 응답 추적용 (디버깅)
@@ -310,24 +475,10 @@ class BotCommandExecutor extends BaseActionExecutor {
     }
 
     /**
-     * 타임아웃과 함께 커맨드 실행
+     * 지연 실행을 위한 sleep 메서드
      */
-    async executeWithTimeout(commandFunction, timeoutMs) {
-        return new Promise((resolve, reject) => {
-            const timer = setTimeout(() => {
-                reject(new Error(`커맨드 실행 시간 초과 (${timeoutMs}ms)`));
-            }, timeoutMs);
-            
-            Promise.resolve(commandFunction())
-                .then(result => {
-                    clearTimeout(timer);
-                    resolve(result);
-                })
-                .catch(error => {
-                    clearTimeout(timer);
-                    reject(error);
-                });
-        });
+    async sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 }
 
