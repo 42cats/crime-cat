@@ -27,6 +27,7 @@ const client = new Client({
 client.redis = require('./Commands/utility/redis');
 const UnifiedPubSubManager = require('./Commands/utility/unifiedPubSub');
 const AdvertisementPubSubManager = require('./Commands/utility/advertisementPubSub');
+const { CommandsCacheManager } = require('./Commands/utility/commandsCacheManager');
 
 // Discord 클라이언트를 전역으로 설정 (Pub/Sub에서 사용)
 global.discordClient = client;
@@ -42,6 +43,10 @@ global.discordClient = client;
 	// 광고 매니저 초기화 (통합 Pub/Sub 연동)
 	client.advertisementManager = new AdvertisementPubSubManager(client);
 	await client.advertisementManager.initialize();
+	
+	// 커맨드 캐시 매니저 초기화
+	client.commandsCacheManager = new CommandsCacheManager();
+	console.log('✅ 커맨드 캐시 매니저 초기화 완료');
 	
 	// Redis 키스페이스 이벤트 활성화
 	try {
@@ -77,6 +82,16 @@ client.once(Events.ClientReady, async (readyClient) => {
 	console.log(`Ready! Logged in as !!${readyClient.user.tag}`);
 	await updateActivity(client, messege, currentIndex);
 	client.master = await client.users.fetch('317655426868969482');
+
+	// 커맨드 캐시 초기 업데이트
+	if (client.commandsCacheManager) {
+		try {
+			await client.commandsCacheManager.updateCommandsCache(client);
+			console.log('✅ 봇 준비 완료 - 커맨드 캐시 업데이트 완료');
+		} catch (error) {
+			console.error('❌ 커맨드 캐시 초기 업데이트 실패:', error);
+		}
+	}
 
 	// 카테고리 정리 스케줄러 시작 (24시간마다, 7일 이상 된 빈 카테고리 삭제)
 	categoryCleanupScheduler.start(client, 24, 7);

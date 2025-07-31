@@ -152,7 +152,8 @@ module.exports = {
 		startVoteUpdater(interaction.client, voteId, message);
 	},
 	upload: true,
-	permissionLevel: PermissionFlagsBits.DeafenMembers
+	permissionLevel: PermissionFlagsBits.DeafenMembers,
+	isCacheCommand: true,
 };
 
 // 투표 임베드 생성

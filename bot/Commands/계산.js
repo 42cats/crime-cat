@@ -42,6 +42,7 @@ module.exports = {
   },
   upload: true,
   permissionLevel: PermissionFlagsBits.DeafenMembers,
+  isCacheCommand: true,
 };
 
 function calculateExpression(expression) {

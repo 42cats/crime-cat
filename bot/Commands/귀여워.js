@@ -83,7 +83,8 @@ module.exports = {
 		}
 	},
 	upload: true,
-	permissionLevel: PermissionFlagsBits.Administrator
+	permissionLevel: PermissionFlagsBits.Administrator,
+	isCacheCommand: true,
 };
 
 /**
