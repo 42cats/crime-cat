@@ -99,6 +99,8 @@ export type ActionType =
   | 'remove_channel_permission'
   | 'override_channel_permission'
   | 'reset_channel_permission'
+  | 'grant_server_permission'
+  | 'revoke_server_permission'
   | 'send_message'
   | 'send_dm'
   | 'move_voice_channel'
@@ -111,6 +113,9 @@ export type ActionType =
   | 'set_priority_speaker'
   | 'timeout_user'
   | 'remove_timeout'
+  | 'play_music'
+  | 'stop_music'
+  | 'pause_music'
   | 'execute_bot_command'
   | 'button_setting';
 
@@ -533,6 +538,116 @@ export const ACTION_TYPE_CONFIGS: Record<ActionType, ActionTypeConfig> = {
     ],
     requiredPermissions: ['MODERATE_MEMBERS']
   },
+  grant_server_permission: {
+    label: '서버 권한 부여',
+    icon: 'Key',
+    description: '사용자에게 서버 권한을 부여합니다',
+    parameters: [
+      {
+        name: 'permissions',
+        type: 'multiselect',
+        label: '부여할 권한들',
+        required: true,
+        options: [
+          { label: '서버 관리', value: 'MANAGE_GUILD' },
+          { label: '역할 관리', value: 'MANAGE_ROLES' },
+          { label: '채널 관리', value: 'MANAGE_CHANNELS' },
+          { label: '멤버 추방', value: 'BAN_MEMBERS' },
+          { label: '멤버 차단', value: 'KICK_MEMBERS' },
+          { label: '메시지 관리', value: 'MANAGE_MESSAGES' },
+          { label: '닉네임 관리', value: 'MANAGE_NICKNAMES' },
+          { label: '웹훅 관리', value: 'MANAGE_WEBHOOKS' }
+        ],
+        placeholder: '부여할 권한을 선택하세요'
+      }
+    ],
+    requiredPermissions: ['MANAGE_ROLES']
+  },
+  revoke_server_permission: {
+    label: '서버 권한 제거',
+    icon: 'ShieldOff',
+    description: '사용자의 서버 권한을 제거합니다',
+    parameters: [
+      {
+        name: 'permissions',
+        type: 'multiselect',
+        label: '제거할 권한들',
+        required: true,
+        options: [
+          { label: '서버 관리', value: 'MANAGE_GUILD' },
+          { label: '역할 관리', value: 'MANAGE_ROLES' },
+          { label: '채널 관리', value: 'MANAGE_CHANNELS' },
+          { label: '멤버 추방', value: 'BAN_MEMBERS' },
+          { label: '멤버 차단', value: 'KICK_MEMBERS' },
+          { label: '메시지 관리', value: 'MANAGE_MESSAGES' },
+          { label: '닉네임 관리', value: 'MANAGE_NICKNAMES' },
+          { label: '웹훅 관리', value: 'MANAGE_WEBHOOKS' }
+        ],
+        placeholder: '제거할 권한을 선택하세요'
+      }
+    ],
+    requiredPermissions: ['MANAGE_ROLES']
+  },
+  play_music: {
+    label: '음악 재생',
+    icon: 'Music',
+    description: '선택한 음악을 재생합니다',
+    parameters: [
+      {
+        name: 'source',
+        type: 'select',
+        label: '음악 소스',
+        required: true,
+        options: [
+          { label: 'YouTube URL', value: 'youtube_url' },
+          { label: '업로드된 파일', value: 'uploaded_file' },
+          { label: '플레이리스트', value: 'playlist' }
+        ],
+        placeholder: '음악 소스를 선택하세요'
+      },
+      {
+        name: 'trackId',
+        type: 'string',
+        label: '트랙 ID 또는 URL',
+        required: true,
+        placeholder: 'YouTube URL 또는 파일명을 입력하세요'
+      },
+      {
+        name: 'volume',
+        type: 'number',
+        label: '볼륨 (1-100)',
+        required: false,
+        placeholder: '50'
+      },
+      {
+        name: 'stopBehavior',
+        type: 'select',
+        label: '재생 완료 후 동작',
+        required: false,
+        options: [
+          { label: '정지', value: 'stop' },
+          { label: '반복', value: 'loop' },
+          { label: '다음 곡', value: 'next' }
+        ],
+        placeholder: '재생 완료 후 동작을 선택하세요'
+      }
+    ],
+    requiredPermissions: ['CONNECT', 'SPEAK']
+  },
+  stop_music: {
+    label: '음악 정지',
+    icon: 'Square',
+    description: '현재 재생 중인 음악을 정지합니다',
+    parameters: [],
+    requiredPermissions: ['CONNECT', 'SPEAK']
+  },
+  pause_music: {
+    label: '음악 일시정지/재개',
+    icon: 'Pause',
+    description: '현재 재생 중인 음악을 일시정지하거나 재개합니다',
+    parameters: [],
+    requiredPermissions: ['CONNECT', 'SPEAK']
+  },
   execute_bot_command: {
     label: '봇 커맨드 실행',
     icon: 'Terminal',
@@ -604,6 +719,22 @@ export const ACTION_TYPE_CONFIGS: Record<ActionType, ActionTypeConfig> = {
     requiredPermissions: []
   }
 };
+
+// ===== 봇 커맨드 인터페이스 =====
+
+export interface BotCommand {
+  name: string;
+  description: string;
+  type: 'slash' | 'prefix';
+  category?: string;
+  parameters?: {
+    name: string;
+    type: 'string' | 'number' | 'boolean' | 'user' | 'channel' | 'role';
+    description: string;
+    required: boolean;
+    choices?: { name: string; value: string }[];
+  }[];
+}
 
 // ===== 미리보기용 텍스트 생성 인터페이스 =====
 
