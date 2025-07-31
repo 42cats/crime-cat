@@ -6,11 +6,14 @@ const mockChannels: Channel[] = [{ id: "none", name: "현재채널" }];
 // 채널 리스트 가져오기
 export async function fetchChannels(guildId?: string): Promise<Channel[]> {
     try {
+        console.log('🔍 채널 목록 요청:', { guildId, endpoint: `/auth/guilds/channels/${guildId}` });
         const endpoint = `/auth/guilds/channels/${guildId}`;
         const data = await apiClient.get<Channel[]>(endpoint);
+        console.log('✅ 채널 목록 응답:', { count: data.length, channels: data });
         return [...mockChannels, ...data];
     } catch (error) {
-        console.error("Error fetching channels:", error);
+        console.error("❌ 채널 목록 로드 실패:", { guildId, error, endpoint: `/auth/guilds/channels/${guildId}` });
+        console.warn("📋 목 채널 사용:", mockChannels);
         return [...mockChannels];
     }
 }
