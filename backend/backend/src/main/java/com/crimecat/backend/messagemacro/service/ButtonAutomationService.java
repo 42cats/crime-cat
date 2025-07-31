@@ -2,6 +2,7 @@ package com.crimecat.backend.messagemacro.service;
 
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.messagemacro.controller.BotButtonAutomationController;
+import com.crimecat.backend.messagemacro.controller.ButtonAutomationController;
 import com.crimecat.backend.messagemacro.domain.ButtonAutomation;
 import com.crimecat.backend.messagemacro.domain.ButtonAutomationGroup;
 import com.crimecat.backend.messagemacro.dto.*;
@@ -9,6 +10,8 @@ import com.crimecat.backend.messagemacro.repository.ButtonAutomationGroupReposit
 import com.crimecat.backend.messagemacro.repository.ButtonAutomationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +28,7 @@ public class ButtonAutomationService {
     
     private final ButtonAutomationGroupRepository groupRepository;
     private final ButtonAutomationRepository buttonRepository;
+    private final BotCommandsRedisService botCommandsRedisService;
 
     // ===== 그룹 관리 =====
     
@@ -549,4 +553,37 @@ public class ButtonAutomationService {
             return false;
         }
     }
+
+    /**
+     * 봇 커맨드 목록 조회 (Redis 캐시 기반 + Spring Cache 적용)
+     * Bot CommandsCacheManager에서 저장한 커맨드 메타데이터를 조회하여 
+     * 변환된 DTO를 Spring Cache에 캐싱
+     * @return 봇 커맨드 목록
+     */
+    @Cacheable(value = "botCommands", key = "'all'")
+    @Transactional(readOnly = true)
+    public List<ButtonAutomationController.BotCommandDto> getBotCommands() {
+        log.info("🔍 Redis에서 봇 커맨드 목록 조회 시작 (캐시 미스)");
+        
+        // Redis에서 실제 봇 커맨드 조회
+        List<ButtonAutomationController.BotCommandDto> commands = botCommandsRedisService.getBotCommandsFromCache();
+        
+        if (commands.isEmpty()) {
+            log.warn("⚠️ Redis 캐시에서 봇 커맨드를 찾을 수 없음. 봇이 아직 시작되지 않았거나 캐시 생성 실패");
+        } else {
+            log.info("✅ Redis에서 {} 개의 봇 커맨드 조회 성공 (Spring Cache에 저장됨)", commands.size());
+        }
+        
+        return commands;
+    }
+
+    /**
+     * 봇 커맨드 캐시 무효화 (봇 재시작 시 호출)
+     * Redis에서 새로운 커맨드 캐시가 생성되었을 때 Spring Cache를 갱신
+     */
+    @CacheEvict(value = "botCommands", allEntries = true)
+    public void evictBotCommandsCache() {
+        log.info("🗑️ 봇 커맨드 Spring Cache 무효화 완료");
+    }
+
 }
