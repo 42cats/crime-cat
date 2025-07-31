@@ -21,7 +21,8 @@ import {
     DragOutlined,
     CopyOutlined,
 } from "@ant-design/icons";
-import { ActionConfig, ActionType } from "../../types/buttonAutomation";
+import { RefreshCw } from "lucide-react";
+import { ActionConfig, ActionType, ACTION_TYPE_CONFIGS } from "../../types/buttonAutomation";
 import {
     DISCORD_LIMITS,
     validateActionCount,
@@ -39,11 +40,54 @@ import { MultiRoleSelect } from "../ui/multi-role-select";
 import { EmojiPicker } from "../ui/EmojiPicker";
 import { ChannelProvider } from "../../contexts/ChannelContext";
 import { useChannels } from "../../hooks/useChannels";
-import { ACTION_TYPES } from "../../constants/actionTypes";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
+
+// 아이콘 매핑 헬퍼 함수 (유니코드 이모지)
+const getActionIcon = (iconName: string) => {
+  const iconMap: Record<string, string> = {
+    'Terminal': '🤖',
+    'UserPlus': '👥',
+    'UserMinus': '👤',
+    'Edit': '✏️',
+    'MessageSquare': '💬',
+    'Clock': '⏰',
+    'ToggleRight': '🔄',
+    'RotateCcw': '🔄',
+    'RefreshCw': '🔄',
+    'Shield': '🛡️',
+    'ShieldOff': '🚫',
+    'ShieldCheck': '✅',
+    'Mail': '📨',
+    'ArrowRightLeft': '↔️',
+    'PhoneOff': '📞',
+    'MicOff': '🔇',
+    'MicToggle': '🔊',
+    'HeadphonesOff': '🔊',
+    'HeadphonesToggle': '🎧',
+    'Megaphone': '📢',
+    'UserCheck': '✅',
+    'Settings': '⚙️',
+  };
+  
+  return <span>{iconMap[iconName] || iconName}</span>;
+};
+
+// 봇 커맨드 인터페이스
+interface BotCommand {
+  name: string;
+  description: string;
+  type: 'slash' | 'prefix';
+  parameters?: {
+    name: string;
+    type: 'string' | 'number' | 'boolean' | 'user' | 'channel' | 'role';
+    description: string;
+    required: boolean;
+    choices?: { name: string; value: string }[];
+  }[];
+}
 
 interface ActionEditorProps {
     actions: ActionConfig[];
@@ -62,6 +106,42 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
 }) => {
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const { channels } = useChannels();
+    
+    // 봇 커맨드 상태
+    const [botCommands, setBotCommands] = useState<BotCommand[]>([]);
+    const [loadingCommands, setLoadingCommands] = useState(false);
+    const [commandsError, setCommandsError] = useState<string | null>(null);
+    
+    // 봇 커맨드 로드
+    const loadBotCommands = async () => {
+        setLoadingCommands(true);
+        setCommandsError(null);
+        
+        try {
+            const response = await fetch('/api/v1/automations/bot-commands');
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            if (data.success) {
+                setBotCommands(data.commands);
+            } else {
+                throw new Error(data.error || '알 수 없는 오류가 발생했습니다');
+            }
+        } catch (error) {
+            console.error('봇 커맨드 로드 실패:', error);
+            setCommandsError(error instanceof Error ? error.message : '커맨드를 불러올 수 없습니다');
+            setBotCommands([]);
+        } finally {
+            setLoadingCommands(false);
+        }
+    };
+    
+    // 컴포넌트 마운트 시 봇 커맨드 로드
+    useEffect(() => {
+        loadBotCommands();
+    }, []);
 
     // 액션 추가
     const addAction = () => {
@@ -333,11 +413,12 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
     // 액션 타입별 파라미터 렌더링
     const renderActionParameters = (action: ActionConfig, index: number) => {
         const actionType =
-            ACTION_TYPES[action.type as keyof typeof ACTION_TYPES];
+            ACTION_TYPE_CONFIGS[action.type as keyof typeof ACTION_TYPE_CONFIGS];
         if (!actionType) return null;
 
         // 음악 액션인 경우 전용 에디터 사용
-        if (actionType.category === "music") {
+        // ACTION_TYPE_CONFIGS에는 category 필드가 없으므로 music 액션 확인을 다른 방식으로 해야 함
+        if (action.type === 'play_music' || action.type === 'stop_music' || action.type === 'pause_music') {
             return (
                 <div style={{ marginTop: 16 }}>
                     <MusicParameterEditor
@@ -354,10 +435,84 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
             );
         }
 
+        // 봇 커맨드 실행 액션인 경우 특별 처리
+        if (action.type === 'execute_bot_command') {
+            return (
+                <div style={{ marginTop: 16 }}>
+                    {/* 커맨드 선택 */}
+                    <Form.Item label="실행할 커맨드" style={{ marginBottom: 12 }}>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <Select
+                                value={action.parameters?.commandName || ''}
+                                onChange={(value) => updateActionParameter(index, 'commandName', value)}
+                                placeholder="커맨드를 선택하세요"
+                                style={{ flex: 1 }}
+                                loading={loadingCommands}
+                                disabled={loadingCommands}
+                            >
+                                {botCommands.map((command) => (
+                                    <Option key={command.name} value={command.name}>
+                                        /{command.name} - {command.description}
+                                    </Option>
+                                ))}
+                            </Select>
+                            <Button
+                                type="default"
+                                onClick={loadBotCommands}
+                                disabled={loadingCommands}
+                                title="커맨드 목록 새로고침"
+                                icon={loadingCommands ? '🔄' : <RefreshCw size={16} />}
+                            />
+                        </div>
+                        {loadingCommands && (
+                            <p style={{ fontSize: 12, color: '#1890ff', margin: '4px 0 0 0' }}>🔄 커맨드 목록을 불러오는 중...</p>
+                        )}
+                        {commandsError && (
+                            <p style={{ fontSize: 12, color: '#ff4d4f', margin: '4px 0 0 0' }}>❌ {commandsError}</p>
+                        )}
+                        {!loadingCommands && !commandsError && botCommands.length === 0 && (
+                            <p style={{ fontSize: 12, color: '#faad14', margin: '4px 0 0 0' }}>⚠️ 사용 가능한 커맨드가 없습니다</p>
+                        )}
+                        <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: "block" }}>
+                            봇에서 사용 가능한 커맨드를 선택하세요
+                        </Text>
+                    </Form.Item>
+                    
+                    {/* 타임아웃 설정 */}
+                    <Form.Item label="실행 타임아웃 (초)" style={{ marginBottom: 12 }}>
+                        <InputNumber
+                            value={action.parameters?.timeout || 30}
+                            onChange={(value) => updateActionParameter(index, 'timeout', value || 30)}
+                            min={1}
+                            max={300}
+                            style={{ width: "100%" }}
+                            placeholder="30"
+                        />
+                        <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: "block" }}>
+                            커맨드 실행 제한 시간 (1-300초)
+                        </Text>
+                    </Form.Item>
+                    
+                    {/* 조용히 실행 설정 */}
+                    <Form.Item label="조용히 실행" style={{ marginBottom: 12 }}>
+                        <Switch
+                            checked={action.parameters?.silent || false}
+                            onChange={(checked) => updateActionParameter(index, 'silent', checked)}
+                            checkedChildren="ON"
+                            unCheckedChildren="OFF"
+                        />
+                        <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: "block" }}>
+                            실패해도 오류 메시지를 표시하지 않습니다
+                        </Text>
+                    </Form.Item>
+                </div>
+            );
+        }
+        
         // 기존 액션들의 파라미터 렌더링
         return (
             <div style={{ marginTop: 16 }}>
-                {actionType.parameters.includes("roleId") && (
+                {actionType.parameters.some(param => param.name === "roleId") && (
                     <Form.Item label="대상 역할" style={{ marginBottom: 12 }}>
                         <MultiRoleSelect
                             value={
@@ -397,7 +552,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.includes("channelId") && (
+                {actionType.parameters.some(param => param.name === "channelId") && (
                     <Form.Item label="대상 채널" style={{ marginBottom: 12 }}>
                         <ChannelProvider guildId={guildId}>
                             <MultiChannelSelect
@@ -531,7 +686,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.includes("nickname") && (
+                {actionType.parameters.some(param => param.name === "nickname") && (
                     <Form.Item label="새 닉네임" style={{ marginBottom: 12 }}>
                         <Input
                             value={action.parameters.nickname || ""}
@@ -565,17 +720,19 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.includes("message") && (
+                {actionType.parameters.some(param => param.name === "message" || param.name === "messageContent") && (
                     <Form.Item label="메시지 내용" style={{ marginBottom: 12 }}>
                         <TextArea
-                            value={action.parameters.message || ""}
-                            onChange={(e) =>
+                            value={action.parameters.message || action.parameters.messageContent || ""}
+                            onChange={(e) => {
+                                // message 또는 messageContent 필드에 저장
+                                const paramName = actionType.parameters.find(p => p.name === "messageContent") ? "messageContent" : "message";
                                 updateActionParameter(
                                     index,
-                                    "message",
+                                    paramName,
                                     e.target.value
-                                )
-                            }
+                                );
+                            }}
                             placeholder="안녕하세요, {user}님!"
                             rows={3}
                             maxLength={2000}
@@ -600,7 +757,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.includes("reactions") && (
+                {actionType.parameters.some(param => param.name === "reactions") && (
                     <Form.Item label="이모지 반응" style={{ marginBottom: 12 }}>
                         <EmojiPicker
                             value={action.parameters.reactions || []}
@@ -629,7 +786,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.includes("seconds") && (
+                {actionType.parameters.some(param => param.name === "seconds") && (
                     <Form.Item label="시간 (초)" style={{ marginBottom: 12 }}>
                         <InputNumber
                             value={action.parameters.seconds || 0}
@@ -647,7 +804,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.includes("duration") && (
+                {actionType.parameters.some(param => param.name === "duration") && (
                     <Form.Item
                         label="지속 시간 (초)"
                         style={{ marginBottom: 12 }}
@@ -673,7 +830,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.includes("enable") && (
+                {actionType.parameters.some(param => param.name === "enable" || param.name === "enabled") && (
                     <Form.Item label="활성화" style={{ marginBottom: 12 }}>
                         <Switch
                             checked={action.parameters.enable !== false}
@@ -686,7 +843,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.includes("permissions") && (
+                {actionType.parameters.some(param => param.name === "permissions" || param.name === "permission") && (
                     <Form.Item label="권한 설정" style={{ marginBottom: 12 }}>
                         <div>
                             <Select
@@ -829,7 +986,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                 )}
 
                 {/* 버튼 설정 파라미터들 */}
-                {actionType.parameters.includes("buttonStyle") && (
+                {actionType.parameters.some(param => param.name === "buttonStyle") && (
                     <Form.Item label="버튼 스타일" style={{ marginBottom: 12 }}>
                         <Select
                             value={action.parameters.buttonStyle || "primary"}
@@ -860,7 +1017,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.includes("buttonLabel") && (
+                {actionType.parameters.some(param => param.name === "buttonLabel") && (
                     <Form.Item
                         label="새 버튼 라벨"
                         style={{ marginBottom: 12 }}
@@ -908,7 +1065,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.includes("buttonDisabled") && (
+                {actionType.parameters.some(param => param.name === "buttonDisabled") && (
                     <Form.Item
                         label="버튼 비활성화"
                         style={{ marginBottom: 12 }}
@@ -938,7 +1095,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     </Form.Item>
                 )}
 
-                {actionType.parameters.includes("buttonEmoji") && (
+                {actionType.parameters.some(param => param.name === "buttonEmoji") && (
                     <Form.Item label="버튼 이모지" style={{ marginBottom: 12 }}>
                         <Input
                             value={action.parameters.buttonEmoji || ""}
@@ -989,7 +1146,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
 
             {actions.map((action, index) => {
                 const actionType =
-                    ACTION_TYPES[action.type as keyof typeof ACTION_TYPES];
+                    ACTION_TYPE_CONFIGS[action.type as keyof typeof ACTION_TYPE_CONFIGS];
 
                 return (
                     <Card
@@ -1009,7 +1166,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                 }}
                             >
                                 <DragOutlined style={{ cursor: "grab" }} />
-                                <span>{actionType?.icon}</span>
+                                {getActionIcon(actionType?.icon || '')}
                                 <span>
                                     액션 {index + 1}: {actionType?.label}
                                 </span>
@@ -1057,12 +1214,12 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                         }
                                         style={{ width: "100%" }}
                                     >
-                                        {Object.entries(ACTION_TYPES).map(
+                                        {Object.entries(ACTION_TYPE_CONFIGS).map(
                                             ([key, config]) => (
                                                 <Option key={key} value={key}>
                                                     <Space>
                                                         <span>
-                                                            {config.icon}
+                                                            {getActionIcon(config.icon)}
                                                         </span>
                                                         <span>
                                                             {config.label}

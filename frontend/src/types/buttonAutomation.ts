@@ -111,6 +111,7 @@ export type ActionType =
   | 'set_priority_speaker'
   | 'timeout_user'
   | 'remove_timeout'
+  | 'execute_bot_command'
   | 'button_setting';
 
 // ===== 액션 타입별 파라미터 정의 =====
@@ -531,6 +532,35 @@ export const ACTION_TYPE_CONFIGS: Record<ActionType, ActionTypeConfig> = {
       }
     ],
     requiredPermissions: ['MODERATE_MEMBERS']
+  },
+  execute_bot_command: {
+    label: '봇 커맨드 실행',
+    icon: 'Terminal',
+    description: '기존 디스코드 봇 명령어를 버튼으로 실행합니다',
+    parameters: [
+      {
+        name: 'commandName',
+        type: 'select',
+        label: '실행할 커맨드',
+        required: true,
+        placeholder: '커맨드를 선택하세요'
+      },
+      {
+        name: 'timeout',
+        type: 'number',
+        label: '실행 타임아웃 (초)',
+        required: false,
+        placeholder: '30'
+      },
+      {
+        name: 'silent',
+        type: 'boolean',
+        label: '조용히 실행 (실패해도 오류 표시 안함)',
+        required: false
+      }
+      // 커맨드별 동적 파라미터는 선택 후 추가됨
+    ],
+    requiredPermissions: ['MANAGE_GUILD']
   }
 };
 

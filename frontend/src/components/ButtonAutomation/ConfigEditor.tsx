@@ -1,8 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Settings, Eye, Code, Save } from 'lucide-react';
+import { Plus, Trash2, Settings, Eye, Code, Save, Terminal, RefreshCw } from 'lucide-react';
 import { ButtonConfig, ActionConfig, ACTION_TYPE_CONFIGS } from '../../types/buttonAutomation';
 import { validateButtonConfig, createExampleConfig } from '../../utils/buttonAutomationPreview';
 import ButtonPreview from './ButtonPreview';
+
+interface BotCommand {
+  name: string;
+  description: string;
+  type: 'slash' | 'prefix';
+  parameters?: {
+    name: string;
+    type: 'string' | 'number' | 'boolean' | 'user' | 'channel' | 'role';
+    description: string;
+    required: boolean;
+    choices?: { name: string; value: string }[];
+  }[];
+}
 
 interface ConfigEditorProps {
   config: Partial<ButtonConfig>;
@@ -27,11 +40,45 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'editor' | 'preview' | 'json'>('editor');
   const [jsonText, setJsonText] = useState('');
+  const [botCommands, setBotCommands] = useState<BotCommand[]>([]);
+  const [loadingCommands, setLoadingCommands] = useState(false);
+  const [commandsError, setCommandsError] = useState<string | null>(null);
 
   // JSON 텍스트 동기화
   useEffect(() => {
     setJsonText(JSON.stringify(config, null, 2));
   }, [config]);
+
+  // 봇 커맨드 로드
+  const loadBotCommands = async () => {
+    setLoadingCommands(true);
+    setCommandsError(null);
+    
+    try {
+      const response = await fetch('/api/v1/automations/bot-commands');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      if (data.success) {
+        setBotCommands(data.commands);
+      } else {
+        throw new Error(data.error || '알 수 없는 오류가 발생했습니다');
+      }
+    } catch (error) {
+      console.error('봇 커맨드 로드 실패:', error);
+      setCommandsError(error instanceof Error ? error.message : '커맨드를 불러올 수 없습니다');
+      setBotCommands([]);
+    } finally {
+      setLoadingCommands(false);
+    }
+  };
+
+  // 컴포넌트 마운트 시 봇 커맨드 로드
+  useEffect(() => {
+    loadBotCommands();
+  }, []);
 
   // 기본 설정 로드
   const loadExample = () => {
@@ -106,6 +153,137 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
       ...config,
       ui: { ...config.ui, ...updates }
     });
+  };
+
+  // 선택된 봇 커맨드 정보 가져오기
+  const getSelectedCommand = (commandName: string): BotCommand | null => {
+    return botCommands.find(cmd => cmd.name === commandName) || null;
+  };
+
+  // 봇 커맨드 파라미터 렌더링
+  const renderBotCommandParameters = (action: ActionConfig, actionIndex: number) => {
+    const selectedCommandName = action.parameters?.commandName;
+    if (!selectedCommandName) return null;
+
+    const selectedCommand = getSelectedCommand(selectedCommandName);
+    if (!selectedCommand?.parameters) return null;
+
+    return (
+      <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+        <div className="flex items-center gap-2 mb-3">
+          <Terminal className="w-4 h-4 text-blue-600" />
+          <span className="text-sm font-medium text-blue-800">
+            커맨드 파라미터: {selectedCommand.name}
+          </span>
+        </div>
+        <div className="space-y-3">
+          {selectedCommand.parameters.map((param) => (
+            <div key={param.name}>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {param.name}
+                {param.required && <span className="text-red-500 ml-1">*</span>}
+                <span className="text-xs text-gray-500 ml-2">({param.type})</span>
+              </label>
+              <p className="text-xs text-gray-600 mb-2">{param.description}</p>
+              
+              {param.choices ? (
+                <select
+                  value={action.parameters?.[param.name] || ''}
+                  onChange={(e) => updateAction(actionIndex, {
+                    parameters: { ...action.parameters, [param.name]: e.target.value }
+                  })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="">선택해주세요</option>
+                  {param.choices.map((choice) => (
+                    <option key={choice.value} value={choice.value}>
+                      {choice.name}
+                    </option>
+                  ))}
+                </select>
+              ) : param.type === 'boolean' ? (
+                <select
+                  value={action.parameters?.[param.name] || ''}
+                  onChange={(e) => updateAction(actionIndex, {
+                    parameters: { ...action.parameters, [param.name]: e.target.value }
+                  })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="">선택해주세요</option>
+                  <option value="true">참 (True)</option>
+                  <option value="false">거짓 (False)</option>
+                </select>
+              ) : param.type === 'number' ? (
+                <input
+                  type="number"
+                  value={action.parameters?.[param.name] || ''}
+                  onChange={(e) => updateAction(actionIndex, {
+                    parameters: { ...action.parameters, [param.name]: e.target.value }
+                  })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  placeholder={`숫자를 입력하세요`}
+                />
+              ) : param.type === 'user' ? (
+                <select
+                  value={action.parameters?.[param.name] || ''}
+                  onChange={(e) => updateAction(actionIndex, {
+                    parameters: { ...action.parameters, [param.name]: e.target.value }
+                  })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="">사용자를 선택하세요</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.username}
+                    </option>
+                  ))}
+                </select>
+              ) : param.type === 'channel' ? (
+                <select
+                  value={action.parameters?.[param.name] || ''}
+                  onChange={(e) => updateAction(actionIndex, {
+                    parameters: { ...action.parameters, [param.name]: e.target.value }
+                  })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="">채널을 선택하세요</option>
+                  {channels.map((channel) => (
+                    <option key={channel.id} value={channel.id}>
+                      {channel.name}
+                    </option>
+                  ))}
+                </select>
+              ) : param.type === 'role' ? (
+                <select
+                  value={action.parameters?.[param.name] || ''}
+                  onChange={(e) => updateAction(actionIndex, {
+                    parameters: { ...action.parameters, [param.name]: e.target.value }
+                  })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="">역할을 선택하세요</option>
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={action.parameters?.[param.name] || ''}
+                  onChange={(e) => updateAction(actionIndex, {
+                    parameters: { ...action.parameters, [param.name]: e.target.value }
+                  })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  placeholder="텍스트를 입력하세요"
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   const validation = validateButtonConfig(config);
@@ -283,52 +461,150 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
                     </div>
 
                     {/* 액션별 파라미터 */}
-                    {ACTION_TYPE_CONFIGS[action.type]?.parameters.map((param) => (
-                      <div key={param.name} className="mt-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          {param.label}
-                          {param.required && <span className="text-red-500 ml-1">*</span>}
-                        </label>
-                        {param.type === 'select' ? (
-                          <select
-                            value={action.parameters?.[param.name] || ''}
-                            onChange={(e) => updateAction(index, {
-                              parameters: { ...action.parameters, [param.name]: e.target.value }
-                            })}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2"
-                          >
-                            <option value="">{param.placeholder}</option>
-                            {(param.name.includes('role') ? roles : 
-                              param.name.includes('channel') ? channels : 
-                              param.options || []).map((item) => (
-                              <option key={item.id || item.value} value={item.id || item.value}>
-                                {item.name || item.username || item.label}
-                              </option>
-                            ))}
-                          </select>
-                        ) : param.type === 'number' ? (
+                    {action.type === 'execute_bot_command' ? (
+                      <>
+                        {/* 봇 커맨드 선택 */}
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            실행할 커맨드
+                            <span className="text-red-500 ml-1">*</span>
+                          </label>
+                          <div className="flex gap-2">
+                            <select
+                              value={action.parameters?.commandName || ''}
+                              onChange={(e) => {
+                                // 커맨드 변경 시 기존 커맨드별 파라미터 초기화
+                                const baseParams = {
+                                  commandName: e.target.value,
+                                  timeout: action.parameters?.timeout || 30,
+                                  silent: action.parameters?.silent || false
+                                };
+                                updateAction(index, { parameters: baseParams });
+                              }}
+                              className="flex-1 border border-gray-300 rounded-md px-3 py-2"
+                              disabled={loadingCommands}
+                            >
+                              <option value="">커맨드를 선택하세요</option>
+                              {botCommands.map((command) => (
+                                <option key={command.name} value={command.name}>
+                                  /{command.name} - {command.description}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={loadBotCommands}
+                              disabled={loadingCommands}
+                              className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 disabled:opacity-50"
+                              title="커맨드 목록 새로고침"
+                            >
+                              <RefreshCw className={`w-4 h-4 ${loadingCommands ? 'animate-spin' : ''}`} />
+                            </button>
+                          </div>
+                          {loadingCommands && (
+                            <p className="text-sm text-gray-500 mt-1">커맨드 목록을 불러오는 중...</p>
+                          )}
+                          {commandsError && (
+                            <p className="text-sm text-red-600 mt-1">❌ {commandsError}</p>
+                          )}
+                        </div>
+
+                        {/* 기본 봇 커맨드 파라미터 (timeout, silent) */}
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            실행 타임아웃 (초)
+                          </label>
                           <input
                             type="number"
-                            value={action.parameters?.[param.name] || ''}
+                            min="1"
+                            max="300"
+                            value={action.parameters?.timeout || 30}
                             onChange={(e) => updateAction(index, {
-                              parameters: { ...action.parameters, [param.name]: parseInt(e.target.value) || 0 }
+                              parameters: { ...action.parameters, timeout: parseInt(e.target.value) || 30 }
                             })}
-                            placeholder={param.placeholder}
+                            placeholder="30"
                             className="w-full border border-gray-300 rounded-md px-3 py-2"
                           />
-                        ) : (
-                          <input
-                            type="text"
-                            value={action.parameters?.[param.name] || ''}
-                            onChange={(e) => updateAction(index, {
-                              parameters: { ...action.parameters, [param.name]: e.target.value }
-                            })}
-                            placeholder={param.placeholder}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2"
-                          />
-                        )}
-                      </div>
-                    ))}
+                        </div>
+
+                        <div className="mt-4">
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={action.parameters?.silent || false}
+                              onChange={(e) => updateAction(index, {
+                                parameters: { ...action.parameters, silent: e.target.checked }
+                              })}
+                              className="rounded"
+                            />
+                            <span className="text-sm text-gray-700">조용히 실행 (실패해도 오류 표시 안함)</span>
+                          </label>
+                        </div>
+
+                        {/* 동적 커맨드 파라미터 */}
+                        {renderBotCommandParameters(action, index)}
+                      </>
+                    ) : (
+                      /* 기존 액션 타입들 */
+                      ACTION_TYPE_CONFIGS[action.type]?.parameters.map((param) => (
+                        <div key={param.name} className="mt-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            {param.label}
+                            {param.required && <span className="text-red-500 ml-1">*</span>}
+                          </label>
+                          {param.type === 'select' ? (
+                            <select
+                              value={action.parameters?.[param.name] || ''}
+                              onChange={(e) => updateAction(index, {
+                                parameters: { ...action.parameters, [param.name]: e.target.value }
+                              })}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2"
+                            >
+                              <option value="">{param.placeholder}</option>
+                              {(param.name.includes('role') ? roles : 
+                                param.name.includes('channel') ? channels : 
+                                param.options || []).map((item) => (
+                                <option key={item.id || item.value} value={item.id || item.value}>
+                                  {item.name || item.username || item.label}
+                                </option>
+                              ))}
+                            </select>
+                          ) : param.type === 'number' ? (
+                            <input
+                              type="number"
+                              value={action.parameters?.[param.name] || ''}
+                              onChange={(e) => updateAction(index, {
+                                parameters: { ...action.parameters, [param.name]: parseInt(e.target.value) || 0 }
+                              })}
+                              placeholder={param.placeholder}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2"
+                            />
+                          ) : param.type === 'boolean' ? (
+                            <label className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={action.parameters?.[param.name] || false}
+                                onChange={(e) => updateAction(index, {
+                                  parameters: { ...action.parameters, [param.name]: e.target.checked }
+                                })}
+                                className="rounded"
+                              />
+                              <span className="text-sm text-gray-700">{param.placeholder}</span>
+                            </label>
+                          ) : (
+                            <input
+                              type="text"
+                              value={action.parameters?.[param.name] || ''}
+                              onChange={(e) => updateAction(index, {
+                                parameters: { ...action.parameters, [param.name]: e.target.value }
+                              })}
+                              placeholder={param.placeholder}
+                              className="w-full border border-gray-300 rounded-md px-3 py-2"
+                            />
+                          )}
+                        </div>
+                      ))
+                    )}
 
                     {/* 지연 시간 설정 */}
                     <div className="mt-4">
