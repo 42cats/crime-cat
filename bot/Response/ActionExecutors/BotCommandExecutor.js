@@ -13,7 +13,7 @@ class BotCommandExecutor extends BaseActionExecutor {
     }
 
     async performAction(action, context) {
-        const { commandName, parameters = {}, delay = 0, silent = false, channelId } = action.parameters;
+        const { commandName, parameters = {}, delay = 0, silent = false, channelId, originalUserId } = action.parameters;
         
         console.log(`🤖 [BotCommand] 실행 시작: ${commandName}`, parameters);
         
@@ -40,8 +40,8 @@ class BotCommandExecutor extends BaseActionExecutor {
             }
 
             // 3. 가상 인터랙션 생성 (채널 지정 지원)
-            const virtualInteraction = this.createVirtualInteraction(
-                context, commandName, parameters, channelId
+            const virtualInteraction = await this.createVirtualInteraction(
+                context, commandName, parameters, channelId, originalUserId
             );
 
             // 4. 커맨드 실행 (타임아웃 제거)
@@ -109,7 +109,7 @@ class BotCommandExecutor extends BaseActionExecutor {
     /**
      * 가상 Discord 인터랙션 생성
      */
-    createVirtualInteraction(context, commandName, parameters, targetChannelId) {
+    async createVirtualInteraction(context, commandName, parameters, targetChannelId, originalUserId) {
         const { interaction, user, member, guild, channel } = context;
         
         // 지정된 채널이 있으면 해당 채널 사용, 없으면 기본 채널 사용
@@ -131,10 +131,30 @@ class BotCommandExecutor extends BaseActionExecutor {
         let hasDeferred = false;
         const responses = [];
         
+        // 원래 사용자 정보가 제공된 경우 해당 사용자로 설정
+        let virtualUser = user;
+        let virtualMember = member;
+        
+        // 커스텀투표의 경우 DM을 받을 사용자를 별도로 추적
+        if (commandName === '커스텀투표') {
+            // 버튼을 누른 사용자를 creatorUser로 설정하여 결과 DM을 받도록 함
+            console.log(`📩 [BotCommand] 커스텀투표 DM 수신자 설정: ${user.username} (${user.id})`);
+            console.log(`🏰 [BotCommand] 실제 Guild 정보: ${guild.name} (${guild.id})`);
+            console.log(`📺 [BotCommand] 실제 Channel 정보: ${executionChannel.name} (${executionChannel.id})`);
+        } else if (originalUserId && originalUserId !== user.id) {
+            try {
+                virtualMember = await guild.members.fetch(originalUserId);
+                virtualUser = virtualMember.user;
+                console.log(`👤 [BotCommand] 원래 사용자로 변경: ${virtualUser.username} (${originalUserId})`);
+            } catch (error) {
+                console.warn(`⚠️ [BotCommand] 원래 사용자 조회 실패 (${originalUserId}):`, error.message);
+            }
+        }
+
         const virtualInteraction = {
-            // 기본 Discord 객체들
-            user,
-            member,
+            // 기본 Discord 객체들 (원래 사용자 정보 사용)
+            user: virtualUser,
+            member: virtualMember,
             guild,
             channel: executionChannel, // 지정된 채널 또는 기본 채널
             client: interaction.client,
@@ -147,6 +167,10 @@ class BotCommandExecutor extends BaseActionExecutor {
             version: interaction.version,
             locale: interaction.locale || 'ko',
             guildLocale: interaction.guildLocale || 'ko',
+            
+            // Discord 표준 속성 (현재 실제 서버 정보 사용)
+            guildId: guild.id,
+            channelId: executionChannel.id,
             
             // 상태 추적
             get replied() { return hasReplied; },
