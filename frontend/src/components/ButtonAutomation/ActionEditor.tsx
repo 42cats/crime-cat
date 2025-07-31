@@ -22,7 +22,7 @@ import {
     CopyOutlined,
 } from "@ant-design/icons";
 import { RefreshCw } from "lucide-react";
-import { ActionConfig, ActionType, ACTION_TYPE_CONFIGS } from "../../types/buttonAutomation";
+import { ActionConfig, ActionType, ACTION_TYPE_CONFIGS, BotCommand } from "../../types/buttonAutomation";
 import {
     DISCORD_LIMITS,
     validateActionCount,
@@ -75,19 +75,6 @@ const getActionIcon = (iconName: string) => {
   return <span>{iconMap[iconName] || iconName}</span>;
 };
 
-// 봇 커맨드 인터페이스
-interface BotCommand {
-  name: string;
-  description: string;
-  type: 'slash' | 'prefix';
-  parameters?: {
-    name: string;
-    type: 'string' | 'number' | 'boolean' | 'user' | 'channel' | 'role';
-    description: string;
-    required: boolean;
-    choices?: { name: string; value: string }[];
-  }[];
-}
 
 interface ActionEditorProps {
     actions: ActionConfig[];
