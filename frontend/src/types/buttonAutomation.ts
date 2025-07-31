@@ -561,6 +561,47 @@ export const ACTION_TYPE_CONFIGS: Record<ActionType, ActionTypeConfig> = {
       // 커맨드별 동적 파라미터는 선택 후 추가됨
     ],
     requiredPermissions: ['MANAGE_GUILD']
+  },
+  button_setting: {
+    label: '버튼 설정',
+    icon: 'Settings',
+    description: '액션 실행 후 버튼의 스타일, 라벨, 활성화 상태를 변경합니다',
+    parameters: [
+      {
+        name: 'buttonStyle',
+        type: 'select',
+        label: '버튼 스타일',
+        required: false,
+        options: [
+          { label: '파란색 (Primary)', value: 'primary' },
+          { label: '회색 (Secondary)', value: 'secondary' },
+          { label: '초록색 (Success)', value: 'success' },
+          { label: '빨간색 (Danger)', value: 'danger' }
+        ],
+        placeholder: '버튼 스타일을 선택하세요'
+      },
+      {
+        name: 'buttonLabel',
+        type: 'string',
+        label: '새 버튼 라벨',
+        required: false,
+        placeholder: '버튼에 표시될 새 텍스트'
+      },
+      {
+        name: 'buttonDisabled',
+        type: 'boolean',
+        label: '버튼 비활성화',
+        required: false
+      },
+      {
+        name: 'buttonEmoji',
+        type: 'string', 
+        label: '버튼 이모지',
+        required: false,
+        placeholder: '🎯'
+      }
+    ],
+    requiredPermissions: []
   }
 };
 
