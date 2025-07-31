@@ -6,7 +6,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 const nameOfCommand = "해제";
 const description = '채널 권한이나 역할을 유저 또는 역할로부터 제거함';
 
-module.exports={
+module.exports = {
 	data: new SlashCommandBuilder()
 		.setName(nameOfCommand)
 		.setDescription(description)
@@ -33,7 +33,8 @@ module.exports={
 	},
 
 	upload: true,
-	permissionLevel: PermissionFlagsBits.Administrator
+	permissionLevel: PermissionFlagsBits.Administrator,
+	isCacheCommand: true,
 };
 
 async function processRevoke(interaction, guild, inputString) {
