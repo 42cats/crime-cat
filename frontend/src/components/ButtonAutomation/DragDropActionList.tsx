@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Card, Typography, message } from 'antd';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { DragOutlined } from '@ant-design/icons';
-import { ActionConfig } from '../../types/buttonAutomation';
-import { ACTION_TYPES } from '../../constants/actionTypes';
+import { ActionConfig, ACTION_TYPE_CONFIGS } from '../../types/buttonAutomation';
 
 const { Text } = Typography;
 
@@ -70,7 +69,7 @@ export const DragDropActionList: React.FC<DragDropActionListProps> = ({
                 index={index}
               >
                 {(provided, snapshot) => {
-                  const actionType = ACTION_TYPES[action.type as keyof typeof ACTION_TYPES];
+                  const actionType = ACTION_TYPE_CONFIGS[action.type as keyof typeof ACTION_TYPE_CONFIGS];
                   
                   return (
                     <div

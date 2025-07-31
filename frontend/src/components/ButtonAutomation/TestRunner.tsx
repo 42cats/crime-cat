@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Button, Space, Typography, Steps, Alert, Spin, Timeline, Tag, Modal, message } from 'antd';
 import { PlayCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, InfoCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
-import { ButtonAutomation, ActionConfig } from '../../types/buttonAutomation';
-import { ACTION_TYPES } from '../../constants/actionTypes';
+import { ButtonAutomation, ActionConfig, ACTION_TYPE_CONFIGS } from '../../types/buttonAutomation';
 import { buttonAutomationApi } from '../../lib/api/buttonAutomation';
 
 const { Title, Text } = Typography;
@@ -225,7 +224,7 @@ export const TestRunner: React.FC<TestRunnerProps> = ({
   // 액션 테스트
   const testAction = async (action: ActionConfig, index: number): Promise<TestResult> => {
     const startTime = Date.now();
-    const actionType = ACTION_TYPES[action.type as keyof typeof ACTION_TYPES];
+    const actionType = ACTION_TYPE_CONFIGS[action.type as keyof typeof ACTION_TYPE_CONFIGS];
     
     // 액션 타입별 시뮬레이션 지연 시간
     const simulationTime = Math.random() * 800 + 200;
@@ -307,7 +306,7 @@ export const TestRunner: React.FC<TestRunnerProps> = ({
 
   // 액션 파라미터 검증
   const validateActionParameters = (action: ActionConfig): { isValid: boolean; error?: string } => {
-    const actionType = ACTION_TYPES[action.type as keyof typeof ACTION_TYPES];
+    const actionType = ACTION_TYPE_CONFIGS[action.type as keyof typeof ACTION_TYPE_CONFIGS];
     
     if (!actionType) {
       return { isValid: false, error: '알 수 없는 액션 타입입니다.' };
@@ -627,7 +626,7 @@ export const TestRunner: React.FC<TestRunnerProps> = ({
             >
               <Step title="조건 검증" description="실행 조건 확인" />
               {config.actions?.map((action: ActionConfig, index: number) => {
-                const actionType = ACTION_TYPES[action.type as keyof typeof ACTION_TYPES];
+                const actionType = ACTION_TYPE_CONFIGS[action.type as keyof typeof ACTION_TYPE_CONFIGS];
                 const category = getActionCategory(action.type);
                 return (
                   <Step 

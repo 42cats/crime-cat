@@ -156,12 +156,35 @@ export const ACTION_TYPES = {
   },
   
   // 기타
+  timeout_user: {
+    label: '사용자 타임아웃',
+    icon: '⏰',
+    description: '사용자에게 타임아웃을 적용합니다',
+    parameters: ['duration', 'reason'],
+    requiredPermissions: ['MODERATE_MEMBERS']
+  },
   remove_timeout: {
     label: '타임아웃 해제',
     icon: '⏰',
     description: '사용자의 타임아웃을 해제합니다',
     parameters: [],
     requiredPermissions: ['MODERATE_MEMBERS']
+  },
+  set_slowmode: {
+    label: '슬로우모드 설정',
+    icon: '⏱️',
+    description: '채널에 슬로우모드를 설정합니다',
+    parameters: ['channelId', 'seconds'],
+    requiredPermissions: ['MANAGE_CHANNELS']
+  },
+  
+  // 봇 커맨드 실행
+  execute_bot_command: {
+    label: '봇 커맨드 실행',
+    icon: '🤖',
+    description: '기존 디스코드 봇 명령어를 버튼으로 실행합니다',
+    parameters: ['commandName', 'timeout', 'silent'],
+    requiredPermissions: ['MANAGE_GUILD']
   },
   
   // 음악 관리

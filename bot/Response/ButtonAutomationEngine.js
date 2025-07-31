@@ -80,6 +80,10 @@ class ButtonAutomationEngine {
             const { ButtonSettingExecutor } = require('./ActionExecutors/ButtonSettingExecutor');
             this.executors.set('button_setting', new ButtonSettingExecutor('button_setting'));
 
+            // 봇 커맨드 실행 액션 (1개) - 🆕 새로 추가
+            const { BotCommandExecutor } = require('./ActionExecutors/BotCommandExecutor');
+            this.executors.set('execute_bot_command', new BotCommandExecutor());
+
             console.log(`액션 실행기 ${this.executors.size}개 등록 완료`);
         } catch (error) {
             console.error('액션 실행기 등록 실패:', error);
@@ -114,7 +118,8 @@ class ButtonAutomationEngine {
             'set_channel_permission', 'remove_channel_permission',
             'override_channel_permission', 'reset_channel_permission',
             'remove_timeout',
-            'play_music', 'stop_music', 'pause_music'
+            'play_music', 'stop_music', 'pause_music',
+            'execute_bot_command' // 🆕 새로 추가
         ];
 
         fallbackTypes.forEach(type => {
