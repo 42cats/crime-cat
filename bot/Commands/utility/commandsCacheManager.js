@@ -283,40 +283,62 @@ class CommandsCacheManager {
                     if (option.options && Array.isArray(option.options) && option.options.length > 0) {
                         console.log(`📂 [CommandsCache] 서브커맨드 "${option.name}" 내부 옵션 수: ${option.options.length}`);
                         
-                        // 🚨 디버깅: 서브커맨드 내부 옵션들도 출력
-                        console.log(`🔍 [DEBUG] 서브커맨드 "${option.name}" 내부 옵션들:`, 
-                            option.options.map(opt => ({ name: opt.name, type: opt.type, description: opt.description }))
-                        );
+                        // 서브커맨드 내부 파라미터들을 직접 파싱 (재귀 호출 없이)
+                        const subParameters = [];
+                        for (const subOption of option.options) {
+                            try {
+                                // 서브커맨드 내부 옵션도 타입 보정 적용
+                                let subActualType = subOption.type;
+                                try {
+                                    if (typeof subOption === 'object' && subOption !== null) {
+                                        const subRawOptionStr = JSON.stringify(subOption);
+                                        const subRawData = JSON.parse(subRawOptionStr);
+                                        if (subRawData.type !== undefined) {
+                                            subActualType = subRawData.type;
+                                        }
+                                    }
+                                } catch (subParseError) {
+                                    console.warn(`⚠️ [CommandsCache] 서브옵션 JSON 파싱 실패: ${subOption.name}`);
+                                }
+
+                                const subParameter = {
+                                    name: subOption.name,
+                                    type: this.mapDiscordTypeToString(subActualType),
+                                    description: subOption.description || '설명 없음',
+                                    required: subOption.required || false,
+                                    choices: subOption.choices?.map(c => ({
+                                        name: c.name,
+                                        value: c.value.toString()
+                                    })) || null
+                                };
+                                
+                                subParameters.push(subParameter);
+                                console.log(`📝 [DEBUG] 서브커맨드 "${option.name}" 파라미터: ${subParameter.name} (${subParameter.type})`);
+                            } catch (subError) {
+                                console.warn(`⚠️ [CommandsCache] 서브커맨드 파라미터 파싱 실패: ${subOption.name}`, subError.message);
+                            }
+                        }
                         
-                        // 서브커맨드별 네임스페이스 생성
-                        const subPath = parentPath ? `${parentPath}.${option.name}` : option.name;
-                        const subResult = this.parseParameters(option.options, subPath);
-                        
-                        // 서브커맨드별 파라미터 저장
+                        // 서브커맨드별 완전히 분리된 구조로 저장
                         subcommands[option.name] = {
                             name: option.name,
                             description: option.description || '설명 없음',
-                            parameters: subResult.flat
+                            parameters: subParameters // 독립적인 파라미터 배열
                         };
                         
-                        // flat 구조에 네임스페이스된 파라미터 추가 (하위 호환성)
-                        subResult.flat.forEach(param => {
-                            const namespacedParam = {
-                                ...param,
-                                subcommand: option.name,
-                                subcommandPath: subPath,
-                                fullName: `${option.name}.${param.name}`, // 네임스페이스된 이름
-                                originalName: param.name // 원래 이름 보존
-                            };
-                            allParameters.push(namespacedParam);
-                        });
+                        console.log(`✅ [CommandsCache] 서브커맨드 "${option.name}" 완전 분리 완료: ${subParameters.length}개 파라미터`);
                         
-                        // 중첩된 서브커맨드들도 병합
-                        Object.assign(subcommands, subResult.subcommands);
+                        // ⚠️ flat 구조에는 더 이상 서브커맨드 파라미터를 추가하지 않음
+                        // 완전한 분리를 위해 flat 구조는 최상위 파라미터만 포함
                         
-                        console.log(`✅ [CommandsCache] 서브커맨드 "${option.name}"에서 ${subResult.flat.length}개 파라미터 추출`);
                     } else {
                         console.log(`⚠️ [DEBUG] 서브커맨드 "${option.name}"에 내부 옵션이 없음`);
+                        // 빈 서브커맨드도 구조에 포함
+                        subcommands[option.name] = {
+                            name: option.name,
+                            description: option.description || '설명 없음',
+                            parameters: []
+                        };
                     }
                 } else {
                     // 일반 파라미터 처리

@@ -308,6 +308,17 @@ public class ButtonAutomationController {
         private String description;
         private String type; // 'slash' or 'prefix'
         private String category; // 커맨드 카테고리 (예: 'utility', 'moderation')
+        private List<BotCommandParameterDto> parameters; // 하위 호환성을 위한 flat 구조
+        private java.util.Map<String, BotCommandSubcommandDto> subcommands; // 새로운 서브커맨드 구조
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class BotCommandSubcommandDto {
+        private String name;
+        private String description;
         private List<BotCommandParameterDto> parameters;
     }
 

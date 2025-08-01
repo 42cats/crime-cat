@@ -76,7 +76,9 @@ public class CacheManagementController {
                     "sampleCommand", springCacheData.isEmpty() ? null : 
                         Map.of(
                             "name", springCacheData.get(0).getName(),
-                            "parameterCount", springCacheData.get(0).getParameters().size()
+                            "parameterCount", springCacheData.get(0).getParameters().size(),
+                            "subcommandCount", springCacheData.get(0).getSubcommands() != null ? 
+                                springCacheData.get(0).getSubcommands().size() : 0
                         )
                 ),
                 "timestamp", System.currentTimeMillis()
