@@ -28,18 +28,23 @@ public class BotCacheListenerConfig {
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory connectionFactory) {
         try {
+            log.info("🔧 [BotCacheListener] Redis 메시지 리스너 컨테이너 초기화 시작");
+            
             RedisMessageListenerContainer container = new RedisMessageListenerContainer();
             container.setConnectionFactory(connectionFactory);
 
-            // 봇 캐시 Pub/Sub 이벤트 리스너 등록
-            MessageListenerAdapter pubSubListener = new MessageListenerAdapter(botCachePubSubListener, "handleBotCacheEvent");
-            container.addMessageListener(pubSubListener, new PatternTopic("bot:cache:events"));
+            // 봇 캐시 Pub/Sub 이벤트 리스너 등록 - MessageListener 직접 사용
+            container.addMessageListener(botCachePubSubListener, new PatternTopic("bot:cache:events"));
 
-            log.info("✅ 봇 캐시 Redis 메시지 리스너 Bean 등록 완료");
+            // 컨테이너 시작 후 리스너 등록 상태 로그
+            log.info("📢 [BotCacheListener] Pub/Sub 채널 'bot:cache:events' 구독 설정 완료");
+            log.info("🎯 [BotCacheListener] 리스너 메서드: handleBotCacheEvent");
+            log.info("✅ [BotCacheListener] 봇 캐시 Redis 메시지 리스너 Bean 등록 완료");
+            
             return container;
 
         } catch (Exception e) {
-            log.error("❌ 봇 캐시 Redis 메시지 리스너 Bean 등록 실패", e);
+            log.error("❌ [BotCacheListener] 봇 캐시 Redis 메시지 리스너 Bean 등록 실패", e);
             throw e;
         }
     }

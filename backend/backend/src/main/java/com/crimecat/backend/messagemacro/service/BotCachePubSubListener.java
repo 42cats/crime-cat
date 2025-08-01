@@ -3,6 +3,8 @@ package com.crimecat.backend.messagemacro.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.connection.Message;
+import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -14,10 +16,30 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class BotCachePubSubListener {
+public class BotCachePubSubListener implements MessageListener {
 
     private final ButtonAutomationService buttonAutomationService;
     private final ObjectMapper objectMapper;
+
+    /**
+     * Redis MessageListener 인터페이스 구현
+     * @param message Redis 메시지
+     * @param pattern 패턴 (사용되지 않음)
+     */
+    @Override
+    public void onMessage(Message message, byte[] pattern) {
+        try {
+            String channel = new String(message.getChannel());
+            String messageBody = new String(message.getBody());
+            
+            log.debug("📨 [BotCachePubSub] 메시지 수신 - 채널: {}, 메시지: {}", channel, messageBody);
+            
+            handleBotCacheEvent(messageBody, channel);
+            
+        } catch (Exception e) {
+            log.error("❌ [BotCachePubSub] Redis 메시지 처리 실패", e);
+        }
+    }
 
     /**
      * 봇 캐시 이벤트 처리
