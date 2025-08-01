@@ -41,7 +41,8 @@ module.exports = {
 	},
 
 	upload: true,
-	permissionLevel: -1
+	permissionLevel: -1,
+	isCacheCommand: false,
 };
 
 async function getCoupons(value, count, duration = 28) {

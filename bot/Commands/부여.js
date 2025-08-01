@@ -37,7 +37,7 @@ module.exports = {
 
 	upload: true,
 	permissionLevel: PermissionFlagsBits.Administrator,
-	isCacheCommand: true,
+	isCacheCommand: false,
 };
 
 async function processGrant(interaction, guild, inputString) {

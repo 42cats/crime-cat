@@ -84,6 +84,7 @@ module.exports = {
 
 	upload: true,
 	permissionLevel: PermissionFlagsBits.Administrator,
+	isCacheCommand: false,
 };
 
 /**
