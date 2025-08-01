@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { Check, ChevronsUpDown, Hash, Users, X, Volume2, UserCheck } from "lucide-react";
+import {
+    Check,
+    ChevronsUpDown,
+    Hash,
+    Users,
+    X,
+    Volume2,
+    UserCheck,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,13 +32,13 @@ import { useChannels } from "@/hooks/useChannels";
 // 특수 채널 옵션
 const SPECIAL_CHANNELS = [
     {
-        id: 'ROLE_CHANNEL',
-        name: '역할별 채널 (자동 생성)',
-        typeKey: 'special',
-        emoji: '🎭',
-        displayName: '역할별 채널 (자동 생성)',
-        description: '사용자의 역할에 따라 자동으로 채널을 생성하여 전송'
-    }
+        id: "ROLE_CHANNEL",
+        name: "역할별 채널 (자동 생성)",
+        typeKey: "special",
+        emoji: "🎭",
+        displayName: "역할별 채널 (자동 생성)",
+        description: "사용자의 역할에 따라 자동으로 채널을 생성하여 전송",
+    },
 ];
 
 interface MultiChannelSelectProps {
@@ -41,6 +49,7 @@ interface MultiChannelSelectProps {
     disabled?: boolean;
     className?: string;
     channelTypes?: string[]; // 필터링할 채널 타입
+    excludeSpecialChannels?: string[]; // 제외할 특수 채널 ID 목록
 }
 
 export function MultiChannelSelect({
@@ -51,6 +60,7 @@ export function MultiChannelSelect({
     disabled,
     className,
     channelTypes,
+    excludeSpecialChannels = [],
 }: MultiChannelSelectProps) {
     const { channels, isLoading } = useChannels();
     const [open, setOpen] = useState(false);
@@ -71,27 +81,34 @@ export function MultiChannelSelect({
         // 일반 채널 필터링
         let filtered = channels;
         if (channelTypes && channelTypes.length > 0) {
-            filtered = channels.filter(channel => 
-                channelTypes.includes(channel.typeKey || 'text')
+            filtered = channels.filter((channel) =>
+                channelTypes.includes(channel.typeKey || "text")
             );
         }
-        
+
         // 특수 채널 추가 (메시지 전송용 채널 타입일 때만)
         let specialChannels: any[] = [];
-        if (!channelTypes || channelTypes.includes('text') || channelTypes.includes('announcement') || channelTypes.includes('category')) {
-            specialChannels = SPECIAL_CHANNELS;
+        if (
+            !channelTypes ||
+            channelTypes.includes("text") ||
+            channelTypes.includes("announcement") ||
+            channelTypes.includes("category")
+        ) {
+            specialChannels = SPECIAL_CHANNELS.filter(
+                (channel) => !excludeSpecialChannels.includes(channel.id)
+            );
         }
-        
+
         // 검색 필터링
         if (searchQuery) {
-            filtered = filtered.filter(channel => 
+            filtered = filtered.filter((channel) =>
                 matches(channel.name, searchQuery)
             );
-            specialChannels = specialChannels.filter(channel => 
+            specialChannels = specialChannels.filter((channel) =>
                 matches(channel.name, searchQuery)
             );
         }
-        
+
         // 특수 채널을 맨 앞에 배치
         return [...specialChannels, ...filtered];
     };
@@ -103,19 +120,21 @@ export function MultiChannelSelect({
         if (channel?.emoji) {
             return <span className="text-sm">{channel.emoji}</span>;
         }
-        
+
         const type = channel?.typeKey;
         switch (type) {
-            case 'special':
+            case "current":
+                return <UserCheck className="h-4 w-4 text-blue-500" />;
+            case "special":
                 return <UserCheck className="h-4 w-4 text-orange-500" />;
-            case 'voice':
-            case 'stage':
+            case "voice":
+            case "stage":
                 return <Volume2 className="h-4 w-4 text-green-500" />;
-            case 'category':
+            case "category":
                 return <Users className="h-4 w-4 text-gray-500" />;
-            case 'announcement':
+            case "announcement":
                 return <Hash className="h-4 w-4 text-yellow-500" />;
-            case 'forum':
+            case "forum":
                 return <Hash className="h-4 w-4 text-purple-500" />;
             default:
                 return <Hash className="h-4 w-4 text-blue-500" />;
@@ -124,14 +143,16 @@ export function MultiChannelSelect({
 
     // 선택된 채널 정보 가져오기 (특수 채널 포함)
     const allChannels = [...SPECIAL_CHANNELS, ...channels];
-    const selectedChannels = allChannels.filter(channel => value.includes(channel.id));
+    const selectedChannels = allChannels.filter((channel) =>
+        value.includes(channel.id)
+    );
 
     // 채널 선택/해제 토글
     const handleToggle = (channelId: string) => {
         const newValue = value.includes(channelId)
-            ? value.filter(id => id !== channelId)
+            ? value.filter((id) => id !== channelId)
             : [...value, channelId];
-        
+
         // 최대 선택 개수 제한
         if (newValue.length <= maxSelections) {
             onChange(newValue);
@@ -140,7 +161,7 @@ export function MultiChannelSelect({
 
     // 선택된 항목 제거
     const handleRemove = (channelId: string) => {
-        onChange(value.filter(id => id !== channelId));
+        onChange(value.filter((id) => id !== channelId));
     };
 
     return (
@@ -155,18 +176,21 @@ export function MultiChannelSelect({
                         disabled={disabled || isLoading}
                     >
                         <div className="flex items-center gap-2 min-w-0">
-                            {selectedChannels.length > 0 ? getChannelIcon(selectedChannels[0]) : <Hash className="h-4 w-4" />}
+                            {selectedChannels.length > 0 ? (
+                                getChannelIcon(selectedChannels[0])
+                            ) : (
+                                <Hash className="h-4 w-4" />
+                            )}
                             <span className="truncate">
-                                {value.length > 0 
+                                {value.length > 0
                                     ? `${value.length}개 채널 선택됨`
-                                    : placeholder
-                                }
+                                    : placeholder}
                             </span>
                         </div>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>
-                
+
                 <PopoverContent className="w-full p-0" align="start">
                     <Command>
                         <CommandInput
@@ -176,16 +200,20 @@ export function MultiChannelSelect({
                         />
                         <CommandList>
                             <CommandEmpty>
-                                {isLoading ? "채널 목록을 불러오는 중..." : "해당하는 채널이 없습니다."}
+                                {isLoading
+                                    ? "채널 목록을 불러오는 중..."
+                                    : "해당하는 채널이 없습니다."}
                             </CommandEmpty>
                             <CommandGroup>
                                 {filteredChannels.map((channel) => (
                                     <CommandItem
                                         key={channel.id}
-                                        onSelect={() => handleToggle(channel.id)}
+                                        onSelect={() =>
+                                            handleToggle(channel.id)
+                                        }
                                         className="cursor-pointer"
                                     >
-                                        <Checkbox 
+                                        <Checkbox
                                             checked={value.includes(channel.id)}
                                             className="mr-2"
                                         />
@@ -193,9 +221,13 @@ export function MultiChannelSelect({
                                             {getChannelIcon(channel)}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <div className="font-medium truncate">{channel.name}</div>
+                                            <div className="font-medium truncate">
+                                                {channel.name}
+                                            </div>
                                             <div className="text-xs text-muted-foreground">
-                                                {channel.displayName || channel.typeKey || '채널'}
+                                                {channel.displayName ||
+                                                    channel.typeKey ||
+                                                    "채널"}
                                             </div>
                                         </div>
                                     </CommandItem>
@@ -210,13 +242,19 @@ export function MultiChannelSelect({
             {value.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                     {selectedChannels.map((channel) => (
-                        <Badge key={channel.id} variant="secondary" className="flex items-center gap-1">
+                        <Badge
+                            key={channel.id}
+                            variant="secondary"
+                            className="flex items-center gap-1"
+                        >
                             <div className="text-muted-foreground">
                                 {getChannelIcon(channel)}
                             </div>
-                            <span className="truncate max-w-32">{channel.name}</span>
-                            <X 
-                                className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                            <span className="truncate max-w-32">
+                                {channel.name}
+                            </span>
+                            <X
+                                className="h-3 w-3 cursor-pointer hover:text-destructive"
                                 onClick={() => handleRemove(channel.id)}
                             />
                         </Badge>
@@ -234,9 +272,9 @@ export function MultiChannelSelect({
             {/* 채널 타입 필터 안내 */}
             {channelTypes && channelTypes.length > 0 && (
                 <div className="text-xs text-muted-foreground mt-1">
-                    {channelTypes.includes('text') && '텍스트 '}
-                    {channelTypes.includes('voice') && '음성 '}
-                    {channelTypes.includes('category') && '카테고리 '}
+                    {channelTypes.includes("text") && "텍스트 "}
+                    {channelTypes.includes("voice") && "음성 "}
+                    {channelTypes.includes("category") && "카테고리 "}
                     채널만 표시됩니다.
                 </div>
             )}

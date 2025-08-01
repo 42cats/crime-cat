@@ -159,43 +159,47 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
 
     // 봇 커맨드 액션의 파라미터 형식을 정규화하는 함수 (기존 데이터 마이그레이션용)
     const normalizeAction = (action: ActionConfig): ActionConfig => {
-        if (action.type !== 'execute_bot_command') {
+        if (action.type !== "execute_bot_command") {
             return action;
         }
-        
+
         // 기존 commandParam_ 접두사를 가진 파라미터들을 찾아서 변환
         const commandParams: Record<string, any> = {};
         const otherParams: Record<string, any> = {};
         let hasLegacyParams = false;
-        
+
         for (const [key, value] of Object.entries(action.parameters)) {
-            if (key.startsWith('commandParam_')) {
-                const actualParamName = key.replace('commandParam_', '');
+            if (key.startsWith("commandParam_")) {
+                const actualParamName = key.replace("commandParam_", "");
                 commandParams[actualParamName] = value;
                 hasLegacyParams = true;
-                console.log('🔄 레거시 파라미터 발견 및 변환:', { key, actualParamName, value });
+                console.log("🔄 레거시 파라미터 발견 및 변환:", {
+                    key,
+                    actualParamName,
+                    value,
+                });
             } else {
                 otherParams[key] = value;
             }
         }
-        
+
         // 이미 중첩된 parameters가 있다면 병합 (기존 새 형식 + 레거시 형식 혼재 대응)
         if (action.parameters.parameters) {
             Object.assign(commandParams, action.parameters.parameters);
         }
-        
+
         // commandParam_ 형식이 있었다면 변환하여 중첩된 구조로 저장
         if (hasLegacyParams || Object.keys(commandParams).length > 0) {
             otherParams.parameters = commandParams;
-            console.log('✅ 레거시 파라미터 마이그레이션 완료:', {
+            console.log("✅ 레거시 파라미터 마이그레이션 완료:", {
                 commandParams,
-                finalParams: otherParams
+                finalParams: otherParams,
             });
         }
-        
+
         return {
             ...action,
-            parameters: otherParams
+            parameters: otherParams,
         };
     };
 
@@ -207,12 +211,13 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
     // 액션이 변경될 때 봇 커맨드 액션들을 정규화
     useEffect(() => {
         const normalizedActions = actions.map(normalizeAction);
-        const hasChanges = JSON.stringify(normalizedActions) !== JSON.stringify(actions);
-        
+        const hasChanges =
+            JSON.stringify(normalizedActions) !== JSON.stringify(actions);
+
         if (hasChanges) {
-            console.log('🔄 기존 액션들을 정규화합니다:', {
+            console.log("🔄 기존 액션들을 정규화합니다:", {
                 before: actions,
-                after: normalizedActions
+                after: normalizedActions,
             });
             onChange(normalizedActions);
         }
@@ -275,45 +280,48 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
         value: any
     ) => {
         const newActions = [...actions];
-        
+
         // 봇 커맨드 파라미터인 경우 특별 처리
-        if (actions[index].type === 'execute_bot_command' && paramKey.startsWith('commandParam_')) {
-            const actualParamName = paramKey.replace('commandParam_', '');
-            
-            console.log('🎯 봇 커맨드 파라미터 업데이트:', {
+        if (
+            actions[index].type === "execute_bot_command" &&
+            paramKey.startsWith("commandParam_")
+        ) {
+            const actualParamName = paramKey.replace("commandParam_", "");
+
+            console.log("🎯 봇 커맨드 파라미터 업데이트:", {
                 actionIndex: index,
                 paramKey,
                 actualParamName,
                 value,
-                actionType: actions[index]?.type
+                actionType: actions[index]?.type,
             });
-            
+
             // 기존 중첩된 parameters 객체 가져오기 (없으면 빈 객체)
-            const existingParams = newActions[index].parameters.parameters || {};
-            
+            const existingParams =
+                newActions[index].parameters.parameters || {};
+
             // 새로운 parameters 객체 생성
             const updatedParams = {
                 ...existingParams,
-                [actualParamName]: value
+                [actualParamName]: value,
             };
-            
+
             // 전체 parameters 업데이트 (중첩된 구조로 바로 저장)
             newActions[index] = {
                 ...newActions[index],
                 parameters: {
                     ...newActions[index].parameters,
-                    parameters: updatedParams  // 중첩된 parameters 객체에 직접 저장
-                }
+                    parameters: updatedParams, // 중첩된 parameters 객체에 직접 저장
+                },
             };
-            
-            console.log('✅ 봇 커맨드 파라미터 직접 저장 완료:', {
+
+            console.log("✅ 봇 커맨드 파라미터 직접 저장 완료:", {
                 actionIndex: index,
                 actualParamName,
                 value,
                 finalNestedParams: updatedParams,
-                allParameters: newActions[index].parameters
+                allParameters: newActions[index].parameters,
             });
-            
         } else {
             // 일반 파라미터는 기존 방식으로 처리
             newActions[index] = {
@@ -324,7 +332,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                 },
             };
         }
-        
+
         onChange(newActions);
     };
 
@@ -667,10 +675,18 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                         style={{ marginBottom: 12 }}
                     >
                         <InputNumber
-                            value={action.parameters?.delay !== undefined ? action.parameters.delay : 0}
+                            value={
+                                action.parameters?.delay !== undefined
+                                    ? action.parameters.delay
+                                    : 0
+                            }
                             onChange={(value) => {
-                                console.log('⏱️ 지연 시간 값 변경:', value);
-                                updateActionParameter(index, "delay", value !== null ? value : 0);
+                                console.log("⏱️ 지연 시간 값 변경:", value);
+                                updateActionParameter(
+                                    index,
+                                    "delay",
+                                    value !== null ? value : 0
+                                );
                             }}
                             min={0}
                             max={60}
@@ -687,15 +703,22 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                         >
                             ⏱️ 커맨드 실행 전 대기 시간 (0=즉시 실행, 1-60초)
                         </Text>
-                        <div style={{
-                            marginTop: 4,
-                            padding: 6,
-                            backgroundColor: '#f0f8ff',
-                            borderRadius: 4,
-                            fontSize: 11
-                        }}>
+                        <div
+                            style={{
+                                marginTop: 4,
+                                padding: 6,
+                                backgroundColor: "#f0f8ff",
+                                borderRadius: 4,
+                                fontSize: 11,
+                            }}
+                        >
                             <Text type="secondary">
-                                ⏱️ <strong>현재 설정:</strong> {action.parameters?.delay !== undefined ? (action.parameters.delay === 0 ? '즉시 실행' : action.parameters.delay + '초 후 실행') : '0초(즉시 실행)'}
+                                ⏱️ <strong>현재 설정:</strong>{" "}
+                                {action.parameters?.delay !== undefined
+                                    ? action.parameters.delay === 0
+                                        ? "즉시 실행"
+                                        : action.parameters.delay + "초 후 실행"
+                                    : "0초(즉시 실행)"}
                             </Text>
                         </div>
                     </Form.Item>
@@ -704,18 +727,30 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     <Form.Item label="실행 채널" style={{ marginBottom: 12 }}>
                         <ChannelProvider guildId={guildId}>
                             <MultiChannelSelect
-                                value={action.parameters?.channelId ? [action.parameters.channelId] : []}
+                                value={
+                                    action.parameters?.channelId
+                                        ? [action.parameters.channelId]
+                                        : []
+                                }
                                 onChange={(channels) => {
-                                    updateActionParameter(index, "channelId", channels[0] || "");
-                                    console.log('📍 봇 커맨드 실행 채널 변경:', {
-                                        actionIndex: index,
-                                        selectedChannelId: channels[0],
-                                        allChannels: channels
-                                    });
+                                    updateActionParameter(
+                                        index,
+                                        "channelId",
+                                        channels[0] || ""
+                                    );
+                                    console.log(
+                                        "📍 봇 커맨드 실행 채널 변경:",
+                                        {
+                                            actionIndex: index,
+                                            selectedChannelId: channels[0],
+                                            allChannels: channels,
+                                        }
+                                    );
                                 }}
-                                placeholder="커맨드를 실행할 채널을 선택하세요 (선택하지 않으면 현재 채널에서 실행)"
+                                placeholder="커맨드를 실행할 채널을 선택하세요"
                                 maxSelections={1}
-                                channelTypes={['text', 'announcement']} // 텍스트 채널만
+                                channelTypes={["text", "announcement"]} // 텍스트 채널만
+                                excludeSpecialChannels={["ROLE_CHANNEL"]} // 봇 커맨드에서는 역할별 채널 숨김
                             />
                         </ChannelProvider>
                         <Text
@@ -726,9 +761,10 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                 display: "block",
                             }}
                         >
-                            {action.parameters?.channelId
+                            {action.parameters?.channelId &&
+                            action.parameters.channelId !== "CURRENT_CHANNEL"
                                 ? "💬 지정된 채널에서 커맨드가 실행됩니다"
-                                : "📍 채널을 선택하지 않으면 버튼이 클릭된 채널에서 실행됩니다"}
+                                : "📍 버튼이 클릭된 채널에서 커맨드가 실행됩니다"}
                         </Text>
                     </Form.Item>
 
@@ -854,15 +890,29 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                     {(() => {
                                                         const paramKey = `commandParam_${param.name}`;
                                                         // 봇 커맨드 파라미터는 중첩된 parameters 객체에서 읽어오기
-                                                        const currentValue = action.parameters.parameters?.[param.name] || 
-                                                                           action.parameters[paramKey] || "";
-                                                        
-                                                        console.log(`🔧 봇 커맨드 파라미터 렌더링 - ${param.name}:`, {
-                                                            paramKey,
-                                                            currentValue,
-                                                            nestedParams: action.parameters.parameters,
-                                                            allParameters: action.parameters
-                                                        });
+                                                        const currentValue =
+                                                            action.parameters
+                                                                .parameters?.[
+                                                                param.name
+                                                            ] ||
+                                                            action.parameters[
+                                                                paramKey
+                                                            ] ||
+                                                            "";
+
+                                                        console.log(
+                                                            `🔧 봇 커맨드 파라미터 렌더링 - ${param.name}:`,
+                                                            {
+                                                                paramKey,
+                                                                currentValue,
+                                                                nestedParams:
+                                                                    action
+                                                                        .parameters
+                                                                        .parameters,
+                                                                allParameters:
+                                                                    action.parameters,
+                                                            }
+                                                        );
 
                                                         switch (param.type) {
                                                             case "string":
