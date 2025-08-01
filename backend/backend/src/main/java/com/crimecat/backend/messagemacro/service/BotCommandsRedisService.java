@@ -3,6 +3,7 @@ package com.crimecat.backend.messagemacro.service;
 import com.crimecat.backend.messagemacro.controller.ButtonAutomationController.BotCommandDto;
 import com.crimecat.backend.messagemacro.controller.ButtonAutomationController.BotCommandParameterDto;
 import com.crimecat.backend.messagemacro.controller.ButtonAutomationController.BotCommandChoiceDto;
+import com.crimecat.backend.messagemacro.controller.ButtonAutomationController.BotCommandSubcommandDto;
 import com.crimecat.backend.utils.RedisCacheService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -93,7 +95,7 @@ public class BotCommandsRedisService {
         String type = (String) cmdMap.get("type");
         String category = (String) cmdMap.get("category");
 
-        // 파라미터 변환
+        // 파라미터 변환 (하위 호환성)
         List<BotCommandParameterDto> parameters = new ArrayList<>();
         Object parametersObj = cmdMap.get("parameters");
         
@@ -106,11 +108,58 @@ public class BotCommandsRedisService {
             }
         }
 
+        // 서브커맨드 변환 (새로운 구조)
+        Map<String, BotCommandSubcommandDto> subcommands = new HashMap<>();
+        Object subcommandsObj = cmdMap.get("subcommands");
+        
+        if (subcommandsObj instanceof Map) {
+            Map<String, Map<String, Object>> subcommandsMap = (Map<String, Map<String, Object>>) subcommandsObj;
+            
+            for (Map.Entry<String, Map<String, Object>> entry : subcommandsMap.entrySet()) {
+                String subName = entry.getKey();
+                Map<String, Object> subInfo = entry.getValue();
+                
+                BotCommandSubcommandDto subcommand = convertToSubcommandDto(subInfo);
+                subcommands.put(subName, subcommand);
+            }
+            
+            log.debug("커맨드 '{}': {}개 서브커맨드 변환 완료", name, subcommands.size());
+        }
+
         return BotCommandDto.builder()
             .name(name)
             .description(description != null ? description : "설명 없음")
             .type(type != null ? type : "slash")
             .category(category != null ? category : "general")
+            .parameters(parameters)
+            .subcommands(subcommands)
+            .build();
+    }
+
+    /**
+     * 서브커맨드 맵을 BotCommandSubcommandDto로 변환
+     */
+    @SuppressWarnings("unchecked")
+    private BotCommandSubcommandDto convertToSubcommandDto(Map<String, Object> subMap) {
+        String name = (String) subMap.get("name");
+        String description = (String) subMap.get("description");
+        
+        // 서브커맨드 내부 파라미터들 변환
+        List<BotCommandParameterDto> parameters = new ArrayList<>();
+        Object parametersObj = subMap.get("parameters");
+        
+        if (parametersObj instanceof List) {
+            List<Map<String, Object>> paramsList = (List<Map<String, Object>>) parametersObj;
+            
+            for (Map<String, Object> paramMap : paramsList) {
+                BotCommandParameterDto parameter = convertToParameterDto(paramMap);
+                parameters.add(parameter);
+            }
+        }
+
+        return BotCommandSubcommandDto.builder()
+            .name(name != null ? name : "unknown")
+            .description(description != null ? description : "설명 없음")
             .parameters(parameters)
             .build();
     }
