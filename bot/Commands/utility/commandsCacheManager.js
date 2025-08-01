@@ -233,7 +233,7 @@ class CommandsCacheManager {
     }
 
     /**
-     * 커맨드 옵션을 파라미터 메타데이터로 변환
+     * 커맨드 옵션을 파라미터 메타데이터로 변환 (서브커맨드 지원)
      * @param {Array} options Discord 커맨드 옵션들
      * @returns {Array} 파라미터 메타데이터 배열
      */
@@ -242,29 +242,55 @@ class CommandsCacheManager {
             return [];
         }
 
-        return options.map(option => {
+        const allParameters = [];
+
+        for (const option of options) {
             try {
-                return {
-                    name: option.name,
-                    type: this.mapDiscordTypeToString(option.type),
-                    description: option.description || '설명 없음',
-                    required: option.required || false,
-                    choices: option.choices?.map(c => ({
-                        name: c.name,
-                        value: c.value.toString()
-                    })) || null
-                };
+                // 서브커맨드 타입인 경우 내부 옵션들을 재귀적으로 파싱
+                if (option.type === 1 || option.type === 2) { // SUB_COMMAND, SUB_COMMAND_GROUP
+                    console.log(`🔍 [CommandsCache] 서브커맨드 발견: ${option.name} (타입: ${option.type})`);
+                    
+                    if (option.options && Array.isArray(option.options) && option.options.length > 0) {
+                        console.log(`📂 [CommandsCache] 서브커맨드 "${option.name}" 내부 옵션 수: ${option.options.length}`);
+                        
+                        // 서브커맨드 내부 옵션들을 재귀적으로 파싱
+                        const subParameters = this.parseParameters(option.options);
+                        allParameters.push(...subParameters);
+                        
+                        console.log(`✅ [CommandsCache] 서브커맨드 "${option.name}"에서 ${subParameters.length}개 파라미터 추출`);
+                    }
+                } else {
+                    // 일반 파라미터 처리
+                    const parameter = {
+                        name: option.name,
+                        type: this.mapDiscordTypeToString(option.type),
+                        description: option.description || '설명 없음',
+                        required: option.required || false,
+                        choices: option.choices?.map(c => ({
+                            name: c.name,
+                            value: c.value.toString()
+                        })) || null
+                    };
+                    
+                    allParameters.push(parameter);
+                    
+                    if (parameter.type === 'boolean') {
+                        console.log(`🔘 [CommandsCache] 불리언 파라미터 발견: ${parameter.name}`);
+                    }
+                }
             } catch (error) {
                 console.warn('⚠️ [CommandsCache] 파라미터 파싱 실패:', error.message);
-                return {
+                allParameters.push({
                     name: option.name || 'unknown',
                     type: 'string',
                     description: '파싱 실패',
                     required: false,
                     choices: null
-                };
+                });
             }
-        });
+        }
+
+        return allParameters;
     }
 
     /**
