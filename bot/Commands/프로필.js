@@ -237,7 +237,8 @@ module.exports = {
         }
     },
     upload: true,
-    permissionLevel: -1
+    permissionLevel: -1,
+    isCacheCommand: false,
 };
 
 // URL이 유효한 이미지 URL인지 확인하는 함수

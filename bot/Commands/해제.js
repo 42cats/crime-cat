@@ -34,7 +34,7 @@ module.exports = {
 
 	upload: true,
 	permissionLevel: PermissionFlagsBits.Administrator,
-	isCacheCommand: true,
+	isCacheCommand: false,
 };
 
 async function processRevoke(interaction, guild, inputString) {

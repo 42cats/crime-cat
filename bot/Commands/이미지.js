@@ -144,5 +144,6 @@ module.exports = {
 		}
 	},
 	upload: false,
-	permissionLevel: PermissionFlagsBits.Administrator
+	permissionLevel: PermissionFlagsBits.Administrator,
+	isCacheCommand: false,
 };

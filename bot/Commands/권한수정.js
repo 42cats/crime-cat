@@ -46,5 +46,6 @@ module.exports = {
 	},
 
 	upload: true,
-	permissionLevel: -1
+	permissionLevel: -1,
+	isCacheCommand: false,
 };

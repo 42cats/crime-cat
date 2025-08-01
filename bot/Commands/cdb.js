@@ -37,5 +37,6 @@ module.exports = {
 	},
 
 	upload: true,
-	permissionLevel: -1 // 길드 전용으로 등록할 수 있도록 설정
+	permissionLevel: -1, // 길드 전용으로 등록할 수 있도록 설정
+	isCacheCommand: false,
 };

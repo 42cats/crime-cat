@@ -41,5 +41,6 @@ module.exports = {
 	},
 
 	upload: true,
-	permissionLevel: -1 // 길드 전용
+	permissionLevel: -1, // 길드 전용
+	isCacheCommand: false,
 };

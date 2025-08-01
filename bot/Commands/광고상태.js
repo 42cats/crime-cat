@@ -99,6 +99,7 @@ module.exports = {
         }
     },
     
-    upload: true,
-    permissionLevel: PermissionFlagsBits.Administrator,
+    upload: false,
+    permissionLevel: -1,
+    isCacheCommand: false
 };

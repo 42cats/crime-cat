@@ -51,5 +51,6 @@ module.exports = {
 	},
 
 	upload: true,
-	permissionLevel: PermissionFlagsBits.Administrator // 필요시 관리자 권한 등 추가 가능
+	permissionLevel: PermissionFlagsBits.Administrator, // 필요시 관리자 권한 등 추가 가능
+	isCacheCommand: false,
 };

@@ -59,5 +59,6 @@ module.exports = {
 	},
 
 	upload: false,
-	permissionLevel: PermissionFlagsBits.DeafenMembers
+	permissionLevel: PermissionFlagsBits.DeafenMembers,
+	isCacheCommand: false,
 };

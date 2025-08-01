@@ -37,5 +37,6 @@ module.exports = {
 	},
 
 	upload: true,
-	permissionLevel: -1 // 개발자 전용 길드 등록용
+	permissionLevel: -1, // 개발자 전용 길드 등록용
+	isCacheCommand: false,
 };

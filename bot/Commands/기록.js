@@ -68,4 +68,5 @@ module.exports = {
 
 	upload: true,
 	permissionLevel: PermissionFlagsBits.Administrator, // 모든 유저 가능, 제한하려면 PermissionFlagsBits.Administrator 등으로 수정
+	isCacheCommand: false,
 };

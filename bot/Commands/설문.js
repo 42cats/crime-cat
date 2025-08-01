@@ -57,7 +57,8 @@ module.exports = {
 		}
 	},
 	upload: false,
-	permissionLevel: -1
+	permissionLevel: -1,
+	isCacheCommand: false,
 };
 
 const { v4: uuidv4 } = require('uuid');
