@@ -722,18 +722,32 @@ export const ACTION_TYPE_CONFIGS: Record<ActionType, ActionTypeConfig> = {
 
 // ===== 봇 커맨드 인터페이스 =====
 
+export interface BotCommandParameter {
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'user' | 'channel' | 'role';
+  description: string;
+  required: boolean;
+  choices?: { name: string; value: string }[];
+  // 서브커맨드 네임스페이스 지원
+  subcommand?: string;
+  subcommandPath?: string;
+  fullName?: string; // 네임스페이스된 이름 (예: "단일.한번만")
+  originalName?: string; // 원래 이름 (예: "한번만")
+}
+
+export interface BotCommandSubcommand {
+  name: string;
+  description: string;
+  parameters: BotCommandParameter[];
+}
+
 export interface BotCommand {
   name: string;
   description: string;
   type: 'slash' | 'prefix';
   category?: string;
-  parameters?: {
-    name: string;
-    type: 'string' | 'number' | 'boolean' | 'user' | 'channel' | 'role';
-    description: string;
-    required: boolean;
-    choices?: { name: string; value: string }[];
-  }[];
+  parameters?: BotCommandParameter[]; // 하위 호환성을 위한 flat 구조
+  subcommands?: Record<string, BotCommandSubcommand>; // 새로운 구조화된 서브커맨드 정보
 }
 
 // ===== 미리보기용 텍스트 생성 인터페이스 =====
