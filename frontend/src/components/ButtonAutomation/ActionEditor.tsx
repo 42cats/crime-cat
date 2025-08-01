@@ -301,6 +301,14 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
             return;
         }
 
+        console.log(`➕ 새 액션 추가:`, {
+            currentActionsCount: actions.length,
+            maxActions,
+            botCommandsLoaded: botCommands.length > 0,
+            loadingCommands,
+            commandsError
+        });
+
         const newAction: ActionConfig = {
             type: "add_role",
             target: "executor",
@@ -312,7 +320,14 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
             },
         };
 
-        onChange([...actions, newAction]);
+        const newActions = [...actions, newAction];
+        console.log(`✅ 액션 추가 완료:`, {
+            newActionsCount: newActions.length,
+            newActionIndex: newActions.length - 1,
+            newAction
+        });
+
+        onChange(newActions);
     };
 
     // 액션 제거
@@ -352,67 +367,100 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
 
         // 봇 커맨드 파라미터인 경우 특별 처리
         if (actions[index].type === "execute_bot_command") {
-            let actualParamName: string;
+            // 메타 파라미터 (액션 설정): parameters 직속에 저장
+            const metaParams = ['commandName', 'delay', 'silent', 'channelId', 'originalUserId', 'selectedSubcommand'];
+            const isMetaParam = metaParams.includes(paramKey);
             
-            // 서브커맨드 파라미터 (subcommand.parameter 형식) 처리
-            if (paramKey.includes('.')) {
-                actualParamName = paramKey; // 이미 네임스페이스된 키를 그대로 사용
-                console.log("🎯 서브커맨드 파라미터 업데이트:", {
+            if (isMetaParam) {
+                // 메타 파라미터는 parameters 직속에 저장
+                console.log("🎯 봇 커맨드 메타 파라미터 업데이트:", {
                     actionIndex: index,
                     paramKey,
-                    actualParamName,
                     value,
                     actionType: actions[index]?.type,
+                    location: 'parameters 직속'
                 });
-            }
-            // 레거시 commandParam_ 접두사 처리
-            else if (paramKey.startsWith("commandParam_")) {
-                actualParamName = paramKey.replace("commandParam_", "");
-                console.log("🎯 레거시 봇 커맨드 파라미터 업데이트:", {
-                    actionIndex: index,
+                
+                newActions[index] = {
+                    ...newActions[index],
+                    parameters: {
+                        ...newActions[index].parameters,
+                        [paramKey]: value, // 직속 저장
+                    },
+                };
+                
+                console.log("✅ 메타 파라미터 저장 완료:", {
                     paramKey,
-                    actualParamName,
                     value,
-                    actionType: actions[index]?.type,
+                    finalParameters: newActions[index].parameters,
                 });
-            }
-            // 일반 봇 커맨드 파라미터
-            else {
-                actualParamName = paramKey;
-                console.log("🎯 일반 봇 커맨드 파라미터 업데이트:", {
+            } else {
+                // 실제 커맨드 파라미터: parameters.parameters에 저장
+                let actualParamName: string;
+                
+                // 서브커맨드 파라미터 (subcommand.parameter 형식) 처리
+                if (paramKey.includes('.')) {
+                    actualParamName = paramKey; // 이미 네임스페이스된 키를 그대로 사용
+                    console.log("🎯 서브커맨드 파라미터 업데이트:", {
+                        actionIndex: index,
+                        paramKey,
+                        actualParamName,
+                        value,
+                        actionType: actions[index]?.type,
+                        location: 'parameters.parameters 중첩'
+                    });
+                }
+                // 레거시 commandParam_ 접두사 처리
+                else if (paramKey.startsWith("commandParam_")) {
+                    actualParamName = paramKey.replace("commandParam_", "");
+                    console.log("🎯 레거시 봇 커맨드 파라미터 업데이트:", {
+                        actionIndex: index,
+                        paramKey,
+                        actualParamName,
+                        value,
+                        actionType: actions[index]?.type,
+                        location: 'parameters.parameters 중첩'
+                    });
+                }
+                // 일반 봇 커맨드 파라미터
+                else {
+                    actualParamName = paramKey;
+                    console.log("🎯 실제 커맨드 파라미터 업데이트:", {
+                        actionIndex: index,
+                        paramKey,
+                        actualParamName,
+                        value,
+                        actionType: actions[index]?.type,
+                        location: 'parameters.parameters 중첩'
+                    });
+                }
+
+                // 기존 중첩된 parameters 객체 가져오기 (없으면 빈 객체)
+                const existingParams = newActions[index].parameters.parameters || {};
+
+                // 새로운 parameters 객체 생성
+                const updatedParams = {
+                    ...existingParams,
+                    [actualParamName]: value,
+                };
+
+                // 전체 parameters 업데이트 (중첩된 구조로 바로 저장)
+                newActions[index] = {
+                    ...newActions[index],
+                    parameters: {
+                        ...newActions[index].parameters,
+                        parameters: updatedParams, // 중첩된 parameters 객체에 직접 저장
+                    },
+                };
+
+                console.log("✅ 실제 커맨드 파라미터 저장 완료:", {
                     actionIndex: index,
-                    paramKey,
                     actualParamName,
                     value,
-                    actionType: actions[index]?.type,
+                    finalNestedParams: updatedParams,
+                    allParameters: newActions[index].parameters,
                 });
             }
-
-            // 기존 중첩된 parameters 객체 가져오기 (없으면 빈 객체)
-            const existingParams = newActions[index].parameters.parameters || {};
-
-            // 새로운 parameters 객체 생성
-            const updatedParams = {
-                ...existingParams,
-                [actualParamName]: value,
-            };
-
-            // 전체 parameters 업데이트 (중첩된 구조로 바로 저장)
-            newActions[index] = {
-                ...newActions[index],
-                parameters: {
-                    ...newActions[index].parameters,
-                    parameters: updatedParams, // 중첩된 parameters 객체에 직접 저장
-                },
-            };
-
-            console.log("✅ 봇 커맨드 파라미터 직접 저장 완료:", {
-                actionIndex: index,
-                actualParamName,
-                value,
-                finalNestedParams: updatedParams,
-                allParameters: newActions[index].parameters,
-            });
         } else {
             // 일반 파라미터는 기존 방식으로 처리
             newActions[index] = {
@@ -629,6 +677,15 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
 
     // 액션 타입별 파라미터 렌더링
     const renderActionParameters = (action: ActionConfig, index: number) => {
+        console.log(`🔧 [액션 ${index}] 파라미터 렌더링 시작:`, {
+            actionIndex: index,
+            actionType: action.type,
+            parameters: action.parameters,
+            commandName: action.parameters?.commandName,
+            botCommandsAvailable: botCommands.length > 0,
+            loadingCommands
+        });
+
         const actionType =
             ACTION_TYPE_CONFIGS[
                 action.type as keyof typeof ACTION_TYPE_CONFIGS
@@ -671,12 +728,18 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                             <Select
                                 value={action.parameters?.commandName || ""}
                                 onChange={(value) => {
-                                    console.log("🎯 커맨드 선택됨:", value);
+                                    console.log(`🎯 [액션 ${index}] 커맨드 선택됨:`, {
+                                        value,
+                                        actionIndex: index,
+                                        currentValue: action.parameters?.commandName,
+                                        botCommandsCount: botCommands.length,
+                                        allActions: actions.length
+                                    });
                                     const selectedCmd = botCommands.find(
                                         (cmd) => cmd.name === value
                                     );
                                     console.log(
-                                        "🔍 선택된 커맨드 정보:",
+                                        `🔍 [액션 ${index}] 선택된 커맨드 정보:`,
                                         selectedCmd
                                     );
                                     updateActionParameter(
@@ -690,14 +753,24 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                 loading={loadingCommands}
                                 disabled={loadingCommands}
                             >
-                                {botCommands.map((command) => (
-                                    <Option
-                                        key={command.name}
-                                        value={command.name}
-                                    >
-                                        /{command.name} - {command.description}
-                                    </Option>
-                                ))}
+                                {(() => {
+                                    console.log(`📋 [액션 ${index}] 드롭다운 렌더링:`, {
+                                        actionIndex: index,
+                                        botCommandsCount: botCommands.length,
+                                        commandNames: botCommands.map(cmd => cmd.name),
+                                        currentValue: action.parameters?.commandName,
+                                        loadingCommands,
+                                        commandsError
+                                    });
+                                    return botCommands.map((command) => (
+                                        <Option
+                                            key={command.name}
+                                            value={command.name}
+                                        >
+                                            /{command.name} - {command.description}
+                                        </Option>
+                                    ));
+                                })()}
                             </Select>
                             <Button
                                 type="default"
