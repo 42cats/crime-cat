@@ -216,6 +216,8 @@ class CommandsCacheManager {
                 return null;
             }
 
+            const parameterResult = this.parseParameters(commandData.options || command.options || []);
+            
             return {
                 name: name,
                 description: commandData.description || command.description || '설명 없음',
@@ -224,7 +226,8 @@ class CommandsCacheManager {
                 permissions: command.permissions || command.requiredPermissions || [],
                 permissionLevel: command.permissionLevel || -1,
                 aliases: command.aliases || [],
-                parameters: this.parseParameters(commandData.options || command.options || [])
+                parameters: parameterResult.flat, // 하위 호환성을 위한 flat 구조
+                subcommands: parameterResult.subcommands // 새로운 구조화된 서브커맨드 정보
             };
         } catch (error) {
             console.error('❌ [CommandsCache] 커맨드 파싱 오류:', error);
@@ -233,37 +236,95 @@ class CommandsCacheManager {
     }
 
     /**
-     * 커맨드 옵션을 파라미터 메타데이터로 변환 (서브커맨드 지원)
+     * 커맨드 옵션을 파라미터 메타데이터로 변환 (서브커맨드 지원 + 네임스페이스)
      * @param {Array} options Discord 커맨드 옵션들
-     * @returns {Array} 파라미터 메타데이터 배열
+     * @param {string} parentPath 상위 서브커맨드 경로 (예: "단일", "멀티")
+     * @returns {Object} 구조화된 파라미터 메타데이터 (flat + subcommands)
      */
-    parseParameters(options) {
+    parseParameters(options, parentPath = '') {
         if (!Array.isArray(options)) {
-            return [];
+            return { flat: [], subcommands: {} };
         }
 
         const allParameters = [];
+        const subcommands = {};
 
         for (const option of options) {
             try {
-                // 서브커맨드 타입인 경우 내부 옵션들을 재귀적으로 파싱
-                if (option.type === 1 || option.type === 2) { // SUB_COMMAND, SUB_COMMAND_GROUP
-                    console.log(`🔍 [CommandsCache] 서브커맨드 발견: ${option.name} (타입: ${option.type})`);
+                // Discord.js 구조 문제 해결: JSON 파싱으로 실제 타입 가져오기
+                let actualType = option.type;
+                try {
+                    // rawOption이 있으면 JSON 파싱해서 실제 타입 추출
+                    if (typeof option === 'object' && option !== null) {
+                        const rawOptionStr = JSON.stringify(option);
+                        const rawData = JSON.parse(rawOptionStr);
+                        if (rawData.type !== undefined) {
+                            actualType = rawData.type;
+                        }
+                    }
+                } catch (parseError) {
+                    console.warn(`⚠️ [CommandsCache] JSON 파싱 실패, 기본 타입 사용: ${option.name}`);
+                }
+
+                console.log(`🔍 [DEBUG] 타입 보정 결과:`, {
+                    name: option.name,
+                    originalType: option.type,
+                    actualType: actualType,
+                    description: option.description,
+                    hasOptions: !!(option.options && option.options.length > 0),
+                    optionsCount: option.options ? option.options.length : 0,
+                    parentPath: parentPath || 'root'
+                });
+                
+                // 서브커맨드 타입인 경우 내부 옵션들을 재귀적으로 파싱 (보정된 타입 사용)
+                if (actualType === 1 || actualType === 2) { // SUB_COMMAND, SUB_COMMAND_GROUP
+                    console.log(`🎯 [CommandsCache] 서브커맨드 발견: ${option.name} (원본타입: ${option.type} → 보정타입: ${actualType})`);
                     
                     if (option.options && Array.isArray(option.options) && option.options.length > 0) {
                         console.log(`📂 [CommandsCache] 서브커맨드 "${option.name}" 내부 옵션 수: ${option.options.length}`);
                         
-                        // 서브커맨드 내부 옵션들을 재귀적으로 파싱
-                        const subParameters = this.parseParameters(option.options);
-                        allParameters.push(...subParameters);
+                        // 🚨 디버깅: 서브커맨드 내부 옵션들도 출력
+                        console.log(`🔍 [DEBUG] 서브커맨드 "${option.name}" 내부 옵션들:`, 
+                            option.options.map(opt => ({ name: opt.name, type: opt.type, description: opt.description }))
+                        );
                         
-                        console.log(`✅ [CommandsCache] 서브커맨드 "${option.name}"에서 ${subParameters.length}개 파라미터 추출`);
+                        // 서브커맨드별 네임스페이스 생성
+                        const subPath = parentPath ? `${parentPath}.${option.name}` : option.name;
+                        const subResult = this.parseParameters(option.options, subPath);
+                        
+                        // 서브커맨드별 파라미터 저장
+                        subcommands[option.name] = {
+                            name: option.name,
+                            description: option.description || '설명 없음',
+                            parameters: subResult.flat
+                        };
+                        
+                        // flat 구조에 네임스페이스된 파라미터 추가 (하위 호환성)
+                        subResult.flat.forEach(param => {
+                            const namespacedParam = {
+                                ...param,
+                                subcommand: option.name,
+                                subcommandPath: subPath,
+                                fullName: `${option.name}.${param.name}`, // 네임스페이스된 이름
+                                originalName: param.name // 원래 이름 보존
+                            };
+                            allParameters.push(namespacedParam);
+                        });
+                        
+                        // 중첩된 서브커맨드들도 병합
+                        Object.assign(subcommands, subResult.subcommands);
+                        
+                        console.log(`✅ [CommandsCache] 서브커맨드 "${option.name}"에서 ${subResult.flat.length}개 파라미터 추출`);
+                    } else {
+                        console.log(`⚠️ [DEBUG] 서브커맨드 "${option.name}"에 내부 옵션이 없음`);
                     }
                 } else {
                     // 일반 파라미터 처리
+                    console.log(`📝 [DEBUG] 일반 파라미터 처리: ${option.name} (원본타입: ${option.type} → 보정타입: ${actualType} -> ${this.mapDiscordTypeToString(actualType)})`);
+                    
                     const parameter = {
                         name: option.name,
-                        type: this.mapDiscordTypeToString(option.type),
+                        type: this.mapDiscordTypeToString(actualType),
                         description: option.description || '설명 없음',
                         required: option.required || false,
                         choices: option.choices?.map(c => ({
@@ -272,10 +333,16 @@ class CommandsCacheManager {
                         })) || null
                     };
                     
+                    // 서브커맨드 컨텍스트가 있으면 추가
+                    if (parentPath) {
+                        parameter.subcommandPath = parentPath;
+                        console.log(`🏷️ [DEBUG] 파라미터에 서브커맨드 경로 추가: ${parameter.name} -> ${parentPath}`);
+                    }
+                    
                     allParameters.push(parameter);
                     
                     if (parameter.type === 'boolean') {
-                        console.log(`🔘 [CommandsCache] 불리언 파라미터 발견: ${parameter.name}`);
+                        console.log(`🔘 [CommandsCache] 불리언 파라미터 발견: ${parameter.name} (경로: ${parentPath || 'root'})`);
                     }
                 }
             } catch (error) {
@@ -285,12 +352,24 @@ class CommandsCacheManager {
                     type: 'string',
                     description: '파싱 실패',
                     required: false,
-                    choices: null
+                    choices: null,
+                    subcommandPath: parentPath
                 });
             }
         }
 
-        return allParameters;
+        // 🚨 디버깅: 최종 결과 출력
+        console.log(`🏁 [DEBUG] parseParameters 완료 (parentPath: ${parentPath || 'root'}):`, {
+            flatParametersCount: allParameters.length,
+            subcommandsCount: Object.keys(subcommands).length,
+            subcommandNames: Object.keys(subcommands),
+            flatParameters: allParameters.map(p => ({ name: p.name, type: p.type, subcommand: p.subcommand, fullName: p.fullName }))
+        });
+
+        return {
+            flat: allParameters, // 기존 flat 구조 (네임스페이스 포함)
+            subcommands: subcommands // 새로운 구조화된 서브커맨드 정보
+        };
     }
 
     /**
