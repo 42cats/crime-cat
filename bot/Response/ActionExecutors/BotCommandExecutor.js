@@ -13,9 +13,52 @@ class BotCommandExecutor extends BaseActionExecutor {
     }
 
     async performAction(action, context) {
-        const { commandName, parameters = {}, delay = 0, silent = false, channelId, originalUserId } = action.parameters;
+        const { 
+            commandName, 
+            parameters = {}, 
+            delay = 0, 
+            silent = false, 
+            channelId, 
+            originalUserId,
+            selectedSubcommand // 새로운 구조: 선택된 서브커맨드
+        } = action.parameters;
         
-        console.log(`🤖 [BotCommand] 실행 시작: ${commandName}`, parameters);
+        console.log(`🤖 [BotCommand] 실행 시작: ${commandName}`, {
+            parameters,
+            selectedSubcommand,
+            hasNestedParams: !!parameters.parameters
+        });
+        
+        // 새로운 구조의 파라미터 처리: 중첩된 parameters 객체 병합
+        let processedParameters = { ...parameters };
+        if (parameters.parameters && typeof parameters.parameters === 'object') {
+            // 중첩된 parameters를 상위 레벨로 병합
+            processedParameters = { ...processedParameters, ...parameters.parameters };
+            console.log(`🔄 [BotCommand] 중첩 파라미터 병합 완료:`, processedParameters);
+        }
+        
+        // 서브커맨드 네임스페이스 파라미터 처리 (예: "단일.텍스트" -> "텍스트")
+        if (selectedSubcommand) {
+            const subcommandPrefix = `${selectedSubcommand}.`;
+            const subcommandParams = {};
+            
+            // 네임스페이스된 파라미터를 일반 파라미터로 변환
+            Object.keys(processedParameters).forEach(key => {
+                if (key.startsWith(subcommandPrefix)) {
+                    const actualParamName = key.replace(subcommandPrefix, '');
+                    subcommandParams[actualParamName] = processedParameters[key];
+                    console.log(`🏷️ [BotCommand] 서브커맨드 파라미터 변환: ${key} -> ${actualParamName} = ${processedParameters[key]}`);
+                }
+            });
+            
+            // 서브커맨드 파라미터가 있으면 병합
+            if (Object.keys(subcommandParams).length > 0) {
+                processedParameters = { ...processedParameters, ...subcommandParams };
+                console.log(`✅ [BotCommand] 서브커맨드 파라미터 처리 완료 (${selectedSubcommand}):`, subcommandParams);
+            }
+        }
+        
+        console.log(`📦 [BotCommand] 최종 파라미터:`, processedParameters);
         
         // 지연 시간이 설정된 경우 대기
         if (delay > 0) {
@@ -39,9 +82,9 @@ class BotCommandExecutor extends BaseActionExecutor {
                 }
             }
 
-            // 3. 가상 인터랙션 생성 (채널 지정 지원)
+            // 3. 가상 인터랙션 생성 (채널 지정 지원, 처리된 파라미터 사용)
             const virtualInteraction = await this.createVirtualInteraction(
-                context, commandName, parameters, channelId, originalUserId
+                context, commandName, processedParameters, channelId, originalUserId, selectedSubcommand
             );
 
             // 4. 커맨드 실행 (타임아웃 제거)
@@ -109,7 +152,7 @@ class BotCommandExecutor extends BaseActionExecutor {
     /**
      * 가상 Discord 인터랙션 생성
      */
-    async createVirtualInteraction(context, commandName, parameters, targetChannelId, originalUserId) {
+    async createVirtualInteraction(context, commandName, parameters, targetChannelId, originalUserId, selectedSubcommand = null) {
         const { interaction, user, member, guild, channel } = context;
         
         // 지정된 채널이 있으면 해당 채널 사용, 없으면 기본 채널 사용
@@ -262,31 +305,42 @@ class BotCommandExecutor extends BaseActionExecutor {
                     return roleId ? guild.roles.cache.get(roleId) : null;
                 },
                 
-                // 서브커맨드 처리 - 자동화에서 호출되는 명령어의 서브커맨드 추론
+                // 서브커맨드 처리 - 새로운 구조 우선, 기존 추론 로직 백업
                 getSubcommand: (required = false) => {
-                    // 명령어별 서브커맨드 추론 로직
+                    // 1. 새로운 구조: selectedSubcommand가 명시적으로 전달된 경우 우선 사용
+                    if (selectedSubcommand) {
+                        console.log(`🎯 [VirtualInteraction] 선택된 서브커맨드 사용: ${selectedSubcommand}`);
+                        return selectedSubcommand;
+                    }
+                    
+                    // 2. 레거시: 명시적으로 서브커맨드가 전달된 경우
+                    if (parameters.subcommand) {
+                        console.log(`📝 [VirtualInteraction] 명시적 서브커맨드 사용: ${parameters.subcommand}`);
+                        return parameters.subcommand;
+                    }
+                    
+                    // 3. 레거시: 명령어별 서브커맨드 추론 로직
                     if (commandName === '버튼') {
                         // 버튼 명령어의 경우 groupnames 파라미터로 단일/멀티 구분
                         if (parameters.groupnames || (parameters.groupname && parameters.groupname.includes(','))) {
+                            console.log(`🔍 [VirtualInteraction] 버튼 명령어 추론: 멀티 (groupnames 또는 쉼표 구분자 발견)`);
                             return '멀티';
                         } else if (parameters.groupname) {
+                            console.log(`🔍 [VirtualInteraction] 버튼 명령어 추론: 단일 (단일 groupname 발견)`);
                             return '단일';
                         }
                         // 기본값: 단일
+                        console.log(`🔍 [VirtualInteraction] 버튼 명령어 기본값: 단일`);
                         return '단일';
-                    }
-                    
-                    // 명시적으로 서브커맨드가 전달된 경우
-                    if (parameters.subcommand) {
-                        return parameters.subcommand;
                     }
                     
                     // 다른 명령어들의 기본 서브커맨드 추론 로직을 여기에 추가
                     
                     if (required) {
-                        throw new Error(`서브커맨드를 추론할 수 없습니다. 명령어: ${commandName}, 파라미터: ${JSON.stringify(parameters)}`);
+                        throw new Error(`서브커맨드를 추론할 수 없습니다. 명령어: ${commandName}, 선택된서브커맨드: ${selectedSubcommand}, 파라미터: ${JSON.stringify(parameters)}`);
                     }
                     
+                    console.log(`❓ [VirtualInteraction] 서브커맨드를 찾을 수 없음: ${commandName}`);
                     return null;
                 }
             },

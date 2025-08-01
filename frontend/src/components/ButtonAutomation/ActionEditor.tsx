@@ -971,14 +971,15 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                 style={{ marginTop: 8 }}
                                                 activeKey={action.parameters.selectedSubcommand || Object.keys(selectedCommand.subcommands)[0]}
                                                 onChange={(activeKey) => {
-                                                    // 활성 탭 변경 시 해당 서브커맨드로 파라미터 초기화
+                                                    // 활성 탭 변경 시 선택된 서브커맨드만 변경 (기존 파라미터 보존)
                                                     console.log(`🔄 서브커맨드 탭 변경: ${activeKey}`);
+                                                    console.log(`📦 기존 파라미터 보존:`, action.parameters.parameters);
                                                     
-                                                    // 기존 커맨드 파라미터 초기화 (다른 서브커맨드의 파라미터 제거)
+                                                    // 기존 파라미터는 그대로 유지하고 선택된 서브커맨드만 변경
                                                     const newParameters = { 
                                                         ...action.parameters,
-                                                        parameters: {},
-                                                        selectedSubcommand: activeKey // 선택된 서브커맨드 저장
+                                                        // parameters 객체는 그대로 유지 (모든 서브커맨드 파라미터 보존)
+                                                        selectedSubcommand: activeKey // 선택된 서브커맨드만 변경
                                                     };
                                                     
                                                     // 액션 파라미터 업데이트
@@ -988,6 +989,8 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                         parameters: newParameters
                                                     };
                                                     onChange(newActions);
+                                                    
+                                                    console.log(`✅ 서브커맨드 변경 완료 - 선택: ${activeKey}, 보존된 파라미터:`, newParameters.parameters || {});
                                                 }}
                                                 items={Object.entries(selectedCommand.subcommands).map(([subName, subInfo]) => ({
                                                     key: subName,
