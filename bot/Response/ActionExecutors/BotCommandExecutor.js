@@ -260,6 +260,34 @@ class BotCommandExecutor extends BaseActionExecutor {
                         throw new Error(`필수 파라미터가 없습니다: ${name}`);
                     }
                     return roleId ? guild.roles.cache.get(roleId) : null;
+                },
+                
+                // 서브커맨드 처리 - 자동화에서 호출되는 명령어의 서브커맨드 추론
+                getSubcommand: (required = false) => {
+                    // 명령어별 서브커맨드 추론 로직
+                    if (commandName === '버튼') {
+                        // 버튼 명령어의 경우 groupnames 파라미터로 단일/멀티 구분
+                        if (parameters.groupnames || (parameters.groupname && parameters.groupname.includes(','))) {
+                            return '멀티';
+                        } else if (parameters.groupname) {
+                            return '단일';
+                        }
+                        // 기본값: 단일
+                        return '단일';
+                    }
+                    
+                    // 명시적으로 서브커맨드가 전달된 경우
+                    if (parameters.subcommand) {
+                        return parameters.subcommand;
+                    }
+                    
+                    // 다른 명령어들의 기본 서브커맨드 추론 로직을 여기에 추가
+                    
+                    if (required) {
+                        throw new Error(`서브커맨드를 추론할 수 없습니다. 명령어: ${commandName}, 파라미터: ${JSON.stringify(parameters)}`);
+                    }
+                    
+                    return null;
                 }
             },
             
