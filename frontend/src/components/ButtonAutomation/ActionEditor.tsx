@@ -14,6 +14,7 @@ import {
     Form,
     message,
     Tag,
+    Tabs,
 } from "antd";
 import {
     DeleteOutlined,
@@ -105,6 +106,74 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
 }) => {
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const { channels } = useChannels();
+
+    // 파라미터 입력 컴포넌트 렌더링 함수
+    const renderParameterInput = (param: any, paramKey: string, currentValue: any, actionIndex: number, subcommandName?: string) => {
+        // 서브커맨드 파라미터 업데이트 핸들러
+        const handleParameterChange = (value: any) => {
+            if (subcommandName) {
+                // 서브커맨드 파라미터: 네임스페이스된 키로 저장
+                updateActionParameter(actionIndex, paramKey, value);
+                console.log(`🔄 서브커맨드 파라미터 업데이트: ${subcommandName}.${param.name} = ${value}`);
+            } else {
+                // 일반 파라미터
+                updateActionParameter(actionIndex, paramKey, value);
+            }
+        };
+
+        switch (param.type) {
+            case "string":
+                if (param.choices && param.choices.length > 0) {
+                    return (
+                        <Select
+                            value={currentValue}
+                            onChange={handleParameterChange}
+                            placeholder={param.description}
+                            style={{ width: "100%" }}
+                            allowClear
+                        >
+                            {param.choices.map((choice: any) => (
+                                <Option key={choice.value} value={choice.value}>
+                                    {choice.name}
+                                </Option>
+                            ))}
+                        </Select>
+                    );
+                } else {
+                    return (
+                        <Input
+                            value={currentValue}
+                            onChange={(e) => handleParameterChange(e.target.value)}
+                            placeholder={param.description}
+                        />
+                    );
+                }
+            case "number":
+                return (
+                    <InputNumber
+                        value={currentValue}
+                        onChange={handleParameterChange}
+                        placeholder={param.description}
+                        style={{ width: "100%" }}
+                    />
+                );
+            case "boolean":
+                return (
+                    <Switch
+                        checked={currentValue || false}
+                        onChange={handleParameterChange}
+                    />
+                );
+            default:
+                return (
+                    <Input
+                        value={currentValue}
+                        onChange={(e) => handleParameterChange(e.target.value)}
+                        placeholder={param.description}
+                    />
+                );
+        }
+    };
 
     // 봇 커맨드 상태
     const [botCommands, setBotCommands] = useState<BotCommand[]>([]);
@@ -282,23 +351,45 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
         const newActions = [...actions];
 
         // 봇 커맨드 파라미터인 경우 특별 처리
-        if (
-            actions[index].type === "execute_bot_command" &&
-            paramKey.startsWith("commandParam_")
-        ) {
-            const actualParamName = paramKey.replace("commandParam_", "");
-
-            console.log("🎯 봇 커맨드 파라미터 업데이트:", {
-                actionIndex: index,
-                paramKey,
-                actualParamName,
-                value,
-                actionType: actions[index]?.type,
-            });
+        if (actions[index].type === "execute_bot_command") {
+            let actualParamName: string;
+            
+            // 서브커맨드 파라미터 (subcommand.parameter 형식) 처리
+            if (paramKey.includes('.')) {
+                actualParamName = paramKey; // 이미 네임스페이스된 키를 그대로 사용
+                console.log("🎯 서브커맨드 파라미터 업데이트:", {
+                    actionIndex: index,
+                    paramKey,
+                    actualParamName,
+                    value,
+                    actionType: actions[index]?.type,
+                });
+            }
+            // 레거시 commandParam_ 접두사 처리
+            else if (paramKey.startsWith("commandParam_")) {
+                actualParamName = paramKey.replace("commandParam_", "");
+                console.log("🎯 레거시 봇 커맨드 파라미터 업데이트:", {
+                    actionIndex: index,
+                    paramKey,
+                    actualParamName,
+                    value,
+                    actionType: actions[index]?.type,
+                });
+            }
+            // 일반 봇 커맨드 파라미터
+            else {
+                actualParamName = paramKey;
+                console.log("🎯 일반 봇 커맨드 파라미터 업데이트:", {
+                    actionIndex: index,
+                    paramKey,
+                    actualParamName,
+                    value,
+                    actionType: actions[index]?.type,
+                });
+            }
 
             // 기존 중첩된 parameters 객체 가져오기 (없으면 빈 객체)
-            const existingParams =
-                newActions[index].parameters.parameters || {};
+            const existingParams = newActions[index].parameters.parameters || {};
 
             // 새로운 parameters 객체 생성
             const updatedParams = {
@@ -803,11 +894,13 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                 selectedCommand?.parameters
                             );
 
-                            if (
-                                !selectedCommand ||
-                                !selectedCommand.parameters ||
-                                selectedCommand.parameters.length === 0
-                            ) {
+                            // 파라미터 존재 여부 확인 (새로운 구조 포함)
+                            const hasParameters = selectedCommand && (
+                                (selectedCommand.parameters && selectedCommand.parameters.length > 0) ||
+                                (selectedCommand.subcommands && Object.keys(selectedCommand.subcommands).length > 0)
+                            );
+
+                            if (!hasParameters) {
                                 return (
                                     <div
                                         style={{
@@ -863,8 +956,96 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                         {selectedCommand.description}
                                     </Text>
 
-                                    {selectedCommand.parameters.map(
-                                        (param, paramIndex) => (
+                                    {/* 서브커맨드 구조가 있는 경우 탭 구조로 렌더링 */}
+                                    {selectedCommand.subcommands && Object.keys(selectedCommand.subcommands).length > 0 ? (
+                                        <div style={{ marginTop: 16 }}>
+                                            <Title level={5} style={{ marginBottom: 12 }}>
+                                                📂 서브커맨드 선택
+                                            </Title>
+                                            <Text type="secondary" style={{ fontSize: 12, marginBottom: 16, display: 'block' }}>
+                                                원하는 서브커맨드를 선택하고 해당 파라미터만 설정하세요. 한 번에 하나의 서브커맨드만 사용할 수 있습니다.
+                                            </Text>
+                                            <Tabs
+                                                type="card"
+                                                size="small"
+                                                style={{ marginTop: 8 }}
+                                                activeKey={action.parameters.selectedSubcommand || Object.keys(selectedCommand.subcommands)[0]}
+                                                onChange={(activeKey) => {
+                                                    // 활성 탭 변경 시 해당 서브커맨드로 파라미터 초기화
+                                                    console.log(`🔄 서브커맨드 탭 변경: ${activeKey}`);
+                                                    
+                                                    // 기존 커맨드 파라미터 초기화 (다른 서브커맨드의 파라미터 제거)
+                                                    const newParameters = { 
+                                                        ...action.parameters,
+                                                        parameters: {},
+                                                        selectedSubcommand: activeKey // 선택된 서브커맨드 저장
+                                                    };
+                                                    
+                                                    // 액션 파라미터 업데이트
+                                                    const newActions = [...actions];
+                                                    newActions[index] = {
+                                                        ...action,
+                                                        parameters: newParameters
+                                                    };
+                                                    onChange(newActions);
+                                                }}
+                                                items={Object.entries(selectedCommand.subcommands).map(([subName, subInfo]) => ({
+                                                    key: subName,
+                                                    label: (
+                                                        <span>
+                                                            🔸 {subName}
+                                                        </span>
+                                                    ),
+                                                    children: (
+                                                        <div style={{ padding: "16px 0" }}>
+                                                            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 16 }}>
+                                                                {subInfo.description}
+                                                            </Text>
+                                                            
+                                                            {subInfo.parameters.map((param, paramIndex) => (
+                                                                <div key={`${subName}.${param.name}`} style={{ marginBottom: 16 }}>
+                                                                    <Form.Item
+                                                                        label={
+                                                                            <span>
+                                                                                {param.name}
+                                                                                {param.required && (
+                                                                                    <span style={{ color: "#ff4d4f" }}> *</span>
+                                                                                )}
+                                                                            </span>
+                                                                        }
+                                                                        style={{ marginBottom: 8 }}
+                                                                    >
+                                                                        {(() => {
+                                                                            // 서브커맨드별 네임스페이스된 키 사용
+                                                                            const paramKey = `${subName}.${param.name}`;
+                                                                            const currentValue =
+                                                                                action.parameters.parameters?.[paramKey] ||
+                                                                                action.parameters.parameters?.[param.name] ||
+                                                                                "";
+                                                                            
+                                                                            return renderParameterInput(
+                                                                                param, 
+                                                                                paramKey, 
+                                                                                currentValue, 
+                                                                                index,
+                                                                                subName // 서브커맨드 이름 전달
+                                                                            );
+                                                                        })()}
+                                                                    </Form.Item>
+                                                                    <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>
+                                                                        {param.description}
+                                                                    </Text>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )
+                                                }))}
+                                            />
+                                        </div>
+                                    ) : (
+                                        /* 기존 flat 구조 렌더링 (하위 호환성) */
+                                        selectedCommand.parameters?.map(
+                                            (param, paramIndex) => (
                                             <div
                                                 key={paramIndex}
                                                 style={{ marginBottom: 16 }}
@@ -914,230 +1095,22 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                             }
                                                         );
 
-                                                        switch (param.type) {
-                                                            case "string":
-                                                                if (
-                                                                    param.choices &&
-                                                                    param
-                                                                        .choices
-                                                                        .length >
-                                                                        0
-                                                                ) {
-                                                                    return (
-                                                                        <Select
-                                                                            value={
-                                                                                currentValue
-                                                                            }
-                                                                            onChange={(
-                                                                                value
-                                                                            ) =>
-                                                                                updateActionParameter(
-                                                                                    index,
-                                                                                    paramKey,
-                                                                                    value
-                                                                                )
-                                                                            }
-                                                                            placeholder={
-                                                                                param.description
-                                                                            }
-                                                                            style={{
-                                                                                width: "100%",
-                                                                            }}
-                                                                            allowClear
-                                                                        >
-                                                                            {param.choices.map(
-                                                                                (
-                                                                                    choice
-                                                                                ) => (
-                                                                                    <Option
-                                                                                        key={
-                                                                                            choice.value
-                                                                                        }
-                                                                                        value={
-                                                                                            choice.value
-                                                                                        }
-                                                                                    >
-                                                                                        {
-                                                                                            choice.name
-                                                                                        }
-                                                                                    </Option>
-                                                                                )
-                                                                            )}
-                                                                        </Select>
-                                                                    );
-                                                                } else {
-                                                                    return (
-                                                                        <Input
-                                                                            value={
-                                                                                currentValue
-                                                                            }
-                                                                            onChange={(
-                                                                                e
-                                                                            ) =>
-                                                                                updateActionParameter(
-                                                                                    index,
-                                                                                    paramKey,
-                                                                                    e
-                                                                                        .target
-                                                                                        .value
-                                                                                )
-                                                                            }
-                                                                            placeholder={
-                                                                                param.description
-                                                                            }
-                                                                            maxLength={
-                                                                                2000
-                                                                            }
-                                                                        />
-                                                                    );
-                                                                }
-                                                            case "number":
-                                                                return (
-                                                                    <InputNumber
-                                                                        value={
-                                                                            currentValue
-                                                                        }
-                                                                        onChange={(
-                                                                            value
-                                                                        ) =>
-                                                                            updateActionParameter(
-                                                                                index,
-                                                                                paramKey,
-                                                                                value
-                                                                            )
-                                                                        }
-                                                                        placeholder={
-                                                                            param.description
-                                                                        }
-                                                                        style={{
-                                                                            width: "100%",
-                                                                        }}
-                                                                    />
-                                                                );
-                                                            case "boolean":
-                                                                return (
-                                                                    <Switch
-                                                                        checked={
-                                                                            currentValue ===
-                                                                                true ||
-                                                                            currentValue ===
-                                                                                "true"
-                                                                        }
-                                                                        onChange={(
-                                                                            checked
-                                                                        ) =>
-                                                                            updateActionParameter(
-                                                                                index,
-                                                                                paramKey,
-                                                                                checked
-                                                                            )
-                                                                        }
-                                                                        checkedChildren="예"
-                                                                        unCheckedChildren="아니오"
-                                                                    />
-                                                                );
-                                                            case "user":
-                                                                return (
-                                                                    <Input
-                                                                        value={
-                                                                            currentValue
-                                                                        }
-                                                                        onChange={(
-                                                                            e
-                                                                        ) =>
-                                                                            updateActionParameter(
-                                                                                index,
-                                                                                paramKey,
-                                                                                e
-                                                                                    .target
-                                                                                    .value
-                                                                            )
-                                                                        }
-                                                                        placeholder="@사용자명 또는 사용자 ID"
-                                                                        addonBefore="👤"
-                                                                    />
-                                                                );
-                                                            case "channel":
-                                                                return (
-                                                                    <Input
-                                                                        value={
-                                                                            currentValue
-                                                                        }
-                                                                        onChange={(
-                                                                            e
-                                                                        ) =>
-                                                                            updateActionParameter(
-                                                                                index,
-                                                                                paramKey,
-                                                                                e
-                                                                                    .target
-                                                                                    .value
-                                                                            )
-                                                                        }
-                                                                        placeholder="#채널명 또는 채널 ID"
-                                                                        addonBefore="📝"
-                                                                    />
-                                                                );
-                                                            case "role":
-                                                                return (
-                                                                    <Input
-                                                                        value={
-                                                                            currentValue
-                                                                        }
-                                                                        onChange={(
-                                                                            e
-                                                                        ) =>
-                                                                            updateActionParameter(
-                                                                                index,
-                                                                                paramKey,
-                                                                                e
-                                                                                    .target
-                                                                                    .value
-                                                                            )
-                                                                        }
-                                                                        placeholder="@역할명 또는 역할 ID"
-                                                                        addonBefore="🏷️"
-                                                                    />
-                                                                );
-                                                            default:
-                                                                return (
-                                                                    <Input
-                                                                        value={
-                                                                            currentValue
-                                                                        }
-                                                                        onChange={(
-                                                                            e
-                                                                        ) =>
-                                                                            updateActionParameter(
-                                                                                index,
-                                                                                paramKey,
-                                                                                e
-                                                                                    .target
-                                                                                    .value
-                                                                            )
-                                                                        }
-                                                                        placeholder={
-                                                                            param.description
-                                                                        }
-                                                                    />
-                                                                );
-                                                        }
+                                                        return renderParameterInput(param, paramKey, currentValue, index);
                                                     })()}
-                                                    <Text
-                                                        type="secondary"
-                                                        style={{
-                                                            fontSize: 11,
-                                                            marginTop: 4,
-                                                            display: "block",
-                                                        }}
-                                                    >
-                                                        📋 {param.description}
-                                                        {param.required &&
-                                                            " (필수)"}
-                                                    </Text>
                                                 </Form.Item>
+                                                <Text
+                                                    type="secondary"
+                                                    style={{
+                                                        fontSize: 11,
+                                                        marginTop: 4,
+                                                        display: "block",
+                                                    }}
+                                                >
+                                                    📋 {param.description}
+                                                    {param.required && " (필수)"}
+                                                </Text>
                                             </div>
-                                        )
+                                        ))
                                     )}
 
                                     <div
@@ -1156,10 +1129,10 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                             </strong>{" "}
                                             /{selectedCommand.name}
                                             {selectedCommand.parameters
-                                                .filter((p) => {
+                                                ?.filter((p) => {
                                                     const value =
                                                         action.parameters[
-                                                            `commandParam_${p.name}`
+                                                            `commandParam_${p.originalName || p.name}`
                                                         ];
                                                     return (
                                                         value !== undefined &&
@@ -1169,11 +1142,11 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                 .map((p) => {
                                                     const value =
                                                         action.parameters[
-                                                            `commandParam_${p.name}`
+                                                            `commandParam_${p.originalName || p.name}`
                                                         ];
-                                                    return ` ${p.name}:${value}`;
+                                                    return ` ${p.originalName || p.name}:${value}`;
                                                 })
-                                                .join("")}
+                                                .join("") || ''}
                                         </Text>
                                     </div>
                                 </div>
