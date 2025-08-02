@@ -270,6 +270,7 @@ export const ButtonAutomationEditor: React.FC<ButtonAutomationEditorProps> = () 
           onSave={(config) => handleUpdateButton(selectedButton.id, config)}
           onCancel={() => setSelectedButton(null)}
           loading={saving}
+          guildId={guildId}
         />
       )}
 

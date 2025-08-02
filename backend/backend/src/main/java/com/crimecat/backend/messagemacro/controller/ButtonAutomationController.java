@@ -250,6 +250,57 @@ public class ButtonAutomationController {
         }
     }
 
+    /**
+     * 자동완성 메타데이터가 포함된 향상된 봇 커맨드 조회
+     * Discord 봇 커맨드 + 자동완성 지원 정보 통합 제공
+     */
+    @GetMapping("/{guildId}/bot-commands-enhanced")
+    public ResponseEntity<EnhancedBotCommandsResponse> getEnhancedBotCommands(@PathVariable @NonNull String guildId) {
+        WebUser webUser = AuthenticationUtil.getCurrentWebUser();
+        log.info("🚀 Enhanced bot commands requested - guildId: {}, user: {}", guildId, webUser.getId());
+        
+        // 길드 권한 확인
+        validateGuildAccess(webUser, guildId);
+        
+        try {
+            // 1. 기존 봇 커맨드 조회
+            List<BotCommandDto> commands = buttonAutomationService.getBotCommands();
+            log.info("📦 Retrieved {} bot commands", commands.size());
+            
+            // 2. 자동완성 메타데이터와 통합
+            List<EnhancedBotCommandDto> enhancedCommands = commands.stream()
+                .map(this::enhanceWithAutocompleteMetadata)
+                .toList();
+            
+            // 3. 자동완성 통계 생성
+            AutocompleteSummaryDto summary = createAutocompleteSummary(enhancedCommands);
+            
+            EnhancedBotCommandsResponse response = EnhancedBotCommandsResponse.builder()
+                .success(true)
+                .commands(enhancedCommands)
+                .count(enhancedCommands.size())
+                .autocompleteSummary(summary)
+                .build();
+            
+            log.info("✅ Enhanced bot commands response: {} commands, {} with autocomplete", 
+                enhancedCommands.size(), summary.getCommandsWithAutocomplete());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("❌ Failed to retrieve enhanced bot commands for user: {}", webUser.getId(), e);
+            
+            EnhancedBotCommandsResponse errorResponse = EnhancedBotCommandsResponse.builder()
+                .success(false)
+                .commands(List.of())
+                .count(0)
+                .message("향상된 봇 커맨드를 불러올 수 없습니다: " + e.getMessage())
+                .build();
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
     // ===== 통계 엔드포인트 =====
 
     @GetMapping("/{guildId}/stats")
@@ -275,6 +326,140 @@ public class ButtonAutomationController {
         if (!hasAccess) {
             throw ErrorStatus.FORBIDDEN.asControllerException();
         }
+    }
+
+    /**
+     * 기본 봇 커맨드를 자동완성 메타데이터가 포함된 향상된 커맨드로 변환
+     */
+    private EnhancedBotCommandDto enhanceWithAutocompleteMetadata(BotCommandDto command) {
+        // 서브커맨드 변환
+        var enhancedSubcommands = command.getSubcommands() != null ? 
+            command.getSubcommands().entrySet().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                    java.util.Map.Entry::getKey,
+                    entry -> enhanceSubcommand(entry.getValue())
+                )) : 
+            java.util.Map.<String, EnhancedBotCommandSubcommandDto>of();
+
+        // 자동완성 지원 통계 계산
+        int totalAutocompleteParams = enhancedSubcommands.values().stream()
+            .mapToInt(EnhancedBotCommandSubcommandDto::getAutocompleteParameterCount)
+            .sum();
+
+        return EnhancedBotCommandDto.builder()
+            .name(command.getName())
+            .description(command.getDescription())
+            .type(command.getType())
+            .category(command.getCategory())
+            .isCacheCommand(true) // 기본값으로 설정
+            .subcommands(enhancedSubcommands)
+            .hasAutocompleteSupport(totalAutocompleteParams > 0)
+            .totalAutocompleteParameters(totalAutocompleteParams)
+            .build();
+    }
+
+    /**
+     * 서브커맨드를 자동완성 메타데이터가 포함된 향상된 서브커맨드로 변환
+     */
+    private EnhancedBotCommandSubcommandDto enhanceSubcommand(BotCommandSubcommandDto subcommand) {
+        var enhancedParameters = subcommand.getParameters() != null ?
+            subcommand.getParameters().stream()
+                .map(this::enhanceParameter)
+                .toList() :
+            List.<EnhancedBotCommandParameterDto>of();
+
+        int autocompleteCount = (int) enhancedParameters.stream()
+            .mapToLong(param -> param.isHasAutocomplete() ? 1 : 0)
+            .sum();
+
+        return EnhancedBotCommandSubcommandDto.builder()
+            .name(subcommand.getName())
+            .description(subcommand.getDescription())
+            .parameters(enhancedParameters)
+            .autocompleteParameterCount(autocompleteCount)
+            .build();
+    }
+
+    /**
+     * 파라미터를 자동완성 메타데이터가 포함된 향상된 파라미터로 변환
+     */
+    private EnhancedBotCommandParameterDto enhanceParameter(BotCommandParameterDto parameter) {
+        // 자동완성 지원 파라미터 매핑
+        boolean hasAutocomplete = isAutocompleteSupported(parameter.getName());
+        boolean isMultiSelect = parameter.getName().equals("groupnames");
+        String autocompleteType = getAutocompleteType(parameter.getName());
+        String autocompleteEndpoint = getAutocompleteEndpoint(parameter.getName());
+
+        // 선택지 변환
+        var choices = parameter.getChoices() != null ?
+            parameter.getChoices().stream()
+                .map(choice -> ParameterChoiceDto.builder()
+                    .name(choice.getName())
+                    .value(choice.getValue())
+                    .build())
+                .toList() :
+            List.<ParameterChoiceDto>of();
+
+        return EnhancedBotCommandParameterDto.builder()
+            .name(parameter.getName())
+            .description(parameter.getDescription())
+            .type(parameter.getType())
+            .required(parameter.required)
+            .choices(choices)
+            .hasAutocomplete(hasAutocomplete)
+            .isMultiSelect(isMultiSelect)
+            .autocompleteType(autocompleteType)
+            .autocompleteEndpoint(autocompleteEndpoint)
+            .build();
+    }
+
+    /**
+     * 파라미터명으로 자동완성 지원 여부 확인
+     */
+    private boolean isAutocompleteSupported(String parameterName) {
+        return List.of("groupname", "groupnames", "자동화_그룹", "파일명").contains(parameterName);
+    }
+
+    /**
+     * 파라미터명으로 자동완성 타입 조회
+     */
+    private String getAutocompleteType(String parameterName) {
+        return switch (parameterName) {
+            case "groupname", "groupnames" -> "group-names";
+            case "자동화_그룹" -> "button-groups";
+            case "파일명" -> "log-files";
+            default -> null;
+        };
+    }
+
+    /**
+     * 파라미터명으로 자동완성 엔드포인트 조회
+     */
+    private String getAutocompleteEndpoint(String parameterName) {
+        String type = getAutocompleteType(parameterName);
+        return type != null ? "/api/v1/autocomplete/{guildId}/" + type : null;
+    }
+
+    /**
+     * 자동완성 통계 생성
+     */
+    private AutocompleteSummaryDto createAutocompleteSummary(List<EnhancedBotCommandDto> commands) {
+        int totalCommands = commands.size();
+        int commandsWithAutocomplete = (int) commands.stream()
+            .mapToLong(cmd -> cmd.isHasAutocompleteSupport() ? 1 : 0)
+            .sum();
+        int totalAutocompleteParameters = commands.stream()
+            .mapToInt(EnhancedBotCommandDto::getTotalAutocompleteParameters)
+            .sum();
+        
+        List<String> supportedTypes = List.of("group-names", "button-groups", "log-files");
+
+        return AutocompleteSummaryDto.builder()
+            .totalCommands(totalCommands)
+            .commandsWithAutocomplete(commandsWithAutocomplete)
+            .totalAutocompleteParameters(totalAutocompleteParameters)
+            .supportedAutocompleteTypes(supportedTypes)
+            .build();
     }
 
     // ===== 응답 DTO =====

@@ -8,6 +8,7 @@ import {
     Save,
     Terminal,
     RefreshCw,
+    InfoIcon,
 } from "lucide-react";
 import {
     ButtonConfig,
@@ -20,6 +21,8 @@ import {
     createExampleConfig,
 } from "../../utils/buttonAutomationPreview";
 import ButtonPreview from "./ButtonPreview";
+import { BotCommandParameterInput } from "./SmartAutocompleteInput";
+import { useEnhancedBotCommands, EnhancedBotCommand } from "../../hooks/useEnhancedBotCommands";
 
 interface BotCommand {
     name: string;
@@ -48,6 +51,7 @@ interface ConfigEditorProps {
     button?: any;
     onCancel?: () => void;
     loading?: boolean;
+    guildId?: string;
 }
 
 const ConfigEditor: React.FC<ConfigEditorProps> = ({
@@ -63,6 +67,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
     button,
     onCancel,
     loading,
+    guildId,
 }) => {
     // ButtonAutomationEditor에서 온 경우 button prop에서 config 추출
     const actualConfig = configProp || button?.config || {};
@@ -86,9 +91,16 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
         "editor"
     );
     const [jsonText, setJsonText] = useState("");
-    const [botCommands, setBotCommands] = useState<BotCommand[]>([]);
-    const [loadingCommands, setLoadingCommands] = useState(false);
-    const [commandsError, setCommandsError] = useState<string | null>(null);
+    
+    // 향상된 봇 커맨드 조회 (자동완성 메타데이터 포함)
+    const { 
+        data: enhancedCommandsData, 
+        isLoading: loadingCommands, 
+        error: commandsError,
+        refetch: refetchBotCommands
+    } = useEnhancedBotCommands(guildId || "");
+    
+    const botCommands = enhancedCommandsData?.commands || [];
 
     // ButtonAutomationEditor 호환성을 위한 onChange 래퍼
     const handleConfigChange = (newConfig: Partial<ButtonConfig>) => {
@@ -102,76 +114,6 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
     useEffect(() => {
         setJsonText(JSON.stringify(actualConfig, null, 2));
     }, [actualConfig]);
-
-    // 봇 커맨드 로드
-    const loadBotCommands = async () => {
-        setLoadingCommands(true);
-        setCommandsError(null);
-
-        try {
-            const response = await fetch("/api/v1/automations/bot-commands");
-            if (!response.ok) {
-                throw new Error(
-                    `HTTP ${response.status}: ${response.statusText}`
-                );
-            }
-
-            const data = await response.json();
-            console.log("🔥 [Debug] API 응답 데이터:", data);
-            console.log("🔍 [Debug] API 응답 구조 분석:", {
-                hasSuccess: "success" in data,
-                successValue: data.success,
-                hasCommands: "commands" in data,
-                commandsLength: data.commands ? data.commands.length : 0,
-                firstCommand: data.commands ? data.commands[0] : null,
-            });
-
-            if (data.success && data.commands && Array.isArray(data.commands)) {
-                console.log("✅ [Debug] 커맨드 로드 성공:", {
-                    commandCount: data.commands.length,
-                    firstCommand: data.commands[0],
-                    commandsWithParams: data.commands.filter(
-                        (cmd) => cmd.parameters && cmd.parameters.length > 0
-                    ).length,
-                    sampleCommandWithParams: data.commands.find(
-                        (cmd) => cmd.parameters && cmd.parameters.length > 0
-                    ),
-                });
-                setBotCommands(data.commands);
-            } else {
-                console.error("❌ [Debug] API 응답 구조 문제:", {
-                    success: data.success,
-                    hasCommands: !!data.commands,
-                    isCommandsArray: Array.isArray(data.commands),
-                    dataKeys: Object.keys(data),
-                });
-                throw new Error(
-                    data.error || "API 응답 구조가 올바르지 않습니다"
-                );
-            }
-        } catch (error) {
-            console.error("봇 커맨드 로드 실패:", error);
-            setCommandsError(
-                error instanceof Error
-                    ? error.message
-                    : "커맨드를 불러올 수 없습니다"
-            );
-            setBotCommands([]);
-        } finally {
-            setLoadingCommands(false);
-        }
-    };
-
-    // 컴포넌트 마운트 시 봇 커맨드 로드
-    useEffect(() => {
-        console.log("🚀 [Debug] ConfigEditor 마운트됨");
-        console.log("📋 [Debug] ACTION_TYPE_CONFIGS 확인:", {
-            configs: ACTION_TYPE_CONFIGS,
-            keys: Object.keys(ACTION_TYPE_CONFIGS),
-            hasBotCommand: "execute_bot_command" in ACTION_TYPE_CONFIGS,
-        });
-        loadBotCommands();
-    }, []);
 
     // 기본 설정 로드
     const loadExample = () => {
@@ -265,277 +207,94 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
     };
 
     // 선택된 봇 커맨드 정보 가져오기
-    const getSelectedCommand = (commandName: string): BotCommand | null => {
+    const getSelectedCommand = (commandName: string): EnhancedBotCommand | null => {
         return botCommands.find((cmd) => cmd.name === commandName) || null;
     };
 
-    // 봇 커맨드 파라미터 렌더링
+    // 봇 커맨드 파라미터 렌더링 (스마트 자동완성 적용)
     const renderBotCommandParameters = (
         action: ActionConfig,
         actionIndex: number
     ) => {
-        console.log("🔍 [Debug] renderBotCommandParameters 호출됨", {
-            actionIndex,
-            commandName: action.parameters?.commandName,
-            botCommandsCount: botCommands.length,
-            actionParameters: action.parameters,
-            botCommandsLoaded: botCommands.length > 0,
-            availableCommands: botCommands.map((cmd) => ({
-                name: cmd.name,
-                paramCount: cmd.parameters?.length || 0,
-            })),
-        });
-
         const selectedCommandName = action.parameters?.commandName;
-        if (!selectedCommandName) {
-            console.log("❌ [Debug] selectedCommandName이 없음:", {
-                actionParameters: action.parameters,
-                hasParameters: !!action.parameters,
-                parameterKeys: action.parameters
-                    ? Object.keys(action.parameters)
-                    : [],
-            });
+        if (!selectedCommandName || !guildId) {
             return null;
         }
-
-        console.log("🔍 [Debug] 선택된 커맨드명:", selectedCommandName);
-        console.log(
-            "🔍 [Debug] 사용 가능한 커맨드들:",
-            botCommands.map((cmd) => ({
-                name: cmd.name,
-                hasParams: !!cmd.parameters,
-                paramCount: cmd.parameters?.length || 0,
-            }))
-        );
 
         const selectedCommand = getSelectedCommand(selectedCommandName);
-        console.log("🔍 [Debug] getSelectedCommand 결과:", {
-            selectedCommandName,
-            found: !!selectedCommand,
-            selectedCommand: selectedCommand
-                ? {
-                      name: selectedCommand.name,
-                      description: selectedCommand.description,
-                      hasParameters: !!selectedCommand.parameters,
-                      parametersCount: selectedCommand.parameters?.length || 0,
-                      parameters: selectedCommand.parameters,
-                  }
-                : null,
-        });
-
         if (!selectedCommand) {
-            console.log("❌ [Debug] selectedCommand가 null임");
             return null;
         }
 
-        if (!selectedCommand.parameters) {
-            console.log("❌ [Debug] selectedCommand.parameters가 없음");
-            return null;
-        }
-
-        if (selectedCommand.parameters.length === 0) {
-            console.log(
-                "ℹ️ [Debug] 선택된 커맨드에 파라미터가 없음:",
-                selectedCommand.name
-            );
+        // Enhanced command structure의 첫 번째 서브커맨드를 사용
+        // 실제로는 UI에서 서브커맨드 선택 기능이 필요하지만, 현재는 첫 번째를 사용
+        const subcommandNames = Object.keys(selectedCommand.subcommands);
+        if (subcommandNames.length === 0) {
             return (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <div className="flex items-center gap-2">
                         <Terminal className="w-4 h-4 text-blue-600" />
                         <span className="text-sm font-medium text-blue-800">
-                            커맨드 "{selectedCommand.name}"에는 추가 파라미터가
-                            필요하지 않습니다.
+                            커맨드 "{selectedCommand.name}"에는 사용 가능한 서브커맨드가 없습니다.
                         </span>
                     </div>
                 </div>
             );
         }
 
-        console.log("✅ [Debug] 파라미터 폼 렌더링 시작", {
-            commandName: selectedCommand.name,
-            parameterCount: selectedCommand.parameters.length,
-            parameters: selectedCommand.parameters.map((p) => ({
-                name: p.name,
-                type: p.type,
-                required: p.required,
-            })),
-        });
+        const firstSubcommandName = subcommandNames[0];
+        const firstSubcommand = selectedCommand.subcommands[firstSubcommandName];
+
+        if (!firstSubcommand.parameters || firstSubcommand.parameters.length === 0) {
+            return (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center gap-2">
+                        <Terminal className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-800">
+                            서브커맨드 "{firstSubcommandName}"에는 추가 파라미터가 필요하지 않습니다.
+                        </span>
+                    </div>
+                </div>
+            );
+        }
 
         return (
             <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="flex items-center gap-2 mb-3">
                     <Terminal className="w-4 h-4 text-blue-600" />
                     <span className="text-sm font-medium text-blue-800">
-                        커맨드 파라미터: {selectedCommand.name}
+                        파라미터: {selectedCommand.name}/{firstSubcommandName}
+                        {firstSubcommand.autocompleteParameterCount > 0 && (
+                            <span className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                                자동완성 지원: {firstSubcommand.autocompleteParameterCount}개
+                            </span>
+                        )}
                     </span>
                 </div>
                 <div className="space-y-3">
-                    {selectedCommand.parameters.map((param) => (
-                        <div key={param.name}>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                {param.name}
-                                {param.required && (
-                                    <span className="text-red-500 ml-1">*</span>
-                                )}
-                                <span className="text-xs text-gray-500 ml-2">
-                                    ({param.type})
-                                </span>
-                            </label>
-                            <p className="text-xs text-gray-600 mb-2">
-                                {param.description}
-                            </p>
-
-                            {param.choices && param.choices.length > 0 ? (
-                                <select
-                                    value={
-                                        action.parameters?.[param.name] || ""
-                                    }
-                                    onChange={(e) =>
-                                        updateAction(actionIndex, {
-                                            parameters: {
-                                                ...action.parameters,
-                                                [param.name]: e.target.value,
-                                            },
-                                        })
-                                    }
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                                >
-                                    <option value="">선택해주세요</option>
-                                    {param.choices.map((choice) => (
-                                        <option
-                                            key={choice.value}
-                                            value={choice.value}
-                                        >
-                                            {choice.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            ) : param.type === "boolean" ? (
-                                <select
-                                    value={
-                                        action.parameters?.[param.name] || ""
-                                    }
-                                    onChange={(e) =>
-                                        updateAction(actionIndex, {
-                                            parameters: {
-                                                ...action.parameters,
-                                                [param.name]: e.target.value,
-                                            },
-                                        })
-                                    }
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                                >
-                                    <option value="">선택해주세요</option>
-                                    <option value="true">참 (True)</option>
-                                    <option value="false">거짓 (False)</option>
-                                </select>
-                            ) : param.type === "number" ? (
-                                <input
-                                    type="number"
-                                    value={
-                                        action.parameters?.[param.name] || ""
-                                    }
-                                    onChange={(e) =>
-                                        updateAction(actionIndex, {
-                                            parameters: {
-                                                ...action.parameters,
-                                                [param.name]: e.target.value,
-                                            },
-                                        })
-                                    }
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                                    placeholder={`숫자를 입력하세요`}
-                                />
-                            ) : param.type === "user" ? (
-                                <select
-                                    value={
-                                        action.parameters?.[param.name] || ""
-                                    }
-                                    onChange={(e) =>
-                                        updateAction(actionIndex, {
-                                            parameters: {
-                                                ...action.parameters,
-                                                [param.name]: e.target.value,
-                                            },
-                                        })
-                                    }
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                                >
-                                    <option value="">
-                                        사용자를 선택하세요
-                                    </option>
-                                    {users.map((user) => (
-                                        <option key={user.id} value={user.id}>
-                                            {user.username}
-                                        </option>
-                                    ))}
-                                </select>
-                            ) : param.type === "channel" ? (
-                                <select
-                                    value={
-                                        action.parameters?.[param.name] || ""
-                                    }
-                                    onChange={(e) =>
-                                        updateAction(actionIndex, {
-                                            parameters: {
-                                                ...action.parameters,
-                                                [param.name]: e.target.value,
-                                            },
-                                        })
-                                    }
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                                >
-                                    <option value="">채널을 선택하세요</option>
-                                    {channels.map((channel) => (
-                                        <option
-                                            key={channel.id}
-                                            value={channel.id}
-                                        >
-                                            {channel.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            ) : param.type === "role" ? (
-                                <select
-                                    value={
-                                        action.parameters?.[param.name] || ""
-                                    }
-                                    onChange={(e) =>
-                                        updateAction(actionIndex, {
-                                            parameters: {
-                                                ...action.parameters,
-                                                [param.name]: e.target.value,
-                                            },
-                                        })
-                                    }
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                                >
-                                    <option value="">역할을 선택하세요</option>
-                                    {roles.map((role) => (
-                                        <option key={role.id} value={role.id}>
-                                            {role.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            ) : (
-                                <input
-                                    type="text"
-                                    value={
-                                        action.parameters?.[param.name] || ""
-                                    }
-                                    onChange={(e) =>
-                                        updateAction(actionIndex, {
-                                            parameters: {
-                                                ...action.parameters,
-                                                [param.name]: e.target.value,
-                                            },
-                                        })
-                                    }
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                                    placeholder="텍스트를 입력하세요"
-                                />
-                            )}
-                        </div>
+                    {firstSubcommand.parameters.map((param) => (
+                        <BotCommandParameterInput
+                            key={param.name}
+                            commandName={selectedCommand.name}
+                            subcommand={firstSubcommandName}
+                            parameterName={param.name}
+                            parameterType={param.type}
+                            description={param.description}
+                            required={param.required}
+                            guildId={guildId}
+                            value={action.parameters?.[param.name] || ""}
+                            onChange={(value) =>
+                                updateAction(actionIndex, {
+                                    parameters: {
+                                        ...action.parameters,
+                                        [param.name]: value,
+                                    },
+                                })
+                            }
+                            hasAutocomplete={param.hasAutocomplete}
+                            isMultiSelect={param.isMultiSelect}
+                            autocompleteType={param.autocompleteType}
+                        />
                     ))}
                 </div>
             </div>
@@ -686,6 +445,23 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
                                 )}
                             </div>
                         </div>
+
+                        {/* 시스템 상태 정보 */}
+                        {enhancedCommandsData?.message && (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                                <div className="flex items-center gap-2">
+                                    <InfoIcon className="w-4 h-4 text-yellow-600" />
+                                    <span className="text-sm text-yellow-800">
+                                        {enhancedCommandsData.message}
+                                    </span>
+                                </div>
+                                {enhancedCommandsData.autocompleteSummary.commandsWithAutocomplete === 0 && (
+                                    <div className="text-xs text-yellow-700 mt-1">
+                                        자동완성 기능이 일시적으로 비활성화되었습니다.
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* 액션 설정 */}
                         <div className="bg-gray-50 rounded-lg p-4">
@@ -892,9 +668,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
                                                         </select>
                                                         <button
                                                             type="button"
-                                                            onClick={
-                                                                loadBotCommands
-                                                            }
+                                                            onClick={() => refetchBotCommands()}
                                                             disabled={
                                                                 loadingCommands
                                                             }
@@ -918,7 +692,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
                                                     )}
                                                     {commandsError && (
                                                         <p className="text-sm text-red-600 mt-1">
-                                                            ❌ {commandsError}
+                                                            ❌ {commandsError.message || '커맨드를 불러올 수 없습니다'}
                                                         </p>
                                                     )}
                                                 </div>
