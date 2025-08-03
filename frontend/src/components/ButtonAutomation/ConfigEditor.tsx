@@ -102,6 +102,18 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
     
     const botCommands = enhancedCommandsData?.commands || [];
 
+    console.log("🔍 [ConfigEditor] Enhanced 봇 커맨드 상태:", {
+        guildId,
+        hasData: !!enhancedCommandsData,
+        commandsCount: botCommands.length,
+        isLoading: loadingCommands,
+        hasError: !!commandsError,
+        errorMessage: commandsError?.message,
+        isSuccessMode: enhancedCommandsData?.success,
+        isFallbackMode: enhancedCommandsData?.message?.includes('기본 모드'),
+        autocompleteSummary: enhancedCommandsData?.autocompleteSummary
+    });
+
     // ButtonAutomationEditor 호환성을 위한 onChange 래퍼
     const handleConfigChange = (newConfig: Partial<ButtonConfig>) => {
         if (onChangeProp) {
@@ -272,30 +284,43 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
                     </span>
                 </div>
                 <div className="space-y-3">
-                    {firstSubcommand.parameters.map((param) => (
-                        <BotCommandParameterInput
-                            key={param.name}
-                            commandName={selectedCommand.name}
-                            subcommand={firstSubcommandName}
-                            parameterName={param.name}
-                            parameterType={param.type}
-                            description={param.description}
-                            required={param.required}
-                            guildId={guildId}
-                            value={action.parameters?.[param.name] || ""}
-                            onChange={(value) =>
-                                updateAction(actionIndex, {
-                                    parameters: {
-                                        ...action.parameters,
-                                        [param.name]: value,
-                                    },
-                                })
-                            }
-                            hasAutocomplete={param.hasAutocomplete}
-                            isMultiSelect={param.isMultiSelect}
-                            autocompleteType={param.autocompleteType}
-                        />
-                    ))}
+                    {firstSubcommand.parameters.map((param) => {
+                        console.log("🎯 [ConfigEditor] 파라미터 렌더링:", {
+                            commandName: selectedCommand.name,
+                            subcommand: firstSubcommandName,
+                            parameterName: param.name,
+                            parameterType: param.type,
+                            hasAutocomplete: param.hasAutocomplete,
+                            isMultiSelect: param.isMultiSelect,
+                            autocompleteType: param.autocompleteType,
+                            guildId
+                        });
+                        
+                        return (
+                            <BotCommandParameterInput
+                                key={param.name}
+                                commandName={selectedCommand.name}
+                                subcommand={firstSubcommandName}
+                                parameterName={param.name}
+                                parameterType={param.type}
+                                description={param.description}
+                                required={param.required}
+                                guildId={guildId}
+                                value={action.parameters?.[param.name] || ""}
+                                onChange={(value) =>
+                                    updateAction(actionIndex, {
+                                        parameters: {
+                                            ...action.parameters,
+                                            [param.name]: value,
+                                        },
+                                    })
+                                }
+                                hasAutocomplete={param.hasAutocomplete}
+                                isMultiSelect={param.isMultiSelect}
+                                autocompleteType={param.autocompleteType}
+                            />
+                        );
+                    })}
                 </div>
             </div>
         );

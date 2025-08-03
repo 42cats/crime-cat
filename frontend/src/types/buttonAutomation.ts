@@ -43,6 +43,7 @@ export interface TriggerConfig {
 }
 
 export interface ActionConfig {
+  id: string; // 액션 고유 식별자 (UUID)
   type: ActionType;
   order: number;
   target: 'executor' | 'specific' | 'admin';

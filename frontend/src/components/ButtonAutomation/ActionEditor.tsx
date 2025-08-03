@@ -29,6 +29,8 @@ import {
     ACTION_TYPE_CONFIGS,
     BotCommand,
 } from "../../types/buttonAutomation";
+import { EnhancedBotCommandParameter, ParameterContext } from "../../types/parameterAutocomplete";
+import { ParameterRenderer } from "../ParameterInput/ParameterRenderer";
 import {
     DISCORD_LIMITS,
     validateActionCount,
@@ -46,6 +48,8 @@ import { MultiRoleSelect } from "../ui/multi-role-select";
 import { EmojiPicker } from "../ui/EmojiPicker";
 import { ChannelProvider } from "../../contexts/ChannelContext";
 import { useChannels } from "../../hooks/useChannels";
+import { normalizeActions, validateActions } from "../../utils/actionNormalization";
+import { generateActionId } from "../../utils/uuid";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -107,17 +111,86 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const { channels } = useChannels();
 
+    // 새로운 스마트 파라미터 렌더링 함수
+    const renderSmartParameterInput = (
+        param: any, 
+        paramKey: string, 
+        currentValue: any, 
+        actionIndex: number, 
+        subcommandName?: string
+    ) => {
+        console.log(`🎯 스마트 파라미터 렌더링: ${param.name}`, {
+            type: param.type,
+            hasChoices: Boolean(param.choices?.length),
+            currentValue,
+            actionIndex
+        });
+
+        // 서브커맨드 파라미터 업데이트 핸들러
+        const handleParameterChange = (value: any) => {
+            if (subcommandName) {
+                updateActionParameterByIndex(actionIndex, paramKey, value);
+                console.log(`🔄 서브커맨드 파라미터 업데이트: ${subcommandName}.${param.name} = ${value}`);
+            } else {
+                updateActionParameterByIndex(actionIndex, paramKey, value);
+                console.log(`🔄 파라미터 업데이트: ${param.name} = ${value}`);
+            }
+        };
+
+        // BotCommandParameter를 EnhancedBotCommandParameter로 변환
+        const enhancedParam: EnhancedBotCommandParameter = {
+            name: param.name,
+            type: param.type,
+            description: param.description,
+            required: param.required,
+            choices: param.choices?.map((choice: any) => ({
+                name: choice.name,
+                value: choice.value,
+                description: choice.description
+            })),
+            autocomplete: param.autocomplete || {
+                type: param.type === 'role' ? 'guild_roles' : 
+                      param.type === 'channel' ? 'guild_channels' :
+                      param.type === 'user' ? 'guild_members' :
+                      param.choices?.length ? 'static' : 'dynamic'
+            },
+            ui: {
+                placeholder: param.description,
+                maxLength: param.type === 'string' ? 100 : undefined
+            }
+        };
+
+        // 파라미터 컨텍스트 구성
+        const context: ParameterContext = {
+            guildId: guildId,
+            userId: userId,
+            actionIndex: actionIndex,
+            subcommandName: subcommandName
+        };
+
+        return (
+            <ParameterRenderer
+                parameter={enhancedParam}
+                value={currentValue}
+                onChange={handleParameterChange}
+                commandName="current_command"
+                context={context}
+                size="middle"
+            />
+        );
+    };
+
     // 파라미터 입력 컴포넌트 렌더링 함수
     const renderParameterInput = (param: any, paramKey: string, currentValue: any, actionIndex: number, subcommandName?: string) => {
         // 서브커맨드 파라미터 업데이트 핸들러
         const handleParameterChange = (value: any) => {
             if (subcommandName) {
                 // 서브커맨드 파라미터: 네임스페이스된 키로 저장
-                updateActionParameter(actionIndex, paramKey, value);
+                updateActionParameterByIndex(actionIndex, paramKey, value);
                 console.log(`🔄 서브커맨드 파라미터 업데이트: ${subcommandName}.${param.name} = ${value}`);
             } else {
                 // 일반 파라미터
-                updateActionParameter(actionIndex, paramKey, value);
+                updateActionParameterByIndex(actionIndex, paramKey, value);
             }
         };
 
@@ -277,22 +350,33 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
         loadBotCommands();
     }, []);
 
-    // 액션이 변경될 때 봇 커맨드 액션들을 정규화
+    // 액션이 변경될 때 정규화 적용 (ID 시스템 포함)
     useEffect(() => {
-        const normalizedActions = actions.map(normalizeAction);
-        const hasChanges =
-            JSON.stringify(normalizedActions) !== JSON.stringify(actions);
+        if (actions.length === 0) return;
+
+        console.log("🔍 액션 정규화 시작:", { actionCount: actions.length });
+
+        // normalizeActions 함수를 사용하여 전체 배열 정규화
+        const normalizedActions = normalizeActions(actions);
+        const hasChanges = JSON.stringify(normalizedActions) !== JSON.stringify(actions);
 
         if (hasChanges) {
-            console.log("🔄 기존 액션들을 정규화합니다:", {
-                before: actions,
-                after: normalizedActions,
+            console.log("🔄 액션 정규화 적용:", {
+                before: actions.map(a => ({ id: a.id, type: a.type, order: a.order })),
+                after: normalizedActions.map(a => ({ id: a.id, type: a.type, order: a.order })),
+                changeCount: normalizedActions.length - actions.length
             });
             onChange(normalizedActions);
         }
+
+        // 액션 유효성 검증
+        const validation = validateActions(normalizedActions);
+        if (!validation.isValid) {
+            console.warn("⚠️ 액션 유효성 검증 실패:", validation.errors);
+        }
     }, []);
 
-    // 액션 추가
+    // 액션 추가 (ID 기반)
     const addAction = () => {
         if (actions.length >= maxActions) {
             message.warning(
@@ -310,7 +394,9 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
         });
 
         const newAction: ActionConfig = {
+            id: generateActionId(), // UUID 기반 고유 ID 생성
             type: "add_role",
+            order: actions.length, // 순서는 현재 배열 길이
             target: "executor",
             parameters: {},
             delay: 0,
@@ -321,22 +407,43 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
         };
 
         const newActions = [...actions, newAction];
-        console.log(`✅ 액션 추가 완료:`, {
+        console.log(`✅ 액션 추가 완료 (ID 기반):`, {
             newActionsCount: newActions.length,
             newActionIndex: newActions.length - 1,
+            newActionId: newAction.id,
             newAction
         });
 
         onChange(newActions);
     };
 
-    // 액션 제거
-    const removeAction = (index: number) => {
-        const newActions = actions.filter((_, i) => i !== index);
-        onChange(newActions);
+    // 액션 제거 (ID 기반)
+    const removeAction = (actionId: string) => {
+        console.log(`🗑️ 액션 제거 (ID 기반):`, { actionId });
+        
+        const newActions = actions.filter(action => action.id !== actionId);
+        // order 재정렬
+        const reorderedActions = newActions.map((action, index) => ({
+            ...action,
+            order: index
+        }));
+        
+        onChange(reorderedActions);
+    };
+    
+    // 레거시 인덱스 기반 제거 (호환성을 위해 유지)
+    const removeActionByIndex = (index: number) => {
+        if (index < 0 || index >= actions.length) {
+            console.warn(`⚠️ 잘못된 인덱스: ${index}`);
+            return;
+        }
+        const actionId = actions[index]?.id;
+        if (actionId) {
+            removeAction(actionId);
+        }
     };
 
-    // 액션 복사
+    // 액션 복사 (ID 기반)
     const copyAction = (index: number) => {
         if (actions.length >= maxActions) {
             message.warning("최대 액션 개수에 도달했습니다.");
@@ -344,29 +451,70 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
         }
 
         const actionToCopy = { ...actions[index] };
+        // 새로운 고유 ID 생성 (복사된 액션은 새 ID를 가져야 함)
+        actionToCopy.id = generateActionId();
         const newActions = [...actions];
         newActions.splice(index + 1, 0, actionToCopy);
-        onChange(newActions);
+        
+        // order 재정렬
+        const reorderedActions = newActions.map((action, idx) => ({
+            ...action,
+            order: idx
+        }));
+        
+        console.log(`📋 액션 복사 완료 (ID 기반):`, {
+            originalId: actions[index].id,
+            newId: actionToCopy.id,
+            insertIndex: index + 1
+        });
+        
+        onChange(reorderedActions);
         message.success("액션이 복사되었습니다.");
     };
 
-    // 액션 업데이트
-    const updateAction = (index: number, updates: Partial<ActionConfig>) => {
-        const newActions = [...actions];
-        newActions[index] = { ...newActions[index], ...updates };
+    // 액션 업데이트 (ID 기반)
+    const updateAction = (actionId: string, updates: Partial<ActionConfig>) => {
+        console.log(`🔄 액션 업데이트 (ID 기반):`, { actionId, updates });
+        
+        const newActions = actions.map(action => 
+            action.id === actionId 
+                ? { ...action, ...updates }
+                : action
+        );
+        
         onChange(newActions);
     };
+    
+    // 레거시 인덱스 기반 업데이트 (호환성을 위해 유지)
+    const updateActionByIndex = (index: number, updates: Partial<ActionConfig>) => {
+        if (index < 0 || index >= actions.length) {
+            console.warn(`⚠️ 잘못된 인덱스: ${index}`);
+            return;
+        }
+        const actionId = actions[index]?.id;
+        if (actionId) {
+            updateAction(actionId, updates);
+        }
+    };
 
-    // 액션 파라미터 업데이트
+    // 액션 파라미터 업데이트 (ID 기반)
     const updateActionParameter = (
-        index: number,
+        actionId: string,
         paramKey: string,
         value: any
     ) => {
+        console.log(`🎯 액션 파라미터 업데이트 (ID 기반):`, { actionId, paramKey, value });
+        
+        const actionIndex = actions.findIndex(action => action.id === actionId);
+        if (actionIndex === -1) {
+            console.error(`❓ 액션 ID를 찾을 수 없음: ${actionId}`);
+            return;
+        }
+        
         const newActions = [...actions];
 
         // 봇 커맨드 파라미터인 경우 특별 처리
-        if (actions[index].type === "execute_bot_command") {
+        if (actions[actionIndex].type === "execute_bot_command") {
             // 메타 파라미터 (액션 설정): parameters 직속에 저장
             const metaParams = ['commandName', 'delay', 'silent', 'channelId', 'originalUserId', 'selectedSubcommand'];
             const isMetaParam = metaParams.includes(paramKey);
@@ -374,17 +522,18 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
             if (isMetaParam) {
                 // 메타 파라미터는 parameters 직속에 저장
                 console.log("🎯 봇 커맨드 메타 파라미터 업데이트:", {
-                    actionIndex: index,
+                    actionId,
+                    actionIndex,
                     paramKey,
                     value,
-                    actionType: actions[index]?.type,
+                    actionType: actions[actionIndex]?.type,
                     location: 'parameters 직속'
                 });
                 
-                newActions[index] = {
-                    ...newActions[index],
+                newActions[actionIndex] = {
+                    ...newActions[actionIndex],
                     parameters: {
-                        ...newActions[index].parameters,
+                        ...newActions[actionIndex].parameters,
                         [paramKey]: value, // 직속 저장
                     },
                 };
@@ -392,7 +541,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                 console.log("✅ 메타 파라미터 저장 완료:", {
                     paramKey,
                     value,
-                    finalParameters: newActions[index].parameters,
+                    finalParameters: newActions[actionIndex].parameters,
                 });
             } else {
                 // 실제 커맨드 파라미터: parameters.parameters에 저장
@@ -402,11 +551,12 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                 if (paramKey.includes('.')) {
                     actualParamName = paramKey; // 이미 네임스페이스된 키를 그대로 사용
                     console.log("🎯 서브커맨드 파라미터 업데이트:", {
-                        actionIndex: index,
+                        actionId,
+                        actionIndex,
                         paramKey,
                         actualParamName,
                         value,
-                        actionType: actions[index]?.type,
+                        actionType: actions[actionIndex]?.type,
                         location: 'parameters.parameters 중첩'
                     });
                 }
@@ -414,11 +564,12 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                 else if (paramKey.startsWith("commandParam_")) {
                     actualParamName = paramKey.replace("commandParam_", "");
                     console.log("🎯 레거시 봇 커맨드 파라미터 업데이트:", {
-                        actionIndex: index,
+                        actionId,
+                        actionIndex,
                         paramKey,
                         actualParamName,
                         value,
-                        actionType: actions[index]?.type,
+                        actionType: actions[actionIndex]?.type,
                         location: 'parameters.parameters 중첩'
                     });
                 }
@@ -426,17 +577,18 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                 else {
                     actualParamName = paramKey;
                     console.log("🎯 실제 커맨드 파라미터 업데이트:", {
-                        actionIndex: index,
+                        actionId,
+                        actionIndex,
                         paramKey,
                         actualParamName,
                         value,
-                        actionType: actions[index]?.type,
+                        actionType: actions[actionIndex]?.type,
                         location: 'parameters.parameters 중첩'
                     });
                 }
 
                 // 기존 중첩된 parameters 객체 가져오기 (없으면 빈 객체)
-                const existingParams = newActions[index].parameters.parameters || {};
+                const existingParams = newActions[actionIndex].parameters.parameters || {};
 
                 // 새로운 parameters 객체 생성
                 const updatedParams = {
@@ -445,28 +597,29 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                 };
 
                 // 전체 parameters 업데이트 (중첩된 구조로 바로 저장)
-                newActions[index] = {
-                    ...newActions[index],
+                newActions[actionIndex] = {
+                    ...newActions[actionIndex],
                     parameters: {
-                        ...newActions[index].parameters,
+                        ...newActions[actionIndex].parameters,
                         parameters: updatedParams, // 중첩된 parameters 객체에 직접 저장
                     },
                 };
 
                 console.log("✅ 실제 커맨드 파라미터 저장 완료:", {
-                    actionIndex: index,
+                    actionId,
+                    actionIndex,
                     actualParamName,
                     value,
                     finalNestedParams: updatedParams,
-                    allParameters: newActions[index].parameters,
+                    allParameters: newActions[actionIndex].parameters,
                 });
             }
         } else {
             // 일반 파라미터는 기존 방식으로 처리
-            newActions[index] = {
-                ...newActions[index],
+            newActions[actionIndex] = {
+                ...newActions[actionIndex],
                 parameters: {
-                    ...newActions[index].parameters,
+                    ...newActions[actionIndex].parameters,
                     [paramKey]: value,
                 },
             };
@@ -474,13 +627,38 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
 
         onChange(newActions);
     };
+    
+    // 레거시 인덱스 기반 파라미터 업데이트 (호환성을 위해 유지)
+    const updateActionParameterByIndex = (
+        index: number,
+        paramKey: string,
+        value: any
+    ) => {
+        if (index < 0 || index >= actions.length) {
+            console.warn(`⚠️ 잘못된 인덱스: ${index}`);
+            return;
+        }
+        const actionId = actions[index]?.id;
+        if (actionId) {
+            updateActionParameter(actionId, paramKey, value);
+        }
+    };
 
-    // 액션 순서 변경 (드래그 앤 드롭)
+    // 액션 순서 변경 (드래그 앤 드롭, ID 기반)
     const moveAction = (fromIndex: number, toIndex: number) => {
+        console.log(`🔀 액션 이동:`, { fromIndex, toIndex });
+        
         const newActions = [...actions];
         const movedAction = newActions.splice(fromIndex, 1)[0];
         newActions.splice(toIndex, 0, movedAction);
-        onChange(newActions);
+        
+        // order 재정렬
+        const reorderedActions = newActions.map((action, index) => ({
+            ...action,
+            order: index
+        }));
+        
+        onChange(reorderedActions);
     };
 
     // 드래그 이벤트 핸들러
@@ -742,7 +920,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                         `🔍 [액션 ${index}] 선택된 커맨드 정보:`,
                                         selectedCmd
                                     );
-                                    updateActionParameter(
+                                    updateActionParameterByIndex(
                                         index,
                                         "commandName",
                                         value
@@ -846,7 +1024,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                             }
                             onChange={(value) => {
                                 console.log("⏱️ 지연 시간 값 변경:", value);
-                                updateActionParameter(
+                                updateActionParameterByIndex(
                                     index,
                                     "delay",
                                     value !== null ? value : 0
@@ -897,7 +1075,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                         : []
                                 }
                                 onChange={(channels) => {
-                                    updateActionParameter(
+                                    updateActionParameterByIndex(
                                         index,
                                         "channelId",
                                         channels[0] || ""
@@ -937,7 +1115,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                         <Switch
                             checked={action.parameters?.silent || false}
                             onChange={(checked) =>
-                                updateActionParameter(index, "silent", checked)
+                                updateActionParameterByIndex(index, "silent", checked)
                             }
                             checkedChildren="ON"
                             unCheckedChildren="OFF"
@@ -1099,7 +1277,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                                                 action.parameters.parameters?.[param.name] ||
                                                                                 "";
                                                                             
-                                                                            return renderParameterInput(
+                                                                            return renderSmartParameterInput(
                                                                                 param, 
                                                                                 paramKey, 
                                                                                 currentValue, 
@@ -1123,7 +1301,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                         selectedCommand.parameters?.map(
                                             (param, paramIndex) => (
                                             <div
-                                                key={paramIndex}
+                                                key={`param_${param.name}_${paramIndex}`}
                                                 style={{ marginBottom: 16 }}
                                             >
                                                 <Form.Item
@@ -1171,7 +1349,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                             }
                                                         );
 
-                                                        return renderParameterInput(param, paramKey, currentValue, index);
+                                                        return renderSmartParameterInput(param, paramKey, currentValue, index);
                                                     })()}
                                                 </Form.Item>
                                                 <Text
@@ -1321,7 +1499,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                         onChange(newActions);
                                     } else {
                                         // 기타 액션은 단일 채널만 선택
-                                        updateActionParameter(
+                                        updateActionParameterByIndex(
                                             index,
                                             "channelId",
                                             channels[0] || ""
@@ -1430,7 +1608,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                         <Input
                             value={action.parameters.nickname || ""}
                             onChange={(e) =>
-                                updateActionParameter(
+                                updateActionParameterByIndex(
                                     index,
                                     "nickname",
                                     e.target.value
@@ -1478,7 +1656,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                 )
                                     ? "messageContent"
                                     : "message";
-                                updateActionParameter(
+                                updateActionParameterByIndex(
                                     index,
                                     paramName,
                                     e.target.value
@@ -1515,7 +1693,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                         <EmojiPicker
                             value={action.parameters.reactions || []}
                             onChange={(value) =>
-                                updateActionParameter(index, "reactions", value)
+                                updateActionParameterByIndex(index, "reactions", value)
                             }
                             maxCount={10}
                             placeholder="이모지를 선택하세요"
@@ -1550,7 +1728,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                         <InputNumber
                             value={action.parameters.seconds || 0}
                             onChange={(value) =>
-                                updateActionParameter(
+                                updateActionParameterByIndex(
                                     index,
                                     "seconds",
                                     value || 0
@@ -1573,7 +1751,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                         <InputNumber
                             value={action.parameters.duration || 0}
                             onChange={(value) =>
-                                updateActionParameter(
+                                updateActionParameterByIndex(
                                     index,
                                     "duration",
                                     value || 0
@@ -1599,7 +1777,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                         <Switch
                             checked={action.parameters.enable !== false}
                             onChange={(checked) =>
-                                updateActionParameter(index, "enable", checked)
+                                updateActionParameterByIndex(index, "enable", checked)
                             }
                             checkedChildren="ON"
                             unCheckedChildren="OFF"
@@ -1618,7 +1796,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                 mode="multiple"
                                 value={action.parameters.permissions || []}
                                 onChange={(value) =>
-                                    updateActionParameter(
+                                    updateActionParameterByIndex(
                                         index,
                                         "permissions",
                                         value
@@ -1761,7 +1939,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                         <Select
                             value={action.parameters.buttonStyle || "primary"}
                             onChange={(value) =>
-                                updateActionParameter(
+                                updateActionParameterByIndex(
                                     index,
                                     "buttonStyle",
                                     value
@@ -1797,7 +1975,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                         <Input
                             value={action.parameters.buttonLabel || ""}
                             onChange={(e) =>
-                                updateActionParameter(
+                                updateActionParameterByIndex(
                                     index,
                                     "buttonLabel",
                                     e.target.value
@@ -1847,7 +2025,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                         <Switch
                             checked={action.parameters.buttonDisabled === true}
                             onChange={(checked) =>
-                                updateActionParameter(
+                                updateActionParameterByIndex(
                                     index,
                                     "buttonDisabled",
                                     checked
@@ -1876,7 +2054,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                         <Input
                             value={action.parameters.buttonEmoji || ""}
                             onChange={(e) =>
-                                updateActionParameter(
+                                updateActionParameterByIndex(
                                     index,
                                     "buttonEmoji",
                                     e.target.value
@@ -1928,7 +2106,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
 
                 return (
                     <Card
-                        key={index}
+                        key={action.id}
                         size="small"
                         style={{
                             marginBottom: 16,
@@ -1964,7 +2142,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                         type="text"
                                         danger
                                         icon={<DeleteOutlined />}
-                                        onClick={() => removeAction(index)}
+                                        onClick={() => removeActionByIndex(index)}
                                         title="액션 삭제"
                                     />
                                 )}
@@ -1985,7 +2163,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                     <Select
                                         value={action.type}
                                         onChange={(value) =>
-                                            updateAction(index, {
+                                            updateActionByIndex(index, {
                                                 type: value,
                                                 parameters: {},
                                             })
@@ -2018,7 +2196,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                     <Select
                                         value={action.target}
                                         onChange={(value) =>
-                                            updateAction(index, {
+                                            updateActionByIndex(index, {
                                                 target: value,
                                             })
                                         }
@@ -2046,7 +2224,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                     <InputNumber
                                         value={action.delay || 0}
                                         onChange={(value) =>
-                                            updateAction(index, {
+                                            updateActionByIndex(index, {
                                                 delay: value || 0,
                                             })
                                         }
@@ -2072,7 +2250,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                     .targetRoleIds || []
                                             }
                                             onChange={(roles) =>
-                                                updateActionParameter(
+                                                updateActionParameterByIndex(
                                                     index,
                                                     "targetRoleIds",
                                                     roles
@@ -2113,7 +2291,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                     .targetUserId || ""
                                             }
                                             onChange={(e) =>
-                                                updateActionParameter(
+                                                updateActionParameterByIndex(
                                                     index,
                                                     "targetUserId",
                                                     e.target.value
@@ -2190,7 +2368,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                             action.result?.visibility ?? "none"
                                         }
                                         onChange={(value) =>
-                                            updateAction(index, {
+                                            updateActionByIndex(index, {
                                                 result: {
                                                     ...action.result,
                                                     visibility: value,
@@ -2224,7 +2402,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                     <Input
                                         value={action.result?.message || ""}
                                         onChange={(e) =>
-                                            updateAction(index, {
+                                            updateActionByIndex(index, {
                                                 result: {
                                                     ...action.result,
                                                     message: e.target.value,
@@ -2257,7 +2435,7 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                         : []
                                                 }
                                                 onChange={(channels) =>
-                                                    updateAction(index, {
+                                                    updateActionByIndex(index, {
                                                         result: {
                                                             ...action.result,
                                                             channelId:

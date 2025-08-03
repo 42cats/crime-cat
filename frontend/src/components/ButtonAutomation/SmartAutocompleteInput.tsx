@@ -34,9 +34,29 @@ export const SmartAutocompleteInput: React.FC<SmartAutocompleteInputProps> = ({
   isMultiSelect: enhancedIsMultiSelect,
   autocompleteType: enhancedAutocompleteType
 }) => {
+  console.log("🔍 [SmartAutocomplete] 컴포넌트 렌더링:", {
+    commandName,
+    subcommand,
+    parameterName,
+    guildId,
+    value,
+    enhancedHasAutocomplete,
+    enhancedIsMultiSelect,
+    enhancedAutocompleteType,
+    fallbackHasAutocomplete: hasAutocomplete(parameterName),
+    fallbackIsMultiSelect: isMultiSelect(parameterName)
+  });
+
   // Enhanced 메타데이터가 있으면 우선 사용, 없으면 기존 로직 사용
   const hasAutocompletion = enhancedHasAutocomplete ?? hasAutocomplete(parameterName);
   const isMultiSelectParam = enhancedIsMultiSelect ?? isMultiSelect(parameterName);
+  
+  console.log("🎯 [SmartAutocomplete] 자동완성 결정:", {
+    hasAutocompletion,
+    isMultiSelectParam,
+    useEnhanced: enhancedHasAutocomplete !== undefined,
+    useFallback: enhancedHasAutocomplete === undefined
+  });
   
   // 자동완성 데이터 조회 (Enhanced 메타데이터 기반)
   const autocompleteParameterName = enhancedAutocompleteType ? 
@@ -60,6 +80,16 @@ export const SmartAutocompleteInput: React.FC<SmartAutocompleteInputProps> = ({
     guildId,
     value
   );
+
+  console.log("📡 [SmartAutocomplete] API 호출 상태:", {
+    autocompleteParameterName,
+    guildId,
+    query: value,
+    optionsCount: options.length,
+    isLoading,
+    error: error?.message,
+    options: options.slice(0, 3) // 처음 3개만 로그
+  });
 
   // 자동완성이 없는 경우 일반 Input 반환
   if (!hasAutocompletion) {

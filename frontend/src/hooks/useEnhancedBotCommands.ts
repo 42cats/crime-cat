@@ -59,10 +59,15 @@ export interface EnhancedBotCommandsResponse {
  * 실패 시 기본 봇 커맨드 API로 폴백
  */
 export const useEnhancedBotCommands = (guildId: string) => {
+  console.log("🚀 [useEnhancedBotCommands] 훅 호출:", { guildId });
+  
   return useQuery<EnhancedBotCommandsResponse, Error>({
     queryKey: ['enhanced-bot-commands', guildId],
     queryFn: async () => {
+      console.log("📡 [useEnhancedBotCommands] API 호출 시작:", { guildId });
+      
       if (!guildId) {
+        console.error("❌ [useEnhancedBotCommands] Guild ID가 없음");
         throw new Error('Guild ID is required');
       }
 
@@ -80,17 +85,26 @@ export const useEnhancedBotCommands = (guildId: string) => {
         }
 
         const data: EnhancedBotCommandsResponse = await response.json();
+        console.log("✅ [useEnhancedBotCommands] Enhanced API 성공:", {
+          success: data.success,
+          commandCount: data.commands?.length,
+          autocompleteSummary: data.autocompleteSummary,
+          firstCommand: data.commands?.[0],
+          firstCommandSubcommands: Object.keys(data.commands?.[0]?.subcommands || {})
+        });
         
         if (!data.success) {
+          console.error("❌ [useEnhancedBotCommands] Enhanced API 실패:", data.message);
           throw new Error(data.message || 'Enhanced API returned failure');
         }
 
         return data;
       } catch (enhancedError) {
-        console.warn('Enhanced bot commands API failed, trying fallback:', enhancedError);
+        console.warn("⚠️ [useEnhancedBotCommands] Enhanced API 실패, 폴백 시도:", enhancedError);
         
         // 2차 시도: 기존 API로 폴백
         try {
+          console.log("🔄 [useEnhancedBotCommands] 폴백 API 호출 시작");
           const fallbackResponse = await fetch(`/api/v1/automations/bot-commands`, {
             credentials: 'include',
             headers: {
@@ -132,6 +146,13 @@ export const useEnhancedBotCommands = (guildId: string) => {
               supportedAutocompleteTypes: [],
             },
           };
+
+          console.log("✅ [useEnhancedBotCommands] 폴백 API 성공:", {
+            commandCount: enhancedCommands.length,
+            fallbackMode: true,
+            autocompleteDisabled: true,
+            firstCommand: enhancedCommands[0]
+          });
 
           return fallbackResponse_;
         } catch (fallbackError) {
