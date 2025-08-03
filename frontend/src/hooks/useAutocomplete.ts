@@ -144,6 +144,13 @@ export const useAutocompleteOptions = (
   guildId: string, 
   query: string
 ) => {
+  console.log("🔍 [useAutocompleteOptions] 훅 호출:", {
+    parameterName,
+    guildId,
+    query,
+    queryLength: query.length
+  });
+
   // 파라미터명에 따른 훅 선택
   const groupNamesQuery = useGroupNamesAutocomplete(guildId, query);
   const buttonGroupsQuery = useButtonGroupsAutocomplete(guildId, query);
@@ -154,17 +161,31 @@ export const useAutocompleteOptions = (
     switch (parameterName) {
       case 'groupname':
       case 'groupnames':
+        console.log("📡 [useAutocompleteOptions] group-names 선택됨");
         return groupNamesQuery;
       case '자동화_그룹':
+        console.log("📡 [useAutocompleteOptions] button-groups 선택됨");
         return buttonGroupsQuery;
       case '파일명':
+        console.log("📡 [useAutocompleteOptions] log-files 선택됨");
         return logFilesQuery;
       default:
+        console.log("❌ [useAutocompleteOptions] 지원하지 않는 파라미터:", parameterName);
         return { data: [], isLoading: false, error: null };
     }
   };
 
-  return getQueryByParameterName();
+  const result = getQueryByParameterName();
+  
+  console.log("📊 [useAutocompleteOptions] 최종 결과:", {
+    parameterName,
+    optionsCount: result.data?.length || 0,
+    isLoading: result.isLoading,
+    hasError: !!result.error,
+    errorMessage: result.error?.message
+  });
+
+  return result;
 };
 
 /**
