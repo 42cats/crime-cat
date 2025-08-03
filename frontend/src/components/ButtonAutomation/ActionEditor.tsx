@@ -549,15 +549,17 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                 
                 // 서브커맨드 파라미터 (subcommand.parameter 형식) 처리
                 if (paramKey.includes('.')) {
-                    actualParamName = paramKey; // 이미 네임스페이스된 키를 그대로 사용
-                    console.log("🎯 서브커맨드 파라미터 업데이트:", {
+                    // 네임스페이스 접두사를 제거하여 깨끗한 파라미터명만 저장
+                    actualParamName = paramKey.split('.').pop() || paramKey;
+                    console.log("🎯 서브커맨드 파라미터 업데이트 (네임스페이스 제거):", {
                         actionId,
                         actionIndex,
                         paramKey,
                         actualParamName,
                         value,
                         actionType: actions[actionIndex]?.type,
-                        location: 'parameters.parameters 중첩'
+                        location: 'parameters.parameters 중첩',
+                        namespaceCleaned: true
                     });
                 }
                 // 레거시 commandParam_ 접두사 처리
