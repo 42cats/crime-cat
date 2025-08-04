@@ -734,6 +734,10 @@ export interface BotCommandParameter {
   subcommandPath?: string;
   fullName?: string; // 네임스페이스된 이름 (예: "단일.한번만")
   originalName?: string; // 원래 이름 (예: "한번만")
+  // Enhanced API 자동완성 메타데이터
+  hasAutocomplete?: boolean;
+  isMultiSelect?: boolean;
+  autocompleteType?: string;
 }
 
 export interface BotCommandSubcommand {

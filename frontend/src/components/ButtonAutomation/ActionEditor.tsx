@@ -1092,12 +1092,10 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                     };
                                                     onChange(newActions);
                                                 }}
-                                            >
-                                                {Object.entries(selectedCommand.subcommands).map(([subcommandName, subcommand]) => (
-                                                    <Tabs.TabPane 
-                                                        tab={subcommand.name || subcommandName} 
-                                                        key={subcommandName}
-                                                    >
+                                                items={Object.entries(selectedCommand.subcommands).map(([subcommandName, subcommand]) => ({
+                                                    key: subcommandName,
+                                                    label: subcommand.name || subcommandName,
+                                                    children: (
                                                         <div style={{ padding: '12px 0' }}>
                                                             {subcommand.parameters?.map((param) => (
                                                                 <div key={param.name} style={{ marginBottom: 12 }}>
@@ -1121,6 +1119,9 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                                             guildId={guildId}
                                                                             placeholder={`${param.name}을(를) 입력하세요`}
                                                                             required={param.required}
+                                                                            hasAutocomplete={param.hasAutocomplete}
+                                                                            isMultiSelect={param.isMultiSelect}
+                                                                            autocompleteType={param.autocompleteType}
                                                                         />
                                                                     </Form.Item>
                                                                     <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>
@@ -1129,9 +1130,9 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                                 </div>
                                                             ))}
                                                         </div>
-                                                    </Tabs.TabPane>
-                                                ))}
-                                            </Tabs>
+                                                    )
+                                                }))}
+                                            />
                                         </div>
                                     ) : (
                                         /* 기존 flat 구조 렌더링 (하위 호환성) */
