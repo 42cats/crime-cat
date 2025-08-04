@@ -21,9 +21,12 @@ class MessageActionExecutor extends BaseActionExecutor {
      */
     async performAction(action, context) {
         const { type } = action;
-        const { message, channelId, embed } = action.parameters;
+        const { message, messageContent, channelId, embed } = action.parameters;
+        
+        // messageContent와 message 파라미터 통합 처리
+        const finalMessage = message || messageContent;
 
-        if (!message && !embed) {
+        if (!finalMessage && !embed) {
             throw new Error('메시지 내용 또는 임베드가 지정되지 않았습니다.');
         }
 
@@ -87,7 +90,10 @@ class MessageActionExecutor extends BaseActionExecutor {
      */
     async sendChannelMessage(action, context, targets) {
         const { guild, channel: currentChannel } = context;
-        const { channelId, message, embed, reactions } = action.parameters;
+        const { channelId, message, messageContent, embed, reactions } = action.parameters;
+        
+        // messageContent와 message 파라미터 통합 처리
+        const finalMessage = message || messageContent;
 
         try {
             // 채널 ID 검증 및 기본값 설정
@@ -107,7 +113,7 @@ class MessageActionExecutor extends BaseActionExecutor {
             }
 
             // 메시지 내용 처리
-            const processedMessage = this.processMessageVariables(message || '', context);
+            const processedMessage = this.processMessageVariables(finalMessage || '', context);
             
             // 메시지 옵션 구성
             const messageOptions = {};
@@ -122,7 +128,7 @@ class MessageActionExecutor extends BaseActionExecutor {
 
             // 카테고리 채널인 경우 하위 채널들에 메시지 전송
             if (targetChannel.type === ChannelType.GuildCategory) {
-                return await this.sendToCategoryChannels(targetChannel, messageOptions, context);
+                return await this.sendToCategoryChannels(targetChannel, messageOptions, context, reactions);
             }
 
             if (!targetChannel.isTextBased()) {
@@ -184,7 +190,10 @@ class MessageActionExecutor extends BaseActionExecutor {
      * 개별 DM 전송
      */
     async sendDirectMessage(action, context, targetMember) {
-        const { message, embed } = action.parameters;
+        const { message, messageContent, embed } = action.parameters;
+        
+        // messageContent와 message 파라미터 통합 처리
+        const finalMessage = message || messageContent;
 
         try {
             // 봇 자신에게는 DM 전송 안함
@@ -198,7 +207,7 @@ class MessageActionExecutor extends BaseActionExecutor {
             }
 
             // 메시지 내용 처리
-            const processedMessage = this.processMessageVariables(message || '', context);
+            const processedMessage = this.processMessageVariables(finalMessage || '', context);
             
             // 메시지 옵션 구성
             const messageOptions = {};
@@ -330,9 +339,10 @@ class MessageActionExecutor extends BaseActionExecutor {
     /**
      * 카테고리 채널의 하위 채널들에 메시지 전송
      */
-    async sendToCategoryChannels(categoryChannel, messageOptions, context) {
+    async sendToCategoryChannels(categoryChannel, messageOptions, context, reactions = null) {
         const { guild } = context;
-        const { reactions } = messageOptions;
+        
+        console.log(`🔍 [카테고리] reactions 파라미터 확인:`, reactions);
 
         try {
             // 카테고리 하위의 텍스트 채널들 수집
@@ -367,6 +377,7 @@ class MessageActionExecutor extends BaseActionExecutor {
 
                     // 이모지 반응 추가
                     let processedReactions = [];
+                    console.log(`🔍 [카테고리] ${channel.name} 채널 reactions 처리:`, reactions);
                     if (reactions) {
                         if (typeof reactions === 'string') {
                             processedReactions = reactions.split(',').map(r => r.trim()).filter(Boolean);
@@ -374,6 +385,7 @@ class MessageActionExecutor extends BaseActionExecutor {
                             processedReactions = reactions.filter(r => r && r.trim());
                         }
                     }
+                    console.log(`🔍 [카테고리] ${channel.name} 채널 processedReactions:`, processedReactions);
 
                     if (processedReactions.length > 0) {
                         for (const reaction of processedReactions) {
