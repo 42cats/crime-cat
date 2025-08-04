@@ -37,6 +37,7 @@ import {
     isValidDiscordId,
 } from "../../utils/validation";
 import { MusicParameterEditor } from "./ActionParameters/MusicParameterEditor";
+import { SmartAutocompleteInput } from "./SmartAutocompleteInput";
 import {
     PERMISSION_CATEGORIES,
     PERMISSION_INFO,
@@ -119,21 +120,13 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
         actionIndex: number, 
         subcommandName?: string
     ) => {
-        console.log(`🎯 스마트 파라미터 렌더링: ${param.name}`, {
-            type: param.type,
-            hasChoices: Boolean(param.choices?.length),
-            currentValue,
-            actionIndex
-        });
 
         // 서브커맨드 파라미터 업데이트 핸들러
         const handleParameterChange = (value: any) => {
             if (subcommandName) {
                 updateActionParameterByIndex(actionIndex, paramKey, value);
-                console.log(`🔄 서브커맨드 파라미터 업데이트: ${subcommandName}.${param.name} = ${value}`);
             } else {
                 updateActionParameterByIndex(actionIndex, paramKey, value);
-                console.log(`🔄 파라미터 업데이트: ${param.name} = ${value}`);
             }
         };
 
@@ -187,7 +180,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
             if (subcommandName) {
                 // 서브커맨드 파라미터: 네임스페이스된 키로 저장
                 updateActionParameterByIndex(actionIndex, paramKey, value);
-                console.log(`🔄 서브커맨드 파라미터 업데이트: ${subcommandName}.${param.name} = ${value}`);
             } else {
                 // 일반 파라미터
                 updateActionParameterByIndex(actionIndex, paramKey, value);
@@ -255,17 +247,11 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
 
     // 봇 커맨드 로드
     const loadBotCommands = async () => {
-        console.log("🔄 봇 커맨드 로딩 시작...");
         setLoadingCommands(true);
         setCommandsError(null);
 
         try {
             const response = await fetch("/api/v1/automations/bot-commands");
-            console.log(
-                "📡 API 응답 상태:",
-                response.status,
-                response.statusText
-            );
 
             if (!response.ok) {
                 throw new Error(
@@ -274,13 +260,8 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
             }
 
             const data = await response.json();
-            console.log("📦 API 응답 데이터:", data);
 
             if (data.success) {
-                console.log(
-                    `✅ 봇 커맨드 ${data.commands.length}개 로드 성공:`,
-                    data.commands.map((cmd) => cmd.name)
-                );
                 setBotCommands(data.commands);
             } else {
                 throw new Error(data.error || "알 수 없는 오류가 발생했습니다");
@@ -295,7 +276,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
             setBotCommands([]);
         } finally {
             setLoadingCommands(false);
-            console.log("🏁 봇 커맨드 로딩 완료");
         }
     };
 
@@ -315,11 +295,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                 const actualParamName = key.replace("commandParam_", "");
                 commandParams[actualParamName] = value;
                 hasLegacyParams = true;
-                console.log("🔄 레거시 파라미터 발견 및 변환:", {
-                    key,
-                    actualParamName,
-                    value,
-                });
             } else {
                 otherParams[key] = value;
             }
@@ -333,10 +308,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
         // commandParam_ 형식이 있었다면 변환하여 중첩된 구조로 저장
         if (hasLegacyParams || Object.keys(commandParams).length > 0) {
             otherParams.parameters = commandParams;
-            console.log("✅ 레거시 파라미터 마이그레이션 완료:", {
-                commandParams,
-                finalParams: otherParams,
-            });
         }
 
         return {
@@ -354,18 +325,12 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
     useEffect(() => {
         if (actions.length === 0) return;
 
-        console.log("🔍 액션 정규화 시작:", { actionCount: actions.length });
 
         // normalizeActions 함수를 사용하여 전체 배열 정규화
         const normalizedActions = normalizeActions(actions);
         const hasChanges = JSON.stringify(normalizedActions) !== JSON.stringify(actions);
 
         if (hasChanges) {
-            console.log("🔄 액션 정규화 적용:", {
-                before: actions.map(a => ({ id: a.id, type: a.type, order: a.order })),
-                after: normalizedActions.map(a => ({ id: a.id, type: a.type, order: a.order })),
-                changeCount: normalizedActions.length - actions.length
-            });
             onChange(normalizedActions);
         }
 
@@ -385,13 +350,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
             return;
         }
 
-        console.log(`➕ 새 액션 추가:`, {
-            currentActionsCount: actions.length,
-            maxActions,
-            botCommandsLoaded: botCommands.length > 0,
-            loadingCommands,
-            commandsError
-        });
 
         const newAction: ActionConfig = {
             id: generateActionId(), // UUID 기반 고유 ID 생성
@@ -407,19 +365,12 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
         };
 
         const newActions = [...actions, newAction];
-        console.log(`✅ 액션 추가 완료 (ID 기반):`, {
-            newActionsCount: newActions.length,
-            newActionIndex: newActions.length - 1,
-            newActionId: newAction.id,
-            newAction
-        });
 
         onChange(newActions);
     };
 
     // 액션 제거 (ID 기반)
     const removeAction = (actionId: string) => {
-        console.log(`🗑️ 액션 제거 (ID 기반):`, { actionId });
         
         const newActions = actions.filter(action => action.id !== actionId);
         // order 재정렬
@@ -462,11 +413,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
             order: idx
         }));
         
-        console.log(`📋 액션 복사 완료 (ID 기반):`, {
-            originalId: actions[index].id,
-            newId: actionToCopy.id,
-            insertIndex: index + 1
-        });
         
         onChange(reorderedActions);
         message.success("액션이 복사되었습니다.");
@@ -474,7 +420,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
 
     // 액션 업데이트 (ID 기반)
     const updateAction = (actionId: string, updates: Partial<ActionConfig>) => {
-        console.log(`🔄 액션 업데이트 (ID 기반):`, { actionId, updates });
         
         const newActions = actions.map(action => 
             action.id === actionId 
@@ -503,7 +448,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
         paramKey: string,
         value: any
     ) => {
-        console.log(`🎯 액션 파라미터 업데이트 (ID 기반):`, { actionId, paramKey, value });
         
         const actionIndex = actions.findIndex(action => action.id === actionId);
         if (actionIndex === -1) {
@@ -521,14 +465,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
             
             if (isMetaParam) {
                 // 메타 파라미터는 parameters 직속에 저장
-                console.log("🎯 봇 커맨드 메타 파라미터 업데이트:", {
-                    actionId,
-                    actionIndex,
-                    paramKey,
-                    value,
-                    actionType: actions[actionIndex]?.type,
-                    location: 'parameters 직속'
-                });
                 
                 newActions[actionIndex] = {
                     ...newActions[actionIndex],
@@ -538,11 +474,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     },
                 };
                 
-                console.log("✅ 메타 파라미터 저장 완료:", {
-                    paramKey,
-                    value,
-                    finalParameters: newActions[actionIndex].parameters,
-                });
             } else {
                 // 실제 커맨드 파라미터: parameters.parameters에 저장
                 let actualParamName: string;
@@ -551,42 +482,14 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                 if (paramKey.includes('.')) {
                     // 네임스페이스 접두사를 제거하여 깨끗한 파라미터명만 저장
                     actualParamName = paramKey.split('.').pop() || paramKey;
-                    console.log("🎯 서브커맨드 파라미터 업데이트 (네임스페이스 제거):", {
-                        actionId,
-                        actionIndex,
-                        paramKey,
-                        actualParamName,
-                        value,
-                        actionType: actions[actionIndex]?.type,
-                        location: 'parameters.parameters 중첩',
-                        namespaceCleaned: true
-                    });
                 }
                 // 레거시 commandParam_ 접두사 처리
                 else if (paramKey.startsWith("commandParam_")) {
                     actualParamName = paramKey.replace("commandParam_", "");
-                    console.log("🎯 레거시 봇 커맨드 파라미터 업데이트:", {
-                        actionId,
-                        actionIndex,
-                        paramKey,
-                        actualParamName,
-                        value,
-                        actionType: actions[actionIndex]?.type,
-                        location: 'parameters.parameters 중첩'
-                    });
                 }
                 // 일반 봇 커맨드 파라미터
                 else {
                     actualParamName = paramKey;
-                    console.log("🎯 실제 커맨드 파라미터 업데이트:", {
-                        actionId,
-                        actionIndex,
-                        paramKey,
-                        actualParamName,
-                        value,
-                        actionType: actions[actionIndex]?.type,
-                        location: 'parameters.parameters 중첩'
-                    });
                 }
 
                 // 기존 중첩된 parameters 객체 가져오기 (없으면 빈 객체)
@@ -607,14 +510,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                     },
                 };
 
-                console.log("✅ 실제 커맨드 파라미터 저장 완료:", {
-                    actionId,
-                    actionIndex,
-                    actualParamName,
-                    value,
-                    finalNestedParams: updatedParams,
-                    allParameters: newActions[actionIndex].parameters,
-                });
             }
         } else {
             // 일반 파라미터는 기존 방식으로 처리
@@ -648,7 +543,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
 
     // 액션 순서 변경 (드래그 앤 드롭, ID 기반)
     const moveAction = (fromIndex: number, toIndex: number) => {
-        console.log(`🔀 액션 이동:`, { fromIndex, toIndex });
         
         const newActions = [...actions];
         const movedAction = newActions.splice(fromIndex, 1)[0];
@@ -857,14 +751,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
 
     // 액션 타입별 파라미터 렌더링
     const renderActionParameters = (action: ActionConfig, index: number) => {
-        console.log(`🔧 [액션 ${index}] 파라미터 렌더링 시작:`, {
-            actionIndex: index,
-            actionType: action.type,
-            parameters: action.parameters,
-            commandName: action.parameters?.commandName,
-            botCommandsAvailable: botCommands.length > 0,
-            loadingCommands
-        });
 
         const actionType =
             ACTION_TYPE_CONFIGS[
@@ -908,19 +794,8 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                             <Select
                                 value={action.parameters?.commandName || ""}
                                 onChange={(value) => {
-                                    console.log(`🎯 [액션 ${index}] 커맨드 선택됨:`, {
-                                        value,
-                                        actionIndex: index,
-                                        currentValue: action.parameters?.commandName,
-                                        botCommandsCount: botCommands.length,
-                                        allActions: actions.length
-                                    });
                                     const selectedCmd = botCommands.find(
                                         (cmd) => cmd.name === value
-                                    );
-                                    console.log(
-                                        `🔍 [액션 ${index}] 선택된 커맨드 정보:`,
-                                        selectedCmd
                                     );
                                     updateActionParameterByIndex(
                                         index,
@@ -934,14 +809,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                 disabled={loadingCommands}
                             >
                                 {(() => {
-                                    console.log(`📋 [액션 ${index}] 드롭다운 렌더링:`, {
-                                        actionIndex: index,
-                                        botCommandsCount: botCommands.length,
-                                        commandNames: botCommands.map(cmd => cmd.name),
-                                        currentValue: action.parameters?.commandName,
-                                        loadingCommands,
-                                        commandsError
-                                    });
                                     return botCommands.map((command) => (
                                         <Option
                                             key={command.name}
@@ -1025,12 +892,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                     : 0
                             }
                             onChange={(value) => {
-                                console.log("⏱️ 지연 시간 값 변경:", value);
-                                updateActionParameterByIndex(
-                                    index,
-                                    "delay",
-                                    value !== null ? value : 0
-                                );
                             }}
                             min={0}
                             max={60}
@@ -1082,14 +943,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                         "channelId",
                                         channels[0] || ""
                                     );
-                                    console.log(
-                                        "📍 봇 커맨드 실행 채널 변경:",
-                                        {
-                                            actionIndex: index,
-                                            selectedChannelId: channels[0],
-                                            allChannels: channels,
-                                        }
-                                    );
                                 }}
                                 placeholder="커맨드를 실행할 채널을 선택하세요"
                                 maxSelections={1}
@@ -1140,11 +993,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                             const selectedCommand = botCommands.find(
                                 (cmd) =>
                                     cmd.name === action.parameters.commandName
-                            );
-                            console.log("선택된 커맨드:", selectedCommand);
-                            console.log(
-                                "커맨드 파라미터들:",
-                                selectedCommand?.parameters
                             );
 
                             // 파라미터 존재 여부 확인 (새로운 구조 포함)
@@ -1225,8 +1073,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                 activeKey={action.parameters.selectedSubcommand || Object.keys(selectedCommand.subcommands)[0]}
                                                 onChange={(activeKey) => {
                                                     // 활성 탭 변경 시 선택된 서브커맨드만 변경 (기존 파라미터 보존)
-                                                    console.log(`🔄 서브커맨드 탭 변경: ${activeKey}`);
-                                                    console.log(`📦 기존 파라미터 보존:`, action.parameters.parameters);
                                                     
                                                     // 기존 파라미터는 그대로 유지하고 선택된 서브커맨드만 변경
                                                     const newParameters = { 
@@ -1242,51 +1088,35 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                         parameters: newParameters
                                                     };
                                                     onChange(newActions);
-                                                    
-                                                    console.log(`✅ 서브커맨드 변경 완료 - 선택: ${activeKey}, 보존된 파라미터:`, newParameters.parameters || {});
                                                 }}
-                                                items={Object.entries(selectedCommand.subcommands).map(([subName, subInfo]) => ({
-                                                    key: subName,
-                                                    label: (
-                                                        <span>
-                                                            🔸 {subName}
-                                                        </span>
-                                                    ),
-                                                    children: (
-                                                        <div style={{ padding: "16px 0" }}>
-                                                            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 16 }}>
-                                                                {subInfo.description}
-                                                            </Text>
-                                                            
-                                                            {subInfo.parameters.map((param, paramIndex) => (
-                                                                <div key={`${subName}.${param.name}`} style={{ marginBottom: 16 }}>
+                                            >
+                                                {Object.entries(selectedCommand.subcommands).map(([subcommandName, subcommand]) => (
+                                                    <Tabs.TabPane 
+                                                        tab={subcommand.name || subcommandName} 
+                                                        key={subcommandName}
+                                                    >
+                                                        <div style={{ padding: '12px 0' }}>
+                                                            {subcommand.parameters?.map((param) => (
+                                                                <div key={param.name} style={{ marginBottom: 12 }}>
                                                                     <Form.Item
-                                                                        label={
-                                                                            <span>
-                                                                                {param.name}
-                                                                                {param.required && (
-                                                                                    <span style={{ color: "#ff4d4f" }}> *</span>
-                                                                                )}
-                                                                            </span>
-                                                                        }
-                                                                        style={{ marginBottom: 8 }}
+                                                                        label={param.name}
+                                                                        style={{ marginBottom: 4 }}
                                                                     >
-                                                                        {(() => {
-                                                                            // 서브커맨드별 네임스페이스된 키 사용
-                                                                            const paramKey = `${subName}.${param.name}`;
-                                                                            const currentValue =
-                                                                                action.parameters.parameters?.[paramKey] ||
-                                                                                action.parameters.parameters?.[param.name] ||
-                                                                                "";
-                                                                            
-                                                                            return renderSmartParameterInput(
-                                                                                param, 
-                                                                                paramKey, 
-                                                                                currentValue, 
-                                                                                index,
-                                                                                subName // 서브커맨드 이름 전달
-                                                                            );
-                                                                        })()}
+                                                                        <SmartAutocompleteInput
+                                                                            value={action.parameters?.parameters?.[param.name] || ""}
+                                                                            onChange={(value) => {
+                                                                                updateActionParameterByIndex(
+                                                                                    index,
+                                                                                    `parameters.${param.name}`,
+                                                                                    value
+                                                                                );
+                                                                            }}
+                                                                            parameterName={param.name}
+                                                                            parameterType={param.type}
+                                                                            guildId={guildId}
+                                                                            placeholder={`${param.name}을(를) 입력하세요`}
+                                                                            required={param.required}
+                                                                        />
                                                                     </Form.Item>
                                                                     <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>
                                                                         {param.description}
@@ -1294,9 +1124,9 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                                 </div>
                                                             ))}
                                                         </div>
-                                                    )
-                                                }))}
-                                            />
+                                                    </Tabs.TabPane>
+                                                ))}
+                                            </Tabs>
                                         </div>
                                     ) : (
                                         /* 기존 flat 구조 렌더링 (하위 호환성) */
@@ -1337,19 +1167,6 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                             ] ||
                                                             "";
 
-                                                        console.log(
-                                                            `🔧 봇 커맨드 파라미터 렌더링 - ${param.name}:`,
-                                                            {
-                                                                paramKey,
-                                                                currentValue,
-                                                                nestedParams:
-                                                                    action
-                                                                        .parameters
-                                                                        .parameters,
-                                                                allParameters:
-                                                                    action.parameters,
-                                                            }
-                                                        );
 
                                                         return renderSmartParameterInput(param, paramKey, currentValue, index);
                                                     })()}
