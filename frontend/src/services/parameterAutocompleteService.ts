@@ -15,9 +15,11 @@ import { apiClient } from '../lib/api';
 // API 상수
 const API_PREFIX = '/api/v1';
 
-// 캐시 관리
+// 캐시 관리 (메모리 누수 방지)
 const autocompleteCache = new Map<string, { data: AutocompleteChoice[]; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5분
+const MAX_CACHE_SIZE = 100; // 최대 캐시 항목 수
+const CLEANUP_INTERVAL = 10 * 60 * 1000; // 10분마다 정리
 
 /**
  * 캐시 키 생성
@@ -43,13 +45,54 @@ function getCachedData(cacheKey: string): AutocompleteChoice[] | null {
 }
 
 /**
- * 캐시에 데이터 저장
+ * 만료된 캐시 항목 정리
+ */
+function cleanupExpiredCache(): void {
+  const now = Date.now();
+  const keysToDelete: string[] = [];
+  
+  for (const [key, { timestamp }] of autocompleteCache.entries()) {
+    if (now - timestamp > CACHE_DURATION) {
+      keysToDelete.push(key);
+    }
+  }
+  
+  keysToDelete.forEach(key => autocompleteCache.delete(key));
+  
+  if (keysToDelete.length > 0) {
+    console.debug(`🧹 만료된 캐시 ${keysToDelete.length}개 정리 완료`);
+  }
+}
+
+/**
+ * 캐시 크기 제한 (LRU 방식)
+ */
+function enforceMaxCacheSize(): void {
+  if (autocompleteCache.size <= MAX_CACHE_SIZE) return;
+  
+  // 가장 오래된 항목부터 제거
+  const entries = Array.from(autocompleteCache.entries());
+  entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+  
+  const itemsToRemove = entries.length - MAX_CACHE_SIZE;
+  for (let i = 0; i < itemsToRemove; i++) {
+    autocompleteCache.delete(entries[i][0]);
+  }
+  
+  console.debug(`📦 캐시 크기 제한: ${itemsToRemove}개 항목 제거 (현재: ${autocompleteCache.size}/${MAX_CACHE_SIZE})`);
+}
+
+/**
+ * 캐시에 데이터 저장 (크기 제한 적용)
  */
 function setCachedData(cacheKey: string, data: AutocompleteChoice[]): void {
   autocompleteCache.set(cacheKey, {
     data,
     timestamp: Date.now()
   });
+  
+  // 캐시 크기 제한 적용
+  enforceMaxCacheSize();
 }
 
 /**
@@ -176,6 +219,9 @@ function convertToAutocompleteChoice(data: unknown[], type: 'channel' | 'role' |
  * 길드 역할 목록 조회 (새로운 API 사용)
  */
 export async function fetchGuildRoles(guildId: string): Promise<AutocompleteChoice[]> {
+  // 첫 사용 시 캐시 시스템 초기화
+  initializeCache();
+  
   const cacheKey = generateCacheKey('guild_roles', guildId);
   const cached = getCachedData(cacheKey);
   if (cached) return cached;
@@ -390,9 +436,45 @@ export function filterChoices(choices: AutocompleteChoice[], query: string): Aut
   );
 }
 
+// 자동 캐시 정리 타이머 설정
+let cleanupTimer: NodeJS.Timeout | null = null;
+
 /**
- * 캐시 초기화
+ * 자동 캐시 정리 시작
+ */
+function startAutomaticCleanup(): void {
+  if (cleanupTimer) return; // 이미 실행 중
+  
+  cleanupTimer = setInterval(() => {
+    cleanupExpiredCache();
+  }, CLEANUP_INTERVAL);
+  
+  console.debug('🕒 자동 캐시 정리 타이머 시작 (10분 간격)');
+}
+
+/**
+ * 자동 캐시 정리 중지
+ */
+function stopAutomaticCleanup(): void {
+  if (cleanupTimer) {
+    clearInterval(cleanupTimer);
+    cleanupTimer = null;
+    console.debug('⏹️ 자동 캐시 정리 타이머 중지');
+  }
+}
+
+/**
+ * 캐시 초기화 및 정리 시스템 관리
  */
 export function clearAutocompleteCache(): void {
   autocompleteCache.clear();
+  stopAutomaticCleanup();
+  console.debug('🧹 캐시 완전 초기화 완료');
+}
+
+/**
+ * 캐시 시스템 활성화 (첫 사용 시 자동 호출)
+ */
+export function initializeCache(): void {
+  startAutomaticCleanup();
 }

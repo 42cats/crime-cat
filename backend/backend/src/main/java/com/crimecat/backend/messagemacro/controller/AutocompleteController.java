@@ -20,11 +20,14 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,6 +45,9 @@ public class AutocompleteController {
     private final MessageMacroService messageMacroService;
     private final ButtonAutomationService buttonAutomationService;
     private final GuildRepository guildRepository;
+    
+    // Guild ID 검증을 위한 패턴 (Discord Snowflake ID는 숫자로만 구성)
+    private static final Pattern VALID_GUILD_ID_PATTERN = Pattern.compile("^[0-9]{17,19}$");
 
     /**
      * 그룹명 자동완성 (버튼 커맨드용)
@@ -53,8 +59,6 @@ public class AutocompleteController {
             @RequestParam(required = false, defaultValue = "") String q) {
         
         WebUser webUser = AuthenticationUtil.getCurrentWebUser();
-        log.info("🔍 그룹명 자동완성 요청 - guildId: {}, query: '{}', user: {}", 
-                guildId, q, webUser.getId());
         
         // 길드 소유권 검증 (웹 인증 필수)
         validateGuildAccess(webUser, guildId);
@@ -62,7 +66,6 @@ public class AutocompleteController {
         try {
             // Discord 봇과 동일한 로직 적용
             List<GroupDto> groups = messageMacroService.getAllGroups(guildId);
-            log.info("📦 조회된 그룹 수: {}", groups.size());
             
             String normalizedQuery = Normalizer.normalize(q, Normalizer.Form.NFC).toLowerCase();
             
@@ -76,7 +79,6 @@ public class AutocompleteController {
                     .build())
                 .collect(Collectors.toList());
             
-            log.info("✅ 그룹명 자동완성 결과: {}개 옵션", options.size());
             return ResponseEntity.ok(options);
             
         } catch (Exception e) {
@@ -95,15 +97,12 @@ public class AutocompleteController {
             @RequestParam(required = false, defaultValue = "") String q) {
         
         WebUser webUser = AuthenticationUtil.getCurrentWebUser();
-        log.info("🔍 버튼 그룹 자동완성 요청 - guildId: {}, query: '{}', user: {}", 
-                guildId, q, webUser.getId());
         
         validateGuildAccess(webUser, guildId);
         
         try {
             // buttonGroups.js 로직 이식
             List<ButtonAutomationGroupDto> groups = buttonAutomationService.getGroups(guildId);
-            log.info("📦 조회된 버튼 그룹 수: {}", groups.size());
             
             String normalizedQuery = Normalizer.normalize(q, Normalizer.Form.NFC).toLowerCase();
             
@@ -120,7 +119,6 @@ public class AutocompleteController {
                 })
                 .collect(Collectors.toList());
             
-            log.info("✅ 버튼 그룹 자동완성 결과: {}개 옵션", options.size());
             return ResponseEntity.ok(options);
             
         } catch (Exception e) {
@@ -139,15 +137,12 @@ public class AutocompleteController {
             @RequestParam(required = false, defaultValue = "") String q) {
         
         WebUser webUser = AuthenticationUtil.getCurrentWebUser();
-        log.info("🔍 로그 파일 자동완성 요청 - guildId: {}, query: '{}', user: {}", 
-                guildId, q, webUser.getId());
         
         validateGuildAccess(webUser, guildId);
         
         try {
             // logFileName.js 로직 이식 - 파일시스템에서 엑셀 파일 조회
             List<String> logFiles = getExcelFilesFromFileSystem(guildId);
-            log.info("📦 조회된 로그 파일 수: {}", logFiles.size());
             
             String normalizedQuery = Normalizer.normalize(q, Normalizer.Form.NFC).toLowerCase();
             
@@ -161,7 +156,6 @@ public class AutocompleteController {
                     .build())
                 .collect(Collectors.toList());
             
-            log.info("✅ 로그 파일 자동완성 결과: {}개 옵션", options.size());
             return ResponseEntity.ok(options);
             
         } catch (Exception e) {
@@ -176,19 +170,16 @@ public class AutocompleteController {
      */
     @GetMapping("/commands/metadata")
     public ResponseEntity<List<CommandAutocompleteMetadataDto>> getAutocompleteMetadata() {
-        log.info("🔍 봇 커맨드 자동완성 메타데이터 요청");
         
         try {
             // 기존 BotCommandsRedisService 활용
             List<BotCommandDto> botCommands = buttonAutomationService.getBotCommands();
-            log.info("📦 조회된 봇 커맨드 수: {}", botCommands.size());
             
             // 자동완성 메타데이터 추출 및 매핑
             List<CommandAutocompleteMetadataDto> metadata = botCommands.stream()
                 .flatMap(this::extractAutocompleteParameters)
                 .collect(Collectors.toList());
             
-            log.info("✅ 자동완성 메타데이터 추출 완료: {}개 파라미터", metadata.size());
             return ResponseEntity.ok(metadata);
             
         } catch (Exception e) {
@@ -250,17 +241,40 @@ public class AutocompleteController {
     }
 
     /**
+     * Guild ID 유효성 검증 (보안: Path Traversal 방지)
+     */
+    private boolean isValidGuildId(String guildId) {
+        return guildId != null && VALID_GUILD_ID_PATTERN.matcher(guildId).matches();
+    }
+
+    /**
      * 파일시스템에서 엑셀 파일 목록 조회
      * Discord 봇의 logFileName.js와 동일한 로직
+     * 보안: Path Traversal 취약점 방지를 위한 검증 추가
      */
     private List<String> getExcelFilesFromFileSystem(String guildId) {
         try {
-            // Discord 봇과 동일한 경로 사용 (../dat/{guildId}/)
-            String logFolderPath = System.getProperty("user.dir") + "/dat/" + guildId;
-            File logFolder = new File(logFolderPath);
+            // Guild ID 유효성 검증 (보안)
+            if (!isValidGuildId(guildId)) {
+                log.warn("⚠️ 유효하지 않은 guildId 감지: {}", guildId);
+                return new ArrayList<>();
+            }
+            
+            // 안전한 경로 구성 (Path Traversal 방지)
+            Path logFolderPath = Paths.get(System.getProperty("user.dir"), "dat", guildId);
+            File logFolder = logFolderPath.toFile();
+            
+            // 경로 정규화 및 검증
+            String normalizedPath = logFolder.getCanonicalPath();
+            String expectedBasePath = Paths.get(System.getProperty("user.dir"), "dat").toFile().getCanonicalPath();
+            
+            if (!normalizedPath.startsWith(expectedBasePath)) {
+                log.error("🚨 Path Traversal 시도 감지: guildId={}, path={}", guildId, normalizedPath);
+                return new ArrayList<>();
+            }
             
             if (!logFolder.exists() || !logFolder.isDirectory()) {
-                log.warn("⚠️ 로그 폴더가 존재하지 않음: {}", logFolderPath);
+                log.warn("⚠️ 로그 폴더가 존재하지 않음: {}", normalizedPath);
                 return new ArrayList<>();
             }
             
