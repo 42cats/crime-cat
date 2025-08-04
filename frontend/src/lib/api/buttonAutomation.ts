@@ -2,6 +2,7 @@ import { apiClient } from '../api';
 import { ButtonAutomationGroup, ButtonAutomation } from '../../types/buttonAutomation';
 import { GroupFormData } from '../../components/ButtonAutomation/GroupForm';
 import { ButtonFormData } from '../../components/ButtonAutomation/ButtonForm';
+import { transformButtonConfigForBackend, transformButtonConfigForFrontend } from '../../utils/parameterMapping';
 
 // 통계 인터페이스
 export interface AutomationStats {
@@ -84,33 +85,84 @@ export const buttonAutomationApi = {
   /**
    * 특정 길드의 모든 버튼 조회
    */
-  getButtons: (guildId: string): Promise<ButtonAutomation[]> => {
-    return apiClient.get(`/automations/${guildId}/buttons`);
+  getButtons: async (guildId: string): Promise<ButtonAutomation[]> => {
+    const buttons = await apiClient.get<ButtonAutomation[]>(`/automations/${guildId}/buttons`);
+    
+    // 각 버튼의 config를 프론트엔드용으로 역변환
+    return buttons.map(button => {
+      try {
+        const parsedConfig = JSON.parse(button.config);
+        const transformedConfigObj = transformButtonConfigForFrontend(parsedConfig);
+        return {
+          ...button,
+          config: JSON.stringify(transformedConfigObj)
+        };
+      } catch (error) {
+        console.warn('버튼 설정 역변환 실패, 원본 사용:', error);
+        return button;
+      }
+    });
   },
 
   /**
    * 특정 그룹의 버튼들 조회
    */
-  getButtonsByGroup: (guildId: string, groupId: string): Promise<ButtonAutomation[]> => {
-    return apiClient.get(`/automations/${guildId}/groups/${groupId}/buttons`);
+  getButtonsByGroup: async (guildId: string, groupId: string): Promise<ButtonAutomation[]> => {
+    const buttons = await apiClient.get<ButtonAutomation[]>(`/automations/${guildId}/groups/${groupId}/buttons`);
+    
+    // 각 버튼의 config를 프론트엔드용으로 역변환
+    return buttons.map(button => {
+      try {
+        const parsedConfig = JSON.parse(button.config);
+        const transformedConfigObj = transformButtonConfigForFrontend(parsedConfig);
+        return {
+          ...button,
+          config: JSON.stringify(transformedConfigObj)
+        };
+      } catch (error) {
+        console.warn('버튼 설정 역변환 실패, 원본 사용:', error);
+        return button;
+      }
+    });
   },
 
   /**
    * 특정 버튼 조회
    */
-  getButton: (guildId: string, buttonId: string): Promise<ButtonAutomation> => {
-    return apiClient.get(`/automations/${guildId}/buttons/${buttonId}`);
+  getButton: async (guildId: string, buttonId: string): Promise<ButtonAutomation> => {
+    const button = await apiClient.get<ButtonAutomation>(`/automations/${guildId}/buttons/${buttonId}`);
+    
+    // config를 파싱하여 프론트엔드용으로 변환
+    try {
+      const parsedConfig = JSON.parse(button.config);
+      const transformedConfigObj = transformButtonConfigForFrontend(parsedConfig);
+      button.config = JSON.stringify(transformedConfigObj);
+    } catch (error) {
+      console.warn('버튼 설정 역변환 실패, 원본 사용:', error);
+    }
+    
+    return button;
   },
 
   /**
    * 새 버튼 생성
    */
   createButton: (guildId: string, data: ButtonFormData): Promise<ButtonAutomation> => {
+    // config를 파싱하여 파라미터 변환 적용
+    let transformedConfig = data.config;
+    try {
+      const parsedConfig = JSON.parse(data.config);
+      const transformedConfigObj = transformButtonConfigForBackend(parsedConfig);
+      transformedConfig = JSON.stringify(transformedConfigObj);
+    } catch (error) {
+      console.warn('버튼 설정 파싱 실패, 원본 사용:', error);
+    }
+
     const requestData: ButtonRequestDto = {
       groupId: data.groupId,
       buttonLabel: data.buttonLabel,
       displayOrder: data.displayOrder,
-      config: data.config,
+      config: transformedConfig,
       isActive: data.isActive
     };
     return apiClient.post(`/automations/${guildId}/buttons`, requestData);
@@ -120,11 +172,21 @@ export const buttonAutomationApi = {
    * 버튼 수정
    */
   updateButton: (guildId: string, buttonId: string, data: ButtonFormData): Promise<ButtonAutomation> => {
+    // config를 파싱하여 파라미터 변환 적용
+    let transformedConfig = data.config;
+    try {
+      const parsedConfig = JSON.parse(data.config);
+      const transformedConfigObj = transformButtonConfigForBackend(parsedConfig);
+      transformedConfig = JSON.stringify(transformedConfigObj);
+    } catch (error) {
+      console.warn('버튼 설정 파싱 실패, 원본 사용:', error);
+    }
+
     const requestData: ButtonRequestDto = {
       groupId: data.groupId,
       buttonLabel: data.buttonLabel,
       displayOrder: data.displayOrder,
-      config: data.config,
+      config: transformedConfig,
       isActive: data.isActive
     };
     return apiClient.put(`/automations/${guildId}/buttons/${buttonId}`, requestData);

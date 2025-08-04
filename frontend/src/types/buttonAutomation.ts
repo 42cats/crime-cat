@@ -201,6 +201,13 @@ export const ACTION_TYPE_CONFIGS: Record<ActionType, ActionTypeConfig> = {
         label: '메시지 내용',
         required: true,
         placeholder: '전송할 메시지를 입력하세요'
+      },
+      {
+        name: 'reactions',
+        type: 'multiselect',
+        label: '이모지 반응',
+        required: false,
+        placeholder: '메시지에 자동으로 추가할 이모지를 선택하세요'
       }
     ],
     requiredPermissions: ['SEND_MESSAGES']

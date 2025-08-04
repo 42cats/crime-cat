@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { AutoComplete, Input, Switch } from 'antd';
 import { useAutocompleteOptions, hasAutocomplete, isMultiSelect } from '../../hooks/useAutocomplete';
+import { EmojiPicker } from '../ui/EmojiPicker';
 
 /**
  * 자동완성 타입에서 파라미터명 매핑 (컴포넌트 외부로 이동하여 재생성 방지)
@@ -65,6 +66,25 @@ export const SmartAutocompleteInput: React.FC<SmartAutocompleteInputProps> = ({
     guildId,
     value
   );
+
+  // 이모지 반응 파라미터인 경우 EmojiPicker 반환
+  if (parameterName === 'reactions') {
+    // 콤마로 구분된 문자열을 배열로 변환
+    const emojisArray = value ? value.split(',').map((e: string) => e.trim()).filter(Boolean) : [];
+    
+    return (
+      <EmojiPicker
+        value={emojisArray}
+        onChange={(emojis) => {
+          // 배열을 콤마로 구분된 문자열로 변환하여 백엔드 형식에 맞춤
+          onChange(emojis.join(','));
+        }}
+        maxCount={10}
+        placeholder={placeholder || '메시지에 자동으로 추가할 이모지를 선택하세요'}
+        disabled={disabled}
+      />
+    );
+  }
 
   // 불리언 타입인 경우 토글 스위치 반환
   if (parameterType === 'boolean') {
@@ -198,6 +218,22 @@ export const BotCommandParameterInput: React.FC<BotCommandParameterInputProps> =
   autocompleteType
 }) => {
   const renderInput = () => {
+    // 이모지 반응 파라미터인 경우 특별 처리
+    if (parameterName === 'reactions') {
+      const emojisArray = value ? value.split(',').map((e: string) => e.trim()).filter(Boolean) : [];
+      
+      return (
+        <EmojiPicker
+          value={emojisArray}
+          onChange={(emojis) => {
+            onChange(emojis.join(','));
+          }}
+          maxCount={10}
+          placeholder={description || '메시지에 자동으로 추가할 이모지를 선택하세요'}
+        />
+      );
+    }
+
     switch (parameterType) {
       case 'string':
         return (
@@ -205,6 +241,7 @@ export const BotCommandParameterInput: React.FC<BotCommandParameterInputProps> =
             commandName={commandName}
             subcommand={subcommand}
             parameterName={parameterName}
+            parameterType={parameterType}
             guildId={guildId}
             value={value || ''}
             onChange={onChange}
