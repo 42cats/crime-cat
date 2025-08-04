@@ -76,16 +76,6 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
             ? buttonLabel
             : button?.buttonLabel || "새 버튼";
 
-    console.log("🚀 [Debug] ConfigEditor 렌더링 시작:", {
-        configProp,
-        button,
-        actualConfig,
-        actualButtonLabel,
-        hasActions: !!actualConfig.actions,
-        actionsCount: actualConfig.actions?.length || 0,
-        firstActionType: actualConfig.actions?.[0]?.type,
-        isButtonMode: !!button,
-    });
 
     const [activeTab, setActiveTab] = useState<"editor" | "preview" | "json">(
         "editor"
@@ -102,17 +92,6 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
     
     const botCommands = enhancedCommandsData?.commands || [];
 
-    console.log("🔍 [ConfigEditor] Enhanced 봇 커맨드 상태:", {
-        guildId,
-        hasData: !!enhancedCommandsData,
-        commandsCount: botCommands.length,
-        isLoading: loadingCommands,
-        hasError: !!commandsError,
-        errorMessage: commandsError?.message,
-        isSuccessMode: enhancedCommandsData?.success,
-        isFallbackMode: enhancedCommandsData?.message?.includes('기본 모드'),
-        autocompleteSummary: enhancedCommandsData?.autocompleteSummary
-    });
 
     // ButtonAutomationEditor 호환성을 위한 onChange 래퍼
     const handleConfigChange = (newConfig: Partial<ButtonConfig>) => {
@@ -169,22 +148,10 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
 
     // 액션 업데이트
     const updateAction = (index: number, updates: Partial<ActionConfig>) => {
-        console.log("🔄 [Debug] updateAction 호출됨:", {
-            index,
-            updates,
-            currentAction: actualConfig.actions?.[index],
-            newType: updates.type,
-        });
 
         const newActions = [...(actualConfig.actions || [])];
         newActions[index] = { ...newActions[index], ...updates };
 
-        console.log("📝 [Debug] 액션 업데이트 후:", {
-            index,
-            oldAction: actualConfig.actions?.[index],
-            newAction: newActions[index],
-            allActions: newActions,
-        });
 
         handleConfigChange({
             ...actualConfig,
@@ -285,16 +252,6 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
                 </div>
                 <div className="space-y-3">
                     {firstSubcommand.parameters.map((param) => {
-                        console.log("🎯 [ConfigEditor] 파라미터 렌더링:", {
-                            commandName: selectedCommand.name,
-                            subcommand: firstSubcommandName,
-                            parameterName: param.name,
-                            parameterType: param.type,
-                            hasAutocomplete: param.hasAutocomplete,
-                            isMultiSelect: param.isMultiSelect,
-                            autocompleteType: param.autocompleteType,
-                            guildId
-                        });
                         
                         return (
                             <BotCommandParameterInput
@@ -531,18 +488,6 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
                                                 <select
                                                     value={action.type}
                                                     onChange={(e) => {
-                                                        console.log(
-                                                            "🎯 [Debug] 액션 타입 선택됨:",
-                                                            {
-                                                                selectedValue:
-                                                                    e.target
-                                                                        .value,
-                                                                currentType:
-                                                                    action.type,
-                                                                actionIndex:
-                                                                    index,
-                                                            }
-                                                        );
                                                         updateAction(index, {
                                                             type: e.target
                                                                 .value as any,
@@ -612,27 +557,6 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
                                                                 ""
                                                             }
                                                             onChange={(e) => {
-                                                                console.log(
-                                                                    "🎯 [Debug] 커맨드 선택 변경:",
-                                                                    {
-                                                                        selectedCommand:
-                                                                            e
-                                                                                .target
-                                                                                .value,
-                                                                        availableCommands:
-                                                                            botCommands.length,
-                                                                        selectedCommandDetails:
-                                                                            botCommands.find(
-                                                                                (
-                                                                                    cmd
-                                                                                ) =>
-                                                                                    cmd.name ===
-                                                                                    e
-                                                                                        .target
-                                                                                        .value
-                                                                            ),
-                                                                    }
-                                                                );
 
                                                                 // 커맨드 변경 시 기존 커맨드별 파라미터 초기화
                                                                 const baseParams =
@@ -798,28 +722,6 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
                                                         action.parameters
                                                             ?.commandName &&
                                                         botCommands.length > 0;
-                                                    console.log(
-                                                        "🎯 [Debug] 동적 파라미터 렌더링 조건 확인:",
-                                                        {
-                                                            actionIndex: index,
-                                                            hasCommandName:
-                                                                !!action
-                                                                    .parameters
-                                                                    ?.commandName,
-                                                            commandName:
-                                                                action
-                                                                    .parameters
-                                                                    ?.commandName,
-                                                            hasBotCommands:
-                                                                botCommands.length >
-                                                                0,
-                                                            botCommandsCount:
-                                                                botCommands.length,
-                                                            shouldRender,
-                                                            actionParameters:
-                                                                action.parameters,
-                                                        }
-                                                    );
 
                                                     return shouldRender ? (
                                                         renderBotCommandParameters(

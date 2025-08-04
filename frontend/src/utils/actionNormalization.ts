@@ -101,12 +101,6 @@ export function normalizeActions(actions: (Partial<ActionConfig> | ActionConfig)
     order: index
   }));
 
-  console.log('✅ 액션 정규화 완료:', {
-    originalCount: actions.length,
-    normalizedCount: reorderedActions.length,
-    actionIds: reorderedActions.map(a => a.id.substring(0, 12) + '...'),
-    actionTypes: reorderedActions.map(a => a.type)
-  });
 
   return reorderedActions;
 }

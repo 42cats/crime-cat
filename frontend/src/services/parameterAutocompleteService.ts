@@ -12,6 +12,9 @@ import {
 } from '../types/parameterAutocomplete';
 import { apiClient } from '../lib/api';
 
+// API 상수
+const API_PREFIX = '/api/v1';
+
 // 캐시 관리
 const autocompleteCache = new Map<string, { data: AutocompleteChoice[]; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5분
@@ -54,8 +57,8 @@ function setCachedData(cacheKey: string, data: AutocompleteChoice[]): void {
  */
 async function fetchWithAuth<T = unknown>(endpoint: string): Promise<T> {
   try {
-    // /api/v1 prefix 제거 (apiClient가 자동으로 추가)
-    const cleanEndpoint = endpoint.startsWith('/api/v1') ? endpoint.substring(7) : endpoint;
+    // API_PREFIX 제거 (apiClient가 자동으로 추가)
+    const cleanEndpoint = endpoint.startsWith(API_PREFIX) ? endpoint.substring(API_PREFIX.length) : endpoint;
     return await apiClient.get<T>(cleanEndpoint);
   } catch (error: unknown) {
     const axiosError = error as { response?: { status: number } };
@@ -314,7 +317,6 @@ export async function fetchParameterChoices(request: AutocompleteRequest): Promi
   }
 
   try {
-    console.log('📡 파라미터 자동완성 요청:', { endpoint, parameter: parameterName, query });
     
     let choices: AutocompleteChoice[] = [];
     
@@ -341,7 +343,6 @@ export async function fetchParameterChoices(request: AutocompleteRequest): Promi
         }
     }
     
-    console.log('✅ 파라미터 자동완성 응답:', { choices: choices.length, parameter: parameterName });
     
     return {
       success: true,
@@ -394,5 +395,4 @@ export function filterChoices(choices: AutocompleteChoice[], query: string): Aut
  */
 export function clearAutocompleteCache(): void {
   autocompleteCache.clear();
-  console.log('🧹 자동완성 캐시 초기화됨');
 }

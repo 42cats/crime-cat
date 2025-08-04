@@ -42,7 +42,6 @@ export const MusicSelector: React.FC<MusicSelectorProps> = ({
     const { data: localFiles, isLoading: isLoadingLocal } = useQuery({
         queryKey: ['local-files', guildId, userId],
         queryFn: () => {
-            console.log('🎵 로컬 음악 API 호출:', { guildId, userId, source });
             return musicApi.getLocalFiles(guildId, userId || '');
         },
         enabled: !!userId && source === 'local',
@@ -62,13 +61,9 @@ export const MusicSelector: React.FC<MusicSelectorProps> = ({
 
     // 선택 처리
     const handleSelection = (trackId: string) => {
-        console.log('선택된 trackId:', trackId);
-        console.log('현재 tracks:', tracks);
-        
         const track = tracks?.find(track => track.id === trackId);
         
         if (track) {
-            console.log('선택된 track:', track);
             const selection: MusicSelection = {
                 trackId: track.id,
                 source,
@@ -76,7 +71,6 @@ export const MusicSelector: React.FC<MusicSelectorProps> = ({
                 duration: track.duration,
                 thumbnail: source === 'youtube' ? (track as YouTubeTrack).thumbnail : undefined
             };
-            console.log('생성된 selection:', selection);
             onChange?.(selection);
         } else {
             console.error('트랙을 찾을 수 없습니다:', trackId);

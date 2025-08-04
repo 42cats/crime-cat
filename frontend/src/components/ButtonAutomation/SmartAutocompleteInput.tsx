@@ -1,16 +1,18 @@
 import React from 'react';
-import { AutoComplete, Input } from 'antd';
+import { AutoComplete, Input, Switch } from 'antd';
 import { useAutocompleteOptions, hasAutocomplete, isMultiSelect } from '../../hooks/useAutocomplete';
 
 interface SmartAutocompleteInputProps {
   commandName: string;
   subcommand?: string;
   parameterName: string;
+  parameterType?: string; // 파라미터 타입 추가
   guildId: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  required?: boolean; // 필수 여부 추가
   // Enhanced API 메타데이터 (우선적으로 사용)
   hasAutocomplete?: boolean;
   isMultiSelect?: boolean;
@@ -25,38 +27,21 @@ export const SmartAutocompleteInput: React.FC<SmartAutocompleteInputProps> = ({
   commandName,
   subcommand,
   parameterName,
+  parameterType,
   guildId,
   value,
   onChange,
   placeholder,
   disabled = false,
+  required = false,
   hasAutocomplete: enhancedHasAutocomplete,
   isMultiSelect: enhancedIsMultiSelect,
   autocompleteType: enhancedAutocompleteType
 }) => {
-  console.log("🔍 [SmartAutocomplete] 컴포넌트 렌더링:", {
-    commandName,
-    subcommand,
-    parameterName,
-    guildId,
-    value,
-    enhancedHasAutocomplete,
-    enhancedIsMultiSelect,
-    enhancedAutocompleteType,
-    fallbackHasAutocomplete: hasAutocomplete(parameterName),
-    fallbackIsMultiSelect: isMultiSelect(parameterName)
-  });
 
   // Enhanced 메타데이터가 있으면 우선 사용, 없으면 기존 로직 사용
   const hasAutocompletion = enhancedHasAutocomplete ?? hasAutocomplete(parameterName);
   const isMultiSelectParam = enhancedIsMultiSelect ?? isMultiSelect(parameterName);
-  
-  console.log("🎯 [SmartAutocomplete] 자동완성 결정:", {
-    hasAutocompletion,
-    isMultiSelectParam,
-    useEnhanced: enhancedHasAutocomplete !== undefined,
-    useFallback: enhancedHasAutocomplete === undefined
-  });
   
   // 자동완성 데이터 조회 (Enhanced 메타데이터 기반)
   const autocompleteParameterName = enhancedAutocompleteType ? 
@@ -81,15 +66,38 @@ export const SmartAutocompleteInput: React.FC<SmartAutocompleteInputProps> = ({
     value
   );
 
-  console.log("📡 [SmartAutocomplete] API 호출 상태:", {
-    autocompleteParameterName,
-    guildId,
-    query: value,
-    optionsCount: options.length,
-    isLoading,
-    error: error?.message,
-    options: options.slice(0, 3) // 처음 3개만 로그
-  });
+  // 불리언 타입인 경우 토글 스위치 반환
+  if (parameterType === 'boolean') {
+    const booleanValue = value === 'true' || (typeof value === 'boolean' && value);
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Switch
+          checked={booleanValue}
+          onChange={(checked) => onChange(checked ? 'true' : 'false')}
+          checkedChildren="참"
+          unCheckedChildren="거짓"
+          disabled={disabled}
+        />
+        <span style={{ fontSize: '14px', color: '#666' }}>
+          {booleanValue ? '참 (true)' : '거짓 (false)'}
+        </span>
+        {required && <span style={{ color: 'red', marginLeft: 4 }}>*</span>}
+      </div>
+    );
+  }
+
+  // 숫자 타입인 경우 숫자 입력 반환
+  if (parameterType === 'number') {
+    return (
+      <Input
+        type="number"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder || `${parameterName} 입력`}
+        disabled={disabled}
+      />
+    );
+  }
 
   // 자동완성이 없는 경우 일반 Input 반환
   if (!hasAutocompletion) {
@@ -208,17 +216,19 @@ export const BotCommandParameterInput: React.FC<BotCommandParameterInputProps> =
         );
       
       case 'boolean':
+        const booleanValue = value === 'true' || value === true;
         return (
-          <AutoComplete
-            value={value?.toString() || ''}
-            onChange={onChange}
-            options={[
-              { value: 'true', label: '예 (true)' },
-              { value: 'false', label: '아니오 (false)' }
-            ]}
-            placeholder="true 또는 false 선택"
-            style={{ width: '100%' }}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Switch
+              checked={booleanValue}
+              onChange={(checked) => onChange(checked ? 'true' : 'false')}
+              checkedChildren="참"
+              unCheckedChildren="거짓"
+            />
+            <span style={{ fontSize: '14px', color: '#666' }}>
+              {booleanValue ? '참 (true)' : '거짓 (false)'}
+            </span>
+          </div>
         );
       
       case 'number':
