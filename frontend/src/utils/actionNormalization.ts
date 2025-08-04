@@ -79,30 +79,25 @@ export function normalizeActions(actions: (Partial<ActionConfig> | ActionConfig)
     return [];
   }
 
-  const normalized = actions.map((action, index) => normalizeAction(action, index));
-  
-  // 중복 ID 검사 및 수정
+  // 단일 순회로 정규화, 중복 제거, 재정렬 통합 처리 (성능 최적화)
   const seenIds = new Set<string>();
-  const deduplicatedActions = normalized.map((action, index) => {
+  const result: ActionConfig[] = [];
+  
+  for (let i = 0; i < actions.length; i++) {
+    let action = normalizeAction(actions[i], i);
+    
+    // 중복 ID 검사 및 수정  
     if (seenIds.has(action.id)) {
       console.warn(`🔧 중복 액션 ID 감지: ${action.id}, 새 ID 생성`);
-      return {
-        ...action,
-        id: generateActionId()
-      };
+      action = { ...action, id: generateActionId() };
     }
     seenIds.add(action.id);
-    return action;
-  });
-
-  // order 필드 재정렬
-  const reorderedActions = deduplicatedActions.map((action, index) => ({
-    ...action,
-    order: index
-  }));
-
-
-  return reorderedActions;
+    
+    // order 필드 재정렬과 함께 결과 배열에 추가
+    result.push({ ...action, order: result.length });
+  }
+  
+  return result;
 }
 
 /**

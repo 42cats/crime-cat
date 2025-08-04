@@ -369,15 +369,18 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
         onChange(newActions);
     };
 
-    // 액션 제거 (ID 기반)
+    // 액션 제거 (ID 기반) - 단일 순회 최적화
     const removeAction = (actionId: string) => {
+        // 필터링과 재정렬을 단일 순회로 통합 처리 (성능 최적화)
+        const reorderedActions = [];
+        let order = 0;
         
-        const newActions = actions.filter(action => action.id !== actionId);
-        // order 재정렬
-        const reorderedActions = newActions.map((action, index) => ({
-            ...action,
-            order: index
-        }));
+        for (const action of actions) {
+            if (action.id !== actionId) {
+                reorderedActions.push({ ...action, order });
+                order++;
+            }
+        }
         
         onChange(reorderedActions);
     };
@@ -1103,6 +1106,8 @@ export const ActionEditor: React.FC<ActionEditorProps> = ({
                                                                         style={{ marginBottom: 4 }}
                                                                     >
                                                                         <SmartAutocompleteInput
+                                                                            commandName={selectedCommand.name}
+                                                                            subcommand={subcommandName}
                                                                             value={action.parameters?.parameters?.[param.name] || ""}
                                                                             onChange={(value) => {
                                                                                 updateActionParameterByIndex(

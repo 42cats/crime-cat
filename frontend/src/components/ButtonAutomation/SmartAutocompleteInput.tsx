@@ -1,6 +1,18 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { AutoComplete, Input, Switch } from 'antd';
 import { useAutocompleteOptions, hasAutocomplete, isMultiSelect } from '../../hooks/useAutocomplete';
+
+/**
+ * 자동완성 타입에서 파라미터명 매핑 (컴포넌트 외부로 이동하여 재생성 방지)
+ */
+function getParameterNameFromType(autocompleteType: string): string {
+  switch (autocompleteType) {
+    case 'group-names': return 'groupname';
+    case 'button-groups': return '자동화_그룹';
+    case 'log-files': return '파일명';
+    default: return autocompleteType;
+  }
+}
 
 interface SmartAutocompleteInputProps {
   commandName: string;
@@ -47,18 +59,6 @@ export const SmartAutocompleteInput: React.FC<SmartAutocompleteInputProps> = ({
   const autocompleteParameterName = enhancedAutocompleteType ? 
     getParameterNameFromType(enhancedAutocompleteType) : 
     parameterName;
-  
-  /**
-   * 자동완성 타입에서 파라미터명 매핑
-   */
-  function getParameterNameFromType(autocompleteType: string): string {
-    switch (autocompleteType) {
-      case 'group-names': return 'groupname';
-      case 'button-groups': return '자동화_그룹';
-      case 'log-files': return '파일명';
-      default: return autocompleteType;
-    }
-  }
     
   const { data: options = [], isLoading, error } = useAutocompleteOptions(
     autocompleteParameterName,

@@ -257,7 +257,6 @@ public class ButtonAutomationController {
     @GetMapping("/{guildId}/bot-commands-enhanced")
     public ResponseEntity<EnhancedBotCommandsResponse> getEnhancedBotCommands(@PathVariable @NonNull String guildId) {
         WebUser webUser = AuthenticationUtil.getCurrentWebUser();
-        log.info("🚀 Enhanced bot commands requested - guildId: {}, user: {}", guildId, webUser.getId());
         
         // 길드 권한 확인
         validateGuildAccess(webUser, guildId);
@@ -265,7 +264,6 @@ public class ButtonAutomationController {
         try {
             // 1. 기존 봇 커맨드 조회
             List<BotCommandDto> commands = buttonAutomationService.getBotCommands();
-            log.info("📦 Retrieved {} bot commands", commands.size());
             
             // 2. 자동완성 메타데이터와 통합
             List<EnhancedBotCommandDto> enhancedCommands = commands.stream()
@@ -282,8 +280,6 @@ public class ButtonAutomationController {
                 .autocompleteSummary(summary)
                 .build();
             
-            log.info("✅ Enhanced bot commands response: {} commands, {} with autocomplete", 
-                enhancedCommands.size(), summary.getCommandsWithAutocomplete());
             
             return ResponseEntity.ok(response);
             
