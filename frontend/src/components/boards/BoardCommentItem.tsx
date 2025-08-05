@@ -63,9 +63,12 @@ export const BoardCommentItem: React.FC<BoardCommentItemProps> = ({
         comment.content === "[비밀댓글]"
     ) {
         return (
-            <div className={`py-3 ${isReply ? "ml-12" : ""}`}>
+            <div className={`${isReply ? "ml-12 py-3" : "p-4"}`}>
                 <div className="flex gap-3">
-                    <Avatar className="h-8 w-8 rounded-full border bg-muted/20 shrink-0">
+                    <Avatar
+                        className="h-8 w-8 rounded-full border bg-muted/20 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                        onClick={() => onProfileClick(comment.authorId)}
+                    >
                         <AvatarImage
                             src={
                                 comment.authorProfileImage ||
@@ -76,18 +79,35 @@ export const BoardCommentItem: React.FC<BoardCommentItemProps> = ({
                             {comment.authorName.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-sm">
-                                {comment.authorName}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                                <UTCToKST date={comment.createdAt} />
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground italic">
-                            <Lock className="w-3.5 h-3.5" />
-                            <span>비밀 댓글입니다.</span>
+                    <div className="flex-1 overflow-hidden">
+                        <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                                {/* 작성자 정보 */}
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span
+                                        className="font-medium text-foreground text-sm cursor-pointer hover:text-primary transition-colors"
+                                        onClick={() => onProfileClick(comment.authorId)}
+                                    >
+                                        {comment.authorName}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        <UTCToKST date={comment.createdAt} />
+                                    </span>
+                                    <Badge
+                                        variant="secondary"
+                                        className="text-xs h-5 px-1.5"
+                                    >
+                                        <Lock className="w-3 h-3 mr-0.5" />
+                                        비밀
+                                    </Badge>
+                                </div>
+
+                                {/* 비밀 댓글 메시지 */}
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground italic mt-2 mb-2">
+                                    <Lock className="w-3.5 h-3.5" />
+                                    <span>비밀 댓글입니다.</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
