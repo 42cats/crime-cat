@@ -1,6 +1,7 @@
 package com.crimecat.backend.boardPost.dto;
 
 import com.crimecat.backend.boardPost.domain.BoardPost;
+import com.crimecat.backend.boardPost.enums.PostType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,6 +36,7 @@ public class BoardPostDetailResponse {
     private boolean isPinned;
     @JsonProperty("isSecret")
     private boolean isSecret;
+    private PostType postType;
 
     @JsonProperty("isOwnPost")
     public boolean isOwnPost() {
@@ -78,6 +80,7 @@ public class BoardPostDetailResponse {
                 .isLikedByCurrentUser(isLikedByCurrentUser)
                 .isPinned(boardPost.getIsPinned())
                 .isSecret(boardPost.getIsSecret())
+                .postType(boardPost.getPostType())
                 .build();
     }
 }

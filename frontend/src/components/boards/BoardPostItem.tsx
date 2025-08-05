@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { BoardPost, BoardType, PostType } from "@/lib/types/board";
+import { BoardPost, BoardType, PostType, DetailedPostType } from "@/lib/types/board";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -22,12 +22,84 @@ interface BoardPostItemProps {
 const BoardPostItem: React.FC<BoardPostItemProps> = ({ post, boardType }) => {
     const { user, hasRole } = useAuth();
 
-    // 비밀글 접근 가능 여부 확인
+    // 비밀글 접근 가능 여부 확인 (백엔드 isOwnPost 신룰)
     const canAccessSecret = post.isSecret
-        ? post.isOwnPost ||
-          (user && post.authorId && post.authorId === user?.id) ||
-          hasRole(["ADMIN", "MANAGER"])
+        ? post.isOwnPost || hasRole(["ADMIN", "MANAGER"])
         : true;
+
+    // DetailedPostType 뱃지 생성 함수
+    const getDetailedPostTypeBadge = (postType: DetailedPostType) => {
+        switch (postType) {
+            case DetailedPostType.QUESTION:
+                return (
+                    <Badge variant="outline" className="mr-2 border-blue-500 text-blue-600 bg-blue-50">
+                        질문
+                    </Badge>
+                );
+            case DetailedPostType.PHOTO:
+                return (
+                    <Badge variant="outline" className="mr-2 border-green-500 text-green-600 bg-green-50">
+                        사진
+                    </Badge>
+                );
+            case DetailedPostType.SECRET:
+                return (
+                    <Badge variant="outline" className="mr-2 border-gray-500 text-gray-600 bg-gray-50">
+                        비밀
+                    </Badge>
+                );
+            case DetailedPostType.PROMOTION:
+                return (
+                    <Badge variant="outline" className="mr-2 border-purple-500 text-purple-600 bg-purple-50">
+                        홍보
+                    </Badge>
+                );
+            case DetailedPostType.RECRUIT:
+                return (
+                    <Badge variant="outline" className="mr-2 border-indigo-500 text-indigo-600 bg-indigo-50">
+                        모집
+                    </Badge>
+                );
+            case DetailedPostType.CRIME_SCENE:
+                return (
+                    <Badge variant="outline" className="mr-2 border-red-500 text-red-600 bg-red-50">
+                        크라임
+                    </Badge>
+                );
+            case DetailedPostType.MURDER_MYSTERY:
+                return (
+                    <Badge variant="outline" className="mr-2 border-orange-500 text-orange-600 bg-orange-50">
+                        머더미스터리
+                    </Badge>
+                );
+            case DetailedPostType.ESCAPE_ROOM:
+                return (
+                    <Badge variant="outline" className="mr-2 border-yellow-500 text-yellow-600 bg-yellow-50">
+                        방탈출
+                    </Badge>
+                );
+            case DetailedPostType.REAL_WORLD:
+                return (
+                    <Badge variant="outline" className="mr-2 border-teal-500 text-teal-600 bg-teal-50">
+                        리얼월드
+                    </Badge>
+                );
+            case DetailedPostType.EVENT:
+                return (
+                    <Badge variant="outline" className="mr-2 border-purple-500 text-purple-600 bg-purple-50">
+                        이벤트
+                    </Badge>
+                );
+            case DetailedPostType.GENERAL:
+                return (
+                    <Badge variant="outline" className="mr-2 border-gray-400 text-gray-600 bg-gray-50">
+                        일반
+                    </Badge>
+                );
+            default:
+                return null;
+        }
+    };
 
     const getPostTypeBadge = (postType: PostType) => {
         switch (postType) {
@@ -109,7 +181,10 @@ const BoardPostItem: React.FC<BoardPostItemProps> = ({ post, boardType }) => {
             </div>
 
             <div className="flex items-center flex-grow min-w-0 pr-4">
-                {getPostTypeBadge(post.postType)}
+                {/* 기존 PostType 뱃지 (공지만, 이벤트 제외) */}
+                {post.postType && post.postType !== 'EVENT' && Object.values(PostType).includes(post.postType as PostType) && getPostTypeBadge(post.postType as PostType)}
+                {/* DetailedPostType 뱃지 (일반, 질문, 크라임씨, 이벤트 등) */}
+                {post.postType && Object.values(DetailedPostType).includes(post.postType as DetailedPostType) && getDetailedPostTypeBadge(post.postType as DetailedPostType)}
 
                 <div className="flex items-center overflow-hidden">
                     {post.isSecret && (

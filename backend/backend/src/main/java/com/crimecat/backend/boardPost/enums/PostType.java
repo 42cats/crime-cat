@@ -15,7 +15,8 @@ public enum PostType {
     CRIME_SCENE("크라임씬"),
     MURDER_MYSTERY("머더미스터리"),
     ESCAPE_ROOM("방탈출"),
-    REAL_WORLD("리얼월드");
+    REAL_WORLD("리얼월드"),
+    EVENT("이벤트");
     
     private final String description;
 }

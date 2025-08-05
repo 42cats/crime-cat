@@ -24,6 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/useToast";
 import { boardPostService } from "@/api/posts/boardPostService";
 import { BoardType, DetailedPostType } from "@/lib/types/board";
+import { BOARD_POST_TYPES, POST_TYPE_LABELS } from "@/lib/constants/boardPostTypes";
 import { MarkdownEditor } from "@/components/markdown";
 
 interface FormData {
@@ -37,49 +38,6 @@ interface BoardWriteProps {
     boardType?: BoardType;
 }
 
-// 게시판 유형별 사용 가능한 게시글 유형 정의
-const BOARD_POST_TYPES: Record<BoardType, DetailedPostType[]> = {
-    [BoardType.NONE]: [DetailedPostType.GENERAL],
-    [BoardType.CHAT]: [
-        DetailedPostType.GENERAL,
-        DetailedPostType.PHOTO,
-        DetailedPostType.SECRET,
-        DetailedPostType.PROMOTION,
-        DetailedPostType.RECRUIT,
-        DetailedPostType.CRIME_SCENE,
-        DetailedPostType.MURDER_MYSTERY,
-        DetailedPostType.ESCAPE_ROOM,
-        DetailedPostType.REAL_WORLD,
-    ],
-    [BoardType.QUESTION]: [
-        DetailedPostType.QUESTION,
-        DetailedPostType.GENERAL,
-        DetailedPostType.SECRET,
-    ],
-    [BoardType.CREATOR]: [
-        DetailedPostType.GENERAL,
-        DetailedPostType.CRIME_SCENE,
-        DetailedPostType.QUESTION,
-        DetailedPostType.MURDER_MYSTERY,
-        DetailedPostType.ESCAPE_ROOM,
-        DetailedPostType.REAL_WORLD,
-        DetailedPostType.PROMOTION,
-        DetailedPostType.RECRUIT,
-    ],
-};
-
-const POST_TYPE_LABELS: Record<string, string> = {
-    [DetailedPostType.GENERAL]: "일반",
-    [DetailedPostType.QUESTION]: "질문",
-    [DetailedPostType.PHOTO]: "사진",
-    [DetailedPostType.SECRET]: "비밀",
-    [DetailedPostType.PROMOTION]: "홍보",
-    [DetailedPostType.RECRUIT]: "모집",
-    [DetailedPostType.CRIME_SCENE]: "크라임씬",
-    [DetailedPostType.MURDER_MYSTERY]: "머더미스터리",
-    [DetailedPostType.ESCAPE_ROOM]: "방탈출",
-    [DetailedPostType.REAL_WORLD]: "리얼월드",
-};
 
 const BoardWrite: React.FC<BoardWriteProps> = ({
     boardType: propsBoardType,
