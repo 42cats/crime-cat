@@ -142,7 +142,12 @@ export const BoardCommentItem: React.FC<BoardCommentItemProps> = ({
                     className="h-8 w-8 rounded-full border bg-muted/20 shrink-0 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
                     onClick={handleProfileClick}
                 >
-                    <AvatarImage src={comment.authorProfileImage} />
+                    <AvatarImage
+                        src={
+                            comment.authorProfileImage ||
+                            "/content/image/default_profile_image.png"
+                        }
+                    />
                     <AvatarFallback className="text-xs bg-primary/10 text-primary">
                         {comment.authorName.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
