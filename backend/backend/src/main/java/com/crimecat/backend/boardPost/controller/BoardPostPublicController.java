@@ -42,7 +42,12 @@ public class BoardPostPublicController {
                         .toList()
                 : List.of(BoardPostSortType.LATEST);
         Sort resolvedSort = SortUtil.combineSorts(sortTypes);
-        Page<BoardPostResponse> boardPosts = boardPostService.getBoardPage(page, size, kw, resolvedSort, boardType, postType);
+        
+        // 현재 사용자 정보 가져오기
+        WebUser currentWebUser = AuthenticationUtil.getCurrentWebUserOptional().orElse(null);
+        UUID currentUserId = currentWebUser != null ? currentWebUser.getId() : null;
+        
+        Page<BoardPostResponse> boardPosts = boardPostService.getBoardPage(page, size, kw, resolvedSort, boardType, postType, currentUserId);
         return ResponseEntity.ok().body(boardPosts);
     }
 

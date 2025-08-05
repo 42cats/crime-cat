@@ -73,7 +73,8 @@ public class BoardPostService {
             String kw,
             Sort sortType,
             BoardType boardType,
-            PostType postType
+            PostType postType,
+            UUID currentUserId
     ) {
         Pageable pageable = PageRequest.of(page, size, sortType);
         
@@ -89,7 +90,7 @@ public class BoardPostService {
             posts = boardPostRepository.findAllByKeywordAndTypeAndIsDeletedFalse(kw, boardType, postType, pageable);
         }
 
-        return posts.map(BoardPostResponse::from);
+        return posts.map(post -> BoardPostResponse.from(post, currentUserId));
     }
 
     @Transactional

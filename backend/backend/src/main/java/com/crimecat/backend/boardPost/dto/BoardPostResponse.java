@@ -28,6 +28,8 @@ public class BoardPostResponse {
     private Boolean isSecret;
     @JsonProperty("isPinned")
     private Boolean isPinned;
+    @JsonProperty("isOwnPost")
+    private Boolean isOwnPost;
     private PostType postType;
 
     @JsonProperty("isSecret")
@@ -40,8 +42,14 @@ public class BoardPostResponse {
         return isPinned;
     }
 
+    @JsonProperty("isOwnPost")
+    public boolean isOwnPost() {
+        return isOwnPost != null ? isOwnPost : false;
+    }
+
     public static BoardPostResponse from(
-            BoardPost boardPost
+            BoardPost boardPost,
+            UUID currentUserId
     ) {
         return BoardPostResponse.builder()
                 .id(boardPost.getId())
@@ -54,7 +62,13 @@ public class BoardPostResponse {
                 .comments(boardPost.getComments())
                 .isSecret(boardPost.getIsSecret())
                 .isPinned(boardPost.getIsPinned())
+                .isOwnPost(currentUserId != null && boardPost.getAuthorId().equals(currentUserId))
                 .postType(boardPost.getPostType())
                 .build();
+    }
+
+    // 기존 호환성을 위한 오버로드 메서드
+    public static BoardPostResponse from(BoardPost boardPost) {
+        return from(boardPost, null);
     }
 }
