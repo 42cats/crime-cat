@@ -4,6 +4,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Label } from "@/components/ui/label";
 import WritePreviewToggle from "./WritePreviewToggle";
 import { videoCommand } from "./VideoCommand";
+import { audioCommand } from "./AudioCommand";
 
 interface MarkdownEditorProps {
   /** 에디터 내용 */
@@ -39,6 +40,7 @@ interface MarkdownEditorProps {
  * - Markdown 에디팅
  * - 작성/미리보기 토글
  * - 동영상 삽입 (YouTube, Vimeo)
+ * - 오디오 삽입 (MP3, WAV, OGG, SoundCloud)
  * - 테마 연동 (dark/light)
  */
 const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
@@ -73,6 +75,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         icon: <WritePreviewToggle />,
       },
       videoCommand,
+      audioCommand,
       ...commands.getCommands(),
     ],
     extraCommands,
