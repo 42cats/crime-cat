@@ -5,6 +5,8 @@ import com.crimecat.backend.boardPost.domain.BoardPostLike;
 import com.crimecat.backend.boardPost.dto.BoardPostDetailResponse;
 import com.crimecat.backend.boardPost.dto.BoardPostRequest;
 import com.crimecat.backend.boardPost.dto.BoardPostResponse;
+import com.crimecat.backend.boardPost.dto.BoardPostSummary;
+import com.crimecat.backend.boardPost.dto.PostNavigationResponse;
 import com.crimecat.backend.boardPost.enums.BoardType;
 import com.crimecat.backend.boardPost.enums.PostType;
 import com.crimecat.backend.boardPost.repository.BoardPostLikeRepository;
@@ -56,8 +58,8 @@ public class BoardPostService {
         // 동적 쿼리를 사용하는 방법
         Page<BoardPost> posts;
         
-        // postType이 GENERAL인 경우 postType 필터링을 하지 않음
-        if (postType == PostType.GENERAL) {
+        // postType이 null이거나 GENERAL인 경우 postType 필터링을 하지 않음
+        if (postType == null || postType == PostType.GENERAL) {
             // postType 필터링 없이 boardType만으로 조회
             posts = boardPostRepository.findAllByKeywordAndBoardTypeAndIsDeletedFalse(kw, boardType, pageable);
         } else {
@@ -160,5 +162,39 @@ public class BoardPostService {
 
         boardPost.delete();
         boardPostRepository.save(boardPost);
+    }
+
+    @Transactional(readOnly = true)
+    public PostNavigationResponse getPostNavigation(UUID postId, BoardType boardType) {
+        // 현재 게시글 조회
+        BoardPost currentPost = boardPostRepository.findByIdAndIsDeletedFalse(postId)
+                .orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
+
+        // 현재 게시글이 지정된 boardType과 다르면 예외 발생
+        if (!currentPost.getBoardType().equals(boardType)) {
+            throw new IllegalArgumentException("잘못된 게시판 유형입니다.");
+        }
+
+        // 이전글 조회 (첫 번째 결과만 가져오기)
+        java.util.List<BoardPost> previousPosts = boardPostRepository.findPreviousPost(
+                boardType, 
+                currentPost.getCreatedAt(), 
+                PageRequest.of(0, 1)
+        );
+        BoardPost previousPost = previousPosts.isEmpty() ? null : previousPosts.get(0);
+
+        // 다음글 조회 (첫 번째 결과만 가져오기)
+        java.util.List<BoardPost> nextPosts = boardPostRepository.findNextPost(
+                boardType, 
+                currentPost.getCreatedAt(), 
+                PageRequest.of(0, 1)
+        );
+        BoardPost nextPost = nextPosts.isEmpty() ? null : nextPosts.get(0);
+
+        return PostNavigationResponse.builder()
+                .currentPost(BoardPostSummary.from(currentPost))
+                .previousPost(previousPost != null ? BoardPostSummary.from(previousPost) : null)
+                .nextPost(nextPost != null ? BoardPostSummary.from(nextPost) : null)
+                .build();
     }
 }

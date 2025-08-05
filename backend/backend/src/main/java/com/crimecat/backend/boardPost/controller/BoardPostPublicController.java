@@ -2,6 +2,7 @@ package com.crimecat.backend.boardPost.controller;
 
 import com.crimecat.backend.boardPost.dto.BoardPostDetailResponse;
 import com.crimecat.backend.boardPost.dto.BoardPostResponse;
+import com.crimecat.backend.boardPost.dto.PostNavigationResponse;
 import com.crimecat.backend.boardPost.enums.BoardType;
 import com.crimecat.backend.boardPost.enums.PostType;
 import com.crimecat.backend.boardPost.service.BoardPostService;
@@ -31,7 +32,7 @@ public class BoardPostPublicController {
             @RequestParam(value = "size", defaultValue = "10") Integer size,
             @RequestParam(value = "kw", defaultValue = "") String kw,
             @RequestParam(value = "boardType", defaultValue = "NONE") BoardType boardType,
-            @RequestParam(value = "postType", defaultValue = "GENERAL") PostType postType,
+            @RequestParam(value = "postType", required = false) PostType postType,
             @RequestParam(defaultValue = "LATEST") List<String> sort
     ) {
         List<BoardPostSortType> sortTypes = (sort != null && !sort.isEmpty()) ?
@@ -53,6 +54,15 @@ public class BoardPostPublicController {
         return ResponseEntity.ok().body(
                 boardPostService.getBoardPostDetail(postId, currentWebUser)
         );
+    }
+
+    @GetMapping("/{id}/navigation")
+    public ResponseEntity<PostNavigationResponse> getPostNavigation(
+            @PathVariable("id") UUID postId,
+            @RequestParam("boardType") BoardType boardType
+    ) {
+        PostNavigationResponse navigation = boardPostService.getPostNavigation(postId, boardType);
+        return ResponseEntity.ok().body(navigation);
     }
 
 }
