@@ -63,7 +63,7 @@ const BoardPostItem: React.FC<BoardPostItemProps> = ({ post, boardType }) => {
             case DetailedPostType.CRIME_SCENE:
                 return (
                     <Badge variant="outline" className="mr-2 border-red-500 text-red-600 bg-red-50">
-                        크라임
+                        크라임씬
                     </Badge>
                 );
             case DetailedPostType.MURDER_MYSTERY:
@@ -86,7 +86,7 @@ const BoardPostItem: React.FC<BoardPostItemProps> = ({ post, boardType }) => {
                 );
             case DetailedPostType.EVENT:
                 return (
-                    <Badge variant="outline" className="mr-2 border-purple-500 text-purple-600 bg-purple-50">
+                    <Badge variant="outline" className="mr-2 border-pink-500 text-pink-600 bg-pink-50">
                         이벤트
                     </Badge>
                 );

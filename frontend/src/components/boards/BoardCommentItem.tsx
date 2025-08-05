@@ -17,7 +17,7 @@ import {
     BoardComment,
     UpdateBoardCommentRequest,
 } from "../../api/boards/boardCommentService";
-import { formatRelativeTime, UTCToKST } from "../../lib/dateFormat";
+import { UTCToKST } from "../../lib/dateFormat";
 import { Heart, MessageSquare, Lock } from "lucide-react";
 
 interface BoardCommentItemProps {
