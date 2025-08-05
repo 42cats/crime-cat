@@ -13,12 +13,14 @@ import com.crimecat.backend.boardPost.repository.BoardPostLikeRepository;
 import com.crimecat.backend.boardPost.repository.BoardPostRepository;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gametheme.service.ViewCountService;
+import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.enums.UserRole;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import java.util.Objects;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -30,9 +32,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.util.Objects;
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 public class BoardPostService {
@@ -42,6 +41,29 @@ public class BoardPostService {
     private final RedisTemplate<String, String> redisTemplate;
     private final WebUserRepository webUserRepository;
     private final ViewCountService viewCountService;
+
+    /**
+     * 게시글 수정/삭제 권한 확인
+     * 작성자 본인이거나 MANAGER 이상 권한을 가진 사용자만 허용
+     *
+     * @param postAuthorId 게시글 작성자 ID
+     * @param currentUserId 현재 사용자 ID
+     * @return 권한이 있으면 true, 없으면 false
+     */
+    private boolean canModifyPost(UUID postAuthorId, UUID currentUserId) {
+        // 작성자 본인인 경우
+        if (postAuthorId.equals(currentUserId)) {
+            return true;
+        }
+        
+        // MANAGER 이상 권한 확인
+        try {
+            AuthenticationUtil.validateUserHasMinimumRole(UserRole.MANAGER);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
     @Transactional(readOnly = true)
     // Page 객체는 Redis 직렬화가 복잡하므로 캐시하지 않음
@@ -138,7 +160,7 @@ public class BoardPostService {
     ) {
         BoardPost boardPost = boardPostRepository.findById(postId).orElseThrow(() -> new EntityNotFoundException("게시글물 찾을 수 없습니다."));
 
-        if (!boardPost.getAuthorId().equals(userId)) {
+        if (!canModifyPost(boardPost.getAuthorId(), userId)) {
             throw new AccessDeniedException("게시글을 수정할 권한이 없습니다");
         }
 
@@ -156,8 +178,8 @@ public class BoardPostService {
     ) {
         BoardPost boardPost = boardPostRepository.findById(postId).orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
 
-        if (!boardPost.getAuthorId().equals(userId)) {
-            throw new AccessDeniedException("게시글을 수정할 권한이 없습니다");
+        if (!canModifyPost(boardPost.getAuthorId(), userId)) {
+            throw new AccessDeniedException("게시글을 삭제할 권한이 없습니다");
         }
 
         boardPost.delete();
