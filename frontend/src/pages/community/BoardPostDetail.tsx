@@ -65,10 +65,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
     });
 
     // 게시글 네비게이션 조회 쿼리
-    const {
-        data: navigation,
-        isLoading: isNavigationLoading,
-    } = useQuery({
+    const { data: navigation, isLoading: isNavigationLoading } = useQuery({
         queryKey: ["postNavigation", id, boardType],
         queryFn: () => boardPostService.getPostNavigation(id!, boardType),
         enabled: !!id && !!post,
@@ -213,13 +210,21 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
     // 네비게이션 핸들러들
     const handlePreviousPost = () => {
         if (navigation?.previousPost) {
-            navigate(`/community/${boardType.toLowerCase()}/${navigation.previousPost.id}`);
+            navigate(
+                `/community/${boardType.toLowerCase()}/${
+                    navigation.previousPost.id
+                }`
+            );
         }
     };
 
     const handleNextPost = () => {
         if (navigation?.nextPost) {
-            navigate(`/community/${boardType.toLowerCase()}/${navigation.nextPost.id}`);
+            navigate(
+                `/community/${boardType.toLowerCase()}/${
+                    navigation.nextPost.id
+                }`
+            );
         }
     };
 
@@ -414,19 +419,28 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                             variant="outline"
                             size="sm"
                             onClick={handlePreviousPost}
-                            disabled={!navigation?.previousPost || isNavigationLoading}
-                            className="flex items-center gap-1"
-                            title={navigation?.previousPost?.subject || "이전글"}
+                            disabled={
+                                !navigation?.previousPost || isNavigationLoading
+                            }
+                            className="flex items-center gap-2 max-w-[200px]"
                         >
-                            <ChevronLeft className="h-4 w-4" />
-                            <span className="text-sm">이전글</span>
+                            <ChevronLeft className="h-4 w-4 flex-shrink-0" />
+                            {navigation?.previousPost ? (
+                                <span className="text-sm truncate">
+                                    {navigation.previousPost.subject}
+                                </span>
+                            ) : (
+                                <span className="text-sm text-muted-foreground">
+                                    이전글
+                                </span>
+                            )}
                         </Button>
 
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={handlePostList}
-                            className="flex items-center gap-1 px-3"
+                            className="flex items-center gap-1 px-3 flex-shrink-0"
                         >
                             <List className="h-4 w-4" />
                             <span className="text-sm">목록</span>
@@ -436,12 +450,21 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                             variant="outline"
                             size="sm"
                             onClick={handleNextPost}
-                            disabled={!navigation?.nextPost || isNavigationLoading}
-                            className="flex items-center gap-1"
-                            title={navigation?.nextPost?.subject || "다음글"}
+                            disabled={
+                                !navigation?.nextPost || isNavigationLoading
+                            }
+                            className="flex items-center gap-2 max-w-[200px]"
                         >
-                            <span className="text-sm">다음글</span>
-                            <ChevronRight className="h-4 w-4" />
+                            {navigation?.nextPost ? (
+                                <span className="text-sm truncate">
+                                    {navigation.nextPost.subject}
+                                </span>
+                            ) : (
+                                <span className="text-sm text-muted-foreground">
+                                    다음글
+                                </span>
+                            )}
+                            <ChevronRight className="h-4 w-4 flex-shrink-0" />
                         </Button>
                     </div>
 
