@@ -3,6 +3,7 @@ import {
     BoardPostPage,
     BoardType,
     PostType,
+    DetailedPostType,
     BoardPostSortType,
 } from "@/lib/types/board";
 
@@ -11,7 +12,7 @@ interface GetBoardPostsParams {
     size?: number;
     kw?: string;
     boardType?: BoardType;
-    postType?: PostType;
+    postType?: PostType | DetailedPostType | null;
     sort?: BoardPostSortType[];
 }
 
@@ -47,7 +48,7 @@ export const boardPostService = {
         size = 20,
         kw = "",
         boardType = BoardType.NONE,
-        postType = PostType.GENERAL,
+        postType = null,
         sort = [BoardPostSortType.LATEST],
     }: GetBoardPostsParams): Promise<BoardPostPage> {
         try {
@@ -56,7 +57,8 @@ export const boardPostService = {
             searchParams.append("size", size.toString());
             if (kw) searchParams.append("kw", kw);
             if (boardType !== BoardType.NONE) searchParams.append("boardType", boardType);
-            // postType 파라미터를 아예 보내지 않아서 백엔드 기본값(GENERAL) 사용
+            // postType이 null이 아닌 경우에만 파라미터 추가
+            if (postType) searchParams.append("postType", postType);
             sort.forEach((sortOption) => {
                 searchParams.append("sort", sortOption);
             });

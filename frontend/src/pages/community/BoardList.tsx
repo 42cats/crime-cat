@@ -6,8 +6,10 @@ import {
     BoardPost,
     BoardType,
     PostType,
+    DetailedPostType,
     BoardPostSortType,
 } from "@/lib/types/board";
+import { BOARD_POST_TYPES, POST_TYPE_LABELS } from "@/lib/constants/boardPostTypes";
 import {
     Card,
     CardContent,
@@ -59,9 +61,15 @@ const BoardList: React.FC<BoardListProps> = ({ boardType }) => {
     const [sortType, setSortType] = useState<BoardPostSortType>(
         sortParam ? (sortParam as BoardPostSortType) : BoardPostSortType.LATEST
     );
+    
+    // 현재 선택된 필터 탭
+    const [activeTab, setActiveTab] = useState<string>("all");
+    
+    // 선택된 postType 필터
+    const [selectedPostType, setSelectedPostType] = useState<DetailedPostType | null>(null);
 
     const { data, isLoading, isError, refetch } = useQuery({
-        queryKey: ["boardPosts", boardType, page, searchKeyword, sortType],
+        queryKey: ["boardPosts", boardType, page, searchKeyword, sortType, selectedPostType],
         queryFn: async () => {
             try {
                 console.log("게시글 조회 요청:", {
@@ -77,6 +85,7 @@ const BoardList: React.FC<BoardListProps> = ({ boardType }) => {
                     size: 20,
                     kw: searchKeyword,
                     boardType: boardType, // 원래대로 복구
+                    postType: selectedPostType, // 선택된 postType 필터 추가
                     sort: [sortType],
                 });
                 console.log("게시글 조회 결과:", result);
@@ -142,6 +151,12 @@ const BoardList: React.FC<BoardListProps> = ({ boardType }) => {
         setKeyword(e.target.value);
     };
 
+    // 현재 게시판 타입에 맞는 사용 가능한 탭 목록 생성
+    const getAvailableTabs = () => {
+        const availableTypes = BOARD_POST_TYPES[boardType] || [];
+        return availableTypes;
+    };
+
     return (
         <div className="container mx-auto py-6 px-4">
             <div className="mb-6">
@@ -156,16 +171,29 @@ const BoardList: React.FC<BoardListProps> = ({ boardType }) => {
             <Card className="border-gray-200 dark:border-gray-800 shadow-sm">
                 <CardHeader className="p-4 pb-0">
                     <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                        <Tabs defaultValue="posts" className="w-full">
-                            <TabsList className="mb-4">
-                                <TabsTrigger value="posts">
-                                    기본 게시글
+                        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                            <TabsList className="mb-4 flex-wrap h-auto">
+                                {/* 전체 탭은 항상 표시 */}
+                                <TabsTrigger 
+                                    value="all" 
+                                    onClick={() => setSelectedPostType(null)}
+                                >
+                                    전체
                                 </TabsTrigger>
-                                <TabsTrigger value="hot">인기글</TabsTrigger>
-                                <TabsTrigger value="photos">사진글</TabsTrigger>
+                                
+                                {/* 현재 게시판 타입에 맞는 탭들 동적 생성 */}
+                                {getAvailableTabs().map((postType) => (
+                                    <TabsTrigger 
+                                        key={postType}
+                                        value={postType.toLowerCase()} 
+                                        onClick={() => setSelectedPostType(postType)}
+                                    >
+                                        {POST_TYPE_LABELS[postType]}
+                                    </TabsTrigger>
+                                ))}
                             </TabsList>
 
-                            <TabsContent value="posts" className="p-0 mt-0">
+                            <TabsContent value={activeTab} className="p-0 mt-0">
                                 <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-2">
                                     <BoardFilter
                                         sortType={sortType}
@@ -336,22 +364,6 @@ const BoardList: React.FC<BoardListProps> = ({ boardType }) => {
                                         />
                                     </div>
                                 )}
-                            </TabsContent>
-
-                            <TabsContent value="hot" className="p-0 mt-0">
-                                <div className="py-12 text-center border-t border-b border-gray-200 dark:border-gray-700">
-                                    <p className="text-muted-foreground">
-                                        인기글 기능은 준비 중입니다.
-                                    </p>
-                                </div>
-                            </TabsContent>
-
-                            <TabsContent value="photos" className="p-0 mt-0">
-                                <div className="py-12 text-center border-t border-b border-gray-200 dark:border-gray-700">
-                                    <p className="text-muted-foreground">
-                                        사진글 기능은 준비 중입니다.
-                                    </p>
-                                </div>
                             </TabsContent>
                         </Tabs>
                     </div>

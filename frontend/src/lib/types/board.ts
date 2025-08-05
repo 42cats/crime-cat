@@ -24,6 +24,7 @@ export enum DetailedPostType {
     MURDER_MYSTERY = "MURDER_MYSTERY", // 머더미스터리
     ESCAPE_ROOM = "ESCAPE_ROOM", // 방탈출
     REAL_WORLD = "REAL_WORLD", // 리얼월드
+    EVENT = "EVENT", // 이벤트
 }
 
 export enum BoardPostSortType {
@@ -45,7 +46,7 @@ export interface BoardPost {
     authorProfileImagePath?: string;
     authorProfileImage?: string; // 백엔드 필드명
     boardType?: BoardType;
-    postType?: PostType;
+    postType?: PostType | DetailedPostType; // PostType과 DetailedPostType 모두 지원
     createdAt: string;
     updatedAt?: string;
     views: number; // viewCount 대신 views
