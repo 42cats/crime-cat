@@ -220,7 +220,7 @@ const BoardPostItem: React.FC<BoardPostItemProps> = ({ post, boardType }) => {
                 </div>
             </div>
 
-            <div className="flex-shrink-0 w-24 text-center text-sm text-muted-foreground hidden lg:block truncate">
+            <div className="flex-shrink-0 w-24 text-center text-sm text-muted-foreground hidden md:block truncate">
                 {post.authorName}
             </div>
 
