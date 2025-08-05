@@ -6,7 +6,6 @@ export const BOARD_POST_TYPES: Record<BoardType, DetailedPostType[]> = {
     [BoardType.CHAT]: [
         DetailedPostType.GENERAL,
         DetailedPostType.PHOTO,
-        DetailedPostType.SECRET,
         DetailedPostType.EVENT,
         DetailedPostType.PROMOTION,
         DetailedPostType.RECRUIT,
@@ -18,7 +17,6 @@ export const BOARD_POST_TYPES: Record<BoardType, DetailedPostType[]> = {
     [BoardType.QUESTION]: [
         DetailedPostType.QUESTION,
         DetailedPostType.GENERAL,
-        DetailedPostType.SECRET,
         DetailedPostType.EVENT,
     ],
     [BoardType.CREATOR]: [
