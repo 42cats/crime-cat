@@ -248,7 +248,7 @@ const BoardList: React.FC<BoardListProps> = ({ boardType }) => {
                                     <div className="flex-grow text-xs font-medium text-muted-foreground">
                                         제목
                                     </div>
-                                    <div className="flex-shrink-0 w-24 text-center text-xs font-medium text-muted-foreground hidden lg:block">
+                                    <div className="flex-shrink-0 w-24 text-center text-xs font-medium text-muted-foreground hidden md:block">
                                         작성자
                                     </div>
                                     <div className="flex-shrink-0 w-20 text-center text-xs font-medium text-muted-foreground hidden md:block">
