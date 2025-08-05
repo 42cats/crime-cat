@@ -115,6 +115,8 @@ public class BoardPostService {
         }
         boolean isLiked = boardPostLikeRepository.existsByUserIdAndPostId(userId, postId);
         boolean isOwnPost = boardPost.getAuthorId().equals(userId);
+        if(webUser.getRole() == UserRole.ADMIN || webUser.getRole() == UserRole.MANAGER)
+            isOwnPost = true;
         return BoardPostDetailResponse.from(boardPost, isOwnPost, isLiked);
     }
 
@@ -161,7 +163,7 @@ public class BoardPostService {
     ) {
         BoardPost boardPost = boardPostRepository.findById(postId).orElseThrow(() -> new EntityNotFoundException("게시글물 찾을 수 없습니다."));
 
-        if (!canModifyPost(boardPost.getAuthorId(), userId)) {
+        if (!canModifyPost(boardPost.getAuthorId(), userId) && (AuthenticationUtil.getCurrentWebUser().getRole() != UserRole.ADMIN || AuthenticationUtil.getCurrentWebUser().getRole() != UserRole.MANAGER)) {
             throw new AccessDeniedException("게시글을 수정할 권한이 없습니다");
         }
 
