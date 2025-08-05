@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BoardType } from "@/lib/types/board";
+import { BoardType, PostNavigationResponse } from "@/lib/types/board";
 import { boardPostService } from "@/api/posts/boardPostService";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,9 @@ import {
     Edit,
     AlertCircle,
     Lock,
+    ChevronLeft,
+    ChevronRight,
+    List,
 } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
 import { BoardCommentList } from "@/components/boards/BoardCommentList";
@@ -60,6 +63,16 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
         queryFn: () => boardPostService.getBoardPostById(id!),
         enabled: !!id,
     });
+
+    // 게시글 네비게이션 조회 쿼리
+    const {
+        data: navigation,
+        isLoading: isNavigationLoading,
+    } = useQuery({
+        queryKey: ["postNavigation", id, boardType],
+        queryFn: () => boardPostService.getPostNavigation(id!, boardType),
+        enabled: !!id && !!post,
+    }) as { data: PostNavigationResponse | undefined; isLoading: boolean };
 
     // 게시글 데이터에서 좋아요 상태를 가져옴 (별도 API 호출 불필요)
     const isLiked =
@@ -195,6 +208,23 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
     const handleProfileClick = (userId: string) => {
         setSelectedUserId(userId);
         setProfileModalOpen(true);
+    };
+
+    // 네비게이션 핸들러들
+    const handlePreviousPost = () => {
+        if (navigation?.previousPost) {
+            navigate(`/community/${boardType.toLowerCase()}/${navigation.previousPost.id}`);
+        }
+    };
+
+    const handleNextPost = () => {
+        if (navigation?.nextPost) {
+            navigate(`/community/${boardType.toLowerCase()}/${navigation.nextPost.id}`);
+        }
+    };
+
+    const handlePostList = () => {
+        navigate(`/community/${boardType.toLowerCase()}`);
     };
 
     // 현재 사용자가 게시글 작성자인지 확인
@@ -353,7 +383,8 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                     />
                 </CardContent>
 
-                <CardFooter className="flex justify-between border-t py-4">
+                <CardFooter className="flex justify-between items-center border-t py-4">
+                    {/* 수정/삭제 버튼 */}
                     <div>
                         {isAuthor && (
                             <div className="flex gap-2">
@@ -377,6 +408,44 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                         )}
                     </div>
 
+                    {/* 네비게이션 버튼들 */}
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handlePreviousPost}
+                            disabled={!navigation?.previousPost || isNavigationLoading}
+                            className="flex items-center gap-1"
+                            title={navigation?.previousPost?.subject || "이전글"}
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                            <span className="text-sm">이전글</span>
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handlePostList}
+                            className="flex items-center gap-1 px-3"
+                        >
+                            <List className="h-4 w-4" />
+                            <span className="text-sm">목록</span>
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleNextPost}
+                            disabled={!navigation?.nextPost || isNavigationLoading}
+                            className="flex items-center gap-1"
+                            title={navigation?.nextPost?.subject || "다음글"}
+                        >
+                            <span className="text-sm">다음글</span>
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+
+                    {/* 좋아요/공유 버튼 */}
                     <div className="flex gap-2">
                         <Button
                             variant="ghost"

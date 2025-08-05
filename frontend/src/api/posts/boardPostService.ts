@@ -137,4 +137,13 @@ export const boardPostService = {
             return handleApiError(error);
         }
     },
+
+    // 게시글 네비게이션 조회 (이전글/다음글)
+    async getPostNavigation(postId: string, boardType: BoardType) {
+        try {
+            return await apiClient.get(`/public/posts/${postId}/navigation?boardType=${boardType}`);
+        } catch (error) {
+            return handleApiError(error);
+        }
+    },
 };

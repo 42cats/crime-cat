@@ -88,3 +88,22 @@ export interface BoardPostPage {
     first: boolean;
     empty: boolean;
 }
+
+// 게시글 요약 정보 (네비게이션용)
+export interface BoardPostSummary {
+    id: string;
+    subject: string;
+    authorName: string;
+    createdAt: string;
+    views: number;
+    likes: number;
+    comments: number;
+    isSecret: boolean;
+}
+
+// 게시글 네비게이션 정보
+export interface PostNavigationResponse {
+    previousPost: BoardPostSummary | null;
+    nextPost: BoardPostSummary | null;
+    currentPost: BoardPostSummary;
+}

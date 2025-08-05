@@ -34,8 +34,7 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID>, Jpa
             + "   or u2.nickname like %:kw% "
             + ") "
             + " and p.boardType = :boardType "
-            + " and p.isDeleted = false "
-            + " ORDER BY p.isPinned DESC, p.createdAt DESC ")
+            + " and p.isDeleted = false ")
     Page<BoardPost> findAllByKeywordAndBoardTypeAndIsDeletedFalse(
             @Param("kw") String kw,
             @Param("boardType") BoardType boardType,
@@ -57,8 +56,7 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID>, Jpa
             + ") "
             + " and p.boardType = :boardType "
             + " and p.postType = :postType "
-            + " and p.isDeleted = false "
-            + " ORDER BY p.isPinned DESC, p.createdAt DESC ")
+            + " and p.isDeleted = false ")
     Page<BoardPost> findAllByKeywordAndTypeAndIsDeletedFalse(
             @Param("kw") String kw,
             @Param("boardType") BoardType boardType,
@@ -82,5 +80,35 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID>, Jpa
      */
     @Query("SELECT p FROM BoardPost p WHERE p.boardType = :boardType AND p.isDeleted = false ORDER BY p.createdAt DESC")
     java.util.List<BoardPost> findByBoardTypeOrderByCreatedAtDesc(@Param("boardType") BoardType boardType, Pageable pageable);
+
+    /**
+     * 이전글 조회 (현재 게시글보다 오래된 글 중 가장 최신)
+     */
+    @Query("SELECT p FROM BoardPost p " +
+           "LEFT JOIN FETCH p.author " +
+           "WHERE p.boardType = :boardType " +
+           "AND p.createdAt < :currentCreatedAt " +
+           "AND p.isDeleted = false " +
+           "ORDER BY p.isPinned DESC, p.createdAt DESC")
+    java.util.List<BoardPost> findPreviousPost(
+            @Param("boardType") BoardType boardType,
+            @Param("currentCreatedAt") java.time.LocalDateTime currentCreatedAt,
+            Pageable pageable
+    );
+
+    /**
+     * 다음글 조회 (현재 게시글보다 최신 글 중 가장 오래된)
+     */
+    @Query("SELECT p FROM BoardPost p " +
+           "LEFT JOIN FETCH p.author " +
+           "WHERE p.boardType = :boardType " +
+           "AND p.createdAt > :currentCreatedAt " +
+           "AND p.isDeleted = false " +
+           "ORDER BY p.isPinned DESC, p.createdAt ASC")
+    java.util.List<BoardPost> findNextPost(
+            @Param("boardType") BoardType boardType,
+            @Param("currentCreatedAt") java.time.LocalDateTime currentCreatedAt,
+            Pageable pageable
+    );
 
 }
