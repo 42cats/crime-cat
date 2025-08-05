@@ -23,12 +23,14 @@ class MusicActionExecutor extends BaseActionExecutor {
         const { searchQuery, trackId, trackTitle, volume, shuffle, loop, playMode } = action.parameters;
         const { member: executorMember, guild, channel } = context;
         
-        logger.debug('액션 파라미터 확인:', {
+        logger.debug('음악 액션 파라미터 확인:', {
             type,
             source: action.parameters.source,
             trackId,
             trackTitle,
-            playMode
+            playMode,
+            guildId: guild.id,
+            userId: executorMember.user.id
         });
 
         // 디버깅: member 정보 확인
@@ -86,11 +88,15 @@ class MusicActionExecutor extends BaseActionExecutor {
                     break;
 
                 case 'stop_music':
+                    logger.info(`음악 정지 액션 실행 시작 - 길드: ${guild.id}, 사용자: ${executorMember.user.id}`);
                     result = await this.stopMusic(voiceChannel, guild);
+                    logger.info(`음악 정지 액션 실행 완료 - 성공: ${result.success}`);
                     break;
 
                 case 'pause_music':
+                    logger.info(`음악 일시정지/재개 액션 실행 시작 - 길드: ${guild.id}, 사용자: ${executorMember.user.id}`);
                     result = await this.pauseMusic(voiceChannel, guild);
+                    logger.info(`음악 일시정지/재개 액션 실행 완료 - 성공: ${result.success}`);
                     break;
 
                 default:
@@ -225,9 +231,9 @@ class MusicActionExecutor extends BaseActionExecutor {
      */
     async stopMusic(voiceChannel, guild) {
         try {
-            const musicService = this.getMusicService();
-            
-            if (!musicService) {
+            // Context에서 안전하게 client 가져오기
+            const client = guild.client;
+            if (!client?.serverMusicData) {
                 return {
                     success: false,
                     message: '음악 서비스를 사용할 수 없습니다.',
@@ -235,8 +241,9 @@ class MusicActionExecutor extends BaseActionExecutor {
                 };
             }
 
-            const queue = musicService.getQueue(guild.id);
-            if (!queue || queue.length === 0) {
+            const musicData = client.serverMusicData.get(guild.id);
+            
+            if (!musicData) {
                 return {
                     success: true,
                     message: '현재 재생 중인 음악이 없습니다.',
@@ -244,22 +251,60 @@ class MusicActionExecutor extends BaseActionExecutor {
                 };
             }
 
-            await musicService.stop(guild.id);
-            await musicService.disconnect(guild.id);
+            // 재생 중인지 확인
+            const wasPlaying = musicData.state.isPlaying || musicData.state.isPaused;
+            const queueLength = musicData.queue?.tracks?.length || 0;
+
+            if (!wasPlaying) {
+                return {
+                    success: true,
+                    message: '현재 재생 중인 음악이 없습니다.',
+                    data: { wasPlaying: false }
+                };
+            }
+
+            // MusicPlayerV4의 stop 메서드 호출 (상태 동기화 보장)
+            const stopSuccess = await musicData.stop();
+            
+            // 잠시 대기 후 연결 해제 (정지 처리 완료 보장)
+            setTimeout(async () => {
+                try {
+                    await musicData.audio.disconnect();
+                    musicData.destroy();
+                    client.serverMusicData.delete(guild.id);
+                } catch (error) {
+                    console.warn('정리 과정에서 오류 발생:', error.message);
+                }
+            }, 500); // 500ms 대기
 
             return {
-                success: true,
-                message: '🛑 음악 재생을 정지하고 음성 채널에서 나갔습니다.',
+                success: stopSuccess,
+                message: stopSuccess ? 
+                    '🛑 음악 재생을 정지하고 음성 채널에서 나갔습니다.' :
+                    '⚠️ 음악 정지 중 일부 문제가 발생했지만 처리되었습니다.',
                 data: { 
                     wasPlaying: true,
-                    clearedQueueCount: queue.length
+                    clearedQueueCount: queueLength
                 }
             };
 
         } catch (error) {
+            // 오류 발생 시 강제 정리 시도
+            try {
+                const client = guild.client;
+                const musicData = client?.serverMusicData?.get(guild.id);
+                if (musicData) {
+                    await musicData.audio.disconnect();
+                    musicData.destroy();
+                    client.serverMusicData.delete(guild.id);
+                }
+            } catch (cleanupError) {
+                console.warn('강제 정리 실패:', cleanupError.message);
+            }
+
             return {
                 success: false,
-                message: error.message,
+                message: `음악 정지 실패: ${error.message}`,
                 data: {}
             };
         }
@@ -270,9 +315,9 @@ class MusicActionExecutor extends BaseActionExecutor {
      */
     async pauseMusic(voiceChannel, guild) {
         try {
-            const musicService = this.getMusicService();
-            
-            if (!musicService) {
+            // Context에서 안전하게 client 가져오기
+            const client = guild.client;
+            if (!client?.serverMusicData) {
                 return {
                     success: false,
                     message: '음악 서비스를 사용할 수 없습니다.',
@@ -280,8 +325,9 @@ class MusicActionExecutor extends BaseActionExecutor {
                 };
             }
 
-            const queue = musicService.getQueue(guild.id);
-            if (!queue || queue.length === 0) {
+            const musicData = client.serverMusicData.get(guild.id);
+            
+            if (!musicData) {
                 return {
                     success: false,
                     message: '현재 재생 중인 음악이 없습니다.',
@@ -289,28 +335,44 @@ class MusicActionExecutor extends BaseActionExecutor {
                 };
             }
 
-            const isPaused = musicService.isPaused(guild.id);
+            const isPlaying = musicData.state.isPlaying;
+            const isPaused = musicData.state.isPaused;
             
-            if (isPaused) {
-                await musicService.resume(guild.id);
+            if (!isPlaying && !isPaused) {
+                return {
+                    success: false,
+                    message: '현재 재생 중인 음악이 없습니다.',
+                    data: { wasPlaying: false }
+                };
+            }
+
+            // MusicPlayerV4의 togglePlayPause 메서드 사용 (상태 동기화 보장)
+            const success = await musicData.togglePlayPause();
+            
+            if (success) {
+                const newIsPaused = musicData.state.isPaused;
                 return {
                     success: true,
-                    message: '▶️ 음악 재생을 재개했습니다.',
-                    data: { action: 'resumed', wasPaused: true }
+                    message: newIsPaused ? 
+                        '⏸️ 음악을 일시정지했습니다.' : 
+                        '▶️ 음악 재생을 재개했습니다.',
+                    data: { 
+                        action: newIsPaused ? 'paused' : 'resumed',
+                        wasPaused: isPaused
+                    }
                 };
             } else {
-                await musicService.pause(guild.id);
                 return {
-                    success: true,
-                    message: '⏸️ 음악을 일시정지했습니다.',
-                    data: { action: 'paused', wasPaused: false }
+                    success: false,
+                    message: '일시정지/재개 처리에 실패했습니다.',
+                    data: {}
                 };
             }
 
         } catch (error) {
             return {
                 success: false,
-                message: error.message,
+                message: `일시정지/재개 실패: ${error.message}`,
                 data: {}
             };
         }
@@ -498,8 +560,8 @@ class MusicActionExecutor extends BaseActionExecutor {
             },
             
             getQueue: (guildId) => {
-                const client = require('../../main').client;
-                const musicData = client.serverMusicData?.get(guildId);
+                const client = global.discordClient;
+                const musicData = client?.serverMusicData?.get(guildId);
                 return musicData?.queue?.tracks || [];
             },
             
@@ -514,19 +576,19 @@ class MusicActionExecutor extends BaseActionExecutor {
             },
             
             stop: async (guildId) => {
-                const client = require('../../main').client;
-                const musicData = client.serverMusicData?.get(guildId);
+                const client = global.discordClient;
+                const musicData = client?.serverMusicData?.get(guildId);
                 
-                if (musicData && musicData.audio) {
-                    await musicData.audio.stop();
-                    return true;
+                if (musicData) {
+                    // MusicPlayerV4.stop() 호출로 상태 동기화 보장
+                    return await musicData.stop();
                 }
                 return false;
             },
             
             pause: async (guildId) => {
-                const client = require('../../main').client;
-                const musicData = client.serverMusicData?.get(guildId);
+                const client = global.discordClient;
+                const musicData = client?.serverMusicData?.get(guildId);
                 
                 if (musicData && musicData.audio) {
                     musicData.audio.pause();
@@ -536,8 +598,8 @@ class MusicActionExecutor extends BaseActionExecutor {
             },
             
             resume: async (guildId) => {
-                const client = require('../../main').client;
-                const musicData = client.serverMusicData?.get(guildId);
+                const client = global.discordClient;
+                const musicData = client?.serverMusicData?.get(guildId);
                 
                 if (musicData && musicData.audio) {
                     musicData.audio.resume();
@@ -547,27 +609,35 @@ class MusicActionExecutor extends BaseActionExecutor {
             },
             
             disconnect: async (guildId) => {
-                const client = require('../../main').client;
-                const musicData = client.serverMusicData?.get(guildId);
+                const client = global.discordClient;
+                const musicData = client?.serverMusicData?.get(guildId);
                 
                 if (musicData && musicData.audio) {
-                    musicData.audio.disconnect();
-                    musicData.destroy();
-                    client.serverMusicData.delete(guildId);
-                    return true;
+                    // 안전한 연결 해제 및 정리
+                    try {
+                        await musicData.audio.disconnect();
+                        musicData.destroy();
+                        client.serverMusicData.delete(guildId);
+                        return true;
+                    } catch (error) {
+                        console.warn('Disconnect cleanup error:', error.message);
+                        // 정리 실패해도 맵에서는 제거
+                        client.serverMusicData.delete(guildId);
+                        return true;
+                    }
                 }
                 return false;
             },
             
             isPaused: (guildId) => {
-                const client = require('../../main').client;
-                const musicData = client.serverMusicData?.get(guildId);
+                const client = global.discordClient;
+                const musicData = client?.serverMusicData?.get(guildId);
                 return musicData?.state?.isPaused || false;
             },
             
             setVolume: async (guildId, volume) => {
-                const client = require('../../main').client;
-                const musicData = client.serverMusicData?.get(guildId);
+                const client = global.discordClient;
+                const musicData = client?.serverMusicData?.get(guildId);
                 
                 if (musicData && musicData.audio) {
                     musicData.audio.setVolume(volume / 100);
@@ -577,8 +647,8 @@ class MusicActionExecutor extends BaseActionExecutor {
             },
             
             shuffle: async (guildId) => {
-                const client = require('../../main').client;
-                const musicData = client.serverMusicData?.get(guildId);
+                const client = global.discordClient;
+                const musicData = client?.serverMusicData?.get(guildId);
                 
                 if (musicData && musicData.queue) {
                     musicData.queue.shuffle();
@@ -588,8 +658,8 @@ class MusicActionExecutor extends BaseActionExecutor {
             },
             
             setLoop: async (guildId, mode) => {
-                const client = require('../../main').client;
-                const musicData = client.serverMusicData?.get(guildId);
+                const client = global.discordClient;
+                const musicData = client?.serverMusicData?.get(guildId);
                 
                 if (musicData) {
                     musicData.state.loopMode = mode;
