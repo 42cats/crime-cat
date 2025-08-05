@@ -13,12 +13,14 @@ const WritePreviewToggle: React.FC = () => {
   return (
     <div className="flex items-center">
       <button
+        type="button"
         onClick={() => dispatch({ preview: "edit" })}
         className={`${base} ${preview === "edit" ? selected : unselected}`}
       >
         작성
       </button>
       <button
+        type="button"
         onClick={() => dispatch({ preview: "preview" })}
         className={`${base} ${preview === "preview" ? selected : unselected}`}
       >
