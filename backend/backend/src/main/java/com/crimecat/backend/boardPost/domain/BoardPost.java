@@ -12,6 +12,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -96,14 +97,27 @@ public class BoardPost {
     public void update(BoardPostRequest boardPostRequest) {
         this.subject = boardPostRequest.getSubject();
         this.content = boardPostRequest.getContent();
-        this.isSecret = boardPostRequest.isSecret();
+        this.isSecret = boardPostRequest.getIsSecret();
         this.postType = boardPostRequest.getPostType();
         this.boardType = boardPostRequest.getBoardType();
-        this.isPinned = boardPostRequest.isPinned();
+        this.isPinned = boardPostRequest.getIsPinned();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateWithoutContent(BoardPostRequest boardPostRequest) {
+        this.subject = boardPostRequest.getSubject();
+        this.isSecret = boardPostRequest.getIsSecret();
+        this.postType = boardPostRequest.getPostType();
+        this.boardType = boardPostRequest.getBoardType();
+        this.isPinned = boardPostRequest.getIsPinned();
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void updateContent(String content) {
-        this.content = content;
+        if (!Objects.equals(this.content, content)) {
+            this.content = content;
+            this.updatedAt = LocalDateTime.now();
+        }
     }
 
     public void delete() {

@@ -2,6 +2,7 @@ package com.crimecat.backend.boardPost.controller;
 
 import com.crimecat.backend.boardPost.service.BoardPostService;
 import com.crimecat.backend.boardPost.dto.AudioUploadDto;
+import com.crimecat.backend.boardPost.dto.TempCleanupRequest;
 import com.crimecat.backend.boardPost.entity.BoardPostAttachment;
 import com.crimecat.backend.boardPost.service.AudioAttachmentService;
 import com.crimecat.backend.exception.ErrorResponse;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -169,6 +171,24 @@ public class AudioAttachmentController {
             return ResponseEntity.ok(streamingInfoOpt.get());
         } catch (Exception e) {
             log.error("Failed to get audio info: {}", filename, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ErrorResponse.of(ErrorStatus.INTERNAL_ERROR));
+        }
+    }
+
+    /**
+     * 임시 오디오 파일 정리
+     */
+    @PostMapping("/temp-cleanup")
+    public ResponseEntity<?> cleanupTempFiles(
+        @RequestBody TempCleanupRequest request,
+        @AuthenticationPrincipal WebUser user
+    ) {
+        try {
+            audioAttachmentService.cleanupUserTempFiles(request.getTempIds(), user.getId());
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Failed to cleanup temp files for user: {}", user.getId(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ErrorResponse.of(ErrorStatus.INTERNAL_ERROR));
         }
