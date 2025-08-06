@@ -94,13 +94,16 @@ public class BoardPost {
     }
 
     public void update(BoardPostRequest boardPostRequest) {
-        this.updatedAt = LocalDateTime.now();
         this.subject = boardPostRequest.getSubject();
         this.content = boardPostRequest.getContent();
-        this.isSecret = boardPostRequest.getIsSecret();
-        this.isPinned = boardPostRequest.getIsPinned();
+        this.isSecret = boardPostRequest.isSecret();
         this.postType = boardPostRequest.getPostType();
         this.boardType = boardPostRequest.getBoardType();
+        this.isPinned = boardPostRequest.isPinned();
+    }
+
+    public void updateContent(String content) {
+        this.content = content;
     }
 
     public void delete() {
