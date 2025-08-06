@@ -25,6 +25,7 @@ export enum DetailedPostType {
     ESCAPE_ROOM = "ESCAPE_ROOM", // 방탈출
     REAL_WORLD = "REAL_WORLD", // 리얼월드
     EVENT = "EVENT", // 이벤트
+    NOTICE = "NOTICE", // 공지
 }
 
 export enum BoardPostSortType {

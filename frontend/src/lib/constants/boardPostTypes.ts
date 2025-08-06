@@ -44,4 +44,5 @@ export const POST_TYPE_LABELS: Record<string, string> = {
     [DetailedPostType.ESCAPE_ROOM]: "방탈출",
     [DetailedPostType.REAL_WORLD]: "리얼월드",
     [DetailedPostType.EVENT]: "이벤트",
+    [DetailedPostType.NOTICE]: "공지",
 };

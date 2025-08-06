@@ -310,37 +310,31 @@ const BoardList: React.FC<BoardListProps> = ({ boardType }) => {
                                     </div>
                                 ) : (
                                     <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                                        {/* 공지사항 게시글 (상단 고정) */}
+                                        {/* 고정 게시글 (상단 고정) */}
                                         {data.content
-                                            .filter(
-                                                (post) =>
-                                                    post.postType ===
-                                                    PostType.NOTICE
-                                            )
+                                            .filter((post) => post.isPinned)
                                             .map((post) => (
                                                 <div
                                                     key={post.id}
-                                                    className="bg-blue-50/50 dark:bg-blue-900/10"
+                                                    className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20"
                                                 >
                                                     <BoardPostItem
                                                         post={post}
                                                         boardType={boardType}
+                                                        isPinned={true}
                                                     />
                                                 </div>
                                             ))}
 
                                         {/* 일반 게시글 */}
                                         {data.content
-                                            .filter(
-                                                (post) =>
-                                                    post.postType !==
-                                                    PostType.NOTICE
-                                            )
+                                            .filter((post) => !post.isPinned)
                                             .map((post) => (
                                                 <BoardPostItem
                                                     key={post.id}
                                                     post={post}
                                                     boardType={boardType}
+                                                    isPinned={false}
                                                 />
                                             ))}
 

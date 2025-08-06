@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/useToast";
+import { useAuth } from "@/hooks/useAuth";
 import { boardPostService } from "@/api/posts/boardPostService";
 import { BoardType, DetailedPostType } from "@/lib/types/board";
 import { BOARD_POST_TYPES, POST_TYPE_LABELS } from "@/lib/constants/boardPostTypes";
@@ -32,6 +33,7 @@ interface FormData {
     content: string;
     postType: string;
     isSecret: boolean;
+    isPinned: boolean;
 }
 
 interface BoardWriteProps {
@@ -46,6 +48,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
     const location = useLocation();
     const { id } = useParams<{ id: string }>();
     const { toast } = useToast();
+    const { hasRole } = useAuth();
     const [markdownContent, setMarkdownContent] = useState("");
     const isEditMode = !!id;
 
@@ -76,6 +79,18 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
         return BOARD_POST_TYPES[boardType][0];
     };
 
+    // 현재 사용자가 접근 가능한 게시글 유형 목록
+    const getAvailablePostTypes = () => {
+        const baseTypes = BOARD_POST_TYPES[boardType] || [DetailedPostType.GENERAL];
+        
+        // 관리자/매니저인 경우 NOTICE 유형 추가
+        if (hasRole(["ADMIN", "MANAGER"])) {
+            return [...baseTypes, DetailedPostType.NOTICE];
+        }
+        
+        return baseTypes;
+    };
+
     const {
         register,
         handleSubmit,
@@ -89,6 +104,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
             content: "",
             postType: getDefaultPostType(),
             isSecret: false,
+            isPinned: false,
         },
     });
 
@@ -100,6 +116,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                 content: existingPost.content || "",
                 postType: existingPost.postType || getDefaultPostType(),
                 isSecret: existingPost.isSecret || false,
+                isPinned: existingPost.isPinned || false,
             });
             setMarkdownContent(existingPost.content || "");
         }
@@ -146,6 +163,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                     boardType: boardType,
                     postType: data.postType,
                     isSecret: data.isSecret,
+                    isPinned: data.isPinned,
                 });
 
                 toast({
@@ -160,6 +178,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                     boardType: boardType,
                     postType: data.postType,
                     isSecret: data.isSecret,
+                    isPinned: data.isPinned,
                 });
 
                 toast({
@@ -274,7 +293,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                                     <SelectValue placeholder="게시글 유형 선택" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {BOARD_POST_TYPES[boardType].map(
+                                    {getAvailablePostTypes().map(
                                         (postType) => (
                                             <SelectItem
                                                 key={postType}
@@ -304,6 +323,25 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                                 비밀글로 설정
                             </Label>
                         </div>
+
+                        {/* 핀설정 (관리자/매니저만) */}
+                        {hasRole(["ADMIN", "MANAGER"]) && (
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="isPinned"
+                                    checked={watch("isPinned")}
+                                    onCheckedChange={(checked) =>
+                                        setValue("isPinned", checked)
+                                    }
+                                />
+                                <Label
+                                    htmlFor="isPinned"
+                                    className="text-sm font-medium"
+                                >
+                                    상단 고정 (관리자 전용)
+                                </Label>
+                            </div>
+                        )}
 
                         {/* MarkdownEditor 컴포넌트 사용 */}
                         <div className="space-y-2">

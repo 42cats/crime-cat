@@ -11,15 +11,17 @@ import {
     Heart,
     ChevronRight,
     Lock,
+    Pin,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface BoardPostItemProps {
     post: BoardPost;
     boardType: BoardType;
+    isPinned?: boolean;
 }
 
-const BoardPostItem: React.FC<BoardPostItemProps> = ({ post, boardType }) => {
+const BoardPostItem: React.FC<BoardPostItemProps> = ({ post, boardType, isPinned = false }) => {
     const { user, hasRole } = useAuth();
 
     // 비밀글 접근 가능 여부 확인 (백엔드 isOwnPost 신룰)
@@ -177,7 +179,11 @@ const BoardPostItem: React.FC<BoardPostItemProps> = ({ post, boardType }) => {
     const content = (
         <div className="flex items-center">
             <div className="flex-shrink-0 w-12 text-center text-muted-foreground text-sm hidden md:block">
-                {post.number || post.id}
+                {isPinned ? (
+                    <Pin className="w-4 h-4 text-blue-600 mx-auto" />
+                ) : (
+                    post.number || post.id
+                )}
             </div>
 
             <div className="flex items-center flex-grow min-w-0 pr-4">
