@@ -323,25 +323,25 @@ const SidebarInner = React.memo(() => {
                                                 name: "쿠폰 관리",
                                                 path: "/dashboard/admin/coupon",
                                                 icon: Ticket,
-                                                roles: ["ADMIN", "MANAGER"],
+                                                roles: ["ADMIN"],
                                             },
                                             {
                                                 name: "테마 광고 관리",
                                                 path: "/dashboard/admin/theme-ads",
                                                 icon: ImageIcon,
-                                                roles: ["ADMIN", "MANAGER"],
+                                                roles: ["ADMIN"],
                                             },
                                             {
                                                 name: "지역 매핑 관리",
                                                 path: "/dashboard/admin/location-mappings",
                                                 icon: MapPin,
-                                                roles: ["ADMIN", "MANAGER"],
+                                                roles: ["ADMIN"],
                                             },
                                             {
                                                 name: "포인트 모니터링",
                                                 path: "/dashboard/admin/point-monitoring",
                                                 icon: Coins,
-                                                roles: ["ADMIN", "MANAGER"],
+                                                roles: ["ADMIN"],
                                             },
                                         ]
                                             .filter((item) =>

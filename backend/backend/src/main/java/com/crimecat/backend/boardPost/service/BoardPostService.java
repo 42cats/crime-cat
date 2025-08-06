@@ -127,6 +127,16 @@ public class BoardPostService {
             UUID userId
     ) {
         WebUser author = webUserRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+        
+        // NOTICE 유형 권한 체크
+        if (PostType.NOTICE.equals(boardPostRequest.getPostType())) {
+            try {
+                AuthenticationUtil.validateUserHasMinimumRole(UserRole.MANAGER);
+            } catch (AccessDeniedException e) {
+                throw new AccessDeniedException("공지 게시글은 관리자 및 매니저만 작성할 수 있습니다.");
+            }
+        }
+        
         BoardPost boardPost = BoardPost.from(boardPostRequest, author);
 
         BoardPost savedBoardPost = boardPostRepository.save(boardPost);
@@ -167,6 +177,15 @@ public class BoardPostService {
             throw new AccessDeniedException("게시글을 수정할 권한이 없습니다");
         }
 
+        // NOTICE 유형 권한 체크
+        if (PostType.NOTICE.equals(boardPostRequest.getPostType())) {
+            try {
+                AuthenticationUtil.validateUserHasMinimumRole(UserRole.MANAGER);
+            } catch (AccessDeniedException e) {
+                throw new AccessDeniedException("공지 게시글은 관리자 및 매니저만 작성할 수 있습니다.");
+            }
+        }
+
         boardPost.update(boardPostRequest);
         BoardPost updatedBoardPost = boardPostRepository.save(boardPost);
         Boolean isLikedByCurrentUser = boardPostLikeRepository.existsByUserIdAndPostId(userId, postId);
@@ -192,8 +211,7 @@ public class BoardPostService {
     @Transactional(readOnly = true)
     public PostNavigationResponse getPostNavigation(UUID postId, BoardType boardType) {
         // 현재 게시글 조회
-        BoardPost currentPost = boardPostRepository.findByIdAndIsDeletedFalse(postId)
-                .orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
+        BoardPost currentPost = boardPostRepository.findByIdAndIsDeletedFalse(postId).orElseThrow(ErrorStatus.RESOURCE_NOT_FOUND::asServiceException);
 
         // 현재 게시글이 지정된 boardType과 다르면 예외 발생
         if (!currentPost.getBoardType().equals(boardType)) {
