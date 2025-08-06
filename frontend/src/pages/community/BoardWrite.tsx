@@ -23,6 +23,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { boardPostService } from "@/api/posts/boardPostService";
 import { BoardType, DetailedPostType } from "@/lib/types/board";
 import { BOARD_POST_TYPES, POST_TYPE_LABELS } from "@/lib/constants/boardPostTypes";
@@ -48,8 +49,10 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
     const location = useLocation();
     const { id } = useParams<{ id: string }>();
     const { toast } = useToast();
+    const { user } = useAuth();
     const { hasRole } = useAuth();
     const [markdownContent, setMarkdownContent] = useState("");
+    const [tempAudioIds, setTempAudioIds] = useState<string[]>([]);
     const isEditMode = !!id;
 
     // URL에서 boardType 파라미터 읽기
@@ -110,6 +113,12 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
 
     // 수정 모드에서 기존 데이터 로드
     useEffect(() => {
+        const handleAudioUploaded = (event: CustomEvent) => {
+            setTempAudioIds(prev => [...prev, event.detail.tempId]);
+        };
+
+        window.addEventListener('audioUploaded', handleAudioUploaded as EventListener);
+
         if (isEditMode && existingPost) {
             reset({
                 subject: existingPost.subject || existingPost.title || "",
@@ -120,6 +129,10 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
             });
             setMarkdownContent(existingPost.content || "");
         }
+
+        return () => {
+            window.removeEventListener('audioUploaded', handleAudioUploaded as EventListener);
+        };
     }, [isEditMode, existingPost, reset]);
 
     // 게시판 유형에 따른 타이틀 설정
@@ -163,6 +176,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                     boardType: boardType,
                     postType: data.postType,
                     isSecret: data.isSecret,
+                    tempAudioIds: tempAudioIds, // Add this line
                     isPinned: data.isPinned,
                 });
 
@@ -178,6 +192,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                     boardType: boardType,
                     postType: data.postType,
                     isSecret: data.isSecret,
+                    tempAudioIds: tempAudioIds, // Add this line
                     isPinned: data.isPinned,
                 });
 
@@ -355,6 +370,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                                 value={markdownContent}
                                 onChange={handleEditorChange}
                                 height={400}
+                                userRole={user?.role || 'USER'}
                             />
                             {errors.content && (
                                 <p className="text-sm text-red-500 mt-1">
