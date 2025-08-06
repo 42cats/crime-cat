@@ -23,10 +23,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/useToast";
 import { useAuth } from "@/hooks/useAuth";
-import { useAuth } from "@/hooks/useAuth";
 import { boardPostService } from "@/api/posts/boardPostService";
 import { BoardType, DetailedPostType } from "@/lib/types/board";
-import { BOARD_POST_TYPES, POST_TYPE_LABELS } from "@/lib/constants/boardPostTypes";
+import {
+    BOARD_POST_TYPES,
+    POST_TYPE_LABELS,
+} from "@/lib/constants/boardPostTypes";
 import { MarkdownEditor } from "@/components/markdown";
 
 interface FormData {
@@ -40,7 +42,6 @@ interface FormData {
 interface BoardWriteProps {
     boardType?: BoardType;
 }
-
 
 const BoardWrite: React.FC<BoardWriteProps> = ({
     boardType: propsBoardType,
@@ -84,13 +85,15 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
 
     // 현재 사용자가 접근 가능한 게시글 유형 목록
     const getAvailablePostTypes = () => {
-        const baseTypes = BOARD_POST_TYPES[boardType] || [DetailedPostType.GENERAL];
-        
+        const baseTypes = BOARD_POST_TYPES[boardType] || [
+            DetailedPostType.GENERAL,
+        ];
+
         // 관리자/매니저인 경우 NOTICE 유형 추가
         if (hasRole(["ADMIN", "MANAGER"])) {
             return [...baseTypes, DetailedPostType.NOTICE];
         }
-        
+
         return baseTypes;
     };
 
@@ -114,10 +117,13 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
     // 수정 모드에서 기존 데이터 로드
     useEffect(() => {
         const handleAudioUploaded = (event: CustomEvent) => {
-            setTempAudioIds(prev => [...prev, event.detail.tempId]);
+            setTempAudioIds((prev) => [...prev, event.detail.tempId]);
         };
 
-        window.addEventListener('audioUploaded', handleAudioUploaded as EventListener);
+        window.addEventListener(
+            "audioUploaded",
+            handleAudioUploaded as EventListener
+        );
 
         if (isEditMode && existingPost) {
             reset({
@@ -131,7 +137,10 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
         }
 
         return () => {
-            window.removeEventListener('audioUploaded', handleAudioUploaded as EventListener);
+            window.removeEventListener(
+                "audioUploaded",
+                handleAudioUploaded as EventListener
+            );
         };
     }, [isEditMode, existingPost, reset]);
 
@@ -308,16 +317,14 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                                     <SelectValue placeholder="게시글 유형 선택" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {getAvailablePostTypes().map(
-                                        (postType) => (
-                                            <SelectItem
-                                                key={postType}
-                                                value={postType}
-                                            >
-                                                {POST_TYPE_LABELS[postType]}
-                                            </SelectItem>
-                                        )
-                                    )}
+                                    {getAvailablePostTypes().map((postType) => (
+                                        <SelectItem
+                                            key={postType}
+                                            value={postType}
+                                        >
+                                            {POST_TYPE_LABELS[postType]}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -370,7 +377,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                                 value={markdownContent}
                                 onChange={handleEditorChange}
                                 height={400}
-                                userRole={user?.role || 'USER'}
+                                userRole={user?.role || "USER"}
                             />
                             {errors.content && (
                                 <p className="text-sm text-red-500 mt-1">
