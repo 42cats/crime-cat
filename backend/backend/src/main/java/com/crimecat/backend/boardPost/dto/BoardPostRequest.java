@@ -4,6 +4,7 @@ import com.crimecat.backend.boardPost.enums.BoardType;
 import com.crimecat.backend.boardPost.enums.PostType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,6 +33,8 @@ public class BoardPostRequest {
     @Builder.Default
     @JsonProperty("isPinned")
     private Boolean isPinned = false;
+
+    private List<String> tempAudioIds;
 
     @JsonProperty("isPinned")
     public boolean isPinned() {

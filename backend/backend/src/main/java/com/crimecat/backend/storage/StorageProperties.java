@@ -27,10 +27,13 @@ public class StorageProperties {
     private String gameThemeBaseUrl;
     private String userPostImageUploadDir;
     private String userPostImageBaseUrl;
+    private String boardPostAudioUploadDir;
+    private String boardPostAudioBaseUrl;
 
     private StorageFileType avatar = StorageFileType.AVATAR;
     private StorageFileType gameTheme = StorageFileType.GAME_THEME;
     private StorageFileType userPostImage = StorageFileType.USER_POST_IMAGE;
+    private StorageFileType boardPostAudio = StorageFileType.BOARD_POST_AUDIO;
 
     @PostConstruct
     public void initEnum(){
@@ -38,6 +41,7 @@ public class StorageProperties {
         StorageFileType.AVATAR.init(avatarUploadDir, avatarBaseUrl);
         StorageFileType.GAME_THEME.init(gameThemeUploadDir, gameThemeBaseUrl);
         StorageFileType.USER_POST_IMAGE.init(userPostImageUploadDir, userPostImageBaseUrl);
+        StorageFileType.BOARD_POST_AUDIO.init(boardPostAudioUploadDir, boardPostAudioBaseUrl);
     }
 
     // getter/setter for new fields
@@ -87,5 +91,21 @@ public class StorageProperties {
     
     public void setUserPostImageBaseUrl(String userPostImageBaseUrl) {
         this.userPostImageBaseUrl = userPostImageBaseUrl;
+    }
+
+    public String getBoardPostAudioUploadDir() {
+        return boardPostAudioUploadDir;
+    }
+
+    public void setBoardPostAudioUploadDir(String boardPostAudioUploadDir) {
+        this.boardPostAudioUploadDir = boardPostAudioUploadDir;
+    }
+
+    public String getBoardPostAudioBaseUrl() {
+        return boardPostAudioBaseUrl;
+    }
+
+    public void setBoardPostAudioBaseUrl(String boardPostAudioBaseUrl) {
+        this.boardPostAudioBaseUrl = boardPostAudioBaseUrl;
     }
 }

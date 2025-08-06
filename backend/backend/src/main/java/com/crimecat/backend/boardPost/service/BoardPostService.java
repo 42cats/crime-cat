@@ -7,6 +7,7 @@ import com.crimecat.backend.boardPost.dto.BoardPostRequest;
 import com.crimecat.backend.boardPost.dto.BoardPostResponse;
 import com.crimecat.backend.boardPost.dto.BoardPostSummary;
 import com.crimecat.backend.boardPost.dto.PostNavigationResponse;
+import com.crimecat.backend.boardPost.entity.BoardPostAttachment;
 import com.crimecat.backend.boardPost.enums.BoardType;
 import com.crimecat.backend.boardPost.enums.PostType;
 import com.crimecat.backend.boardPost.repository.BoardPostLikeRepository;
@@ -18,6 +19,8 @@ import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.enums.UserRole;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +44,8 @@ public class BoardPostService {
     private final RedisTemplate<String, String> redisTemplate;
     private final WebUserRepository webUserRepository;
     private final ViewCountService viewCountService;
+    private final BoardPostAttachmentService boardPostAttachmentService;
+    private final AudioAttachmentService audioAttachmentService;
 
     /**
      * 게시글 수정/삭제 권한 확인
@@ -138,9 +143,31 @@ public class BoardPostService {
         }
         
         BoardPost boardPost = BoardPost.from(boardPostRequest, author);
-
         BoardPost savedBoardPost = boardPostRepository.save(boardPost);
-        return BoardPostDetailResponse.from(savedBoardPost, true, false);
+
+        // 1. 임시 파일을 정식 파일로 변환하고, ID 매핑 정보를 받음
+        Map<String, String> tempIdToStoredFilenameMap = boardPostAttachmentService.convertTempAttachmentsToPost(boardPostRequest.getTempAudioIds(), savedBoardPost);
+
+        // 2. 본문의 임시 URL을 영구 URL로 교체
+        String finalContent = replaceTempUrlsWithPermanentUrls(boardPostRequest.getContent(), tempIdToStoredFilenameMap);
+        savedBoardPost.updateContent(finalContent);
+
+        BoardPost finalBoardPost = boardPostRepository.save(savedBoardPost);
+        return BoardPostDetailResponse.from(finalBoardPost, true, false);
+    }
+
+    private String replaceTempUrlsWithPermanentUrls(String content, Map<String, String> tempIdToStoredFilenameMap) {
+        if (content == null || tempIdToStoredFilenameMap == null || tempIdToStoredFilenameMap.isEmpty()) {
+            return content;
+        }
+        for (Map.Entry<String, String> entry : tempIdToStoredFilenameMap.entrySet()) {
+            String tempId = entry.getKey();
+            String permanentFilename = entry.getValue();
+            String tempUrl = "/api/v1/board/audio/stream/" + tempId;
+            String permanentUrl = "/api/v1/board/audio/stream/" + permanentFilename;
+            content = content.replace(tempUrl, permanentUrl);
+        }
+        return content;
     }
 
     @Transactional
@@ -171,9 +198,9 @@ public class BoardPostService {
             UUID postId,
             UUID userId
     ) {
-        BoardPost boardPost = boardPostRepository.findById(postId).orElseThrow(() -> new EntityNotFoundException("게시글물 찾을 수 없습니다."));
+        BoardPost boardPost = boardPostRepository.findById(postId).orElseThrow(() -> new EntityNotFoundException("게시글을 찾을 수 없습니다."));
 
-        if (!canModifyPost(boardPost.getAuthorId(), userId) && (AuthenticationUtil.getCurrentWebUser().getRole() != UserRole.ADMIN || AuthenticationUtil.getCurrentWebUser().getRole() != UserRole.MANAGER)) {
+        if (!canModifyPost(boardPost.getAuthorId(), userId)) {
             throw new AccessDeniedException("게시글을 수정할 권한이 없습니다");
         }
 
@@ -186,7 +213,20 @@ public class BoardPostService {
             }
         }
 
+        // 1. 기존 첨부파일 목록 조회
+        List<BoardPostAttachment> oldAttachments = boardPostAttachmentService.getAttachmentsByBoardPost(boardPost);
+
+        // 2. 게시글 내용 업데이트
         boardPost.update(boardPostRequest);
+
+        // 3. 새로운 임시 첨부파일이 있다면 정식으로 변환 및 연결
+        if (boardPostRequest.getTempAudioIds() != null && !boardPostRequest.getTempAudioIds().isEmpty()) {
+            boardPostAttachmentService.convertTempAttachmentsToPost(boardPostRequest.getTempAudioIds(), boardPost);
+        }
+
+        // 4. 본문에서 제거된 오디오 파일(고아 파일) 삭제
+        boardPostAttachmentService.cleanupOrphanedAttachments(boardPost, boardPostRequest.getContent());
+
         BoardPost updatedBoardPost = boardPostRepository.save(boardPost);
         Boolean isLikedByCurrentUser = boardPostLikeRepository.existsByUserIdAndPostId(userId, postId);
         return BoardPostDetailResponse.from(updatedBoardPost, true, isLikedByCurrentUser);
@@ -204,6 +244,10 @@ public class BoardPostService {
             throw new AccessDeniedException("게시글을 삭제할 권한이 없습니다");
         }
 
+        // 1. 연관된 첨부파일 먼저 삭제
+        boardPostAttachmentService.deleteAttachmentsByBoardPost(boardPost);
+
+        // 2. 게시글 소프트 삭제
         boardPost.delete();
         boardPostRepository.save(boardPost);
     }

@@ -101,7 +101,17 @@ public enum ErrorStatus {
     // 광고 관련
     ADVERTISEMENT_NOT_FOUND("광고를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     ADVERTISEMENT_PERIOD_OVERLAP("해당 테마는 이미 겹치는 기간에 광고가 등록되어 있습니다.", HttpStatus.CONFLICT),
-    ADVERTISEMENT_INVALID_PERIOD("시작 날짜는 종료 날짜보다 이전이어야 합니다.", HttpStatus.BAD_REQUEST);
+    ADVERTISEMENT_INVALID_PERIOD("시작 날짜는 종료 날짜보다 이전이어야 합니다.", HttpStatus.BAD_REQUEST),
+    
+    // 오디오 첨부파일 관련
+    AUDIO_FILE_NOT_FOUND("오디오 파일을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    AUDIO_FILE_INVALID_FORMAT("지원하지 않는 오디오 형식입니다.", HttpStatus.BAD_REQUEST),
+    AUDIO_FILE_SIZE_EXCEEDED("오디오 파일 크기가 너무 큽니다.", HttpStatus.BAD_REQUEST),
+    AUDIO_FILE_UPLOAD_FAILED("오디오 파일 업로드에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    AUDIO_FILE_ACCESS_DENIED("오디오 파일에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    TEMP_ATTACHMENT_NOT_FOUND("임시 첨부파일을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    TEMP_ATTACHMENT_EXPIRED("임시 첨부파일이 만료되었습니다.", HttpStatus.BAD_REQUEST),
+    AUDIO_ACCESS_POLICY_INVALID("오디오 접근 정책이 유효하지 않습니다.", HttpStatus.BAD_REQUEST);
 
     private final String message;
     private final HttpStatus status;

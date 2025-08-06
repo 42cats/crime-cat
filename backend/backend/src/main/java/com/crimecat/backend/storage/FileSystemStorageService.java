@@ -48,18 +48,27 @@ public class FileSystemStorageService implements StorageService {
         }
         
         Path savePath = this.rootLocation;
-        savePath = savePath.resolve(type.getUploadDir());
+        // filename에 디렉토리 경로가 포함될 수 있으므로, resolve 전에 분리
+        Path directoryPath = savePath.resolve(type.getUploadDir());
+        String actualFilename = filename;
+
+        if (filename.contains("/")) {
+            int lastSlash = filename.lastIndexOf('/');
+            directoryPath = directoryPath.resolve(filename.substring(0, lastSlash));
+            actualFilename = filename.substring(lastSlash + 1);
+        }
+
         try {
-            if (Files.notExists(savePath)) {
-                log.info("Creating directory: {}", savePath.toAbsolutePath());
-                Files.createDirectories(savePath);
+            if (Files.notExists(directoryPath)) {
+                log.info("Creating directory: {}", directoryPath.toAbsolutePath());
+                Files.createDirectories(directoryPath);
             }
-            savePath = savePath.resolve(filename + FileUtil.getExtension(file.getOriginalFilename()));
+            Path finalPath = directoryPath.resolve(actualFilename + FileUtil.getExtension(file.getOriginalFilename()));
             if (file.isEmpty()) {
                 throw new RuntimeException("Failed to store empty file " + file.getOriginalFilename());
             }
-            log.info("Storing file at: {}", savePath.toAbsolutePath());
-            Files.copy(file.getInputStream(), savePath, StandardCopyOption.REPLACE_EXISTING);
+            log.info("Storing file at: {}", finalPath.toAbsolutePath());
+            Files.copy(file.getInputStream(), finalPath, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new RuntimeException("Failed to store file " + file.getOriginalFilename(), e);
         }
@@ -150,6 +159,24 @@ public class FileSystemStorageService implements StorageService {
 
         } catch (IOException e) {
             log.error("Failed to delete file: {}", filename, e);
+        }
+    }
+
+    @Override
+    public void move(StorageFileType type, String sourceFilename, String destFilename) throws IOException {
+        Path sourcePath = rootLocation.resolve(type.getUploadDir()).resolve(sourceFilename);
+        Path destPath = rootLocation.resolve(type.getUploadDir()).resolve(destFilename);
+
+        if (Files.exists(sourcePath)) {
+            // Ensure parent directory of destination exists
+            if (destPath.getParent() != null && !Files.exists(destPath.getParent())) {
+                Files.createDirectories(destPath.getParent());
+            }
+            Files.move(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+            log.info("Moved file from {} to {}", sourcePath.toAbsolutePath(), destPath.toAbsolutePath());
+        } else {
+            log.warn("Source file not found for move: {}", sourcePath.toAbsolutePath());
+            throw new NoSuchFileException("Source file not found: " + sourceFilename);
         }
     }
 

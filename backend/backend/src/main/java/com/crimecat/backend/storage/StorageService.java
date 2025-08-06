@@ -1,4 +1,5 @@
 package com.crimecat.backend.storage;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 import org.springframework.core.io.Resource;
@@ -23,4 +24,6 @@ public interface StorageService {
     void deleteAll();
 
     void delete(StorageFileType type, String filename);
+
+    void move(StorageFileType type, String sourceFilename, String destFilename) throws IOException;
 }
