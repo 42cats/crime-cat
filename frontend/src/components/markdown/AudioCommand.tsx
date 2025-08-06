@@ -1,5 +1,28 @@
-import React from "react";
-import { Volume2 } from "lucide-react";
+import React, { useState } from "react";
+import { Volume2, Upload } from "lucide-react";
+import AudioUploadModal from "./AudioUploadModal";
+
+/**
+ * 오디오 업로드 API 호출
+ */
+const uploadAudioFile = async (file: File, title: string, accessPolicy: string) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('audioTitle', title);
+  formData.append('accessPolicy', accessPolicy);
+
+  const response = await fetch('/api/v1/board/audio/temp-upload', {
+    method: 'POST',
+    body: formData,
+    credentials: 'include', // JWT 쿠키 포함
+  });
+
+  if (!response.ok) {
+    throw new Error('Upload failed');
+  }
+
+  return await response.json();
+};
 
 /**
  * URL에서 오디오 정보를 추출하는 함수

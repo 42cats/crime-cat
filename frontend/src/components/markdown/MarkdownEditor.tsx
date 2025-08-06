@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import WritePreviewToggle from "./WritePreviewToggle";
 import { videoCommand } from "./VideoCommand";
 import { audioCommand } from "./AudioCommand";
+import { createUrlAudioCommand, createDirectUploadAudioCommand, AudioUploadManager } from "./EnhancedAudioCommand";
 
 interface MarkdownEditorProps {
   /** 에디터 내용 */
@@ -31,6 +32,8 @@ interface MarkdownEditorProps {
   label?: string;
   /** 에러 메시지 (있는 경우 에러 표시) */
   error?: string;
+  /** 사용자 역할 (오디오 업로드 권한용) */
+  userRole?: 'USER' | 'MANAGER' | 'ADMIN';
 }
 
 /**
@@ -56,8 +59,12 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   textareaId,
   label,
   error,
+  userRole = 'USER',
 }) => {
   const { theme } = useTheme();
+
+  const urlAudioCommand = createUrlAudioCommand();
+  const directUploadAudioCommand = userRole ? createDirectUploadAudioCommand(userRole) : null;
 
   // MDEditor에 전달할 props에서 커스텀 prop 제외
   const mdEditorProps = {
@@ -75,7 +82,8 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         icon: <WritePreviewToggle />,
       },
       videoCommand,
-      audioCommand,
+      urlAudioCommand,
+      ...(directUploadAudioCommand ? [directUploadAudioCommand] : []),
       ...commands.getCommands(),
     ],
     extraCommands,
@@ -93,6 +101,9 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         </div>
       </div>
       {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+      
+      {/* 오디오 업로드 모달 매니저 */}
+      {userRole && <AudioUploadManager userRole={userRole} />}
     </div>
   );
 };

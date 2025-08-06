@@ -88,6 +88,7 @@ export const boardPostService = {
         boardType: BoardType;
         postType: string;
         isSecret: boolean;
+        tempAudioIds?: string[];
     }) {
         try {
             return await apiClient.post("/posts", postData);
@@ -103,6 +104,7 @@ export const boardPostService = {
         boardType?: BoardType;
         postType?: string;
         isSecret?: boolean;
+        tempAudioIds?: string[];
     }) {
         try {
             return await apiClient.put(`/posts/${id}`, postData);
