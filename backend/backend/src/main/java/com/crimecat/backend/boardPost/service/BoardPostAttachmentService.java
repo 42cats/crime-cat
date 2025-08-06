@@ -147,18 +147,20 @@ public class BoardPostAttachmentService {
     }
 
     /**
-     * HTML/Markdown 본문에서 오디오 파일명(UUID.ext)을 추출하는 헬퍼 메소드
+     * HTML/Markdown 본문에서 오디오 파일명을 추출하고 확장자를 제거하여 storedFilename과 매칭 가능하도록 변환
      */
     private Set<String> extractAudioFilenamesFromContent(String content) {
         if (content == null || content.isEmpty()) {
             return Set.of();
         }
-        // src="/api/v1/board/audio/stream/FILENAME" 패턴을 찾음
-        Pattern pattern = Pattern.compile("src=\"/api/v1/board/audio/stream/([a-zA-Z0-9-]+.[a-zA-Z0-9]+)");
+        // src="/api/v1/board/audio/stream/FILENAME" 패턴을 찾음 (점을 이스케이프 처리)
+        Pattern pattern = Pattern.compile("src=\"/api/v1/board/audio/stream/([a-zA-Z0-9-]+\\.[a-zA-Z0-9]+)\"");
         Matcher matcher = pattern.matcher(content);
         Set<String> filenames = new java.util.HashSet<>();
         while (matcher.find()) {
-            filenames.add(matcher.group(1));
+            String fullFilename = matcher.group(1); // "uuid.mp3"
+            String storedFilename = FileUtil.getNameWithoutExtension(fullFilename); // "uuid"
+            filenames.add(storedFilename);
         }
         return filenames;
     }

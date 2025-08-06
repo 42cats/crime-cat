@@ -216,16 +216,23 @@ public class BoardPostService {
         // 1. 기존 첨부파일 목록 조회
         List<BoardPostAttachment> oldAttachments = boardPostAttachmentService.getAttachmentsByBoardPost(boardPost);
 
-        // 2. 게시글 내용 업데이트
-        boardPost.update(boardPostRequest);
+        // 2. content를 제외한 필드들만 먼저 업데이트
+        boardPost.updateWithoutContent(boardPostRequest);
 
-        // 3. 새로운 임시 첨부파일이 있다면 정식으로 변환 및 연결
+        // 3. content 처리를 위한 준비
+        String finalContent = boardPostRequest.getContent();
+        
+        // 4. 새로운 임시 첨부파일이 있다면 정식으로 변환 및 URL 교체
         if (boardPostRequest.getTempAudioIds() != null && !boardPostRequest.getTempAudioIds().isEmpty()) {
-            boardPostAttachmentService.convertTempAttachmentsToPost(boardPostRequest.getTempAudioIds(), boardPost);
+            Map<String, String> tempIdToStoredFilenameMap = boardPostAttachmentService.convertTempAttachmentsToPost(boardPostRequest.getTempAudioIds(), boardPost);
+            finalContent = replaceTempUrlsWithPermanentUrls(finalContent, tempIdToStoredFilenameMap);
         }
 
-        // 4. 본문에서 제거된 오디오 파일(고아 파일) 삭제
-        boardPostAttachmentService.cleanupOrphanedAttachments(boardPost, boardPostRequest.getContent());
+        // 5. content가 실제로 변경된 경우만 업데이트
+        boardPost.updateContent(finalContent);
+
+        // 6. 본문에서 제거된 오디오 파일(고아 파일) 삭제
+        boardPostAttachmentService.cleanupOrphanedAttachments(boardPost, finalContent);
 
         BoardPost updatedBoardPost = boardPostRepository.save(boardPost);
         Boolean isLikedByCurrentUser = boardPostLikeRepository.existsByUserIdAndPostId(userId, postId);

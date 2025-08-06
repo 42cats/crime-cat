@@ -114,16 +114,52 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
         },
     });
 
-    // 수정 모드에서 기존 데이터 로드
+    // 임시 파일 정리 함수
+    const cleanupTempFiles = async () => {
+        if (tempAudioIds.length > 0) {
+            try {
+                await fetch('/api/v1/board/audio/temp-cleanup', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        // CSRF 토큰이 필요한 경우 추가
+                    },
+                    credentials: 'include', // JWT 쿠키 포함
+                    body: JSON.stringify({ tempIds: tempAudioIds })
+                });
+            } catch (error) {
+                console.warn('임시 파일 정리 실패:', error);
+            }
+        }
+    };
+
+    // 수정 모드에서 기존 데이터 로드 및 이벤트 리스너 설정
     useEffect(() => {
         const handleAudioUploaded = (event: CustomEvent) => {
             setTempAudioIds((prev) => [...prev, event.detail.tempId]);
+        };
+
+        const handleBeforeUnload = () => {
+            // 페이지 이탈 시 임시 파일 정리 (Beacon API 사용)
+            if (tempAudioIds.length > 0) {
+                navigator.sendBeacon('/api/v1/board/audio/temp-cleanup', 
+                    JSON.stringify({ tempIds: tempAudioIds }));
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            // 탭 숨김/백그라운드 전환 시 임시 파일 정리
+            if (document.visibilityState === 'hidden' && tempAudioIds.length > 0) {
+                cleanupTempFiles();
+            }
         };
 
         window.addEventListener(
             "audioUploaded",
             handleAudioUploaded as EventListener
         );
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
         if (isEditMode && existingPost) {
             reset({
@@ -141,8 +177,10 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                 "audioUploaded",
                 handleAudioUploaded as EventListener
             );
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [isEditMode, existingPost, reset]);
+    }, [isEditMode, existingPost, reset, tempAudioIds]);
 
     // 게시판 유형에 따른 타이틀 설정
     const getBoardTitle = () => {
@@ -233,12 +271,15 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
         }
     };
 
-    const handleCancel = () => {
+    const handleCancel = async () => {
         if (
             window.confirm(
                 "작성 중인 내용이 저장되지 않습니다. 정말 취소하시겠습니까?"
             )
         ) {
+            // 먼저 임시 파일 정리
+            await cleanupTempFiles();
+            
             const boardPath =
                 boardType === BoardType.CHAT
                     ? "chat"

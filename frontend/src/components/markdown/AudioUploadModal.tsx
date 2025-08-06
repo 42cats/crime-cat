@@ -6,7 +6,6 @@ interface AudioUploadModalProps {
     onClose: () => void;
     onUpload: (
         file: File,
-        title: string,
         accessPolicy: "PUBLIC" | "PRIVATE"
     ) => Promise<void>;
     userRole: "USER" | "MANAGER" | "ADMIN";
@@ -22,7 +21,6 @@ const AudioUploadModal: React.FC<AudioUploadModalProps> = ({
     userRole,
 }) => {
     const [file, setFile] = useState<File | null>(null);
-    const [title, setTitle] = useState("");
     const [accessPolicy, setAccessPolicy] = useState<"PUBLIC" | "PRIVATE">(
         "PUBLIC"
     );
@@ -56,11 +54,6 @@ const AudioUploadModal: React.FC<AudioUploadModalProps> = ({
         }
 
         setFile(selectedFile);
-        if (!title && selectedFile.name) {
-            // 확장자 제거한 파일명을 기본 제목으로 설정
-            const nameWithoutExt = selectedFile.name.replace(/\.[^/.]+$/, "");
-            setTitle(nameWithoutExt);
-        }
     };
 
     const handleDrop = (e: React.DragEvent) => {
@@ -79,7 +72,7 @@ const AudioUploadModal: React.FC<AudioUploadModalProps> = ({
         setUploading(true);
         setError(null);
         try {
-            await onUpload(file, title, accessPolicy);
+            await onUpload(file, accessPolicy);
             handleClose();
         } catch (error: any) {
             console.error("Upload failed:", error);
@@ -92,7 +85,6 @@ const AudioUploadModal: React.FC<AudioUploadModalProps> = ({
 
     const handleClose = () => {
         setFile(null);
-        setTitle("");
         setAccessPolicy("PUBLIC");
         setUploading(false);
         setError(null); // Reset error on close
@@ -170,19 +162,6 @@ const AudioUploadModal: React.FC<AudioUploadModalProps> = ({
                     </div>
                 )}
 
-                {/* 제목 입력 */}
-                <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1">
-                        오디오 제목
-                    </label>
-                    <input
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        placeholder="오디오 제목을 입력하세요"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    />
-                </div>
 
                 {/* 접근 정책 선택 (ADMIN/MANAGER만) */}
                 {(userRole === "ADMIN" || userRole === "MANAGER") && (

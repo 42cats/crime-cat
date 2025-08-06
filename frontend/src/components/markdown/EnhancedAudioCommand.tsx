@@ -7,10 +7,9 @@ import { apiClient } from "@/lib/api";
 /**
  * 오디오 업로드 API 호출
  */
-const uploadAudioFile = async (file: File, title: string, accessPolicy: string) => {
+const uploadAudioFile = async (file: File, accessPolicy: string) => {
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('audioTitle', title);
   formData.append('accessPolicy', accessPolicy);
 
   return await apiClient.post('/board/audio/temp-upload', formData, {
@@ -100,18 +99,18 @@ export const AudioUploadManager: React.FC<{ userRole: 'USER' | 'MANAGER' | 'ADMI
     };
   }, []);
 
-  const handleUpload = async (file: File, title: string, accessPolicy: 'PUBLIC' | 'PRIVATE') => {
+  const handleUpload = async (file: File, accessPolicy: 'PUBLIC' | 'PRIVATE') => {
     try {
-      const response = await uploadAudioFile(file, title, accessPolicy);
+      const response = await uploadAudioFile(file, accessPolicy);
       
       const audioElement = `<audio 
 controls 
 preload="metadata"
 style="width: 100%; max-width: 500px;"
 data-temp-id="${response.tempId}"
-data-title="${response.audioTitle || title}"
+data-title="${response.audioTitle || file.name}"
 src="/api/v1/board/audio/stream/${response.tempId}">
-${response.audioTitle || title}
+${response.audioTitle || file.name}
 </audio>`;
       
       if (currentApi) {

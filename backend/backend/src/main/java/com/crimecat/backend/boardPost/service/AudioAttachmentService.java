@@ -161,7 +161,7 @@ public class AudioAttachmentService {
 
     /**
      * 첨부파일 스트리밍 정보 조회
-     * identifier는 tempId 또는 storedFilename일 수 있습니다.
+     * identifier는 tempId 또는 storedFilename (확장자 포함/제외 모두 허용)일 수 있습니다.
      */
     public Optional<AudioUploadDto.StreamingInfo> getStreamingInfo(String identifier, WebUser user) {
         // 1. 임시 파일로 조회 (tempId 기준)
@@ -181,7 +181,7 @@ public class AudioAttachmentService {
         }
 
         // 2. 정식 첨부파일로 조회 (storedFilename 기준)
-        // identifier에서 확장자를 제거하고 조회
+        // 프론트에서 확장자가 포함되어 올 수 있으므로 항상 확장자를 제거하고 조회
         String storedFilenameWithoutExtension = FileUtil.getNameWithoutExtension(identifier);
         BoardPostAttachment attachment = attachmentRepository.findByStoredFilename(storedFilenameWithoutExtension);
         if (attachment != null && attachment.isAccessible(user)) { // 접근 권한 확인
@@ -199,7 +199,7 @@ public class AudioAttachmentService {
 
     /**
      * 오디오 파일 스트림 제공
-     * identifier는 tempId 또는 storedFilename (확장자 포함)일 수 있습니다.
+     * identifier는 tempId 또는 storedFilename (확장자 포함/제외 모두 허용)일 수 있습니다.
      */
     public InputStream getAudioStream(String identifier) throws IOException {
         String filenameToLoad;
@@ -213,8 +213,8 @@ public class AudioAttachmentService {
             return storageService.loadAsResource(filenameToLoad).getInputStream();
         }
 
-        // 2. 정식 첨부파일로 조회 (identifier가 storedFilename + 확장자라고 가정)
-        // identifier에서 확장자를 제거하고 조회
+        // 2. 정식 첨부파일로 조회
+        // 프론트에서 확장자가 포함되어 올 수 있으므로 항상 확장자를 제거하고 조회
         String storedFilenameWithoutExtension = FileUtil.getNameWithoutExtension(identifier);
         BoardPostAttachment attachment = attachmentRepository.findByStoredFilename(storedFilenameWithoutExtension);
         if (attachment != null) {
@@ -224,6 +224,41 @@ public class AudioAttachmentService {
         }
 
         throw new IOException("File not found for identifier: " + identifier);
+    }
+
+    /**
+     * 사용자가 요청한 특정 임시 파일들 정리
+     */
+    @Transactional
+    public void cleanupUserTempFiles(List<String> tempIds, UUID userId) {
+        if (tempIds == null || tempIds.isEmpty()) {
+            return;
+        }
+
+        List<TempAttachment> userTempAttachments = tempIds.stream()
+            .map(tempAttachmentRepository::findByTempId)
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .filter(temp -> temp.getUser().getId().equals(userId)) // 사용자 검증
+            .collect(Collectors.toList());
+
+        for (TempAttachment temp : userTempAttachments) {
+            try {
+                // 파일 삭제
+                String extension = FileUtil.getExtension(temp.getOriginalFilename());
+                String tempPath = "temp/" + temp.getStoredFilename() + extension;
+                storageService.delete(StorageFileType.BOARD_POST_AUDIO, tempPath);
+                log.debug("Deleted user temp file: {}", temp.getStoredFilename());
+            } catch (Exception e) {
+                log.warn("Failed to delete user temp file: {}", temp.getStoredFilename(), e);
+            }
+        }
+
+        // DB에서 삭제
+        tempAttachmentRepository.deleteAll(userTempAttachments);
+        if (!userTempAttachments.isEmpty()) {
+            log.info("Cleaned up {} user temp attachments for user {}", userTempAttachments.size(), userId);
+        }
     }
 
     /**

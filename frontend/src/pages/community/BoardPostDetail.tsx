@@ -332,7 +332,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                             >
                                 <AvatarImage
                                     src={
-                                        post.authorProfileImagePath ||
+                                        post.authorProfileImage ||
                                         "/content/image/default_profile_image.png"
                                     }
                                     alt={post.authorName}
