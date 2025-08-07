@@ -1,5 +1,6 @@
 // 마크다운 관련 컴포넌트 및 유틸리티 내보내기
 
+export { default as MarkdownEditor } from './MarkdownEditor';
 export { default as EnhancedMarkdownRenderer } from './EnhancedMarkdownRenderer';
 export { AudioSyntaxParser } from './AudioSyntaxParser';
 export { AudioResolver } from './AudioResolver';

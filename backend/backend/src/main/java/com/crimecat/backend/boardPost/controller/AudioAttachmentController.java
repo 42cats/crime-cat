@@ -150,12 +150,19 @@ public class AudioAttachmentController {
             response.setHeader("X-Download-Options", "noopen");
             response.setHeader("X-Robots-Tag", "noindex, nofollow, nosnippet, noarchive");
 
-            // Range 요청 차단 (부분 다운로드 방지)
-            if (request.getHeader("Range") != null) {
-                log.warn("Range request blocked for audio streaming. User: {}, Filename: {}", 
-                        user != null ? user.getId() : "anonymous", filename);
-                response.setStatus(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE.value());
-                return;
+            // Range 요청 처리 (JWT 인증된 사용자는 허용)
+            String rangeHeader = request.getHeader("Range");
+            if (rangeHeader != null) {
+                if (user != null && isValidReferer(request)) {
+                    // 인증된 사용자의 정상적인 스트리밍 요청은 허용
+                    handleRangeRequest(request, response, streamingInfo, filename);
+                    return;
+                } else {
+                    log.warn("Range request blocked for unauthorized access. User: {}, Filename: {}", 
+                            user != null ? user.getId() : "anonymous", filename);
+                    response.setStatus(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE.value());
+                    return;
+                }
             }
 
             // 파일 스트리밍
@@ -218,13 +225,18 @@ public class AudioAttachmentController {
     
     /**
      * Referer 검증 메서드
-     * 애플리케이션 도메인에서의 요청만 허용
+     * JWT 인증 완료된 사용자의 직접 URL 접근 방지용
      */
     private boolean isValidReferer(HttpServletRequest request) {
         String referer = request.getHeader("Referer");
         
-        // Referer가 없는 경우 거부 (직접 URL 접근 차단)
+        // Referer가 없는 경우 개발 환경에서만 허용
         if (referer == null || referer.isEmpty()) {
+            if (isDevelopmentEnvironment()) {
+                log.debug("Allowing empty referer in development environment");
+                return true;
+            }
+            log.warn("Empty referer blocked in production environment");
             return false;
         }
         
@@ -232,13 +244,21 @@ public class AudioAttachmentController {
             java.net.URL refererUrl = new java.net.URL(referer);
             String refererHost = refererUrl.getHost();
             
-            // 허용된 도메인 목록
+            // 허용된 도메인 목록 검증
             return isAllowedHost(refererHost);
             
         } catch (java.net.MalformedURLException e) {
             log.warn("Invalid referer URL format: {}", referer);
             return false;
         }
+    }
+    
+    /**
+     * 개발 환경 여부 확인
+     */
+    private boolean isDevelopmentEnvironment() {
+        String profiles = System.getProperty("spring.profiles.active");
+        return profiles != null && (profiles.contains("dev") || profiles.contains("local"));
     }
     
     /**
@@ -249,17 +269,7 @@ public class AudioAttachmentController {
             return false;
         }
         
-        // 로컬 개발 환경
-        if ("localhost".equals(host) || "127.0.0.1".equals(host)) {
-            return true;
-        }
-        
-        // localhost with port
-        if (host.startsWith("localhost:") || host.startsWith("127.0.0.1:")) {
-            return true;
-        }
-        
-        // ServiceUrlConfig에서 설정된 도메인 확인
+        // ServiceUrlConfig에서 설정된 도메인 확인 (프로덕션/개발 공통)
         String configuredDomain = serviceUrlConfig.getDomain();
         if (configuredDomain != null && !configuredDomain.isEmpty()) {
             // 정확한 도메인 매칭
@@ -278,12 +288,119 @@ public class AudioAttachmentController {
             }
         }
         
-        // 개발 환경에서 사용할 수 있는 내부 네트워크 대역
-        if (host.startsWith("192.168.") || host.startsWith("10.0.") || host.startsWith("172.")) {
-            return true;
+        // 개발 환경에서만 허용되는 호스트들
+        if (isDevelopmentEnvironment()) {
+            // 로컬 개발 환경
+            if ("localhost".equals(host) || "127.0.0.1".equals(host)) {
+                return true;
+            }
+            
+            // localhost with port
+            if (host.startsWith("localhost:") || host.startsWith("127.0.0.1:")) {
+                return true;
+            }
+            
+            // 내부 네트워크 대역 (개발 환경에서만)
+            if (host.startsWith("192.168.") || host.startsWith("10.0.")) {
+                return true;
+            }
+            
+            // Docker 환경 대역 (개발 환경에서만)
+            if (host.startsWith("172.") && host.matches("172\\.(1[6-9]|2[0-9]|3[01])\\..*")) {
+                return true;
+            }
         }
         
-        log.warn("Blocked request from unauthorized host: {} (configured domain: {})", host, configuredDomain);
+        log.warn("Blocked request from unauthorized host: {} (configured domain: {}, dev mode: {})", 
+                host, configuredDomain, isDevelopmentEnvironment());
         return false;
+    }
+    
+    /**
+     * Range 요청 처리 - 부분 스트리밍 지원
+     */
+    private void handleRangeRequest(HttpServletRequest request, HttpServletResponse response, 
+                                   AudioUploadDto.StreamingInfo streamingInfo, String filename) throws IOException {
+        String rangeHeader = request.getHeader("Range");
+        long fileSize = streamingInfo.getFileSize();
+        
+        // Range 헤더 파싱 (bytes=start-end)
+        if (!rangeHeader.startsWith("bytes=")) {
+            response.setStatus(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE.value());
+            response.setHeader("Content-Range", "bytes */" + fileSize);
+            return;
+        }
+        
+        String rangeValue = rangeHeader.substring(6);
+        String[] ranges = rangeValue.split("-");
+        
+        long start = 0;
+        long end = fileSize - 1;
+        
+        try {
+            if (ranges.length >= 1 && !ranges[0].isEmpty()) {
+                start = Long.parseLong(ranges[0]);
+            }
+            if (ranges.length >= 2 && !ranges[1].isEmpty()) {
+                end = Long.parseLong(ranges[1]);
+            }
+            
+            // 범위 검증
+            if (start < 0 || end >= fileSize || start > end) {
+                response.setStatus(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE.value());
+                response.setHeader("Content-Range", "bytes */" + fileSize);
+                return;
+            }
+            
+        } catch (NumberFormatException e) {
+            response.setStatus(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE.value());
+            response.setHeader("Content-Range", "bytes */" + fileSize);
+            return;
+        }
+        
+        // 응답 헤더 설정
+        long contentLength = end - start + 1;
+        response.setStatus(HttpStatus.PARTIAL_CONTENT.value());
+        response.setContentType(streamingInfo.getContentType());
+        response.setHeader("Accept-Ranges", "bytes");
+        response.setHeader("Content-Range", String.format("bytes %d-%d/%d", start, end, fileSize));
+        response.setHeader("Content-Length", String.valueOf(contentLength));
+        
+        // 다운로드 방지 헤더 유지
+        response.setHeader("Content-Disposition", "inline");
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        
+        // 부분 파일 스트리밍
+        try (InputStream inputStream = audioAttachmentService.getAudioStream(filename)) {
+            // 시작 위치까지 스킵
+            long skipped = inputStream.skip(start);
+            if (skipped != start) {
+                log.warn("Failed to skip to start position {} for file {}", start, filename);
+                response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+                return;
+            }
+            
+            // 지정된 길이만큼 복사
+            byte[] buffer = new byte[8192];
+            long remaining = contentLength;
+            
+            while (remaining > 0) {
+                int toRead = (int) Math.min(buffer.length, remaining);
+                int bytesRead = inputStream.read(buffer, 0, toRead);
+                
+                if (bytesRead == -1) {
+                    break;
+                }
+                
+                response.getOutputStream().write(buffer, 0, bytesRead);
+                remaining -= bytesRead;
+            }
+            
+            response.flushBuffer();
+            
+        } catch (IOException e) {
+            log.error("Failed to stream range for file: {} (range: {}-{})", filename, start, end, e);
+            throw e;
+        }
     }
 }

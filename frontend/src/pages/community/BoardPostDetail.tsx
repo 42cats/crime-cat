@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BoardType, PostNavigationResponse } from "@/lib/types/board";
+import { BoardType, PostNavigationResponse, BoardPost } from "@/lib/types/board";
 import { boardPostService } from "@/api/posts/boardPostService";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,6 @@ import {
     Share2,
     Trash2,
     Edit,
-    AlertCircle,
     Lock,
     ChevronLeft,
     ChevronRight,
@@ -32,6 +31,7 @@ import { useToast } from "@/hooks/useToast";
 import { BoardCommentList } from "@/components/boards/BoardCommentList";
 import ProfileDetailModal from "@/components/profile/ProfileDetailModal";
 import EnhancedMarkdownRenderer from "@/components/markdown/EnhancedMarkdownRenderer";
+import { useAudioService } from "@/hooks/useAudioService";
 
 interface BoardPostDetailProps {
     boardType: BoardType;
@@ -53,6 +53,9 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
         null
     );
 
+    // AudioService 메모리 관리
+    useAudioService();
+
     // 게시글 조회 쿼리
     const {
         data: post,
@@ -62,7 +65,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
         queryKey: ["boardPost", id],
         queryFn: () => boardPostService.getBoardPostById(id!),
         enabled: !!id,
-    });
+    }) as { data: BoardPost | undefined; isLoading: boolean; isError: boolean };
 
     // 게시글 네비게이션 조회 쿼리
     const { data: navigation, isLoading: isNavigationLoading } = useQuery({
@@ -79,7 +82,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
     const likeCount =
         optimisticLikeCount !== null
             ? optimisticLikeCount
-            : post?.likes || post?.likeCount || 0;
+            : (post?.likes || (post as any)?.likeCount || 0);
 
     // 좋아요 토글 뮤테이션
     const likeMutation = useMutation({
@@ -152,7 +155,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
         const currentLikeCount =
             optimisticLikeCount !== null
                 ? optimisticLikeCount
-                : post?.likes || post?.likeCount || 0;
+                : (post?.likes || (post as any)?.likeCount || 0);
 
         setOptimisticIsLiked(!currentIsLiked);
         setOptimisticLikeCount(
@@ -358,7 +361,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-1">
                                 <Eye className="h-4 w-4" />
-                                <span>{post.views || post.viewCount || 0}</span>
+                                <span>{post.views || (post as any).viewCount || 0}</span>
                             </div>
                             <div className="flex items-center gap-1">
                                 <Heart
@@ -373,7 +376,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                             <div className="flex items-center gap-1">
                                 <MessageSquare className="h-4 w-4" />
                                 <span>
-                                    {post.comments || post.commentCount || 0}
+                                    {post.comments || (post as any).commentCount || 0}
                                 </span>
                             </div>
                         </div>
@@ -383,7 +386,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                 <CardContent className="py-6">
                     {/* 게시글 내용 */}
                     <EnhancedMarkdownRenderer
-                        content={post.content}
+                        content={post.content || ''}
                         className="prose dark:prose-invert max-w-none"
                         enableAudioProcessing={true}
                     />
