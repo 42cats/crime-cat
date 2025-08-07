@@ -414,7 +414,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                     </div>
 
                     {/* 네비게이션 버튼들 */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2">
                         <Button
                             variant="outline"
                             size="sm"
@@ -422,15 +422,15 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                             disabled={
                                 !navigation?.previousPost || isNavigationLoading
                             }
-                            className="flex items-center gap-2 max-w-[200px]"
+                            className="flex items-center gap-1 sm:gap-2 max-w-[120px] sm:max-w-[150px] md:max-w-[200px] px-2 sm:px-3"
                         >
                             <ChevronLeft className="h-4 w-4 flex-shrink-0" />
                             {navigation?.previousPost ? (
-                                <span className="text-sm truncate">
+                                <span className="text-xs sm:text-sm truncate hidden xs:inline">
                                     {navigation.previousPost.subject}
                                 </span>
                             ) : (
-                                <span className="text-sm text-muted-foreground">
+                                <span className="text-xs sm:text-sm text-muted-foreground hidden xs:inline">
                                     이전글
                                 </span>
                             )}
@@ -440,10 +440,10 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                             variant="outline"
                             size="sm"
                             onClick={handlePostList}
-                            className="flex items-center gap-1 px-3 flex-shrink-0"
+                            className="flex items-center gap-1 px-2 sm:px-3 flex-shrink-0"
                         >
                             <List className="h-4 w-4" />
-                            <span className="text-sm">목록</span>
+                            <span className="text-xs sm:text-sm">목록</span>
                         </Button>
 
                         <Button
@@ -453,14 +453,14 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                             disabled={
                                 !navigation?.nextPost || isNavigationLoading
                             }
-                            className="flex items-center gap-2 max-w-[200px]"
+                            className="flex items-center gap-1 sm:gap-2 max-w-[120px] sm:max-w-[150px] md:max-w-[200px] px-2 sm:px-3"
                         >
                             {navigation?.nextPost ? (
-                                <span className="text-sm truncate">
+                                <span className="text-xs sm:text-sm truncate hidden xs:inline">
                                     {navigation.nextPost.subject}
                                 </span>
                             ) : (
-                                <span className="text-sm text-muted-foreground">
+                                <span className="text-xs sm:text-sm text-muted-foreground hidden xs:inline">
                                     다음글
                                 </span>
                             )}
