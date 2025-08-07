@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { RecoilRoot } from "recoil";
 import { SEOProvider } from "@/components/seo";
+import { useAudioService } from "@/hooks/useAudioService";
 
 // Types
 import { BoardType } from "@/lib/types/board";
@@ -87,9 +88,13 @@ import UserGameHistoryPageV2 from "@/pages/UserGameHistoryPageV2";
 import GameComparisonPage from "@/pages/GameComparisonPage";
 import ButtonAutomationPage from "@/pages/dashboard/ButtonAutomationPage";
 
-const App = () => (
-    <RecoilRoot>
-        <QueryClientProvider client={queryClient}>
+const App = () => {
+    // 전역 AudioService 메모리 관리
+    useAudioService();
+    
+    return (
+        <RecoilRoot>
+            <QueryClientProvider client={queryClient}>
             <SEOProvider>
                 <TooltipProvider>
                     <Toaster />
@@ -439,6 +444,7 @@ const App = () => (
             </SEOProvider>
         </QueryClientProvider>
     </RecoilRoot>
-);
+    );
+};
 
 export default App;

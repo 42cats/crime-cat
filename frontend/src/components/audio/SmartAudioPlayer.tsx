@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Play, Pause, Volume2, Download, Shield } from "lucide-react";
-import { apiClient } from "@/lib/api";
+import { audioService } from "@/services/AudioService";
 
 interface SmartAudioPlayerProps {
   src: string;
@@ -32,14 +32,14 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
-  // Fetch audio data when src changes
+  // Fetch audio data when src changes - blob URL인지 확인 후 AudioService 사용
   useEffect(() => {
     if (!src) {
       setLoading(false);
       return;
     }
 
-    let currentObjectUrl: string | null = null;
+    let isCancelled = false;
 
     const fetchAudio = async () => {
       setLoading(true);
@@ -47,22 +47,38 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
       setObjectUrl(null);
 
       try {
-        const audioBlob = await apiClient.get<Blob>(src, { responseType: 'blob' });
-        currentObjectUrl = URL.createObjectURL(audioBlob);
-        setObjectUrl(currentObjectUrl);
+        // 이미 blob URL인 경우 직접 사용
+        if (src.startsWith('blob:')) {
+          console.log('SmartAudioPlayer: Using existing blob URL:', src);
+          if (!isCancelled) {
+            setObjectUrl(src);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // 일반 URL인 경우 AudioService를 통해 중복 요청 방지 및 캐싱
+        console.log('SmartAudioPlayer: Fetching audio via AudioService:', src);
+        const blobUrl = await audioService.getAudioBlobUrl(src);
+        
+        if (!isCancelled) {
+          setObjectUrl(blobUrl);
+          setLoading(false);
+        }
       } catch (err) {
         console.error("Failed to fetch audio:", err);
-        setError("오디오를 가져오는 데 실패했습니다.");
-        setLoading(false);
+        if (!isCancelled) {
+          setError("오디오를 가져오는 데 실패했습니다.");
+          setLoading(false);
+        }
       }
     };
 
     fetchAudio();
 
     return () => {
-      if (currentObjectUrl) {
-        URL.revokeObjectURL(currentObjectUrl);
-      }
+      isCancelled = true;
+      // AudioService가 Blob URL 관리하므로 여기서는 정리하지 않음
     };
   }, [src]);
 

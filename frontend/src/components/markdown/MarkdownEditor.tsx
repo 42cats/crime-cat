@@ -4,7 +4,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { Label } from "@/components/ui/label";
 import WritePreviewToggle from "./WritePreviewToggle";
 import { videoCommand } from "./VideoCommand";
-import { audioCommand } from "./AudioCommand";
 import { createUrlAudioCommand, createDirectUploadAudioCommand, AudioUploadManager } from "./EnhancedAudioCommand";
 
 interface MarkdownEditorProps {
