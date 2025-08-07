@@ -18,7 +18,7 @@ interface SmartAudioPlayerProps {
  */
 const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
   src,
-  title,
+  title: _title,
   isPrivate = false,
   duration,
   className = ""
@@ -49,7 +49,6 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
       try {
         // 이미 blob URL인 경우 직접 사용
         if (src.startsWith('blob:')) {
-          console.log('SmartAudioPlayer: Using existing blob URL:', src);
           if (!isCancelled) {
             setObjectUrl(src);
             setLoading(false);
@@ -58,7 +57,6 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
         }
 
         // 일반 URL인 경우 AudioService를 통해 중복 요청 방지 및 캐싱
-        console.log('SmartAudioPlayer: Fetching audio via AudioService:', src);
         const blobUrl = await audioService.getAudioBlobUrl(src);
         
         if (!isCancelled) {
@@ -96,7 +94,7 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
       setIsPlaying(false);
       setCurrentTime(0);
     };
-    const handleError = (e: Event) => {
+    const handleError = () => {
       setError("오디오를 재생할 수 없습니다.");
       setLoading(false);
     };
@@ -171,14 +169,11 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
         onContextMenu={(e) => e.preventDefault()} // 우클릭 방지
       />
 
-      {/* 헤더 */}
+      {/* 헤더 - 제목 숨김 */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-            {title || "오디오"}
-          </h4>
           {isPrivate && (
-            <div className="flex items-center gap-1 mt-1">
+            <div className="flex items-center gap-1">
               <Shield className="w-3 h-3 text-amber-500" />
               <span className="text-xs text-gray-500">비공개</span>
             </div>

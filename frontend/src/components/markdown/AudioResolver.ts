@@ -44,19 +44,12 @@ export class AudioResolver {
    */
   private async resolveInternalAudio(token: AudioToken): Promise<{ blobUrl: string; metadata: AudioMetadata }> {
     try {
-      console.log('🎯 AudioResolver.resolveInternalAudio() - Processing token:', token);
-      console.log('  - token.url:', token.url);
-      console.log('  - token.type:', token.type);
-      
       // AudioService를 통해 중복 요청 방지
-      console.log('🔄 Calling audioService.getAudioBlobUrl()...');
       const blobUrl = await audioService.getAudioBlobUrl(token.url);
-      console.log('✅ Received blobUrl from AudioService:', blobUrl);
       
       // 메타데이터는 한번만 추출하고 캐시
       let metadata = this.getMetadataFromCache(token.url);
       if (!metadata) {
-        console.log('🔄 Extracting metadata from blob...');
         const audioBlob = await audioService.getAudioBlob(token.url);
         const partialMetadata = await this.extractBlobMetadata(audioBlob, token);
         metadata = {
@@ -64,23 +57,17 @@ export class AudioResolver {
           ...partialMetadata
         };
         this.setMetadataCache(token.url, metadata);
-        console.log('✅ Extracted and cached metadata:', metadata);
-      } else {
-        console.log('📦 Using cached metadata:', metadata);
       }
 
-      const result = {
+      return {
         blobUrl,
         metadata: {
           ...token.metadata,
           ...metadata
         }
       };
-      
-      console.log('📤 AudioResolver.resolveInternalAudio() RESULT:', result);
-      return result;
     } catch (error) {
-      console.error('💥 Internal audio resolution failed:', error);
+      console.error('Internal audio resolution failed:', error);
       throw error;
     }
   }
