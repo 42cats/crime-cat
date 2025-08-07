@@ -103,18 +103,11 @@ export const AudioUploadManager: React.FC<{ userRole: 'USER' | 'MANAGER' | 'ADMI
     try {
       const response = await uploadAudioFile(file, accessPolicy);
       
-      const audioElement = `<audio 
-controls 
-preload="metadata"
-style="width: 100%; max-width: 500px;"
-data-temp-id="${response.tempId}"
-data-title="${response.audioTitle || file.name}"
-src="/api/v1/board/audio/stream/${response.tempId}">
-${response.audioTitle || file.name}
-</audio>`;
+      // 새로운 마크다운 오디오 문법 사용
+      const audioMarkdown = `[audio:${response.audioTitle || file.name}](/api/v1/board/audio/stream/${response.tempId})`;
       
       if (currentApi) {
-        currentApi.replaceSelection(audioElement);
+        currentApi.replaceSelection(audioMarkdown);
       }
 
       // Notify the parent component about the new tempId

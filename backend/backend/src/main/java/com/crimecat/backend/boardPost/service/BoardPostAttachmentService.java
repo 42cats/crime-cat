@@ -153,15 +153,32 @@ public class BoardPostAttachmentService {
         if (content == null || content.isEmpty()) {
             return Set.of();
         }
-        // src="/api/v1/board/audio/stream/FILENAME" 패턴을 찾음 (점을 이스케이프 처리)
-        Pattern pattern = Pattern.compile("src=\"/api/v1/board/audio/stream/([a-zA-Z0-9-]+\\.[a-zA-Z0-9]+)\"");
-        Matcher matcher = pattern.matcher(content);
+        
         Set<String> filenames = new java.util.HashSet<>();
-        while (matcher.find()) {
-            String fullFilename = matcher.group(1); // "uuid.mp3"
+        
+        // 1. HTML audio 태그에서 추출: src="/api/v1/board/audio/stream/FILENAME"
+        Pattern htmlPattern = Pattern.compile("src=\"/api/v1/board/audio/stream/([a-zA-Z0-9-]+\\.[a-zA-Z0-9]+)\"");
+        Matcher htmlMatcher = htmlPattern.matcher(content);
+        while (htmlMatcher.find()) {
+            String fullFilename = htmlMatcher.group(1); // "uuid.mp3"
             String storedFilename = FileUtil.getNameWithoutExtension(fullFilename); // "uuid"
             filenames.add(storedFilename);
         }
+        
+        // 2. 마크다운 오디오 문법에서 추출: [audio:title](/api/v1/board/audio/stream/FILENAME)
+        Pattern markdownPattern = Pattern.compile("\\[audio:[^\\]]*\\]\\(/api/v1/board/audio/stream/([a-zA-Z0-9-]+\\.[a-zA-Z0-9]+)\\)");
+        Matcher markdownMatcher = markdownPattern.matcher(content);
+        while (markdownMatcher.find()) {
+            String fullFilename = markdownMatcher.group(1); // "uuid.mp3"
+            String storedFilename = FileUtil.getNameWithoutExtension(fullFilename); // "uuid"
+            filenames.add(storedFilename);
+        }
+        
+        log.debug("Extracted {} audio filenames from content (HTML: {}, Markdown: {})", 
+                filenames.size(), 
+                htmlPattern.matcher(content).results().count(),
+                markdownPattern.matcher(content).results().count());
+        
         return filenames;
     }
 }
