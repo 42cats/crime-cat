@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { apiClient } from "@/lib/api";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
@@ -54,6 +55,12 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
     const { hasRole } = useAuth();
     const [markdownContent, setMarkdownContent] = useState("");
     const [tempAudioIds, setTempAudioIds] = useState<string[]>([]);
+    const tempAudioIdsRef = useRef<string[]>([]);
+
+    // tempAudioIdsRef 동기화
+    useEffect(() => {
+        tempAudioIdsRef.current = tempAudioIds;
+    }, [tempAudioIds]);
     const isEditMode = !!id;
 
     // URL에서 boardType 파라미터 읽기
@@ -116,16 +123,12 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
 
     // 임시 파일 정리 함수
     const cleanupTempFiles = async () => {
-        if (tempAudioIds.length > 0) {
+        const currentTempIds = tempAudioIdsRef.current;
+        
+        if (currentTempIds.length > 0) {
             try {
-                await fetch('/api/v1/board/audio/temp-cleanup', {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        // CSRF 토큰이 필요한 경우 추가
-                    },
-                    credentials: 'include', // JWT 쿠키 포함
-                    body: JSON.stringify({ tempIds: tempAudioIds })
+                await apiClient.post('/board/audio/temp-cleanup', { 
+                    tempIds: currentTempIds 
                 });
             } catch (error) {
                 console.warn('임시 파일 정리 실패:', error);
@@ -140,16 +143,20 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
         };
 
         const handleBeforeUnload = () => {
-            // 페이지 이탈 시 임시 파일 정리 (Beacon API 사용)
-            if (tempAudioIds.length > 0) {
-                navigator.sendBeacon('/api/v1/board/audio/temp-cleanup', 
-                    JSON.stringify({ tempIds: tempAudioIds }));
+            const currentTempIds = tempAudioIdsRef.current;
+            
+            if (currentTempIds.length > 0) {
+                const blob = new Blob([JSON.stringify({ tempIds: currentTempIds })], { 
+                    type: 'application/json' 
+                });
+                navigator.sendBeacon('/api/v1/board/audio/temp-cleanup', blob);
             }
         };
 
         const handleVisibilityChange = () => {
-            // 탭 숨김/백그라운드 전환 시 임시 파일 정리
-            if (document.visibilityState === 'hidden' && tempAudioIds.length > 0) {
+            const currentTempIds = tempAudioIdsRef.current;
+            
+            if (document.visibilityState === 'hidden' && currentTempIds.length > 0) {
                 cleanupTempFiles();
             }
         };
@@ -180,7 +187,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
             window.removeEventListener('beforeunload', handleBeforeUnload);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [isEditMode, existingPost, reset, tempAudioIds]);
+    }, [isEditMode, existingPost, reset]); // tempAudioIds 의존성 제거
 
     // 게시판 유형에 따른 타이틀 설정
     const getBoardTitle = () => {
@@ -288,6 +295,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                     : boardType === BoardType.CREATOR
                     ? "creator"
                     : "";
+                    
             navigate(`/community/${boardPath}`);
         }
     };

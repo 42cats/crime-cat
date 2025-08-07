@@ -123,7 +123,7 @@ ${response.audioTitle || file.name}
       
       setIsModalOpen(false);
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error('오디오 업로드 실패:', error);
       throw error;
     }
   };
