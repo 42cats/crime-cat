@@ -5,10 +5,12 @@ import com.crimecat.backend.boardPost.dto.AudioUploadDto;
 import com.crimecat.backend.boardPost.dto.TempCleanupRequest;
 import com.crimecat.backend.boardPost.entity.BoardPostAttachment;
 import com.crimecat.backend.boardPost.service.AudioAttachmentService;
+import com.crimecat.backend.config.ServiceUrlConfig;
 import com.crimecat.backend.exception.ErrorResponse;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.webUser.domain.WebUser;
 import java.util.UUID;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +43,7 @@ public class AudioAttachmentController {
 
     private final AudioAttachmentService audioAttachmentService;
     private final BoardPostService boardPostService;
+    private final ServiceUrlConfig serviceUrlConfig;
 
     /**
      * 임시 오디오 파일 업로드
@@ -108,9 +111,18 @@ public class AudioAttachmentController {
     public void streamAudio(
         @PathVariable String filename,
         @AuthenticationPrincipal WebUser user,
+        HttpServletRequest request,
         HttpServletResponse response
     ) {
         try {
+            // Referer 검증 - 애플리케이션 도메인에서의 요청만 허용
+            if (!isValidReferer(request)) {
+                log.warn("Invalid referer for audio streaming request. Referer: {}, User: {}", 
+                        request.getHeader("Referer"), user != null ? user.getId() : "anonymous");
+                response.setStatus(HttpStatus.FORBIDDEN.value());
+                return;
+            }
+            
             // 스트리밍 정보 조회 및 권한 확인
             Optional<AudioUploadDto.StreamingInfo> streamingInfoOpt = 
                 audioAttachmentService.getStreamingInfo(filename, user);
@@ -126,15 +138,25 @@ public class AudioAttachmentController {
             response.setContentType(streamingInfo.getContentType());
             response.setContentLengthLong(streamingInfo.getFileSize());
             
-            // 다운로드 방지를 위한 헤더 설정
+            // 다운로드 방지를 위한 헤더 설정 강화
             response.setHeader("Content-Disposition", "inline");
             response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
             response.setHeader("Pragma", "no-cache");
             response.setHeader("Expires", "0");
             
-            // 외부 접근 방지
+            // 외부 접근 방지 및 추가 보안 헤더
             response.setHeader("X-Frame-Options", "SAMEORIGIN");
             response.setHeader("X-Content-Type-Options", "nosniff");
+            response.setHeader("X-Download-Options", "noopen");
+            response.setHeader("X-Robots-Tag", "noindex, nofollow, nosnippet, noarchive");
+
+            // Range 요청 차단 (부분 다운로드 방지)
+            if (request.getHeader("Range") != null) {
+                log.warn("Range request blocked for audio streaming. User: {}, Filename: {}", 
+                        user != null ? user.getId() : "anonymous", filename);
+                response.setStatus(HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE.value());
+                return;
+            }
 
             // 파일 스트리밍
             try (InputStream inputStream = audioAttachmentService.getAudioStream(filename)) {
@@ -192,5 +214,76 @@ public class AudioAttachmentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ErrorResponse.of(ErrorStatus.INTERNAL_ERROR));
         }
+    }
+    
+    /**
+     * Referer 검증 메서드
+     * 애플리케이션 도메인에서의 요청만 허용
+     */
+    private boolean isValidReferer(HttpServletRequest request) {
+        String referer = request.getHeader("Referer");
+        
+        // Referer가 없는 경우 거부 (직접 URL 접근 차단)
+        if (referer == null || referer.isEmpty()) {
+            return false;
+        }
+        
+        try {
+            java.net.URL refererUrl = new java.net.URL(referer);
+            String refererHost = refererUrl.getHost();
+            
+            // 허용된 도메인 목록
+            return isAllowedHost(refererHost);
+            
+        } catch (java.net.MalformedURLException e) {
+            log.warn("Invalid referer URL format: {}", referer);
+            return false;
+        }
+    }
+    
+    /**
+     * 허용된 호스트인지 확인
+     */
+    private boolean isAllowedHost(String host) {
+        if (host == null || host.isEmpty()) {
+            return false;
+        }
+        
+        // 로컬 개발 환경
+        if ("localhost".equals(host) || "127.0.0.1".equals(host)) {
+            return true;
+        }
+        
+        // localhost with port
+        if (host.startsWith("localhost:") || host.startsWith("127.0.0.1:")) {
+            return true;
+        }
+        
+        // ServiceUrlConfig에서 설정된 도메인 확인
+        String configuredDomain = serviceUrlConfig.getDomain();
+        if (configuredDomain != null && !configuredDomain.isEmpty()) {
+            // 정확한 도메인 매칭
+            if (configuredDomain.equals(host)) {
+                return true;
+            }
+            
+            // 서브도메인 포함 매칭 (예: sub.domain.com이 domain.com 설정에 매칭)
+            if (host.endsWith("." + configuredDomain)) {
+                return true;
+            }
+            
+            // www 프리픽스 처리
+            if (("www." + configuredDomain).equals(host)) {
+                return true;
+            }
+        }
+        
+        // 개발 환경에서 사용할 수 있는 내부 네트워크 대역
+        if (host.startsWith("192.168.") || host.startsWith("10.0.") || host.startsWith("172.")) {
+            return true;
+        }
+        
+        log.warn("Blocked request from unauthorized host: {} (configured domain: {})", host, configuredDomain);
+        return false;
     }
 }
