@@ -31,16 +31,17 @@ export class AudioService {
   // HTTP 응답 캐시 (Blob Promise)
   private httpCache = new Map<string, Promise<Blob>>();
   
-  // 글로벌 Blob URL 캐시 (파일 해시별 단일 인스턴스)
+  // 글로벌 Blob URL 캐시 (LRU 방식으로 관리)
   private globalBlobCache = new Map<string, BlobDescriptor>();
+  private lruOrder: string[] = []; // LRU 순서 추적
   
   // 참조 카운팅 (컴포넌트별 사용 추적)
   private referenceCounter = new Map<string, Set<string>>();
   
-  // 메모리 관리 설정
+  // 메모리 관리 설정 (프로덕션 최적화)
   private readonly maxCacheSize = 15; // 메모리 절약을 위해 감소
-  private readonly maxMemoryUsageRatio = 0.8; // 80% 이상 시 정리
-  private readonly emergencyCleanupThreshold = 0.9; // 90% 이상 시 긴급 정리
+  private readonly maxMemoryUsageRatio = 0.85; // 85% 이상 시 정리
+  private readonly emergencyCleanupThreshold = 0.98; // 98% 이상 시 긴급 정리 (프로덕션 표준)
   
   // 메모리 모니터링
   private memoryCheckInterval: NodeJS.Timeout | null = null;
@@ -58,22 +59,67 @@ export class AudioService {
   }
 
   /**
-   * 메모리 모니터링 시작
+   * 스마트 메모리 모니터링 시작 (프로덕션 최적화)
    */
   private startMemoryMonitoring(): void {
-    // 30초마다 메모리 상태 확인
-    this.memoryCheckInterval = setInterval(() => {
-      this.checkMemoryUsage();
-    }, 30000);
+    // 페이지 로드 완료 후 모니터링 시작
+    if (document.readyState === 'complete') {
+      this.initializeMonitoring();
+    } else {
+      window.addEventListener('load', () => {
+        setTimeout(() => this.initializeMonitoring(), 10000); // 10초 후 시작
+      });
+    }
   }
 
   /**
-   * 파일 URL에서 해시 생성 (간단한 해시 함수)
+   * 모니터링 초기화
+   */
+  private initializeMonitoring(): void {
+    // 60초마다 백그라운드 메모리 상태 확인 (프로덕션 표준)
+    this.memoryCheckInterval = setInterval(() => {
+      this.checkMemoryUsage();
+    }, 60000);
+    
+    console.log('📊 AudioService - Smart memory monitoring initialized (60s interval)');
+  }
+
+  /**
+   * 파일 URL에서 해시 생성 (충돌 방지를 위한 개선된 해시 함수)
    */
   private generateFileHash(url: string): string {
-    // URL에서 파일 경로 추출하여 해시로 사용
-    const normalizedUrl = this.normalizeUrl(url);
-    return `hash_${btoa(normalizedUrl).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16)}`;
+    // 전체 URL을 사용하여 더 정확한 해시 생성
+    const fullUrl = url.includes('http') ? url : `${window.location.origin}${url}`;
+    
+    // URL 객체를 사용하여 파일명과 경로 모두 포함
+    try {
+      const urlObj = new URL(fullUrl);
+      const pathname = urlObj.pathname;
+      const filename = pathname.split('/').pop() || 'unknown';
+      const fullPath = `${pathname}_${filename}`;
+      
+      // 더 강력한 해시 생성 (경로 + 파일명 + 쿼리 파라미터)
+      const hashSource = `${fullPath}_${urlObj.search || ''}`;
+      const hash = btoa(encodeURIComponent(hashSource)).replace(/[^a-zA-Z0-9]/g, '');
+      
+      // 뒤쪽 16자 사용으로 파일명 고유성 확보
+      const uniqueHash = hash.length >= 16 ? hash.slice(-16) : hash;
+      
+      console.log('🔑 AudioService - Generated hash:', {
+        originalUrl: url,
+        hashSource,
+        fullHash: hash,
+        generatedHash: `hash_${uniqueHash}`
+      });
+      
+      return `hash_${uniqueHash}`;
+    } catch (error) {
+      // URL 파싱 실패 시 폴백
+      const normalizedUrl = this.normalizeUrl(url);
+      const fallbackHash = btoa(encodeURIComponent(normalizedUrl)).replace(/[^a-zA-Z0-9]/g, '');
+      const uniqueFallback = fallbackHash.length >= 16 ? fallbackHash.slice(-16) : fallbackHash;
+      return `hash_${uniqueFallback}`;
+    }
   }
 
   /**
@@ -133,8 +179,9 @@ export class AudioService {
       // 참조 카운터 증가
       this.addReference(fileHash, compId);
       
-      // 마지막 사용 시간 업데이트
+      // 마지막 사용 시간 업데이트 및 LRU 순서 갱신
       descriptor.lastUsedAt = Date.now();
+      this.updateLruOrder(fileHash);
       
       console.log('♻️ AudioService - Reusing existing blob URL:', {
         blobUrl: descriptor.blobUrl,
@@ -164,8 +211,9 @@ export class AudioService {
       
       this.globalBlobCache.set(fileHash, descriptor);
       
-      // 참조 카운터 증가
+      // 참조 카운터 증가 및 LRU 순서 갱신
       this.addReference(fileHash, compId);
+      this.updateLruOrder(fileHash);
       
       // 캐시 크기 제한 적용
       this.enforceGlobalCacheSize();
@@ -208,7 +256,7 @@ export class AudioService {
   }
 
   /**
-   * 참조 제거 (컴포넌트 언마운트 시)
+   * 참조 제거 (컴포넌트 언마운트 시) - 지연 정리로 타이밍 문제 해결
    */
   releaseReference(componentId: string): void {
     let releasedFiles: string[] = [];
@@ -227,9 +275,19 @@ export class AudioService {
             refCount: descriptor.refCount
           });
 
-          // 참조 카운트가 0이면 즉시 메모리 해제
+          // 참조 카운트가 0이면 지연 메모리 해제 (타이밍 문제 해결)
           if (descriptor.refCount === 0) {
-            this.immediateCleanup(fileHash);
+            setTimeout(() => {
+              // 다시 한 번 참조 카운트 확인 (새로운 컴포넌트가 사용하기 시작했을 수 있음)
+              const currentDescriptor = this.globalBlobCache.get(fileHash);
+              if (currentDescriptor && currentDescriptor.refCount === 0) {
+                this.immediateCleanup(fileHash);
+                console.log('🧹 AudioService - Delayed cleanup executed:', fileHash);
+              } else {
+                console.log('ℹ️ AudioService - Cleanup cancelled (new references added):', fileHash);
+              }
+            }, 500); // 500ms 지연으로 컴포넌트 라이프사이클과 충돌 방지
+            
             releasedFiles.push(fileHash);
           }
         }
@@ -237,9 +295,9 @@ export class AudioService {
     }
 
     if (releasedFiles.length > 0) {
-      console.log('🧹 AudioService - Zero-latency cleanup completed:', {
+      console.log('🧹 AudioService - Scheduled delayed cleanup:', {
         componentId,
-        releasedFiles,
+        scheduledFiles: releasedFiles,
         remainingGlobalBlobs: this.globalBlobCache.size
       });
     }
@@ -264,6 +322,12 @@ export class AudioService {
     // 캐시에서 제거
     this.globalBlobCache.delete(fileHash);
     this.referenceCounter.delete(fileHash);
+    
+    // LRU 순서에서도 제거
+    const lruIndex = this.lruOrder.indexOf(fileHash);
+    if (lruIndex > -1) {
+      this.lruOrder.splice(lruIndex, 1);
+    }
     
     // 강제 가비지 컬렉션 힌트 (Chrome DevTools)
     this.triggerGarbageCollection();
@@ -340,28 +404,57 @@ export class AudioService {
   }
 
   /**
-   * 글로벌 캐시 크기 제한
+   * LRU 순서 업데이트
+   */
+  private updateLruOrder(fileHash: string): void {
+    // 기존 위치에서 제거
+    const index = this.lruOrder.indexOf(fileHash);
+    if (index > -1) {
+      this.lruOrder.splice(index, 1);
+    }
+    
+    // 맨 앞으로 이동 (가장 최근 사용)
+    this.lruOrder.unshift(fileHash);
+  }
+
+  /**
+   * 글로벌 캐시 크기 제한 (LRU 방식)
    */
   private enforceGlobalCacheSize(): void {
     if (this.globalBlobCache.size <= this.maxCacheSize) return;
 
-    console.log('⚠️ AudioService - Global cache size limit reached, cleaning up oldest entries');
+    console.log('⚠️ AudioService - Global cache size limit reached, cleaning up LRU entries');
 
-    // 마지막 사용 시간 기준으로 정렬하여 가장 오래된 것부터 제거
-    const sortedEntries = Array.from(this.globalBlobCache.entries())
-      .sort(([, a], [, b]) => a.lastUsedAt - b.lastUsedAt)
-      .slice(0, 5); // 가장 오래된 5개 제거
-
-    for (const [fileHash, descriptor] of sortedEntries) {
-      if (descriptor.refCount === 0) {
+    // LRU 순서에서 가장 오래된 항목들부터 제거
+    const itemsToRemove = this.lruOrder.slice(this.maxCacheSize - 5); // 여유분 5개 유지
+    
+    for (const fileHash of itemsToRemove) {
+      const descriptor = this.globalBlobCache.get(fileHash);
+      if (descriptor && descriptor.refCount === 0) {
         this.immediateCleanup(fileHash);
-        console.log('🧹 AudioService - Removed unused old entry:', fileHash);
+        console.log('🧹 AudioService - Removed LRU entry:', fileHash);
       }
     }
   }
 
   /**
-   * 메모리 사용량 확인
+   * 적응형 메모리 임계값 계산 (Netflix/Spotify 스타일)
+   */
+  private getAdaptiveMemoryThreshold(): { cleanup: number; emergency: number } {
+    const loadTime = performance.timing.loadEventEnd;
+    const isInitialLoad = loadTime === 0 || (Date.now() - loadTime < 15000); // 15초 이내
+    
+    if (isInitialLoad) {
+      // 초기 로딩 중에는 관대한 임계값
+      return { cleanup: 0.90, emergency: 0.98 };
+    } else {
+      // 안정화 후에는 일반 임계값
+      return { cleanup: 0.85, emergency: 0.95 };
+    }
+  }
+
+  /**
+   * 스마트 메모리 사용량 확인 (적응형 임계값)
    */
   private checkMemoryUsage(): void {
     try {
@@ -369,23 +462,28 @@ export class AudioService {
       if (!memoryInfo) return;
 
       const usageRatio = memoryInfo.usedJSHeapSize / memoryInfo.totalJSHeapSize;
+      const thresholds = this.getAdaptiveMemoryThreshold();
       
-      console.log('📊 AudioService - Memory usage check:', {
+      console.log('📊 AudioService - Smart memory check:', {
         usageRatio: (usageRatio * 100).toFixed(1) + '%',
         usedMB: (memoryInfo.usedJSHeapSize / 1024 / 1024).toFixed(1),
         totalMB: (memoryInfo.totalJSHeapSize / 1024 / 1024).toFixed(1),
         globalBlobsCount: this.globalBlobCache.size,
-        httpCacheCount: this.httpCache.size
+        httpCacheCount: this.httpCache.size,
+        thresholds: {
+          cleanup: (thresholds.cleanup * 100).toFixed(0) + '%',
+          emergency: (thresholds.emergency * 100).toFixed(0) + '%'
+        }
       });
 
-      // 긴급 정리 필요
-      if (usageRatio > this.emergencyCleanupThreshold) {
-        console.warn('🚨 AudioService - Emergency memory cleanup triggered');
+      // 적응형 긴급 정리
+      if (usageRatio > thresholds.emergency) {
+        console.warn('🚨 AudioService - Adaptive emergency cleanup triggered');
         this.emergencyCleanup();
       }
-      // 일반 정리 필요
-      else if (usageRatio > this.maxMemoryUsageRatio) {
-        console.warn('⚠️ AudioService - Memory cleanup triggered');
+      // 적응형 일반 정리
+      else if (usageRatio > thresholds.cleanup) {
+        console.warn('⚠️ AudioService - Adaptive memory cleanup triggered');
         this.performMemoryCleanup();
       }
     } catch (error) {
@@ -438,28 +536,46 @@ export class AudioService {
   }
 
   /**
-   * 긴급 메모리 정리 (모든 캐시 정리)
+   * 긴급 메모리 정리 (활성 컴포넌트 보호)
    */
   private emergencyCleanup(): void {
-    console.log('🚨 AudioService - Emergency cleanup started');
+    console.log('🚨 AudioService - Emergency cleanup started (protecting active components)');
 
     let totalCleaned = 0;
+    let protectedCount = 0;
 
-    // 모든 글로벌 Blob URL 해제
+    // 참조 카운트가 0인 항목만 정리 (활성 컴포넌트 보호)
     for (const [fileHash, descriptor] of this.globalBlobCache.entries()) {
-      URL.revokeObjectURL(descriptor.blobUrl);
-      totalCleaned++;
+      if (descriptor.refCount === 0) {
+        URL.revokeObjectURL(descriptor.blobUrl);
+        this.globalBlobCache.delete(fileHash);
+        this.referenceCounter.delete(fileHash);
+        
+        // LRU 순서에서도 제거
+        const lruIndex = this.lruOrder.indexOf(fileHash);
+        if (lruIndex > -1) {
+          this.lruOrder.splice(lruIndex, 1);
+        }
+        
+        totalCleaned++;
+      } else {
+        protectedCount++;
+        console.log('🛡️ AudioService - Protected active blob:', {
+          fileHash,
+          refCount: descriptor.refCount
+        });
+      }
     }
 
-    // 모든 캐시 초기화
-    this.globalBlobCache.clear();
-    this.referenceCounter.clear();
+    // HTTP 캐시는 안전하게 정리
     this.httpCache.clear();
 
     this.triggerGarbageCollection();
 
     console.log('🚨 AudioService - Emergency cleanup completed:', {
-      totalCleanedBlobs: totalCleaned
+      totalCleanedBlobs: totalCleaned,
+      protectedBlobs: protectedCount,
+      remainingBlobs: this.globalBlobCache.size
     });
   }
 

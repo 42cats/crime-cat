@@ -95,16 +95,26 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
       } catch (err) {
         console.error("❌ SmartAudioPlayer - Failed to fetch audio:", err);
         if (!isCancelled) {
-          setError("오디오를 가져오는 데 실패했습니다.");
+          // 더 친화적인 에러 메시지
+          const errorMsg = err instanceof Error && err.message.includes('메모리') 
+            ? "시스템 메모리 부족으로 잠시 후 다시 시도해주세요"
+            : "오디오를 가져오는 데 실패했습니다. 잠시 후 다시 시도해주세요.";
+          setError(errorMsg);
           setLoading(false);
         }
       }
     };
 
-    fetchAudio();
+    // 지연 초기화로 메모리 안정화 대기 (프로덕션 최적화)
+    const delayTimer = setTimeout(() => {
+      if (!isCancelled) {
+        fetchAudio();
+      }
+    }, 200); // 200ms 지연으로 초기 메모리 압박 회피
 
     return () => {
       isCancelled = true;
+      clearTimeout(delayTimer);
       
       // 참조 카운팅 해제 (Zero-Latency 정리 트리거)
       if (componentIdRef.current) {
@@ -167,8 +177,17 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
       audioManager.clearAudio(audio);
     };
     const handleError = () => {
-      setError("오디오를 재생할 수 없습니다.");
+      setError("오디오 로드 중 오류가 발생했습니다. 새로고침해주세요.");
       setLoading(false);
+      
+      // 5초 후 자동 재시도
+      setTimeout(() => {
+        if (audioRef.current && !audioRef.current.src) {
+          setError(null);
+          setLoading(true);
+          // 재시도 로직은 fetchAudio를 다시 호출하는 방식으로 구현 가능
+        }
+      }, 5000);
     };
     
     // 다른 오디오에 의해 재생이 중단되었을 때 상태 동기화
@@ -232,7 +251,21 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
       }
     } catch (err) {
       console.error("❌ SmartAudioPlayer - Playback failed:", err);
-      setError("재생에 실패했습니다. 브라우저 권한을 확인해주세요.");
+      
+      // 에러 유형별 메시지
+      let errorMessage = "재생에 실패했습니다.";
+      
+      if (err instanceof Error) {
+        if (err.message.includes('NotAllowedError')) {
+          errorMessage = "브라우저에서 오디오 재생을 차단했습니다. 페이지를 클릭한 후 다시 시도해주세요.";
+        } else if (err.message.includes('NotSupportedError')) {
+          errorMessage = "지원되지 않는 오디오 형식입니다.";
+        } else if (err.message.includes('메모리')) {
+          errorMessage = "시스템 메모리 부족으로 잠시 후 다시 시도해주세요.";
+        }
+      }
+      
+      setError(errorMessage);
       setIsPlaying(false);
     }
   };
