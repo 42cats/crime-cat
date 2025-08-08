@@ -48,7 +48,6 @@ export class AudioService {
 
   private constructor() {
     this.startMemoryMonitoring();
-    console.log('🚀 MemoryOptimizedAudioService initialized');
   }
 
   static getInstance(): AudioService {
@@ -81,7 +80,6 @@ export class AudioService {
       this.checkMemoryUsage();
     }, 60000);
     
-    console.log('📊 AudioService - Smart memory monitoring initialized (60s interval)');
   }
 
   /**
@@ -105,12 +103,6 @@ export class AudioService {
       // 뒤쪽 16자 사용으로 파일명 고유성 확보
       const uniqueHash = hash.length >= 16 ? hash.slice(-16) : hash;
       
-      console.log('🔑 AudioService - Generated hash:', {
-        originalUrl: url,
-        hashSource,
-        fullHash: hash,
-        generatedHash: `hash_${uniqueHash}`
-      });
       
       return `hash_${uniqueHash}`;
     } catch (error) {
@@ -137,7 +129,6 @@ export class AudioService {
 
     // 이미 요청 중인 경우 같은 Promise 반환
     if (this.httpCache.has(normalizedUrl)) {
-      console.log('🔄 AudioService - Reusing HTTP cache for:', normalizedUrl);
       return this.httpCache.get(normalizedUrl)!;
     }
 
@@ -150,7 +141,6 @@ export class AudioService {
 
     try {
       const blob = await audioPromise;
-      console.log('✅ AudioService - HTTP fetch completed for:', normalizedUrl);
       return blob;
     } catch (error) {
       // 실패한 요청은 캐시에서 제거
@@ -166,11 +156,6 @@ export class AudioService {
     const fileHash = this.generateFileHash(url);
     const compId = componentId || this.generateComponentId();
 
-    console.log('🎵 AudioService - Requesting blob URL:', {
-      originalUrl: url,
-      fileHash,
-      componentId: compId
-    });
 
     // 기존 글로벌 Blob URL이 있는 경우 재사용
     if (this.globalBlobCache.has(fileHash)) {
@@ -183,11 +168,6 @@ export class AudioService {
       descriptor.lastUsedAt = Date.now();
       this.updateLruOrder(fileHash);
       
-      console.log('♻️ AudioService - Reusing existing blob URL:', {
-        blobUrl: descriptor.blobUrl,
-        refCount: descriptor.refCount,
-        componentId: compId
-      });
       
       return { blobUrl: descriptor.blobUrl, componentId: compId };
     }
@@ -218,13 +198,6 @@ export class AudioService {
       // 캐시 크기 제한 적용
       this.enforceGlobalCacheSize();
       
-      console.log('🎵 AudioService - Created new global blob URL:', {
-        originalUrl: url,
-        blobUrl,
-        fileSize: blob.size,
-        componentId: compId,
-        totalGlobalBlobs: this.globalBlobCache.size
-      });
       
       return { blobUrl, componentId: compId };
     } catch (error) {
@@ -248,11 +221,6 @@ export class AudioService {
     this.referenceCounter.get(fileHash)!.add(componentId);
     descriptor.refCount = this.referenceCounter.get(fileHash)!.size;
     
-    console.log('➕ AudioService - Added reference:', {
-      fileHash,
-      componentId,
-      refCount: descriptor.refCount
-    });
   }
 
   /**
@@ -269,11 +237,6 @@ export class AudioService {
         if (descriptor) {
           descriptor.refCount = components.size;
           
-          console.log('➖ AudioService - Removed reference:', {
-            fileHash,
-            componentId,
-            refCount: descriptor.refCount
-          });
 
           // 참조 카운트가 0이면 지연 메모리 해제 (타이밍 문제 해결)
           if (descriptor.refCount === 0) {
@@ -282,9 +245,7 @@ export class AudioService {
               const currentDescriptor = this.globalBlobCache.get(fileHash);
               if (currentDescriptor && currentDescriptor.refCount === 0) {
                 this.immediateCleanup(fileHash);
-                console.log('🧹 AudioService - Delayed cleanup executed:', fileHash);
               } else {
-                console.log('ℹ️ AudioService - Cleanup cancelled (new references added):', fileHash);
               }
             }, 500); // 500ms 지연으로 컴포넌트 라이프사이클과 충돌 방지
             
@@ -295,11 +256,6 @@ export class AudioService {
     }
 
     if (releasedFiles.length > 0) {
-      console.log('🧹 AudioService - Scheduled delayed cleanup:', {
-        componentId,
-        scheduledFiles: releasedFiles,
-        remainingGlobalBlobs: this.globalBlobCache.size
-      });
     }
   }
 
@@ -310,11 +266,6 @@ export class AudioService {
     const descriptor = this.globalBlobCache.get(fileHash);
     if (!descriptor) return;
 
-    console.log('🧹 AudioService - Immediate cleanup:', {
-      fileHash,
-      blobUrl: descriptor.blobUrl,
-      fileSize: descriptor.fileSize
-    });
 
     // Blob URL 해제
     URL.revokeObjectURL(descriptor.blobUrl);
@@ -349,7 +300,6 @@ export class AudioService {
    */
   private async fetchAudioBlob(url: string): Promise<Blob> {
     try {
-      console.log('📡 AudioService - Making HTTP request to:', url);
       
       const response = await apiClient.get<Blob>(url, { 
         responseType: 'blob',
@@ -360,10 +310,6 @@ export class AudioService {
         }
       });
       
-      console.log('✅ AudioService - HTTP request successful:', {
-        url,
-        size: response.size
-      });
       
       return response;
     } catch (error) {
@@ -380,7 +326,6 @@ export class AudioService {
       if (typeof window !== 'undefined' && (window as any).gc) {
         setTimeout(() => {
           (window as any).gc();
-          console.log('🗑️ AudioService - Forced garbage collection triggered');
         }, 100);
       }
     } catch (error) {
@@ -399,7 +344,6 @@ export class AudioService {
     const keysToRemove = Array.from(this.httpCache.keys()).slice(0, 5);
     keysToRemove.forEach(key => {
       this.httpCache.delete(key);
-      console.log('🧹 AudioService - Removed old HTTP cache:', key);
     });
   }
 
@@ -432,7 +376,6 @@ export class AudioService {
       const descriptor = this.globalBlobCache.get(fileHash);
       if (descriptor && descriptor.refCount === 0) {
         this.immediateCleanup(fileHash);
-        console.log('🧹 AudioService - Removed LRU entry:', fileHash);
       }
     }
   }
@@ -441,8 +384,7 @@ export class AudioService {
    * 적응형 메모리 임계값 계산 (Netflix/Spotify 스타일)
    */
   private getAdaptiveMemoryThreshold(): { cleanup: number; emergency: number } {
-    const loadTime = performance.timing.loadEventEnd;
-    const isInitialLoad = loadTime === 0 || (Date.now() - loadTime < 15000); // 15초 이내
+    const isInitialLoad = performance.timing.loadEventEnd === 0 || (Date.now() - performance.timing.loadEventEnd < 15000);
     
     if (isInitialLoad) {
       // 초기 로딩 중에는 관대한 임계값
@@ -478,12 +420,10 @@ export class AudioService {
 
       // 적응형 긴급 정리
       if (usageRatio > thresholds.emergency) {
-        console.warn('🚨 AudioService - Adaptive emergency cleanup triggered');
         this.emergencyCleanup();
       }
       // 적응형 일반 정리
       else if (usageRatio > thresholds.cleanup) {
-        console.warn('⚠️ AudioService - Adaptive memory cleanup triggered');
         this.performMemoryCleanup();
       }
     } catch (error) {
@@ -560,10 +500,6 @@ export class AudioService {
         totalCleaned++;
       } else {
         protectedCount++;
-        console.log('🛡️ AudioService - Protected active blob:', {
-          fileHash,
-          refCount: descriptor.refCount
-        });
       }
     }
 
@@ -572,11 +508,6 @@ export class AudioService {
 
     this.triggerGarbageCollection();
 
-    console.log('🚨 AudioService - Emergency cleanup completed:', {
-      totalCleanedBlobs: totalCleaned,
-      protectedBlobs: protectedCount,
-      remainingBlobs: this.globalBlobCache.size
-    });
   }
 
   /**
@@ -588,12 +519,7 @@ export class AudioService {
     
     if (descriptor && descriptor.refCount === 0) {
       this.immediateCleanup(fileHash);
-      console.log('🧹 AudioService - Invalidated cache for:', url);
     } else if (descriptor) {
-      console.log('ℹ️ AudioService - Cannot invalidate cache (still referenced):', {
-        url,
-        refCount: descriptor.refCount
-      });
     }
   }
 
@@ -601,7 +527,6 @@ export class AudioService {
    * 전체 캐시 정리 (레거시 호환성)
    */
   clearCache(): void {
-    console.log('🧹 AudioService - Clearing all cache');
     this.emergencyCleanup();
   }
 
@@ -609,7 +534,6 @@ export class AudioService {
    * 서비스 종료 시 정리
    */
   destroy(): void {
-    console.log('🔧 AudioService - Destroying service');
     
     // 메모리 모니터링 중지
     if (this.memoryCheckInterval) {
@@ -672,12 +596,10 @@ export class AudioService {
    * 프리로드 (메모리 효율적)
    */
   async preloadAudio(urls: string[]): Promise<void> {
-    console.log('🔄 AudioService - Preloading audio files:', urls.length);
     
     const preloadPromises = urls.map(async (url) => {
       try {
         await this.getAudioBlobUrl(url);
-        console.log('✅ AudioService - Preloaded:', url);
       } catch (error) {
         console.warn(`❌ AudioService - Preload failed for ${url}:`, error);
       }
@@ -685,22 +607,18 @@ export class AudioService {
 
     await Promise.allSettled(preloadPromises);
     
-    console.log('✅ AudioService - Preload completed');
   }
 
   /**
    * 레거시 호환성을 위한 라우트 관리 (더 이상 사용되지 않음)
    */
-  setCurrentRoute(route: string): void {
-    console.log('ℹ️ AudioService - Route-based caching is no longer used (global caching enabled)');
+  setCurrentRoute(): void {
   }
 
-  cleanupRouteBlobs(route: string): void {
-    console.log('ℹ️ AudioService - Route-based cleanup is no longer needed (reference counting enabled)');
+  cleanupRouteBlobs(): void {
   }
 
   cleanupPreviousRoutes(): void {
-    console.log('ℹ️ AudioService - Previous route cleanup is automatic (zero-latency cleanup enabled)');
   }
 }
 

@@ -9,7 +9,10 @@ import {
     DetailedPostType,
     BoardPostSortType,
 } from "@/lib/types/board";
-import { BOARD_POST_TYPES, POST_TYPE_LABELS } from "@/lib/constants/boardPostTypes";
+import {
+    BOARD_POST_TYPES,
+    POST_TYPE_LABELS,
+} from "@/lib/constants/boardPostTypes";
 import {
     Card,
     CardContent,
@@ -61,24 +64,32 @@ const BoardList: React.FC<BoardListProps> = ({ boardType }) => {
     const [sortType, setSortType] = useState<BoardPostSortType>(
         sortParam ? (sortParam as BoardPostSortType) : BoardPostSortType.LATEST
     );
-    
+
     // 현재 선택된 필터 탭
     const [activeTab, setActiveTab] = useState<string>("all");
-    
+
     // 선택된 postType 필터
-    const [selectedPostType, setSelectedPostType] = useState<DetailedPostType | null>(null);
+    const [selectedPostType, setSelectedPostType] =
+        useState<DetailedPostType | null>(null);
 
     const { data, isLoading, isError, refetch } = useQuery({
-        queryKey: ["boardPosts", boardType, page, searchKeyword, sortType, selectedPostType],
+        queryKey: [
+            "boardPosts",
+            boardType,
+            page,
+            searchKeyword,
+            sortType,
+            selectedPostType,
+        ],
         queryFn: async () => {
             try {
-                console.log("게시글 조회 요청:", {
-                    page,
-                    size: 20,
-                    kw: searchKeyword,
-                    boardType,
-                    sort: [sortType],
-                });
+                // console.log("게시글 조회 요청:", {
+                //     page,
+                //     size: 20,
+                //     kw: searchKeyword,
+                //     boardType,
+                //     sort: [sortType],
+                // });
                 // 현재 boardType에 맞는 데이터 조회
                 const result = await boardPostService.getBoardPosts({
                     page,
@@ -88,7 +99,7 @@ const BoardList: React.FC<BoardListProps> = ({ boardType }) => {
                     postType: selectedPostType, // 선택된 postType 필터 추가
                     sort: [sortType],
                 });
-                console.log("게시글 조회 결과:", result);
+                // console.log("게시글 조회 결과:", result);
                 return result;
             } catch (error) {
                 console.error("게시글 로딩 오류:", error);
@@ -171,22 +182,28 @@ const BoardList: React.FC<BoardListProps> = ({ boardType }) => {
             <Card className="border-gray-200 dark:border-gray-800 shadow-sm">
                 <CardHeader className="p-4 pb-0">
                     <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <Tabs
+                            value={activeTab}
+                            onValueChange={setActiveTab}
+                            className="w-full"
+                        >
                             <TabsList className="mb-4 flex-wrap h-auto">
                                 {/* 전체 탭은 항상 표시 */}
-                                <TabsTrigger 
-                                    value="all" 
+                                <TabsTrigger
+                                    value="all"
                                     onClick={() => setSelectedPostType(null)}
                                 >
                                     전체
                                 </TabsTrigger>
-                                
+
                                 {/* 현재 게시판 타입에 맞는 탭들 동적 생성 */}
                                 {getAvailableTabs().map((postType) => (
-                                    <TabsTrigger 
+                                    <TabsTrigger
                                         key={postType}
-                                        value={postType.toLowerCase()} 
-                                        onClick={() => setSelectedPostType(postType)}
+                                        value={postType.toLowerCase()}
+                                        onClick={() =>
+                                            setSelectedPostType(postType)
+                                        }
                                     >
                                         {POST_TYPE_LABELS[postType]}
                                     </TabsTrigger>

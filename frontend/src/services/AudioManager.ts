@@ -23,34 +23,17 @@ class AudioManager {
    * 새로운 오디오 재생 시작 전 이전 오디오 정리
    */
   setCurrentAudio(audioElement: HTMLAudioElement, src: string) {
-    console.log('🎵 AudioManager - Setting new current audio:', src);
-    console.log('🔍 Previous audio ref:', this.currentAudioRef);
-    console.log('🔍 Previous src:', this.currentSrc);
-    console.log('🔍 New audio element:', audioElement);
-    console.log('🔍 Is same audio element?', this.currentAudioRef === audioElement);
     
     // 이전 오디오가 있다면 정리
     if (this.currentAudioRef && this.currentAudioRef !== audioElement) {
-      console.log('🛑 AudioManager - Different audio detected, stopping previous audio:', this.currentSrc);
-      console.log('🔍 Previous audio state before stop:', {
-        paused: this.currentAudioRef.paused,
-        currentTime: this.currentAudioRef.currentTime,
-        src: this.currentAudioRef.src
-      });
       this.stopCurrentAudio();
     } else if (this.currentAudioRef === audioElement) {
-      console.log('ℹ️ AudioManager - Same audio element, no need to stop');
     } else {
-      console.log('ℹ️ AudioManager - No previous audio to stop');
     }
 
     this.currentAudioRef = audioElement;
     this.currentSrc = src;
     
-    console.log('✅ AudioManager - Current audio set:', {
-      src: this.currentSrc,
-      audioElement: this.currentAudioRef
-    });
   }
 
   /**
@@ -61,7 +44,6 @@ class AudioManager {
       this.currentAudioRef.pause();
       this.currentAudioRef.currentTime = 0;
       // src는 해제하지 않음 - 컴포넌트에서 관리
-      console.log('⏹️ AudioManager - Audio stopped');
     }
     this.currentAudioRef = null;
     this.currentSrc = null;
@@ -72,10 +54,6 @@ class AudioManager {
    */
   registerAudioContext(audioContext: AudioContext) {
     this.audioContexts.add(audioContext);
-    console.log('🔊 AudioManager - Registered AudioContext:', {
-      totalContexts: this.audioContexts.size,
-      contextState: audioContext.state
-    });
   }
 
   /**
@@ -84,9 +62,6 @@ class AudioManager {
   unregisterAudioContext(audioContext: AudioContext) {
     this.audioContexts.delete(audioContext);
     this.suspendedContexts.delete(audioContext);
-    console.log('🔊 AudioManager - Unregistered AudioContext:', {
-      totalContexts: this.audioContexts.size
-    });
   }
 
   /**
@@ -94,59 +69,36 @@ class AudioManager {
    * DOM 참조가 무효한 상황에서도 안전하게 동작
    */
   forceStopAll() {
-    console.log('🚨 AudioManager - Force stopping all audio elements');
-    console.log('🔍 Current audio ref:', this.currentAudioRef);
-    console.log('🔍 Current src:', this.currentSrc);
-    console.log('🔊 Active AudioContexts:', this.audioContexts.size);
     
     // 1. 현재 참조가 있고 유효한 경우 정리
     if (this.currentAudioRef) {
       try {
-        console.log('🎵 Current audio paused?', this.currentAudioRef.paused);
-        console.log('🎵 Current audio currentTime:', this.currentAudioRef.currentTime);
-        console.log('🎵 Current audio src:', this.currentAudioRef.src);
-        
         if (!this.currentAudioRef.paused) {
-          console.log('⏸️ Pausing current audio ref');
           this.currentAudioRef.pause();
           this.currentAudioRef.currentTime = 0;
         }
       } catch (error) {
-        console.warn('❌ AudioManager - Current audio ref invalid, skipping:', error);
       }
     } else {
-      console.log('ℹ️ No current audio ref to stop');
     }
     
     // 2. DOM에서 모든 audio 엘리먼트 강제 정지 (안전장치)
     try {
       const audioElements = document.querySelectorAll('audio');
-      console.log(`🔍 Found ${audioElements.length} audio elements in DOM`);
-      
-      audioElements.forEach((audio, index) => {
-        console.log(`🎵 Audio element ${index + 1}:`, {
-          paused: audio.paused,
-          currentTime: audio.currentTime,
-          src: audio.src,
-          duration: audio.duration,
-          readyState: audio.readyState
-        });
-        
+      audioElements.forEach((audio) => {
         if (!audio.paused) {
-          console.log(`🛑 AudioManager - Force stopping audio element ${index + 1}`);
           audio.pause();
           audio.currentTime = 0;
           
-          // 추가적인 정리 시도
           try {
-            audio.load(); // 오디오 엘리먼트 완전 초기화
+            audio.load();
           } catch (loadError) {
-            console.warn(`⚠️ Failed to reload audio element ${index + 1}:`, loadError);
+            // Silent failure
           }
         }
       });
     } catch (error) {
-      console.error('❌ AudioManager - Error during force stop all:', error);
+      // Silent failure
     }
     
     // 3. 내부 상태 초기화
@@ -157,24 +109,15 @@ class AudioManager {
     setTimeout(() => {
       const stillPlayingAudios = document.querySelectorAll('audio');
       const playingCount = Array.from(stillPlayingAudios).filter(audio => !audio.paused).length;
-      console.log(`🔍 After cleanup - ${playingCount} audio elements still playing out of ${stillPlayingAudios.length} total`);
       
       if (playingCount > 0) {
-        console.warn('⚠️ Some audio elements are still playing after cleanup attempt');
-        stillPlayingAudios.forEach((audio, index) => {
+        stillPlayingAudios.forEach((audio) => {
           if (!audio.paused) {
-            console.warn(`🚨 Still playing audio ${index + 1}:`, {
-              src: audio.src,
-              currentTime: audio.currentTime,
-              volume: audio.volume
-            });
-            
-            // 최후의 수단: src 제거
             try {
               audio.src = '';
               audio.load();
             } catch (e) {
-              console.error(`❌ Failed to clear src for audio ${index + 1}:`, e);
+              // Silent failure
             }
           }
         });
@@ -191,19 +134,10 @@ class AudioManager {
     try {
       // 전역 AudioContext 생성 감지 및 정리 (가능한 경우)
       if (window.AudioContext || (window as any).webkitAudioContext) {
-        console.log('🔊 Attempting browser-level audio cleanup');
-        
-        // 페이지의 모든 미디어 스트림 정지 시도
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          // 활성 미디어 스트림이 있다면 정지 시도 (보통은 없지만 안전장치)
-          console.log('🎤 Checking for active media streams');
-        }
       }
     } catch (error) {
-      console.warn('⚠️ Browser-level audio control failed:', error);
     }
     
-    console.log('✅ AudioManager - All audio elements force stopped');
   }
 
   /**
@@ -211,27 +145,19 @@ class AudioManager {
    */
   private suspendAllAudioContexts() {
     if (this.audioContexts.size === 0) {
-      console.log('ℹ️ No AudioContexts to suspend');
       return;
     }
-
-    console.log(`🔊 AudioManager - Suspending ${this.audioContexts.size} AudioContext instances`);
     
     for (const audioContext of this.audioContexts) {
       try {
         if (audioContext.state === 'running') {
-          console.log('⏸️ Suspending AudioContext:', audioContext.state);
           audioContext.suspend().then(() => {
             this.suspendedContexts.add(audioContext);
-            console.log('✅ AudioContext suspended successfully');
-          }).catch(error => {
-            console.warn('⚠️ Failed to suspend AudioContext:', error);
+          }).catch(() => {
+            // Silent failure
           });
-        } else {
-          console.log('ℹ️ AudioContext already suspended/closed:', audioContext.state);
         }
       } catch (error) {
-        console.warn('❌ Error suspending AudioContext:', error);
       }
     }
   }
@@ -242,7 +168,6 @@ class AudioManager {
   private resetMediaSession() {
     try {
       if ('mediaSession' in navigator) {
-        console.log('📱 AudioManager - Resetting MediaSession');
         
         // 재생 상태를 중지로 설정
         navigator.mediaSession.playbackState = 'paused';
@@ -257,16 +182,12 @@ class AudioManager {
             navigator.mediaSession.setActionHandler(action, null);
           } catch (error) {
             // 일부 브라우저에서는 특정 액션을 지원하지 않을 수 있음
-            console.debug(`MediaSession action ${action} not supported:`, error);
           }
         });
         
-        console.log('✅ MediaSession reset completed');
       } else {
-        console.log('ℹ️ MediaSession API not available');
       }
     } catch (error) {
-      console.warn('⚠️ Failed to reset MediaSession:', error);
     }
   }
 
@@ -275,24 +196,19 @@ class AudioManager {
    */
   resumeAudioContexts() {
     if (this.suspendedContexts.size === 0) {
-      console.log('ℹ️ No suspended AudioContexts to resume');
       return;
     }
-
-    console.log(`🔊 AudioManager - Resuming ${this.suspendedContexts.size} suspended AudioContext instances`);
     
     for (const audioContext of this.suspendedContexts) {
       try {
         if (audioContext.state === 'suspended') {
           audioContext.resume().then(() => {
             this.suspendedContexts.delete(audioContext);
-            console.log('✅ AudioContext resumed successfully');
-          }).catch(error => {
-            console.warn('⚠️ Failed to resume AudioContext:', error);
+          }).catch(() => {
+            // Silent failure
           });
         }
       } catch (error) {
-        console.warn('❌ Error resuming AudioContext:', error);
       }
     }
   }
@@ -309,7 +225,6 @@ class AudioManager {
    */
   clearAudio(audioElement: HTMLAudioElement) {
     if (this.currentAudioRef === audioElement) {
-      console.log('🗑️ AudioManager - Clearing unmounted audio component');
       this.currentAudioRef = null;
       this.currentSrc = null;
     }

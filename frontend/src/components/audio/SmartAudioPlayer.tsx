@@ -70,7 +70,6 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
           if (!isCancelled) {
             setObjectUrl(src);
             setLoading(false);
-            console.log('🎵 SmartAudioPlayer - Using existing blob URL:', src);
           }
           return;
         }
@@ -83,11 +82,6 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
           setObjectUrl(result.blobUrl);
           setLoading(false);
           
-          console.log('🎵 SmartAudioPlayer - Acquired audio with reference:', {
-            src,
-            blobUrl: result.blobUrl,
-            componentId: result.componentId
-          });
         } else {
           // 취소된 경우 참조 즉시 해제
           audioService.releaseReference(result.componentId);
@@ -118,7 +112,6 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
       
       // 참조 카운팅 해제 (Zero-Latency 정리 트리거)
       if (componentIdRef.current) {
-        console.log('🧹 SmartAudioPlayer - Releasing reference:', componentIdRef.current);
         audioService.releaseReference(componentIdRef.current);
         componentIdRef.current = null;
       }
@@ -139,7 +132,6 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
     return () => {
       const audio = audioRef.current;
       if (audio) {
-        console.log('🧹 SmartAudioPlayer - Final cleanup on unmount');
         
         // AudioManager에서 제거
         audioManager.clearAudio(audio);
@@ -153,7 +145,6 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
       
       // 참조 카운팅 최종 해제 (안전장치)
       if (componentIdRef.current) {
-        console.log('🧹 SmartAudioPlayer - Final reference release:', componentIdRef.current);
         audioService.releaseReference(componentIdRef.current);
         componentIdRef.current = null;
       }
@@ -215,37 +206,19 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
   const togglePlayPause = async () => {
     const audio = audioRef.current;
     if (!audio || !objectUrl) {
-      console.warn('🚫 SmartAudioPlayer - Cannot toggle play: no audio ref or objectUrl', {
-        hasAudio: !!audio,
-        hasObjectUrl: !!objectUrl,
-        src
-      });
       return;
     }
 
-    console.log('🎮 SmartAudioPlayer - Toggle play/pause', {
-      currentlyPlaying: isPlaying,
-      src,
-      objectUrl,
-      audioElement: audio
-    });
 
     try {
       if (isPlaying) {
-        console.log('⏸️ SmartAudioPlayer - Pausing audio');
         audio.pause();
         setIsPlaying(false);
       } else {
-        console.log('▶️ SmartAudioPlayer - Starting audio playback');
-        
         // 다른 오디오 재생 중단 후 새로운 오디오 재생
-        console.log('🔄 SmartAudioPlayer - Setting as current audio in AudioManager');
         audioManager.setCurrentAudio(audio, src);
-        
-        console.log('🎵 SmartAudioPlayer - Calling audio.play()');
         await audio.play();
         
-        console.log('✅ SmartAudioPlayer - Audio play successful');
         setIsPlaying(true);
         setError(null); // Clear previous errors on successful play
       }
