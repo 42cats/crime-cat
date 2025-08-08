@@ -1,14 +1,17 @@
 import { useEffect } from 'react';
 import { audioService } from '@/services/AudioService';
+import { audioManager } from '@/services/AudioManager';
 
 /**
  * AudioService 관리 훅
  * 앱 생명주기와 연동하여 메모리 누수 방지
  */
 export const useAudioService = () => {
-  // 페이지 언로드 시 캐시 정리
+  // 페이지 언로드 시 캐시 정리 및 오디오 정지
   useEffect(() => {
     const handleBeforeUnload = () => {
+      // 페이지 언로드 시 모든 오디오 즉시 정지
+      audioManager.forceStopAll();
       audioService.clearCache();
     };
 
@@ -26,7 +29,8 @@ export const useAudioService = () => {
     // 메모리 압박 시 캐시 정리
     const handleMemoryPressure = () => {
       const stats = audioService.getCacheStats();
-      if (stats.audioCacheSize > 20 || stats.totalSize > 100 * 1024 * 1024) { // 100MB 초과
+      // audioCacheSize: Blob Promise 캐시 개수, blobUrlCacheSize: Blob URL 캐시 개수
+      if (stats.audioCacheSize > 20 || stats.blobUrlCacheSize > 30) {
         console.warn('AudioService cache size exceeded, clearing cache');
         audioService.clearCache();
       }
