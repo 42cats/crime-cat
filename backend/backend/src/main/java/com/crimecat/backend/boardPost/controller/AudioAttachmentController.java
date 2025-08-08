@@ -117,10 +117,25 @@ public class AudioAttachmentController {
         log.info("🎵 Audio stream request - filename: {}, user: {}, requestURI: {}", 
                 filename, user != null ? user.getId() : "anonymous", request.getRequestURI());
         try {
-            // Referer 검증 - 애플리케이션 도메인에서의 요청만 허용
+            // 1. 인증된 사용자만 허용 (직접 URL 접근 차단의 첫 번째 방어선)
+            if (user == null) {
+                log.warn("Unauthorized access attempt to audio stream. Filename: {}", filename);
+                response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                return;
+            }
+            
+            // 2. Referer 검증 - 애플리케이션 도메인에서의 요청만 허용 (두 번째 방어선)
             if (!isValidReferer(request)) {
                 log.warn("Invalid referer for audio streaming request. Referer: {}, User: {}", 
-                        request.getHeader("Referer"), user != null ? user.getId() : "anonymous");
+                        request.getHeader("Referer"), user.getId());
+                response.setStatus(HttpStatus.FORBIDDEN.value());
+                return;
+            }
+            
+            // 3. User-Agent 검증 - 직접 브라우저 접근 차단 (세 번째 방어선)
+            if (!isValidUserAgent(request)) {
+                log.warn("Direct browser access blocked. User-Agent: {}, User: {}", 
+                        request.getHeader("User-Agent"), user.getId());
                 response.setStatus(HttpStatus.FORBIDDEN.value());
                 return;
             }
@@ -141,8 +156,8 @@ public class AudioAttachmentController {
             response.setContentLengthLong(streamingInfo.getFileSize());
             
             // 다운로드 방지를 위한 헤더 설정 강화
-            response.setHeader("Content-Disposition", "inline");
-            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.setHeader("Content-Disposition", "inline; filename=\"stream.audio\"");
+            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, private");
             response.setHeader("Pragma", "no-cache");
             response.setHeader("Expires", "0");
             
@@ -151,6 +166,10 @@ public class AudioAttachmentController {
             response.setHeader("X-Content-Type-Options", "nosniff");
             response.setHeader("X-Download-Options", "noopen");
             response.setHeader("X-Robots-Tag", "noindex, nofollow, nosnippet, noarchive");
+            
+            // 스트리밍 전용 헤더 추가
+            response.setHeader("Accept-Ranges", "bytes");
+            response.setHeader("X-Content-Source", "stream-only");
 
             // Range 요청 처리 (JWT 인증된 사용자는 허용)
             String rangeHeader = request.getHeader("Range");
@@ -316,6 +335,48 @@ public class AudioAttachmentController {
         log.warn("Blocked request from unauthorized host: {} (configured domain: {}, dev mode: {})", 
                 host, configuredDomain, isDevelopmentEnvironment());
         return false;
+    }
+    
+    /**
+     * User-Agent 검증 - 직접 브라우저 접근 차단
+     * 정상적인 AJAX 요청과 직접 브라우저 접근을 구분
+     */
+    private boolean isValidUserAgent(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        
+        if (userAgent == null || userAgent.isEmpty()) {
+            log.warn("Empty User-Agent blocked");
+            return false;
+        }
+        
+        // 개발 환경에서는 엄격하지 않게 처리
+        if (isDevelopmentEnvironment()) {
+            return true;
+        }
+        
+        // 일반적인 브라우저의 직접 접근 패턴 차단
+        // 정상적인 AJAX 요청은 XMLHttpRequest 특성을 가짐
+        String requestedWith = request.getHeader("X-Requested-With");
+        String accept = request.getHeader("Accept");
+        
+        // XMLHttpRequest나 fetch API를 통한 요청인지 확인
+        boolean isValidRequest = 
+            // X-Requested-With 헤더 확인
+            "XMLHttpRequest".equals(requestedWith) ||
+            // Accept 헤더가 명시적으로 audio/* 또는 */* 요청인지 확인
+            (accept != null && (accept.contains("application/json") || 
+                               accept.contains("*/*") || 
+                               accept.contains("audio/*"))) ||
+            // 모바일 앱에서의 요청 허용
+            (userAgent.contains("Mobile") && !userAgent.contains("Chrome/") && !userAgent.contains("Safari/"));
+        
+        if (!isValidRequest) {
+            log.warn("Direct browser access detected - User-Agent: {}, Accept: {}, X-Requested-With: {}", 
+                    userAgent, accept, requestedWith);
+            return false;
+        }
+        
+        return true;
     }
     
     /**

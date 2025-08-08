@@ -103,9 +103,14 @@ public class BoardPostAttachmentService {
         
         for (BoardPostAttachment attachment : attachments) {
             try {
-                storageService.delete(StorageFileType.BOARD_POST_AUDIO, attachment.getStoredFilename());
+                // 실제 파일 삭제 시 확장자 포함한 전체 파일명 사용
+                String extension = FileUtil.getExtension(attachment.getOriginalFilename());
+                String fullFilename = attachment.getStoredFilename() + extension;
+                storageService.delete(StorageFileType.BOARD_POST_AUDIO, fullFilename);
+                log.debug("Deleted attachment file: {}", fullFilename);
             } catch (Exception e) {
-                log.warn("Failed to delete attachment file from storage: {}", attachment.getStoredFilename(), e);
+                log.warn("Failed to delete attachment file from storage: {} (with extension from {})", 
+                        attachment.getStoredFilename(), attachment.getOriginalFilename(), e);
             }
         }
         attachmentRepository.deleteAll(attachments);
@@ -134,9 +139,12 @@ public class BoardPostAttachmentService {
         if (!orphanedAttachments.isEmpty()) {
             log.info("Found {} orphaned attachments for post {}. Cleaning up...", orphanedAttachments.size(), boardPost.getId());
             for (BoardPostAttachment orphan : orphanedAttachments) {
-                // 1. 스토리지에서 실제 파일 삭제
+                // 1. 스토리지에서 실제 파일 삭제 - 확장자 포함한 전체 파일명 사용
                 try {
-                    storageService.delete(StorageFileType.BOARD_POST_AUDIO, orphan.getStoredFilename());
+                    String extension = FileUtil.getExtension(orphan.getOriginalFilename());
+                    String fullFilename = orphan.getStoredFilename() + extension;
+                    storageService.delete(StorageFileType.BOARD_POST_AUDIO, fullFilename);
+                    log.debug("Deleted orphaned file: {}", fullFilename);
                 } catch (Exception e) {
                     log.warn("Failed to delete orphaned file from storage: {}", orphan.getStoredFilename(), e);
                 }
