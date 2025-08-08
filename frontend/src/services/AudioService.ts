@@ -102,7 +102,11 @@ export class AudioService {
       console.log('📡 Making API request to:', normalizedUrl);
       const response = await apiClient.get<Blob>(normalizedUrl, { 
         responseType: 'blob',
-        timeout: 30000 // 30초 타임아웃
+        timeout: 30000, // 30초 타임아웃
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'audio/*,*/*'
+        }
       });
       
       console.log('✅ Audio fetch successful for:', normalizedUrl);
