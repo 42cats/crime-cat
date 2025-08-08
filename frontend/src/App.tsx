@@ -106,8 +106,6 @@ const AppContent = () => {
         <>
             <AuthInitializer />
             <AnimatePresence mode="wait" onExitComplete={() => {
-                // 페이지 전환 애니메이션 완료 후 추가 안전장치
-                console.log('🎬 AnimatePresence exit complete - additional audio cleanup');
                 audioManager.forceStopAll();
             }}>
                         <Routes>
