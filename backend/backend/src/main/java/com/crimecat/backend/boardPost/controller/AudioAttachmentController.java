@@ -114,6 +114,8 @@ public class AudioAttachmentController {
         HttpServletRequest request,
         HttpServletResponse response
     ) {
+        log.info("🎵 Audio stream request - filename: {}, user: {}, requestURI: {}", 
+                filename, user != null ? user.getId() : "anonymous", request.getRequestURI());
         try {
             // Referer 검증 - 애플리케이션 도메인에서의 요청만 허용
             if (!isValidReferer(request)) {

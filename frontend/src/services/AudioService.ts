@@ -78,21 +78,37 @@ export class AudioService {
   }
 
   /**
+   * URL 정규화 - baseURL 중복 제거
+   */
+  private normalizeUrl(url: string): string {
+    // "/api/v1/"로 시작하면 제거 (axios baseURL에서 자동 추가되므로)
+    if (url.startsWith('/api/v1/')) {
+      return url.substring(7); // "/api/v1/" 제거하여 상대 경로로 변환
+    }
+    return url;
+  }
+
+  /**
    * 실제 API 호출
    */
   private async fetchAudioBlob(url: string): Promise<Blob> {
     try {
-      // API URL 중복 제거: apiClient의 baseURL이 이미 /api/v1을 포함하므로
-      // URL이 /api/v1로 시작하는 경우 제거
-      const cleanUrl = url.startsWith('/api/v1') ? url.substring('/api/v1'.length) : url;
+      console.log('🔍 AudioService.fetchAudioBlob() - Input URL:', url);
       
-      const response = await apiClient.get<Blob>(cleanUrl, { 
+      // URL 정규화: baseURL 중복 방지
+      const normalizedUrl = this.normalizeUrl(url);
+      console.log('🔄 Normalized URL:', normalizedUrl);
+      
+      console.log('📡 Making API request to:', normalizedUrl);
+      const response = await apiClient.get<Blob>(normalizedUrl, { 
         responseType: 'blob',
         timeout: 30000 // 30초 타임아웃
       });
+      
+      console.log('✅ Audio fetch successful for:', normalizedUrl);
       return response;
     } catch (error) {
-      console.error('Audio fetch failed:', error);
+      console.error('❌ Audio fetch failed for URL:', url, error);
       throw new Error(`오디오 다운로드 실패: ${url}`);
     }
   }

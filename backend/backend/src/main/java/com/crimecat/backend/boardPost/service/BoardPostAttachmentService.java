@@ -156,8 +156,8 @@ public class BoardPostAttachmentService {
         
         Set<String> filenames = new java.util.HashSet<>();
         
-        // 1. HTML audio 태그에서 추출: src="/api/v1/board/audio/stream/FILENAME"
-        Pattern htmlPattern = Pattern.compile("src=\"/api/v1/board/audio/stream/([a-zA-Z0-9-]+\\.[a-zA-Z0-9]+)\"");
+        // 1. HTML audio 태그에서 추출: src="/api/v1/board/audio/stream/FILENAME" 또는 src="/board/audio/stream/FILENAME"
+        Pattern htmlPattern = Pattern.compile("src=\"(?:/api/v1)?/board/audio/stream/([a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9]+)?)\"");
         Matcher htmlMatcher = htmlPattern.matcher(content);
         while (htmlMatcher.find()) {
             String fullFilename = htmlMatcher.group(1); // "uuid.mp3"
@@ -165,8 +165,8 @@ public class BoardPostAttachmentService {
             filenames.add(storedFilename);
         }
         
-        // 2. 마크다운 오디오 문법에서 추출: [audio:title](/api/v1/board/audio/stream/FILENAME)
-        Pattern markdownPattern = Pattern.compile("\\[audio:[^\\]]*\\]\\(/api/v1/board/audio/stream/([a-zA-Z0-9-]+\\.[a-zA-Z0-9]+)\\)");
+        // 2. 마크다운 오디오 문법에서 추출: [audio:title](/api/v1/board/audio/stream/FILENAME) 또는 [audio:title](/board/audio/stream/FILENAME)
+        Pattern markdownPattern = Pattern.compile("\\[audio:[^\\]]*\\]\\((?:/api/v1)?/board/audio/stream/([a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9]+)?)\\)");
         Matcher markdownMatcher = markdownPattern.matcher(content);
         while (markdownMatcher.find()) {
             String fullFilename = markdownMatcher.group(1); // "uuid.mp3"
