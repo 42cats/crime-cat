@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Play, Pause, Volume2, Download, Shield } from "lucide-react";
 import { audioService } from "@/services/AudioService";
+import { audioManager } from "@/services/AudioManager";
 
 interface SmartAudioPlayerProps {
   src: string;
@@ -24,6 +25,7 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
   className = ""
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const componentIdRef = useRef<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(duration || 0);
@@ -32,10 +34,26 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
-  // Fetch audio data when src changes - blob URL인지 확인 후 AudioService 사용
+  // Fetch audio data when src changes - 새로운 참조 카운팅 API 사용
   useEffect(() => {
+    // 이전 오디오 정리 (새로운 src로 변경 시)
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+      setIsPlaying(false);
+      setCurrentTime(0);
+    }
+
+    // 이전 참조 해제
+    if (componentIdRef.current) {
+      audioService.releaseReference(componentIdRef.current);
+      componentIdRef.current = null;
+    }
+    
     if (!src) {
       setLoading(false);
+      setObjectUrl(null);
       return;
     }
 
@@ -47,24 +65,35 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
       setObjectUrl(null);
 
       try {
-        // 이미 blob URL인 경우 직접 사용
+        // 이미 blob URL인 경우 직접 사용 (레거시 지원)
         if (src.startsWith('blob:')) {
           if (!isCancelled) {
             setObjectUrl(src);
             setLoading(false);
+            console.log('🎵 SmartAudioPlayer - Using existing blob URL:', src);
           }
           return;
         }
 
-        // 일반 URL인 경우 AudioService를 통해 중복 요청 방지 및 캐싱
-        const blobUrl = await audioService.getAudioBlobUrl(src);
+        // 새로운 참조 카운팅 API 사용
+        const result = await audioService.getAudioBlobUrl(src);
         
         if (!isCancelled) {
-          setObjectUrl(blobUrl);
+          componentIdRef.current = result.componentId;
+          setObjectUrl(result.blobUrl);
           setLoading(false);
+          
+          console.log('🎵 SmartAudioPlayer - Acquired audio with reference:', {
+            src,
+            blobUrl: result.blobUrl,
+            componentId: result.componentId
+          });
+        } else {
+          // 취소된 경우 참조 즉시 해제
+          audioService.releaseReference(result.componentId);
         }
       } catch (err) {
-        console.error("Failed to fetch audio:", err);
+        console.error("❌ SmartAudioPlayer - Failed to fetch audio:", err);
         if (!isCancelled) {
           setError("오디오를 가져오는 데 실패했습니다.");
           setLoading(false);
@@ -76,9 +105,50 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
 
     return () => {
       isCancelled = true;
-      // AudioService가 Blob URL 관리하므로 여기서는 정리하지 않음
+      
+      // 참조 카운팅 해제 (Zero-Latency 정리 트리거)
+      if (componentIdRef.current) {
+        console.log('🧹 SmartAudioPlayer - Releasing reference:', componentIdRef.current);
+        audioService.releaseReference(componentIdRef.current);
+        componentIdRef.current = null;
+      }
+      
+      // 오디오 엘리먼트 완전 정리
+      const audio = audioRef.current;
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.src = '';
+        audio.load();
+      }
     };
   }, [src]);
+
+  // 컴포넌트 언마운트 시 전체 정리
+  useEffect(() => {
+    return () => {
+      const audio = audioRef.current;
+      if (audio) {
+        console.log('🧹 SmartAudioPlayer - Final cleanup on unmount');
+        
+        // AudioManager에서 제거
+        audioManager.clearAudio(audio);
+        
+        // 오디오 엘리먼트 완전 정리
+        audio.pause();
+        audio.currentTime = 0;
+        audio.src = '';
+        audio.load();
+      }
+      
+      // 참조 카운팅 최종 해제 (안전장치)
+      if (componentIdRef.current) {
+        console.log('🧹 SmartAudioPlayer - Final reference release:', componentIdRef.current);
+        audioService.releaseReference(componentIdRef.current);
+        componentIdRef.current = null;
+      }
+    };
+  }, []); // 빈 의존성 배열 - 언마운트 시에만 실행
 
   // Manage audio element event listeners
   useEffect(() => {
@@ -93,40 +163,75 @@ const SmartAudioPlayer: React.FC<SmartAudioPlayerProps> = ({
     const handleEnded = () => {
       setIsPlaying(false);
       setCurrentTime(0);
+      // 재생 완료 시 AudioManager에서도 제거
+      audioManager.clearAudio(audio);
     };
     const handleError = () => {
       setError("오디오를 재생할 수 없습니다.");
       setLoading(false);
+    };
+    
+    // 다른 오디오에 의해 재생이 중단되었을 때 상태 동기화
+    const handlePause = () => {
+      if (!audioManager.isCurrentAudio(audio)) {
+        setIsPlaying(false);
+      }
     };
 
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('error', handleError);
+    audio.addEventListener('pause', handlePause);
 
     return () => {
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('error', handleError);
+      audio.removeEventListener('pause', handlePause);
     };
   }, []);
 
   const togglePlayPause = async () => {
     const audio = audioRef.current;
-    if (!audio || !objectUrl) return;
+    if (!audio || !objectUrl) {
+      console.warn('🚫 SmartAudioPlayer - Cannot toggle play: no audio ref or objectUrl', {
+        hasAudio: !!audio,
+        hasObjectUrl: !!objectUrl,
+        src
+      });
+      return;
+    }
+
+    console.log('🎮 SmartAudioPlayer - Toggle play/pause', {
+      currentlyPlaying: isPlaying,
+      src,
+      objectUrl,
+      audioElement: audio
+    });
 
     try {
       if (isPlaying) {
+        console.log('⏸️ SmartAudioPlayer - Pausing audio');
         audio.pause();
         setIsPlaying(false);
       } else {
+        console.log('▶️ SmartAudioPlayer - Starting audio playback');
+        
+        // 다른 오디오 재생 중단 후 새로운 오디오 재생
+        console.log('🔄 SmartAudioPlayer - Setting as current audio in AudioManager');
+        audioManager.setCurrentAudio(audio, src);
+        
+        console.log('🎵 SmartAudioPlayer - Calling audio.play()');
         await audio.play();
+        
+        console.log('✅ SmartAudioPlayer - Audio play successful');
         setIsPlaying(true);
         setError(null); // Clear previous errors on successful play
       }
     } catch (err) {
-      console.error("Playback failed:", err);
+      console.error("❌ SmartAudioPlayer - Playback failed:", err);
       setError("재생에 실패했습니다. 브라우저 권한을 확인해주세요.");
       setIsPlaying(false);
     }

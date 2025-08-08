@@ -1,14 +1,18 @@
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AuthInitializer from "@/components/AuthInitializer";
 import PrivateRoute from "@/components/PrivateRoute";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { RecoilRoot } from "recoil";
 import { SEOProvider } from "@/components/seo";
 import { useAudioService } from "@/hooks/useAudioService";
+import { useRouterAudioCleanup } from "@/hooks/useRouterAudioCleanup";
+import { audioService } from "@/services/AudioService";
+import { audioManager } from "@/services/AudioManager";
 
 // Types
 import { BoardType } from "@/lib/types/board";
@@ -88,20 +92,24 @@ import UserGameHistoryPageV2 from "@/pages/UserGameHistoryPageV2";
 import GameComparisonPage from "@/pages/GameComparisonPage";
 import ButtonAutomationPage from "@/pages/dashboard/ButtonAutomationPage";
 
-const App = () => {
+// Router 내부에서 실행되는 컴포넌트 (useLocation 사용 가능)
+const AppContent = () => {
+    const location = useLocation();
+    
     // 전역 AudioService 메모리 관리
     useAudioService();
     
+    // 페이지 변경 시 오디오 자동 정리 (참조 카운팅 시스템과 함께 작동)
+    useRouterAudioCleanup();
+
     return (
-        <RecoilRoot>
-            <QueryClientProvider client={queryClient}>
-            <SEOProvider>
-                <TooltipProvider>
-                    <Toaster />
-                    <Sonner />
-                    <BrowserRouter>
-                        <AuthInitializer />
-                        <AnimatePresence mode="wait">
+        <>
+            <AuthInitializer />
+            <AnimatePresence mode="wait" onExitComplete={() => {
+                // 페이지 전환 애니메이션 완료 후 추가 안전장치
+                console.log('🎬 AnimatePresence exit complete - additional audio cleanup');
+                audioManager.forceStopAll();
+            }}>
                         <Routes>
                             {/* Main Layout Routes */}
                             <Route element={<MainLayout />}>
@@ -438,12 +446,26 @@ const App = () => {
                                 element={<Unauthorized />}
                             />
                         </Routes>
-                        </AnimatePresence>
-                    </BrowserRouter>
-                </TooltipProvider>
-            </SEOProvider>
-        </QueryClientProvider>
-    </RecoilRoot>
+            </AnimatePresence>
+        </>
+    );
+};
+
+const App = () => {
+    return (
+        <RecoilRoot>
+            <QueryClientProvider client={queryClient}>
+                <SEOProvider>
+                    <TooltipProvider>
+                        <Toaster />
+                        <Sonner />
+                        <BrowserRouter>
+                            <AppContent />
+                        </BrowserRouter>
+                    </TooltipProvider>
+                </SEOProvider>
+            </QueryClientProvider>
+        </RecoilRoot>
     );
 };
 
