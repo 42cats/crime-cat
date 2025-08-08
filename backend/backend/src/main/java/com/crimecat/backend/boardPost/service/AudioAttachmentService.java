@@ -22,7 +22,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -52,26 +51,35 @@ public class AudioAttachmentService {
         AudioUploadDto.UploadRequest request,
         WebUser user
     ) throws IOException {
+        log.info("🚀 uploadTempAudio() 시작 - filename: {}, user: {}", file.getOriginalFilename(), user.getId());
+        
         // 파일 검증
         validateAudioFile(file);
+        log.info("✅ 파일 검증 완료");
 
         // 접근 정책 검증 (역할별 제한)
         validateAccessPolicy(request.getAccessPolicy(), user);
+        log.info("✅ 접근 정책 검증 완료 - policy: {}", request.getAccessPolicy());
 
         // 저장 파일명 생성 (확장자 제외)
         String originalFilename = file.getOriginalFilename();
         String storedFilenameBase = generateStoredFilenameBase(originalFilename);
         String tempPathAndFilename = "temp/" + storedFilenameBase;
+        log.info("📁 파일명 생성 - storedFilenameBase: {}, tempPath: {}", storedFilenameBase, tempPathAndFilename);
 
         // 파일 저장 (StorageService가 확장자를 붙일 것임)
         storageService.storeAt(StorageFileType.BOARD_POST_AUDIO, file, tempPathAndFilename);
+        log.info("💾 파일 저장 완료 - path: {}", tempPathAndFilename);
 
         // 오디오 메타데이터 추출
         AudioUploadDto.AudioMetadata metadata = extractAudioMetadata(file, request.getAudioTitle());
+        log.info("🎵 메타데이터 추출 완료 - title: {}", metadata.getAudioTitle());
 
         // 임시 첨부파일 생성
         String tempId = UUID.randomUUID().toString();
-        LocalDateTime expiresAt = LocalDateTime.now().plusHours(24); // 24시간 후 만료
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expiresAt = now.plusHours(24); // 24시간 후 만료
+        log.info("🕒 시간 정보 - 현재: {}, 만료: {}", now, expiresAt);
 
         TempAttachment tempAttachment = TempAttachment.createTempAttachment(
             tempId,
@@ -85,8 +93,19 @@ public class AudioAttachmentService {
             request.getAccessPolicy(),
             expiresAt
         );
+        log.info("📋 TempAttachment 객체 생성 완료 - tempId: {}, storedFilename: {}", tempId, storedFilenameBase);
 
-        tempAttachmentRepository.save(tempAttachment);
+        TempAttachment savedAttachment = tempAttachmentRepository.save(tempAttachment);
+        log.info("💿 DB 저장 완료 - id: {}, tempId: {}", savedAttachment.getId(), savedAttachment.getTempId());
+
+        // 저장 직후 즉시 조회 테스트
+        Optional<TempAttachment> verifyOpt = tempAttachmentRepository.findByTempId(tempId);
+        log.info("🔍 저장 직후 조회 테스트 - 결과: {}", verifyOpt.isPresent() ? "FOUND" : "NOT_FOUND");
+        if (verifyOpt.isPresent()) {
+            TempAttachment verify = verifyOpt.get();
+            log.info("✅ 조회된 데이터 - tempId: {}, storedFilename: {}, expired: {}", 
+                    verify.getTempId(), verify.getStoredFilename(), verify.isExpired());
+        }
 
         log.info("Temp audio uploaded: tempId={}, user={}, filename={}", 
                 tempId, user.getId(), originalFilename);
@@ -164,36 +183,58 @@ public class AudioAttachmentService {
      * identifier는 tempId 또는 storedFilename (확장자 포함/제외 모두 허용)일 수 있습니다.
      */
     public Optional<AudioUploadDto.StreamingInfo> getStreamingInfo(String identifier, WebUser user) {
+        log.info("🔍 getStreamingInfo() - identifier: {}, user: {}", identifier, user != null ? user.getId() : "null");
+        
         // 1. 임시 파일로 조회 (tempId 기준)
         Optional<TempAttachment> tempAttachmentOpt = tempAttachmentRepository.findByTempId(identifier);
+        log.info("📋 TempAttachment 조회 결과: {}", tempAttachmentOpt.isPresent() ? "FOUND" : "NOT_FOUND");
+        
         if (tempAttachmentOpt.isPresent()) {
             TempAttachment temp = tempAttachmentOpt.get();
+            log.info("📄 TempAttachment 정보 - tempId: {}, storedFilename: {}, userId: {}, expired: {}", 
+                    temp.getTempId(), temp.getStoredFilename(), temp.getUser().getId(), temp.isExpired());
+            
             // 임시 파일은 업로드한 사용자만 접근 가능
             if (user != null && temp.getUser().getId().equals(user.getId())) {
+                log.info("✅ 임시 파일 접근 권한 확인됨 - 스트리밍 정보 반환");
                 return Optional.of(AudioUploadDto.StreamingInfo.builder()
-                        .streamingUrl("/api/v1/board/audio/stream/" + temp.getTempId())
+                        .streamingUrl("/board/audio/stream/" + temp.getTempId())
                         .contentType(temp.getContentType())
                         .fileSize(temp.getFileSize())
                         .durationSeconds(temp.getDurationSeconds())
                         .requiresAuth(temp.getAccessPolicy() == BoardPostAttachment.AccessPolicy.PRIVATE)
                         .build());
+            } else {
+                log.warn("❌ 임시 파일 접근 권한 없음 - user: {}, fileUserId: {}", 
+                        user != null ? user.getId() : "null", temp.getUser().getId());
             }
         }
 
         // 2. 정식 첨부파일로 조회 (storedFilename 기준)
         // 프론트에서 확장자가 포함되어 올 수 있으므로 항상 확장자를 제거하고 조회
         String storedFilenameWithoutExtension = FileUtil.getNameWithoutExtension(identifier);
+        log.info("🔍 정식 첨부파일 조회 - storedFilename: {}", storedFilenameWithoutExtension);
+        
         BoardPostAttachment attachment = attachmentRepository.findByStoredFilename(storedFilenameWithoutExtension);
-        if (attachment != null && attachment.isAccessible(user)) { // 접근 권한 확인
-            return Optional.of(AudioUploadDto.StreamingInfo.builder()
-                    .streamingUrl("/api/v1/board/audio/stream/" + attachment.getStoredFilename() + FileUtil.getExtension(attachment.getOriginalFilename()))
-                    .contentType(attachment.getContentType())
-                    .fileSize(attachment.getFileSize())
-                    .durationSeconds(attachment.getDurationSeconds())
-                    .requiresAuth(attachment.getAccessPolicy() == BoardPostAttachment.AccessPolicy.PRIVATE)
-                    .build());
+        log.info("📋 BoardPostAttachment 조회 결과: {}", attachment != null ? "FOUND" : "NOT_FOUND");
+        
+        if (attachment != null) {
+            boolean isAccessible = attachment.isAccessible(user);
+            log.info("🔐 정식 첨부파일 접근 권한: {}", isAccessible ? "GRANTED" : "DENIED");
+            
+            if (isAccessible) {
+                log.info("✅ 정식 첨부파일 접근 권한 확인됨 - 스트리밍 정보 반환");
+                return Optional.of(AudioUploadDto.StreamingInfo.builder()
+                        .streamingUrl("/board/audio/stream/" + attachment.getStoredFilename() + FileUtil.getExtension(attachment.getOriginalFilename()))
+                        .contentType(attachment.getContentType())
+                        .fileSize(attachment.getFileSize())
+                        .durationSeconds(attachment.getDurationSeconds())
+                        .requiresAuth(attachment.getAccessPolicy() == BoardPostAttachment.AccessPolicy.PRIVATE)
+                        .build());
+            }
         }
 
+        log.warn("❌ 스트리밍 정보를 찾을 수 없음 - identifier: {}", identifier);
         return Optional.empty();
     }
 
@@ -264,7 +305,7 @@ public class AudioAttachmentService {
     /**
      * 만료된 임시 첨부파일 정리 (스케줄링)
      */
-    @Scheduled(fixedRate = 3600000) // 1시간마다 실행
+//    @Scheduled(fixedRate = 3600000) // 1시간마다 실행
     @Transactional
     public void cleanupExpiredTempAttachments() {
         List<TempAttachment> expiredAttachments = tempAttachmentRepository.findExpiredAttachments(LocalDateTime.now());
@@ -350,7 +391,7 @@ public class AudioAttachmentService {
             .durationSeconds(attachment.getDurationSeconds())
             .accessPolicy(attachment.getAccessPolicy())
             .sortOrder(attachment.getSortOrder())
-            .streamingUrl("/api/v1/board/audio/stream/" + attachment.getStoredFilename())
+            .streamingUrl("/board/audio/stream/" + attachment.getStoredFilename())
             .createdAt(attachment.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
             .build();
     }

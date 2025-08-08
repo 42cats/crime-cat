@@ -163,9 +163,17 @@ public class BoardPostService {
         for (Map.Entry<String, String> entry : tempIdToStoredFilenameMap.entrySet()) {
             String tempId = entry.getKey();
             String permanentFilename = entry.getValue();
-            String tempUrl = "/api/v1/board/audio/stream/" + tempId;
-            String permanentUrl = "/api/v1/board/audio/stream/" + permanentFilename;
-            content = content.replace(tempUrl, permanentUrl);
+            
+            // 다양한 형태의 임시 URL 패턴들 처리
+            String frontendTempUrl = "/board/audio/stream/" + tempId;
+            String backendTempUrl = "/api/v1/board/audio/stream/" + tempId;
+            
+            // 상대 경로로 영구 URL 생성 (axios baseURL과 중복 방지)
+            String permanentUrl = "/board/audio/stream/" + permanentFilename;
+            
+            // 모든 형태의 임시 URL을 상대 경로 영구 URL로 교체
+            content = content.replace(frontendTempUrl, permanentUrl);
+            content = content.replace(backendTempUrl, permanentUrl);
         }
         return content;
     }
