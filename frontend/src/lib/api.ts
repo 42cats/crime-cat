@@ -88,8 +88,20 @@ instance.interceptors.response.use(
         }
 
         // /auth/me에 대한 401은 즉시 반환 (재시도 안함)
-        if (originalRequest.url?.includes("/auth/me") && error.response?.status === 401) {
+        if (
+            originalRequest.url?.includes("/auth/me") &&
+            error.response?.status === 401
+        ) {
             console.log("/auth/me 401 에러 - 재시도하지 않고 즉시 반환");
+            return Promise.reject(error);
+        }
+
+        // 오디오 스트림에 대한 401은 리다이렉트 없이 에러 전달
+        if (
+            originalRequest.url?.includes("/board/audio/stream") &&
+            error.response?.status === 401
+        ) {
+            console.log("Private 오디오 401 에러 - 리다이렉트 없이 에러 전달");
             return Promise.reject(error);
         }
 
@@ -102,7 +114,7 @@ instance.interceptors.response.use(
         ) {
             // 재시도 횟수 확인
             const currentRetryCount = retryCountMap.get(requestKey) || 0;
-            
+
             if (currentRetryCount >= MAX_RETRY_COUNT) {
                 console.log(`재시도 횟수 초과: ${requestKey}`);
                 retryCountMap.delete(requestKey);
@@ -144,14 +156,14 @@ instance.interceptors.response.use(
             const errorCode = error.response?.data?.errorCode;
 
             if (errorCode === "INSUFFICIENT_AUTHENTICATION") {
-              originalRequest._csrfRetry = true;
+                originalRequest._csrfRetry = true;
 
-              try {
-                  await instance.get("/csrf/token");
-                  return instance(originalRequest);
-              } catch (err) {
-                  return Promise.reject(err);
-              }
+                try {
+                    await instance.get("/csrf/token");
+                    return instance(originalRequest);
+                } catch (err) {
+                    return Promise.reject(err);
+                }
             }
         }
 
