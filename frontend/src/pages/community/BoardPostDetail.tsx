@@ -311,7 +311,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
             <Card>
                 <CardHeader className="border-b">
                     <div className="flex justify-between items-start">
-                        <div>
+                        <div className="flex-1">
                             {post.postType === "NOTICE" && (
                                 <Badge className="mb-2 bg-blue-500">공지</Badge>
                             )}
@@ -324,6 +324,28 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                                 {post.subject || post.title}
                             </CardTitle>
                         </div>
+                        
+                        {/* 수정/삭제 버튼 - 헤더 우측 */}
+                        {isAuthor && (
+                            <div className="flex gap-2 ml-4">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleEdit}
+                                >
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    수정
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleDelete}
+                                >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    삭제
+                                </Button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex justify-between items-center mt-4 text-sm text-muted-foreground">
@@ -365,20 +387,38 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                                 <span>{post.views || 0}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                                <Heart
-                                    className={`h-4 w-4 ${
-                                        isLiked
-                                            ? "fill-red-500 text-red-500"
-                                            : ""
-                                    }`}
-                                />
-                                <span>{likeCount}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
                                 <MessageSquare className="h-4 w-4" />
                                 <span>
                                     {post.comments || 0}
                                 </span>
+                            </div>
+                            
+                            {/* 좋아요/공유 버튼 - 메타정보 라인으로 이동 */}
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleLike}
+                                    disabled={likeMutation.isPending}
+                                    className="gap-2 h-8 px-2"
+                                >
+                                    <Heart
+                                        className={`h-4 w-4 ${
+                                            isLiked ? "fill-red-500 text-red-500" : ""
+                                        }`}
+                                    />
+                                    <span>{likeCount}</span>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleShare}
+                                    disabled={isSharing}
+                                    className="h-8 px-2"
+                                >
+                                    <Share2 className="mr-2 h-4 w-4" />
+                                    {isSharing ? "복사중..." : "공유"}
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -393,32 +433,8 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                     />
                 </CardContent>
 
-                <CardFooter className="flex justify-between items-center border-t py-4">
-                    {/* 수정/삭제 버튼 */}
-                    <div>
-                        {isAuthor && (
-                            <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleEdit}
-                                >
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    수정
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleDelete}
-                                >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    삭제
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* 네이버/카카오 스타일 네비게이션 */}
+                <CardFooter className="border-t py-4">
+                    {/* 네이버/카카오 스타일 네비게이션만 유지 */}
                     <PostNavigationBar
                         navigation={navigation}
                         boardType={boardType}
@@ -431,33 +447,6 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                         onNextPost={handleNextPost}
                         onPostList={handlePostList}
                     />
-
-                    {/* 좋아요/공유 버튼 */}
-                    <div className="flex gap-2">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleLike}
-                            disabled={likeMutation.isPending}
-                            className="gap-2"
-                        >
-                            <Heart
-                                className={`h-4 w-4 ${
-                                    isLiked ? "fill-red-500 text-red-500" : ""
-                                }`}
-                            />
-                            <span>{likeCount}</span>
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleShare}
-                            disabled={isSharing}
-                        >
-                            <Share2 className="mr-2 h-4 w-4" />
-                            {isSharing ? "복사중..." : "공유"}
-                        </Button>
-                    </div>
                 </CardFooter>
             </Card>
 
