@@ -32,6 +32,7 @@ import { BoardCommentList } from "@/components/boards/BoardCommentList";
 import ProfileDetailModal from "@/components/profile/ProfileDetailModal";
 import EnhancedMarkdownRenderer from "@/components/markdown/EnhancedMarkdownRenderer";
 import { useAudioService } from "@/hooks/useAudioService";
+import { PostNavigationBar } from "@/components/navigation/PostNavigationBar";
 
 interface BoardPostDetailProps {
     boardType: BoardType;
@@ -82,7 +83,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
     const likeCount =
         optimisticLikeCount !== null
             ? optimisticLikeCount
-            : (post?.likes || (post as any)?.likeCount || 0);
+            : (post?.likes || 0);
 
     // 좋아요 토글 뮤테이션
     const likeMutation = useMutation({
@@ -155,7 +156,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
         const currentLikeCount =
             optimisticLikeCount !== null
                 ? optimisticLikeCount
-                : (post?.likes || (post as any)?.likeCount || 0);
+                : (post?.likes || 0);
 
         setOptimisticIsLiked(!currentIsLiked);
         setOptimisticLikeCount(
@@ -361,7 +362,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-1">
                                 <Eye className="h-4 w-4" />
-                                <span>{post.views || (post as any).viewCount || 0}</span>
+                                <span>{post.views || 0}</span>
                             </div>
                             <div className="flex items-center gap-1">
                                 <Heart
@@ -376,7 +377,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                             <div className="flex items-center gap-1">
                                 <MessageSquare className="h-4 w-4" />
                                 <span>
-                                    {post.comments || (post as any).commentCount || 0}
+                                    {post.comments || 0}
                                 </span>
                             </div>
                         </div>
@@ -417,60 +418,19 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                         )}
                     </div>
 
-                    {/* 네비게이션 버튼들 */}
-                    <div className="flex items-center gap-1 sm:gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handlePreviousPost}
-                            disabled={
-                                !navigation?.previousPost || isNavigationLoading
-                            }
-                            className="flex items-center gap-1 sm:gap-2 max-w-[120px] sm:max-w-[150px] md:max-w-[200px] px-2 sm:px-3"
-                        >
-                            <ChevronLeft className="h-4 w-4 flex-shrink-0" />
-                            {navigation?.previousPost ? (
-                                <span className="text-xs sm:text-sm truncate hidden xs:inline">
-                                    {navigation.previousPost.subject}
-                                </span>
-                            ) : (
-                                <span className="text-xs sm:text-sm text-muted-foreground hidden xs:inline">
-                                    이전글
-                                </span>
-                            )}
-                        </Button>
-
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handlePostList}
-                            className="flex items-center gap-1 px-2 sm:px-3 flex-shrink-0"
-                        >
-                            <List className="h-4 w-4" />
-                            <span className="text-xs sm:text-sm">목록</span>
-                        </Button>
-
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleNextPost}
-                            disabled={
-                                !navigation?.nextPost || isNavigationLoading
-                            }
-                            className="flex items-center gap-1 sm:gap-2 max-w-[120px] sm:max-w-[150px] md:max-w-[200px] px-2 sm:px-3"
-                        >
-                            {navigation?.nextPost ? (
-                                <span className="text-xs sm:text-sm truncate hidden xs:inline">
-                                    {navigation.nextPost.subject}
-                                </span>
-                            ) : (
-                                <span className="text-xs sm:text-sm text-muted-foreground hidden xs:inline">
-                                    다음글
-                                </span>
-                            )}
-                            <ChevronRight className="h-4 w-4 flex-shrink-0" />
-                        </Button>
-                    </div>
+                    {/* 네이버/카카오 스타일 네비게이션 */}
+                    <PostNavigationBar
+                        navigation={navigation}
+                        boardType={boardType}
+                        currentPost={{
+                            id: post.id,
+                            subject: post.subject || post.title || ''
+                        }}
+                        isLoading={isNavigationLoading}
+                        onPreviousPost={handlePreviousPost}
+                        onNextPost={handleNextPost}
+                        onPostList={handlePostList}
+                    />
 
                     {/* 좋아요/공유 버튼 */}
                     <div className="flex gap-2">
