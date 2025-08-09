@@ -64,17 +64,13 @@ export const NavigationCard: React.FC<NavigationCardProps> = ({
             {/* 배경 그라데이션 효과 */}
             <div className="absolute inset-0 bg-gradient-to-r from-yellow-50 to-transparent dark:from-yellow-900/20 dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
 
-            <div className="relative flex items-center justify-center h-full gap-3">
-                {/* 방향 아이콘 */}
-                <div
-                    className={`flex-shrink-0 w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center group-hover:bg-yellow-500 transition-colors duration-200`}
-                >
-                    {isNext ? (
-                        <ChevronRight className="w-4 h-4 text-gray-800" />
-                    ) : (
+            <div className="relative flex items-center h-full gap-3">
+                {/* 이전글 아이콘 (왼쪽) */}
+                {!isNext && (
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center group-hover:bg-yellow-500 transition-colors duration-200">
                         <ChevronLeft className="w-4 h-4 text-gray-800" />
-                    )}
-                </div>
+                    </div>
+                )}
 
                 {/* 게시글 정보 */}
                 <div className="flex-1 min-w-0 text-center">
@@ -98,14 +94,15 @@ export const NavigationCard: React.FC<NavigationCardProps> = ({
                         </div>
                     </div>
                 </div>
+
+                {/* 다음글 아이콘 (오른쪽) */}
+                {isNext && (
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center group-hover:bg-yellow-500 transition-colors duration-200">
+                        <ChevronRight className="w-4 h-4 text-gray-800" />
+                    </div>
+                )}
             </div>
 
-            {/* 타입 라벨 */}
-            <div className={`absolute top-2 ${isNext ? "right-2" : "left-2"}`}>
-                <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-                    {isNext ? "" : ""}
-                </span>
-            </div>
         </button>
     );
 };
