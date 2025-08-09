@@ -82,14 +82,15 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID>, Jpa
     java.util.List<BoardPost> findByBoardTypeOrderByCreatedAtDesc(@Param("boardType") BoardType boardType, Pageable pageable);
 
     /**
-     * 이전글 조회 (현재 게시글보다 오래된 글 중 가장 최신)
+     * 이전글 조회 (현재 게시글보다 오래된 글 중 가장 최신, 핀된 게시글 제외)
      */
     @Query("SELECT p FROM BoardPost p " +
            "LEFT JOIN FETCH p.author " +
            "WHERE p.boardType = :boardType " +
            "AND p.createdAt < :currentCreatedAt " +
            "AND p.isDeleted = false " +
-           "ORDER BY p.isPinned DESC, p.createdAt DESC")
+           "AND p.isPinned = false " +
+           "ORDER BY p.createdAt DESC")
     java.util.List<BoardPost> findPreviousPost(
             @Param("boardType") BoardType boardType,
             @Param("currentCreatedAt") java.time.LocalDateTime currentCreatedAt,
@@ -97,14 +98,15 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID>, Jpa
     );
 
     /**
-     * 다음글 조회 (현재 게시글보다 최신 글 중 가장 오래된)
+     * 다음글 조회 (현재 게시글보다 최신 글 중 가장 오래된, 핀된 게시글 제외)
      */
     @Query("SELECT p FROM BoardPost p " +
            "LEFT JOIN FETCH p.author " +
            "WHERE p.boardType = :boardType " +
            "AND p.createdAt > :currentCreatedAt " +
            "AND p.isDeleted = false " +
-           "ORDER BY p.isPinned DESC, p.createdAt ASC")
+           "AND p.isPinned = false " +
+           "ORDER BY p.createdAt ASC")
     java.util.List<BoardPost> findNextPost(
             @Param("boardType") BoardType boardType,
             @Param("currentCreatedAt") java.time.LocalDateTime currentCreatedAt,
