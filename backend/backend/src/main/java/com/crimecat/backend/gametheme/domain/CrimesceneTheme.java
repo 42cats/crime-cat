@@ -1,11 +1,9 @@
 package com.crimecat.backend.gametheme.domain;
 
-import com.crimecat.backend.gametheme.enums.ThemeType;
-import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.gametheme.dto.AddCrimesceneThemeRequest;
+import com.crimecat.backend.guild.domain.Guild;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
@@ -48,6 +46,14 @@ public class CrimesceneTheme extends GameTheme {
     @Column(name = "EXTRA", columnDefinition = "JSON")
     private Map<String, Object> extra;
 
+    public boolean isOwnTheme(UUID webUserId){
+        if (webUserId == null || this.team == null || this.team.getMembers() == null) {
+            return false;
+        }
+
+        return this.team.getMembers().stream()
+            .anyMatch(member -> webUserId.equals(member.getWebUserId()));
+    }
     public static CrimesceneTheme from(AddCrimesceneThemeRequest request) {
     return CrimesceneTheme.builder()
         .title(request.getTitle())

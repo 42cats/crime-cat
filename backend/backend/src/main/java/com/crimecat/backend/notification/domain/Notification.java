@@ -6,6 +6,7 @@ import com.crimecat.backend.notification.utils.JsonUtil;
 import com.crimecat.backend.user.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
@@ -23,6 +24,7 @@ import java.util.UUID;
 @Getter
 @Builder(access = AccessLevel.PRIVATE)
 @EntityListeners(AuditingEntityListener.class)
+@Slf4j
 public class Notification {
     @Id
     @UuidGenerator

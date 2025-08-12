@@ -4,8 +4,12 @@ import com.crimecat.backend.notification.builder.NotificationBuilders;
 import com.crimecat.backend.notification.event.NotificationEventPublisher;
 import com.crimecat.backend.notification.event.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.UUID;
+import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.exception.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.crimecat.backend.webUser.repository.WebUserRepository;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -21,6 +25,7 @@ public class NotificationEventListener {
     
     private final NotificationBuilders builders;
     private final NotificationEventPublisher eventPublisher;
+    private final WebUserRepository webUserRepository;
     
     /**
      * 게임 기록 요청 이벤트 처리
@@ -31,18 +36,22 @@ public class NotificationEventListener {
         log.info("Processing GameRecordRequestEvent: {}", event.getEventId());
         
         try {
-            // 1. 게임 기록 요청 알림 생성
-            builders.gameRecordRequest(event.getGameThemeId(), event.getRequesterId(), event.getReceiverId())
+            // WebUser ID를 User ID로 변환
+            UUID requesterUserId = convertWebUserIdToUserId(event.getRequesterId());
+            UUID receiverUserId = convertWebUserIdToUserId(event.getReceiverId());
+            
+            // 1. 게임 기록 요청 알림 생성 (User ID 사용)
+            builders.gameRecordRequest(event.getGameThemeId(), requesterUserId, receiverUserId)
                 .data("requesterNickname", event.getData().get("requesterNickname"))
                 .data("gameThemeTitle", event.getGameThemeTitle()) 
                 .data("requestMessage", event.getRequestMessage())
                 .expiresAt(event.getExpiresAt())
                 .send();
             
-            // 2. 요청자에게 확인 알림 발송 (NEW!)
+            // 2. 요청자에게 확인 알림 발송 (User ID 사용)
             eventPublisher.publishSystemNotification(
                 this,
-                event.getRequesterId(),  // 요청자에게 발송
+                requesterUserId,  // 요청자에게 발송 (User ID)
                 event.getGameThemeTitle() + " 기록 요청 성공",
                 "기록 요청이 해당 테마의 오너에게 발송되었습니다. 승인을 기다려주세요."
             );
@@ -54,6 +63,27 @@ public class NotificationEventListener {
         }
         
         return CompletableFuture.completedFuture(null);
+    }
+    
+    /**
+     * WebUser ID를 User ID로 변환하는 헬퍼 메서드
+     */
+    private UUID convertWebUserIdToUserId(UUID webUserId) {
+        if (webUserId == null) {
+            throw new IllegalArgumentException("WebUser ID cannot be null");
+        }
+        
+        WebUser webUser = webUserRepository.findById(webUserId)
+            .orElseThrow(() -> ErrorStatus.USER_NOT_FOUND.asServiceException());
+        
+        if (webUser.getUser() == null) {
+            throw ErrorStatus.USER_NOT_FOUND.asServiceException();
+        }
+        
+        UUID userId = webUser.getUser().getId();
+        log.debug("Converted WebUser ID {} to User ID {}", webUserId, userId);
+        
+        return userId;
     }
 
     

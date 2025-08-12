@@ -258,6 +258,7 @@ public class WebGameHistoryService {
 		return CheckPlayResponseDto.from(hasPlayed);
 	}
 
+    @Transactional
     public WebHistoryResponseDto WebHistoryAddRequest(User user, UUID gameThemeId, WebHistoryRequestDto dto) {
         List<Notification> existingNotifications = notificationRepository
             .findBySenderAndTypeOrderByCreatedAtDesc(user, NotificationType.GAME_RECORD_REQUEST)
@@ -277,17 +278,21 @@ public class WebGameHistoryService {
             }
         }
         
-        // 새로운 요청 처리
-        GameTheme gameTheme = gameThemeRepository.findById(gameThemeId)
+        // 새로운 요청 처리 - JOIN FETCH로 Author와 WebUser를 함께 조회
+        GameTheme gameTheme = gameThemeRepository.findByIdWithAuthorAndWebUser(gameThemeId)
             .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        
+        // 사용자 WebUser 정보 추가 조회
+        WebUser webUser = user.getWebUser();
+        WebUser authorWebUser = gameTheme.getAuthor();
         
         // 게임 기록 요청 이벤트만 발행 (사용자 확인 알림은 Event Listener에서 처리)
         notificationEventPublisher.publishGameRecordRequest(
             this,
             gameThemeId,
             gameTheme.getTitle(),
-            user.getId(),
-            gameTheme.getAuthor().getId(),
+            webUser != null ? webUser.getId() : user.getId(), // WebUser ID 우선 사용
+            authorWebUser != null ? authorWebUser.getId() : gameTheme.getAuthor().getId(), // AuthorWebUser ID 우선 사용
             dto.getMessage(),
 						user.getName()
         );
