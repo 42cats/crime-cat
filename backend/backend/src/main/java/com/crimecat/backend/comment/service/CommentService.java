@@ -8,14 +8,14 @@ import com.crimecat.backend.comment.repository.CommentLikeRepository;
 import com.crimecat.backend.comment.repository.CommentRepository;
 import com.crimecat.backend.comment.sort.CommentSortType;
 import com.crimecat.backend.exception.ErrorStatus;
+import com.crimecat.backend.gameHistory.repository.EscapeRoomHistoryRepository;
 import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
-import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.domain.CrimesceneTheme;
+import com.crimecat.backend.gametheme.domain.EscapeRoomTheme;
+import com.crimecat.backend.gametheme.domain.GameTheme;
 import com.crimecat.backend.gametheme.repository.GameThemeRepository;
 import com.crimecat.backend.gametheme.repository.MakerTeamMemberRepository;
 import com.crimecat.backend.notification.event.NotificationEventPublisher;
-import com.crimecat.backend.notification.event.GameThemeCommentedEvent;
-import com.crimecat.backend.notification.event.GameThemeCommentRepliedEvent;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -25,8 +25,6 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +40,7 @@ public class CommentService {
     private final CommentLikeRepository commentLikeRepository;
     private final GameThemeRepository gameThemeRepository;
     private final GameHistoryRepository gameHistoryRepository;
+    private final EscapeRoomHistoryRepository escapeRoomHistoryRepository;
     private final WebUserRepository webUserRepository;
     private final NotificationEventPublisher notificationEventPublisher;
     private final MakerTeamMemberRepository makerTeamMemberRepository;
@@ -219,7 +218,7 @@ public class CommentService {
                 gameThemeId, pageable);
         
         boolean canViewSpoiler = hasPlayedGameTheme(userId, gameThemeId);
-        
+
         return comments.map(comment -> {
             boolean isLiked = commentLikeRepository.existsByUser_IdAndComment_Id(userId, comment.getId());
             boolean isOwnComment = comment.getAuthorId().equals(userId);
@@ -327,6 +326,29 @@ public class CommentService {
             return false;
         }
         // GameHistory를 통해 확인
-        return gameHistoryRepository.existsByGameTheme_IdAndUser_Id(webUserId, gameThemeId);
+        return gameHistoryRepository.existsByGameTheme_IdAndUser_Id(webUserId, gameThemeId) || isOwnTheme(gameThemeId,webUserId);
+    }
+    
+    private boolean isOwnTheme(UUID gameThemeId, UUID webUserId) {
+        if (webUserId == null || gameThemeId == null) {
+            return false;
+        }
+        
+        GameTheme gameTheme = gameThemeRepository.findById(gameThemeId)
+            .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
+        
+        // CrimesceneTheme인 경우 - 팀 소유권 확인
+        if (gameTheme instanceof CrimesceneTheme crimesceneTheme) {
+          return crimesceneTheme.isOwnTheme(webUserId);
+        }
+        
+        // EscapeRoomTheme인 경우 - 플레이 이력 확인
+        if (gameTheme instanceof EscapeRoomTheme) {
+            return escapeRoomHistoryRepository.existsByWebUserIdAndEscapeRoomThemeIdAndDeletedAtIsNull(
+                webUserId, gameThemeId);
+        }
+        
+        // 지원하지 않는 테마 타입의 경우 false 반환
+        return false;
     }
 }

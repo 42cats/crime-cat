@@ -22,6 +22,11 @@ public interface GameThemeRepository extends JpaRepository<GameTheme, UUID>, Jpa
   @EntityGraph(attributePaths = {"author"})
   Optional<GameTheme> findWithAuthorById(UUID id);
 
+  @Query("SELECT gt FROM GameTheme gt " +
+         "JOIN FETCH gt.author " +
+         "WHERE gt.id = :id")
+  Optional<GameTheme> findByIdWithAuthorAndWebUser(@Param("id") UUID id);
+
   Page<GameTheme> findAll(Specification<GameTheme> spec, Pageable page);
 
   /**

@@ -10,6 +10,7 @@ import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.enums.UserRole;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional
 public class NotificationService {
     
