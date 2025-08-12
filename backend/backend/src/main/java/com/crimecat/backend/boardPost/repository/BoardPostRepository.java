@@ -113,4 +113,48 @@ public interface BoardPostRepository extends JpaRepository<BoardPost, UUID>, Jpa
             Pageable pageable
     );
 
+    /**
+     * 키워드 및 게시판 타입 기반 게시글 카운트 (postType 필터링 없음)
+     */
+    @Query("SELECT COUNT(DISTINCT p.id) FROM BoardPost p " +
+           "LEFT JOIN PostComment c ON c.boardPost = p " +
+           "LEFT JOIN p.author u1 " +
+           "LEFT JOIN c.author u2 " +
+           "WHERE (" +
+           "   p.subject LIKE %:kw% " +
+           "   OR p.content LIKE %:kw% " +
+           "   OR u1.nickname LIKE %:kw% " +
+           "   OR c.content LIKE %:kw% " +
+           "   OR u2.nickname LIKE %:kw% " +
+           ") " +
+           "AND p.boardType = :boardType " +
+           "AND p.isDeleted = false")
+    long countByKeywordAndBoardTypeAndIsDeletedFalse(
+            @Param("kw") String kw,
+            @Param("boardType") BoardType boardType
+    );
+
+    /**
+     * 키워드, 게시판 타입 및 포스트 타입 기반 게시글 카운트
+     */
+    @Query("SELECT COUNT(DISTINCT p.id) FROM BoardPost p " +
+           "LEFT JOIN PostComment c ON c.boardPost = p " +
+           "LEFT JOIN p.author u1 " +
+           "LEFT JOIN c.author u2 " +
+           "WHERE (" +
+           "   p.subject LIKE %:kw% " +
+           "   OR p.content LIKE %:kw% " +
+           "   OR u1.nickname LIKE %:kw% " +
+           "   OR c.content LIKE %:kw% " +
+           "   OR u2.nickname LIKE %:kw% " +
+           ") " +
+           "AND p.boardType = :boardType " +
+           "AND p.postType = :postType " +
+           "AND p.isDeleted = false")
+    long countByKeywordAndTypeAndIsDeletedFalse(
+            @Param("kw") String kw,
+            @Param("boardType") BoardType boardType,
+            @Param("postType") PostType postType
+    );
+
 }

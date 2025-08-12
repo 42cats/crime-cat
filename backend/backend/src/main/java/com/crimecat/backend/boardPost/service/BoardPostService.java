@@ -85,17 +85,36 @@ public class BoardPostService {
         
         // 동적 쿼리를 사용하는 방법
         Page<BoardPost> posts;
+        long totalCount;
         
         // postType이 null이거나 GENERAL인 경우 postType 필터링을 하지 않음
         if (postType == null || postType == PostType.GENERAL) {
-            // postType 필터링 없이 boardType만으로 조회
+            // 별도 카운트 쿼리로 정확한 총 개수 조회
+            totalCount = boardPostRepository.countByKeywordAndBoardTypeAndIsDeletedFalse(kw, boardType);
+            
+            // 데이터 조회
             posts = boardPostRepository.findAllByKeywordAndBoardTypeAndIsDeletedFalse(kw, boardType, pageable);
+            
+            // 정확한 totalCount로 Page 객체 재생성
+            List<BoardPostResponse> content = posts.getContent().stream()
+                    .map(post -> BoardPostResponse.from(post, currentUserId))
+                    .toList();
+            
+            return new org.springframework.data.domain.PageImpl<>(content, pageable, totalCount);
         } else {
-            // 특정 postType이 지정된 경우에만 postType 필터링 적용
+            // 별도 카운트 쿼리로 정확한 총 개수 조회
+            totalCount = boardPostRepository.countByKeywordAndTypeAndIsDeletedFalse(kw, boardType, postType);
+            
+            // 데이터 조회
             posts = boardPostRepository.findAllByKeywordAndTypeAndIsDeletedFalse(kw, boardType, postType, pageable);
+            
+            // 정확한 totalCount로 Page 객체 재생성
+            List<BoardPostResponse> content = posts.getContent().stream()
+                    .map(post -> BoardPostResponse.from(post, currentUserId))
+                    .toList();
+            
+            return new org.springframework.data.domain.PageImpl<>(content, pageable, totalCount);
         }
-
-        return posts.map(post -> BoardPostResponse.from(post, currentUserId));
     }
 
     @Transactional
