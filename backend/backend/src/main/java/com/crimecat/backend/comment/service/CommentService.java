@@ -280,7 +280,9 @@ public class CommentService {
             boolean isOwnReply = false;
             boolean canViewSpoiler = false; // 스포일러 내용을 볼 수 없음
             
-            replyResponses.add(CommentResponse.from(reply, isLiked, isOwnReply, canViewSpoiler, new ArrayList<>()));
+            // 재귀 호출로 모든 깊이의 대댓글 처리
+            List<CommentResponse> nestedReplies = getPublicCommentReplies(reply.getId(), sortType);
+            replyResponses.add(CommentResponse.from(reply, isLiked, isOwnReply, canViewSpoiler, nestedReplies));
         }
         
         return replyResponses;
