@@ -10,6 +10,7 @@ import {
     MessageSquare,
     Heart,
     ChevronRight,
+    Eye,
     Lock,
     Pin,
 } from "lucide-react";
@@ -262,8 +263,8 @@ const BoardPostItem: React.FC<BoardPostItemProps> = ({ post, boardType, isPinned
                             {formatNumber(post.likes || post.likeCount)}
                         </span>
                         <span className="flex items-center gap-1">
-                            <MessageSquare className="h-3 w-3" />
-                            {post.comments}
+                            <Eye className="h-3 w-3" />
+                            {post.views}
                         </span>
                     </div>
                 </div>
@@ -292,8 +293,8 @@ const BoardPostItem: React.FC<BoardPostItemProps> = ({ post, boardType, isPinned
                             {formatNumber(post.likes || post.likeCount)}
                         </span>
                         <span className="flex items-center gap-1">
-                            <MessageSquare className="h-3 w-3" />
-                            {post.comments}
+                            <Eye className="h-3 w-3" />
+                            {post.views}
                         </span>
                     </div>
                 </div>
