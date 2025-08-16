@@ -3,10 +3,10 @@ const { recordAdExposureFromData } = require('../api/themeAd/themeAd');
 
 // 기본 메시지 배열을 상수로 선언
 const DEFAULT_MESSAGES = [
-	// "mystery-place.com",
-	// "모든기능 완전 무료",
-	"대한민국 광복절",
-	"8 . 15 독립"
+	"mystery-place.com",
+	"모든기능 완전 무료",
+	// "대한민국 광복절",
+	// "8 . 15 독립"
 ];
 // 기본 메시지 개수를 상수로
 const DEFAULT_MESSAGE_COUNT = DEFAULT_MESSAGES.length;
