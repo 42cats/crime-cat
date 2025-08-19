@@ -1,7 +1,7 @@
 package com.crimecat.backend.config;
 
-import com.crimecat.backend.gametheme.service.GameThemeService;
 import com.crimecat.backend.permission.service.PermissionService;
+import com.crimecat.backend.schedule.service.ScheduleService;
 import com.crimecat.backend.utils.RedisCacheService;
 import com.crimecat.backend.utils.RedisDbType;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class CacheWarmupService {
 
     private final PermissionService permissionService;
+    private final ScheduleService scheduleService;
     private final RedisCacheService redisCacheService;
 
     /**
@@ -54,8 +55,9 @@ public class CacheWarmupService {
         
         CompletableFuture<Void> permissionWarmup = warmupPermissions();
         CompletableFuture<Void> statsWarmup = warmupStatistics();
+        CompletableFuture<Void> scheduleWarmup = warmupScheduleCache();
         
-        CompletableFuture.allOf(permissionWarmup, statsWarmup)
+        CompletableFuture.allOf(permissionWarmup, statsWarmup, scheduleWarmup)
             .thenRun(() -> log.info("캐시 예열 완료"))
             .exceptionally(ex -> {
                 log.error("캐시 예열 중 오류 발생", ex);
@@ -99,6 +101,27 @@ public class CacheWarmupService {
             log.info("통계 캐시 예열 완료");
         } catch (Exception e) {
             log.error("통계 캐시 예열 실패", e);
+        }
+        return CompletableFuture.completedFuture(null);
+    }
+
+    /**
+     * 일정 관리 캐시 예열
+     */
+    @Async
+    public CompletableFuture<Void> warmupScheduleCache() {
+        try {
+            log.info("일정 관리 캐시 예열 시작");
+            
+            // 모든 일정 목록 캐시 (주요 필터 조건으로)
+            scheduleService.getEvents(null, null); // 전체 목록
+            
+            // 모집 중인 일정 목록 캐시
+            scheduleService.getEvents(null, com.crimecat.backend.schedule.domain.EventStatus.RECRUITING);
+            
+            log.info("일정 관리 캐시 예열 완료");
+        } catch (Exception e) {
+            log.error("일정 관리 캐시 예열 실패", e);
         }
         return CompletableFuture.completedFuture(null);
     }

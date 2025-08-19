@@ -1,12 +1,11 @@
 package com.crimecat.backend.schedule.controller;
 
-import com.crimecat.backend.auth.security.UserDetailsImpl; // Assuming this is the security principal
 import com.crimecat.backend.schedule.domain.EventStatus;
 import com.crimecat.backend.schedule.dto.EventCreateRequest;
 import com.crimecat.backend.schedule.dto.EventResponse;
 import com.crimecat.backend.schedule.dto.UserCalendarRequest;
 import com.crimecat.backend.schedule.service.ScheduleService;
-import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,16 +24,14 @@ public class ScheduleController {
 
     @PostMapping("/events")
     public ResponseEntity<?> createEvent(@RequestBody EventCreateRequest request,
-                                           @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        User currentUser = userDetails.getUser(); // Assuming getUser() method exists
+                                           @AuthenticationPrincipal WebUser currentUser) {
         scheduleService.createEvent(request, currentUser);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/events/{eventId}/join")
     public ResponseEntity<?> joinEvent(@PathVariable UUID eventId,
-                                       @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        User currentUser = userDetails.getUser();
+                                       @AuthenticationPrincipal WebUser currentUser) {
         scheduleService.joinEvent(eventId, currentUser);
         return ResponseEntity.ok().build();
     }
@@ -52,8 +49,7 @@ public class ScheduleController {
 
     @PostMapping("/my-calendar")
     public ResponseEntity<?> saveUserCalendar(@RequestBody UserCalendarRequest request,
-                                              @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        User currentUser = userDetails.getUser();
+                                              @AuthenticationPrincipal WebUser currentUser) {
         scheduleService.saveUserCalendar(request, currentUser);
         return ResponseEntity.ok().build();
     }

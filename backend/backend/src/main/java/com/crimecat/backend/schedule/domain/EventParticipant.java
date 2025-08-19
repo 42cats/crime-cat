@@ -1,6 +1,6 @@
 package com.crimecat.backend.schedule.domain;
 
-import com.crimecat.backend.user.domain.User;
+import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -29,7 +29,7 @@ public class EventParticipant {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private WebUser user;
 
     @Column(nullable = false)
     private String status;
