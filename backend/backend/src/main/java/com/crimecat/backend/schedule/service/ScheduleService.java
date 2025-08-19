@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.StringReader;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -317,5 +318,26 @@ public class ScheduleService {
     public int getPublicParticipantCount(UUID eventId) {
         // 기존 메서드 재사용 - 개수만 반환하므로 안전
         return getEventParticipantCount(eventId);
+    }
+
+    /**
+     * 특정 사용자의 특정 기간 내 이벤트 조회 (추천 시스템용)
+     * - 시작 시간과 종료 시간이 있는 확정된 일정만 반환
+     */
+    @Transactional(readOnly = true)
+    public List<Event> getUserEventsInRange(UUID userId, LocalDate startDate, LocalDate endDate) {
+        WebUser user = WebUser.builder().id(userId).build(); // 프록시 객체 생성
+        
+        // 사용자가 참여 중인 활성 이벤트 중에서 특정 기간 내에 있는 이벤트 조회
+        List<EventParticipant> activeParticipants = eventParticipantRepository.findActiveByUser(user);
+        
+        return activeParticipants.stream()
+            .map(EventParticipant::getEvent)
+            .filter(event -> event.getStartTime() != null && event.getEndTime() != null) // 시간이 확정된 이벤트만
+            .filter(event -> {
+                LocalDate eventDate = event.getStartTime().toLocalDate();
+                return !eventDate.isBefore(startDate) && !eventDate.isAfter(endDate);
+            })
+            .collect(Collectors.toList());
     }
 }

@@ -41,6 +41,10 @@ public class RecommendedTime {
     @Column(name = "total_participants", nullable = false)
     private Integer totalParticipants;
 
+    @Column(name = "availability_score", nullable = false)
+    @Builder.Default
+    private Double availabilityScore = 0.0;
+
     @Column(name = "is_selected", nullable = false)
     @Builder.Default
     private Boolean isSelected = false;

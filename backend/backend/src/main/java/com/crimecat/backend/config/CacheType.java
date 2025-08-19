@@ -84,6 +84,8 @@ public class CacheType {
   public static final String SCHEDULE_AVAILABILITY = "schedule:availability";
   public static final String SCHEDULE_ICAL_PARSED = "schedule:ical:parsed";
   public static final String SCHEDULE_USER_CALENDAR = "schedule:user:calendar";
+  public static final String SCHEDULE_USER_BLOCKED_DATES = "schedule:user:blocked:dates";
+  public static final String SCHEDULE_RECOMMENDED_TIMES = "schedule:recommended:times";
   
   public static final String [] CACHE_TYPE = {
       PERSONAL_DASHBOARD_INFO,
@@ -139,6 +141,8 @@ public class CacheType {
       SCHEDULE_PARTICIPANTS,
       SCHEDULE_AVAILABILITY,
       SCHEDULE_ICAL_PARSED,
-      SCHEDULE_USER_CALENDAR
+      SCHEDULE_USER_CALENDAR,
+      SCHEDULE_USER_BLOCKED_DATES,
+      SCHEDULE_RECOMMENDED_TIMES
   };
 }

@@ -54,6 +54,12 @@ public class Event {
     @Column(name = "confirmed_at")
     private LocalDateTime confirmedAt;
 
+    @Column(name = "start_time")
+    private LocalDateTime startTime;
+    
+    @Column(name = "end_time")
+    private LocalDateTime endTime;
+
     private LocalDateTime scheduledAt;
 
     @CreationTimestamp
