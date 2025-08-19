@@ -42,6 +42,18 @@ public class Event {
     @Column(name = "max_participants")
     private Integer maxParticipants;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "event_type", nullable = false)
+    @Builder.Default
+    private EventType eventType = EventType.FIXED;
+
+    @Column(name = "min_participants", nullable = false)
+    @Builder.Default
+    private Integer minParticipants = 1;
+
+    @Column(name = "confirmed_at")
+    private LocalDateTime confirmedAt;
+
     private LocalDateTime scheduledAt;
 
     @CreationTimestamp
