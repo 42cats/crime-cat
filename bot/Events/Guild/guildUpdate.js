@@ -1,10 +1,5 @@
 const logger = require('../../Commands/utility/logger');
-const axios = require('axios');
-const dotenv = require('dotenv');
-dotenv.config();
-
-const BEARER_TOKEN = process.env.DISCORD_CLIENT_SECRET;
-const baseUrl = process.env.BASE_URL;
+const { updateGuildName, updateGuildOwner } = require('../../Commands/api/guild/guild');
 
 module.exports = {
     name: 'guildUpdate',
@@ -14,23 +9,16 @@ module.exports = {
             // 길드 이름이 변경되었는지 확인
             if (oldGuild.name !== newGuild.name) {
                 logger.info(`Guild name changed: ${oldGuild.name} -> ${newGuild.name}`);
-                
-                // 백엔드로 길드 이름 업데이트 요청
-                const API_URL = `${baseUrl}/bot/v1/guilds/${newGuild.id}/name`;
-                
-                const response = await axios.patch(API_URL, {
-                    name: newGuild.name
-                }, {
-                    headers: {
-                        'Authorization': `Bearer ${BEARER_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                logger.info(`Guild name updated successfully: ${response.data.message}`);
+                await updateGuildName(newGuild.id, newGuild.name);
+            }
+
+            // 길드 오너가 변경되었는지 확인
+            if (oldGuild.ownerId !== newGuild.ownerId) {
+                logger.info(`Guild owner changed: ${oldGuild.ownerId} -> ${newGuild.ownerId}`);
+                await updateGuildOwner(newGuild.id, newGuild.ownerId, oldGuild.ownerId);
             }
         } catch (error) {
-            logger.error('Failed to update guild name:', error.response?.data || error.message);
+            logger.error('Failed to update guild:', error.response?.data || error.message);
         }
     }
 };

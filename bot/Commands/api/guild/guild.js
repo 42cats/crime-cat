@@ -96,8 +96,11 @@ module.exports = {
 	addGuild,
 	guildMembersAdd,
 	guildAddProcess,
+	deleteGuild,
 	getGuildPublicStatus,
-	toggleGuildPublicStatus
+	toggleGuildPublicStatus,
+	updateGuildName,
+	updateGuildOwner
 }
 
 /**
@@ -139,6 +142,59 @@ async function toggleGuildPublicStatus(guildId) {
 		return response.data;
 	} catch (error) {
 		logger.error('길드 공개 상태 토글 실패:', error.response?.data || error.message);
+		throw error;
+	}
+}
+
+/**
+ * 길드 이름을 업데이트합니다.
+ * @param {string} guildId 길드 ID
+ * @param {string} newName 새로운 길드 이름
+ * @returns {Promise<Object>} API 응답 데이터
+ */
+async function updateGuildName(guildId, newName) {
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/name`;
+	try {
+		const response = await axios.patch(API_URL, {
+			name: newName
+		}, {
+			headers: {
+				'Authorization': `Bearer ${BEARER_TOKEN}`,
+				'Content-Type': 'application/json'
+			}
+		});
+		logger.info(`Guild name updated successfully: ${response.data.message}`);
+		return response.data;
+	} catch (error) {
+		logger.error('길드 이름 업데이트 실패:', error.response?.data || error.message);
+		throw error;
+	}
+}
+
+/**
+ * 길드 오너를 변경합니다.
+ * @param {string} guildId 길드 ID
+ * @param {string} newOwnerId 새로운 오너 ID
+ * @param {string} oldOwnerId 이전 오너 ID
+ * @returns {Promise<Object>} API 응답 데이터
+ */
+async function updateGuildOwner(guildId, newOwnerId, oldOwnerId) {
+	const API_URL = `${baseUrl}/bot/v1/guilds/${guildId}/changeOwner`;
+	try {
+		const response = await axios.patch(API_URL, {
+			guildSnowflake: guildId,
+			newOwnerSnowflake: newOwnerId,
+			oldOwnerSnowflake: oldOwnerId
+		}, {
+			headers: {
+				'Authorization': `Bearer ${BEARER_TOKEN}`,
+				'Content-Type': 'application/json'
+			}
+		});
+		logger.info(`Guild owner updated successfully: ${response.data.message}`);
+		return response.data;
+	} catch (error) {
+		logger.error('길드 오너 변경 실패:', error.response?.data || error.message);
 		throw error;
 	}
 }

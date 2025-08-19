@@ -1,5 +1,6 @@
 package com.crimecat.backend.guild.controller.bot;
 
+import com.crimecat.backend.guild.dto.bot.GuildOwnerChangeRequestDto;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -70,5 +71,11 @@ public class GuildController {
             @RequestBody GuildNameUpdateRequestDto requestDto) {
         GuildDto updatedGuild = guildService.updateGuildName(snowflake, requestDto.getName());
         return ResponseEntity.ok(new MessageDto<>("길드 이름이 성공적으로 업데이트되었습니다.", new GuildResponseDto(updatedGuild)));
+    }
+
+    @PatchMapping("/{guildSnowflake}/changeOwner")
+    public MessageDto<?> updateGuildOwner(@PathVariable String guildSnowflake, @RequestBody GuildOwnerChangeRequestDto requestDto){
+        guildService.guildOwnerUpdate(guildSnowflake,requestDto);
+        return new MessageDto<>("길드 오너가 변경되었습니다.");
     }
 }
