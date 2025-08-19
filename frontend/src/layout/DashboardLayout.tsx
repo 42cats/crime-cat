@@ -25,6 +25,7 @@ import {
     MapPin,
     Sparkles,
     BarChart3,
+    Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -192,6 +193,12 @@ const SidebarInner = React.memo(() => {
                                             name: "대시보드",
                                             path: "/dashboard",
                                             icon: LayoutDashboard,
+                                            roles: ["ADMIN", "MANAGER", "USER"],
+                                        },
+                                        {
+                                            name: "일정 관리",
+                                            path: "/dashboard/schedule",
+                                            icon: Calendar,
                                             roles: ["ADMIN", "MANAGER", "USER"],
                                         },
                                         {

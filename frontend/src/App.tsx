@@ -92,6 +92,14 @@ import UserGameHistoryPageV2 from "@/pages/UserGameHistoryPageV2";
 import GameComparisonPage from "@/pages/GameComparisonPage";
 import ButtonAutomationPage from "@/pages/dashboard/ButtonAutomationPage";
 
+// Schedule Pages
+import {
+    ScheduleDashboard,
+    EventListPage,
+    CreateEventPage,
+    EventDetailPage,
+} from "@/pages/schedule";
+
 // Router 내부에서 실행되는 컴포넌트 (useLocation 사용 가능)
 const AppContent = () => {
     const location = useLocation();
@@ -385,6 +393,28 @@ const AppContent = () => {
                                 <Route
                                     path="theme-ad-stats"
                                     element={<ThemeAdvertisementStats />}
+                                />
+
+                                {/* 일정 관리 라우트 */}
+                                <Route
+                                    path="schedule"
+                                    element={<ScheduleDashboard />}
+                                />
+                                <Route
+                                    path="schedule/events"
+                                    element={<EventListPage />}
+                                />
+                                <Route
+                                    path="schedule/create"
+                                    element={
+                                        <PrivateRoute>
+                                            <CreateEventPage />
+                                        </PrivateRoute>
+                                    }
+                                />
+                                <Route
+                                    path="schedule/events/:eventId"
+                                    element={<EventDetailPage />}
                                 />
 
                                 {/* 관리자 페이지 라우트 */}
