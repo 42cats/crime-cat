@@ -15,6 +15,7 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
@@ -42,6 +43,7 @@ public class Guild {
     @Column(name = "IS_WITHDRAW", nullable = false)
     private boolean isWithdraw;
 
+    @Setter
     @Column(name = "OWNER_SNOWFLAKE", nullable = false)
     private String ownerSnowflake;
 

@@ -1,7 +1,9 @@
 package com.crimecat.backend.guild.service.bot;
 
+import com.crimecat.backend.api.discord.CachedDiscordBotService;
 import com.crimecat.backend.guild.domain.Guild;
 import com.crimecat.backend.guild.dto.bot.GuildDto;
+import com.crimecat.backend.guild.dto.bot.GuildOwnerChangeRequestDto;
 import com.crimecat.backend.guild.dto.bot.GuildResponseDto;
 import com.crimecat.backend.guild.dto.bot.MessageDto;
 import com.crimecat.backend.guild.exception.GuildAlreadyExistsException;
@@ -21,6 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class GuildService {
     private final GuildRepository guildRepository;
     private final UserRepository userRepository;
+    private final CachedDiscordBotService cachedDiscordBotService;
 
     // TODO: MessageDto 안 쓰고 생성과 복구를 구별할 방법?
 
@@ -124,6 +127,26 @@ public class GuildService {
         );
         guild.setName(name);
         guildRepository.save(guild);
+        cachedDiscordBotService.evictGuildCache(snowflake);
         return new GuildDto(guild);
+    }
+
+  @Transactional
+  public void guildOwnerUpdate(String guildSnowflake, GuildOwnerChangeRequestDto dto) {
+    Guild guild =
+        guildRepository
+            .findGuildByGuildSnowflake(guildSnowflake)
+            .orElseThrow(ErrorStatus.GUILD_NOT_FOUND::asServiceException);
+
+    if (!guild.getOwnerSnowflake().equals(dto.getOldOwnerSnowflake())) {
+      throw ErrorStatus.NOT_GUILD_OWNER.asServiceException();
+    }
+    User user =
+        userRepository
+            .findByDiscordSnowflake(dto.getNewOwnerSnowflake())
+            .orElseThrow(ErrorStatus.USER_NOT_FOUND::asServiceException);
+    guild.setOwnerSnowflake(user.getDiscordSnowflake());
+    guildRepository.save(guild);
+    cachedDiscordBotService.evictGuildCache(guildSnowflake);
     }
 }
