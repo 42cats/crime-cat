@@ -99,6 +99,7 @@ import {
     CreateEventPage,
     EventDetailPage,
 } from "@/pages/schedule";
+import SchedulePage from "@/pages/SchedulePage";
 
 // Router 내부에서 실행되는 컴포넌트 (useLocation 사용 가능)
 const AppContent = () => {
@@ -309,6 +310,9 @@ const AppContent = () => {
                                     path="/privacy"
                                     element={<PrivacyPage />}
                                 />
+                                
+                                {/* 일정 메인 페이지 (메인 레이아웃) */}
+                                <Route path="/schedule" element={<SchedulePage />} />
                                 <Route path="/login" element={<Login />} />
                                 <Route
                                     path="/login-error"
@@ -407,7 +411,7 @@ const AppContent = () => {
                                 <Route
                                     path="schedule/create"
                                     element={
-                                        <PrivateRoute>
+                                        <PrivateRoute allowedRoles={["ADMIN", "MANAGER", "USER"]}>
                                             <CreateEventPage />
                                         </PrivateRoute>
                                     }

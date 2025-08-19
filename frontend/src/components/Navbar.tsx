@@ -14,6 +14,7 @@ import {
     Heart,
     BookmarkIcon,
     Camera,
+    Calendar,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -54,6 +55,7 @@ const Navbar: React.FC = () => {
 
     const navItems = [
         { name: "홈", path: "/" },
+        { name: "일정", path: "/schedule" },
         { name: "테마" }, // path 없음
         { name: "커뮤니티" }, // path 없음
         { name: "SNS" }, // path 없음

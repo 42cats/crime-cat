@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Users, Clock } from 'lucide-react';
 import { EventResponse, PublicEventResponse, EventStatus } from '@/api/schedule/types';
 import { useAuth } from '@/hooks/useAuth';
+import { mockParticipantCounts } from '@/data/mockScheduleData';
 
 interface EventCardProps {
   event: EventResponse | PublicEventResponse;
@@ -120,12 +121,13 @@ export const EventCard: React.FC<EventCardProps> = ({
             </div>
           )}
           
-          {event.maxParticipants && (
-            <div className="flex items-center gap-1">
-              <Users className="w-4 h-4" />
-              <span>최대 {event.maxParticipants}명</span>
-            </div>
-          )}
+          <div className="flex items-center gap-1">
+            <Users className="w-4 h-4" />
+            <span>
+              {mockParticipantCounts[event.id] || 0}명
+              {event.maxParticipants && ` / ${event.maxParticipants}명`}
+            </span>
+          </div>
         </div>
 
         {/* 생성일 */}
