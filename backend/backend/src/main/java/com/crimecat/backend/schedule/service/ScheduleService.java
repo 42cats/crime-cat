@@ -4,6 +4,7 @@ import com.crimecat.backend.config.CacheType;
 import com.crimecat.backend.schedule.domain.*;
 import com.crimecat.backend.schedule.dto.EventCreateRequest;
 import com.crimecat.backend.schedule.dto.EventResponse;
+import com.crimecat.backend.schedule.dto.PublicEventResponse;
 import com.crimecat.backend.schedule.dto.UserCalendarRequest;
 import com.crimecat.backend.schedule.repository.EventParticipantRepository;
 import com.crimecat.backend.schedule.repository.EventRepository;
@@ -257,5 +258,64 @@ public class ScheduleService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found"));
         return eventParticipantRepository.countByEvent(event);
+    }
+
+    /**
+     * 퍼블릭 API용 일정 목록 조회
+     * - 민감정보 제외한 공개 정보만 반환
+     */
+    @Transactional(readOnly = true)
+    @Cacheable(value = CacheType.SCHEDULE_EVENT_LIST, 
+               key = "'public:' + (#category != null ? #category : 'ALL') + ':' + (#status != null ? #status.name() : 'ALL')")
+    public List<PublicEventResponse> getPublicEvents(String category, EventStatus status) {
+        List<Event> events;
+        if (category != null && status != null) {
+            events = eventRepository.findByCategoryAndStatus(category, status);
+        } else if (category != null) {
+            events = eventRepository.findByCategory(category);
+        } else if (status != null) {
+            events = eventRepository.findByStatus(status);
+        } else {
+            events = eventRepository.findAll();
+        }
+
+        return events.stream()
+                .map(PublicEventResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 퍼블릭 API용 일정 상세 조회
+     * - 민감정보 제외한 공개 정보만 반환
+     */
+    @Transactional(readOnly = true)
+    @Cacheable(value = CacheType.SCHEDULE_EVENT_DETAIL, key = "'public:' + #eventId.toString()")
+    public PublicEventResponse getPublicEvent(UUID eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+        return PublicEventResponse.from(event);
+    }
+
+    /**
+     * 퍼블릭 API용 일정 가용시간 조회
+     * - 개인 식별 정보 없이 가용시간만 제공
+     * - 기존 calculateAvailability 메서드 재사용
+     */
+    @Transactional(readOnly = true)
+    @Cacheable(value = CacheType.SCHEDULE_AVAILABILITY, key = "'public:' + #eventId.toString()")
+    public List<LocalDateTime[]> getPublicAvailability(UUID eventId) {
+        // 기존 메서드 재사용 - 이미 개인 식별 정보 포함하지 않음
+        return calculateAvailability(eventId);
+    }
+
+    /**
+     * 퍼블릭 API용 참여자 수만 조회
+     * - 개인 식별 정보 제외하고 참여자 수만 반환
+     */
+    @Transactional(readOnly = true)  
+    @Cacheable(value = CacheType.SCHEDULE_PARTICIPANTS, key = "'public:' + #eventId.toString() + ':count'")
+    public int getPublicParticipantCount(UUID eventId) {
+        // 기존 메서드 재사용 - 개수만 반환하므로 안전
+        return getEventParticipantCount(eventId);
     }
 }
