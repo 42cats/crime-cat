@@ -101,6 +101,40 @@ public class OptimizedBlockedDateService {
     }
 
     /**
+     * 날짜 범위 일괄 비활성화 (드래그 선택)
+     */
+    @Caching(evict = {
+        @CacheEvict(value = CacheType.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()"),
+        @CacheEvict(value = CacheType.SCHEDULE_AVAILABILITY, allEntries = true),
+        @CacheEvict(value = CacheType.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
+    })
+    public void blockDateRange(UUID userId, LocalDate startDate, LocalDate endDate) {
+        if (startDate.isAfter(endDate)) {
+            log.warn("Start date {} is after end date {}, swapping", startDate, endDate);
+            LocalDate temp = startDate;
+            startDate = endDate;
+            endDate = temp;
+        }
+        
+        LocalDate current = startDate;
+        int blockedCount = 0;
+        
+        while (!current.isAfter(endDate)) {
+            blockDate(userId, current);
+            current = current.plusDays(1);
+            blockedCount++;
+            
+            // 안전장치: 너무 많은 날짜를 한번에 블록하는 것을 방지
+            if (blockedCount > 90) {
+                log.warn("Too many dates to block in range {} to {}, stopping at {}", startDate, endDate, current);
+                break;
+            }
+        }
+        
+        log.info("Blocked {} dates from {} to {} for user {}", blockedCount, startDate, endDate, userId);
+    }
+
+    /**
      * 특정 날짜를 활성화 (O(1))
      */
     @Caching(evict = {

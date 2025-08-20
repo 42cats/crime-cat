@@ -111,7 +111,24 @@ public enum ErrorStatus {
     AUDIO_FILE_ACCESS_DENIED("오디오 파일에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN),
     TEMP_ATTACHMENT_NOT_FOUND("임시 첨부파일을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     TEMP_ATTACHMENT_EXPIRED("임시 첨부파일이 만료되었습니다.", HttpStatus.BAD_REQUEST),
-    AUDIO_ACCESS_POLICY_INVALID("오디오 접근 정책이 유효하지 않습니다.", HttpStatus.BAD_REQUEST);
+    AUDIO_ACCESS_POLICY_INVALID("오디오 접근 정책이 유효하지 않습니다.", HttpStatus.BAD_REQUEST),
+    
+    // 📅 스케줄/일정 관련
+    EVENT_NOT_FOUND("이벤트를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    EVENT_ACCESS_DENIED("이벤트에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    EVENT_ALREADY_JOINED("이미 참여 중인 이벤트입니다.", HttpStatus.CONFLICT),
+    EVENT_NOT_RECRUITING("현재 모집 중이 아닌 이벤트입니다.", HttpStatus.BAD_REQUEST),
+    EVENT_FULL("이벤트 정원이 가득찼습니다.", HttpStatus.CONFLICT),
+    EVENT_CREATOR_CANNOT_LEAVE("이벤트 생성자는 나갈 수 없습니다.", HttpStatus.FORBIDDEN),
+    EVENT_ALREADY_LEFT("이미 나간 이벤트입니다.", HttpStatus.CONFLICT),
+    EVENT_NOT_PARTICIPANT("참여하지 않은 이벤트입니다.", HttpStatus.BAD_REQUEST),
+    EVENT_CANNOT_REJOIN("재참여할 수 없는 이벤트입니다.", HttpStatus.BAD_REQUEST),
+    BLOCKED_DATE_OUT_OF_RANGE("날짜가 유효 범위를 벗어났습니다.", HttpStatus.BAD_REQUEST),
+    RECOMMENDATION_CALCULATION_FAILED("추천 계산에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CALENDAR_SYNC_FAILED("캘린더 동기화에 실패했습니다.", HttpStatus.BAD_GATEWAY),
+    INVALID_DATE_RANGE("잘못된 날짜 범위입니다.", HttpStatus.BAD_REQUEST),
+    EVENT_STATUS_CHANGE_NOT_ALLOWED("이벤트 상태를 변경할 수 없습니다.", HttpStatus.BAD_REQUEST),
+    EVENT_MINIMUM_PARTICIPANTS_NOT_MET("최소 참여 인원이 부족합니다.", HttpStatus.BAD_REQUEST);
 
     private final String message;
     private final HttpStatus status;

@@ -1,6 +1,7 @@
 package com.crimecat.backend.schedule.service;
 
 import com.crimecat.backend.config.CacheType;
+import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.schedule.domain.*;
 import com.crimecat.backend.schedule.dto.EventCreateRequest;
 import com.crimecat.backend.schedule.dto.EventResponse;
@@ -66,21 +67,21 @@ public class ScheduleService {
     })
     public void joinEvent(UUID eventId, WebUser currentUser) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+                .orElseThrow(() -> ErrorStatus.EVENT_NOT_FOUND.asServiceException());
 
         if (event.getStatus() != EventStatus.RECRUITING) {
-            throw new IllegalStateException("This event is not recruiting participants.");
+            throw ErrorStatus.EVENT_NOT_RECRUITING.asServiceException();
         }
 
         // Check if user already joined
         if (eventParticipantRepository.existsByEventAndUser(event, currentUser)) {
-            throw new IllegalStateException("You have already joined this event.");
+            throw ErrorStatus.EVENT_ALREADY_JOINED.asServiceException();
         }
 
         // Check participant limit
         int currentParticipants = eventParticipantRepository.countByEvent(event);
         if (event.getMaxParticipants() != null && currentParticipants >= event.getMaxParticipants()) {
-            throw new IllegalStateException("The event is full.");
+            throw ErrorStatus.EVENT_FULL.asServiceException();
         }
 
         EventParticipant participant = EventParticipant.builder()
@@ -124,7 +125,7 @@ public class ScheduleService {
     @Cacheable(value = CacheType.SCHEDULE_EVENT_DETAIL, key = "#eventId.toString()")
     public EventResponse getEvent(UUID eventId) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+                .orElseThrow(() -> ErrorStatus.EVENT_NOT_FOUND.asServiceException());
         return EventResponse.from(event);
     }
 
@@ -181,7 +182,7 @@ public class ScheduleService {
     @Cacheable(value = CacheType.SCHEDULE_AVAILABILITY, key = "#eventId.toString()")
     public List<LocalDateTime[]> calculateAvailability(UUID eventId) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+                .orElseThrow(() -> ErrorStatus.EVENT_NOT_FOUND.asServiceException());
 
         List<EventParticipant> participants = eventParticipantRepository.findByEvent(event);
 
@@ -246,7 +247,7 @@ public class ScheduleService {
     @Cacheable(value = CacheType.SCHEDULE_PARTICIPANTS, key = "#eventId.toString()")
     public List<EventParticipant> getEventParticipants(UUID eventId) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+                .orElseThrow(() -> ErrorStatus.EVENT_NOT_FOUND.asServiceException());
         return eventParticipantRepository.findByEvent(event);
     }
 
@@ -257,7 +258,7 @@ public class ScheduleService {
     @Cacheable(value = CacheType.SCHEDULE_PARTICIPANTS, key = "#eventId.toString() + ':count'")
     public int getEventParticipantCount(UUID eventId) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+                .orElseThrow(() -> ErrorStatus.EVENT_NOT_FOUND.asServiceException());
         return eventParticipantRepository.countByEvent(event);
     }
 
@@ -293,7 +294,7 @@ public class ScheduleService {
     @Cacheable(value = CacheType.SCHEDULE_EVENT_DETAIL, key = "'public:' + #eventId.toString()")
     public PublicEventResponse getPublicEvent(UUID eventId) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+                .orElseThrow(() -> ErrorStatus.EVENT_NOT_FOUND.asServiceException());
         return PublicEventResponse.from(event);
     }
 
@@ -339,5 +340,14 @@ public class ScheduleService {
                 return !eventDate.isBefore(startDate) && !eventDate.isAfter(endDate);
             })
             .collect(Collectors.toList());
+    }
+
+    /**
+     * 이벤트 엔티티 조회 (컨트롤러에서 사용)
+     */
+    @Transactional(readOnly = true)
+    public Event getEventEntity(UUID eventId) {
+        return eventRepository.findById(eventId)
+                .orElseThrow(() -> ErrorStatus.EVENT_NOT_FOUND.asServiceException());
     }
 }
