@@ -101,13 +101,38 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
         );
         break;
       case DateStatus.BUSY:
-        baseClasses.push(
-          'bg-blue-100',
-          'text-blue-700',
-          'border-2',
-          'border-blue-300',
-          'hover:bg-blue-200'
-        );
+        // iCalendar vs Crime-Cat 이벤트에 따른 배경색 구분
+        const hasICalEvent = dateInfo.events.some(event => event.source === 'icalendar');
+        const hasCrimeCatEvent = dateInfo.events.some(event => event.source === 'crime-cat');
+        
+        if (hasICalEvent && hasCrimeCatEvent) {
+          // 둘 다 있는 경우 - 보라색 배경
+          baseClasses.push(
+            'bg-purple-100',
+            'text-purple-700',
+            'border-2',
+            'border-purple-300',
+            'hover:bg-purple-200'
+          );
+        } else if (hasICalEvent) {
+          // iCalendar 이벤트만 - 에메랄드 배경
+          baseClasses.push(
+            'bg-emerald-100',
+            'text-emerald-700',
+            'border-2',
+            'border-emerald-300',
+            'hover:bg-emerald-200'
+          );
+        } else {
+          // Crime-Cat 이벤트만 - 파란색 배경
+          baseClasses.push(
+            'bg-blue-100',
+            'text-blue-700',
+            'border-2',
+            'border-blue-300',
+            'hover:bg-blue-200'
+          );
+        }
         break;
       default:
         baseClasses.push(
@@ -138,7 +163,7 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
   }, [getDateInfo, isDragging, dragStart, dragEnd]);
 
   /**
-   * 날짜 아이콘 렌더링
+   * 날짜 아이콘 렌더링 (이벤트 소스별 구분)
    */
   const renderDateIcon = useCallback((date: Date) => {
     const dateInfo = getDateInfo(date);
@@ -147,17 +172,30 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
       case DateStatus.BLOCKED:
         return <Ban className="w-3 h-3 absolute top-0.5 right-0.5 text-red-500" />;
       case DateStatus.BUSY:
-        return <Clock className="w-3 h-3 absolute top-0.5 right-0.5 text-blue-500" />;
+        // iCalendar vs Crime-Cat 이벤트 구분
+        const hasICalEvent = dateInfo.events.some(event => event.source === 'icalendar');
+        const hasCrimeCatEvent = dateInfo.events.some(event => event.source === 'crime-cat');
+        
+        if (hasICalEvent && hasCrimeCatEvent) {
+          // 둘 다 있는 경우 - 보라색 시계
+          return <Clock className="w-3 h-3 absolute top-0.5 right-0.5 text-purple-500" />;
+        } else if (hasICalEvent) {
+          // iCalendar 이벤트만 - 초록색 달력
+          return <CalendarIcon className="w-3 h-3 absolute top-0.5 right-0.5 text-emerald-500" />;
+        } else {
+          // Crime-Cat 이벤트만 - 파란색 시계
+          return <Clock className="w-3 h-3 absolute top-0.5 right-0.5 text-blue-500" />;
+        }
       default:
         return <Check className="w-3 h-3 absolute top-0.5 right-0.5 text-green-500" />;
     }
   }, [getDateInfo]);
 
   /**
-   * 범례 컴포넌트
+   * 범례 컴포넌트 (이벤트 소스별 구분 포함)
    */
   const Legend = () => (
-    <div className="flex flex-wrap gap-4 p-4 bg-muted/30 rounded-lg">
+    <div className="flex flex-wrap gap-3 p-4 bg-muted/30 rounded-lg">
       <div className="flex items-center gap-2">
         <div className="w-4 h-4 bg-green-100 border-2 border-green-200 rounded"></div>
         <Check className="w-3 h-3 text-green-500" />
@@ -169,9 +207,19 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
         <span className="text-sm">비활성화됨</span>
       </div>
       <div className="flex items-center gap-2">
+        <div className="w-4 h-4 bg-emerald-100 border-2 border-emerald-300 rounded"></div>
+        <CalendarIcon className="w-3 h-3 text-emerald-500" />
+        <span className="text-sm">개인 일정 (.ics)</span>
+      </div>
+      <div className="flex items-center gap-2">
         <div className="w-4 h-4 bg-blue-100 border-2 border-blue-300 rounded"></div>
         <Clock className="w-3 h-3 text-blue-500" />
-        <span className="text-sm">기존 일정</span>
+        <span className="text-sm">Crime-Cat 일정</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="w-4 h-4 bg-purple-100 border-2 border-purple-300 rounded"></div>
+        <Clock className="w-3 h-3 text-purple-500" />
+        <span className="text-sm">복합 일정</span>
       </div>
     </div>
   );

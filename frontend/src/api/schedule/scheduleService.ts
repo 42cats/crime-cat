@@ -190,6 +190,28 @@ export class ScheduleService {
   }
 
   /**
+   * 날짜 범위 일괄 활성화 (드래그 선택)
+   */
+  async unblockDateRange(
+    startDate: string,
+    endDate: string
+  ): Promise<{ message: string; startDate: string; endDate: string }> {
+    const params = new URLSearchParams({ startDate, endDate });
+    const url = `${this.baseURL}/my-calendar/unblock-range?${params.toString()}`;
+    
+    apiDebugLog('POST', url, `Starting unblock range request from ${startDate} to ${endDate}`);
+    
+    try {
+      const result = await apiClient.post<{ message: string; startDate: string; endDate: string }>(url);
+      apiDebugLog('POST', url, `Successfully unblocked range ${startDate} to ${endDate}`, result);
+      return result;
+    } catch (error) {
+      apiDebugLog('POST', url, `Failed to unblock range ${startDate} to ${endDate}`, error);
+      throw error;
+    }
+  }
+
+  /**
    * 비활성화된 날짜 목록 조회
    */
   async getBlockedDates(startDate: string, endDate: string): Promise<string[]> {

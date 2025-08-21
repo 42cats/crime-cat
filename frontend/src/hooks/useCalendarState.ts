@@ -22,6 +22,7 @@ export interface CalendarEvent {
   allDay: boolean;
   category?: string;
   participantCount?: number;
+  source?: 'icalendar' | 'crime-cat'; // 이벤트 소스 구분
 }
 
 export enum DateStatus {
@@ -241,6 +242,37 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     },
   });
 
+  // 날짜 범위 활성화 Mutation
+  const unblockDateRangeMutation = useMutation({
+    mutationFn: async ({ startDate, endDate }: { startDate: string; endDate: string }) => {
+      debugLog('MUTATION_UNBLOCK_RANGE', `Starting unblock range mutation from ${startDate} to ${endDate}`);
+      try {
+        const result = await scheduleService.unblockDateRange(startDate, endDate);
+        debugLog('MUTATION_UNBLOCK_RANGE', `Successfully unblocked range ${startDate} to ${endDate}`, result);
+        return result;
+      } catch (error) {
+        debugLog('MUTATION_UNBLOCK_RANGE', `Failed to unblock range ${startDate} to ${endDate}`, error);
+        throw error;
+      }
+    },
+    onSuccess: (_, { startDate, endDate }) => {
+      debugLog('MUTATION_UNBLOCK_RANGE', `Unblock range mutation success from ${startDate} to ${endDate}, invalidating queries`);
+      queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
+      toast({
+        title: '날짜 범위 활성화 완료',
+        description: `${startDate} ~ ${endDate} 범위가 추천에 포함됩니다.`,
+      });
+    },
+    onError: (error: any, { startDate, endDate }) => {
+      debugLog('MUTATION_UNBLOCK_RANGE', `Unblock range mutation error from ${startDate} to ${endDate}`, error);
+      toast({
+        title: '범위 활성화 실패',
+        description: error?.response?.data?.message || '날짜 범위 활성화 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   /**
    * 날짜 정보 계산
    */
@@ -364,12 +396,44 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       debugLog('DRAG_HANDLER', `Single date drag, using click handler for ${startDateStr}`);
       handleDateClick(startDate);
     } else {
-      // 범위 선택인 경우 범위 비활성화
-      debugLog('DRAG_HANDLER', `Range drag, blocking range from ${startDateStr} to ${endDateStr}`);
-      blockDateRangeMutation.mutate({
-        startDate: startDateStr,
-        endDate: endDateStr,
+      // 범위 선택인 경우 - 범위 내 날짜들의 상태를 확인하고 토글
+      const rangeDates: Date[] = [];
+      let currentDate = new Date(startDate);
+      
+      while (currentDate <= endDate) {
+        rangeDates.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      // 범위 내 비활성화된 날짜와 활성화된 날짜 분석
+      const blockedDatesInRange = rangeDates.filter(date => {
+        const dateInfo = getDateInfo(date);
+        return dateInfo.blockedByUser;
       });
+      
+      const activeDatesInRange = rangeDates.filter(date => {
+        const dateInfo = getDateInfo(date);
+        return !dateInfo.blockedByUser && date >= new Date(new Date().setHours(0, 0, 0, 0)); // 과거 날짜 제외
+      });
+      
+      debugLog('DRAG_HANDLER', `Range analysis - Blocked: ${blockedDatesInRange.length}, Active: ${activeDatesInRange.length}`);
+      
+      // 간단한 토글 로직: 범위 내에 비활성화된 날짜가 하나라도 있으면 전체 활성화, 모두 활성화되어 있으면 전체 비활성화
+      if (blockedDatesInRange.length > 0) {
+        // 비활성화된 날짜가 있음 -> 전체 활성화 (반대로 바꾸기)
+        debugLog('DRAG_HANDLER', `Found ${blockedDatesInRange.length} blocked dates, activating entire range from ${startDateStr} to ${endDateStr}`);
+        unblockDateRangeMutation.mutate({
+          startDate: startDateStr,
+          endDate: endDateStr,
+        });
+      } else {
+        // 모든 날짜가 활성화되어 있음 -> 전체 비활성화 (반대로 바꾸기)
+        debugLog('DRAG_HANDLER', `All dates active, blocking entire range from ${startDateStr} to ${endDateStr}`);
+        blockDateRangeMutation.mutate({
+          startDate: startDateStr,
+          endDate: endDateStr,
+        });
+      }
     }
     
     setIsDragging(false);
@@ -478,5 +542,6 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     isBlockingDate: blockDateMutation.isPending,
     isUnblockingDate: unblockDateMutation.isPending,
     isBlockingRange: blockDateRangeMutation.isPending,
+    isUnblockingRange: unblockDateRangeMutation.isPending,
   };
 };

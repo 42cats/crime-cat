@@ -157,6 +157,35 @@ public class ScheduleController {
     }
 
     /**
+     * 날짜 범위 일괄 활성화 (드래그 선택)
+     */
+    @PostMapping("/my-calendar/unblock-range")
+    public ResponseEntity<?> unblockDateRange(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                                              @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                                              @AuthenticationPrincipal WebUser currentUser) {
+        log.info("🌐 [API_UNBLOCK_RANGE] POST /my-calendar/unblock-range user={} startDate={} endDate={}", 
+            currentUser.getId(), startDate, endDate);
+        
+        try {
+            AuthenticationUtil.validateCalendarAccess(currentUser.getId());
+            log.debug("🌐 [API_UNBLOCK_RANGE] Authentication validated for user={}", currentUser.getId());
+            
+            blockedDateService.unblockDateRange(currentUser.getId(), startDate, endDate);
+            
+            Map<String, Object> response = Map.of("message", "날짜 범위가 활성화되었습니다", 
+                                               "startDate", startDate, "endDate", endDate);
+            log.info("🌐 [API_UNBLOCK_RANGE] Successfully unblocked range {} to {} for user {}, response={}", 
+                startDate, endDate, currentUser.getId(), response);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("🌐 [API_UNBLOCK_RANGE] Failed to unblock range {} to {} for user {}: {}", 
+                startDate, endDate, currentUser.getId(), e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    /**
      * 비활성화된 날짜 목록 조회
      */
     @GetMapping("/my-calendar/blocked-dates")
@@ -199,14 +228,37 @@ public class ScheduleController {
             AuthenticationUtil.validateCalendarAccess(currentUser.getId());
             log.debug("🌐 [API_GET_EVENTS] Authentication validated for user={}", currentUser.getId());
             
-            List<Map<String, Object>> events = scheduleService.getUserEventsInRange(currentUser.getId(), startDate, endDate)
+            List<Map<String, Object>> rawEvents = scheduleService.getUserEventsInRange(currentUser.getId(), startDate, endDate);
+            log.info("🔍 [MAP_DEBUG] Raw events count from service: {}", rawEvents.size());
+            
+            List<Map<String, Object>> events = rawEvents
                 .stream()
                 .map(event -> {
+                    // 🔍 Map 구조 디버깅 로그
+                    log.debug("🔍 [MAP_DEBUG] Event map keys: {}", event.keySet());
+                    log.debug("🔍 [MAP_DEBUG] Event map values: {}", event);
+                    
+                    // 각 키의 존재 여부와 값 확인
+                    log.debug("🔍 [MAP_DEBUG] 'id' key exists: {}, value: {}", 
+                        event.containsKey("id"), event.get("id"));
+                    log.debug("🔍 [MAP_DEBUG] 'title' key exists: {}, value: {}", 
+                        event.containsKey("title"), event.get("title"));
+                    log.debug("🔍 [MAP_DEBUG] 'Title' key exists: {}, value: {}", 
+                        event.containsKey("Title"), event.get("Title"));
+                    log.debug("🔍 [MAP_DEBUG] 'startTime' key exists: {}, value: {}", 
+                        event.containsKey("startTime"), event.get("startTime"));
+                    log.debug("🔍 [MAP_DEBUG] 'StartTime' key exists: {}, value: {}", 
+                        event.containsKey("StartTime"), event.get("StartTime"));
+                    log.debug("🔍 [MAP_DEBUG] 'endTime' key exists: {}, value: {}", 
+                        event.containsKey("endTime"), event.get("endTime"));
+                    log.debug("🔍 [MAP_DEBUG] 'EndTime' key exists: {}, value: {}", 
+                        event.containsKey("EndTime"), event.get("EndTime"));
+                    
                     Map<String, Object> eventMap = new java.util.HashMap<>();
-                    eventMap.put("id", event.getId().toString());
-                    eventMap.put("title", event.getTitle());
-                    eventMap.put("startTime", event.getStartTime().toString());
-                    eventMap.put("endTime", event.getEndTime().toString());
+                    eventMap.put("id", event.get("id").toString());
+                    eventMap.put("title", event.get("title"));
+                    eventMap.put("startTime", event.get("startTime").toString());
+                    eventMap.put("endTime", event.get("endTime").toString());
                     eventMap.put("allDay", false); // iCalendar 이벤트는 시간이 지정되어 있음
                     return eventMap;
                 })

@@ -147,7 +147,7 @@ public class OptimizedRecommendationService {
         Map<UUID, List<Event>> userExistingEvents = userIds.parallelStream()
             .collect(Collectors.toConcurrentMap(
                 userId -> userId,
-                userId -> scheduleService.getUserEventsInRange(userId, startDate, endDate)
+                userId -> scheduleService.getUserCrimeCatEventsInRange(userId, startDate, endDate)
             ));
         
         // 사용 가능한 시간대 계산

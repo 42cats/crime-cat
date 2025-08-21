@@ -45,6 +45,21 @@ export class BlockedDateService {
   }
 
   /**
+   * 날짜 범위 일괄 활성화 (드래그 선택)
+   * @param startDate 시작 날짜 (YYYY-MM-DD)
+   * @param endDate 종료 날짜 (YYYY-MM-DD)
+   */
+  async unblockDateRange(
+    startDate: string,
+    endDate: string
+  ): Promise<{ message: string; startDate: string; endDate: string }> {
+    const params = new URLSearchParams({ startDate, endDate });
+    return await apiClient.post<{ message: string; startDate: string; endDate: string }>(
+      `${this.baseURL}/unblock-range?${params.toString()}`
+    );
+  }
+
+  /**
    * 비활성화된 날짜 목록 조회
    * @param startDate 조회 시작 날짜 (YYYY-MM-DD)
    * @param endDate 조회 종료 날짜 (YYYY-MM-DD)

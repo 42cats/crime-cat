@@ -12,6 +12,8 @@ import com.crimecat.backend.schedule.repository.EventRepository;
 import com.crimecat.backend.schedule.repository.UserCalendarRepository;
 import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.fortuna.ical4j.data.CalendarBuilder;
 import net.fortuna.ical4j.model.Calendar;
 import net.fortuna.ical4j.model.Component;
@@ -29,17 +31,16 @@ import java.io.StringReader;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class ScheduleService {
+    
+    private static final Logger log = LoggerFactory.getLogger(ScheduleService.class);
 
     private final EventRepository eventRepository;
     private final EventParticipantRepository eventParticipantRepository;
@@ -143,11 +144,102 @@ public class ScheduleService {
         userCalendarRepository.save(calendar);
     }
 
-    // Helper method to fetch and parse iCal data
+    // Helper method to fetch and parse iCal data with event details
+    @Cacheable(value = CacheType.SCHEDULE_ICAL_PARSED, key = "#icalUrl.hashCode() + '_detailed'")
+    private List<Map<String, Object>> fetchAndParseIcalWithDetails(String icalUrl) {
+        log.info("🔍 [ICAL_DEBUG] Starting to fetch iCalendar from URL: {}", icalUrl);
+        
+        WebClient webClient = webClientBuilder.build();
+        
+        String icalContent;
+        try {
+            // Create URI directly to avoid double encoding issues
+            java.net.URI uri = java.net.URI.create(icalUrl);
+            log.debug("🔍 [ICAL_DEBUG] Created URI: {}", uri.toString());
+            
+            icalContent = webClient.get().uri(uri).retrieve().bodyToMono(String.class).block();
+        } catch (Exception e) {
+            log.error("🔍 [ICAL_DEBUG] Failed to fetch iCalendar from URL: {} - {}", icalUrl, e.getMessage(), e);
+            return new ArrayList<>();
+        }
+
+        List<Map<String, Object>> events = new ArrayList<>();
+        if (icalContent == null || icalContent.isEmpty()) {
+            log.warn("🔍 [ICAL_DEBUG] iCalendar content is null or empty");
+            return events;
+        }
+        
+        log.info("🔍 [ICAL_DEBUG] iCalendar content length: {}", icalContent.length());
+        log.debug("🔍 [ICAL_DEBUG] First 500 characters: {}", icalContent.substring(0, Math.min(500, icalContent.length())));
+
+        try {
+            CalendarBuilder builder = new CalendarBuilder();
+            Calendar calendar = builder.build(new StringReader(icalContent));
+
+            log.info("🔍 [ICAL_DEBUG] Starting to parse VEVENT components");
+            int eventCount = 0;
+            int currentYearEvents = 0;
+            
+            for (Object component : calendar.getComponents(Component.VEVENT)) {
+                VEvent event = (VEvent) component;
+                DtStart dtStart = event.getStartDate();
+                DtEnd dtEnd = event.getEndDate();
+                eventCount++;
+
+                if (dtStart != null && dtEnd != null) {
+                    LocalDateTime start = dtStart.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+                    LocalDateTime end = dtEnd.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+                    
+                    // 현재 연도 이벤트인지 확인
+                    if (start.getYear() == LocalDateTime.now().getYear()) {
+                        currentYearEvents++;
+                        log.info("🔍 [ICAL_DEBUG] Found {} event: {} on {}", 
+                            LocalDateTime.now().getYear(),
+                            event.getSummary() != null ? event.getSummary().getValue() : "No title",
+                            start.toLocalDate());
+                    }
+                    
+                    Map<String, Object> eventDetails = new HashMap<>();
+                    eventDetails.put("startTime", start);
+                    eventDetails.put("endTime", end);
+                    eventDetails.put("title", event.getSummary() != null ? event.getSummary().getValue() : "개인 일정");
+                    eventDetails.put("description", event.getDescription() != null ? event.getDescription().getValue() : null);
+                    
+                    events.add(eventDetails);
+                    
+                    // 처음 5개 이벤트의 상세 정보 로그
+                    if (eventCount <= 5) {
+                        log.debug("🔍 [ICAL_DEBUG] Event {}: title={}, start={}, end={}", 
+                            eventCount,
+                            event.getSummary() != null ? event.getSummary().getValue() : "No title",
+                            start, end);
+                    }
+                }
+            }
+            
+            log.info("🔍 [ICAL_DEBUG] Parsed {} total events, {} events in {}", 
+                eventCount, currentYearEvents, LocalDateTime.now().getYear());
+        } catch (Exception e) {
+            log.error("Failed to parse iCalendar from URL: {} - {}", icalUrl, e.getMessage(), e);
+            // Return empty list to gracefully handle parsing failures
+        }
+        return events;
+    }
+
+    // Helper method to fetch and parse iCal data (for backward compatibility)
     @Cacheable(value = CacheType.SCHEDULE_ICAL_PARSED, key = "#icalUrl.hashCode()")
     private List<LocalDateTime[]> fetchAndParseIcal(String icalUrl) {
         WebClient webClient = webClientBuilder.build();
-        String icalContent = webClient.get().uri(icalUrl).retrieve().bodyToMono(String.class).block();
+        
+        String icalContent;
+        try {
+            // Create URI directly to avoid double encoding issues
+            java.net.URI uri = java.net.URI.create(icalUrl);
+            icalContent = webClient.get().uri(uri).retrieve().bodyToMono(String.class).block();
+        } catch (Exception e) {
+            log.error("Failed to fetch iCalendar from URL: {} - {}", icalUrl, e.getMessage(), e);
+            return new ArrayList<>();
+        }
 
         List<LocalDateTime[]> busyTimes = new ArrayList<>();
         if (icalContent == null || icalContent.isEmpty()) {
@@ -170,9 +262,7 @@ public class ScheduleService {
                 }
             }
         } catch (Exception e) {
-            // Log error with proper logging framework
-            // TODO: Replace with proper logger
-            System.err.println("Failed to parse iCalendar from URL: " + icalUrl + " - " + e.getMessage());
+            log.error("Failed to parse iCalendar from URL: {} - {}", icalUrl, e.getMessage(), e);
             // Return empty list to gracefully handle parsing failures
         }
         return busyTimes;
@@ -322,11 +412,11 @@ public class ScheduleService {
     }
 
     /**
-     * 특정 사용자의 특정 기간 내 이벤트 조회 (추천 시스템용)
+     * 특정 사용자의 특정 기간 내 Crime-Cat 이벤트 조회 (추천 시스템용)
      * - 시작 시간과 종료 시간이 있는 확정된 일정만 반환
      */
     @Transactional(readOnly = true)
-    public List<Event> getUserEventsInRange(UUID userId, LocalDate startDate, LocalDate endDate) {
+    public List<Event> getUserCrimeCatEventsInRange(UUID userId, LocalDate startDate, LocalDate endDate) {
         WebUser user = WebUser.builder().id(userId).build(); // 프록시 객체 생성
         
         // 사용자가 참여 중인 활성 이벤트 중에서 특정 기간 내에 있는 이벤트 조회
@@ -340,6 +430,92 @@ public class ScheduleService {
                 return !eventDate.isBefore(startDate) && !eventDate.isAfter(endDate);
             })
             .collect(Collectors.toList());
+    }
+
+    /**
+     * 특정 사용자의 특정 기간 내 iCalendar 이벤트 조회 (캘린더 표시용)
+     * - 외부 .ics 파일에서 파싱된 개인 일정 반환
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getUserEventsInRange(UUID userId, LocalDate startDate, LocalDate endDate) {
+        WebUser user = WebUser.builder().id(userId).build();
+        
+        // 사용자의 iCalendar URL 조회
+        Optional<UserCalendar> userCalendarOpt = userCalendarRepository.findByUser(user);
+        if (userCalendarOpt.isEmpty() || userCalendarOpt.get().getIcalUrl() == null) {
+            return Collections.emptyList();
+        }
+        
+        String icalUrl = userCalendarOpt.get().getIcalUrl();
+        
+        try {
+            // iCalendar 데이터 파싱 (상세 정보 포함)
+            List<Map<String, Object>> icalEvents = fetchAndParseIcalWithDetails(icalUrl);
+            
+            // 지정된 날짜 범위 내의 이벤트만 필터링하고 API 응답 형태로 변환
+            LocalDateTime rangeStart = startDate.atStartOfDay();
+            LocalDateTime rangeEnd = endDate.atTime(23, 59, 59);
+            
+            log.info("🔍 [ICAL_FILTER] Filtering events for range: {} to {}", rangeStart, rangeEnd);
+            log.info("🔍 [ICAL_FILTER] Total parsed events before filtering: {}", icalEvents.size());
+            
+            AtomicInteger filteredEventCount = new AtomicInteger(0);
+            AtomicInteger outOfRangeCount = new AtomicInteger(0);
+            
+            List<Map<String, Object>> result = icalEvents.stream()
+                .filter(eventDetails -> {
+                    LocalDateTime eventStart = (LocalDateTime) eventDetails.get("startTime");
+                    LocalDateTime eventEnd = (LocalDateTime) eventDetails.get("endTime");
+                    
+                    // 이벤트가 범위와 겹치는지 확인
+                    boolean isInRange = eventStart.isBefore(rangeEnd) && eventEnd.isAfter(rangeStart);
+                    
+                    if (isInRange) {
+                        int count = filteredEventCount.incrementAndGet();
+                        log.debug("🔍 [ICAL_FILTER] Event {} in range: {} from {} to {}", 
+                            count,
+                            (eventDetails.get("title") != null ? eventDetails.get("title") : "No title"),
+                            eventStart, eventEnd);
+                    } else {
+                        int count = outOfRangeCount.incrementAndGet();
+                        if (count <= 3) { // 처음 3개만 로깅
+                            log.debug("🔍 [ICAL_FILTER] Event out of range: {} from {} to {}", 
+                                (eventDetails.get("title") != null ? eventDetails.get("title") : "No title"),
+                                eventStart, eventEnd);
+                        }
+                    }
+                    
+                    return isInRange;
+                })
+                .map(eventDetails -> {
+                    LocalDateTime startTime = (LocalDateTime) eventDetails.get("startTime");
+                    LocalDateTime endTime = (LocalDateTime) eventDetails.get("endTime");
+                    String title = (String) eventDetails.get("title");
+                    
+                    Map<String, Object> eventMap = new HashMap<>();
+                    eventMap.put("id", "ical_" + startTime.toString().hashCode()); // 고유 ID 생성
+                    eventMap.put("title", title != null ? title : "개인 일정");
+                    eventMap.put("startTime", startTime.toString());
+                    eventMap.put("endTime", endTime.toString());
+                    eventMap.put("allDay", false);
+                    eventMap.put("source", "icalendar"); // 이벤트 소스 구분
+                    eventMap.put("category", "personal"); // 개인 일정 카테고리
+                    return eventMap;
+                })
+                .collect(Collectors.toList());
+                
+            // 최종 필터링 결과 요약
+            log.info("🔍 [ICAL_SUMMARY] Final filtering summary:");
+            log.info("🔍 [ICAL_SUMMARY] - Events in range: {}", filteredEventCount.get());
+            log.info("🔍 [ICAL_SUMMARY] - Events out of range: {}", outOfRangeCount.get());
+            log.info("🔍 [ICAL_SUMMARY] - Total events processed: {}", (filteredEventCount.get() + outOfRangeCount.get()));
+            
+            return result;
+                
+        } catch (Exception e) {
+            log.error("Failed to fetch iCalendar events for user {}: {}", userId, e.getMessage(), e);
+            return Collections.emptyList();
+        }
     }
 
     /**

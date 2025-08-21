@@ -163,6 +163,52 @@ public class OptimizedBlockedDateService {
     }
 
     /**
+     * 날짜 범위 일괄 활성화 (드래그 선택)
+     */
+    @Caching(evict = {
+        @CacheEvict(value = CacheType.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()"),
+        @CacheEvict(value = CacheType.SCHEDULE_AVAILABILITY, allEntries = true),
+        @CacheEvict(value = CacheType.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
+    })
+    public void unblockDateRange(UUID userId, LocalDate startDate, LocalDate endDate) {
+        log.info("🔓📅 [UNBLOCK_RANGE] Starting unblockDateRange for user={} from={} to={}", userId, startDate, endDate);
+        
+        if (startDate.isAfter(endDate)) {
+            log.warn("🔓📅 [UNBLOCK_RANGE] Start date {} is after end date {}, swapping", startDate, endDate);
+            LocalDate temp = startDate;
+            startDate = endDate;
+            endDate = temp;
+        }
+        
+        LocalDate current = startDate;
+        int unblockedCount = 0;
+        int skippedCount = 0;
+        
+        while (!current.isAfter(endDate)) {
+            try {
+                log.debug("🔓📅 [UNBLOCK_RANGE] Processing date {} ({})", current, unblockedCount + 1);
+                unblockDate(userId, current);
+                unblockedCount++;
+            } catch (Exception e) {
+                log.error("🔓📅 [UNBLOCK_RANGE] Failed to unblock date {} for user {}: {}", current, userId, e.getMessage());
+                skippedCount++;
+            }
+            
+            current = current.plusDays(1);
+            
+            // 안전장치: 너무 많은 날짜를 한번에 언블록하는 것을 방지
+            if (unblockedCount + skippedCount > 90) {
+                log.warn("🔓📅 [UNBLOCK_RANGE] Too many dates to unblock in range {} to {}, stopping at {} (processed={})", 
+                    startDate, endDate, current, unblockedCount + skippedCount);
+                break;
+            }
+        }
+        
+        log.info("🔓📅 [UNBLOCK_RANGE] Completed: unblocked={} skipped={} dates from {} to {} for user {}", 
+            unblockedCount, skippedCount, startDate, endDate, userId);
+    }
+
+    /**
      * 특정 날짜를 활성화 (O(1))
      */
     @Caching(evict = {
