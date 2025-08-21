@@ -72,4 +72,44 @@ public class Event {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    /**
+     * 비밀 일정 여부
+     */
+    @Column(name = "is_secret", nullable = false)
+    @Builder.Default
+    private Boolean isSecret = false;
+
+    /**
+     * BCrypt 해시된 비밀번호 (비밀 일정인 경우만 사용)
+     */
+    @Column(name = "secret_password")
+    private String secretPassword;
+
+    /**
+     * 비밀번호 힌트 (선택사항)
+     */
+    @Column(name = "password_hint", length = 500)
+    private String passwordHint;
+
+    /**
+     * 비밀 일정인지 확인
+     */
+    public boolean isSecretEvent() {
+        return Boolean.TRUE.equals(isSecret);
+    }
+
+    /**
+     * 비밀번호가 설정되어 있는지 확인
+     */
+    public boolean hasPassword() {
+        return secretPassword != null && !secretPassword.isEmpty();
+    }
+
+    /**
+     * 비밀번호 힌트가 있는지 확인
+     */
+    public boolean hasPasswordHint() {
+        return passwordHint != null && !passwordHint.trim().isEmpty();
+    }
 }

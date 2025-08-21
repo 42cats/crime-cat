@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, Calendar, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CalendarEvent {
   id: string;
@@ -35,6 +36,10 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
   maxVisible = 3,
   onEventClick,
 }) => {
+  const isMobile = useIsMobile();
+  
+  // 모바일에서는 표시할 이벤트 수를 줄임
+  const responsiveMaxVisible = isMobile ? Math.min(maxVisible, 2) : maxVisible;
   // 해당 날짜의 이벤트만 필터링
   const dayEvents = events.filter(event => {
     const eventDate = new Date(event.startTime);
@@ -47,8 +52,8 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
   );
 
   // 표시할 이벤트와 숨겨진 이벤트 분리
-  const visibleEvents = sortedEvents.slice(0, maxVisible);
-  const hiddenEventsCount = sortedEvents.length - maxVisible;
+  const visibleEvents = sortedEvents.slice(0, responsiveMaxVisible);
+  const hiddenEventsCount = sortedEvents.length - responsiveMaxVisible;
 
   if (sortedEvents.length === 0) {
     return null;
@@ -95,9 +100,11 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
     <div
       key={event.id}
       className={cn(
-        'text-xs p-1.5 rounded-md border cursor-pointer',
-        'hover:shadow-sm transition-shadow duration-200',
-        'truncate',
+        'cursor-pointer transition-shadow duration-200 truncate',
+        'hover:shadow-sm',
+        isMobile 
+          ? 'text-xs p-1 rounded border' 
+          : 'text-xs p-1.5 rounded-md border',
         getCategoryColor(event.category)
       )}
       onClick={(e) => {
@@ -106,9 +113,17 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
       }}
       title={`${event.title} - ${formatTime(event.startTime)} ~ ${formatTime(event.endTime)}`}
     >
-      <div className="flex items-center justify-between gap-1">
-        <span className="truncate font-medium">{event.title}</span>
-        {event.participantCount && event.participantCount > 1 && (
+      <div className={cn(
+        "flex items-center gap-1",
+        isMobile ? "justify-start" : "justify-between"
+      )}>
+        <span className={cn(
+          "truncate font-medium",
+          isMobile ? "text-xs" : "text-xs"
+        )}>
+          {event.title}
+        </span>
+        {event.participantCount && event.participantCount > 1 && !isMobile && (
           <div className="flex items-center gap-0.5 text-xs opacity-70">
             <Users className="w-3 h-3" />
             <span>{event.participantCount}</span>
@@ -116,7 +131,7 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
         )}
       </div>
       
-      {!event.allDay && (
+      {!event.allDay && !isMobile && (
         <div className="flex items-center gap-1 mt-0.5 opacity-70">
           <Clock className="w-2.5 h-2.5" />
           <span className="text-xs">
@@ -131,17 +146,24 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
     <div className={cn('absolute inset-0 z-10 pointer-events-none', className)}>
       <div className="relative w-full h-full">
         {/* 이벤트 목록 */}
-        <div className="space-y-0.5 p-1 pointer-events-auto">
+        <div className={cn(
+          "pointer-events-auto",
+          isMobile 
+            ? "space-y-0.5 p-0.5" 
+            : "space-y-0.5 p-1"
+        )}>
           {visibleEvents.map((event, index) => renderEventItem(event, index))}
           
           {/* 더보기 표시 */}
           {hiddenEventsCount > 0 && (
             <div
               className={cn(
-                'text-xs p-1 rounded-md border',
                 'bg-muted text-muted-foreground border-muted-foreground/20',
                 'cursor-pointer hover:bg-muted/80 transition-colors',
-                'text-center font-medium'
+                'text-center font-medium',
+                isMobile 
+                  ? 'text-xs p-0.5 rounded border'
+                  : 'text-xs p-1 rounded-md border'
               )}
               onClick={(e) => {
                 e.stopPropagation();
@@ -155,7 +177,7 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
         </div>
 
         {/* 이벤트 개수 인디케이터 */}
-        {sortedEvents.length > 0 && (
+        {sortedEvents.length > 0 && !isMobile && (
           <div className="absolute top-0.5 right-0.5">
             <Badge 
               variant="secondary" 
