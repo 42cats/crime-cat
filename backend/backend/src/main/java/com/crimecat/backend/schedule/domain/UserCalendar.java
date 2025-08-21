@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -18,8 +21,9 @@ import java.util.UUID;
 public class UserCalendar {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(columnDefinition = "BINARY(16)")
+    @UuidGenerator
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(name = "id", columnDefinition = "BINARY(16)")
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY)

@@ -78,26 +78,42 @@ public class OptimizedBlockedDateService {
         @CacheEvict(value = CacheType.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
     })
     public void blockDate(UUID userId, LocalDate date) {
+        log.info("🔒 [BLOCK] Starting blockDate for user={} date={}", userId, date);
+        
         LocalDate periodStart = getCurrentPeriodStart();
         int bitIndex = dateToBitIndex(date, periodStart);
         
+        log.debug("🔒 [BLOCK] Calculated periodStart={} bitIndex={}", periodStart, bitIndex);
+        
         if (bitIndex < 0 || bitIndex >= PERIOD_DAYS) {
-            log.warn("Date {} is out of current period range ({}), ignoring block request", date, periodStart);
+            log.warn("🔒 [BLOCK] Date {} is out of current period range ({}), ignoring block request", date, periodStart);
             return; // 범위 밖 날짜는 무시
         }
         
-        UserBlockedPeriod period = getOrCreatePeriod(userId, periodStart);
-        byte[] bitmap = period.getBlockedDaysBitmap();
-        
-        // 특정 비트 설정 (1 = 비활성화)
-        int byteIndex = bitIndex / 8;
-        int bitOffset = bitIndex % 8;
-        bitmap[byteIndex] |= (1 << bitOffset);
-        
-        period.setBlockedDaysBitmap(bitmap);
-        userBlockedPeriodRepository.save(period);
-        
-        log.debug("Blocked date {} for user {} at bit index {}", date, userId, bitIndex);
+        try {
+            UserBlockedPeriod period = getOrCreatePeriod(userId, periodStart);
+            log.debug("🔒 [BLOCK] Retrieved/created period for user={} periodId={}", userId, period.getId());
+            
+            byte[] bitmap = period.getBlockedDaysBitmap();
+            
+            // 특정 비트 설정 (1 = 비활성화)
+            int byteIndex = bitIndex / 8;
+            int bitOffset = bitIndex % 8;
+            
+            boolean wasAlreadyBlocked = (bitmap[byteIndex] & (1 << bitOffset)) != 0;
+            bitmap[byteIndex] |= (1 << bitOffset);
+            
+            period.setBlockedDaysBitmap(bitmap);
+            UserBlockedPeriod savedPeriod = userBlockedPeriodRepository.save(period);
+            
+            log.info("🔒 [BLOCK] Successfully blocked date {} for user {} at bit index {} (wasAlreadyBlocked={})", 
+                date, userId, bitIndex, wasAlreadyBlocked);
+            log.debug("🔒 [BLOCK] Saved period ID={} with bitmap length={}", savedPeriod.getId(), bitmap.length);
+            
+        } catch (Exception e) {
+            log.error("🔒 [BLOCK] Failed to block date {} for user {}: {}", date, userId, e.getMessage(), e);
+            throw e;
+        }
     }
 
     /**
@@ -109,8 +125,10 @@ public class OptimizedBlockedDateService {
         @CacheEvict(value = CacheType.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
     })
     public void blockDateRange(UUID userId, LocalDate startDate, LocalDate endDate) {
+        log.info("🔒📅 [BLOCK_RANGE] Starting blockDateRange for user={} from={} to={}", userId, startDate, endDate);
+        
         if (startDate.isAfter(endDate)) {
-            log.warn("Start date {} is after end date {}, swapping", startDate, endDate);
+            log.warn("🔒📅 [BLOCK_RANGE] Start date {} is after end date {}, swapping", startDate, endDate);
             LocalDate temp = startDate;
             startDate = endDate;
             endDate = temp;
@@ -118,20 +136,30 @@ public class OptimizedBlockedDateService {
         
         LocalDate current = startDate;
         int blockedCount = 0;
+        int skippedCount = 0;
         
         while (!current.isAfter(endDate)) {
-            blockDate(userId, current);
+            try {
+                log.debug("🔒📅 [BLOCK_RANGE] Processing date {} ({})", current, blockedCount + 1);
+                blockDate(userId, current);
+                blockedCount++;
+            } catch (Exception e) {
+                log.error("🔒📅 [BLOCK_RANGE] Failed to block date {} for user {}: {}", current, userId, e.getMessage());
+                skippedCount++;
+            }
+            
             current = current.plusDays(1);
-            blockedCount++;
             
             // 안전장치: 너무 많은 날짜를 한번에 블록하는 것을 방지
-            if (blockedCount > 90) {
-                log.warn("Too many dates to block in range {} to {}, stopping at {}", startDate, endDate, current);
+            if (blockedCount + skippedCount > 90) {
+                log.warn("🔒📅 [BLOCK_RANGE] Too many dates to block in range {} to {}, stopping at {} (processed={})", 
+                    startDate, endDate, current, blockedCount + skippedCount);
                 break;
             }
         }
         
-        log.info("Blocked {} dates from {} to {} for user {}", blockedCount, startDate, endDate, userId);
+        log.info("🔒📅 [BLOCK_RANGE] Completed: blocked={} skipped={} dates from {} to {} for user {}", 
+            blockedCount, skippedCount, startDate, endDate, userId);
     }
 
     /**
@@ -235,11 +263,18 @@ public class OptimizedBlockedDateService {
      */
     @Transactional(readOnly = true)
     public Set<LocalDate> getUserBlockedDatesInRange(UUID userId, LocalDate startDate, LocalDate endDate) {
+        log.debug("🔍 [QUERY_RANGE] Getting blocked dates for user={} from={} to={}", userId, startDate, endDate);
+        
         Set<LocalDate> allBlockedDates = getUserBlockedDates(userId);
         
-        return allBlockedDates.stream()
+        Set<LocalDate> filteredDates = allBlockedDates.stream()
             .filter(date -> !date.isBefore(startDate) && !date.isAfter(endDate))
             .collect(HashSet::new, HashSet::add, HashSet::addAll);
+            
+        log.debug("🔍 [QUERY_RANGE] Found {} blocked dates (out of {} total) for user={} in range {} to {}", 
+            filteredDates.size(), allBlockedDates.size(), userId, startDate, endDate);
+            
+        return filteredDates;
     }
 
     /**

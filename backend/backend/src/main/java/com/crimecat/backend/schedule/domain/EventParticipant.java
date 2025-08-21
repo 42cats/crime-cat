@@ -4,6 +4,9 @@ import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -19,8 +22,9 @@ import java.util.UUID;
 public class EventParticipant {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(columnDefinition = "BINARY(16)")
+    @UuidGenerator
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(name = "id", columnDefinition = "BINARY(16)")
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -13,6 +13,7 @@ import com.crimecat.backend.schedule.service.ScheduleService;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,6 +29,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/schedule")
 @RequiredArgsConstructor
+@Slf4j
 public class ScheduleController {
 
     private final ScheduleService scheduleService;
@@ -83,9 +85,22 @@ public class ScheduleController {
     @PostMapping("/my-calendar/block-date")
     public ResponseEntity<?> blockDate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                                        @AuthenticationPrincipal WebUser currentUser) {
-        AuthenticationUtil.validateCalendarAccess(currentUser.getId()); // 본인 데이터 확인
-        blockedDateService.blockDate(currentUser.getId(), date);
-        return ResponseEntity.ok(Map.of("message", "날짜가 비활성화되었습니다", "date", date));
+        log.info("🌐 [API_BLOCK] POST /my-calendar/block-date user={} date={}", currentUser.getId(), date);
+        
+        try {
+            AuthenticationUtil.validateCalendarAccess(currentUser.getId()); // 본인 데이터 확인
+            log.debug("🌐 [API_BLOCK] Authentication validated for user={}", currentUser.getId());
+            
+            blockedDateService.blockDate(currentUser.getId(), date);
+            
+            Map<String, Object> response = Map.of("message", "날짜가 비활성화되었습니다", "date", date);
+            log.info("🌐 [API_BLOCK] Successfully blocked date {} for user {}, response={}", date, currentUser.getId(), response);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("🌐 [API_BLOCK] Failed to block date {} for user {}: {}", date, currentUser.getId(), e.getMessage(), e);
+            throw e;
+        }
     }
 
     /**
@@ -94,9 +109,22 @@ public class ScheduleController {
     @DeleteMapping("/my-calendar/block-date")
     public ResponseEntity<?> unblockDate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                                          @AuthenticationPrincipal WebUser currentUser) {
-        AuthenticationUtil.validateCalendarAccess(currentUser.getId());
-        blockedDateService.unblockDate(currentUser.getId(), date);
-        return ResponseEntity.ok(Map.of("message", "날짜가 활성화되었습니다", "date", date));
+        log.info("🌐 [API_UNBLOCK] DELETE /my-calendar/block-date user={} date={}", currentUser.getId(), date);
+        
+        try {
+            AuthenticationUtil.validateCalendarAccess(currentUser.getId());
+            log.debug("🌐 [API_UNBLOCK] Authentication validated for user={}", currentUser.getId());
+            
+            blockedDateService.unblockDate(currentUser.getId(), date);
+            
+            Map<String, Object> response = Map.of("message", "날짜가 활성화되었습니다", "date", date);
+            log.info("🌐 [API_UNBLOCK] Successfully unblocked date {} for user {}, response={}", date, currentUser.getId(), response);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("🌐 [API_UNBLOCK] Failed to unblock date {} for user {}: {}", date, currentUser.getId(), e.getMessage(), e);
+            throw e;
+        }
     }
 
     /**
@@ -106,10 +134,26 @@ public class ScheduleController {
     public ResponseEntity<?> blockDateRange(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
                                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
                                             @AuthenticationPrincipal WebUser currentUser) {
-        AuthenticationUtil.validateCalendarAccess(currentUser.getId());
-        blockedDateService.blockDateRange(currentUser.getId(), startDate, endDate);
-        return ResponseEntity.ok(Map.of("message", "날짜 범위가 비활성화되었습니다", 
-                                       "startDate", startDate, "endDate", endDate));
+        log.info("🌐 [API_BLOCK_RANGE] POST /my-calendar/block-range user={} startDate={} endDate={}", 
+            currentUser.getId(), startDate, endDate);
+        
+        try {
+            AuthenticationUtil.validateCalendarAccess(currentUser.getId());
+            log.debug("🌐 [API_BLOCK_RANGE] Authentication validated for user={}", currentUser.getId());
+            
+            blockedDateService.blockDateRange(currentUser.getId(), startDate, endDate);
+            
+            Map<String, Object> response = Map.of("message", "날짜 범위가 비활성화되었습니다", 
+                                               "startDate", startDate, "endDate", endDate);
+            log.info("🌐 [API_BLOCK_RANGE] Successfully blocked range {} to {} for user {}, response={}", 
+                startDate, endDate, currentUser.getId(), response);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("🌐 [API_BLOCK_RANGE] Failed to block range {} to {} for user {}: {}", 
+                startDate, endDate, currentUser.getId(), e.getMessage(), e);
+            throw e;
+        }
     }
 
     /**
@@ -119,9 +163,65 @@ public class ScheduleController {
     public ResponseEntity<Set<LocalDate>> getBlockedDates(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
                                                          @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
                                                          @AuthenticationPrincipal WebUser currentUser) {
-        AuthenticationUtil.validateCalendarAccess(currentUser.getId());
-        Set<LocalDate> blockedDates = blockedDateService.getUserBlockedDatesInRange(currentUser.getId(), startDate, endDate);
-        return ResponseEntity.ok(blockedDates);
+        log.info("🌐 [API_GET_BLOCKED] GET /my-calendar/blocked-dates user={} startDate={} endDate={}", 
+            currentUser.getId(), startDate, endDate);
+        
+        try {
+            AuthenticationUtil.validateCalendarAccess(currentUser.getId());
+            log.debug("🌐 [API_GET_BLOCKED] Authentication validated for user={}", currentUser.getId());
+            
+            Set<LocalDate> blockedDates = blockedDateService.getUserBlockedDatesInRange(currentUser.getId(), startDate, endDate);
+            
+            log.info("🌐 [API_GET_BLOCKED] Successfully retrieved {} blocked dates for user {} in range {} to {}", 
+                blockedDates.size(), currentUser.getId(), startDate, endDate);
+            log.debug("🌐 [API_GET_BLOCKED] Blocked dates: {}", blockedDates);
+            
+            return ResponseEntity.ok(blockedDates);
+        } catch (Exception e) {
+            log.error("🌐 [API_GET_BLOCKED] Failed to get blocked dates for user {} in range {} to {}: {}", 
+                currentUser.getId(), startDate, endDate, e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    /**
+     * 사용자 iCalendar 이벤트 조회 (특정 기간)
+     */
+    @GetMapping("/my-calendar/events-in-range")
+    public ResponseEntity<List<Map<String, Object>>> getUserEventsInRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @AuthenticationPrincipal WebUser currentUser) {
+        log.info("🌐 [API_GET_EVENTS] GET /my-calendar/events-in-range user={} startDate={} endDate={}", 
+            currentUser.getId(), startDate, endDate);
+        
+        try {
+            AuthenticationUtil.validateCalendarAccess(currentUser.getId());
+            log.debug("🌐 [API_GET_EVENTS] Authentication validated for user={}", currentUser.getId());
+            
+            List<Map<String, Object>> events = scheduleService.getUserEventsInRange(currentUser.getId(), startDate, endDate)
+                .stream()
+                .map(event -> {
+                    Map<String, Object> eventMap = new java.util.HashMap<>();
+                    eventMap.put("id", event.getId().toString());
+                    eventMap.put("title", event.getTitle());
+                    eventMap.put("startTime", event.getStartTime().toString());
+                    eventMap.put("endTime", event.getEndTime().toString());
+                    eventMap.put("allDay", false); // iCalendar 이벤트는 시간이 지정되어 있음
+                    return eventMap;
+                })
+                .collect(java.util.stream.Collectors.toList());
+            
+            log.info("🌐 [API_GET_EVENTS] Successfully retrieved {} events for user {} in range {} to {}", 
+                events.size(), currentUser.getId(), startDate, endDate);
+            log.debug("🌐 [API_GET_EVENTS] Events: {}", events);
+            
+            return ResponseEntity.ok(events);
+        } catch (Exception e) {
+            log.error("🌐 [API_GET_EVENTS] Failed to get events for user {} in range {} to {}: {}", 
+                currentUser.getId(), startDate, endDate, e.getMessage(), e);
+            throw e;
+        }
     }
 
     // =================================================================================
