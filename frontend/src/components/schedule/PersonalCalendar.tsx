@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useCalendarState, DateStatus, CalendarEvent } from '@/hooks/useCalendarState';
 import { useMemo } from 'react';
-import CalendarEventOverlay from './CalendarEventOverlay';
+import EventCountIndicator from './EventCountIndicator';
 import { ICSTooltip, ICSMobileList } from './ics';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -74,21 +74,21 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
   const getCalendarSizes = useCallback((mode: CalendarViewMode): CalendarSize => {
     const sizes: Record<CalendarViewMode, CalendarSize> = {
       compact: {
-        cellSize: isMobile ? 'h-8 w-8' : 'h-10 w-10',
+        cellSize: isMobile ? 'h-8 w-8' : 'h-12 w-12',
         fontSize: 'text-xs',
         iconSize: 'w-2.5 h-2.5',
         spacing: 'space-y-2',
         headerSize: 'text-sm',
       },
       standard: {
-        cellSize: isMobile ? 'h-10 w-10' : 'h-12 w-12',
+        cellSize: isMobile ? 'h-10 w-10' : 'h-16 w-16',
         fontSize: 'text-sm',
         iconSize: 'w-3 h-3',
         spacing: 'space-y-3',
         headerSize: 'text-base',
       },
       expanded: {
-        cellSize: isMobile ? 'h-12 w-12' : 'h-16 w-16',
+        cellSize: isMobile ? 'h-12 w-12' : 'h-20 w-20',
         fontSize: 'text-base',
         iconSize: 'w-4 h-4',
         spacing: 'space-y-4',
@@ -177,10 +177,14 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
   /**
    * 날짜 스타일 계산
    */
-  const getDateClassName = useCallback((date: Date) => {
+  const getDateClassName = useCallback((date: Date, isOutside?: boolean) => {
     const dateInfo = getDateInfo(date);
     const isToday = date.toDateString() === new Date().toDateString();
     const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+    
+    // 이전/이후 월 날짜 판단 (수동 계산)
+    const isOutsideMonth = date.getMonth() !== currentMonth.getMonth() || 
+                          date.getFullYear() !== currentMonth.getFullYear();
     
     // 드래그 선택 범위인지 확인
     const isInDragRange = isDragging && dragStart && dragEnd && 
@@ -267,13 +271,30 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
       baseClasses.push('opacity-50', 'cursor-not-allowed');
     }
     
-    // 드래그 선택 영역
-    if (isInDragRange) {
+    // 이전/이후 월 날짜 스타일링 (강화된 시각적 구분)
+    if (isOutsideMonth) {
+      baseClasses.push(
+        'relative',
+        'bg-gray-50/80',
+        'text-gray-400',
+        'border border-gray-200/60',
+        'backdrop-blur-[1px]',
+        'before:absolute before:inset-0',
+        'before:bg-gray-100/40',
+        'before:rounded-md',
+        'pointer-events-none', // 상호작용 차단
+        'select-none',
+        'cursor-default'
+      );
+    }
+    
+    // 드래그 선택 영역 (이전/이후 월이 아닌 경우만)
+    if (isInDragRange && !isOutsideMonth) {
       baseClasses.push('bg-primary/20', 'border-primary');
     }
     
     return cn(baseClasses);
-  }, [getDateInfo, isDragging, dragStart, dragEnd]);
+  }, [getDateInfo, isDragging, dragStart, dragEnd, currentMonth]);
 
   /**
    * 날짜 아이콘 렌더링 (이벤트 소스별 구분)
@@ -315,21 +336,23 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
     const isMobile = useIsMobile();
     
     return (
-      <div className={cn(
-        "grid gap-2 p-3 bg-muted/30 rounded-lg",
-        isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
-      )}>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-green-100 border-2 border-green-200 rounded flex-shrink-0"></div>
-          <Check className="w-3 h-3 text-green-500 flex-shrink-0" />
-          <span className="text-xs sm:text-sm truncate">사용 가능</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-red-100 border-2 border-red-300 rounded flex-shrink-0"></div>
-          <Ban className="w-3 h-3 text-red-500 flex-shrink-0" />
-          <span className="text-xs sm:text-sm truncate">비활성화됨</span>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="space-y-3">
+        {/* 상태 범례 */}
+        <div className={cn(
+          "grid gap-2 p-3 bg-muted/30 rounded-lg",
+          isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+        )}>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-green-100 border-2 border-green-200 rounded flex-shrink-0"></div>
+            <Check className="w-3 h-3 text-green-500 flex-shrink-0" />
+            <span className="text-xs sm:text-sm truncate">사용 가능</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-red-100 border-2 border-red-300 rounded flex-shrink-0"></div>
+            <Ban className="w-3 h-3 text-red-500 flex-shrink-0" />
+            <span className="text-xs sm:text-sm truncate">비활성화됨</span>
+          </div>
+          <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-emerald-100 border-2 border-emerald-300 rounded flex-shrink-0"></div>
           <CalendarIcon className="w-3 h-3 text-emerald-500 flex-shrink-0" />
           <span className="text-xs sm:text-sm truncate">개인 일정</span>
@@ -345,6 +368,20 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
           <span className="text-xs sm:text-sm truncate">복합 일정</span>
         </div>
       </div>
+      
+      {/* 사용 안내 메시지 */}
+      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-start gap-2">
+          <div className="w-4 h-4 bg-blue-100 rounded-full flex-shrink-0 mt-0.5 flex items-center justify-center">
+            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+          </div>
+          <div className="text-xs text-blue-700 leading-relaxed">
+            <strong>사용 팁:</strong> 현재 월의 날짜만 클릭/드래그로 상태 변경이 가능합니다. 
+            이전/다음 월 날짜는 <span className="text-blue-600 font-medium">흐리게 표시</span>되며 참고용입니다.
+          </div>
+        </div>
+      </div>
+    </div>
     );
   };
 
@@ -563,18 +600,25 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                 // 현재 날짜의 정보 가져오기
                 const dateInfo = getDateInfo(date);
                 
+                // 이전/이후 월 날짜 판단 (수동 계산)
+                const isOutsideMonth = date.getMonth() !== currentMonth.getMonth() || 
+                                      date.getFullYear() !== currentMonth.getFullYear();
+                
                 return (
                   <div
                     className={getDateClassName(date)}
-                    onClick={() => handleDateClick(date)}
-                    onMouseDown={() => startDrag(date)}
+                    title={isOutsideMonth ? "이전/다음 월 날짜 (참고용)" : undefined}
+                    onClick={() => !isOutsideMonth && handleDateClick(date)}
+                    onMouseDown={() => !isOutsideMonth && startDrag(date)}
                     onMouseEnter={(e) => {
-                      updateDrag(date);
-                      handleCellMouseEnter(date, e);
+                      if (!isOutsideMonth) {
+                        updateDrag(date);
+                        handleCellMouseEnter(date, e);
+                      }
                     }}
-                    onMouseLeave={handleCellMouseLeave}
-                    onTouchStart={() => startDrag(date)}
-                    onTouchMove={(e) => {
+                    onMouseLeave={!isOutsideMonth ? handleCellMouseLeave : undefined}
+                    onTouchStart={() => !isOutsideMonth && startDrag(date)}
+                    onTouchMove={!isOutsideMonth ? (e) => {
                       e.preventDefault();
                       const touch = e.touches[0];
                       const element = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -584,8 +628,8 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                           updateDrag(new Date(dateStr));
                         }
                       }
-                    }}
-                    onTouchEnd={endDrag}
+                    } : undefined}
+                    onTouchEnd={!isOutsideMonth ? endDrag : undefined}
                     data-date={date.toISOString()}
                     {...domProps}
                   >
@@ -597,16 +641,12 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                     </span>
                     {renderDateIcon(date)}
                     
-                    {/* 모든 이벤트 오버레이 (뷰모드와 모바일에 따라 조정) */}
-                    {showEvents && dateInfo.events.length > 0 && viewMode !== 'compact' && !isMobile && (
-                      <CalendarEventOverlay
+                    {/* 이벤트 개수 인디케이터 (현재 월만 표시) */}
+                    {showEvents && dateInfo.events.length > 0 && !isOutsideMonth && (
+                      <EventCountIndicator
                         events={dateInfo.events}
                         date={date}
-                        maxVisible={viewMode === 'expanded' ? 2 : 1}
-                        onEventClick={(event) => {
-                          console.log('Crime-Cat Event clicked:', event);
-                          // 향후 이벤트 상세 모달 구현
-                        }}
+                        className="absolute inset-0"
                       />
                     )}
                   </div>

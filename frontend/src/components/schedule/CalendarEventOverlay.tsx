@@ -73,6 +73,26 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
   };
 
   /**
+   * 스마트 텍스트 축약 - 중요 단어 보존하며 축약
+   */
+  const smartTruncate = (text: string, maxLength: number = 15): string => {
+    if (text.length <= maxLength) return text;
+    
+    // 중요 키워드들을 우선 보존
+    const importantWords = ['회의', '미팅', '면접', '발표', '세미나', '교육', '점심', '저녁'];
+    const hasImportantWord = importantWords.some(word => text.includes(word));
+    
+    if (hasImportantWord) {
+      // 중요 단어가 있으면 더 길게 표시
+      if (text.length <= maxLength + 5) return text;
+      return text.substring(0, maxLength + 2) + '…';
+    }
+    
+    // 일반적인 축약
+    return text.substring(0, maxLength) + '…';
+  };
+
+  /**
    * 이벤트 소스 및 카테고리별 색상
    */
   const getEventColor = (event: CalendarEvent): string => {
@@ -107,11 +127,11 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
     <div
       key={event.id}
       className={cn(
-        'cursor-pointer transition-shadow duration-200 truncate',
-        'hover:shadow-sm',
+        'cursor-pointer transition-all duration-200',
+        'hover:shadow-sm hover:scale-[1.02]',
         isMobile 
           ? 'text-xs p-1 rounded border' 
-          : 'text-xs p-1.5 rounded-md border',
+          : 'text-sm p-2 rounded-md border',
         getEventColor(event)
       )}
       onClick={(e) => {
@@ -125,10 +145,10 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
         isMobile ? "justify-start" : "justify-between"
       )}>
         <span className={cn(
-          "truncate font-medium",
-          isMobile ? "text-xs" : "text-xs"
-        )}>
-          {event.title}
+          "font-medium leading-tight",
+          isMobile ? "text-xs" : "text-sm"
+        )} title={event.title}>
+          {smartTruncate(event.title, isMobile ? 12 : 18)}
         </span>
         {event.participantCount && event.participantCount > 1 && !isMobile && (
           <div className="flex items-center gap-0.5 text-xs opacity-70">
@@ -139,9 +159,9 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
       </div>
       
       {!event.allDay && !isMobile && (
-        <div className="flex items-center gap-1 mt-0.5 opacity-70">
-          <Clock className="w-2.5 h-2.5" />
-          <span className="text-xs">
+        <div className="flex items-center gap-1 mt-1 opacity-75">
+          <Clock className="w-3 h-3" />
+          <span className="text-xs font-medium">
             {formatTime(event.startTime)} - {formatTime(event.endTime)}
           </span>
         </div>
@@ -165,12 +185,14 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
           {hiddenEventsCount > 0 && (
             <div
               className={cn(
-                'bg-muted text-muted-foreground border-muted-foreground/20',
-                'cursor-pointer hover:bg-muted/80 transition-colors',
-                'text-center font-medium',
+                'bg-gradient-to-r from-blue-50 to-purple-50',
+                'text-blue-700 border-blue-200/50',
+                'cursor-pointer hover:from-blue-100 hover:to-purple-100',
+                'transition-all duration-200 hover:shadow-sm',
+                'text-center font-semibold',
                 isMobile 
-                  ? 'text-xs p-0.5 rounded border'
-                  : 'text-xs p-1 rounded-md border'
+                  ? 'text-xs p-1 rounded border'
+                  : 'text-sm p-1.5 rounded-md border'
               )}
               onClick={(e) => {
                 e.stopPropagation();
@@ -178,7 +200,7 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
                 console.log('Show more events for', date, sortedEvents);
               }}
             >
-              +{hiddenEventsCount}개 더보기
+              +{hiddenEventsCount}개 더 보기
             </div>
           )}
         </div>

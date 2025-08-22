@@ -464,51 +464,67 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
   }, []);
 
   /**
-   * 월 통계 계산 (현재 월에만 해당)
+   * 월 통계 계산 (현재 날짜부터 월말까지만 유효한 날짜로 처리)
    */
   const monthStats = useMemo(() => {
     const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
     let availableDays = 0;
     let blockedDays = 0;
     let busyDays = 0;
+    let validDays = 0; // 유효한 날짜 수 (과거 날짜 제외)
     
-    // 현재 월의 날짜만 통계에 포함
+    // 현재 월의 날짜만 통계에 포함, 과거 날짜는 제외
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-      const dateInfo = getDateInfo(date);
+      const dateStr = date.toISOString().split('T')[0];
       
-      switch (dateInfo.status) {
-        case DateStatus.AVAILABLE:
-          availableDays++;
-          break;
-        case DateStatus.BLOCKED:
-          blockedDays++;
-          break;
-        case DateStatus.BUSY:
-          busyDays++;
-          break;
+      // 과거 날짜는 통계에서 제외
+      if (date < today) {
+        continue;
+      }
+      
+      validDays++; // 유효한 날짜 카운트
+      
+      // 직접 상태 계산 (getDateInfo 함수 의존성 제거)
+      const isBlocked = blockedDates.includes(dateStr);
+      const hasEvents = userEvents.some(event => {
+        const eventDate = new Date(event.startTime).toDateString();
+        return eventDate === date.toDateString();
+      });
+      
+      if (isBlocked) {
+        blockedDays++;
+      } else if (hasEvents) {
+        busyDays++;
+      } else {
+        availableDays++;
       }
     }
     
-    const availabilityRate = Math.round((availableDays / daysInMonth) * 100);
+    // 유효한 날짜 수로 가용성 비율 계산
+    const availabilityRate = validDays > 0 ? Math.round((availableDays / validDays) * 100) : 0;
     
-    debugLog('MONTH_STATS', `Statistics for ${currentMonth.getFullYear()}-${(currentMonth.getMonth() + 1).toString().padStart(2, '0')}`, {
+    debugLog('MONTH_STATS', `Statistics for ${currentMonth.getFullYear()}-${(currentMonth.getMonth() + 1).toString().padStart(2, '0')} (excluding past dates)`, {
       totalDays: daysInMonth,
+      validDays,
       availableDays,
       blockedDays,
       busyDays,
-      availabilityRate
+      availabilityRate,
+      todayDate: today.toISOString().split('T')[0]
     });
     
     return {
-      totalDays: daysInMonth,
+      totalDays: validDays, // 유효한 날짜 수를 totalDays로 반환
       availableDays,
       blockedDays,
       busyDays,
       availabilityRate,
     };
-  }, [currentMonth, getDateInfo]);
+  }, [currentMonth, blockedDates, userEvents]);
 
   /**
    * iCS 이벤트 전용 필터링
