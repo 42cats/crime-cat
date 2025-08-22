@@ -13,6 +13,7 @@ interface CalendarEvent {
   allDay: boolean;
   category?: string;
   participantCount?: number;
+  source?: 'icalendar' | 'crime-cat';
 }
 
 interface CalendarEventOverlayProps {
@@ -72,10 +73,16 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
   };
 
   /**
-   * 이벤트 카테고리별 색상
+   * 이벤트 소스 및 카테고리별 색상
    */
-  const getCategoryColor = (category?: string): string => {
-    switch (category?.toLowerCase()) {
+  const getEventColor = (event: CalendarEvent): string => {
+    // iCalendar 이벤트는 별도 스타일링
+    if (event.source === 'icalendar') {
+      return 'bg-indigo-50 text-indigo-800 border-indigo-200 ring-1 ring-indigo-200';
+    }
+
+    // Crime-Cat 이벤트는 카테고리별 색상
+    switch (event.category?.toLowerCase()) {
       case 'meeting':
       case '회의':
         return 'bg-blue-100 text-blue-700 border-blue-200';
@@ -105,7 +112,7 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
         isMobile 
           ? 'text-xs p-1 rounded border' 
           : 'text-xs p-1.5 rounded-md border',
-        getCategoryColor(event.category)
+        getEventColor(event)
       )}
       onClick={(e) => {
         e.stopPropagation();

@@ -2,6 +2,13 @@ import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { scheduleService } from '@/api/schedule';
 import { useToast } from '@/hooks/useToast';
+import { 
+  filterICSEvents, 
+  getICSEventsForDate, 
+  groupICSEventsByDate, 
+  hasICSEventsOnDate,
+  type GroupedICSEvents
+} from '@/utils/icsEventUtils';
 
 // Debug logging utility
 const debugLog = (category: string, message: string, data?: any) => {
@@ -279,11 +286,17 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
   const getDateInfo = useCallback((date: Date): DateInfo => {
     const dateStr = date.toISOString().split('T')[0];
     
-    // 해당 날짜의 이벤트 조회
-    const dayEvents: CalendarEvent[] = userEvents.filter(event => {
-      const eventDate = new Date(event.startTime).toDateString();
-      return eventDate === date.toDateString();
-    });
+    // 해당 날짜의 모든 이벤트 조회
+    const dayEvents: CalendarEvent[] = userEvents
+      .filter(event => {
+        const eventDate = new Date(event.startTime).toDateString();
+        return eventDate === date.toDateString();
+      })
+      .map(event => ({
+        ...event,
+        // API에서 받은 이벤트는 iCalendar 개인일정이므로 icalendar로 설정
+        source: event.source || 'icalendar' as const
+      }));
     
     // 비활성화된 날짜인지 확인
     const blockedByUser = blockedDates.includes(dateStr);
@@ -498,6 +511,40 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
   }, [currentMonth, getDateInfo]);
 
   /**
+   * iCS 이벤트 전용 필터링
+   */
+  const icsEvents = useMemo(() => {
+    if (!enableEventFetching || !userEvents.length) return [];
+    // userEvents가 이미 iCalendar 이벤트들이므로 source만 설정하여 직접 사용
+    return userEvents.map(event => ({
+      ...event,
+      source: event.source || 'icalendar' as const
+    }));
+  }, [userEvents, enableEventFetching]);
+
+  /**
+   * 월별 iCS 이벤트 그룹화
+   */
+  const groupedICSEvents = useMemo(() => {
+    if (!enableEventFetching || !icsEvents.length) return {};
+    return groupICSEventsByDate(icsEvents, currentMonth);
+  }, [icsEvents, currentMonth, enableEventFetching]);
+
+  /**
+   * 특정 날짜의 iCS 이벤트 조회 함수
+   */
+  const getICSEventsForDateCallback = useCallback((date: Date) => {
+    return getICSEventsForDate(userEvents, date);
+  }, [userEvents]);
+
+  /**
+   * 특정 날짜에 iCS 이벤트 존재 여부 확인 함수
+   */
+  const hasICSEventsOnDateCallback = useCallback((date: Date) => {
+    return hasICSEventsOnDate(userEvents, date);
+  }, [userEvents]);
+
+  /**
    * 수동 새로고침
    */
   const refreshData = useCallback(() => {
@@ -543,5 +590,11 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     isUnblockingDate: unblockDateMutation.isPending,
     isBlockingRange: blockDateRangeMutation.isPending,
     isUnblockingRange: unblockDateRangeMutation.isPending,
+    
+    // iCS 이벤트 관련
+    icsEvents,
+    groupedICSEvents,
+    getICSEventsForDate: getICSEventsForDateCallback,
+    hasICSEventsOnDate: hasICSEventsOnDateCallback,
   };
 };

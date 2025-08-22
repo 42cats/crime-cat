@@ -6,10 +6,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useCalendarState, DateStatus } from '@/hooks/useCalendarState';
+import { useCalendarState, DateStatus, CalendarEvent } from '@/hooks/useCalendarState';
+import { useMemo } from 'react';
 import CalendarEventOverlay from './CalendarEventOverlay';
+import { ICSTooltip, ICSMobileList } from './ics';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useDebouncedCallback } from '@/hooks/useDebounce';
 
 interface PersonalCalendarProps {
   className?: string;
@@ -114,11 +117,25 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
     cancelDrag,
     refreshData,
     userEvents,
+    icsEvents,
+    groupedICSEvents,
+    getICSEventsForDate,
+    hasICSEventsOnDate,
   } = useCalendarState({
     enableBlocking: allowBlocking && showBlockedDates,
     enableEventFetching: showEvents,
     autoRefreshInterval: autoRefresh ? 30000 : 0, // 30초
   });
+
+  // PC 호버 툴팁 상태
+  const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
+  const [mousePosition, setMousePosition] = useState<{ x: number; y: number } | null>(null);
+  const [hoveredEvents, setHoveredEvents] = useState<CalendarEvent[]>([]);
+
+  // Crime-Cat 이벤트만 필터링 (메모이제이션)
+  const crimeCatEvents = useMemo(() => {
+    return userEvents.filter(event => event.source === 'crime-cat');
+  }, [userEvents]);
 
   /**
    * 날짜 클릭 핸들러 (커스텀 로직 추가)
@@ -127,6 +144,35 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
     hookHandleDateClick(date);
     onDateSelect?.(date);
   }, [hookHandleDateClick, onDateSelect]);
+
+  /**
+   * PC 호버 이벤트 핸들러 (디바운스됨)
+   */
+  const handleCellMouseEnter = useDebouncedCallback((date: Date, event: React.MouseEvent) => {
+    // 모바일에서는 호버 비활성화
+    if (isMobile) return;
+
+    // iCS 이벤트가 있는 날짜만 호버 반응
+    if (hasICSEventsOnDate(date)) {
+      const events = getICSEventsForDate(date);
+      setHoveredDate(date);
+      setMousePosition({ x: event.clientX, y: event.clientY });
+      setHoveredEvents(events);
+    }
+  }, 50); // 50ms 디바운스
+
+  /**
+   * 호버 종료 핸들러 (디바운스됨)
+   */
+  const handleCellMouseLeave = useDebouncedCallback(() => {
+    if (isMobile) return;
+
+    // 툴팁 숨기기
+    setHoveredDate(null);
+    setMousePosition(null);
+    setHoveredEvents([]);
+  }, 100); // 100ms 디바운스로 깜빡임 방지
+
 
   /**
    * 날짜 스타일 계산
@@ -166,7 +212,7 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
           'hover:bg-red-200'
         );
         break;
-      case DateStatus.BUSY:
+      case DateStatus.BUSY: {
         // iCalendar vs Crime-Cat 이벤트에 따른 배경색 구분
         const hasICalEvent = dateInfo.events.some(event => event.source === 'icalendar');
         const hasCrimeCatEvent = dateInfo.events.some(event => event.source === 'crime-cat');
@@ -200,6 +246,7 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
           );
         }
         break;
+      }
       default:
         baseClasses.push(
           'bg-green-50',
@@ -240,7 +287,7 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
     switch (dateInfo.status) {
       case DateStatus.BLOCKED:
         return <Ban className={`${iconSize} absolute ${iconPosition} text-red-500`} />;
-      case DateStatus.BUSY:
+      case DateStatus.BUSY: {
         // iCalendar vs Crime-Cat 이벤트 구분
         const hasICalEvent = dateInfo.events.some(event => event.source === 'icalendar');
         const hasCrimeCatEvent = dateInfo.events.some(event => event.source === 'crime-cat');
@@ -255,6 +302,7 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
           // Crime-Cat 이벤트만 - 파란색 시계
           return <Clock className={`${iconSize} absolute ${iconPosition} text-blue-500`} />;
         }
+      }
       default:
         return <Check className={`${iconSize} absolute ${iconPosition} text-green-500`} />;
     }
@@ -512,12 +560,19 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                   ...domProps 
                 } = props;
                 
+                // 현재 날짜의 정보 가져오기
+                const dateInfo = getDateInfo(date);
+                
                 return (
                   <div
                     className={getDateClassName(date)}
                     onClick={() => handleDateClick(date)}
                     onMouseDown={() => startDrag(date)}
-                    onMouseEnter={() => updateDrag(date)}
+                    onMouseEnter={(e) => {
+                      updateDrag(date);
+                      handleCellMouseEnter(date, e);
+                    }}
+                    onMouseLeave={handleCellMouseLeave}
                     onTouchStart={() => startDrag(date)}
                     onTouchMove={(e) => {
                       e.preventDefault();
@@ -542,14 +597,14 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                     </span>
                     {renderDateIcon(date)}
                     
-                    {/* 이벤트 오버레이 (뷰모드와 모바일에 따라 조정) */}
-                    {showEvents && userEvents.length > 0 && viewMode !== 'compact' && !isMobile && (
+                    {/* 모든 이벤트 오버레이 (뷰모드와 모바일에 따라 조정) */}
+                    {showEvents && dateInfo.events.length > 0 && viewMode !== 'compact' && !isMobile && (
                       <CalendarEventOverlay
-                        events={userEvents}
+                        events={dateInfo.events}
                         date={date}
                         maxVisible={viewMode === 'expanded' ? 2 : 1}
                         onEventClick={(event) => {
-                          console.log('Event clicked:', event);
+                          console.log('Crime-Cat Event clicked:', event);
                           // 향후 이벤트 상세 모달 구현
                         }}
                       />
@@ -638,6 +693,27 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
           </div>
         )}
       </CardContent>
+
+      {/* PC용 iCS 호버 툴팁 */}
+      {!isMobile && (
+        <ICSTooltip
+          events={hoveredEvents}
+          date={hoveredDate}
+          mousePosition={mousePosition}
+          show={!!hoveredDate && hoveredEvents.length > 0}
+        />
+      )}
+
+      {/* iCS 이벤트 하단 목록 (PC/모바일 공통) */}
+      {showEvents && (
+        <ICSMobileList
+          groupedEvents={groupedICSEvents}
+          currentMonth={currentMonth}
+          isLoading={isLoading}
+          error={error}
+          className="mt-0"
+        />
+      )}
     </Card>
   );
 };
