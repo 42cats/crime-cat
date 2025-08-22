@@ -13,6 +13,8 @@ import { ICSTooltip, ICSMobileList } from './ics';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useDebouncedCallback } from '@/hooks/useDebounce';
+import { useToast } from '@/hooks/useToast';
+import { scheduleService } from '@/api/schedule';
 
 interface PersonalCalendarProps {
   className?: string;
@@ -53,9 +55,11 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
   onViewModeChange,
 }) => {
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [viewMode, setViewMode] = useState<CalendarViewMode>(
     isMobile ? 'compact' : defaultViewMode
   );
+  const [isCopyingSchedule, setIsCopyingSchedule] = useState(false);
 
   // 모바일/데스크톱 전환 시 뷰 모드 자동 조정
   useEffect(() => {
@@ -173,6 +177,197 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
     setHoveredEvents([]);
   }, 100); // 100ms 디바운스로 깜빡임 방지
 
+  /**
+   * 현재 날짜 기준 3달치 날짜 범위 계산 (캘린더 뷰와 무관)
+   */
+  const getThreeMonthRangeFromToday = useCallback(() => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonthIndex = today.getMonth();
+    
+    // 현재 월부터 3개월
+    const months = [];
+    for (let i = 0; i < 3; i++) {
+      months.push(new Date(currentYear, currentMonthIndex + i, 1));
+    }
+    
+    return months; // [현재월, 다음월, 다다음월]
+  }, []); // currentMonth 의존성 제거
+
+  /**
+   * API에서 현재 날짜 기준 3달치 최신 데이터 조회
+   */
+  const fetchThreeMonthScheduleData = useCallback(async () => {
+    const months = getThreeMonthRangeFromToday();
+    
+    // 첫 번째 월의 1일부터
+    const startDate = new Date(months[0].getFullYear(), months[0].getMonth(), 1);
+    
+    // 마지막 월의 마지막 날까지
+    const lastMonth = months[months.length - 1];
+    const endDate = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0);
+    
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0];
+    
+    // 병렬로 3달치 데이터 조회
+    const [blockedDates, userEvents] = await Promise.all([
+      scheduleService.getBlockedDates(startDateStr, endDateStr),
+      scheduleService.getUserEventsInRange(startDateStr, endDateStr)
+    ]);
+    
+    return { blockedDates, userEvents };
+  }, [getThreeMonthRangeFromToday]);
+
+  /**
+   * 독립적 날짜 상태 계산
+   */
+  const calculateDateStatus = useCallback((
+    date: Date, 
+    blockedDates: string[], 
+    userEvents: CalendarEvent[]
+  ) => {
+    const dateStr = date.toISOString().split('T')[0];
+    const blockedByUser = blockedDates.includes(dateStr);
+    
+    const dayEvents = userEvents.filter(event => {
+      const eventDate = new Date(event.startTime).toDateString();
+      return eventDate === date.toDateString();
+    });
+    
+    if (blockedByUser) return 'blocked';
+    if (dayEvents.length > 0) return 'busy';
+    return 'available';
+  }, []);
+
+  /**
+   * API 데이터 기반 현재 날짜 기준 3달치 가능한 날짜 수집
+   */
+  const collectAvailableDatesFromAPI = useCallback((
+    blockedDates: string[], 
+    userEvents: CalendarEvent[]
+  ) => {
+    const months = getThreeMonthRangeFromToday();
+    
+    const result: { [key: string]: number[] } = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    months.forEach(month => {
+      const monthKey = `${month.getFullYear()}-${month.getMonth() + 1}`;
+      const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+      
+      const availableDays: number[] = [];
+      
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(month.getFullYear(), month.getMonth(), day);
+        
+        // 과거 날짜 제외
+        if (date < today) continue;
+        
+        const status = calculateDateStatus(date, blockedDates, userEvents);
+        if (status === 'available') {
+          availableDays.push(day);
+        }
+      }
+      
+      if (availableDays.length > 0) {
+        result[monthKey] = availableDays;
+      }
+    });
+    
+    return result;
+  }, [getThreeMonthRangeFromToday, calculateDateStatus]);
+
+  /**
+   * 가능한 날짜를 텍스트로 포맷팅
+   */
+  const formatAvailableDatesText = useCallback((monthData: { [key: string]: number[] }) => {
+    const parts: string[] = [];
+    
+    Object.entries(monthData).forEach(([monthKey, days]) => {
+      const [year, month] = monthKey.split('-');
+      const monthName = `${parseInt(month)}월`;
+      const daysText = days.join(' ');
+      parts.push(`${monthName} ${daysText}`);
+    });
+    
+    return parts.join(', ');
+  }, []);
+
+  /**
+   * 가능한 날짜 텍스트 복사 (API 기반)
+   */
+  const copyAvailableDates = useCallback(async () => {
+    setIsCopyingSchedule(true);
+    
+    try {
+      // API에서 3달치 최신 데이터 조회
+      const { blockedDates, userEvents } = await fetchThreeMonthScheduleData();
+      
+      // 3달치 가능한 날짜 계산
+      const availableDates = collectAvailableDatesFromAPI(blockedDates, userEvents);
+      
+      // 텍스트 포맷팅
+      const text = formatAvailableDatesText(availableDates);
+      
+      if (!text) {
+        toast({
+          title: '복사할 일정이 없습니다',
+          description: '가능한 일정이 없어 복사할 내용이 없습니다.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // 클립보드에 복사
+      await navigator.clipboard.writeText(text);
+      
+      toast({
+        title: '일정이 복사되었습니다',
+        description: text,
+        duration: 3000,
+      });
+    } catch (error) {
+      // API 에러 처리
+      if (error instanceof Error && error.message.includes('fetch')) {
+        toast({
+          title: '일정 조회 실패',
+          description: '최신 일정 정보를 가져올 수 없습니다.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // 클립보드 API 실패 시 폴백
+      try {
+        const { blockedDates, userEvents } = await fetchThreeMonthScheduleData();
+        const availableDates = collectAvailableDatesFromAPI(blockedDates, userEvents);
+        const text = formatAvailableDatesText(availableDates);
+        
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        
+        toast({
+          title: '일정이 복사되었습니다',
+          description: text,
+          duration: 3000,
+        });
+      } catch (fallbackError) {
+        toast({
+          title: '복사 실패',
+          description: '일정 복사 중 오류가 발생했습니다.',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setIsCopyingSchedule(false);
+    }
+  }, [fetchThreeMonthScheduleData, collectAvailableDatesFromAPI, formatAvailableDatesText, toast]);
 
   /**
    * 날짜 스타일 계산
@@ -231,13 +426,13 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
             'hover:bg-purple-200'
           );
         } else if (hasICalEvent) {
-          // iCalendar 이벤트만 - 에메랄드 배경
+          // iCalendar 이벤트만 - 노란색 배경
           baseClasses.push(
-            'bg-emerald-100',
-            'text-emerald-700',
+            'bg-yellow-100',
+            'text-yellow-700',
             'border-2',
-            'border-emerald-300',
-            'hover:bg-emerald-200'
+            'border-yellow-300',
+            'hover:bg-yellow-200'
           );
         } else {
           // Crime-Cat 이벤트만 - 파란색 배경
@@ -317,8 +512,8 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
           // 둘 다 있는 경우 - 보라색 시계
           return <Clock className={`${iconSize} absolute ${iconPosition} text-purple-500`} />;
         } else if (hasICalEvent) {
-          // iCalendar 이벤트만 - 초록색 달력
-          return <CalendarIcon className={`${iconSize} absolute ${iconPosition} text-emerald-500`} />;
+          // iCalendar 이벤트만 - 노란색 달력
+          return <CalendarIcon className={`${iconSize} absolute ${iconPosition} text-yellow-500`} />;
         } else {
           // Crime-Cat 이벤트만 - 파란색 시계
           return <Clock className={`${iconSize} absolute ${iconPosition} text-blue-500`} />;
@@ -353,8 +548,8 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
             <span className="text-xs sm:text-sm truncate">비활성화됨</span>
           </div>
           <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-emerald-100 border-2 border-emerald-300 rounded flex-shrink-0"></div>
-          <CalendarIcon className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+          <div className="w-3 h-3 bg-yellow-100 border-2 border-yellow-300 rounded flex-shrink-0"></div>
+          <CalendarIcon className="w-3 h-3 text-yellow-500 flex-shrink-0" />
           <span className="text-xs sm:text-sm truncate">개인 일정</span>
         </div>
         <div className="flex items-center gap-2">
@@ -379,6 +574,33 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
             <strong>사용 팁:</strong> 현재 월의 날짜만 클릭/드래그로 상태 변경이 가능합니다. 
             이전/다음 월 날짜는 <span className="text-blue-600 font-medium">흐리게 표시</span>되며 참고용입니다.
           </div>
+        </div>
+      </div>
+      
+      {/* 일정공유 섹션 */}
+      <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+        <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+          📅 일정공유
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            variant="outline" 
+            size={isMobile ? "sm" : "default"}
+            className={cn(
+              "flex items-center gap-2",
+              isMobile && "text-xs px-3 py-2"
+            )}
+            onClick={copyAvailableDates}
+            disabled={isCopyingSchedule}
+          >
+            {isCopyingSchedule ? (
+              <RefreshCw className="w-3 h-3 animate-spin" />
+            ) : (
+              "📋"
+            )}
+            {isCopyingSchedule ? "조회 중..." : "텍스트 복사"}
+          </Button>
+          {/* 향후 추가될 다른 버튼들 */}
         </div>
       </div>
     </div>

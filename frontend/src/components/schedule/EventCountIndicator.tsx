@@ -39,7 +39,7 @@ const EventCountIndicator: React.FC<EventCountIndicatorProps> = ({
   // 주 배경색 결정 (더 많은 이벤트 타입 기준)
   const getBadgeColor = () => {
     if (icsEvents.length > crimeCatEvents.length) {
-      return 'bg-emerald-500 text-white';
+      return 'bg-yellow-500 text-white';
     } else if (crimeCatEvents.length > icsEvents.length) {
       return 'bg-blue-500 text-white';
     } else {
@@ -68,7 +68,7 @@ const EventCountIndicator: React.FC<EventCountIndicatorProps> = ({
         {/* 소스별 서브 인디케이터 (옵션) */}
         {icsEvents.length > 0 && crimeCatEvents.length > 0 && (
           <div className="absolute top-1 left-1 flex gap-0.5">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 border border-white/50" />
+            <div className="w-2 h-2 rounded-full bg-yellow-400 border border-white/50" />
             <div className="w-2 h-2 rounded-full bg-blue-400 border border-white/50" />
           </div>
         )}

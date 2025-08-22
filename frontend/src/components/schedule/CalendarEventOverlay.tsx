@@ -98,7 +98,7 @@ const CalendarEventOverlay: React.FC<CalendarEventOverlayProps> = ({
   const getEventColor = (event: CalendarEvent): string => {
     // iCalendar 이벤트는 별도 스타일링
     if (event.source === 'icalendar') {
-      return 'bg-indigo-50 text-indigo-800 border-indigo-200 ring-1 ring-indigo-200';
+      return 'bg-yellow-50 text-yellow-800 border-yellow-200 ring-1 ring-yellow-200';
     }
 
     // Crime-Cat 이벤트는 카테고리별 색상
