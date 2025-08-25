@@ -1,82 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { calendarApi } from '@/api/calendar';
 import type { CalendarResponse, CalendarCreateRequest, CalendarUpdateRequest, CalendarGroup } from '@/types/calendar';
-
-const API_BASE = '/api/v1/my-calendar';
-
-interface CalendarAPI {
-  getUserCalendars: (activeOnly?: boolean) => Promise<CalendarResponse[]>;
-  addCalendar: (request: CalendarCreateRequest) => Promise<CalendarResponse>;
-  updateCalendar: (id: string, request: CalendarUpdateRequest) => Promise<CalendarResponse>;
-  deleteCalendar: (id: string) => Promise<void>;
-  syncCalendar: (id: string) => Promise<CalendarResponse>;
-  syncAllCalendars: () => Promise<CalendarResponse[]>;
-  getColorPalette: () => Promise<{ index: number; hex: string; name: string }[]>;
-  getGroupedEvents: (startDate: string, endDate: string) => Promise<Record<string, CalendarGroup>>;
-}
-
-const calendarAPI: CalendarAPI = {
-  getUserCalendars: async (activeOnly = true) => {
-    const response = await fetch(`${API_BASE}/calendars?activeOnly=${activeOnly}`);
-    if (!response.ok) throw new Error('Failed to fetch calendars');
-    return response.json();
-  },
-
-  addCalendar: async (request) => {
-    const response = await fetch(`${API_BASE}/calendars`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request)
-    });
-    if (!response.ok) throw new Error('Failed to add calendar');
-    return response.json();
-  },
-
-  updateCalendar: async (id, request) => {
-    const response = await fetch(`${API_BASE}/calendars/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request)
-    });
-    if (!response.ok) throw new Error('Failed to update calendar');
-    return response.json();
-  },
-
-  deleteCalendar: async (id) => {
-    const response = await fetch(`${API_BASE}/calendars/${id}`, {
-      method: 'DELETE'
-    });
-    if (!response.ok) throw new Error('Failed to delete calendar');
-  },
-
-  syncCalendar: async (id) => {
-    const response = await fetch(`${API_BASE}/calendars/${id}/sync`, {
-      method: 'POST'
-    });
-    if (!response.ok) throw new Error('Failed to sync calendar');
-    return response.json();
-  },
-
-  syncAllCalendars: async () => {
-    const response = await fetch(`${API_BASE}/calendars/sync-all`, {
-      method: 'POST'
-    });
-    if (!response.ok) throw new Error('Failed to sync all calendars');
-    return response.json();
-  },
-
-  getColorPalette: async () => {
-    const response = await fetch(`${API_BASE}/color-palette`);
-    if (!response.ok) throw new Error('Failed to fetch color palette');
-    return response.json();
-  },
-
-  getGroupedEvents: async (startDate, endDate) => {
-    const response = await fetch(`${API_BASE}/events-in-range?startDate=${startDate}&endDate=${endDate}`);
-    if (!response.ok) throw new Error('Failed to fetch grouped events');
-    return response.json();
-  }
-};
 
 /**
  * 캘린더 관리를 위한 커스텀 훅
@@ -92,7 +17,7 @@ export const useCalendarManagement = () => {
     refetch: refetchCalendars
   } = useQuery({
     queryKey: ['calendars'],
-    queryFn: () => calendarAPI.getUserCalendars(true),
+    queryFn: () => calendarApi.getUserCalendars(true),
     staleTime: 1000 * 60 * 5, // 5분
     gcTime: 1000 * 60 * 30, // 30분
   });
@@ -100,13 +25,13 @@ export const useCalendarManagement = () => {
   // 색상 팔레트 조회
   const { data: colorPalette = [] } = useQuery({
     queryKey: ['color-palette'],
-    queryFn: calendarAPI.getColorPalette,
+    queryFn: calendarApi.getColorPalette,
     staleTime: Infinity, // 색상 정보는 거의 변하지 않음
   });
 
   // 캘린더 추가
   const addCalendarMutation = useMutation({
-    mutationFn: calendarAPI.addCalendar,
+    mutationFn: calendarApi.addCalendar,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendars'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
@@ -116,7 +41,7 @@ export const useCalendarManagement = () => {
   // 캘린더 수정
   const updateCalendarMutation = useMutation({
     mutationFn: ({ id, request }: { id: string; request: CalendarUpdateRequest }) =>
-      calendarAPI.updateCalendar(id, request),
+      calendarApi.updateCalendar(id, request),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendars'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
@@ -125,7 +50,7 @@ export const useCalendarManagement = () => {
 
   // 캘린더 삭제
   const deleteCalendarMutation = useMutation({
-    mutationFn: calendarAPI.deleteCalendar,
+    mutationFn: calendarApi.deleteCalendar,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendars'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
@@ -134,19 +59,69 @@ export const useCalendarManagement = () => {
 
   // 개별 동기화
   const syncCalendarMutation = useMutation({
-    mutationFn: calendarAPI.syncCalendar,
-    onSuccess: () => {
+    mutationFn: async (id: string) => {
+      console.log('🔄 [SYNC_START] Starting individual calendar sync for:', id);
+      
+      // 동기화 전 모든 관련 캐시 강제 제거
+      console.log('🗑️ [CACHE_CLEAR] Clearing all calendar-related cache');
+      queryClient.removeQueries({ queryKey: ['calendars'] });
+      queryClient.removeQueries({ queryKey: ['calendar-events'] });
+      queryClient.removeQueries({ queryKey: ['blocked-dates'] });
+      queryClient.removeQueries({ queryKey: ['user-events'] });
+      queryClient.removeQueries({ queryKey: ['schedule'] });
+      
+      const result = await calendarApi.syncCalendar(id);
+      console.log('✅ [SYNC_SUCCESS] Calendar sync completed:', result);
+      return result;
+    },
+    onSuccess: (data, variables) => {
+      console.log('🔄 [CACHE_INVALIDATE] Invalidating queries after sync success');
+      // 캐시 무효화로 즉시 새로운 데이터 요청
       queryClient.invalidateQueries({ queryKey: ['calendars'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      queryClient.invalidateQueries({ queryKey: ['blocked-dates'] });
+      queryClient.invalidateQueries({ queryKey: ['user-events'] });
+      
+      // 즉시 데이터 재조회 강제
+      queryClient.refetchQueries({ queryKey: ['calendars'] });
+      console.log('🔄 [FORCED_REFETCH] Forced calendar data refetch');
+    },
+    onError: (error, variables) => {
+      console.error('❌ [SYNC_ERROR] Calendar sync failed for:', variables, error);
     }
   });
 
   // 전체 동기화
   const syncAllCalendarsMutation = useMutation({
-    mutationFn: calendarAPI.syncAllCalendars,
-    onSuccess: () => {
+    mutationFn: async () => {
+      console.log('🔄 [SYNC_ALL_START] Starting all calendars sync');
+      
+      // 동기화 전 모든 관련 캐시 강제 제거
+      console.log('🗑️ [CACHE_CLEAR_ALL] Clearing all calendar-related cache');
+      queryClient.removeQueries({ queryKey: ['calendars'] });
+      queryClient.removeQueries({ queryKey: ['calendar-events'] });
+      queryClient.removeQueries({ queryKey: ['blocked-dates'] });
+      queryClient.removeQueries({ queryKey: ['user-events'] });
+      queryClient.removeQueries({ queryKey: ['schedule'] });
+      
+      const result = await calendarApi.syncAllCalendars();
+      console.log('✅ [SYNC_ALL_SUCCESS] All calendars sync completed:', result);
+      return result;
+    },
+    onSuccess: (data) => {
+      console.log('🔄 [CACHE_INVALIDATE_ALL] Invalidating all queries after sync success');
+      // 캐시 무효화로 즉시 새로운 데이터 요청
       queryClient.invalidateQueries({ queryKey: ['calendars'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      queryClient.invalidateQueries({ queryKey: ['blocked-dates'] });
+      queryClient.removeQueries({ queryKey: ['user-events'] });
+      
+      // 즉시 데이터 재조회 강제
+      queryClient.refetchQueries({ queryKey: ['calendars'] });
+      console.log('🔄 [FORCED_REFETCH_ALL] Forced all calendar data refetch');
+    },
+    onError: (error) => {
+      console.error('❌ [SYNC_ALL_ERROR] All calendars sync failed:', error);
     }
   });
 
@@ -155,7 +130,7 @@ export const useCalendarManagement = () => {
     async (startDate: Date, endDate: Date) => {
       const start = startDate.toISOString().split('T')[0];
       const end = endDate.toISOString().split('T')[0];
-      return calendarAPI.getGroupedEvents(start, end);
+      return calendarApi.getGroupedEvents(start, end);
     },
     []
   );

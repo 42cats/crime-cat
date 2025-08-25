@@ -13,10 +13,14 @@ import net.fortuna.ical4j.model.property.Summary;
 import net.fortuna.ical4j.model.property.DtStart;
 import net.fortuna.ical4j.model.property.DtEnd;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.StringReader;
+import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -43,55 +47,198 @@ public class MultipleCalendarService {
      */
     @Transactional
     public void syncAllUserCalendars(UUID userId) {
+        log.info("🔄 [SYNC_START] Starting sync for user: {}", userId);
+        
         List<UserCalendar> calendars = userCalendarRepository.findByUserIdAndIsActiveOrderBySortOrder(userId, true);
         
-        log.info("Starting sync for {} calendars of user: {}", calendars.size(), userId);
+        log.info("📋 [SYNC_CALENDARS] Found {} active calendars to sync", calendars.size());
         
         for (UserCalendar calendar : calendars) {
-            try {
-                syncSingleCalendar(calendar);
-                calendar.setSyncStatus(UserCalendar.SyncStatus.SUCCESS);
-                calendar.setLastSyncedAt(LocalDateTime.now());
-                calendar.setSyncErrorMessage(null);
-                log.debug("Successfully synced calendar: {}", calendar.getId());
-            } catch (Exception e) {
-                calendar.setSyncStatus(UserCalendar.SyncStatus.ERROR);
-                calendar.setSyncErrorMessage(e.getMessage());
-                log.error("Failed to sync calendar: {}", calendar.getId(), e);
-            }
+            // 각 캘린더 동기화를 별도 트랜잭션으로 처리 (실패 격리)
+            syncSingleCalendarWithTransaction(calendar);
         }
         
-        userCalendarRepository.saveAll(calendars);
+        log.info("🏁 [SYNC_COMPLETE] Sync completed for user: {}", userId);
+    }
+
+    /**
+     * 개별 캘린더 동기화 (별도 트랜잭션으로 실패 격리)
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void syncSingleCalendarWithTransaction(UserCalendar calendar) {
+        LocalDateTime syncAttemptTime = LocalDateTime.now();
+        
+        log.info("📅 [SYNC_CALENDAR] Starting sync for calendar: {}", calendar.getId());
+        log.info("🔍 [BEFORE_SYNC] Current status: {} | Error: {} | LastSync: {}", 
+            calendar.getSyncStatus(), 
+            calendar.getSyncErrorMessage(), 
+            calendar.getLastSyncedAt());
+        
+        try {
+            syncSingleCalendar(calendar);
+            
+            // 성공 시 상태 업데이트
+            log.info("✅ [SYNC_SUCCESS] Calendar {} synced successfully", calendar.getId());
+            calendar.setSyncStatus(UserCalendar.SyncStatus.SUCCESS);
+            calendar.setLastSyncedAt(syncAttemptTime);
+            calendar.setSyncErrorMessage(null); // 🎯 오류 메시지 명시적 클리어
+            
+            log.info("🔄 [STATUS_UPDATE] Updated status to SUCCESS, cleared error message");
+            
+        } catch (Exception e) {
+            log.error("❌ [SYNC_FAILED] Calendar {} sync failed: {}", calendar.getId(), e.getMessage());
+            log.error("📝 [ERROR_DETAILS] Exception type: {}", e.getClass().getSimpleName());
+            
+            calendar.setSyncStatus(UserCalendar.SyncStatus.ERROR);
+            calendar.setSyncErrorMessage(e.getMessage());
+            calendar.setLastSyncedAt(syncAttemptTime); // 실패해도 시도 시간 기록
+            
+            // displayName이 없으면 기본값 설정
+            if (calendar.getDisplayName() == null || calendar.getDisplayName().trim().isEmpty()) {
+                String fallbackName = calendar.getCalendarName() != null && !calendar.getCalendarName().trim().isEmpty()
+                    ? calendar.getCalendarName()
+                    : "외부 캘린더";
+                calendar.setDisplayName(fallbackName);
+            }
+            
+            log.error("🔍 [ERROR_STACK] Full error: ", e);
+        }
+        
+        log.info("🔍 [AFTER_SYNC] Final status: {} | Error: {} | LastSync: {}", 
+            calendar.getSyncStatus(), 
+            calendar.getSyncErrorMessage(), 
+            calendar.getLastSyncedAt());
+        
+        userCalendarRepository.save(calendar);
+        log.info("💾 [CALENDAR_SAVED] Calendar {} state persisted", calendar.getId());
+    }
+
+    /**
+     * URL 정규화 - 다중 인코딩 문제 해결
+     */
+    private String normalizeIcalUrl(String originalUrl) {
+        try {
+            String processedUrl = originalUrl;
+            int iterations = 0;
+            final int maxIterations = 5;
+            
+            // 다중 URL 인코딩 해결
+            while (iterations < maxIterations && 
+                   (processedUrl.contains("%25") || processedUrl.contains("%40") || processedUrl.contains("%3A") || processedUrl.contains("%2F"))) {
+                
+                String beforeDecode = processedUrl;
+                processedUrl = URLDecoder.decode(processedUrl, StandardCharsets.UTF_8);
+                
+                log.debug("🔧 URL decode iteration {}: {} -> {}", iterations + 1, beforeDecode, processedUrl);
+                
+                // 무한 루프 방지: 디코딩 후 변화가 없으면 중단
+                if (beforeDecode.equals(processedUrl)) {
+                    log.debug("🔧 URL decode converged at iteration {}", iterations + 1);
+                    break;
+                }
+                
+                iterations++;
+            }
+            
+            if (iterations >= maxIterations) {
+                log.warn("⚠️ URL normalization reached max iterations for: {}", originalUrl);
+            }
+            
+            if (!originalUrl.equals(processedUrl)) {
+                log.info("🔧 URL normalization: {} -> {}", originalUrl, processedUrl);
+            }
+            
+            return processedUrl;
+            
+        } catch (Exception e) {
+            log.warn("⚠️ URL normalization failed for: {} | Error: {}", originalUrl, e.getMessage());
+            return originalUrl;
+        }
     }
 
     /**
      * 단일 캘린더 동기화 및 메타데이터 추출
      */
     private void syncSingleCalendar(UserCalendar userCalendar) {
+        LocalDateTime syncAttemptTime = LocalDateTime.now();
+        
         try {
-            // iCal 데이터 가져오기
-            String icalData = restTemplate.getForObject(userCalendar.getIcalUrl(), String.class);
+            String originalUrl = userCalendar.getIcalUrl();
+            log.info("🔗 Starting sync for calendar {}", userCalendar.getId());
+            log.info("📍 Original URL: {}", originalUrl);
+            
+            // URL 정규화
+            String processedUrl = normalizeIcalUrl(originalUrl);
+            if (!originalUrl.equals(processedUrl)) {
+                log.info("🔧 Using normalized URL: {}", processedUrl);
+            }
+            
+            // iCal 데이터 가져오기 (URI 객체 사용으로 재인코딩 방지)
+            log.info("🌐 Making HTTP request to: {}", processedUrl);
+            String icalData;
+            try {
+                URI uri = URI.create(processedUrl);
+                log.debug("🔗 Using URI object: {}", uri);
+                icalData = restTemplate.getForObject(uri, String.class);
+            } catch (Exception httpException) {
+                log.error("❌ HTTP request failed: {}", httpException.getMessage());
+                
+                // 404 오류는 부분적 실패로 처리 (캘린더 삭제됨/비공개 처리)
+                if (httpException.getMessage().contains("404")) {
+                    log.warn("📱 Calendar appears to be deleted or private, treating as partial success");
+                    log.info("🔍 Possible reasons:");
+                    log.info("   - Calendar became private or was deleted");
+                    log.info("   - URL encoding issues (resolved in next sync)");
+                    log.info("   - Original URL: {}", originalUrl);
+                    log.info("   - Processed URL: {}", processedUrl);
+                    
+                    // 부분 성공으로 상태 업데이트 (에러 메시지 저장하지만 성공으로 처리)
+                    userCalendar.setSyncStatus(UserCalendar.SyncStatus.SUCCESS);
+                    userCalendar.setSyncErrorMessage("Calendar is private or deleted (404)");
+                    userCalendar.setLastSyncedAt(syncAttemptTime);
+                    userCalendarRepository.save(userCalendar);
+                    
+                    log.info("✅ Partial success: Calendar {} marked as private/deleted", userCalendar.getId());
+                    return; // 다른 캘린더 동기화 계속 진행
+                }
+                
+                // 다른 오류는 실패로 처리
+                throw httpException;
+            }
+            
             if (icalData == null || icalData.trim().isEmpty()) {
+                log.error("📭 Empty iCal data received from: {}", processedUrl);
                 throw new RuntimeException("Empty iCal data received");
             }
+            
+            log.info("✅ Successfully fetched iCal data, size: {} chars", icalData.length());
 
             // iCal 파싱
             CalendarBuilder builder = new CalendarBuilder();
             Calendar calendar = builder.build(new StringReader(icalData));
+            log.info("📅 Successfully parsed iCal data");
 
             // 캘린더 이름 추출 및 업데이트
             String calendarName = extractCalendarName(calendar);
+            log.info("🏷️  Extracted calendar name: {}", calendarName);
+            
             if (calendarName != null && !calendarName.equals(userCalendar.getCalendarName())) {
+                log.info("🔄 Updating calendar name from '{}' to '{}'", 
+                    userCalendar.getCalendarName(), calendarName);
                 userCalendar.setCalendarName(calendarName);
                 
                 // displayName이 없으면 calendarName으로 설정
                 if (userCalendar.getDisplayName() == null || userCalendar.getDisplayName().trim().isEmpty()) {
                     userCalendar.setDisplayName(calendarName);
+                    log.info("🏷️  Set display name to: {}", calendarName);
                 }
             }
+            
+            log.info("✅ Successfully synced calendar {}", userCalendar.getId());
 
         } catch (Exception e) {
-            log.error("Failed to sync calendar {}: {}", userCalendar.getId(), e.getMessage());
+            log.error("❌ Failed to sync calendar {}: {}", userCalendar.getId(), e.getMessage());
+            log.error("🔍 Error details: ", e);
             throw new RuntimeException("Calendar sync failed: " + e.getMessage(), e);
         }
     }
@@ -157,14 +304,23 @@ public class MultipleCalendarService {
         UserCalendar savedCalendar = userCalendarRepository.save(newCalendar);
 
         // 초기 동기화 시도
+        LocalDateTime syncAttemptTime = LocalDateTime.now();
         try {
             syncSingleCalendar(savedCalendar);
             savedCalendar.setSyncStatus(UserCalendar.SyncStatus.SUCCESS);
-            savedCalendar.setLastSyncedAt(LocalDateTime.now());
+            savedCalendar.setLastSyncedAt(syncAttemptTime);
+            savedCalendar.setSyncErrorMessage(null); // 성공 시 에러 메시지 클리어
             log.info("Successfully added and synced new calendar: {}", savedCalendar.getId());
         } catch (Exception e) {
             savedCalendar.setSyncStatus(UserCalendar.SyncStatus.ERROR);
             savedCalendar.setSyncErrorMessage(e.getMessage());
+            savedCalendar.setLastSyncedAt(syncAttemptTime); // 실패해도 시도 시간 기록
+            
+            // displayName이 없으면 기본값 설정
+            if (savedCalendar.getDisplayName() == null || savedCalendar.getDisplayName().trim().isEmpty()) {
+                savedCalendar.setDisplayName("외부 캘린더 (동기화 실패)");
+            }
+            
             log.error("Failed initial sync for new calendar: {}", savedCalendar.getId(), e);
         }
 
@@ -221,21 +377,35 @@ public class MultipleCalendarService {
      */
     private List<CalendarEvent> fetchEventsFromCalendar(UserCalendar userCalendar, LocalDate startDate, LocalDate endDate) {
         try {
-            String icalData = restTemplate.getForObject(userCalendar.getIcalUrl(), String.class);
-            if (icalData == null) return Collections.emptyList();
+            String originalUrl = userCalendar.getIcalUrl();
+            log.debug("📅 Fetching events from calendar {} for date range {} to {}", 
+                userCalendar.getId(), startDate, endDate);
+            
+            // URL 정규화
+            String processedUrl = normalizeIcalUrl(originalUrl);
+            
+            URI uri = URI.create(processedUrl);
+            String icalData = restTemplate.getForObject(uri, String.class);
+            if (icalData == null) {
+                log.debug("📭 No iCal data received for calendar: {}", userCalendar.getId());
+                return Collections.emptyList();
+            }
 
             CalendarBuilder builder = new CalendarBuilder();
             Calendar calendar = builder.build(new StringReader(icalData));
 
-            return calendar.getComponents(Component.VEVENT).stream()
+            List<CalendarEvent> events = calendar.getComponents(Component.VEVENT).stream()
                     .map(component -> (VEvent) component)
                     .map(event -> convertToCalendarEvent(event, userCalendar))
                     .filter(Objects::nonNull)
                     .filter(event -> isEventInDateRange(event, startDate, endDate))
                     .collect(Collectors.toList());
+                    
+            log.debug("📋 Found {} events in date range for calendar {}", events.size(), userCalendar.getId());
+            return events;
 
         } catch (Exception e) {
-            log.error("Failed to fetch events from calendar: {}", userCalendar.getId(), e);
+            log.error("❌ Failed to fetch events from calendar: {}", userCalendar.getId(), e);
             return Collections.emptyList();
         }
     }

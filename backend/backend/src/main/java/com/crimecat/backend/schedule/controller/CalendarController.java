@@ -106,7 +106,7 @@ public class CalendarController {
 
         try {
             UserCalendar calendar = userCalendarRepository.findById(calendarId)
-                    .orElseThrow(() -> ErrorStatus.CALENDAR_NOT_FOUND.asServiceException());
+                    .orElseThrow(ErrorStatus.CALENDAR_NOT_FOUND::asServiceException);
 
             // 권한 체크
             if (!calendar.getUser().getId().equals(currentUser.getId())) {
@@ -178,29 +178,44 @@ public class CalendarController {
             @PathVariable UUID calendarId,
             @AuthenticationPrincipal WebUser currentUser) {
 
+        log.info("🔄 [CONTROLLER_SYNC] Sync request for calendar: {} by user: {}", calendarId, currentUser.getId());
+
         try {
             UserCalendar calendar = userCalendarRepository.findById(calendarId)
                     .orElseThrow(() -> ErrorStatus.CALENDAR_NOT_FOUND.asServiceException());
 
+            log.info("📅 [CALENDAR_FOUND] Calendar found: {} | Current status: {} | Error: {}", 
+                calendarId, calendar.getSyncStatus(), calendar.getSyncErrorMessage());
+
             // 권한 체크
             if (!calendar.getUser().getId().equals(currentUser.getId())) {
+                log.error("❌ [ACCESS_DENIED] User {} cannot access calendar {}", currentUser.getId(), calendarId);
                 throw ErrorStatus.CALENDAR_ACCESS_DENIED.asControllerException();
             }
 
+            log.info("🔄 [SYNC_TRIGGER] Triggering sync for all user calendars");
             // 개별 동기화는 전체 동기화로 대체
             multipleCalendarService.syncAllUserCalendars(currentUser.getId());
 
+            log.info("🔍 [FETCH_UPDATED] Fetching updated calendar from database");
             // 업데이트된 캘린더 조회
             UserCalendar updatedCalendar = userCalendarRepository.findById(calendarId)
                     .orElse(calendar);
 
+            log.info("📊 [UPDATED_STATUS] Updated calendar status: {} | Error: {} | LastSync: {}", 
+                updatedCalendar.getSyncStatus(), 
+                updatedCalendar.getSyncErrorMessage(),
+                updatedCalendar.getLastSyncedAt());
+
             CalendarResponse response = convertToResponse(updatedCalendar);
             
-            log.info("Successfully synced calendar {}", calendarId);
+            log.info("✅ [SYNC_COMPLETE] Successfully synced calendar {} | Response status: {}", 
+                calendarId, response.getSyncStatus());
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            log.error("Error syncing calendar {}: {}", calendarId, e.getMessage(), e);
+            log.error("❌ [SYNC_CONTROLLER_ERROR] Error syncing calendar {}: {}", calendarId, e.getMessage());
+            log.error("📝 [ERROR_DETAILS] Exception type: {} | Stack trace: ", e.getClass().getSimpleName(), e);
             throw ErrorStatus.CALENDAR_SYNC_FAILED.asControllerException();
         }
     }
