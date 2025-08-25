@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Clock, Ban, Check, RefreshCw, ChevronLeft, ChevronRight, Maximize2, Minimize2, Grid, List } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Ban, Check, RefreshCw, ChevronLeft, ChevronRight, Maximize2, Minimize2, Grid, List, Settings } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -9,12 +9,18 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useCalendarState, DateStatus, CalendarEvent } from '@/hooks/useCalendarState';
 import { useMemo } from 'react';
 import EventCountIndicator from './EventCountIndicator';
+import CalendarManagement from './CalendarManagement';
 import { ICSTooltip, ICSMobileList } from './ics';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useDebouncedCallback } from '@/hooks/useDebounce';
 import { useToast } from '@/hooks/useToast';
 import { scheduleService } from '@/api/schedule';
+import useCalendarManagement from '@/hooks/useCalendarManagement';
+import { getCalendarColor, getCalendarHex, createStripeGradient } from '@/utils/calendarColors';
+import type { CalendarDisplayMode } from '@/types/calendar';
+import { formatDistanceToNow } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
 interface PersonalCalendarProps {
   className?: string;
@@ -25,6 +31,8 @@ interface PersonalCalendarProps {
   autoRefresh?: boolean;
   defaultViewMode?: CalendarViewMode;
   onViewModeChange?: (mode: CalendarViewMode) => void;
+  showCalendarManagement?: boolean;
+  defaultDisplayMode?: CalendarDisplayMode;
 }
 
 type CalendarViewMode = 'compact' | 'standard' | 'expanded';
@@ -53,6 +61,8 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
   autoRefresh = false,
   defaultViewMode = 'standard',
   onViewModeChange,
+  showCalendarManagement = false,
+  defaultDisplayMode = 'unified',
 }) => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -60,6 +70,20 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
     isMobile ? 'compact' : defaultViewMode
   );
   const [isCopyingSchedule, setIsCopyingSchedule] = useState(false);
+  const [displayMode, setDisplayMode] = useState<CalendarDisplayMode>(defaultDisplayMode);
+  const [showManagement, setShowManagement] = useState(false);
+
+  // 다중 캘린더 관리 훅
+  const {
+    calendars,
+    isLoading: isCalendarLoading,
+    addCalendar,
+    updateCalendar,
+    deleteCalendar,
+    syncCalendar,
+    syncAllCalendars,
+    getGroupedEvents
+  } = useCalendarManagement();
 
   // 모바일/데스크톱 전환 시 뷰 모드 자동 조정
   useEffect(() => {
@@ -140,6 +164,83 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
   const crimeCatEvents = useMemo(() => {
     return userEvents.filter(event => event.source === 'crime-cat');
   }, [userEvents]);
+
+  // 다중 캘린더 정보와 개인 일정을 통합 (메모이제이션)
+  const calendarGroups = useMemo(() => {
+    const groups = new Map<string, { 
+      calendar: any, 
+      events: CalendarEvent[], 
+      colorIndex: number 
+    }>();
+
+    // 기존 iCalendar 이벤트를 다중 캘린더로 분류
+    icsEvents.forEach(event => {
+      if (event.calendarId && displayMode === 'separated') {
+        // 캘린더별로 구분
+        const calendar = calendars.find(cal => cal.id === event.calendarId);
+        if (calendar) {
+          if (!groups.has(calendar.id)) {
+            groups.set(calendar.id, {
+              calendar,
+              events: [],
+              colorIndex: calendar.colorIndex
+            });
+          }
+          groups.get(calendar.id)!.events.push({
+            ...event,
+            colorHex: getCalendarHex(calendar.colorIndex),
+            calendarName: calendar.displayName || calendar.calendarName
+          });
+        }
+      } else {
+        // 통합 모드 또는 캘린더 정보가 없는 경우
+        const unifiedKey = 'unified-personal';
+        if (!groups.has(unifiedKey)) {
+          groups.set(unifiedKey, {
+            calendar: { 
+              id: unifiedKey, 
+              displayName: '개인일정', 
+              colorIndex: 0 
+            },
+            events: [],
+            colorIndex: 0
+          });
+        }
+        groups.get(unifiedKey)!.events.push({
+          ...event,
+          colorHex: getCalendarHex(0),
+          calendarName: '개인일정'
+        });
+      }
+    });
+
+    return groups;
+  }, [icsEvents, calendars, displayMode]);
+
+  // 날짜별 캘린더 색상 정보 계산
+  const getDateCalendarInfo = useCallback((date: Date) => {
+    const dateKey = date.toISOString().split('T')[0];
+    const calendarIds = new Set<string>();
+    const colorIndexes = new Set<number>();
+
+    calendarGroups.forEach((group, groupId) => {
+      const hasEvents = group.events.some(event => {
+        const eventDate = new Date(event.startTime).toISOString().split('T')[0];
+        return eventDate === dateKey;
+      });
+      
+      if (hasEvents) {
+        calendarIds.add(groupId);
+        colorIndexes.add(group.colorIndex);
+      }
+    });
+
+    return {
+      calendarIds: Array.from(calendarIds),
+      colorIndexes: Array.from(colorIndexes),
+      isMultipleCalendars: calendarIds.size > 1
+    };
+  }, [calendarGroups]);
 
   /**
    * 날짜 클릭 핸들러 (커스텀 로직 추가)
@@ -412,12 +513,13 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
         );
         break;
       case DateStatus.BUSY: {
-        // iCalendar vs Crime-Cat 이벤트에 따른 배경색 구분
+        // 다중 캘린더 지원 배경색 구분
         const hasICalEvent = dateInfo.events.some(event => event.source === 'icalendar');
         const hasCrimeCatEvent = dateInfo.events.some(event => event.source === 'crime-cat');
+        const calendarInfo = getDateCalendarInfo(date);
         
         if (hasICalEvent && hasCrimeCatEvent) {
-          // 둘 다 있는 경우 - 보라색 배경
+          // iCalendar + Crime-Cat 복합 - 보라색 배경
           baseClasses.push(
             'bg-purple-100',
             'text-purple-700',
@@ -426,14 +528,32 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
             'hover:bg-purple-200'
           );
         } else if (hasICalEvent) {
-          // iCalendar 이벤트만 - 노란색 배경
-          baseClasses.push(
-            'bg-yellow-100',
-            'text-yellow-700',
-            'border-2',
-            'border-yellow-300',
-            'hover:bg-yellow-200'
-          );
+          if (displayMode === 'separated' && calendarInfo.isMultipleCalendars) {
+            // 다중 캘린더 구분 모드 - 그라디언트 배경
+            dateStyle = {
+              background: createStripeGradient(calendarInfo.colorIndexes),
+              border: '2px solid rgba(0,0,0,0.1)'
+            };
+            baseClasses.push('text-gray-800', 'hover:opacity-80');
+          } else if (displayMode === 'separated' && calendarInfo.colorIndexes.length === 1) {
+            // 단일 캘린더 구분 모드 - 해당 캘린더 색상
+            const colorInfo = getCalendarColor(calendarInfo.colorIndexes[0]);
+            dateStyle = {
+              backgroundColor: colorInfo.lightBg,
+              border: `2px solid ${colorInfo.hex}40`,
+              color: colorInfo.tailwindText.replace('text-', '')
+            };
+            baseClasses.push('hover:opacity-80');
+          } else {
+            // 통합 모드 - 기본 노란색 배경
+            baseClasses.push(
+              'bg-yellow-100',
+              'text-yellow-700',
+              'border-2',
+              'border-yellow-300',
+              'hover:bg-yellow-200'
+            );
+          }
         } else {
           // Crime-Cat 이벤트만 - 파란색 배경
           baseClasses.push(
@@ -498,11 +618,12 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
     const dateInfo = getDateInfo(date);
     
     const iconSize = calendarSizes.iconSize;
-    const iconPosition = viewMode === 'compact' ? "top-0 right-0" : "top-0.5 right-0.5";
+    // 개수 표시와 겹치지 않도록 왼쪽 상단으로 이동
+    const iconPosition = viewMode === 'compact' ? "top-0 left-0" : "top-0.5 left-0.5";
     
     switch (dateInfo.status) {
       case DateStatus.BLOCKED:
-        return <Ban className={`${iconSize} absolute ${iconPosition} text-red-500`} />;
+        return <Ban className={`${iconSize} absolute ${iconPosition} text-red-500 z-10`} />;
       case DateStatus.BUSY: {
         // iCalendar vs Crime-Cat 이벤트 구분
         const hasICalEvent = dateInfo.events.some(event => event.source === 'icalendar');
@@ -532,6 +653,65 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
     
     return (
       <div className="space-y-3">
+        {/* 컨트롤 헤더 */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm">내 캘린더</span>
+            {calendars.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {calendars.length}개 연결됨
+              </Badge>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {/* 표시 모드 토글 */}
+            {calendars.length > 1 && (
+              <ToggleGroup
+                type="single"
+                value={displayMode}
+                onValueChange={(value) => value && setDisplayMode(value as CalendarDisplayMode)}
+                size="sm"
+              >
+                <ToggleGroupItem value="unified" className="text-xs px-2 py-1">
+                  통합
+                </ToggleGroupItem>
+                <ToggleGroupItem value="separated" className="text-xs px-2 py-1">
+                  구분
+                </ToggleGroupItem>
+              </ToggleGroup>
+            )}
+            
+            {/* 캘린더 관리 버튼 */}
+            {showCalendarManagement && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowManagement(!showManagement)}
+                className="h-7 px-2"
+              >
+                <Settings className="w-4 h-4" />
+                {!isMobile && <span className="ml-1">관리</span>}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* 캘린더 관리 패널 */}
+        {showCalendarManagement && showManagement && (
+          <div className="border rounded-lg p-4 bg-background">
+            <CalendarManagement
+              calendars={calendars}
+              onAddCalendar={addCalendar}
+              onUpdateCalendar={updateCalendar}
+              onDeleteCalendar={deleteCalendar}
+              onSyncCalendar={syncCalendar}
+              onSyncAllCalendars={syncAllCalendars}
+              isLoading={isCalendarLoading}
+            />
+          </div>
+        )}
+        
         {/* 상태 범례 */}
         <div className={cn(
           "grid gap-2 p-3 bg-muted/30 rounded-lg",
@@ -547,11 +727,36 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
             <Ban className="w-3 h-3 text-red-500 flex-shrink-0" />
             <span className="text-xs sm:text-sm truncate">비활성화됨</span>
           </div>
-          <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-yellow-100 border-2 border-yellow-300 rounded flex-shrink-0"></div>
-          <CalendarIcon className="w-3 h-3 text-yellow-500 flex-shrink-0" />
-          <span className="text-xs sm:text-sm truncate">개인 일정</span>
-        </div>
+          {/* 다중 캘린더 표시 */}
+          {displayMode === 'unified' || calendars.length <= 1 ? (
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-yellow-100 border-2 border-yellow-300 rounded flex-shrink-0"></div>
+              <CalendarIcon className="w-3 h-3 text-yellow-500 flex-shrink-0" />
+              <span className="text-xs sm:text-sm truncate">
+                개인 일정{calendars.length > 1 && ` (${calendars.length}개 통합)`}
+              </span>
+            </div>
+          ) : (
+            // 구분 모드: 각 캘린더별로 표시
+            calendarGroups.size > 0 && Array.from(calendarGroups.values()).map((group) => {
+              const colorInfo = getCalendarColor(group.colorIndex);
+              return (
+                <div key={group.calendar.id} className="flex items-center gap-2">
+                  <div 
+                    className="w-3 h-3 border-2 border-gray-300 rounded flex-shrink-0"
+                    style={{ backgroundColor: colorInfo.lightBg }}
+                  ></div>
+                  <CalendarIcon 
+                    className="w-3 h-3 flex-shrink-0"
+                    style={{ color: colorInfo.hex }}
+                  />
+                  <span className="text-xs sm:text-sm truncate" title={group.calendar.displayName}>
+                    {group.calendar.displayName || '개인 캘린더'}
+                  </span>
+                </div>
+              );
+            })
+          )}
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-blue-100 border-2 border-blue-300 rounded flex-shrink-0"></div>
           <Clock className="w-3 h-3 text-blue-500 flex-shrink-0" />
@@ -921,6 +1126,54 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
             <span className="truncate">{monthStats.availabilityRate}%</span>
           </Badge>
         </div>
+        
+        {/* 동기화 정보 */}
+        {calendars.length > 0 && (
+          <div className={cn(
+            "pt-3 border-t space-y-2",
+            calendarSizes.fontSize
+          )}>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <RefreshCw className={cn(calendarSizes.iconSize, "flex-shrink-0")} />
+              <span className="font-medium">동기화 상태</span>
+            </div>
+            <div className="space-y-1.5">
+              {calendars.map((calendar) => (
+                <div key={calendar.id} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div 
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: calendar.colorHex }}
+                    />
+                    <span className="truncate text-sm">
+                      {calendar.displayName || calendar.calendarName || 'Unknown'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {calendar.syncStatus === 'SUCCESS' && (
+                      <Check className="w-3 h-3 text-green-500" />
+                    )}
+                    {calendar.syncStatus === 'ERROR' && (
+                      <Ban className="w-3 h-3 text-red-500" />
+                    )}
+                    {calendar.syncStatus === 'PENDING' && (
+                      <RefreshCw className="w-3 h-3 text-yellow-500 animate-spin" />
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {calendar.lastSyncedAt 
+                        ? formatDistanceToNow(new Date(calendar.lastSyncedAt), { 
+                            addSuffix: true, 
+                            locale: ko 
+                          })
+                        : '미동기화'
+                      }
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         
         {/* 도움말 */}
         {allowBlocking && !isMobile && viewMode !== 'compact' && (

@@ -126,6 +126,11 @@ public enum ErrorStatus {
     BLOCKED_DATE_OUT_OF_RANGE("날짜가 유효 범위를 벗어났습니다.", HttpStatus.BAD_REQUEST),
     RECOMMENDATION_CALCULATION_FAILED("추천 계산에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     CALENDAR_SYNC_FAILED("캘린더 동기화에 실패했습니다.", HttpStatus.BAD_GATEWAY),
+    CALENDAR_NOT_FOUND("캘린더를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    CALENDAR_ACCESS_DENIED("캘린더에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    CALENDAR_ALREADY_EXISTS("이미 등록된 캘린더 URL입니다.", HttpStatus.CONFLICT),
+    CALENDAR_INVALID_URL("유효하지 않은 iCalendar URL입니다.", HttpStatus.BAD_REQUEST),
+    CALENDAR_COLOR_INDEX_INVALID("유효하지 않은 색상 인덱스입니다.", HttpStatus.BAD_REQUEST),
     INVALID_DATE_RANGE("잘못된 날짜 범위입니다.", HttpStatus.BAD_REQUEST),
     EVENT_STATUS_CHANGE_NOT_ALLOWED("이벤트 상태를 변경할 수 없습니다.", HttpStatus.BAD_REQUEST),
     EVENT_MINIMUM_PARTICIPANTS_NOT_MET("최소 참여 인원이 부족합니다.", HttpStatus.BAD_REQUEST);
