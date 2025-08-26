@@ -12,6 +12,7 @@ import {
 } from '@/utils/icsEventUtils';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { findClosestColorIndex, getAccessibleColorStyle } from '@/utils/calendarColors';
 
 interface ICSMobileListProps {
   groupedEvents: GroupedICSEvents;
@@ -48,40 +49,73 @@ const ICSMobileList: React.FC<ICSMobileListProps> = ({
   };
 
   /**
-   * 이벤트 아이템 렌더링
+   * 이벤트 아이템 렌더링 (접근성 강화된 캘린더별 색상 적용)
    */
-  const renderEventItem = (event: CalendarEvent, index: number) => (
-    <div 
-      key={event.id} 
-      className={cn(
-        "flex items-start gap-2 bg-emerald-50/50 rounded-lg border border-emerald-100",
-        isMobile ? "p-2" : "p-3"
-      )}
-    >
-      <div className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate" title={event.title}>
-          {event.title}
-        </p>
-        
-        <div className="flex items-center gap-1 mt-1">
-          <Clock className="w-3 h-3 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">
-            {formatEventTime(event.startTime, event.endTime, event.allDay)}
-          </span>
-        </div>
-
-        {/* 카테고리 (있는 경우) */}
-        {event.category && (
-          <div className="mt-1">
-            <Badge variant="secondary" className="text-xs px-1.5 py-0.5 h-auto">
-              {event.category}
-            </Badge>
-          </div>
+  const renderEventItem = (event: CalendarEvent, index: number) => {
+    // colorIndex가 없는 경우 colorHex에서 추정
+    const colorIndex = event.colorIndex ?? findClosestColorIndex(event.colorHex);
+    const accessibleStyle = getAccessibleColorStyle(colorIndex, '#FAFAFA');
+    
+    // 향상된 컨테이너 및 점 스타일
+    const containerStyle = {
+      backgroundColor: `${accessibleStyle.backgroundColor}10`, // 10% 투명도
+      borderColor: `${accessibleStyle.backgroundColor}30`,     // 30% 투명도
+      border: accessibleStyle.border,
+      boxShadow: accessibleStyle.boxShadow
+    };
+    
+    const dotStyle = {
+      backgroundColor: accessibleStyle.backgroundColor,
+      width: '8px',  // 더 큰 점
+      height: '8px',
+      border: accessibleStyle.border,
+      boxShadow: accessibleStyle.boxShadow
+    };
+    
+    return (
+      <div 
+        key={event.id} 
+        className={cn(
+          "flex items-start gap-2 rounded-lg border",
+          isMobile ? "p-2" : "p-3"
         )}
+        style={containerStyle}
+      >
+        <div 
+          className="rounded-full mt-2 flex-shrink-0"
+          style={dotStyle}
+        ></div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground truncate" title={event.title}>
+            {event.title}
+          </p>
+          
+          {/* 캘린더 이름 표시 (있는 경우) */}
+          {event.calendarName && (
+            <p className="text-xs text-muted-foreground truncate mb-1">
+              📅 {event.calendarName}
+            </p>
+          )}
+          
+          <div className="flex items-center gap-1 mt-1">
+            <Clock className="w-3 h-3 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">
+              {formatEventTime(event.startTime, event.endTime, event.allDay)}
+            </span>
+          </div>
+
+          {/* 카테고리 (있는 경우) */}
+          {event.category && (
+            <div className="mt-1">
+              <Badge variant="secondary" className="text-xs px-1.5 py-0.5 h-auto">
+                {event.category}
+              </Badge>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   /**
    * 날짜 그룹 렌더링

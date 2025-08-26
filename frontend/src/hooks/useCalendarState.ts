@@ -32,6 +32,7 @@ export interface CalendarEvent {
   source?: 'icalendar' | 'crime-cat'; // 이벤트 소스 구분
   calendarId?: string; // 다중 캘린더 지원
   colorHex?: string; // 캘린더 색상
+  colorIndex?: number; // 캘린더 색상 인덱스 (0-7)
   calendarName?: string; // 캘린더 이름
 }
 

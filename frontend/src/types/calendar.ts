@@ -52,12 +52,28 @@ export interface CalendarEvent {
   calendarId?: string;
   calendarName?: string;
   colorHex?: string;
+  colorIndex?: number;
+  category?: string;
 }
 
 export interface ColorPalette {
   index: number;
   hex: string;
   name: string;
+}
+
+export interface GroupedCalendarEvents {
+  [dateKey: string]: {
+    [calendarId: string]: {
+      calendarInfo: CalendarGroup;
+      events: CalendarEvent[];
+    };
+  };
+}
+
+export interface CalendarEventGroup {
+  calendarInfo: CalendarGroup;
+  events: CalendarEvent[];
 }
 
 export type CalendarDisplayMode = 'unified' | 'separated';
