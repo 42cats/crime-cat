@@ -26,10 +26,20 @@ const ICSTooltip: React.FC<ICSTooltipProps> = ({
   show,
   className,
 }) => {
-  const [position, setPosition] = useState<{ x: number; y: number; placement: 'top' | 'bottom' | 'left' | 'right' }>({
-    x: 0,
-    y: 0,
-    placement: 'top'
+  const [position, setPosition] = useState<{ x: number; y: number; placement: 'top' | 'bottom' | 'left' | 'right' }>(() => {
+    // 초기값을 마우스 위치로 설정하여 애니메이션 없이 즉시 표시
+    if (mousePosition) {
+      return {
+        x: mousePosition.x,
+        y: mousePosition.y,
+        placement: 'top' as const
+      };
+    }
+    return {
+      x: 0,
+      y: 0,
+      placement: 'top' as const
+    };
   });
   const [isVisible, setIsVisible] = useState(false);
 
@@ -52,15 +62,27 @@ const ICSTooltip: React.FC<ICSTooltipProps> = ({
     let y = mouseY;
     let placement: 'top' | 'bottom' | 'left' | 'right' = 'top';
 
-    // 수평 위치 조정
+    // 수평 위치 조정 - 마우스 위치 우선
     if (mouseX + tooltipWidth + offset > viewportWidth) {
+      // 오른쪽으로 넘어가는 경우
       if (mouseX - tooltipWidth - offset >= 0) {
-        // 왼쪽으로 이동
+        // 왼쪽에 충분한 공간이 있으면 왼쪽에 표시
         x = mouseX - tooltipWidth - offset;
         placement = 'left';
       } else {
-        // 화면 내 최대한 오른쪽
-        x = viewportWidth - tooltipWidth - 20;
+        // 양쪽 모두 공간이 부족한 경우, 가능한 한 마우스에 가깝게
+        const rightSpace = viewportWidth - mouseX - offset;
+        const leftSpace = mouseX - offset;
+        
+        if (rightSpace >= leftSpace) {
+          // 오른쪽 공간이 더 크면 오른쪽에 맞춤
+          x = Math.max(mouseX - tooltipWidth + rightSpace - 20, 20);
+          placement = 'right';
+        } else {
+          // 왼쪽 공간이 더 크면 왼쪽에 맞춤  
+          x = Math.max(20, mouseX - tooltipWidth + leftSpace);
+          placement = 'left';
+        }
       }
     } else {
       // 기본: 마우스 오른쪽
@@ -85,9 +107,10 @@ const ICSTooltip: React.FC<ICSTooltipProps> = ({
     return { x, y, placement };
   }, [mousePosition, show, date, events.length]);
 
-  // 위치 업데이트
+  // 위치 업데이트 - 즉시 적용 (애니메이션 없이)
   useEffect(() => {
-    setPosition(calculatePosition);
+    const newPosition = calculatePosition;
+    setPosition(newPosition);
   }, [calculatePosition]);
 
   // 표시/숨김 애니메이션 - 지연 제거하여 즉시 표시
@@ -109,7 +132,7 @@ const ICSTooltip: React.FC<ICSTooltipProps> = ({
     <div
       className={cn(
         "fixed z-50 pointer-events-none select-none",
-        "transition-all duration-200 ease-out",
+        "transition-opacity transition-transform duration-150 ease-out",
         isVisible 
           ? "opacity-100 scale-100" 
           : "opacity-0 scale-95",
