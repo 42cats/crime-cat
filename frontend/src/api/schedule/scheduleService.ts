@@ -231,7 +231,7 @@ export class ScheduleService {
   }
 
   /**
-   * 사용자 iCalendar 이벤트 조회 (특정 기간)
+   * 사용자 iCalendar 이벤트 조회 (특정 기간) - 레거시
    */
   async getUserEventsInRange(
     startDate: string,
@@ -260,6 +260,45 @@ export class ScheduleService {
       return result;
     } catch (error) {
       apiDebugLog('GET', url, `Failed to get user events for range ${startDate} to ${endDate}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 다중 캘린더 이벤트 조회 (캘린더별 그룹화, 색상 정보 포함)
+   */
+  async getGroupedCalendarEvents(
+    startDate: string,
+    endDate: string
+  ): Promise<Record<string, {
+    calendarId: string;
+    displayName: string;
+    colorHex: string;
+    colorIndex: number;
+    events: Array<{
+      id: string;
+      title: string;
+      startTime: string;
+      endTime: string;
+      allDay: boolean;
+      calendarId: string;
+      colorHex: string;
+      calendarName: string;
+    }>;
+    lastSynced?: string;
+    syncStatus: string;
+  }>> {
+    const params = new URLSearchParams({ startDate, endDate });
+    const url = `/my-calendar/events-in-range?${params.toString()}`;
+    
+    apiDebugLog('GET', url, `Starting get grouped calendar events request for range ${startDate} to ${endDate}`);
+    
+    try {
+      const result = await apiClient.get<Record<string, any>>(url);
+      apiDebugLog('GET', url, `Successfully retrieved grouped calendar events for range ${startDate} to ${endDate}`, result);
+      return result;
+    } catch (error) {
+      apiDebugLog('GET', url, `Failed to get grouped calendar events for range ${startDate} to ${endDate}`, error);
       throw error;
     }
   }

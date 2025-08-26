@@ -90,12 +90,11 @@ const ICSTooltip: React.FC<ICSTooltipProps> = ({
     setPosition(calculatePosition);
   }, [calculatePosition]);
 
-  // 표시/숨김 애니메이션
+  // 표시/숨김 애니메이션 - 지연 제거하여 즉시 표시
   useEffect(() => {
     if (show && events.length > 0 && date) {
-      // 약간의 지연 후 표시
-      const timer = setTimeout(() => setIsVisible(true), 100);
-      return () => clearTimeout(timer);
+      // 즉시 표시
+      setIsVisible(true);
     } else {
       setIsVisible(false);
     }

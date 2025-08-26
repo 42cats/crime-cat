@@ -30,6 +30,9 @@ export interface CalendarEvent {
   category?: string;
   participantCount?: number;
   source?: 'icalendar' | 'crime-cat'; // 이벤트 소스 구분
+  calendarId?: string; // 다중 캘린더 지원
+  colorHex?: string; // 캘린더 색상
+  calendarName?: string; // 캘린더 이름
 }
 
 export enum DateStatus {
@@ -133,21 +136,21 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     staleTime: 5 * 60 * 1000, // 5분
   });
 
-  // 사용자 이벤트 데이터 조회
+  // 다중 캘린더 이벤트 데이터 조회 (색상 정보 포함)
   const {
-    data: userEvents = [],
+    data: groupedCalendarData = {},
     isLoading: isLoadingEvents,
     error: eventsError,
   } = useQuery({
-    queryKey: ['schedule', 'user-events', monthRange.startDate, monthRange.endDate],
+    queryKey: ['schedule', 'grouped-calendar-events', monthRange.startDate, monthRange.endDate],
     queryFn: async () => {
-      debugLog('QUERY_EVENTS', `Fetching user events for range ${monthRange.startDate} to ${monthRange.endDate}`);
+      debugLog('QUERY_GROUPED_EVENTS', `Fetching grouped calendar events for range ${monthRange.startDate} to ${monthRange.endDate}`);
       try {
-        const result = await scheduleService.getUserEventsInRange(monthRange.startDate, monthRange.endDate);
-        debugLog('QUERY_EVENTS', `Successfully fetched ${result.length} user events`, result);
+        const result = await scheduleService.getGroupedCalendarEvents(monthRange.startDate, monthRange.endDate);
+        debugLog('QUERY_GROUPED_EVENTS', 'Successfully fetched grouped calendar events', result);
         return result;
       } catch (error) {
-        debugLog('QUERY_EVENTS', 'Failed to fetch user events', error);
+        debugLog('QUERY_GROUPED_EVENTS', 'Failed to fetch grouped calendar events', error);
         throw error;
       }
     },
@@ -155,6 +158,21 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     refetchInterval: autoRefreshInterval || false,
     staleTime: 10 * 60 * 1000, // 10분
   });
+
+  // 그룹화된 데이터에서 플랫 이벤트 목록 생성
+  const userEvents = useMemo(() => {
+    const events: CalendarEvent[] = [];
+    Object.values(groupedCalendarData).forEach(group => {
+      group.events.forEach(event => {
+        events.push({
+          ...event,
+          source: 'icalendar' as const
+        });
+      });
+    });
+    debugLog('EVENTS_FLATTEN', `Flattened ${events.length} events from ${Object.keys(groupedCalendarData).length} calendars`, events);
+    return events;
+  }, [groupedCalendarData]);
 
   // 날짜 비활성화 Mutation
   const blockDateMutation = useMutation({
@@ -527,11 +545,11 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
   }, [currentMonth, blockedDates, userEvents]);
 
   /**
-   * iCS 이벤트 전용 필터링
+   * iCS 이벤트 전용 필터링 (다중 캘린더 지원)
    */
   const icsEvents = useMemo(() => {
     if (!enableEventFetching || !userEvents.length) return [];
-    // userEvents가 이미 iCalendar 이벤트들이므로 source만 설정하여 직접 사용
+    // userEvents는 이미 캘린더 정보가 포함된 이벤트들
     return userEvents.map(event => ({
       ...event,
       source: event.source || 'icalendar' as const
@@ -570,8 +588,8 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
     }
     if (enableEventFetching) {
-      debugLog('REFRESH', 'Invalidating user-events queries');
-      queryClient.invalidateQueries({ queryKey: ['schedule', 'user-events'] });
+      debugLog('REFRESH', 'Invalidating grouped-calendar-events queries');
+      queryClient.invalidateQueries({ queryKey: ['schedule', 'grouped-calendar-events'] });
     }
   }, [queryClient, enableBlocking, enableEventFetching]);
 

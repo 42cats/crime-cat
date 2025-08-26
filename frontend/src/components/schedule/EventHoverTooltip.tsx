@@ -8,6 +8,12 @@ interface EventHoverTooltipProps {
   events: CalendarEvent[];
   position: { x: number; y: number };
   visible: boolean;
+  overlapInfo?: {
+    hasOverlap: boolean;
+    overlapType: 'none' | 'time-conflict' | 'all-day-conflict' | 'mixed-conflict';
+    conflictingEvents: CalendarEvent[];
+    calendarsInvolved: string[];
+  };
 }
 
 /**
@@ -19,9 +25,22 @@ interface EventHoverTooltipProps {
 const EventHoverTooltip: React.FC<EventHoverTooltipProps> = ({
   events,
   position,
-  visible
+  visible,
+  overlapInfo
 }) => {
   if (!visible || events.length === 0) return null;
+
+  // 디버깅 로그: overlapInfo 구조 확인
+  if (overlapInfo) {
+    console.log('🛠️ [TOOLTIP_DEBUG] OverlapInfo structure:', {
+      hasOverlap: overlapInfo.hasOverlap,
+      overlapType: overlapInfo.overlapType,
+      calendarsInvolved: overlapInfo.calendarsInvolved,
+      calendarsInvolvedType: typeof overlapInfo.calendarsInvolved,
+      calendarsInvolvedLength: overlapInfo.calendarsInvolved?.length,
+      conflictingEventsCount: overlapInfo.conflictingEvents?.length || 0
+    });
+  }
 
   /**
    * 시간 포맷팅
@@ -105,6 +124,25 @@ const EventHoverTooltip: React.FC<EventHoverTooltipProps> = ({
         </span>
       </div>
 
+      {/* 겹침 경고 정보 */}
+      {overlapInfo?.hasOverlap && (
+        <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-red-600 font-bold">⚠️</span>
+            <span className="text-red-800 font-semibold text-sm">
+              {overlapInfo.overlapType === 'time-conflict' && '시간 충돌'}
+              {overlapInfo.overlapType === 'all-day-conflict' && '전일 일정 충돌'}  
+              {overlapInfo.overlapType === 'mixed-conflict' && '복합 충돌'}
+            </span>
+          </div>
+          {(overlapInfo.calendarsInvolved?.length || 0) > 1 && (
+            <div className="text-xs text-red-600 mt-1">
+              {overlapInfo.calendarsInvolved?.length || 0}개 캘린더가 관련됩니다
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 이벤트 목록 */}
       <div className="max-h-48 overflow-y-auto space-y-3">
         {events.map((event, index) => (
@@ -116,8 +154,16 @@ const EventHoverTooltip: React.FC<EventHoverTooltipProps> = ({
             )}
           >
             {/* 이벤트 제목 */}
-            <div className="font-semibold text-sm text-gray-900 mb-1 leading-tight">
-              {event.title}
+            <div className={cn(
+              "font-semibold text-sm mb-1 leading-tight flex items-center gap-2",
+              overlapInfo?.hasOverlap && overlapInfo.conflictingEvents.some(e => e.id === event.id)
+                ? "text-red-800"
+                : "text-gray-900"
+            )}>
+              <span>{event.title}</span>
+              {overlapInfo?.hasOverlap && overlapInfo.conflictingEvents.some(e => e.id === event.id) && (
+                <span className="text-red-600 text-xs">⚠️</span>
+              )}
             </div>
 
             {/* 시간 정보 */}
@@ -137,23 +183,26 @@ const EventHoverTooltip: React.FC<EventHoverTooltipProps> = ({
             )}
 
             {/* 이벤트 소스 배지 */}
-            {event.source && (
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {event.source && (
                 <span className={cn(
                   "inline-block px-2 py-1 rounded-md text-xs font-medium border",
                   getSourceBadgeColor(event.source)
                 )}>
-                  {event.source === 'icalendar' ? '개인일정' : '크라임캣'}
+                  {event.source === 'icalendar' ? 
+                    (event.calendarName || '개인일정') : 
+                    '크라임캣'
+                  }
                 </span>
+              )}
 
-                {/* 카테고리 (있는 경우) */}
-                {event.category && (
-                  <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
-                    {event.category}
-                  </span>
-                )}
-              </div>
-            )}
+              {/* 카테고리 (있는 경우) */}
+              {event.category && (
+                <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
+                  {event.category}
+                </span>
+              )}
+            </div>
           </div>
         ))}
       </div>

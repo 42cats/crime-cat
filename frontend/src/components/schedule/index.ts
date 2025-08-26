@@ -1,6 +1,5 @@
 // Personal Calendar Components
 export { default as PersonalCalendar } from './PersonalCalendar';
-export { default as CalendarEventOverlay } from './CalendarEventOverlay';
 
 // Calendar State Management
 export { useCalendarState, DateStatus } from '../../hooks/useCalendarState';

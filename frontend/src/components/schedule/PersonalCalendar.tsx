@@ -1,5 +1,48 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, Ban, Check, RefreshCw, ChevronLeft, ChevronRight, Maximize2, Minimize2, Grid, List, Settings } from 'lucide-react';
+
+// 겹침 표시를 위한 미니멀 CSS 스타일
+const overlappingStyles = `
+  .time-conflict-cell {
+    background: rgba(239, 68, 68, 0.08) !important;
+    border: 2px solid rgba(239, 68, 68, 0.4) !important;
+    position: relative;
+  }
+  
+  .time-conflict-cell::after {
+    content: '⚠️';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 10px;
+    opacity: 0.8;
+    z-index: 1;
+  }
+  
+  .all-day-conflict-cell {
+    background: rgba(251, 146, 60, 0.08) !important;
+    border: 2px solid rgba(251, 146, 60, 0.4) !important;
+    position: relative;
+  }
+  
+  /* 전일 이벤트 충돌 표시 - 아이콘 제거하고 배경색만 사용 */
+  
+  .mixed-conflict-cell {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.06) 0%, rgba(251, 146, 60, 0.06) 100%) !important;
+    border: 2px solid rgba(245, 101, 101, 0.5) !important;
+    position: relative;
+  }
+  
+  .mixed-conflict-cell::after {
+    content: '⚡';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 10px;
+    opacity: 0.8;
+    z-index: 1;
+  }
+`;
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -165,16 +208,25 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
     return userEvents.filter(event => event.source === 'crime-cat');
   }, [userEvents]);
 
+  // PersonalCalendar 전용 iCS 이벤트 목록 생성 (툴팁용)
+  const personalCalendarICSEvents = useMemo(() => {
+    // 기존 icsEvents를 그대로 사용 (이미 올바른 데이터)
+    return icsEvents.map(event => ({
+      ...event,
+      source: 'icalendar' as const,
+    }));
+  }, [icsEvents]);
+
   // 다중 캘린더 정보와 개인 일정을 통합 (메모이제이션)
-  const calendarGroups = useMemo(() => {
+  const calendarGroupsForDisplay = useMemo(() => {
     const groups = new Map<string, { 
       calendar: any, 
       events: CalendarEvent[], 
       colorIndex: number 
     }>();
 
-    // 기존 iCalendar 이벤트를 다중 캘린더로 분류
-    icsEvents.forEach(event => {
+    // personalCalendarICSEvents 사용
+    personalCalendarICSEvents.forEach(event => {
       if (event.calendarId && displayMode === 'separated') {
         // 캘린더별로 구분
         const calendar = calendars.find(cal => cal.id === event.calendarId);
@@ -186,11 +238,7 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
               colorIndex: calendar.colorIndex
             });
           }
-          groups.get(calendar.id)!.events.push({
-            ...event,
-            colorHex: getCalendarHex(calendar.colorIndex),
-            calendarName: calendar.displayName || calendar.calendarName
-          });
+          groups.get(calendar.id)!.events.push(event); // 이벤트 그대로 사용 (이미 색상 정보 포함)
         }
       } else {
         // 통합 모드 또는 캘린더 정보가 없는 경우
@@ -208,22 +256,174 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
         }
         groups.get(unifiedKey)!.events.push({
           ...event,
-          colorHex: getCalendarHex(0),
-          calendarName: '개인일정'
+          colorHex: event.colorHex || getCalendarHex(0), // 기존 색상 우선, 없으면 기본값
+          calendarName: event.calendarName || '개인일정'
         });
       }
     });
 
     return groups;
-  }, [icsEvents, calendars, displayMode]);
+  }, [personalCalendarICSEvents, calendars, displayMode]);
 
-  // 날짜별 캘린더 색상 정보 계산
+  // 동적 범례 아이템 생성
+  const dynamicLegendItems = useMemo(() => {
+    const baseItems = [
+      { 
+        type: 'available', 
+        label: '사용 가능', 
+        color: '#10b981',
+        bgColor: 'bg-green-100',
+        borderColor: 'border-green-200',
+        icon: Check,
+        iconColor: 'text-green-500'
+      },
+      { 
+        type: 'blocked', 
+        label: '비활성화됨', 
+        color: '#ef4444',
+        bgColor: 'bg-red-100', 
+        borderColor: 'border-red-300',
+        icon: Ban,
+        iconColor: 'text-red-500'
+      }
+    ];
+    
+    // 활성화된 캘린더별 항목 생성
+    const calendarItems = calendars
+      .filter(cal => cal.isActive)
+      .map(cal => {
+        const colorInfo = getCalendarColor(cal.colorIndex);
+        return {
+          type: 'calendar',
+          label: cal.displayName || cal.calendarName || '외부 캘린더',
+          color: colorInfo.hex,
+          bgColor: colorInfo.lightBg,
+          borderColor: `border-gray-300`,
+          icon: CalendarIcon,
+          iconColor: colorInfo.tailwindText,
+          calendarId: cal.id,
+          colorIndex: cal.colorIndex
+        };
+      });
+    
+    const systemItems = [
+      { 
+        type: 'crime-cat', 
+        label: 'Crime-Cat', 
+        color: '#3b82f6',
+        bgColor: 'bg-blue-100',
+        borderColor: 'border-blue-300',
+        icon: Clock,
+        iconColor: 'text-blue-500'
+      },
+      { 
+        type: 'overlapping', 
+        label: '겹친 일정', 
+        color: 'pattern',
+        bgColor: 'bg-gradient-to-r from-red-100 via-yellow-100 to-blue-100',
+        borderColor: 'border-purple-300',
+        icon: Clock,
+        iconColor: 'text-purple-500'
+      }
+    ];
+    
+    return [...baseItems, ...calendarItems, ...systemItems];
+  }, [calendars]);
+
+  // 시간 겹침 유틸리티 함수
+  const isTimeOverlapping = useCallback((event1: CalendarEvent, event2: CalendarEvent): boolean => {
+    if (event1.allDay || event2.allDay) return false; // 전일 이벤트는 별도 처리
+    
+    const start1 = new Date(event1.startTime);
+    const end1 = new Date(event1.endTime);
+    const start2 = new Date(event2.startTime);
+    const end2 = new Date(event2.endTime);
+    
+    return start1 < end2 && start2 < end1;
+  }, []);
+
+  // 날짜별 시간 겹침 분석
+  const analyzeTimeOverlaps = useCallback((date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    const dayEvents = personalCalendarICSEvents.filter(event => {
+      const eventDate = new Date(event.startTime).toISOString().split('T')[0];
+      return eventDate === dateStr;
+    });
+
+    if (dayEvents.length <= 1) {
+      return {
+        hasOverlap: false,
+        overlapType: 'none',
+        calendarsInvolved: [],
+        conflictingEvents: []
+      };
+    }
+
+    const allDayEvents = dayEvents.filter(e => e.allDay);
+    const timedEvents = dayEvents.filter(e => !e.allDay);
+    const timeOverlaps: any[] = [];
+    const calendarsInvolved = new Set<string>();
+
+    // 전일 + 시간 이벤트 겹침
+    if (allDayEvents.length > 0 && timedEvents.length > 0) {
+      timeOverlaps.push({
+        type: 'allday-timed',
+        events: [...allDayEvents, ...timedEvents]
+      });
+      
+      [...allDayEvents, ...timedEvents].forEach(event => {
+        if (event.calendarId) calendarsInvolved.add(event.calendarId);
+      });
+    }
+
+    // 시간 이벤트 간 겹침
+    for (let i = 0; i < timedEvents.length; i++) {
+      for (let j = i + 1; j < timedEvents.length; j++) {
+        if (isTimeOverlapping(timedEvents[i], timedEvents[j])) {
+          timeOverlaps.push({
+            type: 'time-conflict',
+            events: [timedEvents[i], timedEvents[j]]
+          });
+          
+          if (timedEvents[i].calendarId) calendarsInvolved.add(timedEvents[i].calendarId);
+          if (timedEvents[j].calendarId) calendarsInvolved.add(timedEvents[j].calendarId);
+        }
+      }
+    }
+
+    // 전일 이벤트 간 겹침 (다중 전일 이벤트)
+    if (allDayEvents.length > 1) {
+      timeOverlaps.push({
+        type: 'allday-conflict',
+        events: allDayEvents
+      });
+      
+      allDayEvents.forEach(event => {
+        if (event.calendarId) calendarsInvolved.add(event.calendarId);
+      });
+    }
+
+    const hasTimeConflict = timeOverlaps.some(overlap => 
+      overlap.type === 'time-conflict' || overlap.type === 'allday-timed'
+    );
+
+    return {
+      hasOverlap: timeOverlaps.length > 0,
+      overlapType: hasTimeConflict ? 'time-conflict' : 
+                  allDayEvents.length > 1 ? 'all-day-conflict' : 'mixed-conflict',
+      calendarsInvolved: Array.from(calendarsInvolved),
+      conflictingEvents: timeOverlaps.flatMap(overlap => overlap.events)
+    };
+  }, [personalCalendarICSEvents, isTimeOverlapping]);
+
+  // 날짜별 캘린더 및 겹침 정보 계산 (통합)
   const getDateCalendarInfo = useCallback((date: Date) => {
     const dateKey = date.toISOString().split('T')[0];
     const calendarIds = new Set<string>();
     const colorIndexes = new Set<number>();
 
-    calendarGroups.forEach((group, groupId) => {
+    // 기존 캘린더 그룹 정보
+    calendarGroupsForDisplay.forEach((group, groupId) => {
       const hasEvents = group.events.some(event => {
         const eventDate = new Date(event.startTime).toISOString().split('T')[0];
         return eventDate === dateKey;
@@ -235,12 +435,79 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
       }
     });
 
-    return {
+    // 시간 겹침 분석
+    const overlapInfo = analyzeTimeOverlaps(date);
+
+    const result = {
       calendarIds: Array.from(calendarIds),
       colorIndexes: Array.from(colorIndexes),
-      isMultipleCalendars: calendarIds.size > 1
+      isMultipleCalendars: calendarIds.size > 1,
+      ...overlapInfo // 겹침 정보 추가
     };
-  }, [calendarGroups]);
+
+    // 디버깅 로그 제거 - 무한 생성 방지
+
+    return result;
+  }, [calendarGroupsForDisplay, analyzeTimeOverlaps]);
+
+  // 날짜 스타일 계산 로직
+  const getDateDisplayStyle = useCallback((date: Date) => {
+    const info = getDateCalendarInfo(date);
+    
+    // 시간 충돌이 있는 경우 (최우선)
+    if (info.hasOverlap && info.overlapType === 'time-conflict') {
+      return {
+        className: 'time-conflict-cell',
+        style: {}
+      };
+    }
+
+    // 전일 이벤트 충돌
+    if (info.hasOverlap && info.overlapType === 'all-day-conflict') {
+      return {
+        className: 'all-day-conflict-cell',
+        style: {}
+      };
+    }
+
+    // 복합 충돌 (전일 + 시간 이벤트)
+    if (info.hasOverlap && info.overlapType === 'mixed-conflict') {
+      return {
+        className: 'mixed-conflict-cell',
+        style: {}
+      };
+    }
+
+    // 다중 캘린더 (겹침 없음)
+    if (info.isMultipleCalendars && !info.hasOverlap) {
+      return {
+        className: 'multiple-calendars-cell',
+        style: { 
+          background: createStripeGradient(info.colorIndexes),
+          border: '2px solid rgba(0,0,0,0.1)'
+        }
+      };
+    }
+
+    // 단일 캘린더
+    if (info.colorIndexes.length === 1) {
+      const colorInfo = getCalendarColor(info.colorIndexes[0]);
+      return {
+        className: 'single-calendar-cell',
+        style: { 
+          backgroundColor: colorInfo.lightBg,
+          border: `2px solid ${colorInfo.hex}40`,
+          color: colorInfo.tailwindText.replace('text-', '')
+        }
+      };
+    }
+
+    // 기본 상태 (이벤트 없음)
+    return { 
+      className: 'default-cell', 
+      style: {} 
+    };
+  }, [getDateCalendarInfo, createStripeGradient, getCalendarColor]);
 
   /**
    * 날짜 클릭 핸들러 (커스텀 로직 추가)
@@ -251,6 +518,24 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
   }, [hookHandleDateClick, onDateSelect]);
 
   /**
+   * 특정 날짜의 iCS 이벤트 조회 (PersonalCalendar 전용)
+   */
+  const getPersonalICSEventsForDate = useCallback((date: Date): CalendarEvent[] => {
+    const targetDateString = date.toDateString();
+    return personalCalendarICSEvents.filter(event => {
+      const eventDate = new Date(event.startTime);
+      return eventDate.toDateString() === targetDateString;
+    });
+  }, [personalCalendarICSEvents]);
+
+  /**
+   * 특정 날짜에 iCS 이벤트 존재 여부 확인 (PersonalCalendar 전용)
+   */
+  const hasPersonalICSEventsOnDate = useCallback((date: Date): boolean => {
+    return getPersonalICSEventsForDate(date).length > 0;
+  }, [getPersonalICSEventsForDate]);
+
+  /**
    * PC 호버 이벤트 핸들러 (디바운스됨)
    */
   const handleCellMouseEnter = useDebouncedCallback((date: Date, event: React.MouseEvent) => {
@@ -258,13 +543,13 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
     if (isMobile) return;
 
     // iCS 이벤트가 있는 날짜만 호버 반응
-    if (hasICSEventsOnDate(date)) {
-      const events = getICSEventsForDate(date);
+    if (hasPersonalICSEventsOnDate(date)) {
+      const events = getPersonalICSEventsForDate(date);
       setHoveredDate(date);
       setMousePosition({ x: event.clientX, y: event.clientY });
       setHoveredEvents(events);
     }
-  }, 50); // 50ms 디바운스
+  }, 20); // 20ms 디바운스로 반응속도 향상
 
   /**
    * 호버 종료 핸들러 (디바운스됨)
@@ -712,62 +997,48 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
           </div>
         )}
         
-        {/* 상태 범례 */}
+        {/* 동적 상태 범례 */}
         <div className={cn(
           "grid gap-2 p-3 bg-muted/30 rounded-lg",
-          isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+          isMobile ? "grid-cols-1" : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         )}>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-100 border-2 border-green-200 rounded flex-shrink-0"></div>
-            <Check className="w-3 h-3 text-green-500 flex-shrink-0" />
-            <span className="text-xs sm:text-sm truncate">사용 가능</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-100 border-2 border-red-300 rounded flex-shrink-0"></div>
-            <Ban className="w-3 h-3 text-red-500 flex-shrink-0" />
-            <span className="text-xs sm:text-sm truncate">비활성화됨</span>
-          </div>
-          {/* 다중 캘린더 표시 */}
-          {displayMode === 'unified' || calendars.length <= 1 ? (
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-yellow-100 border-2 border-yellow-300 rounded flex-shrink-0"></div>
-              <CalendarIcon className="w-3 h-3 text-yellow-500 flex-shrink-0" />
-              <span className="text-xs sm:text-sm truncate">
-                개인 일정{calendars.length > 1 && ` (${calendars.length}개 통합)`}
-              </span>
-            </div>
-          ) : (
-            // 구분 모드: 각 캘린더별로 표시
-            calendarGroups.size > 0 && Array.from(calendarGroups.values()).map((group) => {
-              const colorInfo = getCalendarColor(group.colorIndex);
-              return (
-                <div key={group.calendar.id} className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 border-2 border-gray-300 rounded flex-shrink-0"
-                    style={{ backgroundColor: colorInfo.lightBg }}
-                  ></div>
-                  <CalendarIcon 
-                    className="w-3 h-3 flex-shrink-0"
-                    style={{ color: colorInfo.hex }}
-                  />
-                  <span className="text-xs sm:text-sm truncate" title={group.calendar.displayName}>
-                    {group.calendar.displayName || '개인 캘린더'}
-                  </span>
-                </div>
-              );
-            })
-          )}
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-blue-100 border-2 border-blue-300 rounded flex-shrink-0"></div>
-          <Clock className="w-3 h-3 text-blue-500 flex-shrink-0" />
-          <span className="text-xs sm:text-sm truncate">Crime-Cat</span>
+          {dynamicLegendItems.map((item, index) => {
+            const IconComponent = item.icon;
+            
+            return (
+              <div key={`${item.type}-${index}`} className="flex items-center gap-2">
+                <div 
+                  className={cn(
+                    "w-3 h-3 border-2 rounded flex-shrink-0",
+                    item.bgColor,
+                    item.borderColor
+                  )}
+                  style={
+                    item.type === 'calendar' 
+                      ? { backgroundColor: item.bgColor === 'colorInfo.lightBg' ? item.color + '20' : undefined }
+                      : item.type === 'overlapping' 
+                      ? { background: 'repeating-linear-gradient(45deg, #ff6b6b 0px, #ff6b6b 3px, #4ecdc4 3px, #4ecdc4 6px)' }
+                      : {}
+                  }
+                />
+                <IconComponent 
+                  className={cn("w-3 h-3 flex-shrink-0", item.iconColor)} 
+                  style={
+                    item.type === 'calendar' 
+                      ? { color: item.color }
+                      : {}
+                  }
+                />
+                <span 
+                  className="text-xs sm:text-sm truncate" 
+                  title={item.label}
+                >
+                  {item.label}
+                </span>
+              </div>
+            );
+          })}
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-purple-100 border-2 border-purple-300 rounded flex-shrink-0"></div>
-          <Clock className="w-3 h-3 text-purple-500 flex-shrink-0" />
-          <span className="text-xs sm:text-sm truncate">복합 일정</span>
-        </div>
-      </div>
       
       {/* 사용 안내 메시지 */}
       <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -811,6 +1082,24 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
     </div>
     );
   };
+
+  // CSS 스타일 주입
+  useEffect(() => {
+    const styleId = 'calendar-overlap-styles';
+    if (!document.getElementById(styleId)) {
+      const styleElement = document.createElement('style');
+      styleElement.id = styleId;
+      styleElement.textContent = overlappingStyles;
+      document.head.appendChild(styleElement);
+    }
+    
+    return () => {
+      const styleElement = document.getElementById(styleId);
+      if (styleElement) {
+        document.head.removeChild(styleElement);
+      }
+    };
+  }, []);
 
   return (
     <Card className={cn('w-full max-w-full', className)}>
@@ -1026,6 +1315,7 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                 
                 // 현재 날짜의 정보 가져오기
                 const dateInfo = getDateInfo(date);
+                const dateStyle = getDateDisplayStyle(date);
                 
                 // 이전/이후 월 날짜 판단 (수동 계산)
                 const isOutsideMonth = date.getMonth() !== currentMonth.getMonth() || 
@@ -1033,7 +1323,11 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                 
                 return (
                   <div
-                    className={getDateClassName(date)}
+                    className={cn(
+                      getDateClassName(date),
+                      !isOutsideMonth ? dateStyle.className : ''
+                    )}
+                    style={!isOutsideMonth ? dateStyle.style : undefined}
                     title={isOutsideMonth ? "이전/다음 월 날짜 (참고용)" : undefined}
                     onClick={() => !isOutsideMonth && handleDateClick(date)}
                     onMouseDown={() => !isOutsideMonth && startDrag(date)}
@@ -1074,6 +1368,7 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                         events={dateInfo.events}
                         date={date}
                         className="absolute inset-0"
+                        overlapInfo={getDateCalendarInfo(date)}
                       />
                     )}
                   </div>
