@@ -44,6 +44,7 @@ const overlappingStyles = `
   }
 `;
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+// import { CalendarHeader, CalendarLegend, CalendarStats } from './calendar'; // 미사용으로 주석 처리
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';

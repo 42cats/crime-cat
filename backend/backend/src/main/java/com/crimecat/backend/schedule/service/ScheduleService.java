@@ -14,23 +14,13 @@ import com.crimecat.backend.webUser.domain.WebUser;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.fortuna.ical4j.data.CalendarBuilder;
-import net.fortuna.ical4j.model.Calendar;
-import net.fortuna.ical4j.model.Component;
-import net.fortuna.ical4j.model.component.VEvent;
-import net.fortuna.ical4j.model.property.DtEnd;
-import net.fortuna.ical4j.model.property.DtStart;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.reactive.function.client.WebClient;
-
-import java.io.StringReader;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -45,7 +35,7 @@ public class ScheduleService {
     private final EventRepository eventRepository;
     private final EventParticipantRepository eventParticipantRepository;
     private final UserCalendarRepository userCalendarRepository;
-    private final WebClient.Builder webClientBuilder;
+    private final ICalParsingService icalParsingService;
     // private final NotificationService notificationService; // Assuming notification service exists
 
     @CacheEvict(value = CacheType.SCHEDULE_EVENT_LIST, allEntries = true)
@@ -144,129 +134,7 @@ public class ScheduleService {
         userCalendarRepository.save(calendar);
     }
 
-    // Helper method to fetch and parse iCal data with event details
-    @Cacheable(value = CacheType.SCHEDULE_ICAL_PARSED, key = "#icalUrl.hashCode() + '_detailed'")
-    private List<Map<String, Object>> fetchAndParseIcalWithDetails(String icalUrl) {
-        log.info("🔍 [ICAL_DEBUG] Starting to fetch iCalendar from URL: {}", icalUrl);
-        
-        WebClient webClient = webClientBuilder.build();
-        
-        String icalContent;
-        try {
-            // Create URI directly to avoid double encoding issues
-            java.net.URI uri = java.net.URI.create(icalUrl);
-            log.debug("🔍 [ICAL_DEBUG] Created URI: {}", uri.toString());
-            
-            icalContent = webClient.get().uri(uri).retrieve().bodyToMono(String.class).block();
-        } catch (Exception e) {
-            log.error("🔍 [ICAL_DEBUG] Failed to fetch iCalendar from URL: {} - {}", icalUrl, e.getMessage(), e);
-            return new ArrayList<>();
-        }
-
-        List<Map<String, Object>> events = new ArrayList<>();
-        if (icalContent == null || icalContent.isEmpty()) {
-            log.warn("🔍 [ICAL_DEBUG] iCalendar content is null or empty");
-            return events;
-        }
-        
-        log.info("🔍 [ICAL_DEBUG] iCalendar content length: {}", icalContent.length());
-        log.debug("🔍 [ICAL_DEBUG] First 500 characters: {}", icalContent.substring(0, Math.min(500, icalContent.length())));
-
-        try {
-            CalendarBuilder builder = new CalendarBuilder();
-            Calendar calendar = builder.build(new StringReader(icalContent));
-
-            log.info("🔍 [ICAL_DEBUG] Starting to parse VEVENT components");
-            int eventCount = 0;
-            int currentYearEvents = 0;
-            
-            for (Object component : calendar.getComponents(Component.VEVENT)) {
-                VEvent event = (VEvent) component;
-                DtStart dtStart = event.getStartDate();
-                DtEnd dtEnd = event.getEndDate();
-                eventCount++;
-
-                if (dtStart != null && dtEnd != null) {
-                    LocalDateTime start = dtStart.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-                    LocalDateTime end = dtEnd.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-                    
-                    // 현재 연도 이벤트인지 확인
-                    if (start.getYear() == LocalDateTime.now().getYear()) {
-                        currentYearEvents++;
-                        log.info("🔍 [ICAL_DEBUG] Found {} event: {} on {}", 
-                            LocalDateTime.now().getYear(),
-                            event.getSummary() != null ? event.getSummary().getValue() : "No title",
-                            start.toLocalDate());
-                    }
-                    
-                    Map<String, Object> eventDetails = new HashMap<>();
-                    eventDetails.put("startTime", start);
-                    eventDetails.put("endTime", end);
-                    eventDetails.put("title", event.getSummary() != null ? event.getSummary().getValue() : "개인 일정");
-                    eventDetails.put("description", event.getDescription() != null ? event.getDescription().getValue() : null);
-                    
-                    events.add(eventDetails);
-                    
-                    // 처음 5개 이벤트의 상세 정보 로그
-                    if (eventCount <= 5) {
-                        log.debug("🔍 [ICAL_DEBUG] Event {}: title={}, start={}, end={}", 
-                            eventCount,
-                            event.getSummary() != null ? event.getSummary().getValue() : "No title",
-                            start, end);
-                    }
-                }
-            }
-            
-            log.info("🔍 [ICAL_DEBUG] Parsed {} total events, {} events in {}", 
-                eventCount, currentYearEvents, LocalDateTime.now().getYear());
-        } catch (Exception e) {
-            log.error("Failed to parse iCalendar from URL: {} - {}", icalUrl, e.getMessage(), e);
-            // Return empty list to gracefully handle parsing failures
-        }
-        return events;
-    }
-
-    // Helper method to fetch and parse iCal data (for backward compatibility)
-    @Cacheable(value = CacheType.SCHEDULE_ICAL_PARSED, key = "#icalUrl.hashCode()")
-    private List<LocalDateTime[]> fetchAndParseIcal(String icalUrl) {
-        WebClient webClient = webClientBuilder.build();
-        
-        String icalContent;
-        try {
-            // Create URI directly to avoid double encoding issues
-            java.net.URI uri = java.net.URI.create(icalUrl);
-            icalContent = webClient.get().uri(uri).retrieve().bodyToMono(String.class).block();
-        } catch (Exception e) {
-            log.error("Failed to fetch iCalendar from URL: {} - {}", icalUrl, e.getMessage(), e);
-            return new ArrayList<>();
-        }
-
-        List<LocalDateTime[]> busyTimes = new ArrayList<>();
-        if (icalContent == null || icalContent.isEmpty()) {
-            return busyTimes;
-        }
-
-        try {
-            CalendarBuilder builder = new CalendarBuilder();
-            Calendar calendar = builder.build(new StringReader(icalContent));
-
-            for (Object component : calendar.getComponents(Component.VEVENT)) {
-                VEvent event = (VEvent) component;
-                DtStart dtStart = event.getStartDate();
-                DtEnd dtEnd = event.getEndDate();
-
-                if (dtStart != null && dtEnd != null) {
-                    LocalDateTime start = dtStart.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-                    LocalDateTime end = dtEnd.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-                    busyTimes.add(new LocalDateTime[]{start, end});
-                }
-            }
-        } catch (Exception e) {
-            log.error("Failed to parse iCalendar from URL: {} - {}", icalUrl, e.getMessage(), e);
-            // Return empty list to gracefully handle parsing failures
-        }
-        return busyTimes;
-    }
+    // Delegate to ICalParsingService for parsing operations
 
     @Transactional(readOnly = true)
     @Cacheable(value = CacheType.SCHEDULE_AVAILABILITY, key = "#eventId.toString()")
@@ -280,7 +148,7 @@ public class ScheduleService {
         List<LocalDateTime[]> allBusyTimes = new ArrayList<>();
         for (EventParticipant participant : participants) {
             userCalendarRepository.findByUser(participant.getUser()).ifPresent(userCalendar -> {
-                allBusyTimes.addAll(fetchAndParseIcal(userCalendar.getIcalUrl()));
+                allBusyTimes.addAll(icalParsingService.fetchAndParseIcal(userCalendar.getIcalUrl()));
             });
         }
 
@@ -450,7 +318,7 @@ public class ScheduleService {
         
         try {
             // iCalendar 데이터 파싱 (상세 정보 포함)
-            List<Map<String, Object>> icalEvents = fetchAndParseIcalWithDetails(icalUrl);
+            List<Map<String, Object>> icalEvents = icalParsingService.fetchAndParseIcalWithDetails(icalUrl);
             
             // 지정된 날짜 범위 내의 이벤트만 필터링하고 API 응답 형태로 변환
             LocalDateTime rangeStart = startDate.atStartOfDay();
