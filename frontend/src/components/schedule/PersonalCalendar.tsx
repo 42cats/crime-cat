@@ -1060,15 +1060,13 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
             const dateInfo = getDateInfo(date);
 
             const iconSize = calendarSizes.iconSize;
-            // 개수 표시와 겹치지 않도록 왼쪽 상단으로 이동
-            const iconPosition =
-                viewMode === "compact" ? "top-0 left-0" : "top-0.5 left-0.5";
+            // 컨테이너에서 위치를 제어하므로 여기서는 상대 위치로 설정
 
             switch (dateInfo.status) {
                 case DateStatus.BLOCKED:
                     return (
                         <Ban
-                            className={`${iconSize} absolute ${iconPosition} text-red-500 z-10`}
+                            className={`${iconSize} text-red-500`}
                         />
                     );
                 case DateStatus.BUSY: {
@@ -1084,21 +1082,21 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                         // 둘 다 있는 경우 - 보라색 시계
                         return (
                             <Clock
-                                className={`${iconSize} absolute ${iconPosition} text-purple-500`}
+                                className={`${iconSize} text-purple-500`}
                             />
                         );
                     } else if (hasICalEvent) {
                         // iCalendar 이벤트만 - 노란색 달력
                         return (
                             <CalendarIcon
-                                className={`${iconSize} absolute ${iconPosition} text-yellow-500`}
+                                className={`${iconSize} text-yellow-500`}
                             />
                         );
                     } else {
                         // Crime-Cat 이벤트만 - 파란색 시계
                         return (
                             <Clock
-                                className={`${iconSize} absolute ${iconPosition} text-blue-500`}
+                                className={`${iconSize} text-blue-500`}
                             />
                         );
                     }
@@ -1106,7 +1104,7 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                 default:
                     return (
                         <Check
-                            className={`${iconSize} absolute ${iconPosition} text-green-500`}
+                            className={`${iconSize} text-green-500`}
                         />
                     );
             }
@@ -1898,7 +1896,7 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                                                 );
                                             return (
                                                 displayRules.showStatusIcon && (
-                                                    <div className="absolute top-0.5 right-0.5 z-25">
+                                                    <div className="absolute top-1 right-1 w-4 h-4 z-25 flex items-center justify-center">
                                                         {renderDateIcon(date)}
                                                     </div>
                                                 )
