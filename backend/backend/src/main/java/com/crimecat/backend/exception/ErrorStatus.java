@@ -133,7 +133,19 @@ public enum ErrorStatus {
     CALENDAR_COLOR_INDEX_INVALID("유효하지 않은 색상 인덱스입니다.", HttpStatus.BAD_REQUEST),
     INVALID_DATE_RANGE("잘못된 날짜 범위입니다.", HttpStatus.BAD_REQUEST),
     EVENT_STATUS_CHANGE_NOT_ALLOWED("이벤트 상태를 변경할 수 없습니다.", HttpStatus.BAD_REQUEST),
-    EVENT_MINIMUM_PARTICIPANTS_NOT_MET("최소 참여 인원이 부족합니다.", HttpStatus.BAD_REQUEST);
+    EVENT_MINIMUM_PARTICIPANTS_NOT_MET("최소 참여 인원이 부족합니다.", HttpStatus.BAD_REQUEST),
+    
+    // 🤖 Discord 봇 일정 관리 관련
+    DISCORD_USER_NOT_LINKED("Discord 계정이 연동되지 않았습니다. 웹사이트에서 Discord 로그인을 해주세요.", HttpStatus.NOT_FOUND),
+    WEB_USER_NOT_REGISTERED("웹사이트 회원가입이 필요합니다.", HttpStatus.NOT_FOUND),
+    CALENDAR_NOT_REGISTERED("등록된 캘린더가 없습니다. 웹사이트에서 Google/Apple 캘린더를 연결해주세요.", HttpStatus.BAD_REQUEST),
+    INVALID_DISCORD_SNOWFLAKE("유효하지 않은 Discord 사용자 ID입니다.", HttpStatus.BAD_REQUEST),
+    INVALID_MONTH_RANGE("개월 수는 1~12 사이여야 합니다.", HttpStatus.BAD_REQUEST),
+    INVALID_DATE_FORMAT("날짜 형식이 올바르지 않습니다. 예: '10월 1 2 3 4'", HttpStatus.BAD_REQUEST),
+    ICAL_PARSING_FAILED("iCalendar 파싱에 실패했습니다.", HttpStatus.BAD_GATEWAY),
+    ICAL_DOWNLOAD_FAILED("iCalendar 다운로드에 실패했습니다.", HttpStatus.BAD_GATEWAY),
+    CACHE_REFRESH_FAILED("캐시 갱신에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    SCHEDULE_SERVICE_ERROR("일정 서비스 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final String message;
     private final HttpStatus status;

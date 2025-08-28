@@ -1,165 +1,211 @@
 package com.crimecat.backend.schedule.service;
 
-import lombok.RequiredArgsConstructor;
-import net.fortuna.ical4j.data.CalendarBuilder;
-import net.fortuna.ical4j.model.Calendar;
-import net.fortuna.ical4j.model.Component;
-import net.fortuna.ical4j.model.component.VEvent;
-import net.fortuna.ical4j.model.property.DtEnd;
-import net.fortuna.ical4j.model.property.DtStart;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-
-import java.io.StringReader;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestTemplate;
 
 /**
- * iCalendar 데이터 파싱 전용 서비스
- * - iCal URL에서 데이터 가져오기
- * - VEvent 파싱 및 변환
- * - 캐싱을 통한 성능 최적화
+ * iCal (.ics) 파일 실시간 파싱 서비스
+ * Google Calendar, Apple Calendar, Outlook 등의 iCal URL을 파싱하여 날짜 정보 추출
  */
+@Slf4j
 @Service
-@RequiredArgsConstructor
 public class ICalParsingService {
     
-    private static final Logger log = LoggerFactory.getLogger(ICalParsingService.class);
+    private final RestTemplate restTemplate;
     
-    private final WebClient.Builder webClientBuilder;
+    // iCal 날짜 포맷 패턴들
+    private static final Pattern DTSTART_PATTERN = Pattern.compile("DTSTART(?:;[^:]*)?:([\\d]{8}T?[\\d]{0,6}Z?)");
+    private static final Pattern DTEND_PATTERN = Pattern.compile("DTEND(?:;[^:]*)?:([\\d]{8}T?[\\d]{0,6}Z?)");
+    private static final DateTimeFormatter ICAL_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final DateTimeFormatter ICAL_DATETIME_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
     
-    /**
-     * iCal URL에서 상세 정보와 함께 이벤트 데이터 파싱
-     */
-    @Cacheable(value = "SCHEDULE_ICAL_DATA", key = "#icalUrl.hashCode() + '_detailed'")
-    public List<Map<String, Object>> fetchAndParseIcalWithDetails(String icalUrl) {
-        String icalContent = fetchIcalContent(icalUrl);
-        if (icalContent == null || icalContent.isEmpty()) {
-            return new ArrayList<>();
-        }
-        
-        return parseIcalContent(icalContent);
+    public ICalParsingService() {
+        this.restTemplate = new RestTemplate();
+        // 타임아웃 설정 (10초)
+        restTemplate.getRequestFactory();
     }
     
     /**
-     * iCal URL에서 기본 시간 간격 데이터만 파싱 (하위 호환성)
+     * iCal URL에서 지정된 기간의 날짜 목록 추출
+     * @param icalUrl iCal 파일 URL
+     * @param months 조회할 개월 수
+     * @return 날짜 목록 (중복 제거)
      */
-    @Cacheable(value = "SCHEDULE_ICAL_DATA", key = "#icalUrl.hashCode()")
-    public List<LocalDateTime[]> fetchAndParseIcal(String icalUrl) {
-        String icalContent = fetchIcalContent(icalUrl);
-        if (icalContent == null || icalContent.isEmpty()) {
-            return new ArrayList<>();
-        }
-        
-        return parseIcalContentForTimeIntervals(icalContent);
-    }
-    
-    /**
-     * iCal URL에서 콘텐츠 가져오기
-     */
-    private String fetchIcalContent(String icalUrl) {
-        WebClient webClient = webClientBuilder.build();
+    public Set<LocalDate> parseICalDates(String icalUrl, int months) {
+        log.info("📅 iCal 파싱 시작: url={}, months={}",icalUrl, months);
         
         try {
-            java.net.URI uri = java.net.URI.create(icalUrl);
-            return webClient.get().uri(uri).retrieve().bodyToMono(String.class).block();
+            // 1. iCal 데이터 다운로드
+            String icalData = downloadICalData(icalUrl);
+            
+            // 2. 이벤트 날짜 추출
+            Set<LocalDate> dates = extractEventDates(icalData, months);
+            
+            log.info("✅ iCal 파싱 완료: {} 개 날짜 추출", dates.size());
+            return dates;
+            
         } catch (Exception e) {
-            log.error("Failed to fetch iCalendar from URL: {} - {}", icalUrl, e.getMessage(), e);
-            return null;
+            log.error("❌ iCal 파싱 실패: {}", e.getMessage());
+            throw new RuntimeException("캘린더 데이터를 읽을 수 없습니다: " + e.getMessage());
         }
     }
     
     /**
-     * iCal 콘텐츠를 상세 정보와 함께 파싱
+     * 여러 iCal URL의 날짜 목록을 통합
+     * @param icalUrls iCal URL 목록
+     * @param months 조회할 개월 수
+     * @return 통합된 날짜 목록
      */
-    private List<Map<String, Object>> parseIcalContent(String icalContent) {
-        List<Map<String, Object>> events = new ArrayList<>();
+    public Set<LocalDate> parseMultipleICalDates(List<String> icalUrls, int months) {
+        log.info("📅 다중 iCal 파싱 시작: {} 개 캘린더, {} 개월", icalUrls.size(), months);
         
+        Set<LocalDate> allDates = new HashSet<>();
+        List<String> errors = new ArrayList<>();
+        
+        for (String icalUrl : icalUrls) {
+            try {
+                Set<LocalDate> dates = parseICalDates(icalUrl, months);
+                allDates.addAll(dates);
+                log.debug("📅 캘린더 파싱 성공: {} 개 날짜", dates.size());
+            } catch (Exception e) {
+                log.warn("⚠️ 개별 캘린더 파싱 실패: {}", e.getMessage());
+                errors.add(maskUrl(icalUrl) + ": " + e.getMessage());
+            }
+        }
+        
+        if (!errors.isEmpty() && allDates.isEmpty()) {
+            throw new RuntimeException("모든 캘린더 파싱 실패: " + String.join(", ", errors));
+        } else if (!errors.isEmpty()) {
+            log.warn("⚠️ 일부 캘린더 파싱 실패: {}", errors);
+        }
+        
+        log.info("✅ 다중 iCal 파싱 완료: 총 {} 개 날짜", allDates.size());
+        return allDates;
+    }
+    
+    /**
+     * iCal 데이터 다운로드
+     */
+    private String downloadICalData(String icalUrl) {
         try {
-            CalendarBuilder builder = new CalendarBuilder();
-            Calendar calendar = builder.build(new StringReader(icalContent));
-
-            for (Object component : calendar.getComponents(Component.VEVENT)) {
-                VEvent event = (VEvent) component;
-                Map<String, Object> eventDetails = parseVEvent(event);
-                if (eventDetails != null) {
-                    events.add(eventDetails);
-                }
+            log.debug("🔄 iCal 다운로드: {}", maskUrl(icalUrl));
+            
+            String icalData = restTemplate.getForObject(icalUrl, String.class);
+            
+            if (icalData == null || icalData.trim().isEmpty()) {
+                throw new RuntimeException("빈 캘린더 데이터");
             }
             
-            log.debug("Parsed {} events from iCalendar", events.size());
-        } catch (Exception e) {
-            log.error("Failed to parse iCalendar content: {}", e.getMessage(), e);
+            if (!icalData.contains("BEGIN:VCALENDAR")) {
+                throw new RuntimeException("유효하지 않은 iCal 형식");
+            }
+            
+            log.debug("✅ iCal 다운로드 완료: {} bytes", icalData.length());
+            return icalData;
+            
+        } catch (ResourceAccessException e) {
+            throw new RuntimeException("캘린더 서버에 연결할 수 없습니다 (타임아웃 또는 네트워크 오류)");
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode().value() == 404) {
+                throw new RuntimeException("캘린더 URL을 찾을 수 없습니다 (404)");
+            } else if (e.getStatusCode().value() == 403) {
+                throw new RuntimeException("캘린더에 접근할 권한이 없습니다 (403)");
+            } else {
+                throw new RuntimeException("캘린더 서버 오류: " + e.getStatusCode());
+            }
         }
-        
-        return events;
     }
     
     /**
-     * iCal 콘텐츠를 시간 간격 배열로만 파싱 (하위 호환성)
+     * iCal 데이터에서 이벤트 날짜 추출
      */
-    private List<LocalDateTime[]> parseIcalContentForTimeIntervals(String icalContent) {
-        List<LocalDateTime[]> busyTimes = new ArrayList<>();
+    private Set<LocalDate> extractEventDates(String icalData, int months) {
+        Set<LocalDate> dates = new HashSet<>();
+        LocalDate startDate = LocalDate.now();
+        LocalDate endDate = startDate.plusMonths(months);
+        
+        // 이벤트 블록별로 분할
+        String[] events = icalData.split("BEGIN:VEVENT");
+        
+        for (String event : events) {
+            if (!event.contains("DTSTART")) continue;
+            
+            try {
+                LocalDate eventDate = extractEventDate(event);
+                
+                // 지정된 기간 내의 날짜만 포함
+                if (eventDate != null && 
+                    !eventDate.isBefore(startDate) && 
+                    eventDate.isBefore(endDate)) {
+                    dates.add(eventDate);
+                }
+                
+            } catch (Exception e) {
+                log.debug("⚠️ 개별 이벤트 파싱 실패: {}", e.getMessage());
+                // 개별 이벤트 실패는 무시하고 계속 진행
+            }
+        }
+        
+        log.debug("📅 이벤트 날짜 추출 완료: {} 개 (기간: {} ~ {})", 
+                 dates.size(), startDate, endDate.minusDays(1));
+        return dates;
+    }
+    
+    /**
+     * 단일 이벤트에서 날짜 추출
+     */
+    private LocalDate extractEventDate(String event) {
+        Matcher dtStartMatcher = DTSTART_PATTERN.matcher(event);
+        
+        if (!dtStartMatcher.find()) {
+            return null;
+        }
+        
+        String dateTimeString = dtStartMatcher.group(1);
         
         try {
-            CalendarBuilder builder = new CalendarBuilder();
-            Calendar calendar = builder.build(new StringReader(icalContent));
-
-            for (Object component : calendar.getComponents(Component.VEVENT)) {
-                VEvent event = (VEvent) component;
-                LocalDateTime[] timeInterval = parseVEventForTimeInterval(event);
-                if (timeInterval != null) {
-                    busyTimes.add(timeInterval);
-                }
+            // 날짜만 있는 경우 (YYYYMMDD)
+            if (dateTimeString.length() == 8) {
+                return LocalDate.parse(dateTimeString, ICAL_DATE_FORMAT);
             }
+            
+            // 날짜+시간이 있는 경우 (YYYYMMDDTHHMMSS 또는 YYYYMMDDTHHMMSSZ)
+            String dateOnly = dateTimeString.substring(0, 8);
+            return LocalDate.parse(dateOnly, ICAL_DATE_FORMAT);
+            
+        } catch (DateTimeParseException e) {
+            log.debug("⚠️ 날짜 파싱 실패: {}", dateTimeString);
+            return null;
+        }
+    }
+    
+    /**
+     * URL 마스킹 (로그용)
+     */
+    private String maskUrl(String url) {
+        if (url == null || url.length() < 20) return url;
+        return url.substring(0, 20) + "...";
+    }
+    
+    /**
+     * iCal URL 유효성 검증
+     */
+    public boolean isValidICalUrl(String icalUrl) {
+        try {
+            downloadICalData(icalUrl);
+            return true;
         } catch (Exception e) {
-            log.error("Failed to parse iCalendar content for time intervals: {}", e.getMessage(), e);
+            log.debug("🚫 iCal URL 유효성 검증 실패: {}", e.getMessage());
+            return false;
         }
-        
-        return busyTimes;
-    }
-    
-    /**
-     * VEvent를 상세 정보가 포함된 Map으로 변환
-     */
-    private Map<String, Object> parseVEvent(VEvent event) {
-        DtStart dtStart = event.getStartDate();
-        DtEnd dtEnd = event.getEndDate();
-        
-        if (dtStart == null || dtEnd == null) {
-            return null;
-        }
-        
-        LocalDateTime start = dtStart.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-        LocalDateTime end = dtEnd.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-        
-        Map<String, Object> eventDetails = new HashMap<>();
-        eventDetails.put("startTime", start);
-        eventDetails.put("endTime", end);
-        eventDetails.put("title", event.getSummary() != null ? event.getSummary().getValue() : "개인 일정");
-        eventDetails.put("description", event.getDescription() != null ? event.getDescription().getValue() : null);
-        
-        return eventDetails;
-    }
-    
-    /**
-     * VEvent를 시간 간격 배열로 변환 (하위 호환성)
-     */
-    private LocalDateTime[] parseVEventForTimeInterval(VEvent event) {
-        DtStart dtStart = event.getStartDate();
-        DtEnd dtEnd = event.getEndDate();
-        
-        if (dtStart == null || dtEnd == null) {
-            return null;
-        }
-        
-        LocalDateTime start = dtStart.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-        LocalDateTime end = dtEnd.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-        
-        return new LocalDateTime[]{start, end};
     }
 }

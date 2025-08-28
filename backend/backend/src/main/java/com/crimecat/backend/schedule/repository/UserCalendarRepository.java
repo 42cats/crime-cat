@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,4 +34,18 @@ public interface UserCalendarRepository extends JpaRepository<UserCalendar, UUID
     int countByUserId(@Param("userId") UUID userId);
     
     boolean existsByUserIdAndIcalUrl(UUID userId, String icalUrl);
+    
+    // Discord 봇 전용 메서드들
+    @Query("SELECT COUNT(uc) FROM UserCalendar uc WHERE uc.user.id = :userId AND uc.isActive = true")
+    int countActiveCalendarsByUserId(@Param("userId") UUID userId);
+    
+    @Query("SELECT MAX(uc.updatedAt) FROM UserCalendar uc WHERE uc.user.id = :userId AND uc.isActive = true")
+    Optional<LocalDateTime> findLatestUpdateTimeByUserId(@Param("userId") UUID userId);
+    
+    // 동기화 상태별 캘린더 조회 (Discord 봇 부분 실패 대응)
+    @Query("SELECT uc FROM UserCalendar uc WHERE uc.user.id = :userId AND uc.syncStatus = :syncStatus ORDER BY uc.sortOrder")
+    List<UserCalendar> findByUserIdAndSyncStatus(@Param("userId") UUID userId, @Param("syncStatus") UserCalendar.SyncStatus syncStatus);
+    
+    @Query("SELECT uc FROM UserCalendar uc WHERE uc.user.id = :userId AND uc.isActive = true AND uc.syncStatus = :syncStatus ORDER BY uc.sortOrder")
+    List<UserCalendar> findByUserIdAndIsActiveAndSyncStatus(@Param("userId") UUID userId, @Param("isActive") Boolean isActive, @Param("syncStatus") UserCalendar.SyncStatus syncStatus);
 }

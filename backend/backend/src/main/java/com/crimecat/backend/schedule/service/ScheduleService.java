@@ -148,7 +148,16 @@ public class ScheduleService {
         List<LocalDateTime[]> allBusyTimes = new ArrayList<>();
         for (EventParticipant participant : participants) {
             userCalendarRepository.findByUser(participant.getUser()).ifPresent(userCalendar -> {
-                allBusyTimes.addAll(icalParsingService.fetchAndParseIcal(userCalendar.getIcalUrl()));
+                try {
+                    // 새 ICalParsingService 메서드로 교체
+                    Set<LocalDate> dates = icalParsingService.parseICalDates(userCalendar.getIcalUrl(), 3);
+                    // LocalDate를 LocalDateTime 배열로 변환
+                    for (LocalDate date : dates) {
+                        allBusyTimes.add(new LocalDateTime[]{date.atStartOfDay(), date.atTime(23, 59)});
+                    }
+                } catch (Exception e) {
+                    log.warn("iCal 파싱 실패: {}", userCalendar.getIcalUrl());
+                }
             });
         }
 
@@ -317,66 +326,27 @@ public class ScheduleService {
         String icalUrl = userCalendarOpt.get().getIcalUrl();
         
         try {
-            // iCalendar 데이터 파싱 (상세 정보 포함)
-            List<Map<String, Object>> icalEvents = icalParsingService.fetchAndParseIcalWithDetails(icalUrl);
+            // 새 ICalParsingService 메서드 사용 - 날짜만 반환
+            Set<LocalDate> dates = icalParsingService.parseICalDates(icalUrl, 3);
             
-            // 지정된 날짜 범위 내의 이벤트만 필터링하고 API 응답 형태로 변환
-            LocalDateTime rangeStart = startDate.atStartOfDay();
-            LocalDateTime rangeEnd = endDate.atTime(23, 59, 59);
-            
-            log.info("🔍 [ICAL_FILTER] Filtering events for range: {} to {}", rangeStart, rangeEnd);
-            log.info("🔍 [ICAL_FILTER] Total parsed events before filtering: {}", icalEvents.size());
-            
-            AtomicInteger filteredEventCount = new AtomicInteger(0);
-            AtomicInteger outOfRangeCount = new AtomicInteger(0);
-            
-            List<Map<String, Object>> result = icalEvents.stream()
-                .filter(eventDetails -> {
-                    LocalDateTime eventStart = (LocalDateTime) eventDetails.get("startTime");
-                    LocalDateTime eventEnd = (LocalDateTime) eventDetails.get("endTime");
-                    
-                    // 이벤트가 범위와 겹치는지 확인
-                    boolean isInRange = eventStart.isBefore(rangeEnd) && eventEnd.isAfter(rangeStart);
-                    
-                    if (isInRange) {
-                        int count = filteredEventCount.incrementAndGet();
-                        log.debug("🔍 [ICAL_FILTER] Event {} in range: {} from {} to {}", 
-                            count,
-                            (eventDetails.get("title") != null ? eventDetails.get("title") : "No title"),
-                            eventStart, eventEnd);
-                    } else {
-                        int count = outOfRangeCount.incrementAndGet();
-                        if (count <= 3) { // 처음 3개만 로깅
-                            log.debug("🔍 [ICAL_FILTER] Event out of range: {} from {} to {}", 
-                                (eventDetails.get("title") != null ? eventDetails.get("title") : "No title"),
-                                eventStart, eventEnd);
-                        }
-                    }
-                    
-                    return isInRange;
-                })
-                .map(eventDetails -> {
-                    LocalDateTime startTime = (LocalDateTime) eventDetails.get("startTime");
-                    LocalDateTime endTime = (LocalDateTime) eventDetails.get("endTime");
-                    String title = (String) eventDetails.get("title");
-                    
-                    Map<String, Object> eventMap = new HashMap<>();
-                    eventMap.put("id", "ical_" + startTime.toString().hashCode()); // 고유 ID 생성
-                    eventMap.put("title", title != null ? title : "개인 일정");
-                    eventMap.put("startTime", startTime.toString());
-                    eventMap.put("endTime", endTime.toString());
-                    eventMap.put("allDay", false);
-                    eventMap.put("source", "icalendar"); // 이벤트 소스 구분
-                    eventMap.put("category", "personal"); // 개인 일정 카테고리
-                    return eventMap;
+            // LocalDate를 Map<String, Object> 형태로 변환
+            List<Map<String, Object>> result = dates.stream()
+                .filter(date -> !date.isBefore(startDate) && !date.isAfter(endDate))
+                .map(date -> {
+                    Map<String, Object> event = new HashMap<>();
+                    event.put("id", "ical_" + date.toString().hashCode());
+                    event.put("title", "개인 일정");
+                    event.put("startTime", date.atStartOfDay().toString());
+                    event.put("endTime", date.atTime(23, 59).toString());
+                    event.put("allDay", true);
+                    event.put("source", "icalendar");
+                    event.put("category", "personal");
+                    return event;
                 })
                 .collect(Collectors.toList());
-                
-            // 최종 필터링 결과 요약
-            log.info("🔍 [ICAL_SUMMARY] Final filtering summary:");
-            log.info("🔍 [ICAL_SUMMARY] - Events in range: {}", filteredEventCount.get());
-            log.info("🔍 [ICAL_SUMMARY] - Events out of range: {}", outOfRangeCount.get());
-            log.info("🔍 [ICAL_SUMMARY] - Total events processed: {}", (filteredEventCount.get() + outOfRangeCount.get()));
+            
+            log.info("🔍 [ICAL_FILTER] Filtered events: {} out of {} total dates", 
+                    result.size(), dates.size());
             
             return result;
                 
