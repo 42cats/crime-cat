@@ -85,9 +85,11 @@ export class ScheduleService {
 
   /**
    * 사용자 iCalendar URL 저장/업데이트
+   * @deprecated 새로운 PersonalCalendarController의 addCalendar API 사용 권장
    */
   async saveUserCalendar(request: UserCalendarRequest): Promise<void> {
-    await apiClient.post<void>(`${this.baseURL}/my-calendar`, request);
+    // 새로운 API 경로로 리디렉션
+    await apiClient.post<void>('/my-calendar/calendars', request);
   }
 
   /**

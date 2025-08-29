@@ -34,21 +34,24 @@ public class BotScheduleService {
     private final MultipleCalendarService multipleCalendarService;
     private final DateFormatService dateFormatService;
     private final OptimizedBlockedDateService blockedDateService;
+    private final UnifiedCalendarCacheService unifiedCacheService;
     private final RedisTemplate<String, Object> redisTemplate;
     
-    // 명시적 생성자 - MultipleCalendarService + OptimizedBlockedDateService 추가 (웹과 동일한 방식 사용)
+    // 명시적 생성자 - UnifiedCalendarCacheService 추가
     public BotScheduleService(
             WebUserRepository webUserRepository,
             UserCalendarRepository userCalendarRepository,
             MultipleCalendarService multipleCalendarService,
             DateFormatService dateFormatService,
             OptimizedBlockedDateService blockedDateService,
+            UnifiedCalendarCacheService unifiedCacheService,
             @Qualifier("redisObjectTemplate") RedisTemplate<String, Object> redisTemplate) {
         this.webUserRepository = webUserRepository;
         this.userCalendarRepository = userCalendarRepository;
         this.multipleCalendarService = multipleCalendarService;
         this.dateFormatService = dateFormatService;
         this.blockedDateService = blockedDateService;
+        this.unifiedCacheService = unifiedCacheService;
         this.redisTemplate = redisTemplate;
     }
 
@@ -58,151 +61,39 @@ public class BotScheduleService {
     private static final int CACHE_TTL_MINUTES = 30;
     
     /**
-     * Discord 사용자의 내일정 조회 (/내일정 명령어)
+     * Discord 사용자의 내일정 조회 (/내일정 명령어) - 통합 캐싱 적용
      * @param discordSnowflake Discord 사용자 Snowflake ID
      * @param months 조회할 개월 수 (기본: 3개월)
      * @return 내일정 응답 데이터
      */
     @Transactional(readOnly = true)
     public MyScheduleResponse getMySchedule(String discordSnowflake, int months) {
-        log.info("📅 내일정 조회 시작: discordSnowflake={}, months={}", discordSnowflake, months);
+        log.info("📅 [UNIFIED] 내일정 조회 시작: discordSnowflake={}, months={}", discordSnowflake, months);
         
         try {
             // 입력 유효성 검사
             validateDiscordSnowflake(discordSnowflake);
             validateMonths(months);
             
-            // Redis 캐시 확인 (3개월 디폴트값만 캐싱)
-            MyScheduleResponse cached = null;
-            String cacheKey = null;
-            if (months == 3) {  // 3개월 디폴트값만 캐싱
-                cacheKey = String.format(CACHE_KEY_MY_SCHEDULE, discordSnowflake, months);
-                cached = (MyScheduleResponse) redisTemplate.opsForValue().get(cacheKey);
-                if (cached != null) {
-                    log.info("✅ 캐시에서 내일정 조회 완료: {} 개 날짜 (3개월 캐시)", cached.getTotalEvents());
-                    return cached;
-                }
+            // 🚀 통합 캐싱 서비스 사용 (3개월만 캐싱)
+            if (months == 3) {
+                // 3개월 디폴트값 - 통합 캐시 사용
+                log.info("📦 [UNIFIED] 3개월 디폴트값 - 통합 캐시 사용: discordSnowflake={}", discordSnowflake);
+                MyScheduleResponse response = unifiedCacheService.getDiscordSchedule(discordSnowflake, months);
+                log.info("✅ [UNIFIED] 내일정 조회 완료 (캐싱): {} 개 이벤트", response.getTotalEvents());
+                return response;
             } else {
-                log.info("📝 캐싱 제외: {}개월 요청 (3개월만 캐싱)", months);
+                // 기타 개월 수 - 실시간 조회 (캐싱 없음)
+                log.info("🔄 [UNIFIED] {}개월 요청 - 실시간 조회 (캐싱 없음)", months);
+                MyScheduleResponse response = unifiedCacheService.getDiscordSchedule(discordSnowflake, months);
+                log.info("✅ [UNIFIED] 내일정 조회 완료 (실시간): {} 개 이벤트", response.getTotalEvents());
+                return response;
             }
-            
-            // 1. Discord 사용자 → User → WebUser 조회
-            WebUser webUser = findWebUserByDiscordSnowflake(discordSnowflake);
-            
-            // 2. 웹과 동일한 방식으로 모든 캘린더 동기화 (부분 실패 허용)
-            try {
-                multipleCalendarService.syncAllUserCalendars(webUser.getId());
-            } catch (Exception e) {
-                log.warn("⚠️ 캘린더 동기화 중 일부 실패 (계속 진행): {}", e.getMessage());
-            }
-            
-            // 3. 모든 활성 캘린더 조회 (동기화 실패한 것도 포함)
-            List<UserCalendar> allActiveCalendars = userCalendarRepository.findActiveCalendarsByUserId(webUser.getId());
-            
-            if (allActiveCalendars.isEmpty()) {
-                throw new ServiceException(ErrorStatus.CALENDAR_NOT_REGISTERED);
-            }
-            
-            // 4. 실시간 이벤트 데이터 조회 (MultipleCalendarService 사용)
-            Set<LocalDate> allDates = new HashSet<>();
-            int successfulCalendarCount = 0;
-            
-            try {
-                // 날짜 범위 설정
-                LocalDate startDate = LocalDate.now();
-                LocalDate endDate = startDate.plusMonths(months);
-                
-                // 그룹화된 캘린더 이벤트 조회
-                Map<String, MultipleCalendarService.CalendarGroup> calendarGroups = 
-                    multipleCalendarService.getGroupedCalendarEvents(webUser.getId(), startDate, endDate);
-                
-                // 모든 캘린더의 이벤트에서 날짜 추출 (범위 내 날짜만)
-                for (MultipleCalendarService.CalendarGroup group : calendarGroups.values()) {
-                    if (group.getEvents() != null) {
-                        Set<LocalDate> groupDates = group.getEvents().stream()
-                                .map(event -> event.getStartTime().toLocalDate())
-                                .filter(date -> !date.isBefore(startDate) && !date.isAfter(endDate))  // 🎯 범위 강제 제한
-                                .collect(Collectors.toSet());
-                        allDates.addAll(groupDates);
-                        successfulCalendarCount++;
-                        log.debug("📅 캘린더 그룹에서 {} 개 날짜 추출 (범위 제한): {} (범위: {} ~ {})", 
-                                groupDates.size(), group.getDisplayName(), startDate, endDate);
-                    }
-                }
-                
-                log.info("✅ 총 {} 개 캘린더 중 {} 개에서 데이터 성공적으로 조회", 
-                        allActiveCalendars.size(), successfulCalendarCount);
-                        
-            } catch (Exception e) {
-                log.warn("⚠️ 캘린더 이벤트 조회 중 오류 (빈 결과로 계속): {}", e.getMessage());
-                // 빈 결과로 계속 진행 (완전 실패가 아닌 부분 실패 처리)
-            }
-            
-            // 5. 한국어 형식으로 변환
-            String koreanDateFormat = dateFormatService.formatDatesToKorean(allDates);
-            
-            // 6. 웹페이지 차단 날짜 조회
-            LocalDate startDate = LocalDate.now();
-            LocalDate endDate = startDate.plusMonths(months);
-            Set<LocalDate> blockedDates = blockedDateService.getUserBlockedDatesInRange(
-                webUser.getId(), startDate, endDate);
-            
-            // 7. 사용 가능한 날짜 계산 (전체 기간 - iCal 일정 - 웹 차단 날짜)
-            Set<LocalDate> allDatesInRange = generateDateRange(startDate, endDate);
-            Set<LocalDate> busyDates = dateFormatService.parseKoreanDates(koreanDateFormat, startDate, endDate);
-            
-            Set<LocalDate> availableDates = allDatesInRange.stream()
-                .filter(date -> !busyDates.contains(date))        // iCal 일정 제외
-                .filter(date -> !blockedDates.contains(date))     // 웹 차단 날짜 제외
-                .collect(Collectors.toSet());
-            
-            String availableDatesFormat = dateFormatService.formatDatesToKorean(availableDates);
-            double availabilityRatio = allDatesInRange.isEmpty() ? 0.0 : 
-                (double) availableDates.size() / allDatesInRange.size();
-            
-            // 8. 응답 데이터 생성 (사용 가능한 날짜 포함)
-            MyScheduleResponse response = MyScheduleResponse.builder()
-                    .discordSnowflake(discordSnowflake)
-                    .koreanDateFormat(koreanDateFormat)
-                    .availableDatesFormat(availableDatesFormat)
-                    .totalEvents(allDates.size())
-                    .totalAvailableDays(availableDates.size())
-                    .totalBlockedDays(blockedDates.size())
-                    .availabilityRatio(Math.round(availabilityRatio * 10000.0) / 10000.0)
-                    .requestedMonths(months)
-                    .calendarCount(allActiveCalendars.size())
-                    .syncedAt(LocalDateTime.now())
-                    .isWebUserRegistered(true)
-                    .hasICalCalendars(true)
-                    .build();
-            
-            log.info("📊 가용성 분석: 전체 {}일 중 사용가능 {}일 ({}%), 차단 {}일, iCal 일정 {}일", 
-                allDatesInRange.size(), availableDates.size(), 
-                Math.round(availabilityRatio * 100), blockedDates.size(), allDates.size());
-                    
-            // 부분 실패 알림을 위한 추가 정보 로그
-            if (successfulCalendarCount < allActiveCalendars.size()) {
-                log.warn("⚠️ Discord 응답: {}/{} 캘린더에서 데이터 조회 성공", 
-                        successfulCalendarCount, allActiveCalendars.size());
-                
-                // TODO: 향후 Discord 응답에 부분 실패 정보 포함할 수 있도록 필드 확장 고려
-                // response에 partialFailureInfo 같은 필드 추가 가능
-            }
-            
-            // 9. Redis 캐시 저장 (3개월 디폴트값만 캐싱, 30분 TTL)
-            if (months == 3 && cacheKey != null) {
-                redisTemplate.opsForValue().set(cacheKey, response, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
-                log.info("💾 3개월 디폴트 응답 캐시 저장 완료: {}", cacheKey);
-            }
-            
-            log.info("✅ 내일정 조회 완료: {} 개 날짜, {}/{} 개 캘린더 성공", 
-                    allDates.size(), successfulCalendarCount, allActiveCalendars.size());
-            return response;
             
         } catch (ServiceException e) {
             throw e; // 이미 올바른 예외이므로 그대로 전파
         } catch (Exception e) {
-            log.error("❌ 내일정 조회 실패: discordSnowflake={}", discordSnowflake, e);
+            log.error("❌ [UNIFIED] 내일정 조회 실패: discordSnowflake={}", discordSnowflake, e);
             throw new ServiceException(ErrorStatus.SCHEDULE_SERVICE_ERROR);
         }
     }
@@ -333,36 +224,43 @@ public class BotScheduleService {
     }
     
     /**
-     * 사용자 캐시 강제 갱신 (/일정갱신 명령어)
+     * 사용자 캐시 강제 갱신 (/일정갱신 명령어) - 통합 캐싱 적용
      * @param discordSnowflake Discord 사용자 Snowflake ID
      * @return 갱신 완료 메시지
      */
     @Transactional(readOnly = true)
     public String refreshUserCache(String discordSnowflake) {
-        log.info("🔄 캐시 강제 갱신 시작: discordSnowflake={}", discordSnowflake);
+        log.info("🔄 [UNIFIED] 캐시 강제 갱신 시작: discordSnowflake={}", discordSnowflake);
         
         try {
             validateDiscordSnowflake(discordSnowflake);
             
-            // 해당 사용자의 모든 캐시 키 삭제
+            // Discord Snowflake → WebUser 조회
+            var webUser = webUserRepository.findByDiscordUserSnowflake(discordSnowflake)
+                    .orElseThrow(() -> new ServiceException(ErrorStatus.DISCORD_USER_NOT_LINKED));
+            
+            // 🚀 통합 캐싱 서비스를 통한 캐시 무효화
+            unifiedCacheService.invalidateUserCache(webUser.getId());
+            
+            // 기존 Discord 전용 캐시도 삭제 (호환성 유지)
             String pattern = String.format("discord:schedule:*%s*", discordSnowflake);
             Set<String> keys = redisTemplate.keys(pattern);
             
             if (keys != null && !keys.isEmpty()) {
                 redisTemplate.delete(keys);
-                log.info("✅ {} 개 캐시 키 삭제 완료", keys.size());
+                log.info("✅ [UNIFIED] {} 개 기존 Discord 캐시 키 삭제 완료", keys.size());
             }
             
             // 즉시 새로운 데이터로 캐시 재생성 (기본 3개월)
             getMySchedule(discordSnowflake, 3);
             
-            log.info("✅ 캐시 강제 갱신 완료: discordSnowflake={}", discordSnowflake);
+            log.info("✅ [UNIFIED] 캐시 강제 갱신 완료: discordSnowflake={}", discordSnowflake);
             return "일정 캐시가 성공적으로 갱신되었습니다.";
             
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
-            log.error("❌ 캐시 갱신 실패: discordSnowflake={}", discordSnowflake, e);
+            log.error("❌ [UNIFIED] 캐시 갱신 실패: discordSnowflake={}", discordSnowflake, e);
             throw new ServiceException(ErrorStatus.CACHE_REFRESH_FAILED);
         }
     }

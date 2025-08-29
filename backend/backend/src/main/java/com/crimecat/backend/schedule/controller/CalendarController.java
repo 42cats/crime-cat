@@ -6,24 +6,24 @@ import com.crimecat.backend.schedule.dto.response.CalendarResponse;
 import com.crimecat.backend.schedule.service.CalendarColorManager;
 import com.crimecat.backend.schedule.service.MultipleCalendarService;
 import com.crimecat.backend.webUser.domain.WebUser;
+import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 /**
- * 다중 캘린더 관리 컨트롤러
+ * 다중 캘린더 관리 컨트롤러 (DEPRECATED)
+ * @deprecated PersonalCalendarController로 통합됨
  */
+@Deprecated
+@ConditionalOnProperty(name = "calendar.controller.legacy.enabled", havingValue = "true", matchIfMissing = false)
 @RestController
-@RequestMapping("/api/v1/my-calendar")
+@RequestMapping("/api/v1/my-calendar-legacy")  // 경로 변경으로 충돌 방지
 @RequiredArgsConstructor
 @Slf4j
 public class CalendarController {
@@ -120,18 +120,24 @@ public class CalendarController {
         return ResponseEntity.ok(colors);
     }
 
+    // ✅ [DEPRECATED] 
+    // 중복 API 제거: /events-in-range -> PersonalCalendarController로 통합됨
+    // PersonalCalendarController.getGroupedEvents() 사용
+    
     /**
-     * 캘린더별 그룹화된 이벤트 조회 (기존 API 확장)
+     * @deprecated PersonalCalendarController.getGroupedEvents() 사용
      */
-    @GetMapping("/events-in-range")
-    public ResponseEntity<Map<String, MultipleCalendarService.CalendarGroup>> getGroupedEvents(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @AuthenticationPrincipal WebUser currentUser) {
-
-        Map<String, MultipleCalendarService.CalendarGroup> groups = 
-            multipleCalendarService.getGroupedCalendarEvents(currentUser.getId(), startDate, endDate);
-
-        return ResponseEntity.ok(groups);
-    }
+//    @Deprecated
+//    @GetMapping("/events-in-range")
+//    public ResponseEntity<Map<String, MultipleCalendarService.CalendarGroup>> getGroupedEvents(
+//            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+//            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+//            @AuthenticationPrincipal WebUser currentUser) {
+//
+//        log.warn("⚠️ [DEPRECATED] Using deprecated API /events-in-range. Use PersonalCalendarController.getGroupedEvents() instead.");
+//        Map<String, MultipleCalendarService.CalendarGroup> groups = 
+//            multipleCalendarService.getGroupedCalendarEvents(currentUser.getId(), startDate, endDate);
+//
+//        return ResponseEntity.ok(groups);
+//    }
 }

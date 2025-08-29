@@ -63,9 +63,17 @@ public class ScheduleController {
         return ResponseEntity.ok(scheduleService.getEvent(eventId));
     }
 
+    // ✅ [DEPRECATED]
+    // 중복 API 제거: /my-calendar -> PersonalCalendarController.addCalendar() 사용
+    
+    /**
+     * @deprecated PersonalCalendarController.addCalendar() 사용
+     */
+    @Deprecated
     @PostMapping("/my-calendar")
     public ResponseEntity<?> saveUserCalendar(@RequestBody UserCalendarRequest request,
                                               @AuthenticationPrincipal WebUser currentUser) {
+        log.warn("⚠️ [DEPRECATED] Using deprecated API /my-calendar. Use PersonalCalendarController.addCalendar() instead.");
         scheduleService.saveUserCalendar(request, currentUser);
         return ResponseEntity.ok().build();
     }
@@ -213,60 +221,37 @@ public class ScheduleController {
         }
     }
 
+    // ✅ [DEPRECATED]
+    // 중복 API 제거: /my-calendar/events-in-range -> PersonalCalendarController.getGroupedEvents() 사용
+    
     /**
-     * 사용자 iCalendar 이벤트 조회 (특정 기간)
+     * @deprecated PersonalCalendarController.getGroupedEvents() 사용
      */
+    @Deprecated
     @GetMapping("/my-calendar/events-in-range")
     public ResponseEntity<List<Map<String, Object>>> getUserEventsInRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @AuthenticationPrincipal WebUser currentUser) {
-        log.info("🌐 [API_GET_EVENTS] GET /my-calendar/events-in-range user={} startDate={} endDate={}", 
-            currentUser.getId(), startDate, endDate);
+        log.warn("⚠️ [DEPRECATED] Using deprecated API /my-calendar/events-in-range. Use PersonalCalendarController.getGroupedEvents() instead.");
         
         try {
             AuthenticationUtil.validateCalendarAccess(currentUser.getId());
-            log.debug("🌐 [API_GET_EVENTS] Authentication validated for user={}", currentUser.getId());
             
             List<Map<String, Object>> rawEvents = scheduleService.getUserEventsInRange(currentUser.getId(), startDate, endDate);
-            log.info("🔍 [MAP_DEBUG] Raw events count from service: {}", rawEvents.size());
             
             List<Map<String, Object>> events = rawEvents
                 .stream()
                 .map(event -> {
-                    // 🔍 Map 구조 디버깅 로그
-                    log.debug("🔍 [MAP_DEBUG] Event map keys: {}", event.keySet());
-                    log.debug("🔍 [MAP_DEBUG] Event map values: {}", event);
-                    
-                    // 각 키의 존재 여부와 값 확인
-                    log.debug("🔍 [MAP_DEBUG] 'id' key exists: {}, value: {}", 
-                        event.containsKey("id"), event.get("id"));
-                    log.debug("🔍 [MAP_DEBUG] 'title' key exists: {}, value: {}", 
-                        event.containsKey("title"), event.get("title"));
-                    log.debug("🔍 [MAP_DEBUG] 'Title' key exists: {}, value: {}", 
-                        event.containsKey("Title"), event.get("Title"));
-                    log.debug("🔍 [MAP_DEBUG] 'startTime' key exists: {}, value: {}", 
-                        event.containsKey("startTime"), event.get("startTime"));
-                    log.debug("🔍 [MAP_DEBUG] 'StartTime' key exists: {}, value: {}", 
-                        event.containsKey("StartTime"), event.get("StartTime"));
-                    log.debug("🔍 [MAP_DEBUG] 'endTime' key exists: {}, value: {}", 
-                        event.containsKey("endTime"), event.get("endTime"));
-                    log.debug("🔍 [MAP_DEBUG] 'EndTime' key exists: {}, value: {}", 
-                        event.containsKey("EndTime"), event.get("EndTime"));
-                    
                     Map<String, Object> eventMap = new java.util.HashMap<>();
                     eventMap.put("id", event.get("id").toString());
                     eventMap.put("title", event.get("title"));
                     eventMap.put("startTime", event.get("startTime").toString());
                     eventMap.put("endTime", event.get("endTime").toString());
-                    eventMap.put("allDay", false); // iCalendar 이벤트는 시간이 지정되어 있음
+                    eventMap.put("allDay", false);
                     return eventMap;
                 })
                 .collect(java.util.stream.Collectors.toList());
-            
-            log.info("🌐 [API_GET_EVENTS] Successfully retrieved {} events for user {} in range {} to {}", 
-                events.size(), currentUser.getId(), startDate, endDate);
-            log.debug("🌐 [API_GET_EVENTS] Events: {}", events);
             
             return ResponseEntity.ok(events);
         } catch (Exception e) {

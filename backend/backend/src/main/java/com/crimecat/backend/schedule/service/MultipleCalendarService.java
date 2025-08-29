@@ -612,6 +612,67 @@ public class MultipleCalendarService {
     }
 
     /**
+     * 캘린더 상태 변경 (활성화/비활성화)
+     */
+    @Transactional
+    public CalendarResponse toggleCalendarStatus(UUID calendarId, Boolean isActive, UUID userId) {
+        log.info("🔄 [TOGGLE_STATUS] 캘린더 상태 변경: calendarId={}, isActive={}, userId={}", 
+                calendarId, isActive, userId);
+
+        UserCalendar calendar = userCalendarRepository.findById(calendarId)
+                .filter(cal -> cal.getUser().getId().equals(userId))
+                .orElseThrow(() -> new IllegalArgumentException("캘린더를 찾을 수 없습니다: " + calendarId));
+
+        calendar.setIsActive(isActive);
+        calendar.setUpdatedAt(LocalDateTime.now());
+
+        UserCalendar savedCalendar = userCalendarRepository.save(calendar);
+
+        log.info("✅ [TOGGLE_STATUS] 캘린더 상태 변경 완료: calendarId={}, newStatus={}", 
+                calendarId, isActive);
+
+        return convertToResponse(savedCalendar);
+    }
+
+    /**
+     * 캘린더 순서 변경
+     */
+    @Transactional
+    public List<CalendarResponse> updateCalendarOrder(List<Map<String, Object>> calendars, UUID userId) {
+        log.info("🔄 [REORDER] 캘린더 순서 변경: userId={}, count={}", userId, calendars.size());
+
+        List<CalendarResponse> updatedCalendars = new ArrayList<>();
+
+        for (Map<String, Object> calendarData : calendars) {
+            String calendarIdStr = (String) calendarData.get("id");
+            Integer sortOrder = (Integer) calendarData.get("sortOrder");
+
+            if (calendarIdStr == null || sortOrder == null) {
+                throw new IllegalArgumentException("캘린더 ID와 정렬 순서는 필수입니다");
+            }
+
+            UUID calendarId = UUID.fromString(calendarIdStr);
+            UserCalendar calendar = userCalendarRepository.findById(calendarId)
+                    .filter(cal -> cal.getUser().getId().equals(userId))
+                    .orElseThrow(() -> new IllegalArgumentException("캘린더를 찾을 수 없습니다: " + calendarId));
+
+            calendar.setSortOrder(sortOrder);
+            calendar.setUpdatedAt(LocalDateTime.now());
+
+            UserCalendar savedCalendar = userCalendarRepository.save(calendar);
+            updatedCalendars.add(convertToResponse(savedCalendar));
+
+            log.debug("🔄 [REORDER] 캘린더 순서 업데이트: calendarId={}, sortOrder={}", 
+                    calendarId, sortOrder);
+        }
+
+        log.info("✅ [REORDER] 캘린더 순서 변경 완료: userId={}, updatedCount={}", 
+                userId, updatedCalendars.size());
+
+        return updatedCalendars;
+    }
+
+    /**
      * UserCalendar -> CalendarResponse 변환
      */
     private CalendarResponse convertToResponse(UserCalendar calendar) {
