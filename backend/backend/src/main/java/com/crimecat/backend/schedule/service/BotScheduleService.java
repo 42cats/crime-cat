@@ -72,12 +72,18 @@ public class BotScheduleService {
             validateDiscordSnowflake(discordSnowflake);
             validateMonths(months);
             
-            // Redis 캐시 확인
-            String cacheKey = String.format(CACHE_KEY_MY_SCHEDULE, discordSnowflake, months);
-            MyScheduleResponse cached = (MyScheduleResponse) redisTemplate.opsForValue().get(cacheKey);
-            if (cached != null) {
-                log.info("✅ 캐시에서 내일정 조회 완료: {} 개 날짜", cached.getTotalEvents());
-                return cached;
+            // Redis 캐시 확인 (3개월 디폴트값만 캐싱)
+            MyScheduleResponse cached = null;
+            String cacheKey = null;
+            if (months == 3) {  // 3개월 디폴트값만 캐싱
+                cacheKey = String.format(CACHE_KEY_MY_SCHEDULE, discordSnowflake, months);
+                cached = (MyScheduleResponse) redisTemplate.opsForValue().get(cacheKey);
+                if (cached != null) {
+                    log.info("✅ 캐시에서 내일정 조회 완료: {} 개 날짜 (3개월 캐시)", cached.getTotalEvents());
+                    return cached;
+                }
+            } else {
+                log.info("📝 캐싱 제외: {}개월 요청 (3개월만 캐싱)", months);
             }
             
             // 1. Discord 사용자 → User → WebUser 조회
@@ -110,16 +116,17 @@ public class BotScheduleService {
                 Map<String, MultipleCalendarService.CalendarGroup> calendarGroups = 
                     multipleCalendarService.getGroupedCalendarEvents(webUser.getId(), startDate, endDate);
                 
-                // 모든 캘린더의 이벤트에서 날짜 추출
+                // 모든 캘린더의 이벤트에서 날짜 추출 (범위 내 날짜만)
                 for (MultipleCalendarService.CalendarGroup group : calendarGroups.values()) {
                     if (group.getEvents() != null) {
                         Set<LocalDate> groupDates = group.getEvents().stream()
                                 .map(event -> event.getStartTime().toLocalDate())
+                                .filter(date -> !date.isBefore(startDate) && !date.isAfter(endDate))  // 🎯 범위 강제 제한
                                 .collect(Collectors.toSet());
                         allDates.addAll(groupDates);
                         successfulCalendarCount++;
-                        log.debug("📅 캘린더 그룹에서 {} 개 날짜 추출: {}", 
-                                groupDates.size(), group.getDisplayName());
+                        log.debug("📅 캘린더 그룹에서 {} 개 날짜 추출 (범위 제한): {} (범위: {} ~ {})", 
+                                groupDates.size(), group.getDisplayName(), startDate, endDate);
                     }
                 }
                 
@@ -142,7 +149,7 @@ public class BotScheduleService {
             
             // 7. 사용 가능한 날짜 계산 (전체 기간 - iCal 일정 - 웹 차단 날짜)
             Set<LocalDate> allDatesInRange = generateDateRange(startDate, endDate);
-            Set<LocalDate> busyDates = dateFormatService.parseKoreanDates(koreanDateFormat);
+            Set<LocalDate> busyDates = dateFormatService.parseKoreanDates(koreanDateFormat, startDate, endDate);
             
             Set<LocalDate> availableDates = allDatesInRange.stream()
                 .filter(date -> !busyDates.contains(date))        // iCal 일정 제외
@@ -182,8 +189,11 @@ public class BotScheduleService {
                 // response에 partialFailureInfo 같은 필드 추가 가능
             }
             
-            // 9. Redis 캐시 저장 (30분 TTL)
-            redisTemplate.opsForValue().set(cacheKey, response, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
+            // 9. Redis 캐시 저장 (3개월 디폴트값만 캐싱, 30분 TTL)
+            if (months == 3 && cacheKey != null) {
+                redisTemplate.opsForValue().set(cacheKey, response, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
+                log.info("💾 3개월 디폴트 응답 캐시 저장 완료: {}", cacheKey);
+            }
             
             log.info("✅ 내일정 조회 완료: {} 개 날짜, {}/{} 개 캘린더 성공", 
                     allDates.size(), successfulCalendarCount, allActiveCalendars.size());
@@ -244,7 +254,12 @@ public class BotScheduleService {
             
             // 2. 내일정 조회 (캐시 활용)
             MyScheduleResponse mySchedule = getMySchedule(discordSnowflake, months);
-            Set<LocalDate> myDates = dateFormatService.parseKoreanDates(mySchedule.getKoreanDateFormat());
+            
+            // 2.1. 일정체크용 날짜 범위 설정 (내일정 조회 범위와 동일)
+            LocalDate checkStartDate = LocalDate.now();
+            LocalDate checkEndDate = checkStartDate.plusMonths(months);
+            Set<LocalDate> myDates = dateFormatService.parseKoreanDates(
+                mySchedule.getKoreanDateFormat(), checkStartDate, checkEndDate);
             
             // 3. 웹페이지 차단 날짜 조회 (입력 날짜 범위 내)
             WebUser webUser = findWebUserByDiscordSnowflake(discordSnowflake);
