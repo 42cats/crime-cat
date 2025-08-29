@@ -120,4 +120,40 @@ public class CalendarColorManager {
     public int getTotalColorCount() {
         return DEFAULT_COLORS.length;
     }
+    
+    /**
+     * 사용자의 색상 중복 체크 및 재할당
+     * @param userId 사용자 ID
+     * @param requestedColorIndex 요청된 색상 인덱스
+     * @return 중복되지 않는 색상 인덱스
+     */
+    public int getValidColorIndexForUser(UUID userId, int requestedColorIndex) {
+        try {
+            // 유효하지 않은 색상 인덱스는 다음 사용 가능한 색상으로
+            if (!isValidColorIndex(requestedColorIndex)) {
+                log.warn("Invalid color index {} requested for user {}, assigning next available", 
+                        requestedColorIndex, userId);
+                return getNextAvailableColorIndex(userId);
+            }
+            
+            // 현재 사용자의 활성 캘린더에서 동일한 색상 인덱스 사용 여부 체크
+            boolean colorInUse = userCalendarRepository
+                    .findByUserIdAndIsActiveOrderBySortOrder(userId, true)
+                    .stream()
+                    .anyMatch(calendar -> calendar.getColorIndex() != null && 
+                              calendar.getColorIndex().equals(requestedColorIndex));
+            
+            if (colorInUse) {
+                log.info("Color index {} already in use for user {}, assigning next available", 
+                        requestedColorIndex, userId);
+                return getNextAvailableColorIndex(userId);
+            }
+            
+            return requestedColorIndex;
+            
+        } catch (Exception e) {
+            log.error("Failed to validate color index for user: {}", userId, e);
+            return getNextAvailableColorIndex(userId);
+        }
+    }
 }

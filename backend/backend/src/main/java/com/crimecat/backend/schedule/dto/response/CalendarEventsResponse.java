@@ -1,6 +1,8 @@
 package com.crimecat.backend.schedule.dto.response;
 
 import com.crimecat.backend.schedule.service.MultipleCalendarService;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -17,7 +19,13 @@ import java.util.UUID;
  */
 @Getter
 @Builder
+@JsonDeserialize(builder = CalendarEventsResponse.CalendarEventsResponseBuilder.class)
 public class CalendarEventsResponse {
+    
+    @JsonPOJOBuilder(withPrefix = "")
+    public static class CalendarEventsResponseBuilder {
+        // Lombok이 자동 생성하는 Builder 메서드들을 Jackson이 인식하도록 함
+    }
     
     private final UUID userId;
     private final LocalDate startDate;
@@ -35,7 +43,14 @@ public class CalendarEventsResponse {
     
     @Getter
     @Builder
+    @JsonDeserialize(builder = CalendarStatistics.CalendarStatisticsBuilder.class)
     public static class CalendarStatistics {
+        
+        @JsonPOJOBuilder(withPrefix = "")
+        public static class CalendarStatisticsBuilder {
+            // Lombok Builder Jackson 지원
+        }
+        
         private final int totalCalendars;
         private final int successfulCalendars;
         private final int totalEvents;
@@ -47,7 +62,14 @@ public class CalendarEventsResponse {
     
     @Getter
     @Builder
+    @JsonDeserialize(builder = CalendarEvent.CalendarEventBuilder.class)
     public static class CalendarEvent {
+        
+        @JsonPOJOBuilder(withPrefix = "")
+        public static class CalendarEventBuilder {
+            // Lombok Builder Jackson 지원
+        }
+        
         private final String id;
         private final String title;
         private final LocalDateTime startTime;

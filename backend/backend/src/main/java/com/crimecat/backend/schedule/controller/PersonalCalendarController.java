@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -250,7 +251,10 @@ public class PersonalCalendarController {
         } catch (Exception e) {
             log.error("❌ [PERSONAL] 캘린더 이벤트 조회 실패: userId={}, error={}", 
                     currentUser.getId(), e.getMessage(), e);
-            throw e;
+            
+            // 빈 응답 반환으로 에러 방지 (프론트엔드 호환성)
+            Map<String, MultipleCalendarService.CalendarGroup> emptyResponse = new HashMap<>();
+            return ResponseEntity.ok(emptyResponse);
         }
     }
 
@@ -283,7 +287,10 @@ public class PersonalCalendarController {
         } catch (Exception e) {
             log.error("❌ [PERSONAL] 캘린더 이벤트 강제 새로고침 실패: userId={}, error={}", 
                     currentUser.getId(), e.getMessage(), e);
-            throw e;
+            
+            // 빈 응답 반환으로 에러 방지 (프론트엔드 호환성)
+            Map<String, MultipleCalendarService.CalendarGroup> emptyResponse = new HashMap<>();
+            return ResponseEntity.ok(emptyResponse);
         }
     }
 

@@ -301,7 +301,10 @@ export class ScheduleService {
       return result;
     } catch (error) {
       apiDebugLog('GET', url, `Failed to get grouped calendar events for range ${startDate} to ${endDate}`, error);
-      throw error;
+      
+      // 에러 시 빈 객체 반환으로 React 렌더링 에러 방지
+      console.warn('📅 Calendar events API failed, returning empty response:', error);
+      return {};
     }
   }
 }

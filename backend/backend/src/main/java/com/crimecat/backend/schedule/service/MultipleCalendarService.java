@@ -534,10 +534,12 @@ public class MultipleCalendarService {
             calendar.setDisplayName(request.getDisplayName());
         }
         if (request.getColorIndex() != null) {
-            if (!colorManager.isValidColorIndex(request.getColorIndex())) {
-                throw ErrorStatus.CALENDAR_COLOR_INDEX_INVALID.asServiceException();
-            }
-            calendar.setColorIndex(request.getColorIndex());
+            // 색상 중복 체크 및 유효성 검사를 통한 안전한 색상 할당
+            int validColorIndex = colorManager.getValidColorIndexForUser(userId, request.getColorIndex());
+            calendar.setColorIndex(validColorIndex);
+            
+            log.info("🎨 [COLOR_ASSIGN] 캘린더 색상 할당: calendarId={}, requested={}, assigned={}", 
+                    calendarId, request.getColorIndex(), validColorIndex);
         }
         if (request.getIsActive() != null) {
             calendar.setIsActive(request.getIsActive());
