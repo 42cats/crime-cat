@@ -2,6 +2,12 @@ package com.crimecat.backend.schedule.service;
 
 import com.crimecat.backend.schedule.domain.UserCalendar;
 import com.crimecat.backend.schedule.repository.UserCalendarRepository;
+import com.crimecat.backend.schedule.dto.request.CalendarCreateRequest;
+import com.crimecat.backend.schedule.dto.request.CalendarUpdateRequest;
+import com.crimecat.backend.schedule.dto.response.CalendarResponse;
+import com.crimecat.backend.webUser.domain.WebUser;
+import com.crimecat.backend.webUser.repository.WebUserRepository;
+import com.crimecat.backend.exception.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.fortuna.ical4j.data.CalendarBuilder;
@@ -39,6 +45,7 @@ import java.util.stream.Collectors;
 public class MultipleCalendarService {
 
     private final UserCalendarRepository userCalendarRepository;
+    private final WebUserRepository webUserRepository;
     private final CalendarColorManager colorManager;
     private final RestTemplate restTemplate;
 
@@ -111,6 +118,22 @@ public class MultipleCalendarService {
         
         userCalendarRepository.save(calendar);
         log.info("💾 [CALENDAR_SAVED] Calendar {} state persisted", calendar.getId());
+    }
+
+    /**
+     * webcal:// URL을 https://로 변환 (Apple Calendar 지원)
+     */
+    private String normalizeWebcalUrl(String icalUrl) {
+        if (icalUrl == null) return null;
+        
+        String trimmedUrl = icalUrl.trim();
+        if (trimmedUrl.startsWith("webcal://")) {
+            String httpsUrl = trimmedUrl.replace("webcal://", "https://");
+            log.info("🔄 webcal URL 변환: {} → {}", icalUrl, httpsUrl);
+            return httpsUrl;
+        }
+        
+        return trimmedUrl;
     }
 
     /**
@@ -278,23 +301,48 @@ public class MultipleCalendarService {
     }
 
     /**
+     * 사용자 캘린더 목록 조회
+     */
+    public List<CalendarResponse> getUserCalendars(UUID userId, boolean activeOnly) {
+        List<UserCalendar> calendars;
+        
+        if (activeOnly) {
+            calendars = userCalendarRepository.findByUserIdAndIsActiveOrderBySortOrder(userId, true);
+        } else {
+            calendars = userCalendarRepository.findByUserIdOrderBySortOrder(userId);
+        }
+
+        return calendars.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 새 캘린더 추가
      */
     @Transactional
-    public UserCalendar addCalendar(UUID userId, String icalUrl, String displayName) {
-        // 중복 URL 체크
-        if (userCalendarRepository.existsByUserIdAndIcalUrl(userId, icalUrl)) {
-            throw new IllegalArgumentException("이미 등록된 캘린더 URL입니다.");
+    public CalendarResponse addCalendar(UUID userId, CalendarCreateRequest request) {
+        // 1. 사용자 조회
+        WebUser user = webUserRepository.findById(userId)
+                .orElseThrow(() -> ErrorStatus.USER_NOT_FOUND.asServiceException());
+
+        // 2. webcal:// → https:// 변환 (Apple Calendar 지원)
+        String normalizedUrl = normalizeWebcalUrl(request.getIcalUrl());
+        
+        // 3. 중복 URL 체크 (정규화된 URL로)
+        if (userCalendarRepository.existsByUserIdAndIcalUrl(userId, normalizedUrl)) {
+            throw ErrorStatus.CALENDAR_ALREADY_EXISTS.asServiceException();
         }
 
-        // 다음 사용 가능한 색상 인덱스 할당
+        // 4. 다음 사용 가능한 색상 인덱스 할당
         int colorIndex = colorManager.getNextAvailableColorIndex(userId);
         int sortOrder = userCalendarRepository.countByUserId(userId);
 
+        // 5. UserCalendar 생성 (User 포함)
         UserCalendar newCalendar = UserCalendar.builder()
-                .user(null) // User 객체는 Controller에서 설정
-                .icalUrl(icalUrl)
-                .displayName(displayName)
+                .user(user) // User 객체 설정
+                .icalUrl(normalizedUrl) // 정규화된 URL 사용
+                .displayName(request.getDisplayName())
                 .colorIndex(colorIndex)
                 .sortOrder(sortOrder)
                 .isActive(true)
@@ -303,7 +351,7 @@ public class MultipleCalendarService {
 
         UserCalendar savedCalendar = userCalendarRepository.save(newCalendar);
 
-        // 초기 동기화 시도
+        // 6. 초기 동기화 시도
         LocalDateTime syncAttemptTime = LocalDateTime.now();
         try {
             syncSingleCalendar(savedCalendar);
@@ -324,7 +372,10 @@ public class MultipleCalendarService {
             log.error("Failed initial sync for new calendar: {}", savedCalendar.getId(), e);
         }
 
-        return userCalendarRepository.save(savedCalendar);
+        UserCalendar finalSaved = userCalendarRepository.save(savedCalendar);
+        
+        // 7. DTO 변환 후 반환
+        return convertToResponse(finalSaved);
     }
 
     /**
@@ -463,6 +514,123 @@ public class MultipleCalendarService {
         private LocalDateTime lastSynced;
         private UserCalendar.SyncStatus syncStatus;
         private String syncError;
+    }
+
+    /**
+     * 캘린더 수정
+     */
+    @Transactional
+    public CalendarResponse updateCalendar(UUID calendarId, CalendarUpdateRequest request, UUID userId) {
+        UserCalendar calendar = userCalendarRepository.findById(calendarId)
+                .orElseThrow(() -> ErrorStatus.CALENDAR_NOT_FOUND.asServiceException());
+
+        // 권한 체크
+        if (!calendar.getUser().getId().equals(userId)) {
+            throw ErrorStatus.CALENDAR_ACCESS_DENIED.asServiceException();
+        }
+
+        // 업데이트
+        if (request.getDisplayName() != null) {
+            calendar.setDisplayName(request.getDisplayName());
+        }
+        if (request.getColorIndex() != null) {
+            if (!colorManager.isValidColorIndex(request.getColorIndex())) {
+                throw ErrorStatus.CALENDAR_COLOR_INDEX_INVALID.asServiceException();
+            }
+            calendar.setColorIndex(request.getColorIndex());
+        }
+        if (request.getIsActive() != null) {
+            calendar.setIsActive(request.getIsActive());
+        }
+        if (request.getSortOrder() != null) {
+            calendar.setSortOrder(request.getSortOrder());
+        }
+
+        UserCalendar savedCalendar = userCalendarRepository.save(calendar);
+        return convertToResponse(savedCalendar);
+    }
+
+    /**
+     * 캘린더 삭제
+     */
+    @Transactional
+    public void deleteCalendar(UUID calendarId, UUID userId) {
+        UserCalendar calendar = userCalendarRepository.findById(calendarId)
+                .orElseThrow(() -> ErrorStatus.CALENDAR_NOT_FOUND.asServiceException());
+
+        // 권한 체크
+        if (!calendar.getUser().getId().equals(userId)) {
+            throw ErrorStatus.CALENDAR_ACCESS_DENIED.asServiceException();
+        }
+
+        userCalendarRepository.delete(calendar);
+    }
+
+    /**
+     * 개별 캘린더 동기화
+     */
+    @Transactional
+    public CalendarResponse syncCalendar(UUID calendarId, UUID userId) {
+        log.info("📅 [CALENDAR_FOUND] Calendar found: {} | Current status: {}", calendarId, "checking");
+
+        UserCalendar calendar = userCalendarRepository.findById(calendarId)
+                .orElseThrow(() -> ErrorStatus.CALENDAR_NOT_FOUND.asServiceException());
+
+        // 권한 체크
+        if (!calendar.getUser().getId().equals(userId)) {
+            throw ErrorStatus.CALENDAR_ACCESS_DENIED.asServiceException();
+        }
+
+        log.info("🔄 [SYNC_TRIGGER] Triggering sync for all user calendars");
+        // 개별 동기화는 전체 동기화로 대체
+        syncAllUserCalendars(userId);
+
+        log.info("🔍 [FETCH_UPDATED] Fetching updated calendar from database");
+        // 업데이트된 캘린더 조회
+        UserCalendar updatedCalendar = userCalendarRepository.findById(calendarId)
+                .orElse(calendar);
+
+        return convertToResponse(updatedCalendar);
+    }
+
+    /**
+     * 전체 캘린더 동기화 후 목록 반환
+     */
+    @Transactional
+    public List<CalendarResponse> syncAllCalendarsAndGet(UUID userId) {
+        syncAllUserCalendars(userId);
+        
+        // 업데이트된 캘린더 목록 반환
+        return getUserCalendars(userId, false);
+    }
+
+    /**
+     * 색상 팔레트 조회
+     */
+    public CalendarColorManager.ColorInfo[] getColorPalette() {
+        return colorManager.getAllColors();
+    }
+
+    /**
+     * UserCalendar -> CalendarResponse 변환
+     */
+    private CalendarResponse convertToResponse(UserCalendar calendar) {
+        return CalendarResponse.builder()
+                .id(calendar.getId())
+                .icalUrl(calendar.getIcalUrl())
+                .calendarName(calendar.getCalendarName())
+                .displayName(calendar.getDisplayName())
+                .colorIndex(calendar.getColorIndex())
+                .colorHex(colorManager.getColorByIndex(calendar.getColorIndex()))
+                .colorName(colorManager.getColorNameByIndex(calendar.getColorIndex()))
+                .syncStatus(calendar.getSyncStatus())
+                .syncErrorMessage(calendar.getSyncErrorMessage())
+                .isActive(calendar.getIsActive())
+                .sortOrder(calendar.getSortOrder())
+                .lastSyncedAt(calendar.getLastSyncedAt())
+                .createdAt(calendar.getCreatedAt())
+                .updatedAt(calendar.getUpdatedAt())
+                .build();
     }
 
     /**

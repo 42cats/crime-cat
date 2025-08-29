@@ -129,7 +129,9 @@ public class ScheduleService {
         Optional<UserCalendar> existingCalendar = userCalendarRepository.findByUser(currentUser);
 
         UserCalendar calendar = existingCalendar.orElseGet(() -> UserCalendar.builder().user(currentUser).build());
-        calendar.setIcalUrl(request.getIcalUrl());
+        // webcal:// -> https:// 변환하여 저장 (Apple Calendar 지원)
+        String normalizedUrl = normalizeICalUrl(request.getIcalUrl());
+        calendar.setIcalUrl(normalizedUrl);
 
         userCalendarRepository.save(calendar);
     }
@@ -363,5 +365,26 @@ public class ScheduleService {
     public Event getEventEntity(UUID eventId) {
         return eventRepository.findById(eventId)
                 .orElseThrow(() -> ErrorStatus.EVENT_NOT_FOUND.asServiceException());
+    }
+
+    /**
+     * iCal URL 정규화 (webcal:// -> https:// 변환)
+     * Apple Calendar에서 제공하는 webcal:// 프로토콜을 HTTP 요청 가능한 https://로 변환
+     */
+    private String normalizeICalUrl(String icalUrl) {
+        if (icalUrl == null || icalUrl.trim().isEmpty()) {
+            return icalUrl;
+        }
+        
+        String trimmedUrl = icalUrl.trim();
+        
+        // webcal:// -> https:// 변환 (Apple Calendar 지원)
+        if (trimmedUrl.startsWith("webcal://")) {
+            String convertedUrl = trimmedUrl.replace("webcal://", "https://");
+            log.info("📱 Apple Calendar URL 변환하여 저장: webcal:// -> https://");
+            return convertedUrl;
+        }
+        
+        return trimmedUrl;
     }
 }
