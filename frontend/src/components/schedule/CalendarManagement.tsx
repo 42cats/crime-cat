@@ -57,8 +57,8 @@ const CalendarManagement: React.FC<CalendarManagementProps> = ({
       return;
     }
 
-    if (!icalUrl.match(/^https?:\/\/.+/)) {
-      toast({ title: "오류", description: "올바른 URL 형식이 아닙니다.", variant: "destructive" });
+    if (!icalUrl.match(/^(https?|webcal):\/\/.+/)) {
+      toast({ title: "오류", description: "올바른 URL 형식이 아닙니다. (http, https, webcal 지원)", variant: "destructive" });
       return;
     }
 
@@ -73,6 +73,12 @@ const CalendarManagement: React.FC<CalendarManagementProps> = ({
         variant: "destructive" 
       });
     }
+  };
+
+  const handleAddCalendarSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); // 페이지 리로딩 방지
+    const formData = new FormData(e.currentTarget);
+    await handleAddCalendar(formData); // 기존 구현 재사용
   };
 
   const handleUpdateCalendar = async (id: string, updates: CalendarUpdateRequest) => {
@@ -179,7 +185,7 @@ const CalendarManagement: React.FC<CalendarManagementProps> = ({
               <DialogHeader>
                 <DialogTitle>새 캘린더 추가</DialogTitle>
               </DialogHeader>
-              <form action={handleAddCalendar} className="space-y-4">
+              <form onSubmit={handleAddCalendarSubmit} className="space-y-4">
                 <div>
                   <Label htmlFor="icalUrl">iCalendar URL *</Label>
                   <Input
