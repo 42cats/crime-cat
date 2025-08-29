@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -126,14 +125,29 @@ public class ScheduleService {
         @CacheEvict(value = CacheType.SCHEDULE_USER_CALENDAR, key = "#currentUser.id.toString()")
     })
     public void saveUserCalendar(UserCalendarRequest request, WebUser currentUser) {
-        Optional<UserCalendar> existingCalendar = userCalendarRepository.findByUser(currentUser);
-
-        UserCalendar calendar = existingCalendar.orElseGet(() -> UserCalendar.builder().user(currentUser).build());
         // webcal:// -> https:// 변환하여 저장 (Apple Calendar 지원)
         String normalizedUrl = normalizeICalUrl(request.getIcalUrl());
-        calendar.setIcalUrl(normalizedUrl);
+        
+        // URL 중복 체크
+        if (userCalendarRepository.existsByUserIdAndIcalUrl(currentUser.getId(), normalizedUrl)) {
+            throw ErrorStatus.DUPLICATE_CALENDAR_URL.asServiceException();
+        }
 
-        userCalendarRepository.save(calendar);
+        // 새 캘린더 생성 (기존 덮어쓰기 방식에서 변경)
+        UserCalendar newCalendar = UserCalendar.builder()
+            .user(currentUser)
+            .icalUrl(normalizedUrl)
+            .displayName("내 캘린더")  // 기본 이름 설정
+            .colorIndex(getNextAvailableColorIndex(currentUser.getId()))
+            .isActive(true)
+            .sortOrder(getNextSortOrder(currentUser.getId()))
+            .syncStatus(UserCalendar.SyncStatus.PENDING)
+            .build();
+
+        userCalendarRepository.save(newCalendar);
+        
+        log.info("✅ 새 캘린더 추가 완료: userId={}, calendarId={}, displayName={}", 
+                currentUser.getId(), newCalendar.getId(), newCalendar.getDisplayName());
     }
 
     // Delegate to ICalParsingService for parsing operations
@@ -146,21 +160,32 @@ public class ScheduleService {
 
         List<EventParticipant> participants = eventParticipantRepository.findByEvent(event);
 
-        // Collect all busy times from participants
+        // Collect all busy times from participants (다중 캘린더 지원)
         List<LocalDateTime[]> allBusyTimes = new ArrayList<>();
         for (EventParticipant participant : participants) {
-            userCalendarRepository.findByUser(participant.getUser()).ifPresent(userCalendar -> {
-                try {
-                    // 새 ICalParsingService 메서드로 교체
-                    Set<LocalDate> dates = icalParsingService.parseICalDates(userCalendar.getIcalUrl(), 3);
-                    // LocalDate를 LocalDateTime 배열로 변환
-                    for (LocalDate date : dates) {
-                        allBusyTimes.add(new LocalDateTime[]{date.atStartOfDay(), date.atTime(23, 59)});
+            // 각 참여자의 모든 활성 캘린더 조회
+            List<UserCalendar> participantCalendars = userCalendarRepository.findActiveCalendarsByUserId(
+                participant.getUser().getId());
+            
+            for (UserCalendar calendar : participantCalendars) {
+                if (calendar.getIcalUrl() != null && calendar.getSyncStatus() == UserCalendar.SyncStatus.SUCCESS) {
+                    try {
+                        // 새 ICalParsingService 메서드로 교체
+                        Set<LocalDate> dates = icalParsingService.parseICalDates(calendar.getIcalUrl(), 3);
+                        // LocalDate를 LocalDateTime 배열로 변환
+                        for (LocalDate date : dates) {
+                            allBusyTimes.add(new LocalDateTime[]{date.atStartOfDay(), date.atTime(23, 59)});
+                        }
+                        
+                        log.debug("📅 Participant {} calendar {} contributed {} busy dates", 
+                                participant.getUser().getId(), calendar.getDisplayName(), dates.size());
+                        
+                    } catch (Exception e) {
+                        log.warn("iCal 파싱 실패 (Participant: {}, Calendar: {}): {}", 
+                                participant.getUser().getId(), calendar.getDisplayName(), e.getMessage());
                     }
-                } catch (Exception e) {
-                    log.warn("iCal 파싱 실패: {}", userCalendar.getIcalUrl());
                 }
-            });
+            }
         }
 
         // Sort all busy times by start time
@@ -313,49 +338,53 @@ public class ScheduleService {
 
     /**
      * 특정 사용자의 특정 기간 내 iCalendar 이벤트 조회 (캘린더 표시용)
-     * - 외부 .ics 파일에서 파싱된 개인 일정 반환
+     * - 다중 캘린더 지원: 모든 활성 캘린더에서 파싱된 개인 일정 반환
      */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getUserEventsInRange(UUID userId, LocalDate startDate, LocalDate endDate) {
-        WebUser user = WebUser.builder().id(userId).build();
-        
-        // 사용자의 iCalendar URL 조회
-        Optional<UserCalendar> userCalendarOpt = userCalendarRepository.findByUser(user);
-        if (userCalendarOpt.isEmpty() || userCalendarOpt.get().getIcalUrl() == null) {
+        // 사용자의 모든 활성 캘린더 조회
+        List<UserCalendar> activeCalendars = userCalendarRepository.findActiveCalendarsByUserId(userId);
+        if (activeCalendars.isEmpty()) {
+            log.info("No active calendars found for user: {}", userId);
             return Collections.emptyList();
         }
         
-        String icalUrl = userCalendarOpt.get().getIcalUrl();
+        List<Map<String, Object>> allEvents = new ArrayList<>();
+        int successfulCalendars = 0;
         
-        try {
-            // 새 ICalParsingService 메서드 사용 - 날짜만 반환
-            Set<LocalDate> dates = icalParsingService.parseICalDates(icalUrl, 3);
+        for (UserCalendar calendar : activeCalendars) {
+            if (calendar.getIcalUrl() == null) {
+                log.warn("Calendar {} has no iCal URL, skipping", calendar.getId());
+                continue;
+            }
             
-            // LocalDate를 Map<String, Object> 형태로 변환
-            List<Map<String, Object>> result = dates.stream()
-                .filter(date -> !date.isBefore(startDate) && !date.isAfter(endDate))
-                .map(date -> {
-                    Map<String, Object> event = new HashMap<>();
-                    event.put("id", "ical_" + date.toString().hashCode());
-                    event.put("title", "개인 일정");
-                    event.put("startTime", date.atStartOfDay().toString());
-                    event.put("endTime", date.atTime(23, 59).toString());
-                    event.put("allDay", true);
-                    event.put("source", "icalendar");
-                    event.put("category", "personal");
-                    return event;
-                })
-                .collect(Collectors.toList());
-            
-            log.info("🔍 [ICAL_FILTER] Filtered events: {} out of {} total dates", 
-                    result.size(), dates.size());
-            
-            return result;
+            try {
+                // 각 캘린더별 이벤트 파싱
+                Set<LocalDate> dates = icalParsingService.parseICalDates(calendar.getIcalUrl(), 3);
                 
-        } catch (Exception e) {
-            log.error("Failed to fetch iCalendar events for user {}: {}", userId, e.getMessage(), e);
-            return Collections.emptyList();
+                // LocalDate를 Map<String, Object> 형태로 변환 (캘린더 정보 포함)
+                List<Map<String, Object>> calendarEvents = dates.stream()
+                    .filter(date -> !date.isBefore(startDate) && !date.isAfter(endDate))
+                    .map(date -> createEventMap(date, calendar))
+                    .collect(Collectors.toList());
+                
+                allEvents.addAll(calendarEvents);
+                successfulCalendars++;
+                
+                log.debug("🗓️ Calendar {} ({}): {} events in range", 
+                        calendar.getDisplayName(), calendar.getId(), calendarEvents.size());
+                
+            } catch (Exception e) {
+                log.error("Failed to fetch events from calendar {} ({}): {}", 
+                        calendar.getDisplayName(), calendar.getId(), e.getMessage());
+                // 개별 캘린더 실패 시에도 다른 캘린더 처리 계속
+            }
         }
+        
+        log.info("🔍 [MULTI_ICAL] Total events: {} from {}/{} calendars for user {}", 
+                allEvents.size(), successfulCalendars, activeCalendars.size(), userId);
+        
+        return allEvents;
     }
 
     /**
@@ -365,6 +394,27 @@ public class ScheduleService {
     public Event getEventEntity(UUID eventId) {
         return eventRepository.findById(eventId)
                 .orElseThrow(() -> ErrorStatus.EVENT_NOT_FOUND.asServiceException());
+    }
+
+    /**
+     * 캘린더 이벤트 Map 객체 생성 헬퍼 메서드 (다중 캘린더 정보 포함)
+     */
+    private Map<String, Object> createEventMap(LocalDate date, UserCalendar calendar) {
+        Map<String, Object> event = new HashMap<>();
+        event.put("id", "ical_" + calendar.getId() + "_" + date.toString().hashCode());
+        event.put("title", "개인 일정");
+        event.put("startTime", date.atStartOfDay().toString());
+        event.put("endTime", date.atTime(23, 59).toString());
+        event.put("allDay", true);
+        event.put("source", "icalendar");
+        event.put("category", "personal");
+        
+        // 다중 캘린더 정보 추가
+        event.put("calendarId", calendar.getId().toString());
+        event.put("calendarName", calendar.getDisplayName() != null ? calendar.getDisplayName() : "내 캘린더");
+        event.put("colorIndex", calendar.getColorIndex() != null ? calendar.getColorIndex() : 0);
+        
+        return event;
     }
 
     /**
@@ -386,5 +436,42 @@ public class ScheduleService {
         }
         
         return trimmedUrl;
+    }
+
+    /**
+     * 다음 사용 가능한 색상 인덱스 조회
+     */
+    private Integer getNextAvailableColorIndex(UUID userId) {
+        List<UserCalendar> existingCalendars = userCalendarRepository.findByUserIdOrderBySortOrder(userId);
+        Set<Integer> usedColors = existingCalendars.stream()
+                .map(cal -> cal.getColorIndex() != null ? cal.getColorIndex() : 0)
+                .collect(Collectors.toSet());
+        
+        // 0-7 범위에서 사용되지 않은 첫 번째 색상 인덱스 반환
+        for (int i = 0; i < 8; i++) {
+            if (!usedColors.contains(i)) {
+                return i;
+            }
+        }
+        
+        // 모든 색상이 사용된 경우 현재 캘린더 수를 8로 나눈 나머지 반환
+        return existingCalendars.size() % 8;
+    }
+
+    /**
+     * 다음 정렬 순서 조회
+     */
+    private Integer getNextSortOrder(UUID userId) {
+        List<UserCalendar> existingCalendars = userCalendarRepository.findByUserIdOrderBySortOrder(userId);
+        if (existingCalendars.isEmpty()) {
+            return 0;
+        }
+        
+        Integer maxSortOrder = existingCalendars.stream()
+                .map(cal -> cal.getSortOrder() != null ? cal.getSortOrder() : 0)
+                .max(Integer::compareTo)
+                .orElse(-1);
+                
+        return maxSortOrder + 1;
     }
 }

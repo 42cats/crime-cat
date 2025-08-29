@@ -299,6 +299,34 @@ const CalendarItem: React.FC<CalendarItemProps> = ({
 
   const colorInfo = getCalendarColor(calendar.colorIndex);
 
+  const formatUrl = (url: string) => {
+    if (!url) return '';
+    
+    // URL이 50자 이하면 그대로 표시
+    if (url.length <= 50) return url;
+    
+    try {
+      const urlObj = new URL(url);
+      const domain = urlObj.hostname;
+      const path = urlObj.pathname;
+      
+      // 도메인만 있는 경우
+      if (path === '/' || !path) {
+        return domain.length <= 30 ? domain : domain.substring(0, 27) + '...';
+      }
+      
+      // 도메인 + 경로 축약
+      const shortDomain = domain.length > 20 ? domain.substring(0, 17) + '...' : domain;
+      const remainingLength = 45 - shortDomain.length;
+      const shortPath = path.length > remainingLength ? path.substring(0, remainingLength - 3) + '...' : path;
+      
+      return shortDomain + shortPath;
+    } catch {
+      // URL 파싱 실패 시 단순 문자열 자르기
+      return url.substring(0, 47) + '...';
+    }
+  };
+
   const handleSave = async () => {
     await onUpdate(calendar.id, {
       displayName: editForm.displayName.trim() || undefined,
@@ -381,7 +409,7 @@ const CalendarItem: React.FC<CalendarItemProps> = ({
                   {calendar.displayName || calendar.calendarName || '이름 없음'}
                 </div>
                 <div className="text-xs text-gray-500 truncate" title={calendar.icalUrl}>
-                  {calendar.icalUrl}
+                  {formatUrl(calendar.icalUrl)}
                 </div>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   {getSyncStatusBadge()}

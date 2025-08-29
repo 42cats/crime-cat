@@ -145,7 +145,8 @@ public enum ErrorStatus {
     ICAL_PARSING_FAILED("iCalendar 파싱에 실패했습니다.", HttpStatus.BAD_GATEWAY),
     ICAL_DOWNLOAD_FAILED("iCalendar 다운로드에 실패했습니다.", HttpStatus.BAD_GATEWAY),
     CACHE_REFRESH_FAILED("캐시 갱신에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
-    SCHEDULE_SERVICE_ERROR("일정 서비스 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR);
+    SCHEDULE_SERVICE_ERROR("일정 서비스 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    DUPLICATE_CALENDAR_URL("이미 등록된 캘린더 URL입니다.", HttpStatus.BAD_REQUEST);
 
     private final String message;
     private final HttpStatus status;
