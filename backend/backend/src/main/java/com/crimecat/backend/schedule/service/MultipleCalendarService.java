@@ -505,6 +505,8 @@ public class MultipleCalendarService {
      */
     @lombok.Builder
     @lombok.Getter
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
     public static class CalendarGroup {
         private UUID calendarId;
         private String displayName;
