@@ -7,6 +7,7 @@ import com.crimecat.backend.schedule.dto.response.CalendarEventsResponse;
 import com.crimecat.backend.schedule.dto.response.CalendarResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ public class PersonalCalendarService {
     private final MultipleCalendarService multipleCalendarService;
     private final UnifiedCalendarCacheService unifiedCacheService;
     private final OptimizedBlockedDateService blockedDateService;
+    private final CacheManager cacheManager;
 
     // =================================================================================
     // 캘린더 관리 API
@@ -42,6 +44,8 @@ public class PersonalCalendarService {
     /**
      * 사용자의 등록된 캘린더 목록 조회
      */
+    @Transactional(readOnly = true)
+    @Cacheable(value = "user-calendars", key = "#userId")
     public List<CalendarResponse> getUserCalendars(UUID userId) {
         try {
             log.info("📅 [PERSONAL] 캘린더 목록 조회: userId={}", userId);
@@ -56,7 +60,7 @@ public class PersonalCalendarService {
      * 새 캘린더 추가
      */
     @Transactional
-    @CacheEvict(value = "calendar-events", key = "#userId + '*'", allEntries = true)
+    @CacheEvict(value = {"unified:calendar:events", "user-calendars"}, allEntries = true)
     public CalendarResponse addCalendar(UUID userId, CalendarCreateRequest request) {
         try {
             log.info("📅 [PERSONAL] 캘린더 추가: userId={}, url={}", userId, request.getIcalUrl());
@@ -71,7 +75,7 @@ public class PersonalCalendarService {
      * 캘린더 수정
      */
     @Transactional
-    @CacheEvict(value = "calendar-events", key = "#userId + '*'", allEntries = true)
+    @CacheEvict(value = {"unified:calendar:events", "user-calendars"}, allEntries = true)
     public CalendarResponse updateCalendar(UUID userId, UUID calendarId, CalendarUpdateRequest request) {
         try {
             log.info("📅 [PERSONAL] 캘린더 수정: userId={}, calendarId={}", userId, calendarId);
@@ -87,7 +91,7 @@ public class PersonalCalendarService {
      * 캘린더 삭제
      */
     @Transactional
-    @CacheEvict(value = "calendar-events", key = "#userId + '*'", allEntries = true)
+    @CacheEvict(value = {"unified:calendar:events", "user-calendars"}, allEntries = true)
     public void deleteCalendar(UUID userId, UUID calendarId) {
         try {
             log.info("📅 [PERSONAL] 캘린더 삭제: userId={}, calendarId={}", userId, calendarId);
@@ -102,11 +106,28 @@ public class PersonalCalendarService {
     /**
      * 개별 캘린더 동기화
      */
-    @CacheEvict(value = "calendar-events", key = "#userId + '*'", allEntries = true)
+    @Transactional
     public CalendarResponse syncCalendar(UUID userId, UUID calendarId) {
         try {
             log.info("📅 [PERSONAL] 캘린더 동기화: userId={}, calendarId={}", userId, calendarId);
-            return multipleCalendarService.syncCalendar(calendarId, userId);
+            
+            CalendarResponse result = multipleCalendarService.syncCalendar(calendarId, userId);
+            
+            // 순차적 캐시 무효화 (순서 중요)
+            log.info("🗑️ [CACHE_ORDER] Step 1 - Spring Cache 무효화");
+            if (cacheManager.getCache("user-calendars") != null) {
+                cacheManager.getCache("user-calendars").evict(userId);
+            }
+            if (cacheManager.getCache("unified:calendar:events") != null) {
+                cacheManager.getCache("unified:calendar:events").clear();
+            }
+            
+            log.info("🗑️ [CACHE_ORDER] Step 2 - UnifiedCalendarCacheService Redis 캐시 무효화");
+            unifiedCacheService.invalidateUserCache(userId);
+            
+            log.info("✅ [CACHE_COMPLETE] 모든 캐시 레이어 무효화 완료");
+            
+            return result;
         } catch (Exception e) {
             log.error("❌ [PERSONAL] 캘린더 동기화 실패: userId={}, calendarId={}, error={}", 
                     userId, calendarId, e.getMessage());
@@ -115,17 +136,33 @@ public class PersonalCalendarService {
     }
 
     /**
-     * 전체 캘린더 동기화
+     * 전체 캘린더 동기화 (동기화만 수행, 목록 조회는 별도 API)
      */
-    @CacheEvict(value = "calendar-events", key = "#userId + '*'", allEntries = true)
+    @Transactional
     public Map<String, Object> syncAllCalendars(UUID userId, Map<String, Object> request) {
         try {
             log.info("📅 [PERSONAL] 전체 캘린더 동기화: userId={}", userId);
-            List<CalendarResponse> calendars = multipleCalendarService.syncAllCalendarsAndGet(userId);
+            
+            // 동기화만 수행 (목록 조회 제외)
+            multipleCalendarService.syncAllUserCalendars(userId);
+            
+            // 순차적 캐시 무효화 (순서 중요)
+            log.info("🗑️ [CACHE_ORDER] Step 1 - Spring Cache 전체 무효화");
+            if (cacheManager.getCache("user-calendars") != null) {
+                cacheManager.getCache("user-calendars").clear();
+            }
+            if (cacheManager.getCache("unified:calendar:events") != null) {
+                cacheManager.getCache("unified:calendar:events").clear();
+            }
+            
+            log.info("🗑️ [CACHE_ORDER] Step 2 - UnifiedCalendarCacheService Redis 캐시 무효화");
+            unifiedCacheService.invalidateUserCache(userId);
+            
+            log.info("✅ [CACHE_COMPLETE] 모든 캐시 레이어 무효화 완료");
+            
             return Map.of(
                 "success", true,
-                "message", "전체 캘린더 동기화가 완료되었습니다",
-                "calendars", calendars
+                "message", "전체 캘린더 동기화가 완료되었습니다. 목록을 새로고침해주세요."
             );
         } catch (Exception e) {
             log.error("❌ [PERSONAL] 전체 캘린더 동기화 실패: userId={}, error={}", userId, e.getMessage());
@@ -138,12 +175,12 @@ public class PersonalCalendarService {
     // =================================================================================
 
     /**
-     * 캐시된 캘린더 이벤트 조회
+     * 캐시된 캘린더 이벤트 조회 (UnifiedCacheService 캐시 활용)
      */
-    @Cacheable(value = "calendar-events", key = "#userId + '_' + #startDate + '_' + #endDate")
+    @Transactional
     public CalendarEventsResponse getCalendarEvents(UUID userId, LocalDate startDate, LocalDate endDate) {
         try {
-            log.info("📅 [PERSONAL] 캘린더 이벤트 조회: userId={}, range={} ~ {}", userId, startDate, endDate);
+            log.info("📅 [PERSONAL] 캘린더 이벤트 조회: userId={}, range={} ~ {} (UnifiedCache 활용)", userId, startDate, endDate);
             return unifiedCacheService.getCachedCalendarEvents(userId, startDate, endDate);
         } catch (Exception e) {
             log.error("❌ [PERSONAL] 캘린더 이벤트 조회 실패: userId={}, error={}", userId, e.getMessage());
@@ -152,9 +189,9 @@ public class PersonalCalendarService {
     }
 
     /**
-     * 캘린더 이벤트 강제 새로고침
+     * 캘린더 이벤트 강제 새로고침 (UnifiedCacheService 캐시 무효화)
      */
-    @CacheEvict(value = "calendar-events", key = "#userId + '_' + #startDate + '_' + #endDate")
+    @Transactional
     public CalendarEventsResponse refreshCalendarEvents(UUID userId, LocalDate startDate, LocalDate endDate) {
         try {
             log.info("📅 [PERSONAL] 캘린더 이벤트 강제 새로고침: userId={}, range={} ~ {}", userId, startDate, endDate);
@@ -256,6 +293,7 @@ public class PersonalCalendarService {
     /**
      * 차단된 날짜 목록 조회
      */
+    @Transactional(readOnly = true)
     public List<String> getBlockedDates(UUID userId, LocalDate startDate, LocalDate endDate) {
         try {
             log.info("📅 [PERSONAL] 차단 날짜 목록 조회: userId={}, range={} ~ {}", userId, startDate, endDate);
@@ -278,7 +316,8 @@ public class PersonalCalendarService {
     /**
      * 사용자 캘린더 캐시 무효화
      */
-    @CacheEvict(value = "calendar-events", key = "#userId + '*'", allEntries = true)
+    @Transactional
+    @CacheEvict(value = {"unified:calendar:events", "user-calendars"}, allEntries = true)
     public Map<String, Object> invalidateUserCache(UUID userId) {
         try {
             log.info("📅 [PERSONAL] 캐시 무효화: userId={}", userId);

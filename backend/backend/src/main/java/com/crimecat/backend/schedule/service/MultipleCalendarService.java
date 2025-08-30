@@ -23,6 +23,9 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URLDecoder;
@@ -48,6 +51,9 @@ public class MultipleCalendarService {
     private final WebUserRepository webUserRepository;
     private final CalendarColorManager colorManager;
     private final RestTemplate restTemplate;
+    
+    @PersistenceContext
+    private EntityManager entityManager;
 
     /**
      * 사용자의 모든 활성 캘린더 동기화
@@ -61,63 +67,117 @@ public class MultipleCalendarService {
         log.info("📋 [SYNC_CALENDARS] Found {} active calendars to sync", calendars.size());
         
         for (UserCalendar calendar : calendars) {
-            // 각 캘린더 동기화를 별도 트랜잭션으로 처리 (실패 격리)
-            syncSingleCalendarWithTransaction(calendar);
+            // 각 캘린더 동기화 (단일 트랜잭션에서 처리)
+            try {
+                syncSingleCalendarWithTransaction(calendar);
+            } catch (Exception e) {
+                log.error("❌ [SYNC_INDIVIDUAL_FAILED] Calendar {} sync failed in batch: {}", 
+                    calendar.getId(), e.getMessage());
+                // 개별 실패해도 다른 캘린더는 계속 진행
+            }
         }
         
         log.info("🏁 [SYNC_COMPLETE] Sync completed for user: {}", userId);
     }
 
     /**
-     * 개별 캘린더 동기화 (별도 트랜잭션으로 실패 격리)
+     * 개별 캘린더 동기화 (단순화된 트랜잭션)
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void syncSingleCalendarWithTransaction(UserCalendar calendar) {
         LocalDateTime syncAttemptTime = LocalDateTime.now();
         
+        log.info("🕰 [TX_START] 트랜잭션 시작: {}", syncAttemptTime);
         log.info("📅 [SYNC_CALENDAR] Starting sync for calendar: {}", calendar.getId());
-        log.info("🔍 [BEFORE_SYNC] Current status: {} | Error: {} | LastSync: {}", 
-            calendar.getSyncStatus(), 
-            calendar.getSyncErrorMessage(), 
-            calendar.getLastSyncedAt());
         
-        try {
-            syncSingleCalendar(calendar);
+        // ✅ 핵심 수정: Entity를 다시 조회하여 Persistent 상태 보장
+        UserCalendar managedCalendar = userCalendarRepository.findById(calendar.getId())
+                .orElseThrow(() -> new IllegalStateException("Calendar not found: " + calendar.getId()));
+        
+        // EntityManager 상태 확인 로그
+        log.info("🔍 [ENTITY_STATE] Entity managed: {}, ID: {}", 
+            entityManager.contains(managedCalendar), managedCalendar.getId());
+        log.info("🔍 [BEFORE_SYNC] Current status: {} | Error: {} | LastSync: {}", 
+            managedCalendar.getSyncStatus(), 
+            managedCalendar.getSyncErrorMessage(), 
+            managedCalendar.getLastSyncedAt());
+        
+        log.info("🔄 [BEFORE_INNER_SYNC] 내부 동기화 전: {}", managedCalendar.getLastSyncedAt());
+        
+        // 순수 함수로 iCal 데이터 처리 (URL은 변경되지 않으므로 기존 객체 사용 가능)
+        SyncResult syncResult = syncSingleCalendar(managedCalendar.getIcalUrl());
+        
+        log.info("🔄 [AFTER_INNER_SYNC] 동기화 결과: {}", syncResult);
+        
+        // 결과에 따라 엔티티 업데이트 (모든 경우를 여기서 처리)
+        if (syncResult.isSuccess()) {
+            // 완전한 성공
+            log.info("✅ [SYNC_SUCCESS] Calendar {} synced successfully", managedCalendar.getId());
+            managedCalendar.setSyncStatus(UserCalendar.SyncStatus.SUCCESS);
+            managedCalendar.setLastSyncedAt(syncAttemptTime);
+            // updatedAt은 DB에서 자동 관리 (ON UPDATE current_timestamp())
+            managedCalendar.setSyncErrorMessage(null);
             
-            // 성공 시 상태 업데이트
-            log.info("✅ [SYNC_SUCCESS] Calendar {} synced successfully", calendar.getId());
-            calendar.setSyncStatus(UserCalendar.SyncStatus.SUCCESS);
-            calendar.setLastSyncedAt(syncAttemptTime);
-            calendar.setSyncErrorMessage(null); // 🎯 오류 메시지 명시적 클리어
-            
-            log.info("🔄 [STATUS_UPDATE] Updated status to SUCCESS, cleared error message");
-            
-        } catch (Exception e) {
-            log.error("❌ [SYNC_FAILED] Calendar {} sync failed: {}", calendar.getId(), e.getMessage());
-            log.error("📝 [ERROR_DETAILS] Exception type: {}", e.getClass().getSimpleName());
-            
-            calendar.setSyncStatus(UserCalendar.SyncStatus.ERROR);
-            calendar.setSyncErrorMessage(e.getMessage());
-            calendar.setLastSyncedAt(syncAttemptTime); // 실패해도 시도 시간 기록
-            
-            // displayName이 없으면 기본값 설정
-            if (calendar.getDisplayName() == null || calendar.getDisplayName().trim().isEmpty()) {
-                String fallbackName = calendar.getCalendarName() != null && !calendar.getCalendarName().trim().isEmpty()
-                    ? calendar.getCalendarName()
-                    : "외부 캘린더";
-                calendar.setDisplayName(fallbackName);
+            // 캘린더 이름 업데이트
+            if (syncResult.hasCalendarName()) {
+                String newCalendarName = syncResult.getCalendarName();
+                if (!newCalendarName.equals(managedCalendar.getCalendarName())) {
+                    log.info("🔄 Updating calendar name from '{}' to '{}'", 
+                        managedCalendar.getCalendarName(), newCalendarName);
+                    managedCalendar.setCalendarName(newCalendarName);
+                    
+                    // displayName이 없으면 calendarName으로 설정
+                    if (managedCalendar.getDisplayName() == null || managedCalendar.getDisplayName().trim().isEmpty()) {
+                        managedCalendar.setDisplayName(newCalendarName);
+                        log.info("🏷️ Set display name to: {}", newCalendarName);
+                    }
+                }
             }
             
-            log.error("🔍 [ERROR_STACK] Full error: ", e);
+        } else if (syncResult.isPartialSuccess()) {
+            // 부분적 성공 (404 등)
+            log.warn("⚠️ [PARTIAL_SUCCESS] Calendar {} partially succeeded", managedCalendar.getId());
+            managedCalendar.setSyncStatus(UserCalendar.SyncStatus.SUCCESS);
+            managedCalendar.setLastSyncedAt(syncAttemptTime);
+            // updatedAt은 DB에서 자동 관리 (ON UPDATE current_timestamp())
+            managedCalendar.setSyncErrorMessage(syncResult.getErrorMessage());
+            
+        } else {
+            // 완전한 실패
+            log.error("❌ [SYNC_FAILED] Calendar {} sync failed", managedCalendar.getId());
+            managedCalendar.setSyncStatus(UserCalendar.SyncStatus.ERROR);
+            managedCalendar.setLastSyncedAt(syncAttemptTime);
+            // updatedAt은 DB에서 자동 관리 (ON UPDATE current_timestamp())
+            managedCalendar.setSyncErrorMessage(syncResult.getErrorMessage());
+            
+            // displayName이 없으면 기본값 설정
+            if (managedCalendar.getDisplayName() == null || managedCalendar.getDisplayName().trim().isEmpty()) {
+                String fallbackName = managedCalendar.getCalendarName() != null && !managedCalendar.getCalendarName().trim().isEmpty()
+                    ? managedCalendar.getCalendarName()
+                    : "외부 캘린더";
+                managedCalendar.setDisplayName(fallbackName);
+                log.info("🏷️ Set fallback display name to: {}", fallbackName);
+            }
         }
         
         log.info("🔍 [AFTER_SYNC] Final status: {} | Error: {} | LastSync: {}", 
-            calendar.getSyncStatus(), 
-            calendar.getSyncErrorMessage(), 
-            calendar.getLastSyncedAt());
+            managedCalendar.getSyncStatus(), 
+            managedCalendar.getSyncErrorMessage(), 
+            managedCalendar.getLastSyncedAt());
         
-        userCalendarRepository.save(calendar);
-        log.info("💾 [CALENDAR_SAVED] Calendar {} state persisted", calendar.getId());
+        log.info("💾 [BEFORE_SAVE] 저장 전 상태: lastSyncedAt={}, status={}", 
+                managedCalendar.getLastSyncedAt(), managedCalendar.getSyncStatus());
+        
+        UserCalendar savedCalendar = userCalendarRepository.save(managedCalendar);
+        
+        log.info("💾 [AFTER_SAVE] 저장 후 상태: lastSyncedAt={}, status={}", 
+                savedCalendar.getLastSyncedAt(), savedCalendar.getSyncStatus());
+        
+        // 트랜잭션 강제 flush
+        entityManager.flush();
+        log.info("🔄 [AFTER_FLUSH] EntityManager flush 완료");
+        
+        log.info("🕰 [TX_END] 트랜잭션 종료: {}", LocalDateTime.now());
     }
 
     /**
@@ -180,19 +240,17 @@ public class MultipleCalendarService {
     }
 
     /**
-     * 단일 캘린더 동기화 및 메타데이터 추출
+     * 단일 캘린더 동기화 - 순수 함수 (엔티티 수정 없음)
+     * @param icalUrl iCal URL
+     * @return 동기화 결과 (성공/실패/부분성공)
      */
-    private void syncSingleCalendar(UserCalendar userCalendar) {
-        LocalDateTime syncAttemptTime = LocalDateTime.now();
-        
+    private SyncResult syncSingleCalendar(String icalUrl) {
         try {
-            String originalUrl = userCalendar.getIcalUrl();
-            log.info("🔗 Starting sync for calendar {}", userCalendar.getId());
-            log.info("📍 Original URL: {}", originalUrl);
+            log.info("🔗 Starting iCal sync for URL: {}", icalUrl);
             
             // URL 정규화
-            String processedUrl = normalizeIcalUrl(originalUrl);
-            if (!originalUrl.equals(processedUrl)) {
+            String processedUrl = normalizeIcalUrl(icalUrl);
+            if (!icalUrl.equals(processedUrl)) {
                 log.info("🔧 Using normalized URL: {}", processedUrl);
             }
             
@@ -212,17 +270,10 @@ public class MultipleCalendarService {
                     log.info("🔍 Possible reasons:");
                     log.info("   - Calendar became private or was deleted");
                     log.info("   - URL encoding issues (resolved in next sync)");
-                    log.info("   - Original URL: {}", originalUrl);
+                    log.info("   - Original URL: {}", icalUrl);
                     log.info("   - Processed URL: {}", processedUrl);
                     
-                    // 부분 성공으로 상태 업데이트 (에러 메시지 저장하지만 성공으로 처리)
-                    userCalendar.setSyncStatus(UserCalendar.SyncStatus.SUCCESS);
-                    userCalendar.setSyncErrorMessage("Calendar is private or deleted (404)");
-                    userCalendar.setLastSyncedAt(syncAttemptTime);
-                    userCalendarRepository.save(userCalendar);
-                    
-                    log.info("✅ Partial success: Calendar {} marked as private/deleted", userCalendar.getId());
-                    return; // 다른 캘린더 동기화 계속 진행
+                    return SyncResult.partialSuccess("Calendar is private or deleted (404)");
                 }
                 
                 // 다른 오류는 실패로 처리
@@ -231,7 +282,7 @@ public class MultipleCalendarService {
             
             if (icalData == null || icalData.trim().isEmpty()) {
                 log.error("📭 Empty iCal data received from: {}", processedUrl);
-                throw new RuntimeException("Empty iCal data received");
+                return SyncResult.failure("Empty iCal data received");
             }
             
             log.info("✅ Successfully fetched iCal data, size: {} chars", icalData.length());
@@ -241,28 +292,17 @@ public class MultipleCalendarService {
             Calendar calendar = builder.build(new StringReader(icalData));
             log.info("📅 Successfully parsed iCal data");
 
-            // 캘린더 이름 추출 및 업데이트
+            // 캘린더 이름 추출
             String calendarName = extractCalendarName(calendar);
             log.info("🏷️  Extracted calendar name: {}", calendarName);
             
-            if (calendarName != null && !calendarName.equals(userCalendar.getCalendarName())) {
-                log.info("🔄 Updating calendar name from '{}' to '{}'", 
-                    userCalendar.getCalendarName(), calendarName);
-                userCalendar.setCalendarName(calendarName);
-                
-                // displayName이 없으면 calendarName으로 설정
-                if (userCalendar.getDisplayName() == null || userCalendar.getDisplayName().trim().isEmpty()) {
-                    userCalendar.setDisplayName(calendarName);
-                    log.info("🏷️  Set display name to: {}", calendarName);
-                }
-            }
-            
-            log.info("✅ Successfully synced calendar {}", userCalendar.getId());
+            log.info("✅ Successfully processed iCal data");
+            return SyncResult.success(calendarName);
 
         } catch (Exception e) {
-            log.error("❌ Failed to sync calendar {}: {}", userCalendar.getId(), e.getMessage());
+            log.error("❌ Failed to sync iCal data: {}", e.getMessage());
             log.error("🔍 Error details: ", e);
-            throw new RuntimeException("Calendar sync failed: " + e.getMessage(), e);
+            return SyncResult.failure("Calendar sync failed: " + e.getMessage());
         }
     }
 
@@ -304,12 +344,46 @@ public class MultipleCalendarService {
      * 사용자 캘린더 목록 조회
      */
     public List<CalendarResponse> getUserCalendars(UUID userId, boolean activeOnly) {
+        log.info("📋 [CALENDAR_LIST] 캘린더 목록 조회: userId={}, activeOnly={}", userId, activeOnly);
+        
         List<UserCalendar> calendars;
         
         if (activeOnly) {
             calendars = userCalendarRepository.findByUserIdAndIsActiveOrderBySortOrder(userId, true);
         } else {
             calendars = userCalendarRepository.findByUserIdOrderBySortOrder(userId);
+        }
+
+        return calendars.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 별도 트랜잭션에서 사용자 캘린더 목록 조회 (JPA 1차 캐시 격리)
+     * - 동기화 후 최신 데이터 보장
+     * - 트랜잭션 격리로 인한 lastSyncedAt 미반영 문제 해결
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
+    public List<CalendarResponse> getUserCalendarsInNewTransaction(UUID userId, boolean activeOnly) {
+        log.info("🔄 [NEW_TRANSACTION] 별도 트랜잭션에서 최신 캘린더 목록 조회: userId={}, activeOnly={}", userId, activeOnly);
+        
+        List<UserCalendar> calendars;
+        
+        if (activeOnly) {
+            calendars = userCalendarRepository.findByUserIdAndIsActiveOrderBySortOrder(userId, true);
+        } else {
+            calendars = userCalendarRepository.findByUserIdOrderBySortOrder(userId);
+        }
+
+        log.info("✅ [NEW_TRANSACTION] 최신 캘린더 데이터 조회 완료: {} 개", calendars.size());
+        
+        // 최신 데이터 확인 로그
+        for (UserCalendar calendar : calendars) {
+            log.info("✅ [NEW_TRANSACTION] 최신 캘린더: id={}, name={}, lastSyncedAt={}", 
+                    calendar.getId(), 
+                    calendar.getDisplayName(), 
+                    calendar.getLastSyncedAt());
         }
 
         return calendars.stream()
@@ -353,23 +427,45 @@ public class MultipleCalendarService {
 
         // 6. 초기 동기화 시도
         LocalDateTime syncAttemptTime = LocalDateTime.now();
-        try {
-            syncSingleCalendar(savedCalendar);
+        
+        // 순수 함수로 동기화 시도
+        SyncResult syncResult = syncSingleCalendar(savedCalendar.getIcalUrl());
+        
+        if (syncResult.isSuccess()) {
             savedCalendar.setSyncStatus(UserCalendar.SyncStatus.SUCCESS);
             savedCalendar.setLastSyncedAt(syncAttemptTime);
-            savedCalendar.setSyncErrorMessage(null); // 성공 시 에러 메시지 클리어
+            // updatedAt은 DB에서 자동 관리 (ON UPDATE current_timestamp())
+            savedCalendar.setSyncErrorMessage(null);
+            
+            // 캘린더 이름 업데이트
+            if (syncResult.hasCalendarName()) {
+                savedCalendar.setCalendarName(syncResult.getCalendarName());
+                if (savedCalendar.getDisplayName() == null || savedCalendar.getDisplayName().trim().isEmpty()) {
+                    savedCalendar.setDisplayName(syncResult.getCalendarName());
+                }
+            }
+            
             log.info("Successfully added and synced new calendar: {}", savedCalendar.getId());
-        } catch (Exception e) {
+            
+        } else if (syncResult.isPartialSuccess()) {
+            savedCalendar.setSyncStatus(UserCalendar.SyncStatus.SUCCESS);
+            savedCalendar.setLastSyncedAt(syncAttemptTime);
+            // updatedAt은 DB에서 자동 관리 (ON UPDATE current_timestamp())
+            savedCalendar.setSyncErrorMessage(syncResult.getErrorMessage());
+            log.info("Added calendar with partial success: {}", savedCalendar.getId());
+            
+        } else {
             savedCalendar.setSyncStatus(UserCalendar.SyncStatus.ERROR);
-            savedCalendar.setSyncErrorMessage(e.getMessage());
-            savedCalendar.setLastSyncedAt(syncAttemptTime); // 실패해도 시도 시간 기록
+            savedCalendar.setLastSyncedAt(syncAttemptTime);
+            // updatedAt은 DB에서 자동 관리 (ON UPDATE current_timestamp())
+            savedCalendar.setSyncErrorMessage(syncResult.getErrorMessage());
             
             // displayName이 없으면 기본값 설정
             if (savedCalendar.getDisplayName() == null || savedCalendar.getDisplayName().trim().isEmpty()) {
                 savedCalendar.setDisplayName("외부 캘린더 (동기화 실패)");
             }
             
-            log.error("Failed initial sync for new calendar: {}", savedCalendar.getId(), e);
+            log.error("Failed initial sync for new calendar: {} - {}", savedCalendar.getId(), syncResult.getErrorMessage());
         }
 
         UserCalendar finalSaved = userCalendarRepository.save(savedCalendar);
@@ -549,6 +645,8 @@ public class MultipleCalendarService {
         if (request.getSortOrder() != null) {
             calendar.setSortOrder(request.getSortOrder());
         }
+        
+        // updatedAt은 DB에서 자동 관리 (ON UPDATE current_timestamp())
 
         UserCalendar savedCalendar = userCalendarRepository.save(calendar);
         return convertToResponse(savedCalendar);
@@ -571,30 +669,44 @@ public class MultipleCalendarService {
     }
 
     /**
-     * 개별 캘린더 동기화
+     * 개별 캘린더 동기화 (최적화: 해당 캘린더만 동기화)
      */
     @Transactional
     public CalendarResponse syncCalendar(UUID calendarId, UUID userId) {
-        log.info("📅 [CALENDAR_FOUND] Calendar found: {} | Current status: {}", calendarId, "checking");
+        log.info("📅 [INDIVIDUAL_SYNC] Starting individual calendar sync: calendarId={}", calendarId);
 
         UserCalendar calendar = userCalendarRepository.findById(calendarId)
-                .orElseThrow(() -> ErrorStatus.CALENDAR_NOT_FOUND.asServiceException());
+                .orElseThrow(ErrorStatus.CALENDAR_NOT_FOUND::asServiceException);
 
         // 권한 체크
         if (!calendar.getUser().getId().equals(userId)) {
             throw ErrorStatus.CALENDAR_ACCESS_DENIED.asServiceException();
         }
 
-        log.info("🔄 [SYNC_TRIGGER] Triggering sync for all user calendars");
-        // 개별 동기화는 전체 동기화로 대체
-        syncAllUserCalendars(userId);
+        // 활성화되지 않은 캘린더는 동기화하지 않음
+//        if (!calendar.getIsActive()) {
+//            log.warn("⚠️ [INDIVIDUAL_SYNC] Calendar is inactive, skipping sync: calendarId={}", calendarId);
+//            return convertToResponse(calendar);
+//        }
 
-        log.info("🔍 [FETCH_UPDATED] Fetching updated calendar from database");
-        // 업데이트된 캘린더 조회
-        UserCalendar updatedCalendar = userCalendarRepository.findById(calendarId)
-                .orElse(calendar);
-
-        return convertToResponse(updatedCalendar);
+        log.info("🔄 [INDIVIDUAL_SYNC] Syncing single calendar: {} ({})", 
+                calendar.getDisplayName(), calendar.getCalendarName());
+        
+        // 개별 캘린더만 동기화 실행 (단일 트랜잭션)
+        log.info("🔄 [MAIN_SYNC] 메인 동기화 시작: {}", LocalDateTime.now());
+        
+        syncSingleCalendarWithTransaction(calendar);
+        
+        log.info("🔄 [MAIN_SYNC] 메인 동기화 완료: {}", LocalDateTime.now());
+        
+        // 단일 트랜잭션이므로 calendar 객체가 이미 최신 상태
+        log.info("✅ [INDIVIDUAL_SYNC] Individual sync completed: calendarId={}, status={}, lastSyncedAt={}", 
+                calendarId, calendar.getSyncStatus(), calendar.getLastSyncedAt());
+        
+        CalendarResponse response = convertToResponse(calendar);
+        log.info("📤 [API_RESPONSE] 응답 생성 완료: lastSyncedAt={}", response.getLastSyncedAt());
+        
+        return response;
     }
 
     /**
@@ -602,10 +714,15 @@ public class MultipleCalendarService {
      */
     @Transactional
     public List<CalendarResponse> syncAllCalendarsAndGet(UUID userId) {
+        log.info("🔄 [SYNC_AND_GET] 전체 캘린더 동기화 및 목록 조회 시작: userId={}", userId);
+        
+        // 1. 전체 캘린더 동기화 실행
         syncAllUserCalendars(userId);
         
-        // 업데이트된 캘린더 목록 반환
-        return getUserCalendars(userId, false);
+        log.info("✅ [SYNC_AND_GET] 동기화 완료, 별도 트랜잭션에서 최신 목록 조회");
+        
+        // 2. 별도 트랜잭션에서 최신 데이터 조회 (JPA 1차 캐시 격리)
+        return getUserCalendarsInNewTransaction(userId, false);
     }
 
     /**
@@ -628,7 +745,7 @@ public class MultipleCalendarService {
                 .orElseThrow(() -> new IllegalArgumentException("캘린더를 찾을 수 없습니다: " + calendarId));
 
         calendar.setIsActive(isActive);
-        calendar.setUpdatedAt(LocalDateTime.now());
+        // updatedAt은 DB에서 자동 관리 (ON UPDATE current_timestamp())
 
         UserCalendar savedCalendar = userCalendarRepository.save(calendar);
 
@@ -661,7 +778,7 @@ public class MultipleCalendarService {
                     .orElseThrow(() -> new IllegalArgumentException("캘린더를 찾을 수 없습니다: " + calendarId));
 
             calendar.setSortOrder(sortOrder);
-            calendar.setUpdatedAt(LocalDateTime.now());
+            // updatedAt은 DB에서 자동 관리 (ON UPDATE current_timestamp())
 
             UserCalendar savedCalendar = userCalendarRepository.save(calendar);
             updatedCalendars.add(convertToResponse(savedCalendar));

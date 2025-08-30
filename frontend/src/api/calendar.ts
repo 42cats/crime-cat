@@ -30,9 +30,9 @@ export const calendarApi = {
     return apiClient.post<CalendarResponse>(`/my-calendar/calendars/${id}/sync`);
   },
 
-  // 전체 캘린더 동기화
-  syncAllCalendars: (): Promise<CalendarResponse[]> => {
-    return apiClient.post<CalendarResponse[]>('/my-calendar/calendars/sync-all');
+  // 전체 캘린더 동기화 (동기화만 수행, 목록 조회는 별도)
+  syncAllCalendars: (): Promise<{ success: boolean; message: string }> => {
+    return apiClient.post<{ success: boolean; message: string }>('/my-calendar/calendars/sync-all');
   },
 
   // 색상 팔레트 조회

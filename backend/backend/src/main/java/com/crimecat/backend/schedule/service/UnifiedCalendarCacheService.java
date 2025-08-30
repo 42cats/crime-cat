@@ -62,9 +62,9 @@ public class UnifiedCalendarCacheService {
      * @return 통합 캘린더 이벤트 응답
      */
     @Cacheable(value = CACHE_PREFIX, key = "#userId + ':' + #startDate + ':' + #endDate")
-    @Transactional(readOnly = true)
+    @Transactional
     public CalendarEventsResponse getCachedCalendarEvents(UUID userId, LocalDate startDate, LocalDate endDate) {
-        log.info("📊 [UNIFIED_CACHE] 캘린더 이벤트 조회 시작: userId={}, range={} ~ {}", userId, startDate, endDate);
+        log.info("📊 [CACHE_MISS] iCal 동기화 및 캐시 생성: userId={}, range={} ~ {} (30분 캐싱)", userId, startDate, endDate);
         
         try {
             // 1. 모든 활성 캘린더 동기화 (부분 실패 허용)
@@ -104,7 +104,7 @@ public class UnifiedCalendarCacheService {
                     .statistics(statistics)
                     .build();
 
-            log.info("✅ [UNIFIED_CACHE] 캘린더 이벤트 조회 완료: userId={}, totalEvents={}, totalCalendars={}", 
+            log.info("✅ [CACHE_CREATED] 캘린더 이벤트 30분 캐싱 완료: userId={}, totalEvents={}, totalCalendars={}", 
                     userId, rawEvents.size(), calendarGroups.size());
 
             return response;
@@ -216,7 +216,7 @@ public class UnifiedCalendarCacheService {
      * 사용자별 캐시 전체 무효화
      * @param userId 사용자 ID
      */
-    @CacheEvict(value = CACHE_PREFIX, allEntries = true)  // 패턴 매칭이 어려워 전체 무효화
+    @CacheEvict(value = {CACHE_PREFIX, "user-calendars"}, allEntries = true)  // 패턴 매칭이 어려워 전체 무효화
     public void invalidateUserCache(UUID userId) {
         log.info("🗑️ [CACHE_EVICT] 사용자 캐시 무효화: userId={}", userId);
         

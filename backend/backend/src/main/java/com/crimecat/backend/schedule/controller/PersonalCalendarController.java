@@ -133,9 +133,11 @@ public class PersonalCalendarController {
 
         log.info("🔄 [PERSONAL] 전체 캘린더 동기화 요청: userId={}", currentUser.getId());
         
+        // 1. 동기화 수행 (성공/실패 확인용)
         Map<String, Object> syncResult = personalCalendarService.syncAllCalendars(currentUser.getId(), Map.of());
-        @SuppressWarnings("unchecked")
-        List<CalendarResponse> response = (List<CalendarResponse>) syncResult.get("calendars");
+        
+        // 2. 동기화 후 업데이트된 캘린더 목록 조회
+        List<CalendarResponse> response = personalCalendarService.getUserCalendars(currentUser.getId());
         
         log.info("✅ [PERSONAL] 전체 캘린더 동기화 완료: {} 개 캘린더", response.size());
         return ResponseEntity.ok(response);

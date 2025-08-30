@@ -60,13 +60,14 @@ public class UserCalendar {
     @Builder.Default
     private Integer sortOrder = 0;
 
+    @Column(name = "last_synced_at")
     private LocalDateTime lastSyncedAt;
 
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
+    @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
 
     public enum SyncStatus {

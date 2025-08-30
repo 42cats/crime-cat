@@ -1,8 +1,10 @@
 package com.crimecat.backend.schedule.dto.response;
 
 import com.crimecat.backend.schedule.domain.UserCalendar;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -12,6 +14,8 @@ import java.util.UUID;
  */
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CalendarResponse {
     private UUID id;
     private String icalUrl;
