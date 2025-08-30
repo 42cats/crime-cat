@@ -703,6 +703,8 @@ public class MultipleCalendarService {
      */
     @lombok.Builder
     @lombok.Getter
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
     public static class CalendarEvent {
         private String id;
         private String title;

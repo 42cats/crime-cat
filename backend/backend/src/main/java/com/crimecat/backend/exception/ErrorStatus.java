@@ -127,6 +127,24 @@ public enum ErrorStatus {
     RECOMMENDATION_CALCULATION_FAILED("추천 계산에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     CALENDAR_SYNC_FAILED("캘린더 동기화에 실패했습니다.", HttpStatus.BAD_GATEWAY),
     CALENDAR_NOT_FOUND("캘린더를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    
+    // 📅 캘린더 관리 관련 추가 에러
+    CALENDAR_ADD_FAILED("캘린더 추가에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CALENDAR_UPDATE_FAILED("캘린더 수정에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CALENDAR_DELETE_FAILED("캘린더 삭제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CALENDAR_SYNC_ALL_FAILED("전체 캘린더 동기화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CALENDAR_EVENTS_LOAD_FAILED("캘린더 이벤트 조회에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CALENDAR_EVENTS_REFRESH_FAILED("캘린더 이벤트 새로고침에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    
+    // 📅 날짜 차단 관련
+    DATE_BLOCK_FAILED("날짜 차단에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    DATE_UNBLOCK_FAILED("날짜 차단 해제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    DATE_RANGE_BLOCK_FAILED("날짜 범위 차단에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    DATE_RANGE_UNBLOCK_FAILED("날짜 범위 차단 해제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    BLOCKED_DATES_LOAD_FAILED("차단 날짜 목록 조회에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    
+    // 📅 캐시 관련
+    CACHE_INVALIDATION_FAILED("캐시 무효화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     CALENDAR_ACCESS_DENIED("캘린더에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN),
     CALENDAR_ALREADY_EXISTS("이미 등록된 캘린더 URL입니다.", HttpStatus.CONFLICT),
     CALENDAR_INVALID_URL("유효하지 않은 iCalendar URL입니다.", HttpStatus.BAD_REQUEST),
