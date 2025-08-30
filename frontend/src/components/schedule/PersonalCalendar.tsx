@@ -78,6 +78,7 @@ import { useMemo } from "react";
 import EventCountIndicator from "./EventCountIndicator";
 import CalendarManagement from "./CalendarManagement";
 import { ICSTooltip, ICSMobileList } from "./ics";
+import { LoadingSpinner } from "./common/LoadingSpinner";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useDebouncedCallback } from "@/hooks/useDebounce";
@@ -1602,15 +1603,11 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                                     </Button>
                                 </div>
                             ) : isLoading ? (
-                                <div
-                                    className={cn(
-                                        "flex items-center gap-2 text-muted-foreground",
-                                        calendarSizes.fontSize
-                                    )}
-                                >
-                                    <RefreshCw className="w-4 h-4 animate-spin" />
-                                    {!isMobile && "로딩 중..."}
-                                </div>
+                                <LoadingSpinner
+                                    size="sm"
+                                    text={!isMobile ? "로딩 중..." : undefined}
+                                    className="text-muted-foreground"
+                                />
                             ) : (
                                 <Button
                                     variant="ghost"
@@ -1731,23 +1728,26 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                                     ? "space-y-1"
                                     : "space-y-2"
                             ),
-                            head_row: "flex w-full",
+                            head_row: "grid grid-cols-7 w-full",
                             head_cell: cn(
-                                "text-muted-foreground rounded-md font-normal text-center flex items-center justify-center",
-                                calendarSizes.cellSize,
-                                calendarSizes.fontSize
+                                "text-muted-foreground rounded-md font-normal text-center flex items-center justify-center min-w-0",
+                                calendarSizes.fontSize,
+                                // aspect-square 대신 최소 높이 설정
+                                viewMode === "compact" 
+                                    ? "min-h-[2rem]" 
+                                    : viewMode === "standard" 
+                                    ? "min-h-[2.5rem]" 
+                                    : "min-h-[3rem]"
                             ),
                             row: cn(
-                                "flex w-full",
+                                "grid grid-cols-7 w-full",
                                 viewMode === "compact" ? "mt-1" : "mt-2"
                             ),
                             cell: cn(
-                                "relative p-0 text-center focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent",
-                                calendarSizes.cellSize
+                                "relative p-0 text-center focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent min-w-0 aspect-square flex items-center justify-center"
                             ),
                             day: cn(
-                                "relative p-0",
-                                calendarSizes.cellSize,
+                                "relative p-0 w-full h-full flex items-center justify-center",
                                 calendarSizes.fontSize
                             ),
                             day_outside: "text-muted-foreground opacity-50",
@@ -1799,7 +1799,7 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                                             !isOutsideMonth
                                                 ? dateStyle.className
                                                 : "",
-                                            "overflow-hidden" // 표식이 날짜 셀을 벗어나지 않도록
+                                            "relative overflow-hidden" // 표식이 날짜 셀을 벗어나지 않도록
                                         )}
                                         style={{
                                             ...getDateClassName(date).style,
@@ -1877,6 +1877,13 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                                         data-date={date.toISOString()}
                                         {...domProps}
                                     >
+                                        {/* 로딩 오버레이 */}
+                                        {isLoading && !isOutsideMonth && (
+                                            <div className="absolute inset-0 z-50 bg-background/60 backdrop-blur-sm flex items-center justify-center">
+                                                <LoadingSpinner size="sm" />
+                                            </div>
+                                        )}
+
                                         {/* Layer 1: 배경 및 상태 표시 */}
                                         <div className="absolute inset-0 z-0 rounded">
                                             {renderDateBackground(date)}
