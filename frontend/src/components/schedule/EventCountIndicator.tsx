@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { CalendarEvent } from '@/hooks/useCalendarState';
+import { getCalendarColor, findClosestColorIndex } from '@/utils/calendarColors';
 
 interface EventCountIndicatorProps {
   events: CalendarEvent[];
@@ -31,7 +32,7 @@ const EventCountIndicator: React.FC<EventCountIndicatorProps> = ({
   const icsEvents = events.filter(e => e.source === 'icalendar');
   const crimeCatEvents = events.filter(e => e.source === 'crime-cat');
 
-  // 주 배경색 결정 (겹침 정보 우선, 그 다음 이벤트 타입 기준)
+  // 주 배경색 결정 (겹침 정보 우선, 그 다음 실제 캘린더 색상 사용)
   const getBadgeColor = () => {
     // 겹침이 있는 경우 경고 색상 우선
     if (overlapInfo?.hasOverlap) {
@@ -47,15 +48,16 @@ const EventCountIndicator: React.FC<EventCountIndicatorProps> = ({
       }
     }
     
-    // 일반적인 이벤트 타입 기준 색상
-    if (icsEvents.length > crimeCatEvents.length) {
-      return 'bg-yellow-500 text-white';
-    } else if (crimeCatEvents.length > icsEvents.length) {
-      return 'bg-blue-500 text-white';
-    } else {
-      // 같거나 혼합된 경우
-      return 'bg-purple-500 text-white';
+    // 실제 캘린더 색상 사용 (다중 캘린더인 경우 첫 번째 이벤트 기준)
+    if (events.length > 0) {
+      const firstEvent = events[0];
+      const colorIndex = firstEvent.colorIndex ?? findClosestColorIndex(firstEvent.colorHex);
+      const colorInfo = getCalendarColor(colorIndex);
+      return `${colorInfo.tailwindBg} text-white`;
     }
+    
+    // 기본값 (이벤트가 없는 경우 - 실제로는 호출되지 않음)
+    return 'bg-gray-500 text-white';
   };
 
   return (

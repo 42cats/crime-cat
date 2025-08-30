@@ -892,6 +892,7 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
             const dateInfo = getDateInfo(date);
             const isToday = date.toDateString() === new Date().toDateString();
             const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+            let dateStyle = {}; // dateStyle 변수 선언 추가
 
             // 이전/이후 월 날짜 판단 (수동 계산)
             const isOutsideMonth =
@@ -984,14 +985,33 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                             };
                             baseClasses.push("hover:opacity-80");
                         } else {
-                            // 통합 모드 - 기본 노란색 배경
-                            baseClasses.push(
-                                "bg-yellow-100",
-                                "text-yellow-700",
-                                "border-2",
-                                "border-yellow-300",
-                                "hover:bg-yellow-200"
-                            );
+                            // 통합 모드 - 실제 캘린더 색상 사용 (다중 캘린더인 경우 그라디언트)
+                            if (calendarInfo.colorIndexes.length > 1) {
+                                // 다중 캘린더 - 그라디언트 배경
+                                dateStyle = {
+                                    background: createStripeGradient(calendarInfo.colorIndexes),
+                                    border: "2px solid rgba(0,0,0,0.1)",
+                                };
+                                baseClasses.push("text-gray-800", "hover:opacity-80");
+                            } else if (calendarInfo.colorIndexes.length === 1) {
+                                // 단일 캘린더 - 해당 캘린더 색상
+                                const colorInfo = getCalendarColor(calendarInfo.colorIndexes[0]);
+                                dateStyle = {
+                                    backgroundColor: colorInfo.lightBg,
+                                    border: `2px solid ${colorInfo.hex}40`,
+                                    color: colorInfo.tailwindText.replace("text-", ""),
+                                };
+                                baseClasses.push("hover:opacity-80");
+                            } else {
+                                // 색상 정보가 없는 경우 기본 색상
+                                baseClasses.push(
+                                    "bg-gray-100",
+                                    "text-gray-700", 
+                                    "border-2",
+                                    "border-gray-300",
+                                    "hover:bg-gray-200"
+                                );
+                            }
                         }
                     } else {
                         // Crime-Cat 이벤트만 - 파란색 배경
@@ -1047,7 +1067,10 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                 baseClasses.push("bg-primary/20", "border-primary");
             }
 
-            return cn(baseClasses);
+            return {
+                className: cn(baseClasses),
+                style: dateStyle
+            };
         },
         [getDateInfo, isDragging, dragStart, dragEnd, currentMonth]
     );
@@ -1561,8 +1584,24 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                                 </Select>
                             )}
 
-                            {/* 새로고침 버튼 */}
-                            {isLoading ? (
+                            {/* 새로고침 버튼 및 에러 표시 */}
+                            {error ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="text-destructive text-sm font-medium">
+                                        {!isMobile && "데이터 로드 실패"}
+                                        <span className="text-xs ml-1">⚠️</span>
+                                    </div>
+                                    <Button
+                                        variant="destructive"
+                                        size={isMobile ? "sm" : "default"}
+                                        onClick={refreshData}
+                                        className="h-8"
+                                    >
+                                        <RefreshCw className="w-4 h-4" />
+                                        {!isMobile && <span className="ml-1">재시도</span>}
+                                    </Button>
+                                </div>
+                            ) : isLoading ? (
                                 <div
                                     className={cn(
                                         "flex items-center gap-2 text-muted-foreground",
@@ -1756,13 +1795,14 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                                 return (
                                     <div
                                         className={cn(
-                                            getDateClassName(date),
+                                            getDateClassName(date).className,
                                             !isOutsideMonth
                                                 ? dateStyle.className
                                                 : "",
                                             "overflow-hidden" // 표식이 날짜 셀을 벗어나지 않도록
                                         )}
                                         style={{
+                                            ...getDateClassName(date).style,
                                             ...(!isOutsideMonth
                                                 ? dateStyle.style
                                                 : undefined),
