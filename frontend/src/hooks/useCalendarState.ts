@@ -10,16 +10,6 @@ import {
   type GroupedICSEvents
 } from '@/utils/icsEventUtils';
 
-// Debug logging utility
-const debugLog = (category: string, message: string, data?: any) => {
-  const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-  const prefix = `🔧 [${category}] ${timestamp}`;
-  if (data !== undefined) {
-    console.log(`${prefix} ${message}`, data);
-  } else {
-    console.log(`${prefix} ${message}`);
-  }
-};
 
 export interface CalendarEvent {
   id: string;
@@ -100,13 +90,6 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = endDate.toISOString().split('T')[0];
     
-    debugLog('MONTH_RANGE', `Extended calendar range from ${startDateStr} to ${endDateStr}`, {
-      currentMonth: currentMonth.toISOString().split('T')[0],
-      firstDayOfMonth: firstDayOfMonth.toISOString().split('T')[0],
-      lastDayOfMonth: lastDayOfMonth.toISOString().split('T')[0],
-      startDate: startDateStr,
-      endDate: endDateStr
-    });
     
     return {
       startDate: startDateStr,
@@ -122,15 +105,7 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
   } = useQuery({
     queryKey: ['schedule', 'blocked-dates', monthRange.startDate, monthRange.endDate],
     queryFn: async () => {
-      debugLog('QUERY_BLOCKED', `Fetching blocked dates for range ${monthRange.startDate} to ${monthRange.endDate}`);
-      try {
-        const result = await scheduleService.getBlockedDates(monthRange.startDate, monthRange.endDate);
-        debugLog('QUERY_BLOCKED', `Successfully fetched ${result.length} blocked dates`, result);
-        return result;
-      } catch (error) {
-        debugLog('QUERY_BLOCKED', 'Failed to fetch blocked dates', error);
-        throw error;
-      }
+      return await scheduleService.getBlockedDates(monthRange.startDate, monthRange.endDate);
     },
     enabled: enableBlocking,
     refetchInterval: autoRefreshInterval || false,
@@ -145,15 +120,7 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
   } = useQuery({
     queryKey: ['schedule', 'grouped-calendar-events', monthRange.startDate, monthRange.endDate],
     queryFn: async () => {
-      debugLog('QUERY_GROUPED_EVENTS', `Fetching grouped calendar events for range ${monthRange.startDate} to ${monthRange.endDate}`);
-      try {
-        const result = await scheduleService.getGroupedCalendarEvents(monthRange.startDate, monthRange.endDate);
-        debugLog('QUERY_GROUPED_EVENTS', 'Successfully fetched grouped calendar events', result);
-        return result;
-      } catch (error) {
-        debugLog('QUERY_GROUPED_EVENTS', 'Failed to fetch grouped calendar events', error);
-        throw error;
-      }
+      return await scheduleService.getGroupedCalendarEvents(monthRange.startDate, monthRange.endDate);
     },
     enabled: enableEventFetching,
     refetchInterval: autoRefreshInterval || false,
@@ -171,25 +138,15 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
         });
       });
     });
-    debugLog('EVENTS_FLATTEN', `Flattened ${events.length} events from ${Object.keys(groupedCalendarData).length} calendars`, events);
     return events;
   }, [groupedCalendarData]);
 
   // 날짜 비활성화 Mutation
   const blockDateMutation = useMutation({
     mutationFn: async (date: string) => {
-      debugLog('MUTATION_BLOCK', `Starting block date mutation for ${date}`);
-      try {
-        const result = await scheduleService.blockDate(date);
-        debugLog('MUTATION_BLOCK', `Successfully blocked date ${date}`, result);
-        return result;
-      } catch (error) {
-        debugLog('MUTATION_BLOCK', `Failed to block date ${date}`, error);
-        throw error;
-      }
+      return await scheduleService.blockDate(date);
     },
     onSuccess: (_, date) => {
-      debugLog('MUTATION_BLOCK', `Block mutation success for ${date}, invalidating queries`);
       queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
       toast({
         title: '날짜 비활성화 완료',
@@ -197,7 +154,6 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       });
     },
     onError: (error: any, date) => {
-      debugLog('MUTATION_BLOCK', `Block mutation error for ${date}`, error);
       toast({
         title: '비활성화 실패',
         description: error?.response?.data?.message || '날짜 비활성화 중 오류가 발생했습니다.',
@@ -209,18 +165,9 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
   // 날짜 활성화 Mutation
   const unblockDateMutation = useMutation({
     mutationFn: async (date: string) => {
-      debugLog('MUTATION_UNBLOCK', `Starting unblock date mutation for ${date}`);
-      try {
-        const result = await scheduleService.unblockDate(date);
-        debugLog('MUTATION_UNBLOCK', `Successfully unblocked date ${date}`, result);
-        return result;
-      } catch (error) {
-        debugLog('MUTATION_UNBLOCK', `Failed to unblock date ${date}`, error);
-        throw error;
-      }
+      return await scheduleService.unblockDate(date);
     },
     onSuccess: (_, date) => {
-      debugLog('MUTATION_UNBLOCK', `Unblock mutation success for ${date}, invalidating queries`);
       queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
       toast({
         title: '날짜 활성화 완료',
@@ -228,7 +175,6 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       });
     },
     onError: (error: any, date) => {
-      debugLog('MUTATION_UNBLOCK', `Unblock mutation error for ${date}`, error);
       toast({
         title: '활성화 실패',
         description: error?.response?.data?.message || '날짜 활성화 중 오류가 발생했습니다.',
@@ -240,18 +186,9 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
   // 날짜 범위 비활성화 Mutation
   const blockDateRangeMutation = useMutation({
     mutationFn: async ({ startDate, endDate }: { startDate: string; endDate: string }) => {
-      debugLog('MUTATION_BLOCK_RANGE', `Starting block range mutation from ${startDate} to ${endDate}`);
-      try {
-        const result = await scheduleService.blockDateRange(startDate, endDate);
-        debugLog('MUTATION_BLOCK_RANGE', `Successfully blocked range ${startDate} to ${endDate}`, result);
-        return result;
-      } catch (error) {
-        debugLog('MUTATION_BLOCK_RANGE', `Failed to block range ${startDate} to ${endDate}`, error);
-        throw error;
-      }
+      return await scheduleService.blockDateRange(startDate, endDate);
     },
     onSuccess: (_, { startDate, endDate }) => {
-      debugLog('MUTATION_BLOCK_RANGE', `Block range mutation success from ${startDate} to ${endDate}, invalidating queries`);
       queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
       toast({
         title: '날짜 범위 비활성화 완료',
@@ -259,7 +196,6 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       });
     },
     onError: (error: any, { startDate, endDate }) => {
-      debugLog('MUTATION_BLOCK_RANGE', `Block range mutation error from ${startDate} to ${endDate}`, error);
       toast({
         title: '범위 비활성화 실패',
         description: error?.response?.data?.message || '날짜 범위 비활성화 중 오류가 발생했습니다.',
@@ -271,18 +207,9 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
   // 날짜 범위 활성화 Mutation
   const unblockDateRangeMutation = useMutation({
     mutationFn: async ({ startDate, endDate }: { startDate: string; endDate: string }) => {
-      debugLog('MUTATION_UNBLOCK_RANGE', `Starting unblock range mutation from ${startDate} to ${endDate}`);
-      try {
-        const result = await scheduleService.unblockDateRange(startDate, endDate);
-        debugLog('MUTATION_UNBLOCK_RANGE', `Successfully unblocked range ${startDate} to ${endDate}`, result);
-        return result;
-      } catch (error) {
-        debugLog('MUTATION_UNBLOCK_RANGE', `Failed to unblock range ${startDate} to ${endDate}`, error);
-        throw error;
-      }
+      return await scheduleService.unblockDateRange(startDate, endDate);
     },
     onSuccess: (_, { startDate, endDate }) => {
-      debugLog('MUTATION_UNBLOCK_RANGE', `Unblock range mutation success from ${startDate} to ${endDate}, invalidating queries`);
       queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
       toast({
         title: '날짜 범위 활성화 완료',
@@ -290,7 +217,6 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       });
     },
     onError: (error: any, { startDate, endDate }) => {
-      debugLog('MUTATION_UNBLOCK_RANGE', `Unblock range mutation error from ${startDate} to ${endDate}`, error);
       toast({
         title: '범위 활성화 실패',
         description: error?.response?.data?.message || '날짜 범위 활성화 중 오류가 발생했습니다.',
@@ -351,15 +277,9 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     const dateInfo = getDateInfo(date);
     const dateStr = date.toISOString().split('T')[0];
     
-    debugLog('CLICK_HANDLER', `Date click for ${dateStr}`, { 
-      dateInfo, 
-      currentBlockedByUser: dateInfo.blockedByUser,
-      status: dateInfo.status 
-    });
     
     // 과거 날짜는 비활성화 불가
     if (date < new Date(new Date().setHours(0, 0, 0, 0))) {
-      debugLog('CLICK_HANDLER', `Rejected past date click for ${dateStr}`);
       toast({
         title: '과거 날짜는 수정할 수 없습니다',
         description: '오늘 이후의 날짜만 비활성화할 수 있습니다.',
@@ -370,7 +290,6 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     
     // 기존 일정이 있는 날짜는 비활성화 불가 (선택적)
     if (dateInfo.status === DateStatus.BUSY && !dateInfo.blockedByUser) {
-      debugLog('CLICK_HANDLER', `Warning for busy date ${dateStr}, but allowing block`);
       toast({
         title: '기존 일정이 있는 날짜입니다',
         description: '기존 일정이 있는 날짜도 비활성화할 수 있지만, 추천 계산에서는 제외됩니다.',
@@ -381,10 +300,8 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     
     // 비활성화/활성화 토글
     if (dateInfo.blockedByUser) {
-      debugLog('CLICK_HANDLER', `Triggering unblock for ${dateStr}`);
       unblockDateMutation.mutate(dateStr);
     } else {
-      debugLog('CLICK_HANDLER', `Triggering block for ${dateStr}`);
       blockDateMutation.mutate(dateStr);
     }
   }, [enableBlocking, getDateInfo, toast, blockDateMutation, unblockDateMutation]);
@@ -420,16 +337,9 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = endDate.toISOString().split('T')[0];
     
-    debugLog('DRAG_HANDLER', `Drag ended from ${startDateStr} to ${endDateStr}`, {
-      isDragging,
-      dragStart: startDate,
-      dragEnd: endDate,
-      isSingleDate: startDate.getTime() === endDate.getTime()
-    });
     
     // 단일 날짜 선택인 경우 클릭 핸들러 사용
     if (startDate.getTime() === endDate.getTime()) {
-      debugLog('DRAG_HANDLER', `Single date drag, using click handler for ${startDateStr}`);
       handleDateClick(startDate);
     } else {
       // 범위 선택인 경우 - 범위 내 날짜들의 상태를 확인하고 토글
@@ -452,19 +362,16 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
         return !dateInfo.blockedByUser && date >= new Date(new Date().setHours(0, 0, 0, 0)); // 과거 날짜 제외
       });
       
-      debugLog('DRAG_HANDLER', `Range analysis - Blocked: ${blockedDatesInRange.length}, Active: ${activeDatesInRange.length}`);
       
       // 간단한 토글 로직: 범위 내에 비활성화된 날짜가 하나라도 있으면 전체 활성화, 모두 활성화되어 있으면 전체 비활성화
       if (blockedDatesInRange.length > 0) {
         // 비활성화된 날짜가 있음 -> 전체 활성화 (반대로 바꾸기)
-        debugLog('DRAG_HANDLER', `Found ${blockedDatesInRange.length} blocked dates, activating entire range from ${startDateStr} to ${endDateStr}`);
         unblockDateRangeMutation.mutate({
           startDate: startDateStr,
           endDate: endDateStr,
         });
       } else {
         // 모든 날짜가 활성화되어 있음 -> 전체 비활성화 (반대로 바꾸기)
-        debugLog('DRAG_HANDLER', `All dates active, blocking entire range from ${startDateStr} to ${endDateStr}`);
         blockDateRangeMutation.mutate({
           startDate: startDateStr,
           endDate: endDateStr,
@@ -530,15 +437,6 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     // 유효한 날짜 수로 가용성 비율 계산
     const availabilityRate = validDays > 0 ? Math.round((availableDays / validDays) * 100) : 0;
     
-    debugLog('MONTH_STATS', `Statistics for ${currentMonth.getFullYear()}-${(currentMonth.getMonth() + 1).toString().padStart(2, '0')} (excluding past dates)`, {
-      totalDays: daysInMonth,
-      validDays,
-      availableDays,
-      blockedDays,
-      busyDays,
-      availabilityRate,
-      todayDate: today.toISOString().split('T')[0]
-    });
     
     return {
       totalDays: validDays, // 유효한 날짜 수를 totalDays로 반환
@@ -587,13 +485,10 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
    * 수동 새로고침
    */
   const refreshData = useCallback(() => {
-    debugLog('REFRESH', 'Manual data refresh triggered', { enableBlocking, enableEventFetching });
     if (enableBlocking) {
-      debugLog('REFRESH', 'Invalidating blocked-dates queries');
       queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
     }
     if (enableEventFetching) {
-      debugLog('REFRESH', 'Invalidating grouped-calendar-events queries');
       queryClient.invalidateQueries({ queryKey: ['schedule', 'grouped-calendar-events'] });
     }
   }, [queryClient, enableBlocking, enableEventFetching]);

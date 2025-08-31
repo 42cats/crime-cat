@@ -97,7 +97,6 @@ export const CALENDAR_COLORS: CalendarColor[] = [
  */
 export const getCalendarColor = (colorIndex: number): CalendarColor => {
   if (colorIndex < 0 || colorIndex >= CALENDAR_COLORS.length) {
-    console.warn(`Invalid color index: ${colorIndex}. Using default color (0).`);
     return CALENDAR_COLORS[0];
   }
   return CALENDAR_COLORS[colorIndex];

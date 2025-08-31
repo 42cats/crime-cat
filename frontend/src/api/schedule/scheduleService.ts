@@ -9,16 +9,6 @@ import {
   EventParticipant
 } from './types';
 
-// Debug logging utility for API calls
-const apiDebugLog = (method: string, url: string, message: string, data?: any) => {
-  const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-  const prefix = `🌐 [API_${method.toUpperCase()}] ${timestamp}`;
-  if (data !== undefined) {
-    console.log(`${prefix} ${url} - ${message}`, data);
-  } else {
-    console.log(`${prefix} ${url} - ${message}`);
-  }
-};
 
 /**
  * 인증된 사용자를 위한 일정 관리 API 서비스
@@ -138,16 +128,7 @@ export class ScheduleService {
     const params = new URLSearchParams({ date });
     const url = `/my-calendar/block-date?${params.toString()}`;
     
-    apiDebugLog('POST', url, `Starting block date request for ${date}`);
-    
-    try {
-      const result = await apiClient.post<{ message: string; date: string }>(url);
-      apiDebugLog('POST', url, `Successfully blocked date ${date}`, result);
-      return result;
-    } catch (error) {
-      apiDebugLog('POST', url, `Failed to block date ${date}`, error);
-      throw error;
-    }
+    return await apiClient.post<{ message: string; date: string }>(url);
   }
 
   /**
@@ -157,16 +138,7 @@ export class ScheduleService {
     const params = new URLSearchParams({ date });
     const url = `/my-calendar/block-date?${params.toString()}`;
     
-    apiDebugLog('DELETE', url, `Starting unblock date request for ${date}`);
-    
-    try {
-      const result = await apiClient.delete<{ message: string; date: string }>(url);
-      apiDebugLog('DELETE', url, `Successfully unblocked date ${date}`, result);
-      return result;
-    } catch (error) {
-      apiDebugLog('DELETE', url, `Failed to unblock date ${date}`, error);
-      throw error;
-    }
+    return await apiClient.delete<{ message: string; date: string }>(url);
   }
 
   /**
@@ -179,16 +151,7 @@ export class ScheduleService {
     const params = new URLSearchParams({ startDate, endDate });
     const url = `/my-calendar/block-range?${params.toString()}`;
     
-    apiDebugLog('POST', url, `Starting block range request from ${startDate} to ${endDate}`);
-    
-    try {
-      const result = await apiClient.post<{ message: string; startDate: string; endDate: string }>(url);
-      apiDebugLog('POST', url, `Successfully blocked range ${startDate} to ${endDate}`, result);
-      return result;
-    } catch (error) {
-      apiDebugLog('POST', url, `Failed to block range ${startDate} to ${endDate}`, error);
-      throw error;
-    }
+    return await apiClient.post<{ message: string; startDate: string; endDate: string }>(url);
   }
 
   /**
@@ -201,16 +164,7 @@ export class ScheduleService {
     const params = new URLSearchParams({ startDate, endDate });
     const url = `/my-calendar/unblock-range?${params.toString()}`;
     
-    apiDebugLog('POST', url, `Starting unblock range request from ${startDate} to ${endDate}`);
-    
-    try {
-      const result = await apiClient.post<{ message: string; startDate: string; endDate: string }>(url);
-      apiDebugLog('POST', url, `Successfully unblocked range ${startDate} to ${endDate}`, result);
-      return result;
-    } catch (error) {
-      apiDebugLog('POST', url, `Failed to unblock range ${startDate} to ${endDate}`, error);
-      throw error;
-    }
+    return await apiClient.post<{ message: string; startDate: string; endDate: string }>(url);
   }
 
   /**
@@ -220,16 +174,7 @@ export class ScheduleService {
     const params = new URLSearchParams({ startDate, endDate });
     const url = `/my-calendar/blocked-dates?${params.toString()}`;
     
-    apiDebugLog('GET', url, `Starting get blocked dates request for range ${startDate} to ${endDate}`);
-    
-    try {
-      const result = await apiClient.get<string[]>(url);
-      apiDebugLog('GET', url, `Successfully retrieved ${result.length} blocked dates for range ${startDate} to ${endDate}`, result);
-      return result;
-    } catch (error) {
-      apiDebugLog('GET', url, `Failed to get blocked dates for range ${startDate} to ${endDate}`, error);
-      throw error;
-    }
+    return await apiClient.get<string[]>(url);
   }
 
   /**
@@ -248,22 +193,13 @@ export class ScheduleService {
     const params = new URLSearchParams({ startDate, endDate });
     const url = `/my-calendar/events-in-range?${params.toString()}`;
     
-    apiDebugLog('GET', url, `Starting get user events request for range ${startDate} to ${endDate}`);
-    
-    try {
-      const result = await apiClient.get<Array<{
-        id: string;
-        title: string;
-        startTime: string;
-        endTime: string;
-        allDay: boolean;
-      }>>(url);
-      apiDebugLog('GET', url, `Successfully retrieved ${result.length} user events for range ${startDate} to ${endDate}`, result);
-      return result;
-    } catch (error) {
-      apiDebugLog('GET', url, `Failed to get user events for range ${startDate} to ${endDate}`, error);
-      throw error;
-    }
+    return await apiClient.get<Array<{
+      id: string;
+      title: string;
+      startTime: string;
+      endTime: string;
+      allDay: boolean;
+    }>>(url);
   }
 
   /**
@@ -293,18 +229,7 @@ export class ScheduleService {
     const params = new URLSearchParams({ startDate, endDate });
     const url = `/my-calendar/events-in-range?${params.toString()}`;
     
-    apiDebugLog('GET', url, `Starting get grouped calendar events request for range ${startDate} to ${endDate}`);
-    
-    try {
-      const result = await apiClient.get<Record<string, any>>(url);
-      apiDebugLog('GET', url, `Successfully retrieved grouped calendar events for range ${startDate} to ${endDate}`, result);
-      return result;
-    } catch (error) {
-      apiDebugLog('GET', url, `Failed to get grouped calendar events for range ${startDate} to ${endDate}`, error);
-      
-      // 에러를 상위로 전파하여 UI에서 에러 상태 표시 가능하도록 함
-      throw error;
-    }
+    return await apiClient.get<Record<string, any>>(url);
   }
 }
 

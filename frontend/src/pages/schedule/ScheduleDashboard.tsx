@@ -223,7 +223,7 @@ const ScheduleDashboard: React.FC = () => {
                                 allowBlocking={true}
                                 showBlockedDates={true}
                                 onDateSelect={(date) => {
-                                    console.log("Selected date:", date);
+                                    // Date selected handler
                                 }}
                                 className="w-full"
                             />

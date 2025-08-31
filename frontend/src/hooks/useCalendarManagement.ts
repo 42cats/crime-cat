@@ -64,22 +64,16 @@ export const useCalendarManagement = () => {
   // 개별 동기화
   const syncCalendarMutation = useMutation({
     mutationFn: async (id: string) => {
-      console.log('🔄 [SYNC_START] Starting individual calendar sync for:', id);
-      
       // Race Condition 방지: 진행 중인 모든 관련 쿼리 취소
       await queryClient.cancelQueries({ queryKey: ['calendars'] });
       await queryClient.cancelQueries({ queryKey: ['calendar-events'] });
       await queryClient.cancelQueries({ queryKey: ['user-events'] });
-      console.log('🚫 [CANCEL_QUERIES] All related queries cancelled');
       
       setIsSyncing(true); // 쿼리 비활성화
       
-      const result = await calendarApi.syncCalendar(id);
-      console.log('✅ [SYNC_SUCCESS] Calendar sync completed:', result);
-      return result;
+      return await calendarApi.syncCalendar(id);
     },
     onSuccess: (data, variables) => {
-      console.log('🔄 [CACHE_INVALIDATE] Invalidating queries after sync success');
       // 캐시 무효화 (자동으로 refetch 실행됨)
       queryClient.invalidateQueries({ queryKey: ['calendars'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
@@ -87,10 +81,8 @@ export const useCalendarManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['user-events'] });
       
       setIsSyncing(false); // 쿼리 재활성화
-      console.log('✅ [QUERY_REACTIVATED] Queries reactivated after sync complete');
     },
     onError: (error, variables) => {
-      console.error('❌ [SYNC_ERROR] Calendar sync failed for:', variables, error);
       setIsSyncing(false); // 에러 시에도 쿼리 재활성화
     }
   });
@@ -98,25 +90,17 @@ export const useCalendarManagement = () => {
   // 전체 동기화 (동기화만 수행, 목록은 자동 새로고침)
   const syncAllCalendarsMutation = useMutation({
     mutationFn: async () => {
-      console.log('🔄 [SYNC_ALL_START] Starting all calendars sync (sync only)');
-      
       // Race Condition 방지: 진행 중인 모든 관련 쿼리 취소
       await queryClient.cancelQueries({ queryKey: ['calendars'] });
       await queryClient.cancelQueries({ queryKey: ['calendar-events'] });
       await queryClient.cancelQueries({ queryKey: ['user-events'] });
       await queryClient.cancelQueries({ queryKey: ['schedule'] });
-      console.log('🚫 [CANCEL_ALL_QUERIES] All related queries cancelled');
       
       setIsSyncing(true); // 쿼리 비활성화
       
-      const result = await calendarApi.syncAllCalendars();
-      console.log('✅ [SYNC_ALL_SUCCESS] All calendars sync completed:', result);
-      return result;
+      return await calendarApi.syncAllCalendars();
     },
     onSuccess: (data) => {
-      console.log('🔄 [CACHE_INVALIDATE_ALL] Invalidating all queries after sync success');
-      console.log('💬 [SYNC_MESSAGE]', data.message);
-      
       // 모든 캘린더 관련 캐시 무효화 및 재조회
       queryClient.invalidateQueries({ queryKey: ['calendars'] });
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
@@ -125,10 +109,8 @@ export const useCalendarManagement = () => {
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       
       setIsSyncing(false); // 쿼리 재활성화
-      console.log('✅ [ALL_SYNC_COMPLETE] Cache invalidated and queries reactivated');
     },
     onError: (error) => {
-      console.error('❌ [SYNC_ALL_ERROR] All calendars sync failed:', error);
       setIsSyncing(false); // 에러 시에도 쿼리 재활성화
     }
   });
