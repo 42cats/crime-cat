@@ -2,10 +2,9 @@ package com.crimecat.backend.schedule.controller;
 
 import com.crimecat.backend.schedule.dto.request.CalendarCreateRequest;
 import com.crimecat.backend.schedule.dto.request.CalendarUpdateRequest;
-import com.crimecat.backend.schedule.dto.response.CalendarEventsResponse;
 import com.crimecat.backend.schedule.dto.response.CalendarResponse;
+import com.crimecat.backend.schedule.facade.PersonalCalendarFacade;
 import com.crimecat.backend.schedule.service.CalendarColorManager;
-import com.crimecat.backend.schedule.service.PersonalCalendarService;
 import com.crimecat.backend.schedule.service.MultipleCalendarService;
 import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.domain.WebUser;
@@ -18,17 +17,17 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 /**
- * 통합 개인 캘린더 관리 컨트롤러
- * - CalendarController + ScheduleController의 my-calendar 기능 통합
- * - 통합 캐싱 시스템 적용
- * - 중복 API 제거 및 일관된 응답 형식 제공
+ * 통합 개인 캘린더 관리 컨트롤러 (Facade 패턴 적용)
+ * - CalendarController + ScheduleController의 my-calendar 기능 통합  
+ * - Facade 패턴으로 레이어 분리 및 트랜잭션 경계 최적화
+ * - 캐싱은 Facade 레벨에서 관리
+ * - Controller는 HTTP 요청/응답 처리만 담당
  */
 @RestController
 @RequestMapping("/api/v1/my-calendar")
@@ -36,8 +35,7 @@ import java.util.UUID;
 @Slf4j
 public class PersonalCalendarController {
 
-    private final PersonalCalendarService personalCalendarService;
-    private final CalendarColorManager colorManager;
+    private final PersonalCalendarFacade personalCalendarFacade;
 
     // =================================================================================
     // 캘린더 관리 API (기존 CalendarController에서 이전)
@@ -52,7 +50,7 @@ public class PersonalCalendarController {
             @RequestParam(defaultValue = "true") boolean activeOnly) {
         
         log.info("📋 [PERSONAL] 캘린더 목록 조회: userId={}, activeOnly={}", currentUser.getId(), activeOnly);
-        List<CalendarResponse> response = personalCalendarService.getUserCalendars(currentUser.getId());
+        List<CalendarResponse> response = personalCalendarFacade.getUserCalendars(currentUser.getId());
         log.info("✅ [PERSONAL] 캘린더 목록 조회 완료: {} 개 캘린더", response.size());
         return ResponseEntity.ok(response);
     }
@@ -68,7 +66,7 @@ public class PersonalCalendarController {
         log.info("➕ [PERSONAL] 캘린더 추가 요청: userId={}, url={}", 
                 currentUser.getId(), request.getIcalUrl());
         
-        CalendarResponse response = personalCalendarService.addCalendar(currentUser.getId(), request);
+        CalendarResponse response = personalCalendarFacade.addCalendar(currentUser.getId(), request);
         
         log.info("✅ [PERSONAL] 캘린더 추가 완료: calendarId={}", response.getId());
         return ResponseEntity.ok(response);
@@ -85,7 +83,7 @@ public class PersonalCalendarController {
 
         log.info("✏️ [PERSONAL] 캘린더 수정 요청: calendarId={}, userId={}", calendarId, currentUser.getId());
         
-        CalendarResponse response = personalCalendarService.updateCalendar(currentUser.getId(), calendarId, request);
+        CalendarResponse response = personalCalendarFacade.updateCalendar(currentUser.getId(), calendarId, request);
         
         log.info("✅ [PERSONAL] 캘린더 수정 완료: calendarId={}", calendarId);
         return ResponseEntity.ok(response);
@@ -101,7 +99,7 @@ public class PersonalCalendarController {
 
         log.info("🗑️ [PERSONAL] 캘린더 삭제 요청: calendarId={}, userId={}", calendarId, currentUser.getId());
         
-        personalCalendarService.deleteCalendar(currentUser.getId(), calendarId);
+        personalCalendarFacade.deleteCalendar(currentUser.getId(), calendarId);
         
         log.info("✅ [PERSONAL] 캘린더 삭제 완료: calendarId={}", calendarId);
         return ResponseEntity.ok().build();
@@ -117,7 +115,7 @@ public class PersonalCalendarController {
 
         log.info("🔄 [PERSONAL] 캘린더 동기화 요청: calendarId={}, userId={}", calendarId, currentUser.getId());
         
-        CalendarResponse response = personalCalendarService.syncCalendar(currentUser.getId(), calendarId);
+        CalendarResponse response = personalCalendarFacade.syncCalendar(currentUser.getId(), calendarId);
         
         log.info("✅ [PERSONAL] 캘린더 동기화 완료: calendarId={}, status={}", 
                 calendarId, response.getSyncStatus());
@@ -133,11 +131,8 @@ public class PersonalCalendarController {
 
         log.info("🔄 [PERSONAL] 전체 캘린더 동기화 요청: userId={}", currentUser.getId());
         
-        // 1. 동기화 수행 (성공/실패 확인용)
-        Map<String, Object> syncResult = personalCalendarService.syncAllCalendars(currentUser.getId(), Map.of());
-        
-        // 2. 동기화 후 업데이트된 캘린더 목록 조회
-        List<CalendarResponse> response = personalCalendarService.getUserCalendars(currentUser.getId());
+        PersonalCalendarFacade.SyncAllResult syncResult = personalCalendarFacade.syncAllCalendars(currentUser.getId());
+        List<CalendarResponse> response = syncResult.getUpdatedCalendars();
         
         log.info("✅ [PERSONAL] 전체 캘린더 동기화 완료: {} 개 캘린더", response.size());
         return ResponseEntity.ok(response);
@@ -148,7 +143,7 @@ public class PersonalCalendarController {
      */
     @GetMapping("/color-palette")
     public ResponseEntity<CalendarColorManager.ColorInfo[]> getColorPalette() {
-        CalendarColorManager.ColorInfo[] colors = colorManager.getAllColors();
+        CalendarColorManager.ColorInfo[] colors = personalCalendarFacade.getColorPalette();
         return ResponseEntity.ok(colors);
     }
 
@@ -169,22 +164,12 @@ public class PersonalCalendarController {
             throw new IllegalArgumentException("isActive 값이 필요합니다");
         }
         
-        // For now, get existing calendar data to preserve other settings
-        List<CalendarResponse> calendars = personalCalendarService.getUserCalendars(currentUser.getId());
-        CalendarResponse existingCalendar = calendars.stream()
-                .filter(cal -> cal.getId().equals(calendarId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Calendar not found"));
+        PersonalCalendarFacade.CalendarStatusChangeResult result = 
+            personalCalendarFacade.toggleCalendarStatus(currentUser.getId(), calendarId, isActive);
         
-        CalendarUpdateRequest updateRequest = new CalendarUpdateRequest();
-        updateRequest.setDisplayName(existingCalendar.getDisplayName());
-        updateRequest.setColorIndex(existingCalendar.getColorIndex());
-        updateRequest.setIsActive(isActive);
-        CalendarResponse response = personalCalendarService.updateCalendar(currentUser.getId(), calendarId, updateRequest);
-        
-        log.info("✅ [PERSONAL] 캘린더 상태 변경 완료: calendarId={}, newStatus={}", 
-                calendarId, response.getIsActive());
-        return ResponseEntity.ok(response);
+        log.info("✅ [PERSONAL] 캘린더 상태 변경 완료: calendarId={}, {} -> {}", 
+                calendarId, result.getPreviousStatus(), result.getNewStatus());
+        return ResponseEntity.ok(result.getUpdatedCalendar());
     }
 
     /**
@@ -203,8 +188,7 @@ public class PersonalCalendarController {
             throw new IllegalArgumentException("calendars 배열이 필요합니다");
         }
         
-        // Personal service doesn't have updateCalendarOrder - would need to implement or delegate
-        List<CalendarResponse> response = personalCalendarService.getUserCalendars(currentUser.getId());
+        List<CalendarResponse> response = personalCalendarFacade.updateCalendarOrder(currentUser.getId(), calendars);
         
         log.info("✅ [PERSONAL] 캘린더 순서 변경 요청 (현재 미구현): {} 개 캘린더", response.size());
         return ResponseEntity.ok(response);
@@ -228,27 +212,11 @@ public class PersonalCalendarController {
         log.info("📅 [PERSONAL] 캘린더 이벤트 조회: userId={}, range={} ~ {}", 
                 currentUser.getId(), startDate, endDate);
 
-        try {
-            // 🚀 Personal Calendar Service 사용
-            CalendarEventsResponse cachedEvents = personalCalendarService.getCalendarEvents(
-                    currentUser.getId(), startDate, endDate);
+        Map<String, MultipleCalendarService.CalendarGroup> response = 
+            personalCalendarFacade.getCalendarEventsInRange(currentUser.getId(), startDate, endDate);
 
-            // 웹 API 형식으로 응답
-            Map<String, MultipleCalendarService.CalendarGroup> response = cachedEvents.toWebResponse();
-
-            log.info("✅ [PERSONAL] 캘린더 이벤트 조회 완료: {} 개 캘린더, {} 개 이벤트", 
-                    response.size(), cachedEvents.getStatistics().getTotalEvents());
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            log.error("❌ [PERSONAL] 캘린더 이벤트 조회 실패: userId={}, error={}", 
-                    currentUser.getId(), e.getMessage(), e);
-            
-            // 빈 응답 반환으로 에러 방지 (프론트엔드 호환성)
-            Map<String, MultipleCalendarService.CalendarGroup> emptyResponse = new HashMap<>();
-            return ResponseEntity.ok(emptyResponse);
-        }
+        log.info("✅ [PERSONAL] 캘린더 이벤트 조회 완료: {} 개 캘린더", response.size());
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -264,27 +232,11 @@ public class PersonalCalendarController {
         log.info("🔄 [PERSONAL] 캘린더 이벤트 강제 새로고침: userId={}, range={} ~ {}", 
                 currentUser.getId(), startDate, endDate);
 
-        try {
-            // 🚀 Personal Calendar Service의 강제 새로고침 사용
-            CalendarEventsResponse refreshedEvents = personalCalendarService.refreshCalendarEvents(
-                    currentUser.getId(), startDate, endDate);
+        Map<String, MultipleCalendarService.CalendarGroup> response = 
+            personalCalendarFacade.forceRefreshCalendarEvents(currentUser.getId(), startDate, endDate);
 
-            // 웹 API 형식으로 응답
-            Map<String, MultipleCalendarService.CalendarGroup> response = refreshedEvents.toWebResponse();
-
-            log.info("✅ [PERSONAL] 캘린더 이벤트 강제 새로고침 완료: {} 개 캘린더, {} 개 이벤트", 
-                    response.size(), refreshedEvents.getStatistics().getTotalEvents());
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            log.error("❌ [PERSONAL] 캘린더 이벤트 강제 새로고침 실패: userId={}, error={}", 
-                    currentUser.getId(), e.getMessage(), e);
-            
-            // 빈 응답 반환으로 에러 방지 (프론트엔드 호환성)
-            Map<String, MultipleCalendarService.CalendarGroup> emptyResponse = new HashMap<>();
-            return ResponseEntity.ok(emptyResponse);
-        }
+        log.info("✅ [PERSONAL] 캘린더 이벤트 강제 새로고침 완료: {} 개 캘린더", response.size());
+        return ResponseEntity.ok(response);
     }
 
     // =================================================================================
@@ -303,7 +255,7 @@ public class PersonalCalendarController {
         
         try {
             AuthenticationUtil.validateCalendarAccess(currentUser.getId());
-            Map<String, Object> response = personalCalendarService.blockDate(currentUser.getId(), date);
+            Map<String, Object> response = personalCalendarFacade.blockDate(currentUser.getId(), date);
             
             log.info("✅ [PERSONAL] 날짜 차단 완료: userId={}, date={}", currentUser.getId(), date);
             return ResponseEntity.ok(response);
@@ -327,7 +279,7 @@ public class PersonalCalendarController {
         
         try {
             AuthenticationUtil.validateCalendarAccess(currentUser.getId());
-            Map<String, Object> response = personalCalendarService.unblockDate(currentUser.getId(), date);
+            Map<String, Object> response = personalCalendarFacade.unblockDate(currentUser.getId(), date);
             
             log.info("✅ [PERSONAL] 날짜 차단 해제 완료: userId={}, date={}", currentUser.getId(), date);
             return ResponseEntity.ok(response);
@@ -353,7 +305,7 @@ public class PersonalCalendarController {
         
         try {
             AuthenticationUtil.validateCalendarAccess(currentUser.getId());
-            Map<String, Object> response = personalCalendarService.blockDateRange(currentUser.getId(), startDate, endDate);
+            Map<String, Object> response = personalCalendarFacade.blockDateRange(currentUser.getId(), startDate, endDate);
             
             log.info("✅ [PERSONAL] 날짜 범위 차단 완료: userId={}, range={} ~ {}", 
                     currentUser.getId(), startDate, endDate);
@@ -380,7 +332,7 @@ public class PersonalCalendarController {
         
         try {
             AuthenticationUtil.validateCalendarAccess(currentUser.getId());
-            Map<String, Object> response = personalCalendarService.unblockDateRange(currentUser.getId(), startDate, endDate);
+            Map<String, Object> response = personalCalendarFacade.unblockDateRange(currentUser.getId(), startDate, endDate);
             
             log.info("✅ [PERSONAL] 날짜 범위 차단 해제 완료: userId={}, range={} ~ {}", 
                     currentUser.getId(), startDate, endDate);
@@ -407,10 +359,7 @@ public class PersonalCalendarController {
         
         try {
             AuthenticationUtil.validateCalendarAccess(currentUser.getId());
-            List<String> blockedDateStrings = personalCalendarService.getBlockedDates(currentUser.getId(), startDate, endDate);
-            Set<LocalDate> blockedDates = blockedDateStrings.stream()
-                    .map(LocalDate::parse)
-                    .collect(java.util.stream.Collectors.toSet());
+            Set<LocalDate> blockedDates = personalCalendarFacade.getBlockedDates(currentUser.getId(), startDate, endDate);
             
             log.info("✅ [PERSONAL] 차단 날짜 목록 조회 완료: userId={}, {} 개 날짜", 
                     currentUser.getId(), blockedDates.size());
@@ -438,7 +387,7 @@ public class PersonalCalendarController {
         log.info("🗑️ [PERSONAL] 캐시 무효화 요청: userId={}", currentUser.getId());
         
         try {
-            Map<String, Object> response = personalCalendarService.invalidateUserCache(currentUser.getId());
+            Map<String, Object> response = personalCalendarFacade.invalidateUserCache(currentUser.getId());
             
             log.info("✅ [PERSONAL] 캐시 무효화 완료: userId={}", currentUser.getId());
             return ResponseEntity.ok(response);
