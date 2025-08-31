@@ -15,7 +15,9 @@ public enum NotificationType {
     THEME_POINT_REWARD("테마 작성 포인트"),
     THEME_AD_EXPIRED("테마 광고 만료"),
     THEME_AD_ACTIVATED("테마 광고 활성화"),
-    THEME_AD_CANCELLED("테마 광고 취소");
+    THEME_AD_CANCELLED("테마 광고 취소"),
+    EVENT_JOINED("일정 참여"),
+    EVENT_CONFIRMED("일정 확정");
     
     private final String displayName;
     

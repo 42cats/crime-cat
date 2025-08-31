@@ -77,6 +77,16 @@ public class CacheType {
   public static final String SITEMAP_COMMANDS = "sitemap:commands";
   public static final String SITEMAP_GAME_THEMES = "sitemap:game_themes";
   
+  // 일정 관리 관련 캐시 타입
+  public static final String SCHEDULE_EVENT_LIST = "schedule:events";
+  public static final String SCHEDULE_EVENT_DETAIL = "schedule:event";
+  public static final String SCHEDULE_PARTICIPANTS = "schedule:participants";
+  public static final String SCHEDULE_AVAILABILITY = "schedule:availability";
+  public static final String SCHEDULE_ICAL_PARSED = "schedule:ical:parsed";
+  public static final String SCHEDULE_USER_CALENDAR = "schedule:user:calendar";
+  public static final String SCHEDULE_USER_BLOCKED_DATES = "schedule:user:blocked:dates";
+  public static final String SCHEDULE_RECOMMENDED_TIMES = "schedule:recommended:times";
+  
   public static final String [] CACHE_TYPE = {
       PERSONAL_DASHBOARD_INFO,
       VIEW_COUNT,
@@ -125,6 +135,14 @@ public class CacheType {
       SITEMAP_SNS,
       SITEMAP_NOTICES,
       SITEMAP_COMMANDS,
-      SITEMAP_GAME_THEMES
+      SITEMAP_GAME_THEMES,
+      SCHEDULE_EVENT_LIST,
+      SCHEDULE_EVENT_DETAIL,
+      SCHEDULE_PARTICIPANTS,
+      SCHEDULE_AVAILABILITY,
+      SCHEDULE_ICAL_PARSED,
+      SCHEDULE_USER_CALENDAR,
+      SCHEDULE_USER_BLOCKED_DATES,
+      SCHEDULE_RECOMMENDED_TIMES
   };
 }

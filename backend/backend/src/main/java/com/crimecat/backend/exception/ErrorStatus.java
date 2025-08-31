@@ -111,7 +111,60 @@ public enum ErrorStatus {
     AUDIO_FILE_ACCESS_DENIED("오디오 파일에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN),
     TEMP_ATTACHMENT_NOT_FOUND("임시 첨부파일을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     TEMP_ATTACHMENT_EXPIRED("임시 첨부파일이 만료되었습니다.", HttpStatus.BAD_REQUEST),
-    AUDIO_ACCESS_POLICY_INVALID("오디오 접근 정책이 유효하지 않습니다.", HttpStatus.BAD_REQUEST);
+    AUDIO_ACCESS_POLICY_INVALID("오디오 접근 정책이 유효하지 않습니다.", HttpStatus.BAD_REQUEST),
+    
+    // 📅 스케줄/일정 관련
+    EVENT_NOT_FOUND("이벤트를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    EVENT_ACCESS_DENIED("이벤트에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    EVENT_ALREADY_JOINED("이미 참여 중인 이벤트입니다.", HttpStatus.CONFLICT),
+    EVENT_NOT_RECRUITING("현재 모집 중이 아닌 이벤트입니다.", HttpStatus.BAD_REQUEST),
+    EVENT_FULL("이벤트 정원이 가득찼습니다.", HttpStatus.CONFLICT),
+    EVENT_CREATOR_CANNOT_LEAVE("이벤트 생성자는 나갈 수 없습니다.", HttpStatus.FORBIDDEN),
+    EVENT_ALREADY_LEFT("이미 나간 이벤트입니다.", HttpStatus.CONFLICT),
+    EVENT_NOT_PARTICIPANT("참여하지 않은 이벤트입니다.", HttpStatus.BAD_REQUEST),
+    EVENT_CANNOT_REJOIN("재참여할 수 없는 이벤트입니다.", HttpStatus.BAD_REQUEST),
+    BLOCKED_DATE_OUT_OF_RANGE("날짜가 유효 범위를 벗어났습니다.", HttpStatus.BAD_REQUEST),
+    RECOMMENDATION_CALCULATION_FAILED("추천 계산에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CALENDAR_SYNC_FAILED("캘린더 동기화에 실패했습니다.", HttpStatus.BAD_GATEWAY),
+    CALENDAR_NOT_FOUND("캘린더를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    
+    // 📅 캘린더 관리 관련 추가 에러
+    CALENDAR_ADD_FAILED("캘린더 추가에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CALENDAR_UPDATE_FAILED("캘린더 수정에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CALENDAR_DELETE_FAILED("캘린더 삭제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CALENDAR_SYNC_ALL_FAILED("전체 캘린더 동기화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CALENDAR_EVENTS_LOAD_FAILED("캘린더 이벤트 조회에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CALENDAR_EVENTS_REFRESH_FAILED("캘린더 이벤트 새로고침에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    
+    // 📅 날짜 차단 관련
+    DATE_BLOCK_FAILED("날짜 차단에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    DATE_UNBLOCK_FAILED("날짜 차단 해제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    DATE_RANGE_BLOCK_FAILED("날짜 범위 차단에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    DATE_RANGE_UNBLOCK_FAILED("날짜 범위 차단 해제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    BLOCKED_DATES_LOAD_FAILED("차단 날짜 목록 조회에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    
+    // 📅 캐시 관련
+    CACHE_INVALIDATION_FAILED("캐시 무효화에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CALENDAR_ACCESS_DENIED("캘린더에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    CALENDAR_ALREADY_EXISTS("이미 등록된 캘린더 URL입니다.", HttpStatus.CONFLICT),
+    CALENDAR_INVALID_URL("유효하지 않은 iCalendar URL입니다.", HttpStatus.BAD_REQUEST),
+    CALENDAR_COLOR_INDEX_INVALID("유효하지 않은 색상 인덱스입니다.", HttpStatus.BAD_REQUEST),
+    INVALID_DATE_RANGE("잘못된 날짜 범위입니다.", HttpStatus.BAD_REQUEST),
+    EVENT_STATUS_CHANGE_NOT_ALLOWED("이벤트 상태를 변경할 수 없습니다.", HttpStatus.BAD_REQUEST),
+    EVENT_MINIMUM_PARTICIPANTS_NOT_MET("최소 참여 인원이 부족합니다.", HttpStatus.BAD_REQUEST),
+    
+    // 🤖 Discord 봇 일정 관리 관련
+    DISCORD_USER_NOT_LINKED("Discord 계정이 연동되지 않았습니다. 웹사이트에서 Discord 로그인을 해주세요.", HttpStatus.NOT_FOUND),
+    WEB_USER_NOT_REGISTERED("웹사이트 회원가입이 필요합니다.", HttpStatus.NOT_FOUND),
+    CALENDAR_NOT_REGISTERED("등록된 캘린더가 없습니다. 웹사이트에서 Google/Apple 캘린더를 연결해주세요.", HttpStatus.BAD_REQUEST),
+    INVALID_DISCORD_SNOWFLAKE("유효하지 않은 Discord 사용자 ID입니다.", HttpStatus.BAD_REQUEST),
+    INVALID_MONTH_RANGE("개월 수는 1~12 사이여야 합니다.", HttpStatus.BAD_REQUEST),
+    INVALID_DATE_FORMAT("날짜 형식이 올바르지 않습니다. 예: '10월 1 2 3 4'", HttpStatus.BAD_REQUEST),
+    ICAL_PARSING_FAILED("iCalendar 파싱에 실패했습니다.", HttpStatus.BAD_GATEWAY),
+    ICAL_DOWNLOAD_FAILED("iCalendar 다운로드에 실패했습니다.", HttpStatus.BAD_GATEWAY),
+    CACHE_REFRESH_FAILED("캐시 갱신에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    SCHEDULE_SERVICE_ERROR("일정 서비스 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    DUPLICATE_CALENDAR_URL("이미 등록된 캘린더 URL입니다.", HttpStatus.BAD_REQUEST);
 
     private final String message;
     private final HttpStatus status;
