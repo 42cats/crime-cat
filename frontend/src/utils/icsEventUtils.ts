@@ -19,14 +19,17 @@ export const filterCrimeCatEvents = (events: CalendarEvent[]): CalendarEvent[] =
 };
 
 /**
- * 특정 날짜의 iCS 이벤트 조회
+ * 특정 날짜의 iCS 이벤트 조회 (백엔드 방식과 동일한 날짜 비교)
  */
 export const getICSEventsForDate = (events: CalendarEvent[], date: Date): CalendarEvent[] => {
-  const targetDateString = date.toDateString();
+  // 백엔드 방식과 동일: 시간 정보 제거하고 날짜만 비교
+  const targetDate = new Date(date);
+  targetDate.setHours(0, 0, 0, 0);
   
   return filterICSEvents(events).filter(event => {
     const eventDate = new Date(event.startTime);
-    return eventDate.toDateString() === targetDateString;
+    eventDate.setHours(0, 0, 0, 0);
+    return eventDate.getTime() === targetDate.getTime();
   });
 };
 
@@ -41,16 +44,23 @@ export const groupICSEventsByDate = (events: CalendarEvent[], month: Date): Grou
   const icsEvents = filterICSEvents(events);
   const grouped: GroupedICSEvents = {};
   
-  // 해당 월의 시작과 끝 날짜
+  // 해당 월의 시작과 끝 날짜 (백엔드 방식과 동일하게 처리)
   const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
   const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
   
+  // 시간 정보 제거하여 날짜만 비교 (백엔드 toLocalDate() 방식과 동일)
+  monthStart.setHours(0, 0, 0, 0);
+  monthEnd.setHours(23, 59, 59, 999); // 월말 마지막 순간까지 포함
+  
   icsEvents.forEach(event => {
     const eventDate = new Date(event.startTime);
+    // 시간 정보 제거하여 날짜만 추출 (백엔드 toLocalDate() 방식과 동일)
+    eventDate.setHours(0, 0, 0, 0);
     
-    // 해당 월의 이벤트만 포함
+    // 백엔드 방식과 동일한 날짜 범위 비교: !eventDate.isBefore(monthStart) && !eventDate.isAfter(monthEnd)
+    // JavaScript에서는 >= monthStart && <= monthEnd로 표현
     if (eventDate >= monthStart && eventDate <= monthEnd) {
-      const dateKey = eventDate.toISOString().split('T')[0]; // YYYY-MM-DD
+      const dateKey = new Date(event.startTime).toISOString().split('T')[0]; // YYYY-MM-DD (원본 시간 사용)
       
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];

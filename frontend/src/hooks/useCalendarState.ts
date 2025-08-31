@@ -305,11 +305,15 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
   const getDateInfo = useCallback((date: Date): DateInfo => {
     const dateStr = date.toISOString().split('T')[0];
     
-    // 해당 날짜의 모든 이벤트 조회
+    // 해당 날짜의 모든 이벤트 조회 (백엔드 방식과 동일한 날짜 비교)
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    
     const dayEvents: CalendarEvent[] = userEvents
       .filter(event => {
-        const eventDate = new Date(event.startTime).toDateString();
-        return eventDate === date.toDateString();
+        const eventDate = new Date(event.startTime);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate.getTime() === targetDate.getTime();
       })
       .map(event => ({
         ...event,
