@@ -5,7 +5,7 @@ import { apiClient } from '@/lib/api';
  * 비트맵 기반 최적화된 날짜 관리 시스템과 연동
  */
 export class BlockedDateService {
-  private readonly baseURL = '/schedule/my-calendar';
+  private readonly baseURL = '/my-calendar';
 
   /**
    * 특정 날짜 비활성화 (추천에서 제외)

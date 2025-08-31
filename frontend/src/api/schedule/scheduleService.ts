@@ -136,7 +136,7 @@ export class ScheduleService {
    */
   async blockDate(date: string): Promise<{ message: string; date: string }> {
     const params = new URLSearchParams({ date });
-    const url = `${this.baseURL}/my-calendar/block-date?${params.toString()}`;
+    const url = `/my-calendar/block-date?${params.toString()}`;
     
     apiDebugLog('POST', url, `Starting block date request for ${date}`);
     
@@ -155,7 +155,7 @@ export class ScheduleService {
    */
   async unblockDate(date: string): Promise<{ message: string; date: string }> {
     const params = new URLSearchParams({ date });
-    const url = `${this.baseURL}/my-calendar/block-date?${params.toString()}`;
+    const url = `/my-calendar/block-date?${params.toString()}`;
     
     apiDebugLog('DELETE', url, `Starting unblock date request for ${date}`);
     
@@ -177,7 +177,7 @@ export class ScheduleService {
     endDate: string
   ): Promise<{ message: string; startDate: string; endDate: string }> {
     const params = new URLSearchParams({ startDate, endDate });
-    const url = `${this.baseURL}/my-calendar/block-range?${params.toString()}`;
+    const url = `/my-calendar/block-range?${params.toString()}`;
     
     apiDebugLog('POST', url, `Starting block range request from ${startDate} to ${endDate}`);
     
@@ -199,7 +199,7 @@ export class ScheduleService {
     endDate: string
   ): Promise<{ message: string; startDate: string; endDate: string }> {
     const params = new URLSearchParams({ startDate, endDate });
-    const url = `${this.baseURL}/my-calendar/unblock-range?${params.toString()}`;
+    const url = `/my-calendar/unblock-range?${params.toString()}`;
     
     apiDebugLog('POST', url, `Starting unblock range request from ${startDate} to ${endDate}`);
     
@@ -218,7 +218,7 @@ export class ScheduleService {
    */
   async getBlockedDates(startDate: string, endDate: string): Promise<string[]> {
     const params = new URLSearchParams({ startDate, endDate });
-    const url = `${this.baseURL}/my-calendar/blocked-dates?${params.toString()}`;
+    const url = `/my-calendar/blocked-dates?${params.toString()}`;
     
     apiDebugLog('GET', url, `Starting get blocked dates request for range ${startDate} to ${endDate}`);
     
@@ -246,7 +246,7 @@ export class ScheduleService {
     allDay: boolean;
   }>> {
     const params = new URLSearchParams({ startDate, endDate });
-    const url = `${this.baseURL}/my-calendar/events-in-range?${params.toString()}`;
+    const url = `/my-calendar/events-in-range?${params.toString()}`;
     
     apiDebugLog('GET', url, `Starting get user events request for range ${startDate} to ${endDate}`);
     

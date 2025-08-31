@@ -7,7 +7,6 @@ import com.crimecat.backend.schedule.dto.UserCalendarRequest;
 import com.crimecat.backend.schedule.dto.response.DualRecommendationResponse;
 import com.crimecat.backend.schedule.service.EventLeaveService;
 import com.crimecat.backend.schedule.service.EventStatusService;
-import com.crimecat.backend.schedule.service.OptimizedBlockedDateService;
 import com.crimecat.backend.schedule.service.OptimizedRecommendationService;
 import com.crimecat.backend.schedule.service.ScheduleService;
 import com.crimecat.backend.utils.AuthenticationUtil;
@@ -23,7 +22,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -33,7 +31,6 @@ import java.util.UUID;
 public class ScheduleController {
 
     private final ScheduleService scheduleService;
-    private final OptimizedBlockedDateService blockedDateService;
     private final EventLeaveService eventLeaveService;
     private final OptimizedRecommendationService recommendationService;
     private final EventStatusService eventStatusService;
@@ -84,142 +81,14 @@ public class ScheduleController {
     }
 
     // =================================================================================
-    // 개인 달력 비활성 날짜 관리 엔드포인트
+    // ❌ REMOVED: 개인 달력 비활성 날짜 관리 엔드포인트
+    // PersonalCalendarController에 동일한 기능이 구현되어 중복 제거
+    // - POST /my-calendar/block-date -> PersonalCalendarController.blockDate()
+    // - DELETE /my-calendar/block-date -> PersonalCalendarController.unblockDate()
+    // - POST /my-calendar/block-range -> PersonalCalendarController.blockDateRange()
+    // - POST /my-calendar/unblock-range -> PersonalCalendarController.unblockDateRange()
+    // - GET /my-calendar/blocked-dates -> PersonalCalendarController.getBlockedDates()
     // =================================================================================
-
-    /**
-     * 특정 날짜 비활성화 (추천에서 제외)
-     */
-    @PostMapping("/my-calendar/block-date")
-    public ResponseEntity<?> blockDate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-                                       @AuthenticationPrincipal WebUser currentUser) {
-        log.info("🌐 [API_BLOCK] POST /my-calendar/block-date user={} date={}", currentUser.getId(), date);
-        
-        try {
-            AuthenticationUtil.validateCalendarAccess(currentUser.getId()); // 본인 데이터 확인
-            log.debug("🌐 [API_BLOCK] Authentication validated for user={}", currentUser.getId());
-            
-            blockedDateService.blockDate(currentUser.getId(), date);
-            
-            Map<String, Object> response = Map.of("message", "날짜가 비활성화되었습니다", "date", date);
-            log.info("🌐 [API_BLOCK] Successfully blocked date {} for user {}, response={}", date, currentUser.getId(), response);
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("🌐 [API_BLOCK] Failed to block date {} for user {}: {}", date, currentUser.getId(), e.getMessage(), e);
-            throw e;
-        }
-    }
-
-    /**
-     * 특정 날짜 활성화 (추천에 포함)
-     */
-    @DeleteMapping("/my-calendar/block-date")
-    public ResponseEntity<?> unblockDate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-                                         @AuthenticationPrincipal WebUser currentUser) {
-        log.info("🌐 [API_UNBLOCK] DELETE /my-calendar/block-date user={} date={}", currentUser.getId(), date);
-        
-        try {
-            AuthenticationUtil.validateCalendarAccess(currentUser.getId());
-            log.debug("🌐 [API_UNBLOCK] Authentication validated for user={}", currentUser.getId());
-            
-            blockedDateService.unblockDate(currentUser.getId(), date);
-            
-            Map<String, Object> response = Map.of("message", "날짜가 활성화되었습니다", "date", date);
-            log.info("🌐 [API_UNBLOCK] Successfully unblocked date {} for user {}, response={}", date, currentUser.getId(), response);
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("🌐 [API_UNBLOCK] Failed to unblock date {} for user {}: {}", date, currentUser.getId(), e.getMessage(), e);
-            throw e;
-        }
-    }
-
-    /**
-     * 날짜 범위 일괄 비활성화 (드래그 선택)
-     */
-    @PostMapping("/my-calendar/block-range")
-    public ResponseEntity<?> blockDateRange(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-                                            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-                                            @AuthenticationPrincipal WebUser currentUser) {
-        log.info("🌐 [API_BLOCK_RANGE] POST /my-calendar/block-range user={} startDate={} endDate={}", 
-            currentUser.getId(), startDate, endDate);
-        
-        try {
-            AuthenticationUtil.validateCalendarAccess(currentUser.getId());
-            log.debug("🌐 [API_BLOCK_RANGE] Authentication validated for user={}", currentUser.getId());
-            
-            blockedDateService.blockDateRange(currentUser.getId(), startDate, endDate);
-            
-            Map<String, Object> response = Map.of("message", "날짜 범위가 비활성화되었습니다", 
-                                               "startDate", startDate, "endDate", endDate);
-            log.info("🌐 [API_BLOCK_RANGE] Successfully blocked range {} to {} for user {}, response={}", 
-                startDate, endDate, currentUser.getId(), response);
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("🌐 [API_BLOCK_RANGE] Failed to block range {} to {} for user {}: {}", 
-                startDate, endDate, currentUser.getId(), e.getMessage(), e);
-            throw e;
-        }
-    }
-
-    /**
-     * 날짜 범위 일괄 활성화 (드래그 선택)
-     */
-    @PostMapping("/my-calendar/unblock-range")
-    public ResponseEntity<?> unblockDateRange(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-                                              @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-                                              @AuthenticationPrincipal WebUser currentUser) {
-        log.info("🌐 [API_UNBLOCK_RANGE] POST /my-calendar/unblock-range user={} startDate={} endDate={}", 
-            currentUser.getId(), startDate, endDate);
-        
-        try {
-            AuthenticationUtil.validateCalendarAccess(currentUser.getId());
-            log.debug("🌐 [API_UNBLOCK_RANGE] Authentication validated for user={}", currentUser.getId());
-            
-            blockedDateService.unblockDateRange(currentUser.getId(), startDate, endDate);
-            
-            Map<String, Object> response = Map.of("message", "날짜 범위가 활성화되었습니다", 
-                                               "startDate", startDate, "endDate", endDate);
-            log.info("🌐 [API_UNBLOCK_RANGE] Successfully unblocked range {} to {} for user {}, response={}", 
-                startDate, endDate, currentUser.getId(), response);
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            log.error("🌐 [API_UNBLOCK_RANGE] Failed to unblock range {} to {} for user {}: {}", 
-                startDate, endDate, currentUser.getId(), e.getMessage(), e);
-            throw e;
-        }
-    }
-
-    /**
-     * 비활성화된 날짜 목록 조회
-     */
-    @GetMapping("/my-calendar/blocked-dates")
-    public ResponseEntity<Set<LocalDate>> getBlockedDates(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-                                                         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-                                                         @AuthenticationPrincipal WebUser currentUser) {
-        log.info("🌐 [API_GET_BLOCKED] GET /my-calendar/blocked-dates user={} startDate={} endDate={}", 
-            currentUser.getId(), startDate, endDate);
-        
-        try {
-            AuthenticationUtil.validateCalendarAccess(currentUser.getId());
-            log.debug("🌐 [API_GET_BLOCKED] Authentication validated for user={}", currentUser.getId());
-            
-            Set<LocalDate> blockedDates = blockedDateService.getUserBlockedDatesInRange(currentUser.getId(), startDate, endDate);
-            
-            log.info("🌐 [API_GET_BLOCKED] Successfully retrieved {} blocked dates for user {} in range {} to {}", 
-                blockedDates.size(), currentUser.getId(), startDate, endDate);
-            log.debug("🌐 [API_GET_BLOCKED] Blocked dates: {}", blockedDates);
-            
-            return ResponseEntity.ok(blockedDates);
-        } catch (Exception e) {
-            log.error("🌐 [API_GET_BLOCKED] Failed to get blocked dates for user {} in range {} to {}: {}", 
-                currentUser.getId(), startDate, endDate, e.getMessage(), e);
-            throw e;
-        }
-    }
 
     // ✅ [DEPRECATED]
     // 중복 API 제거: /my-calendar/events-in-range -> PersonalCalendarController.getGroupedEvents() 사용
