@@ -95,6 +95,7 @@ public class AddEscapeRoomThemeRequest extends AddGameThemeRequest {
 
     /**
      * 위치 정보 유효성 검증
+     * 좌표는 백엔드에서 자동으로 설정되므로 필수가 아님
      */
     @AssertTrue(message = "모든 매장의 위치 정보가 올바르게 입력되어야 합니다.")
     public boolean isValidLocations() {
@@ -104,8 +105,8 @@ public class AddEscapeRoomThemeRequest extends AddGameThemeRequest {
 
         return locations.stream().allMatch(location -> 
             location.getStoreName() != null && !location.getStoreName().trim().isEmpty() &&
-            location.getAddress() != null && !location.getAddress().trim().isEmpty() &&
-            location.getLat() != null && location.getLng() != null
+            location.getAddress() != null && !location.getAddress().trim().isEmpty()
+            // 좌표(lat, lng)는 백엔드에서 자동으로 설정되므로 검증에서 제외
         );
     }
 

@@ -25,6 +25,8 @@ import com.crimecat.backend.point.service.PointHistoryService;
 import com.crimecat.backend.notification.service.NotificationService;
 import com.crimecat.backend.notification.enums.NotificationType;
 import com.crimecat.backend.config.CacheType;
+import com.crimecat.backend.api.naver.service.CachedNaverMapService;
+import com.crimecat.backend.api.naver.dto.CoordinateInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.*;
 
@@ -63,6 +65,7 @@ public class GameThemeService {
     private final com.crimecat.backend.webUser.repository.WebUserRepository webUserRepository;
     private final ThemeCacheService themeCacheService;
     private final MakerTeamRepository makerTeamRepository;
+    private final CachedNaverMapService cachedNaverMapService;
 
     @Transactional
     public void addGameTheme(MultipartFile file, AddGameThemeRequest request) {
@@ -72,6 +75,11 @@ public class GameThemeService {
 
         if (gameTheme instanceof CrimesceneTheme) {
             checkTeam((CrimesceneTheme) gameTheme, webUser);
+        }
+        
+        // 방탈출 테마인 경우 위치 좌표 자동 설정
+        if (gameTheme instanceof EscapeRoomTheme) {
+            enrichEscapeRoomLocationsWithCoordinates((EscapeRoomTheme) gameTheme);
         }
 
         // 초기 저장하여 ID 생성
@@ -617,6 +625,92 @@ public class GameThemeService {
         return themeRepository.findById(uuid)
             .filter(theme -> theme.isPublicStatus() && !theme.isDeleted())
             .orElse(null);
+    }
+    
+    // ================================
+    // 방탈출 테마 좌표 처리 메서드들
+    // ================================
+    
+    /**
+     * 방탈출 테마의 매장 위치에 좌표 정보를 자동으로 설정
+     * 네이버 검색 API를 통해 주소로부터 좌표를 조회하여 설정
+     * 
+     * @param escapeRoomTheme 방탈출 테마
+     */
+    private void enrichEscapeRoomLocationsWithCoordinates(EscapeRoomTheme escapeRoomTheme) {
+        if (escapeRoomTheme.getLocations() == null || escapeRoomTheme.getLocations().isEmpty()) {
+            return;
+        }
+        
+        log.info("방탈출 테마 '{}' 의 매장 위치 좌표 자동 설정 시작 ({}개 매장)", 
+                escapeRoomTheme.getTitle(), escapeRoomTheme.getLocations().size());
+        
+        for (com.crimecat.backend.gametheme.domain.EscapeRoomLocation location : escapeRoomTheme.getLocations()) {
+            // 이미 좌표가 설정되어 있으면 건너뛰기
+            if (location.getLatitude() != null && location.getLongitude() != null) {
+                log.debug("매장 '{}' 좌표 이미 설정됨 (lat: {}, lng: {})", 
+                        location.getStoreName(), location.getLatitude(), location.getLongitude());
+                continue;
+            }
+            
+            // 주소가 없으면 건너뛰기
+            if (location.getAddress() == null || location.getAddress().trim().isEmpty()) {
+                log.warn("매장 '{}' 주소 정보 없음 - 좌표 설정 불가", location.getStoreName());
+                continue;
+            }
+            
+            try {
+                // 네이버 검색 API를 통해 좌표 조회
+                String searchQuery = location.getStoreName() + " " + location.getAddress();
+                CoordinateInfo coordinates = cachedNaverMapService.getCoordinatesFromAddress(searchQuery);
+                
+                // 좌표 설정 (Entity는 불변이므로 새로운 객체 생성이나 Reflection 사용 필요)
+                // 하지만 현재 구조에서는 DTO에서 Entity 변환 시 좌표가 설정되어야 함
+                // 임시로 EscapeRoomLocation DTO에 좌표를 설정하는 방법 사용
+                setLocationCoordinates(location, coordinates);
+                
+                log.info("매장 '{}' 좌표 설정 완료: lat={}, lng={}", 
+                        location.getStoreName(), coordinates.getLat(), coordinates.getLng());
+                        
+            } catch (Exception e) {
+                log.warn("매장 '{}' 좌표 조회 실패: {} - 기본 좌표로 설정", 
+                        location.getStoreName(), e.getMessage());
+                
+                // 좌표 조회 실패 시 서울 중심점으로 기본 설정 (37.5665, 126.9780)
+                try {
+                    setLocationCoordinates(location, CoordinateInfo.of(37.5665, 126.9780));
+                } catch (Exception ex) {
+                    log.error("매장 '{}' 기본 좌표 설정도 실패", location.getStoreName(), ex);
+                }
+            }
+        }
+        
+        log.info("방탈출 테마 '{}' 매장 위치 좌표 설정 완료", escapeRoomTheme.getTitle());
+    }
+    
+    /**
+     * EscapeRoomLocation 엔티티에 좌표 정보를 설정
+     * 엔티티의 불변성을 고려하여 Reflection을 사용
+     * 
+     * @param location 매장 위치 엔티티
+     * @param coordinates 설정할 좌표 정보
+     */
+    private void setLocationCoordinates(com.crimecat.backend.gametheme.domain.EscapeRoomLocation location, CoordinateInfo coordinates) {
+        try {
+            // Java Reflection을 사용하여 private 필드에 접근
+            java.lang.reflect.Field latField = com.crimecat.backend.gametheme.domain.EscapeRoomLocation.class.getDeclaredField("latitude");
+            java.lang.reflect.Field lngField = com.crimecat.backend.gametheme.domain.EscapeRoomLocation.class.getDeclaredField("longitude");
+            
+            latField.setAccessible(true);
+            lngField.setAccessible(true);
+            
+            latField.set(location, coordinates.getLat());
+            lngField.set(location, coordinates.getLng());
+            
+        } catch (Exception e) {
+            log.error("EscapeRoomLocation 좌표 설정 실패", e);
+            throw new RuntimeException("매장 위치 좌표 설정 실패: " + location.getStoreName(), e);
+        }
     }
 
 }
