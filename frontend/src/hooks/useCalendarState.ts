@@ -147,7 +147,13 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       return await scheduleService.blockDate(date);
     },
     onSuccess: (_, date) => {
-      queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
+      // 부분 매칭으로 blocked-dates와 관련된 모든 캐시 무효화
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey[0] === 'schedule' && queryKey[1] === 'blocked-dates';
+        }
+      });
       toast({
         title: '날짜 비활성화 완료',
         description: `${date} 날짜가 추천에서 제외됩니다.`,
@@ -168,7 +174,13 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       return await scheduleService.unblockDate(date);
     },
     onSuccess: (_, date) => {
-      queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
+      // 부분 매칭으로 blocked-dates와 관련된 모든 캐시 무효화
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey[0] === 'schedule' && queryKey[1] === 'blocked-dates';
+        }
+      });
       toast({
         title: '날짜 활성화 완료',
         description: `${date} 날짜가 추천에 포함됩니다.`,
@@ -189,7 +201,13 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       return await scheduleService.blockDateRange(startDate, endDate);
     },
     onSuccess: (_, { startDate, endDate }) => {
-      queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
+      // 부분 매칭으로 blocked-dates와 관련된 모든 캐시 무효화
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey[0] === 'schedule' && queryKey[1] === 'blocked-dates';
+        }
+      });
       toast({
         title: '날짜 범위 비활성화 완료',
         description: `${startDate} ~ ${endDate} 범위가 추천에서 제외됩니다.`,
@@ -210,7 +228,13 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       return await scheduleService.unblockDateRange(startDate, endDate);
     },
     onSuccess: (_, { startDate, endDate }) => {
-      queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
+      // 부분 매칭으로 blocked-dates와 관련된 모든 캐시 무효화
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey[0] === 'schedule' && queryKey[1] === 'blocked-dates';
+        }
+      });
       toast({
         title: '날짜 범위 활성화 완료',
         description: `${startDate} ~ ${endDate} 범위가 추천에 포함됩니다.`,

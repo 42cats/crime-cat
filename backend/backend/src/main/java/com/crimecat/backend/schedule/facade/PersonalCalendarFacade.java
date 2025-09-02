@@ -195,7 +195,9 @@ public class PersonalCalendarFacade {
     /**
      * 날짜 차단 (캐시 무효화)
      */
-    @CacheEvict(value = {"personal_blocked_dates", "personal_calendar_events"}, key = "#userId")
+    @CacheEvict(value = {"personal_blocked_dates", "personal_calendar_events"}, 
+                allEntries = true, 
+                condition = "#userId != null")
     public Map<String, Object> blockDate(UUID userId, LocalDate date) {
         log.debug("🚫 [FACADE] 날짜 차단: userId={}, date={}", userId, date);
         return personalCalendarService.blockDate(userId, date);
@@ -204,7 +206,9 @@ public class PersonalCalendarFacade {
     /**
      * 날짜 차단 해제 (캐시 무효화)
      */
-    @CacheEvict(value = {"personal_blocked_dates", "personal_calendar_events"}, key = "#userId")
+    @CacheEvict(value = {"personal_blocked_dates", "personal_calendar_events"}, 
+                allEntries = true, 
+                condition = "#userId != null")
     public Map<String, Object> unblockDate(UUID userId, LocalDate date) {
         log.debug("✅ [FACADE] 날짜 차단 해제: userId={}, date={}", userId, date);
         return personalCalendarService.unblockDate(userId, date);
@@ -213,7 +217,9 @@ public class PersonalCalendarFacade {
     /**
      * 날짜 범위 차단 (캐시 무효화)
      */
-    @CacheEvict(value = {"personal_blocked_dates", "personal_calendar_events"}, key = "#userId")
+    @CacheEvict(value = {"personal_blocked_dates", "personal_calendar_events"}, 
+                allEntries = true, 
+                condition = "#userId != null")
     public Map<String, Object> blockDateRange(UUID userId, LocalDate startDate, LocalDate endDate) {
         log.debug("🚫 [FACADE] 날짜 범위 차단: userId={}, range={} ~ {}", userId, startDate, endDate);
         return personalCalendarService.blockDateRange(userId, startDate, endDate);
@@ -222,7 +228,9 @@ public class PersonalCalendarFacade {
     /**
      * 날짜 범위 차단 해제 (캐시 무효화)
      */
-    @CacheEvict(value = {"personal_blocked_dates", "personal_calendar_events"}, key = "#userId")
+    @CacheEvict(value = {"personal_blocked_dates", "personal_calendar_events"}, 
+                allEntries = true, 
+                condition = "#userId != null")
     public Map<String, Object> unblockDateRange(UUID userId, LocalDate startDate, LocalDate endDate) {
         log.debug("✅ [FACADE] 날짜 범위 차단 해제: userId={}, range={} ~ {}", userId, startDate, endDate);
         return personalCalendarService.unblockDateRange(userId, startDate, endDate);
