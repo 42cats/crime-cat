@@ -67,7 +67,7 @@ async function createSuccessEmbed(result, months, user) {
         })
         .setTimestamp()
         .setFooter({
-            text: 'Crime-Cat 일정 관리 시스템',
+            text: 'Mystery-place 일정 관리 시스템',
             iconURL: 'https://cdn.discordapp.com/app-icons/your-bot-id/icon.png'
         });
 
@@ -120,33 +120,33 @@ async function createSuccessEmbed(result, months, user) {
             value: [
                 `• 사용 가능: **${result.totalAvailableDays}개 날짜** (${Math.round((result.availabilityRatio || 0) * 100)}%)`,
                 `• iCal 일정: **${result.totalEvents}개 날짜**`,
-                `• 웹 차단: **${result.totalBlockedDays || 0}개 날짜**`,
+                `• 사용자 차단: **${result.totalBlockedDays || 0}개 날짜**`,
                 `• 조회 기간: **${result.requestedMonths}개월**`
             ].join('\n'),
             inline: false
         });
         
         // 추천 메시지
-        const availabilityPercent = Math.round((result.availabilityRatio || 0) * 100);
-        if (availabilityPercent > 70) {
-            embed.addFields({
-                name: '💡 추천',
-                value: '대부분의 날짜가 비어있어서 일정 조율이 쉬울 것 같습니다!',
-                inline: false
-            });
-        } else if (availabilityPercent > 40) {
-            embed.addFields({
-                name: '💡 추천',
-                value: '적당한 날짜가 사용 가능합니다. 사용 가능한 날짜로 일정을 조율해보세요.',
-                inline: false
-            });
-        } else {
-            embed.addFields({
-                name: '⚠️ 주의',
-                value: '사용 가능한 날짜가 제한적입니다. 다른 기간을 고려해보시는 것을 추천합니다.',
-                inline: false
-            });
-        }
+        // const availabilityPercent = Math.round((result.availabilityRatio || 0) * 100);
+        // if (availabilityPercent > 70) {
+        //     embed.addFields({
+        //         name: '💡 추천',
+        //         value: '대부분의 날짜가 비어있어서 일정 조율이 쉬울 것 같습니다!',
+        //         inline: false
+        //     });
+        // } else if (availabilityPercent > 40) {
+        //     embed.addFields({
+        //         name: '💡 추천',
+        //         value: '적당한 날짜가 사용 가능합니다. 사용 가능한 날짜로 일정을 조율해보세요.',
+        //         inline: false
+        //     });
+        // } else {
+        //     embed.addFields({
+        //         name: '⚠️ 주의',
+        //         value: '사용 가능한 날짜가 제한적입니다. 다른 기간을 고려해보시는 것을 추천합니다.',
+        //         inline: false
+        //     });
+        // }
     }
 
     // 추가 안내 메시지
@@ -155,7 +155,7 @@ async function createSuccessEmbed(result, months, user) {
         value: [
             '• `/일정체크 [날짜목록]` - 특정 날짜와 겹침 확인',
             '• `/일정갱신` - 캘린더 강제 새로고침',
-            '• 웹사이트에서 캘린더 추가/수정 가능'
+            '• mystery-place.com 에서 캘린더 추가/수정 가능'
         ].join('\n'),
         inline: false
     });
@@ -177,7 +177,7 @@ function createErrorEmbed(error, user, months) {
         .setDescription(formatUserErrorMessage(error))
         .setTimestamp()
         .setFooter({
-            text: 'Crime-Cat 일정 관리 시스템',
+            text: 'Mystery-place 일정 관리 시스템',
             iconURL: 'https://cdn.discordapp.com/app-icons/your-bot-id/icon.png'
         });
 

@@ -147,7 +147,13 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       return await scheduleService.blockDate(date);
     },
     onSuccess: (_, date) => {
-      queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
+      // 부분 매칭으로 blocked-dates와 관련된 모든 캐시 무효화
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey[0] === 'schedule' && queryKey[1] === 'blocked-dates';
+        }
+      });
       toast({
         title: '날짜 비활성화 완료',
         description: `${date} 날짜가 추천에서 제외됩니다.`,
@@ -168,7 +174,13 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       return await scheduleService.unblockDate(date);
     },
     onSuccess: (_, date) => {
-      queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
+      // 부분 매칭으로 blocked-dates와 관련된 모든 캐시 무효화
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey[0] === 'schedule' && queryKey[1] === 'blocked-dates';
+        }
+      });
       toast({
         title: '날짜 활성화 완료',
         description: `${date} 날짜가 추천에 포함됩니다.`,
@@ -189,7 +201,13 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       return await scheduleService.blockDateRange(startDate, endDate);
     },
     onSuccess: (_, { startDate, endDate }) => {
-      queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
+      // 부분 매칭으로 blocked-dates와 관련된 모든 캐시 무효화
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey[0] === 'schedule' && queryKey[1] === 'blocked-dates';
+        }
+      });
       toast({
         title: '날짜 범위 비활성화 완료',
         description: `${startDate} ~ ${endDate} 범위가 추천에서 제외됩니다.`,
@@ -210,7 +228,13 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       return await scheduleService.unblockDateRange(startDate, endDate);
     },
     onSuccess: (_, { startDate, endDate }) => {
-      queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
+      // 부분 매칭으로 blocked-dates와 관련된 모든 캐시 무효화
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey[0] === 'schedule' && queryKey[1] === 'blocked-dates';
+        }
+      });
       toast({
         title: '날짜 범위 활성화 완료',
         description: `${startDate} ~ ${endDate} 범위가 추천에 포함됩니다.`,
@@ -220,6 +244,28 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       toast({
         title: '범위 활성화 실패',
         description: error?.response?.data?.message || '날짜 범위 활성화 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // 캘린더 이벤트 강제 새로고침 Mutation
+  const forceRefreshMutation = useMutation({
+    mutationFn: async () => {
+      return await scheduleService.forceRefreshGroupedCalendarEvents(monthRange.startDate, monthRange.endDate);
+    },
+    onSuccess: () => {
+      // React Query 캐시 무효화 (백엔드 캐시는 API에서 이미 무효화됨)
+      queryClient.invalidateQueries({ queryKey: ['schedule', 'grouped-calendar-events'] });
+      toast({
+        title: '캘린더 새로고침 완료',
+        description: '최신 캘린더 데이터를 불러왔습니다.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: '새로고침 실패',
+        description: error?.response?.data?.message || '캘린더 새로고침 중 오류가 발생했습니다.',
         variant: 'destructive',
       });
     },
@@ -482,16 +528,25 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
   }, [userEvents]);
 
   /**
-   * 수동 새로고침
+   * 수동 새로고침 (백엔드 캐시 무효화)
    */
   const refreshData = useCallback(() => {
+    if (enableEventFetching) {
+      // 강제 새로고침으로 백엔드 캐시 무효화
+      forceRefreshMutation.mutate();
+    }
     if (enableBlocking) {
+      // 차단 날짜는 기존 방식 유지
       queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
     }
-    if (enableEventFetching) {
-      queryClient.invalidateQueries({ queryKey: ['schedule', 'grouped-calendar-events'] });
-    }
-  }, [queryClient, enableBlocking, enableEventFetching]);
+    
+    // copyAvailableDates에서 사용하는 추가 캐시들 무효화
+    // 3달치 날짜 범위 캐시 무효화 (개인일정 복사 기능용)
+    queryClient.invalidateQueries({ queryKey: ['schedule'] });
+    queryClient.invalidateQueries({ queryKey: ['blocked-dates'] });
+    queryClient.invalidateQueries({ queryKey: ['user-events'] });
+    queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+  }, [forceRefreshMutation, queryClient, enableBlocking, enableEventFetching]);
 
   return {
     // 상태
@@ -502,7 +557,7 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     // 데이터
     blockedDates,
     userEvents,
-    isLoading: isLoadingBlocked || isLoadingEvents,
+    isLoading: isLoadingBlocked || isLoadingEvents || forceRefreshMutation.isPending,
     error: blockedDatesError || eventsError,
     
     // 드래그 상태
@@ -524,6 +579,7 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     isUnblockingDate: unblockDateMutation.isPending,
     isBlockingRange: blockDateRangeMutation.isPending,
     isUnblockingRange: unblockDateRangeMutation.isPending,
+    isRefreshing: forceRefreshMutation.isPending,
     
     // iCS 이벤트 관련
     icsEvents,

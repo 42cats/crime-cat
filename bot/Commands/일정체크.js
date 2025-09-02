@@ -74,7 +74,7 @@ async function createSuccessEmbed(result, inputDates, months, user) {
         })
         .setTimestamp()
         .setFooter({
-            text: 'Crime-Cat 일정 관리 시스템',
+            text: 'Mystery-place 일정 관리 시스템',
             iconURL: 'https://cdn.discordapp.com/app-icons/your-bot-id/icon.png'
         });
 
@@ -133,27 +133,27 @@ async function createSuccessEmbed(result, inputDates, months, user) {
             }
         );
 
-        // 추천 메시지 (가용성 기준으로 변경)
-        const availabilityPercent = Math.round((result.availabilityRatioFromInput || 0) * 100);
-        if (availabilityPercent > 70) {
-            embed.addFields({
-                name: '💡 추천',
-                value: '대부분의 날짜가 사용 가능해서 일정 조율이 쉬울 것 같습니다!',
-                inline: false
-            });
-        } else if (availabilityPercent > 40) {
-            embed.addFields({
-                name: '💡 추천',
-                value: '적당한 날짜가 사용 가능합니다. 사용 가능한 날짜로 일정을 조율해보세요.',
-                inline: false
-            });
-        } else {
-            embed.addFields({
-                name: '⚠️ 주의',
-                value: '사용 가능한 날짜가 제한적입니다. 다른 기간을 고려해보시는 것을 추천합니다.',
-                inline: false
-            });
-        }
+        // // 추천 메시지 (가용성 기준으로 변경)
+        // const availabilityPercent = Math.round((result.availabilityRatioFromInput || 0) * 100);
+        // if (availabilityPercent > 70) {
+        //     embed.addFields({
+        //         name: '💡 추천',
+        //         value: '대부분의 날짜가 사용 가능해서 일정 조율이 쉬울 것 같습니다!',
+        //         inline: false
+        //     });
+        // } else if (availabilityPercent > 40) {
+        //     embed.addFields({
+        //         name: '💡 추천',
+        //         value: '적당한 날짜가 사용 가능합니다. 사용 가능한 날짜로 일정을 조율해보세요.',
+        //         inline: false
+        //     });
+        // } else {
+        //     embed.addFields({
+        //         name: '⚠️ 주의',
+        //         value: '사용 가능한 날짜가 제한적입니다. 다른 기간을 고려해보시는 것을 추천합니다.',
+        //         inline: false
+        //     });
+        // }
     }
 
     // 추가 안내 메시지
@@ -184,7 +184,7 @@ function createErrorEmbed(error, user, months) {
         .setDescription(formatUserErrorMessage(error))
         .setTimestamp()
         .setFooter({
-            text: 'Crime-Cat 일정 관리 시스템',
+            text: 'Mystery-place 일정 관리 시스템',
             iconURL: 'https://cdn.discordapp.com/app-icons/your-bot-id/icon.png'
         });
 

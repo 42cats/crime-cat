@@ -124,14 +124,14 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
     // 임시 파일 정리 함수
     const cleanupTempFiles = async () => {
         const currentTempIds = tempAudioIdsRef.current;
-        
+
         if (currentTempIds.length > 0) {
             try {
-                await apiClient.post('/board/audio/temp-cleanup', { 
-                    tempIds: currentTempIds 
+                await apiClient.post("/board/audio/temp-cleanup", {
+                    tempIds: currentTempIds,
                 });
             } catch (error) {
-                console.warn('임시 파일 정리 실패:', error);
+                console.warn("임시 파일 정리 실패:", error);
             }
         }
     };
@@ -144,19 +144,25 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
 
         const handleBeforeUnload = () => {
             const currentTempIds = tempAudioIdsRef.current;
-            
+
             if (currentTempIds.length > 0) {
-                const blob = new Blob([JSON.stringify({ tempIds: currentTempIds })], { 
-                    type: 'application/json' 
-                });
-                navigator.sendBeacon('/api/v1/board/audio/temp-cleanup', blob);
+                const blob = new Blob(
+                    [JSON.stringify({ tempIds: currentTempIds })],
+                    {
+                        type: "application/json",
+                    }
+                );
+                navigator.sendBeacon("/api/v1/board/audio/temp-cleanup", blob);
             }
         };
 
         const handleVisibilityChange = () => {
             const currentTempIds = tempAudioIdsRef.current;
-            
-            if (document.visibilityState === 'hidden' && currentTempIds.length > 0) {
+
+            if (
+                document.visibilityState === "hidden" &&
+                currentTempIds.length > 0
+            ) {
                 cleanupTempFiles();
             }
         };
@@ -165,8 +171,8 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
             "audioUploaded",
             handleAudioUploaded as EventListener
         );
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        document.addEventListener("visibilitychange", handleVisibilityChange);
 
         if (isEditMode && existingPost) {
             reset({
@@ -184,8 +190,11 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                 "audioUploaded",
                 handleAudioUploaded as EventListener
             );
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+            document.removeEventListener(
+                "visibilitychange",
+                handleVisibilityChange
+            );
         };
     }, [isEditMode, existingPost, reset]); // tempAudioIds 의존성 제거
 
@@ -286,7 +295,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
         ) {
             // 먼저 임시 파일 정리
             await cleanupTempFiles();
-            
+
             const boardPath =
                 boardType === BoardType.CHAT
                     ? "chat"
@@ -295,7 +304,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                     : boardType === BoardType.CREATOR
                     ? "creator"
                     : "";
-                    
+
             navigate(`/community/${boardPath}`);
         }
     };
@@ -396,7 +405,7 @@ const BoardWrite: React.FC<BoardWriteProps> = ({
                         </div>
 
                         {/* 핀설정 (관리자/매니저만) */}
-                        {hasRole(["ADMIN", "MANAGER"]) && (
+                        {hasRole(["ADMIN"]) && (
                             <div className="flex items-center space-x-2">
                                 <Switch
                                     id="isPinned"

@@ -29,7 +29,7 @@ async function safeApiRequest(options) {
     try {
         const url = `${API_BASE_URL}${API_PREFIX}${endpoint}`;
         console.log("📅 Schedule API 호출: " + url);
-        
+
         const config = {
             method,
             url,
@@ -54,7 +54,7 @@ async function safeApiRequest(options) {
 
         console.debug(`✅ 일정 API 응답: ${response.status} (${responseTime}ms)`);
         return response.data;
-        
+
     } catch (error) {
         if (error.code === 'ECONNREFUSED' || error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
             throw new Error(`서버 연결 실패: ${error.message}`);
@@ -96,14 +96,14 @@ async function getMySchedule(discordSnowflake, months = 3) {
         }
 
         const endpoint = `/schedule/user/${discordSnowflake}/my-schedule`;
-        const response = await safeApiRequest({ 
-            endpoint, 
-            params: { months } 
+        const response = await safeApiRequest({
+            endpoint,
+            params: { months }
         });
 
         console.log(`📅 내일정 조회 성공: ${discordSnowflake}, ${months}개월, 총 ${response.totalEvents}개 일정`);
         return response;
-        
+
     } catch (error) {
         console.error(`❌ 내일정 조회 실패: ${discordSnowflake}`, error.message);
         throw error;
@@ -140,7 +140,7 @@ async function checkScheduleOverlap(discordSnowflake, inputDates, months = 3) {
 
         console.log(`🔍 일정 교차체크 성공: ${discordSnowflake}, ${months}개월, ${response.totalMatches}개 일치`);
         return response;
-        
+
     } catch (error) {
         console.error(`❌ 일정 교차체크 실패: ${discordSnowflake}`, error.message);
         throw error;
@@ -159,14 +159,14 @@ async function refreshUserCache(discordSnowflake) {
         }
 
         const endpoint = `/schedule/user/${discordSnowflake}/refresh-cache`;
-        const response = await safeApiRequest({ 
+        const response = await safeApiRequest({
             method: 'POST',
-            endpoint 
+            endpoint
         });
 
         console.log(`🔄 캐시 갱신 성공: ${discordSnowflake}`);
         return response; // 백엔드에서 문자열로 응답
-        
+
     } catch (error) {
         console.error(`❌ 캐시 갱신 실패: ${discordSnowflake}`, error.message);
         throw error;
@@ -180,45 +180,45 @@ async function refreshUserCache(discordSnowflake) {
  */
 function formatUserErrorMessage(error) {
     const message = error.message || '알 수 없는 오류가 발생했습니다';
-    
+
     if (message.includes('사용자를 찾을 수 없습니다')) {
         return '🚫 Discord 계정 인증이 필요합니다. 먼저 웹사이트에서 Discord 로그인을 해주세요.';
     }
-    
+
     if (message.includes('회원가입이 필요합니다')) {
-        return '📝 웹사이트에서 먼저 회원가입을 해주세요.\n🔗 https://crime-cat.com';
+        return '📝 웹사이트에서 먼저 회원가입을 해주세요.\n🔗 https://mystery-place.com';
     }
-    
+
     if (message.includes('캘린더를 등록해주세요')) {
         return '📅 iCal 캘린더 등록이 필요합니다.\n웹사이트 → 설정 → 캘린더 관리에서 Google/Apple 캘린더를 연결해주세요.';
     }
-    
+
     if (message.includes('iCalendar 파싱에 실패했습니다') || message.includes('모든 캘린더 파싱 실패')) {
         return '⚠️ 일부 캘린더에 문제가 있어요.\n\n' +
-               '💡 **해결방법:**\n' +
-               '• `/일정갱신` 명령어로 새로고침 시도\n' +
-               '• 웹사이트에서 캘린더 설정 확인\n' +
-               '• Google/Apple 캘린더의 공유 설정 확인\n\n' +
-               '🔗 대부분 캘린더 URL 만료나 권한 문제입니다.';
+            '💡 **해결방법:**\n' +
+            '• `/일정갱신` 명령어로 새로고침 시도\n' +
+            '• 웹사이트에서 캘린더 설정 확인\n' +
+            '• Google/Apple 캘린더의 공유 설정 확인\n\n' +
+            '🔗 대부분 캘린더 URL 만료나 권한 문제입니다.';
     }
-    
+
     if (message.includes('날짜 형식이 올바르지 않습니다')) {
         return '📋 올바른 날짜 형식으로 입력해주세요.\n예시: `/일정체크 10월 1 2 3 4` 또는 `/일정체크 8월 28 29, 9월 3 4`';
     }
-    
+
     if (message.includes('서버 연결 실패')) {
         return '🔧 서버에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
     }
-    
+
     if (message.includes('캘린더 URL을 찾을 수 없습니다') || message.includes('404')) {
         return '🔗 캘린더 링크에 문제가 있어요!\n\n' +
-               '**원인:** 캘린더 URL이 만료되거나 공유 설정이 변경됨\n\n' +
-               '💡 **해결방법:**\n' +
-               '1. 웹사이트 → 설정 → 캘린더 관리\n' +
-               '2. 문제가 있는 캘린더 삭제 후 재등록\n' +
-               '3. Google/Apple 캘린더 공유 설정 "공개" 확인';
+            '**원인:** 캘린더 URL이 만료되거나 공유 설정이 변경됨\n\n' +
+            '💡 **해결방법:**\n' +
+            '1. 웹사이트 → 설정 → 캘린더 관리\n' +
+            '2. 문제가 있는 캘린더 삭제 후 재등록\n' +
+            '3. Google/Apple 캘린더 공유 설정 "공개" 확인';
     }
-    
+
     return `❌ 오류가 발생했습니다: ${message}`;
 }
 

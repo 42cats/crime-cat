@@ -9,6 +9,27 @@ import {
   EventParticipant
 } from './types';
 
+// 백엔드 CalendarGroup 응답 타입 정의
+interface CalendarGroupResponse {
+  calendarId: string;
+  displayName: string;
+  colorHex: string;
+  colorIndex: number;
+  events: Array<{
+    id: string;
+    title: string;
+    startTime: string;
+    endTime: string;
+    allDay: boolean;
+    source: string;
+    calendarId: string;
+    calendarName: string;
+    colorHex: string;
+  }>;
+  lastSynced: string;
+  syncStatus: string;
+}
+
 
 /**
  * 인증된 사용자를 위한 일정 관리 API 서비스
@@ -193,13 +214,31 @@ export class ScheduleService {
     const params = new URLSearchParams({ startDate, endDate });
     const url = `/my-calendar/events-in-range?${params.toString()}`;
     
-    return await apiClient.get<Array<{
+    // 백엔드에서 Map<String, CalendarGroup> 형식으로 반환됨
+    const response = await apiClient.get<Record<string, CalendarGroupResponse>>(url);
+    
+    // CalendarGroup들을 순회하며 events를 단일 배열로 병합
+    const events: Array<{
       id: string;
       title: string;
       startTime: string;
       endTime: string;
       allDay: boolean;
-    }>>(url);
+    }> = [];
+    
+    Object.values(response).forEach(group => {
+      group.events.forEach(event => {
+        events.push({
+          id: event.id,
+          title: event.title,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          allDay: event.allDay
+        });
+      });
+    });
+    
+    return events;
   }
 
   /**
@@ -230,6 +269,36 @@ export class ScheduleService {
     const url = `/my-calendar/events-in-range?${params.toString()}`;
     
     return await apiClient.get<Record<string, any>>(url);
+  }
+
+  /**
+   * 캘린더 이벤트 강제 새로고침 (백엔드 캐시 무효화)
+   */
+  async forceRefreshGroupedCalendarEvents(
+    startDate: string,
+    endDate: string
+  ): Promise<Record<string, {
+    calendarId: string;
+    displayName: string;
+    colorHex: string;
+    colorIndex: number;
+    events: Array<{
+      id: string;
+      title: string;
+      startTime: string;
+      endTime: string;
+      allDay: boolean;
+      calendarId: string;
+      colorHex: string;
+      calendarName: string;
+    }>;
+    lastSynced?: string;
+    syncStatus: string;
+  }>> {
+    const params = new URLSearchParams({ startDate, endDate });
+    const url = `/my-calendar/events-in-range/refresh?${params.toString()}`;
+    
+    return await apiClient.post<Record<string, any>>(url);
   }
 }
 

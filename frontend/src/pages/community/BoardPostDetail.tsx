@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BoardType, PostNavigationResponse, BoardPost } from "@/lib/types/board";
+import {
+    BoardType,
+    PostNavigationResponse,
+    BoardPost,
+} from "@/lib/types/board";
 import { boardPostService } from "@/api/posts/boardPostService";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -81,9 +85,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
             ? optimisticIsLiked
             : post?.isLikedByCurrentUser || false;
     const likeCount =
-        optimisticLikeCount !== null
-            ? optimisticLikeCount
-            : (post?.likes || 0);
+        optimisticLikeCount !== null ? optimisticLikeCount : post?.likes || 0;
 
     // 좋아요 토글 뮤테이션
     const likeMutation = useMutation({
@@ -156,7 +158,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
         const currentLikeCount =
             optimisticLikeCount !== null
                 ? optimisticLikeCount
-                : (post?.likes || 0);
+                : post?.likes || 0;
 
         setOptimisticIsLiked(!currentIsLiked);
         setOptimisticLikeCount(
@@ -242,7 +244,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
 
     // 비밀글 접근 권한 확인
     const canAccessSecret = post?.isSecret
-        ? isAuthor || hasRole(["ADMIN", "MANAGER"])
+        ? isAuthor || hasRole(["ADMIN"])
         : true;
 
     if (isLoading) {
@@ -324,7 +326,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                                 {post.subject || post.title}
                             </CardTitle>
                         </div>
-                        
+
                         {/* 수정/삭제 버튼 - 헤더 우측 */}
                         {isAuthor && (
                             <div className="flex gap-2 ml-4">
@@ -388,11 +390,9 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                             </div>
                             <div className="flex items-center gap-1">
                                 <MessageSquare className="h-4 w-4" />
-                                <span>
-                                    {post.comments || 0}
-                                </span>
+                                <span>{post.comments || 0}</span>
                             </div>
-                            
+
                             {/* 좋아요/공유 버튼 - 메타정보 라인으로 이동 */}
                             <div className="flex gap-2">
                                 <Button
@@ -404,7 +404,9 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                                 >
                                     <Heart
                                         className={`h-4 w-4 ${
-                                            isLiked ? "fill-red-500 text-red-500" : ""
+                                            isLiked
+                                                ? "fill-red-500 text-red-500"
+                                                : ""
                                         }`}
                                     />
                                     <span>{likeCount}</span>
@@ -427,7 +429,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                 <CardContent className="py-6">
                     {/* 게시글 내용 */}
                     <EnhancedMarkdownRenderer
-                        content={post.content || ''}
+                        content={post.content || ""}
                         className="prose dark:prose-invert max-w-none"
                         enableAudioProcessing={true}
                     />
@@ -440,7 +442,7 @@ const BoardPostDetail: React.FC<BoardPostDetailProps> = ({ boardType }) => {
                         boardType={boardType}
                         currentPost={{
                             id: post.id,
-                            subject: post.subject || post.title || ''
+                            subject: post.subject || post.title || "",
                         }}
                         isLoading={isNavigationLoading}
                         onPreviousPost={handlePreviousPost}

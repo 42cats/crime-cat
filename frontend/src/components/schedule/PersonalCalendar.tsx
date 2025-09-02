@@ -1614,9 +1614,10 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                                     size={isMobile ? "sm" : "default"}
                                     onClick={refreshData}
                                     className="flex items-center gap-1"
+                                    disabled={isLoading}
                                 >
-                                    <RefreshCw className="w-4 h-4" />
-                                    {!isMobile && "새로고침"}
+                                    <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
+                                    {!isMobile && (isLoading ? "새로고침 중..." : "새로고침")}
                                 </Button>
                             )}
                         </div>
