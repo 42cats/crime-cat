@@ -5,6 +5,16 @@ import { CalendarEvent } from '@/hooks/useCalendarState';
  */
 
 /**
+ * 타임존 문제 없이 Date 객체를 YYYY-MM-DD 문자열로 변환
+ * toISOString()은 UTC 변환으로 인해 타임존 오프셋 문제가 발생하므로 로컬 날짜 기반으로 변환
+ */
+const formatDateToString = (date: Date): string => {
+  return date.getFullYear() + '-' + 
+         String(date.getMonth() + 1).padStart(2, '0') + '-' +
+         String(date.getDate()).padStart(2, '0');
+};
+
+/**
  * 전체 이벤트에서 iCS 이벤트만 필터링
  */
 export const filterICSEvents = (events: CalendarEvent[]): CalendarEvent[] => {
@@ -60,7 +70,7 @@ export const groupICSEventsByDate = (events: CalendarEvent[], month: Date): Grou
     // 백엔드 방식과 동일한 날짜 범위 비교: !eventDate.isBefore(monthStart) && !eventDate.isAfter(monthEnd)
     // JavaScript에서는 >= monthStart && <= monthEnd로 표현
     if (eventDate >= monthStart && eventDate <= monthEnd) {
-      const dateKey = new Date(event.startTime).toISOString().split('T')[0]; // YYYY-MM-DD (원본 시간 사용)
+      const dateKey = formatDateToString(new Date(event.startTime)); // YYYY-MM-DD (로컬 날짜 사용)
       
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
@@ -126,7 +136,7 @@ export const formatDateKorean = (date: Date): string => {
  */
 export const getSortedDateKeys = (groupedEvents: GroupedICSEvents): string[] => {
   const today = new Date();
-  const todayKey = today.toISOString().split('T')[0];
+  const todayKey = formatDateToString(today);
   
   return Object.keys(groupedEvents)
     .sort()

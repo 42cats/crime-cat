@@ -10,6 +10,15 @@ import {
   type GroupedICSEvents
 } from '@/utils/icsEventUtils';
 
+/**
+ * 타임존 문제 없이 Date 객체를 YYYY-MM-DD 문자열로 변환
+ * toISOString()은 UTC 변환으로 인해 타임존 오프셋 문제가 발생하므로 로컬 날짜 기반으로 변환
+ */
+const formatDateToString = (date: Date): string => {
+  return date.getFullYear() + '-' + 
+         String(date.getMonth() + 1).padStart(2, '0') + '-' +
+         String(date.getDate()).padStart(2, '0');
+};
 
 export interface CalendarEvent {
   id: string;
@@ -87,8 +96,8 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     const endDate = new Date(lastDayOfMonth);
     endDate.setDate(endDate.getDate() + (6 - lastDayOfMonth.getDay()));
     
-    const startDateStr = startDate.toISOString().split('T')[0];
-    const endDateStr = endDate.toISOString().split('T')[0];
+    const startDateStr = formatDateToString(startDate);
+    const endDateStr = formatDateToString(endDate);
     
     
     return {
@@ -275,7 +284,7 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
    * 날짜 정보 계산
    */
   const getDateInfo = useCallback((date: Date): DateInfo => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatDateToString(date);
     
     // 해당 날짜의 모든 이벤트 조회 (백엔드 방식과 동일한 날짜 비교)
     const targetDate = new Date(date);
@@ -321,7 +330,7 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     if (!enableBlocking) return;
 
     const dateInfo = getDateInfo(date);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatDateToString(date);
     
     
     // 과거 날짜는 비활성화 불가
@@ -380,8 +389,8 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     const startDate = dragStart < dragEnd ? dragStart : dragEnd;
     const endDate = dragStart < dragEnd ? dragEnd : dragStart;
     
-    const startDateStr = startDate.toISOString().split('T')[0];
-    const endDateStr = endDate.toISOString().split('T')[0];
+    const startDateStr = formatDateToString(startDate);
+    const endDateStr = formatDateToString(endDate);
     
     
     // 단일 날짜 선택인 경우 클릭 핸들러 사용
@@ -455,7 +464,7 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     // 현재 월의 날짜만 통계에 포함, 과거 날짜는 제외
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = formatDateToString(date);
       
       // 과거 날짜는 통계에서 제외
       if (date < today) {

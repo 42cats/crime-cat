@@ -118,12 +118,22 @@ const ICSMobileList: React.FC<ICSMobileListProps> = ({
   };
 
   /**
+   * 타임존 문제 없이 Date 객체를 YYYY-MM-DD 문자열로 변환
+   * toISOString()은 UTC 변환으로 인해 타임존 오프셋 문제가 발생하므로 로컬 날짜 기반으로 변환
+   */
+  const formatDateToString = (date: Date): string => {
+    return date.getFullYear() + '-' + 
+           String(date.getMonth() + 1).padStart(2, '0') + '-' +
+           String(date.getDate()).padStart(2, '0');
+  };
+
+  /**
    * 날짜 그룹 렌더링
    */
   const renderDateGroup = (dateKey: string) => {
     const date = parseDate(dateKey);
     const events = groupedEvents[dateKey];
-    const isToday = dateKey === new Date().toISOString().split('T')[0];
+    const isToday = dateKey === formatDateToString(new Date());
 
     return (
       <div key={dateKey} className="space-y-2">

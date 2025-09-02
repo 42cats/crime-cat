@@ -115,11 +115,21 @@ export const useCalendarManagement = () => {
     }
   });
 
+  /**
+   * 타임존 문제 없이 Date 객체를 YYYY-MM-DD 문자열로 변환
+   * toISOString()은 UTC 변환으로 인해 타임존 오프셋 문제가 발생하므로 로컬 날짜 기반으로 변환
+   */
+  const formatDateToString = (date: Date): string => {
+    return date.getFullYear() + '-' + 
+           String(date.getMonth() + 1).padStart(2, '0') + '-' +
+           String(date.getDate()).padStart(2, '0');
+  };
+
   // 그룹화된 이벤트 조회 (PersonalCalendar에서 사용)
   const getGroupedEvents = useCallback(
     async (startDate: Date, endDate: Date) => {
-      const start = startDate.toISOString().split('T')[0];
-      const end = endDate.toISOString().split('T')[0];
+      const start = formatDateToString(startDate);
+      const end = formatDateToString(endDate);
       return calendarApi.getGroupedEvents(start, end);
     },
     []

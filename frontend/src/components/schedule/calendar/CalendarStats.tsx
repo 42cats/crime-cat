@@ -6,6 +6,17 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
+/**
+ * 동기화 시간의 타임존 문제 해결
+ * 백엔드에서 UTC로 전송된 동기화 시간을 한국시간으로 보정하여 정확한 상대시간 표시
+ */
+const adjustSyncTimeForKorea = (syncedAt: Date | string): Date => {
+  const date = new Date(syncedAt);
+  // UTC에서 받은 시간을 한국시간(UTC+9)으로 해석하기 위해 9시간 보정
+  const koreaOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로 변환
+  return new Date(date.getTime() + koreaOffset);
+};
+
 interface MonthStats {
   availableDays: number;
   blockedDays: number;
@@ -111,7 +122,7 @@ const CalendarStats: React.FC<CalendarStatsProps> = ({
                   )}
                   <span className="text-xs text-muted-foreground">
                     {calendar.lastSyncedAt 
-                      ? formatDistanceToNow(new Date(calendar.lastSyncedAt), { 
+                      ? formatDistanceToNow(adjustSyncTimeForKorea(calendar.lastSyncedAt), { 
                           addSuffix: true, 
                           locale: ko 
                         })

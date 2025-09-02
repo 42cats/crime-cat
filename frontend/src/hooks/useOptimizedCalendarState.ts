@@ -17,9 +17,19 @@ export const useOptimizedCalendarState = () => {
     return Date.now() - cacheTimestamp.current < 5 * 60 * 1000; // 5분
   }, []);
 
+  /**
+   * 타임존 문제 없이 Date 객체를 YYYY-MM-DD 문자열로 변환
+   * toISOString()은 UTC 변환으로 인해 타임존 오프셋 문제가 발생하므로 로컬 날짜 기반으로 변환
+   */
+  const formatDateToString = (date: Date): string => {
+    return date.getFullYear() + '-' + 
+           String(date.getMonth() + 1).padStart(2, '0') + '-' +
+           String(date.getDate()).padStart(2, '0');
+  };
+
   // 최적화된 날짜 정보 계산
   const getOptimizedDateInfo = useCallback((date: Date, events: CalendarEvent[]) => {
-    const key = date.toISOString().split('T')[0];
+    const key = formatDateToString(date);
     
     if (!isCacheValid()) {
       dateInfoCache.current.clear();
