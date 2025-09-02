@@ -515,6 +515,13 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
       // 차단 날짜는 기존 방식 유지
       queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
     }
+    
+    // copyAvailableDates에서 사용하는 추가 캐시들 무효화
+    // 3달치 날짜 범위 캐시 무효화 (개인일정 복사 기능용)
+    queryClient.invalidateQueries({ queryKey: ['schedule'] });
+    queryClient.invalidateQueries({ queryKey: ['blocked-dates'] });
+    queryClient.invalidateQueries({ queryKey: ['user-events'] });
+    queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
   }, [forceRefreshMutation, queryClient, enableBlocking, enableEventFetching]);
 
   return {
