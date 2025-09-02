@@ -150,9 +150,20 @@ const CalendarManagement: React.FC<CalendarManagementProps> = ({
     }
   };
 
+  /**
+   * 동기화 시간의 타임존 문제 해결
+   * 백엔드에서 UTC로 전송된 동기화 시간을 한국시간으로 보정하여 정확한 상대시간 표시
+   */
+  const adjustSyncTimeForKorea = (syncedAt: Date | string): Date => {
+    const date = new Date(syncedAt);
+    // UTC에서 받은 시간을 한국시간(UTC+9)으로 해석하기 위해 9시간 보정
+    const koreaOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로 변환
+    return new Date(date.getTime() + koreaOffset);
+  };
+
   const formatSyncTime = (date?: Date) => {
     if (!date) return '동기화 안됨';
-    return formatDistanceToNow(new Date(date), { addSuffix: true, locale: ko });
+    return formatDistanceToNow(adjustSyncTimeForKorea(date), { addSuffix: true, locale: ko });
   };
 
   return (
@@ -350,9 +361,20 @@ const CalendarItem: React.FC<CalendarItemProps> = ({
     }
   };
 
+  /**
+   * 동기화 시간의 타임존 문제 해결
+   * 백엔드에서 UTC로 전송된 동기화 시간을 한국시간으로 보정하여 정확한 상대시간 표시
+   */
+  const adjustSyncTimeForKorea = (syncedAt: Date | string): Date => {
+    const date = new Date(syncedAt);
+    // UTC에서 받은 시간을 한국시간(UTC+9)으로 해석하기 위해 9시간 보정
+    const koreaOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로 변환
+    return new Date(date.getTime() + koreaOffset);
+  };
+
   const formatSyncTime = () => {
     if (!calendar.lastSyncedAt) return '동기화 안됨';
-    return formatDistanceToNow(new Date(calendar.lastSyncedAt), { 
+    return formatDistanceToNow(adjustSyncTimeForKorea(calendar.lastSyncedAt), { 
       addSuffix: true, 
       locale: ko 
     });

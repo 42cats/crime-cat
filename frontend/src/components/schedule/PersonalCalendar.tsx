@@ -707,11 +707,32 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
     }, [getThreeMonthRangeFromToday]);
 
     /**
+     * 타임존 문제 없이 Date 객체를 YYYY-MM-DD 문자열로 변환
+     * toISOString()은 UTC 변환으로 인해 타임존 오프셋 문제가 발생하므로 로컬 날짜 기반으로 변환
+     */
+    const formatDateToString = (date: Date): string => {
+        return date.getFullYear() + '-' + 
+               String(date.getMonth() + 1).padStart(2, '0') + '-' +
+               String(date.getDate()).padStart(2, '0');
+    };
+
+    /**
+     * 동기화 시간의 타임존 문제 해결
+     * 백엔드에서 UTC로 전송된 동기화 시간을 한국시간으로 보정하여 정확한 상대시간 표시
+     */
+    const adjustSyncTimeForKorea = (syncedAt: Date | string): Date => {
+        const date = new Date(syncedAt);
+        // UTC에서 받은 시간을 한국시간(UTC+9)으로 해석하기 위해 9시간 보정
+        const koreaOffset = 9 * 60 * 60 * 1000; // 9시간을 밀리초로 변환
+        return new Date(date.getTime() + koreaOffset);
+    };
+
+    /**
      * 독립적 날짜 상태 계산
      */
     const calculateDateStatus = useCallback(
         (date: Date, blockedDates: string[], userEvents: CalendarEvent[]) => {
-            const dateStr = date.toISOString().split("T")[0];
+            const dateStr = formatDateToString(date);
             const blockedByUser = blockedDates.includes(dateStr);
 
             const dayEvents = userEvents.filter((event) => {
@@ -2097,9 +2118,7 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                                         <span className="text-xs text-muted-foreground">
                                             {calendar.lastSyncedAt
                                                 ? formatDistanceToNow(
-                                                      new Date(
-                                                          calendar.lastSyncedAt
-                                                      ),
+                                                      adjustSyncTimeForKorea(calendar.lastSyncedAt),
                                                       {
                                                           addSuffix: true,
                                                           locale: ko,
