@@ -41,11 +41,20 @@ public class WebStatsInfoServiceProxy {
 
     // 가장 최근 플레이 기록
     GameHistory recent = historyList.get(0);
-    String gameName = "알수없음";
-    String recentlyPlay = "알수없음";
-    if (recent.getGuild().getName() != null){
-      gameName = recent.getGuild().getName();
-      recentlyPlay = recent.getCreatedAt().toInstant(ZoneOffset.UTC).toString();
+    String gameName;
+    // Guild가 null일 수 있으므로 체크
+    if (recent.getGuild() != null && recent.getGuild().getName() != null) {
+        gameName = recent.getGuild().getName();
+    } else {
+        gameName = "길드 없음";
+    }
+
+    String recentlyPlay;
+    // createdAt도 null일 수 있으므로 체크
+    if (recent.getCreatedAt() != null) {
+        recentlyPlay = recent.getCreatedAt().toInstant(ZoneOffset.UTC).toString();
+    } else {
+        recentlyPlay = "알수없음";
     }
 
 
