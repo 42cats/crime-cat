@@ -307,8 +307,7 @@ const SidebarInner = React.memo(() => {
                             </div>
 
                             {/* 관리자 전용 메뉴 */}
-                            {(user?.role === "ADMIN" ||
-                                user?.role === "MANAGER") && (
+                            {user?.role === "ADMIN" && (
                                 <>
                                     <Separator className="my-4" />
 
