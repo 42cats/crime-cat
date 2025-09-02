@@ -40,7 +40,15 @@ public enum RedisDbType {
   SEARCH_RESULT_USERS(Duration.ofMinutes(2)),
   
   // 통계 관련 캐시
-  TOTAL_USER_RANKING(Duration.ofMinutes(10));
+  TOTAL_USER_RANKING(Duration.ofMinutes(10)),
+  
+  // 일정 관리 관련 캐시
+  SCHEDULE_EVENT_LIST_CACHE(Duration.ofMinutes(2)),
+  SCHEDULE_EVENT_DETAIL_CACHE(Duration.ofMinutes(10)),
+  SCHEDULE_PARTICIPANTS_CACHE(Duration.ofMinutes(1)),
+  SCHEDULE_AVAILABILITY_CACHE(Duration.ofMinutes(15)),
+  SCHEDULE_ICAL_PARSED_CACHE(Duration.ofMinutes(30)),
+  SCHEDULE_USER_CALENDAR_CACHE(Duration.ofMinutes(10));
 
   private final Duration ttl;
 

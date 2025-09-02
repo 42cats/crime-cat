@@ -14,6 +14,7 @@ import {
     Heart,
     BookmarkIcon,
     Camera,
+    Calendar,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -54,6 +55,7 @@ const Navbar: React.FC = () => {
 
     const navItems = [
         { name: "홈", path: "/" },
+        // { name: "일정", path: "/schedule" },
         { name: "테마" }, // path 없음
         { name: "커뮤니티" }, // path 없음
         { name: "SNS" }, // path 없음
@@ -105,13 +107,11 @@ const Navbar: React.FC = () => {
                 <div className="flex justify-between items-center">
                     {/* 로고 */}
                     <Link to="/" className="flex items-center space-x-2">
-                        <Logo 
-                            theme={theme === "dark" ? "dark" : "light"} 
+                        <Logo
+                            theme={theme === "dark" ? "dark" : "light"}
                             size="md"
                         />
-                        <TextLogo 
-                            theme={theme === "dark" ? "dark" : "light"}
-                        />
+                        <TextLogo theme={theme === "dark" ? "dark" : "light"} />
                     </Link>
 
                     {/* 데스크탑 메뉴 */}

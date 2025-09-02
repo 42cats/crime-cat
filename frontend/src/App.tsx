@@ -92,358 +92,330 @@ import UserGameHistoryPageV2 from "@/pages/UserGameHistoryPageV2";
 import GameComparisonPage from "@/pages/GameComparisonPage";
 import ButtonAutomationPage from "@/pages/dashboard/ButtonAutomationPage";
 
+// Schedule Pages
+import {
+    ScheduleDashboard,
+    EventListPage,
+    CreateEventPage,
+    EventDetailPage,
+} from "@/pages/schedule";
+import SchedulePage from "@/pages/SchedulePage";
+
 // Router 내부에서 실행되는 컴포넌트 (useLocation 사용 가능)
 const AppContent = () => {
     const location = useLocation();
-    
+
     // 전역 AudioService 메모리 관리
     useAudioService();
-    
+
     // 페이지 변경 시 오디오 자동 정리 (참조 카운팅 시스템과 함께 작동)
     useRouterAudioCleanup();
 
     return (
         <>
             <AuthInitializer />
-            <AnimatePresence mode="wait" onExitComplete={() => {
-                audioManager.forceStopAll();
-            }}>
-                        <Routes>
-                            {/* Main Layout Routes */}
-                            <Route element={<MainLayout />}>
-                                <Route path="/" element={<Index />} />
-                                <Route
-                                    path="/commands"
-                                    element={<Commands />}
-                                />
-                                <Route
-                                    path="/commands/:id"
-                                    element={<CommandDetail />}
-                                />
-                                <Route
-                                    path="/commands/new"
-                                    element={
-                                        <PrivateRoute
-                                            allowedRoles={["ADMIN", "MANAGER"]}
-                                        >
-                                            <CreateCommand />
-                                        </PrivateRoute>
-                                    }
-                                />
-                                <Route
-                                    path="/commands/edit/:id"
-                                    element={
-                                        <PrivateRoute
-                                            allowedRoles={["ADMIN", "MANAGER"]}
-                                        >
-                                            <EditCommand />
-                                        </PrivateRoute>
-                                    }
-                                />
-                                <Route
-                                    path="/notices"
-                                    element={<NoticeList />}
-                                />
-                                <Route
-                                    path="/notices/:id"
-                                    element={<NoticeDetail />}
-                                />
-                                <Route
-                                    path="/notices/new"
-                                    element={
-                                        <PrivateRoute
-                                            allowedRoles={["ADMIN", "MANAGER"]}
-                                        >
-                                            <CreateNotice />
-                                        </PrivateRoute>
-                                    }
-                                />
-                                <Route
-                                    path="/notices/edit/:id"
-                                    element={
-                                        <PrivateRoute
-                                            allowedRoles={["ADMIN", "MANAGER"]}
-                                        >
-                                            <EditNotice />
-                                        </PrivateRoute>
-                                    }
-                                />
-                                <Route
-                                    path="/themes/:category"
-                                    element={<ThemeList />}
-                                />
-                                <Route
-                                    path="/themes/:category/:id"
-                                    element={<ThemeDetailRouter />}
-                                />
-                                <Route
-                                    path="/themes/new"
-                                    element={<CreateTheme />}
-                                />
-                                <Route
-                                    path="/themes/edit/:id"
-                                    element={<EditTheme />}
-                                />
+            <AnimatePresence
+                mode="wait"
+                onExitComplete={() => {
+                    audioManager.forceStopAll();
+                }}
+            >
+                <Routes>
+                    {/* Main Layout Routes */}
+                    <Route element={<MainLayout />}>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/commands" element={<Commands />} />
+                        <Route
+                            path="/commands/:id"
+                            element={<CommandDetail />}
+                        />
+                        <Route
+                            path="/commands/new"
+                            element={
+                                <PrivateRoute
+                                    allowedRoles={["ADMIN", "MANAGER"]}
+                                >
+                                    <CreateCommand />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="/commands/edit/:id"
+                            element={
+                                <PrivateRoute
+                                    allowedRoles={["ADMIN", "MANAGER"]}
+                                >
+                                    <EditCommand />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route path="/notices" element={<NoticeList />} />
+                        <Route path="/notices/:id" element={<NoticeDetail />} />
+                        <Route
+                            path="/notices/new"
+                            element={
+                                <PrivateRoute
+                                    allowedRoles={["ADMIN", "MANAGER"]}
+                                >
+                                    <CreateNotice />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="/notices/edit/:id"
+                            element={
+                                <PrivateRoute
+                                    allowedRoles={["ADMIN", "MANAGER"]}
+                                >
+                                    <EditNotice />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="/themes/:category"
+                            element={<ThemeList />}
+                        />
+                        <Route
+                            path="/themes/:category/:id"
+                            element={<ThemeDetailRouter />}
+                        />
+                        <Route path="/themes/new" element={<CreateTheme />} />
+                        <Route
+                            path="/themes/edit/:id"
+                            element={<EditTheme />}
+                        />
 
-                                {/* SNS 라우트 */}
-                                <Route
-                                    path="/sns/feed"
-                                    element={<SNSFeedPage />}
-                                />
-                                <Route
-                                    path="/sns/explore"
-                                    element={<SNSExplorePage />}
-                                />
-                                <Route
-                                    path="/sns/create"
-                                    element={<SNSCreatePage />}
-                                />
-                                <Route
-                                    path="/sns/post/:postId"
-                                    element={<SNSPostDetailPage />}
-                                />
-                                <Route
-                                    path="/sns/my-posts"
-                                    element={<SNSMyPostsPage />}
-                                />
-                                <Route
-                                    path="/sns/hashtag/:tagName"
-                                    element={<SNSExplorePage />}
-                                />
+                        {/* SNS 라우트 */}
+                        <Route path="/sns/feed" element={<SNSFeedPage />} />
+                        <Route
+                            path="/sns/explore"
+                            element={<SNSExplorePage />}
+                        />
+                        <Route path="/sns/create" element={<SNSCreatePage />} />
+                        <Route
+                            path="/sns/post/:postId"
+                            element={<SNSPostDetailPage />}
+                        />
+                        <Route
+                            path="/sns/my-posts"
+                            element={<SNSMyPostsPage />}
+                        />
+                        <Route
+                            path="/sns/hashtag/:tagName"
+                            element={<SNSExplorePage />}
+                        />
 
-                                {/* 커뮤니티 게시판 라우트 - 순서가 중요합니다! 더 구체적인 경로가 먼저 와야 합니다 */}
-                                {/* 질문게시판 */}
-                                <Route
-                                    path="/community/question/new"
-                                    element={
-                                        <BoardWrite
-                                            boardType={BoardType.QUESTION}
-                                        />
-                                    }
-                                />
-                                <Route
-                                    path="/community/question/edit/:id"
-                                    element={
-                                        <BoardWrite
-                                            boardType={BoardType.QUESTION}
-                                        />
-                                    }
-                                />
-                                <Route
-                                    path="/community/question/:id"
-                                    element={<QuestionPostDetail />}
-                                />
-                                <Route
-                                    path="/community/question"
-                                    element={<QuestionBoard />}
-                                />
+                        {/* 커뮤니티 게시판 라우트 - 순서가 중요합니다! 더 구체적인 경로가 먼저 와야 합니다 */}
+                        {/* 질문게시판 */}
+                        <Route
+                            path="/community/question/new"
+                            element={
+                                <BoardWrite boardType={BoardType.QUESTION} />
+                            }
+                        />
+                        <Route
+                            path="/community/question/edit/:id"
+                            element={
+                                <BoardWrite boardType={BoardType.QUESTION} />
+                            }
+                        />
+                        <Route
+                            path="/community/question/:id"
+                            element={<QuestionPostDetail />}
+                        />
+                        <Route
+                            path="/community/question"
+                            element={<QuestionBoard />}
+                        />
 
-                                {/* 자유게시판 */}
-                                <Route
-                                    path="/community/chat/new"
-                                    element={
-                                        <BoardWrite
-                                            boardType={BoardType.CHAT}
-                                        />
-                                    }
-                                />
-                                <Route
-                                    path="/community/chat/edit/:id"
-                                    element={
-                                        <BoardWrite
-                                            boardType={BoardType.CHAT}
-                                        />
-                                    }
-                                />
-                                <Route
-                                    path="/community/chat/:id"
-                                    element={<FreePostDetail />}
-                                />
-                                <Route
-                                    path="/community/chat"
-                                    element={<FreeBoard />}
-                                />
+                        {/* 자유게시판 */}
+                        <Route
+                            path="/community/chat/new"
+                            element={<BoardWrite boardType={BoardType.CHAT} />}
+                        />
+                        <Route
+                            path="/community/chat/edit/:id"
+                            element={<BoardWrite boardType={BoardType.CHAT} />}
+                        />
+                        <Route
+                            path="/community/chat/:id"
+                            element={<FreePostDetail />}
+                        />
+                        <Route path="/community/chat" element={<FreeBoard />} />
 
-                                {/* 제작자게시판 */}
-                                <Route
-                                    path="/community/creator/new"
-                                    element={
-                                        <BoardWrite
-                                            boardType={BoardType.CREATOR}
-                                        />
-                                    }
-                                />
-                                <Route
-                                    path="/community/creator/edit/:id"
-                                    element={
-                                        <BoardWrite
-                                            boardType={BoardType.CREATOR}
-                                        />
-                                    }
-                                />
-                                <Route
-                                    path="/community/creator/:id"
-                                    element={<CreatorPostDetail />}
-                                />
-                                <Route
-                                    path="/community/creator"
-                                    element={<CreatorBoard />}
-                                />
+                        {/* 제작자게시판 */}
+                        <Route
+                            path="/community/creator/new"
+                            element={
+                                <BoardWrite boardType={BoardType.CREATOR} />
+                            }
+                        />
+                        <Route
+                            path="/community/creator/edit/:id"
+                            element={
+                                <BoardWrite boardType={BoardType.CREATOR} />
+                            }
+                        />
+                        <Route
+                            path="/community/creator/:id"
+                            element={<CreatorPostDetail />}
+                        />
+                        <Route
+                            path="/community/creator"
+                            element={<CreatorBoard />}
+                        />
 
-                                {/* 동적 경로를 위한 추가 라우트 */}
-                                <Route
-                                    path="/community/:boardType/new"
-                                    element={<BoardWrite />}
-                                />
+                        {/* 동적 경로를 위한 추가 라우트 */}
+                        <Route
+                            path="/community/:boardType/new"
+                            element={<BoardWrite />}
+                        />
 
-                                <Route path="/terms" element={<TermsPage />} />
-                                <Route
-                                    path="/privacy"
-                                    element={<PrivacyPage />}
-                                />
-                                <Route path="/login" element={<Login />} />
-                                <Route
-                                    path="/login-error"
-                                    element={<LoginError />}
-                                />
-                                <Route
-                                    path="/contact"
-                                    element={<ContactPage />}
-                                />
-                                <Route
-                                    path="/donate"
-                                    element={<DonationPage />}
-                                />
-                                <Route
-                                    path="/profile/:userId"
-                                    element={<ProfilePage />}
-                                />
-                            </Route>
+                        <Route path="/terms" element={<TermsPage />} />
+                        <Route path="/privacy" element={<PrivacyPage />} />
 
-                            {/* Dashboard Layout Routes */}
-                            <Route
-                                path="/dashboard"
-                                element={<DashboardLayout />}
-                            >
-                                <Route index element={<Dashboard />} />
-                                <Route path="guilds" element={<Guilds />} />
-                                <Route
-                                    path="guilds/message-format"
-                                    element={<MessageFormat />}
-                                />
-                                <Route
-                                    path="guilds/automation/:guildId"
-                                    element={<ButtonAutomationPage />}
-                                />
-                                <Route
-                                    path="guilds/crime-scene-history"
-                                    element={<GameHistoryManager />}
-                                />
-                                <Route
-                                    path="users/my-history"
-                                    element={<UserGameHistoryPage />}
-                                />
-                                <Route
-                                    path="users/my-history-v2"
-                                    element={<UserGameHistoryPageV2 />}
-                                />
-                                <Route
-                                    path="game-comparison"
-                                    element={<GameComparisonPage />}
-                                />
-                                <Route
-                                    path="point-history"
-                                    element={<PointHistoryPage />}
-                                />
-                                <Route
-                                    path="notifications"
-                                    element={<NotificationListPage />}
-                                />
-                                <Route path="posts" element={<PostsPage />} />
-                                <Route
-                                    path="posts/:postId"
-                                    element={<PostDetailPage />}
-                                />
-                                <Route
-                                    path="posts/new"
-                                    element={<PostEditorPage />}
-                                />
-                                <Route
-                                    path="posts/edit/:postId"
-                                    element={<PostEditorPage />}
-                                />
-                                <Route path="profile" element={<Profile />} />
-                                <Route path="teams" element={<Teams />} />
-                                <Route
-                                    path="follows"
-                                    element={<FollowsPage />}
-                                />
-                                <Route
-                                    path="theme-ads"
-                                    element={<ThemeAdvertisements />}
-                                />
-                                <Route
-                                    path="theme-ad-stats"
-                                    element={<ThemeAdvertisementStats />}
-                                />
+                        {/* 일정 메인 페이지 (메인 레이아웃) */}
+                        <Route path="/schedule" element={<SchedulePage />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/login-error" element={<LoginError />} />
+                        <Route path="/contact" element={<ContactPage />} />
+                        <Route path="/donate" element={<DonationPage />} />
+                        <Route
+                            path="/profile/:userId"
+                            element={<ProfilePage />}
+                        />
+                    </Route>
 
-                                {/* 관리자 페이지 라우트 */}
-                                <Route
-                                    path="admin/user-role"
-                                    element={
-                                        <PrivateRoute allowedRoles={["ADMIN"]}>
-                                            <UserRoleManagementPage />
-                                        </PrivateRoute>
-                                    }
-                                />
-                                <Route
-                                    path="admin/coupon"
-                                    element={
-                                        <PrivateRoute allowedRoles={["ADMIN"]}>
-                                            <CouponManagementPage />
-                                        </PrivateRoute>
-                                    }
-                                />
-                                <Route
-                                    path="admin/location-mappings"
-                                    element={
-                                        <PrivateRoute
-                                            allowedRoles={["ADMIN", "MANAGER"]}
-                                        >
-                                            <LocationMappingPage />
-                                        </PrivateRoute>
-                                    }
-                                />
-                                <Route
-                                    path="admin/point-monitoring"
-                                    element={
-                                        <PrivateRoute
-                                            allowedRoles={["ADMIN", "MANAGER"]}
-                                        >
-                                            <PointMonitoringPage />
-                                        </PrivateRoute>
-                                    }
-                                />
-                                <Route
-                                    path="admin/theme-ads"
-                                    element={
-                                        <PrivateRoute
-                                            allowedRoles={["ADMIN", "MANAGER"]}
-                                        >
-                                            <ThemeAdsPage />
-                                        </PrivateRoute>
-                                    }
-                                />
-                            </Route>
+                    {/* Dashboard Layout Routes */}
+                    <Route path="/dashboard" element={<DashboardLayout />}>
+                        <Route index element={<Dashboard />} />
+                        <Route path="guilds" element={<Guilds />} />
+                        <Route
+                            path="guilds/message-format"
+                            element={<MessageFormat />}
+                        />
+                        <Route
+                            path="guilds/automation/:guildId"
+                            element={<ButtonAutomationPage />}
+                        />
+                        <Route
+                            path="guilds/crime-scene-history"
+                            element={<GameHistoryManager />}
+                        />
+                        <Route
+                            path="users/my-history"
+                            element={<UserGameHistoryPage />}
+                        />
+                        <Route
+                            path="users/my-history-v2"
+                            element={<UserGameHistoryPageV2 />}
+                        />
+                        <Route
+                            path="game-comparison"
+                            element={<GameComparisonPage />}
+                        />
+                        <Route
+                            path="point-history"
+                            element={<PointHistoryPage />}
+                        />
+                        <Route
+                            path="notifications"
+                            element={<NotificationListPage />}
+                        />
+                        <Route path="posts" element={<PostsPage />} />
+                        <Route
+                            path="posts/:postId"
+                            element={<PostDetailPage />}
+                        />
+                        <Route path="posts/new" element={<PostEditorPage />} />
+                        <Route
+                            path="posts/edit/:postId"
+                            element={<PostEditorPage />}
+                        />
+                        <Route path="profile" element={<Profile />} />
+                        <Route path="teams" element={<Teams />} />
+                        <Route path="follows" element={<FollowsPage />} />
+                        <Route
+                            path="theme-ads"
+                            element={<ThemeAdvertisements />}
+                        />
+                        <Route
+                            path="theme-ad-stats"
+                            element={<ThemeAdvertisementStats />}
+                        />
 
-                            {/* 404 Route */}
-                            <Route path="*" element={<NotFound />} />
+                        {/* 일정 관리 라우트 */}
+                        <Route
+                            path="schedule"
+                            element={<ScheduleDashboard />}
+                        />
+                        <Route
+                            path="schedule/events"
+                            element={<EventListPage />}
+                        />
+                        <Route
+                            path="schedule/create"
+                            element={
+                                <PrivateRoute
+                                    allowedRoles={["ADMIN", "MANAGER", "USER"]}
+                                >
+                                    <CreateEventPage />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="schedule/events/:eventId"
+                            element={<EventDetailPage />}
+                        />
 
-                            <Route
-                                path="/unauthorized"
-                                element={<Unauthorized />}
-                            />
-                        </Routes>
+                        {/* 관리자 페이지 라우트 */}
+                        <Route
+                            path="admin/user-role"
+                            element={
+                                <PrivateRoute allowedRoles={["ADMIN"]}>
+                                    <UserRoleManagementPage />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="admin/coupon"
+                            element={
+                                <PrivateRoute allowedRoles={["ADMIN"]}>
+                                    <CouponManagementPage />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="admin/location-mappings"
+                            element={
+                                <PrivateRoute allowedRoles={["ADMIN"]}>
+                                    <LocationMappingPage />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="admin/point-monitoring"
+                            element={
+                                <PrivateRoute allowedRoles={["ADMIN"]}>
+                                    <PointMonitoringPage />
+                                </PrivateRoute>
+                            }
+                        />
+                        <Route
+                            path="admin/theme-ads"
+                            element={
+                                <PrivateRoute allowedRoles={["ADMIN"]}>
+                                    <ThemeAdsPage />
+                                </PrivateRoute>
+                            }
+                        />
+                    </Route>
+
+                    {/* 404 Route */}
+                    <Route path="*" element={<NotFound />} />
+
+                    <Route path="/unauthorized" element={<Unauthorized />} />
+                </Routes>
             </AnimatePresence>
         </>
     );

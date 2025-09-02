@@ -87,6 +87,9 @@ dependencies {
 	//webclient
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
+	// iCal parsing
+	implementation 'org.mnode.ical4j:ical4j:3.2.14'
+
 	//jsonMappingTool
 	implementation 'com.vladmihalcea:hibernate-types-60:2.21.1'
 

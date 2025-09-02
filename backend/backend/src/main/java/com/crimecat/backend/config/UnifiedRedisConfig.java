@@ -290,6 +290,25 @@ public class UnifiedRedisConfig {
         cacheConfigurations.put(CacheType.SITEMAP_GAME_THEMES, 
                 defaultConfig.entryTtl(Duration.ofMinutes(30))); // 게임테마 사이트맵 - 30분
         
+        // 일정 관리 캐시 설정
+        cacheConfigurations.put(CacheType.SCHEDULE_EVENT_LIST, 
+                defaultConfig.entryTtl(Duration.ofMinutes(2))); // 일정 목록 - 2분 (실시간성 중요)
+        
+        cacheConfigurations.put(CacheType.SCHEDULE_EVENT_DETAIL, 
+                defaultConfig.entryTtl(Duration.ofMinutes(10))); // 일정 상세 - 10분
+        
+        cacheConfigurations.put(CacheType.SCHEDULE_PARTICIPANTS, 
+                defaultConfig.entryTtl(Duration.ofMinutes(1))); // 참여자 목록 - 1분 (참여 상태 변경 빈도 높음)
+        
+        cacheConfigurations.put(CacheType.SCHEDULE_AVAILABILITY, 
+                defaultConfig.entryTtl(Duration.ofMinutes(15))); // 가용시간 계산 - 15분 (계산 복잡도 높음)
+        
+        cacheConfigurations.put(CacheType.SCHEDULE_ICAL_PARSED, 
+                defaultConfig.entryTtl(Duration.ofMinutes(30))); // iCalendar 파싱 결과 - 30분 (외부 API 호출 최소화)
+        
+        cacheConfigurations.put(CacheType.SCHEDULE_USER_CALENDAR, 
+                defaultConfig.entryTtl(Duration.ofMinutes(10))); // 사용자 캘린더 정보 - 10분
+        
         // 봇 커맨드 목록 캐시 - 1시간 (봇 재시작 시에도 유효한 캐시 유지)
         cacheConfigurations.put("botCommands", 
                 defaultConfig.entryTtl(Duration.ofHours(1))); // 봇 커맨드 - 1시간

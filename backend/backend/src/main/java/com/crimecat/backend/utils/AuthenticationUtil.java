@@ -253,4 +253,106 @@ public class AuthenticationUtil {
     return getCurrentUserOptional()
             .map(User::getId);
   }
+
+  // =================================================================================
+  // 스케줄/이벤트 관련 권한 검증 메서드들
+  // =================================================================================
+
+  /**
+   * 이벤트에 대한 접근 권한을 확인합니다.
+   * 이벤트 생성자이거나 최소 권한 이상을 가진 사용자만 접근 가능
+   *
+   * @param eventCreatorId 이벤트 생성자 ID
+   * @param minimumRole 필요한 최소 권한 (기본: MANAGER)
+   */
+  public static void validateEventAccess(UUID eventCreatorId, UserRole minimumRole) {
+    WebUser currentUser = getCurrentWebUser();
+    
+    // 본인이면 접근 허용
+    if (currentUser.getId().equals(eventCreatorId)) {
+      return;
+    }
+    
+    // 본인이 아니라면 최소 권한 확인
+    validateUserHasMinimumRole(minimumRole);
+  }
+
+  /**
+   * 이벤트 수정 권한을 확인합니다.
+   * 생성자 본인이거나 MANAGER 이상만 수정 가능
+   *
+   * @param eventCreatorId 이벤트 생성자 ID
+   */
+  public static void validateEventEditAccess(UUID eventCreatorId) {
+    validateEventAccess(eventCreatorId, UserRole.MANAGER);
+  }
+
+  /**
+   * 이벤트 삭제 권한을 확인합니다.
+   * 생성자 본인이거나 MANAGER 이상만 삭제 가능
+   *
+   * @param eventCreatorId 이벤트 생성자 ID
+   */
+  public static void validateEventDeleteAccess(UUID eventCreatorId) {
+    validateEventAccess(eventCreatorId, UserRole.MANAGER);
+  }
+
+  /**
+   * 이벤트 참여자 목록 조회 권한을 확인합니다.
+   * 생성자 본인이거나 MANAGER 이상만 조회 가능
+   *
+   * @param eventCreatorId 이벤트 생성자 ID
+   */
+  public static void validateEventParticipantsAccess(UUID eventCreatorId) {
+    validateEventAccess(eventCreatorId, UserRole.MANAGER);
+  }
+
+  /**
+   * 이벤트 강제 완료/취소 권한을 확인합니다.
+   * MANAGER 이상만 가능
+   */
+  public static void validateEventAdminAccess() {
+    validateUserHasMinimumRole(UserRole.MANAGER);
+  }
+
+  /**
+   * 개인 캘린더 데이터 접근 권한을 확인합니다.
+   * 본인 데이터이거나 MANAGER 이상만 접근 가능
+   *
+   * @param targetUserId 접근하려는 사용자 ID
+   */
+  public static void validateCalendarAccess(UUID targetUserId) {
+    validateSelfOrHasRole(targetUserId, UserRole.MANAGER);
+  }
+
+  /**
+   * 이벤트 생성자인지 확인합니다.
+   *
+   * @param eventCreatorId 이벤트 생성자 ID
+   * @return 생성자 여부
+   */
+  public static boolean isEventCreator(UUID eventCreatorId) {
+    try {
+      WebUser currentUser = getCurrentWebUser();
+      return currentUser.getId().equals(eventCreatorId);
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  /**
+   * 현재 사용자가 최소 권한 이상을 가지고 있는지 확인합니다. (예외 발생 없음)
+   *
+   * @param minimumRole 최소 필요 역할
+   * @return 권한 보유 여부
+   */
+  public static boolean hasMinimumRole(UserRole minimumRole) {
+    try {
+      WebUser currentUser = getCurrentWebUser();
+      UserRole userRole = currentUser.getRole();
+      return userRole.ordinal() >= minimumRole.ordinal();
+    } catch (Exception e) {
+      return false;
+    }
+  }
   }
