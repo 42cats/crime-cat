@@ -225,6 +225,28 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     },
   });
 
+  // 캘린더 이벤트 강제 새로고침 Mutation
+  const forceRefreshMutation = useMutation({
+    mutationFn: async () => {
+      return await scheduleService.forceRefreshGroupedCalendarEvents(monthRange.startDate, monthRange.endDate);
+    },
+    onSuccess: () => {
+      // React Query 캐시 무효화 (백엔드 캐시는 API에서 이미 무효화됨)
+      queryClient.invalidateQueries({ queryKey: ['schedule', 'grouped-calendar-events'] });
+      toast({
+        title: '캘린더 새로고침 완료',
+        description: '최신 캘린더 데이터를 불러왔습니다.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: '새로고침 실패',
+        description: error?.response?.data?.message || '캘린더 새로고침 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   /**
    * 날짜 정보 계산
    */
@@ -482,16 +504,18 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
   }, [userEvents]);
 
   /**
-   * 수동 새로고침
+   * 수동 새로고침 (백엔드 캐시 무효화)
    */
   const refreshData = useCallback(() => {
+    if (enableEventFetching) {
+      // 강제 새로고침으로 백엔드 캐시 무효화
+      forceRefreshMutation.mutate();
+    }
     if (enableBlocking) {
+      // 차단 날짜는 기존 방식 유지
       queryClient.invalidateQueries({ queryKey: ['schedule', 'blocked-dates'] });
     }
-    if (enableEventFetching) {
-      queryClient.invalidateQueries({ queryKey: ['schedule', 'grouped-calendar-events'] });
-    }
-  }, [queryClient, enableBlocking, enableEventFetching]);
+  }, [forceRefreshMutation, queryClient, enableBlocking, enableEventFetching]);
 
   return {
     // 상태
@@ -502,7 +526,7 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     // 데이터
     blockedDates,
     userEvents,
-    isLoading: isLoadingBlocked || isLoadingEvents,
+    isLoading: isLoadingBlocked || isLoadingEvents || forceRefreshMutation.isPending,
     error: blockedDatesError || eventsError,
     
     // 드래그 상태
@@ -524,6 +548,7 @@ export const useCalendarState = (options: UseCalendarStateOptions = {}) => {
     isUnblockingDate: unblockDateMutation.isPending,
     isBlockingRange: blockDateRangeMutation.isPending,
     isUnblockingRange: unblockDateRangeMutation.isPending,
+    isRefreshing: forceRefreshMutation.isPending,
     
     // iCS 이벤트 관련
     icsEvents,

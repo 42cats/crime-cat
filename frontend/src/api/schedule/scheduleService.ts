@@ -231,6 +231,36 @@ export class ScheduleService {
     
     return await apiClient.get<Record<string, any>>(url);
   }
+
+  /**
+   * 캘린더 이벤트 강제 새로고침 (백엔드 캐시 무효화)
+   */
+  async forceRefreshGroupedCalendarEvents(
+    startDate: string,
+    endDate: string
+  ): Promise<Record<string, {
+    calendarId: string;
+    displayName: string;
+    colorHex: string;
+    colorIndex: number;
+    events: Array<{
+      id: string;
+      title: string;
+      startTime: string;
+      endTime: string;
+      allDay: boolean;
+      calendarId: string;
+      colorHex: string;
+      calendarName: string;
+    }>;
+    lastSynced?: string;
+    syncStatus: string;
+  }>> {
+    const params = new URLSearchParams({ startDate, endDate });
+    const url = `/my-calendar/events-in-range/refresh?${params.toString()}`;
+    
+    return await apiClient.post<Record<string, any>>(url);
+  }
 }
 
 // 싱글톤 인스턴스 생성
