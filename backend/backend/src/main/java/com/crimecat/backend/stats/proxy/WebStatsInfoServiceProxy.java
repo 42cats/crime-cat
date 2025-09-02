@@ -2,13 +2,13 @@ package com.crimecat.backend.stats.proxy;
 
 import com.crimecat.backend.gameHistory.domain.GameHistory;
 import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
-import com.crimecat.backend.user.domain.DiscordUser;
 import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.repository.UserRepository;
 import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -39,40 +39,44 @@ public class WebStatsInfoServiceProxy {
 
     if (historyList.isEmpty()) return tempMap;
 
-    // 가장 최근 플레이 기록
-    GameHistory recent = historyList.get(0);
-    String gameName;
-    // Guild가 null일 수 있으므로 체크
-    if (recent.getGuild() != null && recent.getGuild().getName() != null) {
+    // Guild 정보가 있는 가장 최근 플레이 기록 찾기
+    Optional<GameHistory> recentWithGuild = historyList.stream()
+        .filter(gameHistory -> gameHistory.getGuild() != null && gameHistory.getGuild().getName() != null)
+        .findFirst();
+
+    // Guild 이름 추출
+    String gameName = "길드 없음";
+    String recentlyPlay = "알수없음";
+    
+    if (recentWithGuild.isPresent()) {
+        GameHistory recent = recentWithGuild.get();
         gameName = recent.getGuild().getName();
-    } else {
-        gameName = "길드 없음";
+        if (recent.getCreatedAt() != null) {
+            recentlyPlay = recent.getCreatedAt().toInstant(ZoneOffset.UTC).toString();
+        }
     }
-
-    String recentlyPlay;
-    // createdAt도 null일 수 있으므로 체크
-    if (recent.getCreatedAt() != null) {
-        recentlyPlay = recent.getCreatedAt().toInstant(ZoneOffset.UTC).toString();
-    } else {
-        recentlyPlay = "알수없음";
-    }
-
 
     tempMap.put("recentlyPlayCrimeSeenTheme", gameName);
-    tempMap.put("recentlyPlayCrimeSeenThemeTime",recentlyPlay);
+    tempMap.put("recentlyPlayCrimeSeenThemeTime", recentlyPlay);
 
     // 가장 많이 플레이한 오너
     Optional<String> mostFrequentOwner = historyList.stream()
-        .map(gh -> gh.getGuild().getOwnerSnowflake())
+        .filter(gameHistory -> gameHistory.getGuild() != null)
+        .map(gameHistory -> gameHistory.getGuild().getOwnerSnowflake())
+        .filter(Objects::nonNull)
         .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
         .entrySet().stream()
         .max(Map.Entry.comparingByValue())
         .map(Map.Entry::getKey);
 
-    mostFrequentOwner.flatMap(userRepository::findByDiscordSnowflake)
-        .map(User::getDiscordUser)
-        .map(DiscordUser::getName)
-        .ifPresent(name -> tempMap.put("mostFavoriteCrimeSeenMaker", name));
+    if (mostFrequentOwner.isPresent()) {
+        userRepository.findByDiscordSnowflake(mostFrequentOwner.get())
+            .ifPresent(foundUser -> {
+                if (foundUser.getDiscordUser() != null) {
+                    tempMap.put("mostFavoriteCrimeSeenMaker", foundUser.getDiscordUser().getName());
+                }
+            });
+    }
 
     return tempMap;
   }
