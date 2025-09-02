@@ -133,6 +133,7 @@ const EscapeRoomFields: React.FC<Props> = ({ extraFields, setExtraFields }) => {
 
   const addLocation = () => {
     if (newLocation.storeName.trim() && newLocation.address.trim()) {
+      // 좌표는 백엔드에서 자동으로 네이버 검색 API를 통해 설정됩니다
       updateField("locations", [...(extraFields.locations || []), { ...newLocation }]);
       setNewLocation({
         storeName: "",
@@ -334,7 +335,8 @@ const EscapeRoomFields: React.FC<Props> = ({ extraFields, setExtraFields }) => {
                 <p className="font-medium mb-1">💡 매장 추가 방법:</p>
                 <ul className="space-y-1 text-xs">
                   <li>• <strong>추천:</strong> 위의 "매장 검색" 버튼으로 네이버 지도에서 정확한 정보를 가져오기</li>
-                  <li>• 또는 아래 폼에서 직접 입력하기</li>
+                  <li>• 또는 아래 폼에서 직접 입력하기 (좌표는 자동으로 검색됩니다)</li>
+                  <li>• <strong>자동 좌표 설정:</strong> 매장명과 주소만 입력하면 좌표가 자동으로 설정됩니다</li>
                 </ul>
               </div>
 
