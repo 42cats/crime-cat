@@ -14,7 +14,7 @@ module.exports = {
         console.log(`🔄 일정갱신 명령어 실행: ${interaction.user.tag} (${discordSnowflake})`);
 
         // 응답 지연 처리 (API 호출 시간 대비)
-        await interaction.deferReply();
+        await interaction.deferReply({ ephemeral: true });
 
         try {
             // 백엔드 API 호출
@@ -59,7 +59,7 @@ async function createSuccessEmbed(result, processingTime, user) {
         })
         .setTimestamp()
         .setFooter({
-            text: 'Crime-Cat 일정 관리 시스템',
+            text: 'Mystery-place 일정 관리 시스템',
             iconURL: 'https://cdn.discordapp.com/app-icons/your-bot-id/icon.png'
         });
 
@@ -124,7 +124,7 @@ function createErrorEmbed(error, user) {
         .setDescription(formatUserErrorMessage(error))
         .setTimestamp()
         .setFooter({
-            text: 'Crime-Cat 일정 관리 시스템',
+            text: 'Mystery-place 일정 관리 시스템',
             iconURL: 'https://cdn.discordapp.com/app-icons/your-bot-id/icon.png'
         });
 
