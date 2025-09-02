@@ -36,8 +36,40 @@ module.exports = {
             }
 
             // 성공 응답 생성
-            const embed = await createSuccessEmbed(result, months, interaction.user);
-            await interaction.editReply({ embeds: [embed] });
+            let embed = await createSuccessEmbed(result, months, interaction.user);
+
+            // 날짜 데이터 길이에 따라 출력 방식 결정
+            let dateMessage = '';
+            let useEmbedField = false;
+
+            if (result.availableDatesFormat && result.availableDatesFormat.length > 0) {
+                const codeBoxText = `\`\`\`\n${result.availableDatesFormat}\n\`\`\``;
+
+                // Embed Field 제한 (1024자) 확인
+                if (codeBoxText.length <= 1024) {
+                    useEmbedField = true;
+                } else {
+                    // 2000자 제한 고려하여 별도 메시지로 출력
+                    if (result.availableDatesFormat.length > 1900) {
+                        dateMessage = `\`\`\`\n${result.availableDatesFormat.substring(0, 1900)}\n...(웹사이트에서 전체 확인)\n\`\`\``;
+                    } else {
+                        dateMessage = `\`\`\`\n${result.availableDatesFormat}\n\`\`\``;
+                    }
+                }
+            } else {
+                useEmbedField = true; // 짧은 메시지이므로 Embed에 포함
+            }
+
+            // 길이에 따라 Embed 업데이트
+            if (useEmbedField) {
+                embed = await createSuccessEmbedWithDates(result, months, interaction.user);
+                await interaction.editReply({ embeds: [embed] });
+            } else {
+                await interaction.editReply({
+                    content: dateMessage,
+                    embeds: [embed]
+                });
+            }
 
             console.log(`✅ 내일정 조회 완료: ${result.totalEvents}개 일정`);
 
@@ -93,27 +125,13 @@ async function createSuccessEmbed(result, months, user) {
             inline: false
         });
     } else {
-        // 사용 가능한 날짜 문자열이 너무 길면 자르기
-        let availableText = result.availableDatesFormat;
-        const maxLength = 1800; // Discord embed field 길이 제한 고려
-
-        if (availableText && availableText.length > maxLength) {
-            availableText = availableText.substring(0, maxLength) + '\n...(일부 생략)';
-            embed.addFields({
-                name: '⚠️ 알림',
-                value: '사용 가능한 날짜가 많아서 일부만 표시됩니다. 전체 날짜는 웹사이트에서 확인하세요.',
-                inline: false
-            });
-        }
-
+        // 사용 가능한 날짜는 별도 메시지에서 출력
         embed.addFields({
             name: '✅ 사용 가능한 날짜',
-            value: availableText && availableText.length > 0 ? 
-                `\`\`\`${availableText}\`\`\`` : 
-                '✅ **모든 날짜가 사용 가능합니다!**',
+            value: '아래 별도 메시지에서 확인하세요.',
             inline: false
         });
-        
+
         // 가용성 통계 정보 추가
         embed.addFields({
             name: '📊 가용성 분석',
@@ -125,7 +143,7 @@ async function createSuccessEmbed(result, months, user) {
             ].join('\n'),
             inline: false
         });
-        
+
         // 추천 메시지
         // const availabilityPercent = Math.round((result.availabilityRatio || 0) * 100);
         // if (availabilityPercent > 70) {
@@ -147,6 +165,81 @@ async function createSuccessEmbed(result, months, user) {
         //         inline: false
         //     });
         // }
+    }
+
+    // 추가 안내 메시지
+    embed.addFields({
+        name: '💡 도움말',
+        value: [
+            '• `/일정체크 [날짜목록]` - 특정 날짜와 겹침 확인',
+            '• `/일정갱신` - 캘린더 강제 새로고침',
+            '• mystery-place.com 에서 캘린더 추가/수정 가능'
+        ].join('\n'),
+        inline: false
+    });
+
+    return embed;
+}
+
+/**
+ * 성공 응답 Embed 생성 (날짜 데이터 포함)
+ */
+async function createSuccessEmbedWithDates(result, months, user) {
+    const embed = new EmbedBuilder()
+        .setColor('#3b82f6') // 파란색
+        .setTitle('📅 내 일정 조회 결과')
+        .setAuthor({
+            name: user.displayName || user.username,
+            iconURL: user.displayAvatarURL()
+        })
+        .setTimestamp()
+        .setFooter({
+            text: 'Mystery-place 일정 관리 시스템',
+            iconURL: 'https://cdn.discordapp.com/app-icons/your-bot-id/icon.png'
+        });
+
+    // 기본 정보
+    embed.addFields(
+        {
+            name: '📊 조회 정보',
+            value: [
+                `• 조회 기간: **${months}개월**`,
+                `• 연결된 캘린더: **${result.calendarCount}개**`,
+                `• 총 일정 수: **${result.totalEvents}개**`,
+                `• 마지막 동기화: **${formatSyncTime(result.syncedAt)}**`
+            ].join('\n'),
+            inline: false
+        }
+    );
+
+    // 사용 가능한 날짜 표시 (로직 반전)
+    if (result.totalAvailableDays === 0) {
+        embed.addFields({
+            name: '⚠️ 알림',
+            value: '**모든 날짜가 사용 불가합니다!**\n일정이나 차단 설정으로 인해 가능한 날짜가 없습니다.',
+            inline: false
+        });
+    } else {
+        // 사용 가능한 날짜를 Embed Field에 직접 포함
+        embed.addFields({
+            name: '✅ 사용 가능한 날짜',
+            value: result.availableDatesFormat && result.availableDatesFormat.length > 0 ?
+                `\`\`\`\n${result.availableDatesFormat}\n\`\`\`` :
+                '✅ **모든 날짜가 사용 가능합니다!**',
+            inline: false
+        });
+
+        // 가용성 통계 정보 추가
+        embed.addFields({
+            name: '📊 가용성 분석',
+            value: [
+                `• 사용 가능: **${result.totalAvailableDays}개 날짜** (${Math.round((result.availabilityRatio || 0) * 100)}%)`,
+                `• iCal 일정: **${result.totalEvents}개 날짜**`,
+                `• 사용자 차단: **${result.totalBlockedDays || 0}개 날짜**`,
+                `• 조회 기간: **${result.requestedMonths}개월**`
+            ].join('\n'),
+            inline: false
+        });
     }
 
     // 추가 안내 메시지
