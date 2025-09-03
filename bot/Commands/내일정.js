@@ -35,39 +35,31 @@ module.exports = {
                 throw new Error('서버 응답이 없습니다');
             }
 
-            // 성공 응답 생성
-            let embed = await createSuccessEmbed(result, months, interaction.user);
+            // 성공 응답 생성 (통계/정보용 임베드)
+            const embed = await createSuccessEmbed(result, months, interaction.user);
 
-            // 날짜 데이터 길이에 따라 출력 방식 결정
-            let dateMessage = '';
-            let useEmbedField = false;
+            // 첫 번째 메시지: 통계 및 정보 임베드
+            await interaction.editReply({ embeds: [embed] });
 
+            // 두 번째 메시지: 복사 전용 일정 텍스트 (항상 분리)
             if (result.availableDatesFormat && result.availableDatesFormat.length > 0) {
-                const codeBoxText = `\`\`\`\n${result.availableDatesFormat}\n\`\`\``;
-
-                // Embed Field 제한 (1024자) 확인
-                if (codeBoxText.length <= 1024) {
-                    useEmbedField = true;
-                } else {
-                    // 2000자 제한 고려하여 별도 메시지로 출력
-                    if (result.availableDatesFormat.length > 1900) {
-                        dateMessage = `\`\`\`\n${result.availableDatesFormat.substring(0, 1900)}\n...(웹사이트에서 전체 확인)\n\`\`\``;
-                    } else {
-                        dateMessage = `\`\`\`\n${result.availableDatesFormat}\n\`\`\``;
-                    }
+                // 2000자 제한 고려하여 필요시 자르기
+                let dateText = result.availableDatesFormat;
+                if (dateText.length > 1900) {
+                    dateText = `${dateText.substring(0, 1900)}\n...(웹사이트에서 전체 확인)`;
                 }
-            } else {
-                useEmbedField = true; // 짧은 메시지이므로 Embed에 포함
-            }
 
-            // 길이에 따라 Embed 업데이트
-            if (useEmbedField) {
-                embed = await createSuccessEmbedWithDates(result, months, interaction.user);
-                await interaction.editReply({ embeds: [embed] });
+                const copyMessage = `${dateText}`;
+
+                await interaction.followUp({
+                    content: copyMessage,
+                    ephemeral: true
+                });
             } else {
-                await interaction.editReply({
-                    content: dateMessage,
-                    embeds: [embed]
+                // 일정이 없는 경우에도 안내 메시지
+                await interaction.followUp({
+                    content: '📋 **복사 전용 일정**\n```\n✅ 모든 날짜가 사용 가능합니다!\n```',
+                    ephemeral: true
                 });
             }
 
@@ -128,7 +120,7 @@ async function createSuccessEmbed(result, months, user) {
         // 사용 가능한 날짜는 별도 메시지에서 출력
         embed.addFields({
             name: '✅ 사용 가능한 날짜',
-            value: '아래 별도 메시지에서 확인하세요.',
+            value: '📋 **아래 복사 전용 메시지에서 확인하세요**',
             inline: false
         });
 
