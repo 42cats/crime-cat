@@ -42,9 +42,28 @@ module.exports = {
                 throw new Error('서버 응답이 없습니다');
             }
 
-            // 성공 응답 생성
+            // 성공 응답 생성 (통계/정보용 임베드)
             const embed = await createSuccessEmbed(result, inputDates, months, interaction.user);
+
+            // 첫 번째 메시지: 통계 및 정보 임베드
             await interaction.editReply({ embeds: [embed] });
+
+            // 두 번째 메시지: 복사 전용 일정 텍스트 (항상 분리)
+            if (result.totalAvailableFromInput > 0 && result.availableDatesFromInput && result.availableDatesFromInput.length > 0) {
+                // 사용 가능한 날짜가 있는 경우
+                const copyMessage = `${result.availableDatesFromInput}`;
+
+                await interaction.followUp({
+                    content: copyMessage,
+                    ephemeral: true
+                });
+            } else {
+                // 사용 가능한 날짜가 없는 경우
+                await interaction.followUp({
+                    content: '📋 **복사 전용 - 참여 가능한 날짜**\n```\n⚠️ 입력하신 날짜에는 참여 가능한 날짜가 없습니다.\n```',
+                    ephemeral: true
+                });
+            }
 
             console.log(`✅ 일정체크 완료: ${result.totalMatches}개 일치`);
 
@@ -116,9 +135,7 @@ async function createSuccessEmbed(result, inputDates, months, user) {
         embed.addFields(
             {
                 name: '✅ 참여 가능한 날짜',
-                value: result.availableDatesFromInput && result.availableDatesFromInput.length > 0 ?
-                    `\`\`\`${result.availableDatesFromInput}\`\`\`` :
-                    '⚠️ 사용 가능한 날짜가 없습니다.',
+                value: '📋 **아래 복사 전용 메시지에서 확인하세요**',
                 inline: false
             },
             {
