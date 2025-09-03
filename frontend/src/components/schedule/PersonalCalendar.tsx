@@ -154,6 +154,8 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
     const [displayMode, setDisplayMode] =
         useState<CalendarDisplayMode>(defaultDisplayMode);
     const [showManagement, setShowManagement] = useState(false);
+    const [showMobileScheduleText, setShowMobileScheduleText] = useState(false);
+    const [mobileScheduleText, setMobileScheduleText] = useState("");
 
     // 다중 캘린더 관리 훅
     const {
@@ -820,6 +822,69 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
     );
 
     /**
+     * 모바일 최적화된 클립보드 복사 함수
+     */
+    const copyToClipboard = useCallback(async (text: string): Promise<boolean> => {
+        // 1. Modern API 우선 시도 (사용자 인터랙션 확인)
+        if (navigator.clipboard && window.isSecureContext) {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (err) {
+                console.warn('Modern clipboard failed:', err);
+            }
+        }
+        
+        // 2. 모바일 최적화된 fallback
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        
+        // 모바일 최적화 스타일
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        textArea.setAttribute('readonly', '');
+        textArea.setAttribute('contenteditable', 'true');
+        
+        document.body.appendChild(textArea);
+        
+        try {
+            // iOS 대응
+            if (navigator.userAgent.match(/ipad|iphone/i)) {
+                const range = document.createRange();
+                range.selectNodeContents(textArea);
+                const selection = window.getSelection();
+                selection?.removeAllRanges();
+                selection?.addRange(range);
+                textArea.setSelectionRange(0, 999999);
+            } else {
+                textArea.select();
+            }
+            
+            const success = document.execCommand('copy');
+            return success;
+        } catch (err) {
+            console.warn('Fallback clipboard failed:', err);
+            return false;
+        } finally {
+            document.body.removeChild(textArea);
+        }
+    }, []);
+
+    /**
+     * 클립보드 지원 확인
+     */
+    const checkClipboardSupport = useCallback(() => {
+        return {
+            modern: !!(navigator.clipboard && window.isSecureContext),
+            legacy: document.queryCommandSupported?.('copy') ?? false,
+            userAgent: navigator.userAgent,
+            isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+            isAndroid: /Android/.test(navigator.userAgent)
+        };
+    }, []);
+
+    /**
      * 가능한 날짜 텍스트 복사 (API 기반)
      */
     const copyAvailableDates = useCallback(async () => {
@@ -848,14 +913,39 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                 return;
             }
 
-            // 클립보드에 복사
-            await navigator.clipboard.writeText(text);
+            // 클립보드 지원 확인
+            const clipboardSupport = checkClipboardSupport();
+            
+            // 모바일 최적화된 클립보드 복사 시도
+            const copySuccess = await copyToClipboard(text);
 
-            toast({
-                title: "일정이 복사되었습니다",
-                description: text,
-                duration: 3000,
-            });
+            if (copySuccess) {
+                toast({
+                    title: "일정이 복사되었습니다",
+                    description: text,
+                    duration: 3000,
+                });
+            } else {
+                // 복사 실패 시 모바일에서는 텍스트 표시 옵션 제공
+                if (isMobile) {
+                    toast({
+                        title: "복사 기능 제한",
+                        description: "브라우저에서 자동 복사가 제한됩니다. 아래 텍스트를 직접 복사해주세요.",
+                        variant: "default",
+                        duration: 5000,
+                    });
+                    
+                    // 모바일 대체 UI 표시
+                    setMobileScheduleText(text);
+                    setShowMobileScheduleText(true);
+                } else {
+                    toast({
+                        title: "복사 실패",
+                        description: `일정 복사 중 오류가 발생했습니다. (지원: ${clipboardSupport.modern ? 'Modern' : 'Legacy'})`,
+                        variant: "destructive",
+                    });
+                }
+            }
         } catch (error) {
             // API 에러 처리
             if (error instanceof Error && error.message.includes("fetch")) {
@@ -867,35 +957,11 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                 return;
             }
 
-            // 클립보드 API 실패 시 폴백
-            try {
-                const { blockedDates, userEvents } =
-                    await fetchThreeMonthScheduleData();
-                const availableDates = collectAvailableDatesFromAPI(
-                    blockedDates,
-                    userEvents
-                );
-                const text = formatAvailableDatesText(availableDates);
-
-                const textarea = document.createElement("textarea");
-                textarea.value = text;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand("copy");
-                document.body.removeChild(textarea);
-
-                toast({
-                    title: "일정이 복사되었습니다",
-                    description: text,
-                    duration: 3000,
-                });
-            } catch (fallbackError) {
-                toast({
-                    title: "복사 실패",
-                    description: "일정 복사 중 오류가 발생했습니다.",
-                    variant: "destructive",
-                });
-            }
+            toast({
+                title: "복사 실패",
+                description: "일정 복사 중 오류가 발생했습니다.",
+                variant: "destructive",
+            });
         } finally {
             setIsCopyingSchedule(false);
         }
@@ -903,7 +969,10 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
         fetchThreeMonthScheduleData,
         collectAvailableDatesFromAPI,
         formatAvailableDatesText,
+        copyToClipboard,
+        checkClipboardSupport,
         toast,
+        isMobile,
     ]);
 
     /**
@@ -1311,6 +1380,75 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
     );
 
     /**
+     * 모바일 일정 텍스트 표시 컴포넌트
+     */
+    const MobileScheduleTextModal = () => {
+        if (!showMobileScheduleText || !mobileScheduleText) return null;
+
+        return (
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-blue-800 flex items-center gap-2">
+                        📋 일정 텍스트 복사
+                    </h3>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowMobileScheduleText(false)}
+                        className="h-6 w-6 p-0 text-blue-600"
+                    >
+                        ×
+                    </Button>
+                </div>
+                <p className="text-xs text-blue-700 mb-2">
+                    아래 텍스트를 길게 누르고 선택하여 복사하세요
+                </p>
+                <textarea
+                    readOnly
+                    value={mobileScheduleText}
+                    className="w-full h-20 p-2 text-xs border border-blue-300 rounded bg-white resize-none"
+                    onFocus={(e) => e.target.select()}
+                    onTouchStart={(e) => {
+                        // 모바일에서 텍스트 선택 도움
+                        setTimeout(() => {
+                            e.currentTarget.select();
+                        }, 100);
+                    }}
+                />
+                <div className="mt-2 flex gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                            // 재시도 버튼
+                            const success = await copyToClipboard(mobileScheduleText);
+                            if (success) {
+                                toast({
+                                    title: "복사 성공!",
+                                    description: "일정이 클립보드에 복사되었습니다.",
+                                    duration: 2000,
+                                });
+                                setShowMobileScheduleText(false);
+                            }
+                        }}
+                        className="text-xs"
+                    >
+                        🔄 다시 복사 시도
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowMobileScheduleText(false)}
+                        className="text-xs"
+                    >
+                        닫기
+                    </Button>
+                </div>
+            </div>
+        );
+    };
+
+    /**
      * 범례 컴포넌트 (반응형 디자인)
      */
     const Legend = () => {
@@ -1705,6 +1843,9 @@ const PersonalCalendar: React.FC<PersonalCalendarProps> = ({
                         </Button>
                     </div>
                 )}
+
+                {/* 모바일 일정 텍스트 표시 */}
+                <MobileScheduleTextModal />
 
                 {/* 범례 */}
                 <Legend />
