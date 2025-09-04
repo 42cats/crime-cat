@@ -18,6 +18,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -111,8 +113,19 @@ public class NotificationService {
             keyword = null;
         }
         
+        // null Collection 처리 - 모든 타입/상태 포함으로 변환
+        List<NotificationType> processedTypes = types;
+        if (types == null || types.isEmpty()) {
+            processedTypes = Arrays.asList(NotificationType.values());
+        }
+        
+        List<NotificationStatus> processedStatuses = statuses;
+        if (statuses == null || statuses.isEmpty()) {
+            processedStatuses = Arrays.asList(NotificationStatus.values());
+        }
+        
         Page<Notification> notifications = notificationRepository
-            .findByUserIdWithFilters(userId, types, statuses, keyword, pageable);
+            .findByUserIdWithFilters(userId, processedTypes, processedStatuses, keyword, pageable);
         
         return notifications.map(this::convertToDto);
     }
