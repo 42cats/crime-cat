@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
+@Slf4j
 public class NotificationController {
     
     private final NotificationService notificationService;
@@ -42,6 +44,14 @@ public class NotificationController {
         @RequestParam(required = false) List<NotificationStatus> statuses,
         @RequestParam(required = false) String keyword
     ) {
+        // 🔍 [DEBUG] Controller 요청 파라미터 로깅
+        log.info("🔍 [DEBUG] NotificationController.getNotifications called with:");
+        log.info("🔍 [DEBUG]   - page: {}, size: {}", page, size);
+        log.info("🔍 [DEBUG]   - sort: {}", sort);
+        log.info("🔍 [DEBUG]   - types: {} (size: {})", types, types != null ? types.size() : "null");
+        log.info("🔍 [DEBUG]   - statuses: {} (size: {})", statuses, statuses != null ? statuses.size() : "null");
+        log.info("🔍 [DEBUG]   - keyword: '{}'", keyword);
+        
         List<NotificationSortType> sortTypes = (sort != null && !sort.isEmpty()) ?
                 sort.stream()
                         .map(String::toUpperCase)
@@ -53,11 +63,26 @@ public class NotificationController {
         Pageable pageable = PageRequest.of(page, size, resolvedSort);
         
         UUID currentUserId = AuthenticationUtil.getCurrentUser().getId();
-        Page<NotificationDto> notifications = notificationService.getUserNotifications(
-            currentUserId, pageable, types, statuses, keyword
-        );
         
-        return ResponseEntity.ok(notifications);
+        log.info("🔍 [DEBUG] Resolved parameters before calling service:");
+        log.info("🔍 [DEBUG]   - currentUserId: {}", currentUserId);
+        log.info("🔍 [DEBUG]   - pageable: {}", pageable);
+        log.info("🔍 [DEBUG]   - sortTypes: {}", sortTypes);
+        log.info("🔍 [DEBUG]   - resolvedSort: {}", resolvedSort);
+        
+        try {
+            Page<NotificationDto> notifications = notificationService.getUserNotifications(
+                currentUserId, pageable, types, statuses, keyword
+            );
+            
+            log.info("🔍 [DEBUG] Service call successful, returning {} notifications", notifications.getTotalElements());
+            return ResponseEntity.ok(notifications);
+            
+        } catch (Exception e) {
+            log.error("🚨 [DEBUG] Service call failed in controller: {}", e.getMessage());
+            log.error("🚨 [DEBUG] Exception in controller:", e);
+            throw e;
+        }
     }
     
     /**

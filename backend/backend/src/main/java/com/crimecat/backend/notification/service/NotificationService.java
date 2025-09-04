@@ -105,16 +105,42 @@ public class NotificationService {
         List<NotificationStatus> statuses,
         String keyword
     ) {
+        // 🔍 [DEBUG] Service 입력 파라미터 로깅
+        log.info("🔍 [DEBUG] NotificationService.getUserNotifications called with:");
+        log.info("🔍 [DEBUG]   - userId: {}", userId);
+        log.info("🔍 [DEBUG]   - pageable: {}", pageable);
+        log.info("🔍 [DEBUG]   - types: {} (size: {})", types, types != null ? types.size() : "null");
+        log.info("🔍 [DEBUG]   - statuses: {} (size: {})", statuses, statuses != null ? statuses.size() : "null");
+        log.info("🔍 [DEBUG]   - keyword: '{}'", keyword);
+        
         // 빈 문자열 처리
         if (keyword != null && keyword.trim().isEmpty()) {
+            log.info("🔍 [DEBUG] Empty keyword converted to null");
             keyword = null;
         }
         
-        // null Collection 처리 - null은 그대로 두고 Repository에서 처리
-        Page<Notification> notifications = notificationRepository
-            .findByUserIdWithFilters(userId, types, statuses, keyword, pageable);
+        // 🔍 [DEBUG] Repository 호출 전 최종 파라미터 로깅
+        log.info("🔍 [DEBUG] Calling repository with final parameters:");
+        log.info("🔍 [DEBUG]   - userId: {}", userId);
+        log.info("🔍 [DEBUG]   - types: {} (isNull: {})", types, types == null);
+        log.info("🔍 [DEBUG]   - statuses: {} (isNull: {})", statuses, statuses == null);
+        log.info("🔍 [DEBUG]   - keyword: {} (isNull: {})", keyword, keyword == null);
+        log.info("🔍 [DEBUG]   - pageable: {}", pageable);
         
-        return notifications.map(this::convertToDto);
+        try {
+            // null Collection 처리 - null은 그대로 두고 Repository에서 처리
+            Page<Notification> notifications = notificationRepository
+                .findByUserIdWithFilters(userId, types, statuses, keyword, pageable);
+            
+            log.info("🔍 [DEBUG] Repository call successful, returned {} notifications", notifications.getTotalElements());
+            return notifications.map(this::convertToDto);
+            
+        } catch (Exception e) {
+            log.error("🚨 [DEBUG] Repository call failed with exception: {}", e.getMessage());
+            log.error("🚨 [DEBUG] Exception type: {}", e.getClass().getSimpleName());
+            log.error("🚨 [DEBUG] Full stack trace:", e);
+            throw e;
+        }
     }
     
     /**
