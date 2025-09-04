@@ -11,14 +11,11 @@ import com.crimecat.backend.utils.AuthenticationUtil;
 import com.crimecat.backend.webUser.enums.UserRole;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -113,19 +110,9 @@ public class NotificationService {
             keyword = null;
         }
         
-        // null Collection 처리 - 모든 타입/상태 포함으로 변환
-        List<NotificationType> processedTypes = types;
-        if (types == null || types.isEmpty()) {
-            processedTypes = Arrays.asList(NotificationType.values());
-        }
-        
-        List<NotificationStatus> processedStatuses = statuses;
-        if (statuses == null || statuses.isEmpty()) {
-            processedStatuses = Arrays.asList(NotificationStatus.values());
-        }
-        
+        // null Collection 처리 - null은 그대로 두고 Repository에서 처리
         Page<Notification> notifications = notificationRepository
-            .findByUserIdWithFilters(userId, processedTypes, processedStatuses, keyword, pageable);
+            .findByUserIdWithFilters(userId, types, statuses, keyword, pageable);
         
         return notifications.map(this::convertToDto);
     }
