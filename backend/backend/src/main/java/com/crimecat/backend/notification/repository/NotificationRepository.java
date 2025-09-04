@@ -103,14 +103,19 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
                             @Param("currentStatus") NotificationStatus currentStatus);
     
     /**
-     * 복합 조건 검색 (타입, 상태, 제목/메시지 검색)
+     * 복합 조건 검색 (타입, 상태, 제목/메시지 검색) - Count 쿼리 분리로 Hibernate 6.x 호환성 문제 해결
      */
-    @Query("SELECT n FROM Notification n WHERE n.receiver.id = :userId " +
-           "AND (:types IS NULL OR n.type IN :types) " +
-           "AND (:statuses IS NULL OR n.status IN :statuses) " +
-           "AND (:keyword IS NULL OR LOWER(n.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "OR LOWER(n.message) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-           "ORDER BY n.createdAt DESC")
+    @Query(value = "SELECT n FROM Notification n WHERE n.receiver.id = :userId " +
+                  "AND (:types IS NULL OR n.type IN :types) " +
+                  "AND (:statuses IS NULL OR n.status IN :statuses) " +
+                  "AND (:keyword IS NULL OR LOWER(n.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                  "OR LOWER(n.message) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+                  "ORDER BY n.createdAt DESC",
+           countQuery = "SELECT COUNT(n) FROM Notification n WHERE n.receiver.id = :userId " +
+                       "AND (:types IS NULL OR n.type IN :types) " +
+                       "AND (:statuses IS NULL OR n.status IN :statuses) " +
+                       "AND (:keyword IS NULL OR LOWER(n.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                       "OR LOWER(n.message) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Notification> findByUserIdWithFilters(
         @Param("userId") UUID userId,
         @Param("types") List<NotificationType> types,
