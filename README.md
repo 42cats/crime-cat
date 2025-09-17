@@ -52,7 +52,7 @@ graph TB
         J[External iCal APIs]
     end
 
-    A --> C
+    A --> D
     B --> F
     C --> E
     D --> C
@@ -106,20 +106,21 @@ graph TB
 /일정체크 날짜목록     # 특정 날짜 겹침 확인
 /일정갱신             # 캐시 강제 새로고침
 
-# 게임 관리
-/게임생성             # 새 게임 세션 생성
-/참여신청             # 게임 참여 신청
-/캐릭터설정           # 게임용 캐릭터 설정
+# 서버관리
+/청소             # 채널 전체 메시지 삭제
+/고양이             # 저장한 목록 채널 전체 메시지 삭제
+/부여           # 특정 역할,권한 유저에게 부여
 
-# 음악 제어
-/음악재생             # 음악 재생
-/재생목록             # 현재 재생목록 확인
-/볼륨조절             # 음성 채널 볼륨 제어
+# 음악
+/귀여워             # 음악 플레이어 생성
+/추가             # 유튜브 주소 추가
+/제거             # 유튜브 주소 삭제
+/파일업로드        # 음악파일및 log 파일 업로드
 
 # 커뮤니티
-/공지사항             # 길드 공지사항 관리
-/투표생성             # 커뮤니티 투표 시스템
-/이벤트알림           # 이벤트 알림 설정
+/주사위             # nDn 다이스 굴림
+/커스텀투표             # 유저커스터마이징 투표 폼 생성
+
 ```
 
 ### 🎨 고급 UI/UX 인터페이스
@@ -203,8 +204,8 @@ AI 통합:
   - libsodium-wrappers 0.7.15
 
 데이터베이스:
-  - Sequelize 6.37.5 (ORM)
-  - MySQL2 3.11.5 (MariaDB 드라이버)
+  - Sequelize 6.37.5 (ORM) // 사용중지 (spring backend 에서 관리)
+  - MySQL2 3.11.5 (MariaDB 드라이버) //사용중지 (spring backend 에서 관리)
   - Redis 4.7.0 (캐시)
 ```
 
@@ -225,22 +226,11 @@ AI 통합:
   - Spring Actuator 헬스체크
 
 메일 시스템:
-  - SMTP 서버 (Docker)
+  - SMTP 서버 (Docker) // 미구현
   - Thymeleaf 템플릿 엔진
 ```
 
 ## 📊 핵심 성능 지표
-
-### 응답 성능
-- **API 응답시간**: < 200ms (95th percentile)
-- **캐시 히트율**: > 85%
-- **툴팁 응답속도**: 20ms
-- **페이지 로드**: < 1초 (초기 로드), < 500ms (캐시된 후속 로드)
-
-### 확장성
-- **동시 접속**: 1000+ 사용자 지원
-- **데이터 압축**: 비트맵 활용으로 99% 공간 절약
-- **캐시 효율**: 3단계 캐싱으로 DB 부하 90% 감소
 
 ### 가용성
 - **서비스 가용성**: 99.9% 목표
@@ -411,30 +401,16 @@ notifications (
 git clone https://github.com/your-org/crime-cat.git
 cd crime-cat
 
-# 2. 환경 변수 설정
-cp .env.example .env
-# .env 파일 편집하여 필요한 변수 설정
-
-# 3. 전체 시스템 실행 (Docker Compose)
-docker-compose up -d
-
-# 4. 개별 서비스 개발 모드
-# 백엔드 (포트: 8080)
-cd backend/backend && ./gradlew bootRun
-
-# 프론트엔드 (포트: 5173)
-cd frontend && npm run dev
-
-# Discord 봇
-cd bot && npm start
+# 2. make FILE 을 이용한 자동화로직
+    make prod // 서비스환경
+    make dev  // 테스트환경
+    make local // 개발환경
 ```
 
 ### 주요 엔드포인트
 ```
-Frontend:  http://localhost:5173
+Frontend:  https://mystery-place.com or http://localhost:5173(로컬 테스트시)
 Backend:   http://localhost:8080
-API Docs:  http://localhost:8080/swagger-ui.html
-Adminer:   http://localhost:8081
 ```
 
 ## 📈 개발 하이라이트
@@ -447,15 +423,14 @@ Adminer:   http://localhost:8081
 
 ### ⚡ 고성능 엔터프라이즈급 최적화
 - **3단계 캐싱 전략**: Caffeine(L1) + Hibernate(L2) + Redis(L3)로 95% 응답속도 향상
-- **비트맵 압축 알고리즘**: 90일 날짜 데이터를 12바이트로 압축 (99% 공간 절약)
 - **N+1 쿼리 최적화**: @EntityGraph, 배치 쿼리, JPA 튜닝으로 DB 부하 90% 감소
-- **비동기 처리**: CompletableFuture 기반 멀티스레드 최적화
+
 
 ### 🛡️ 다중 레이어 보안 시스템
 - **3중 인증 체계**: JWT(웹) + Bearer Token(봇) + Discord OAuth2(연동)
 - **역할 기반 접근제어**: 사용자, 관리자, 봇별 세분화된 권한 관리
 - **API 보안 강화**: Rate Limiting, CORS, CSRF, XSS 방어
-- **데이터 암호화**: 민감정보 AES 암호화 및 마스킹 처리
+
 
 ### 🎮 복합 엔터테인먼트 통합
 - **4가지 게임 타입**: 방탈출, 크라임씬, 머더미스터리, 리얼월드 통합 관리
@@ -466,13 +441,12 @@ Adminer:   http://localhost:8081
 ### 🌐 현대적 UI/UX 혁신
 - **접근성 우선**: WCAG 2.1 AA 준수, 스크린 리더, 키보드 네비게이션
 - **마이크로 인터랙션**: 20ms 응답속도 툴팁, Framer Motion 애니메이션
-- **반응형 설계**: 모바일 퍼스트, 3단계 뷰 모드 (컴팩트/표준/확대)
+- **반응형 설계**: 반응형 디자인으로 설계됨
 - **성능 최적화**: 코드 스플리팅, 지연 로딩, 가상화 리스트, 이미지 최적화
 
-### 🤖 AI 기반 인텔리전트 시스템
+### 🤖 인텔리전트 시스템
 - **스마트 일정 추천**: 참여자 가용성 분석 기반 최적 시간 제안
 - **자동 충돌 감지**: 다중 캘린더 교차 검증 및 시각적 경고
-- **컨텍스트 인식**: 사용자 행동 패턴 학습 기반 개인화
 - **자동화 워크플로**: Discord 봇 70+ 명령어로 반복 작업 자동화
 
 ### 📊 데이터 엔지니어링 최적화
@@ -493,7 +467,7 @@ Adminer:   http://localhost:8081
 1. **브랜치 전략**: GitFlow 기반
 2. **커밋 규칙**: Conventional Commits
 3. **코드 스타일**: ESLint + Prettier (Frontend), Checkstyle (Backend)
-4. **테스트**: 단위 테스트 80% 이상 커버리지
+
 
 ### 프로젝트 구조
 ```
@@ -510,6 +484,7 @@ crime-cat/
 │   │   ├── notification/             # 알림 시스템
 │   │   ├── admin/                    # 관리자 기능
 │   │   └── storage/                  # 파일 저장소
+│   │   └── ....                      # 생략
 │   ├── build.gradle                  # 의존성 (Spring Boot 3.4.3)
 │   └── application.yml               # 설정 (DB, Redis, Cache)
 ├── frontend/                          # React 18 웹 애플리케이션 (74페이지)
@@ -556,13 +531,6 @@ crime-cat/
 ├── nginx/                           # Nginx 설정
 │   ├── nginx.conf                   # 리버스 프록시 설정
 │   └── ssl/                         # SSL 인증서
-├── docs/                            # 프로젝트 문서
-│   ├── backend/                     # 백엔드 개발 가이드
-│   ├── frontend/                    # 프론트엔드 개발 가이드
-│   ├── discord-bot/                 # Discord 봇 개발 가이드
-│   └── shared/                      # 공통 정보
-├── .env.example                     # 환경변수 템플릿
-├── CLAUDE.md                        # 개발 가이드
 └── README.md                        # 프로젝트 문서 (본 파일)
 ```
 
@@ -577,5 +545,6 @@ crime-cat/
 - **프로젝트 URL**: [https://github.com/your-org/crime-cat](https://github.com/your-org/crime-cat)
 
 ---
+
 
 **Crime-Cat**으로 더 스마트한 일정 관리를 경험해보세요! 🚀
