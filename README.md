@@ -540,14 +540,8 @@ crime-cat/
 
 ## 📞 연락처
 
-- **개발자**: [Your Name]
-- **이메일**: [your.email@domain.com]
-- **프로젝트 URL**: [https://github.com/your-org/crime-cat](https://github.com/your-org/crime-cat)
+- **개발자**: [변상훈(Be,Bot,Infra), 이세미(Be,Infra), 윤성훈(Fe), 신형섭(Be)]
+- **이메일**: [hoone0802@gmail.com]
+- **프로젝트 URL**: [https://mystery-place.com](https://mystery-place.com))
 
 ---
-
-
-**Crime-Cat**으로 더 스마트한 일정 관리를 경험해보세요! 🚀
-
-
-
