@@ -6,6 +6,7 @@
 -- =========================================
 
 USE ${DB_DISCORD};
+START TRANSACTION;
 
 -- 1. 현재 상황 진단
 SELECT '===== Author Migration Start =====' as status;
@@ -191,3 +192,5 @@ LIMIT 10;
 
 SELECT '===== Author Migration Completed =====' as status;
 SELECT 'Check game_themes_author_migration_log table for full migration details' as note;
+
+COMMIT;

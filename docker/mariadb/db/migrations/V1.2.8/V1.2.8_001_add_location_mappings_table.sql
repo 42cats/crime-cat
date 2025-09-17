@@ -1,6 +1,9 @@
 -- V1.2.8_001_add_location_mappings_table.sql
 -- 위치 매핑 테이블 생성
 
+USE ${DB_DISCORD};
+START TRANSACTION;
+
 CREATE TABLE IF NOT EXISTS location_mappings (
     id BINARY(16) NOT NULL PRIMARY KEY,
     keyword VARCHAR(100) NOT NULL UNIQUE,
@@ -75,3 +78,5 @@ INSERT INTO location_mappings (id, keyword, normalized, related_keywords, typo_v
 (UNHEX(REPLACE(UUID(), '-', '')), '혜화', '종로구 혜화로', '["대학로", "성균관대", "동대문"]', '["혜화역", "혜화동"]', TRUE),
 (UNHEX(REPLACE(UUID(), '-', '')), '대학로', '종로구 대학로', '["혜화", "동대문", "이화동"]', '["대학로역"]', TRUE),
 (UNHEX(REPLACE(UUID(), '-', '')), '역삼', '강남구 역삼로', '["강남", "선릉", "삼성"]', '["역삼역", "역삼동"]', TRUE);
+
+COMMIT;

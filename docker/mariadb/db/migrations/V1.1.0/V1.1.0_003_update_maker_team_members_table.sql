@@ -2,6 +2,7 @@
 -- Description: maker_team_members 테이블에 필요한 변경 사항 적용
 -- Created: 2025-05-08 14:30:00
 USE ${DB_DISCORD};
+START TRANSACTION;
 
 -- 테이블이 존재하는지 확인
 SET @table_exists = (SELECT COUNT(*) FROM information_schema.tables 
@@ -38,3 +39,5 @@ PREPARE stmt FROM @update_sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 SET FOREIGN_KEY_CHECKS=1;
+
+COMMIT;

@@ -3,6 +3,7 @@
 -- Created: 2025-05-08 14:30:00
 
 USE ${DB_DISCORD};
+START TRANSACTION;
 
 -- 1) comments 테이블
 CREATE TABLE IF NOT EXISTS `comments` (
@@ -63,3 +64,5 @@ CREATE TABLE IF NOT EXISTS `comment_likes` (
 ALTER TABLE `comment_likes`
   ADD INDEX IF NOT EXISTS `idx_comment_likes_user_id`    (`user_id`),
   ADD INDEX IF NOT EXISTS `idx_comment_likes_comment_id` (`comment_id`);
+
+COMMIT;

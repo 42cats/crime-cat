@@ -3,6 +3,7 @@
 -- Created: 2025-05-08 14:30:00
 
 USE ${DB_DISCORD};
+START TRANSACTION;
 
 SET @exist := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
                WHERE TABLE_SCHEMA = '${DB_DISCORD}' 
@@ -17,3 +18,5 @@ SET @sql := IF(@exist = 0, 'ALTER TABLE `web_users`
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
+
+COMMIT;

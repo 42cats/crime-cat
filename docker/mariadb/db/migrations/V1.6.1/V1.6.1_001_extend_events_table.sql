@@ -3,6 +3,7 @@
 -- Created: 2025-08-19 00:00:00
 
 USE ${DB_DISCORD};
+START TRANSACTION;
 
 -- events 테이블 확장
 ALTER TABLE `events`
@@ -18,3 +19,5 @@ ALTER TABLE `events`
 -- 기존 데이터에 대한 기본값 설정
 UPDATE `events` SET `event_type` = 'FIXED' WHERE `event_type` IS NULL;
 UPDATE `events` SET `min_participants` = 1 WHERE `min_participants` IS NULL;
+
+COMMIT;
