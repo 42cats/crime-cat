@@ -22,6 +22,7 @@ Crime-Cat은 **Discord 생태계를 중심으로 한 종합 엔터테인먼트 �
 - **🌐 커뮤니티 중심**: SNS 피드, 팔로우, 해시태그 시스템
 - **🎭 게임 특화**: 방탈출, 머더미스터리 등 테마 관리
 - **⚡ 고성능**: 3단계 캐싱과 마이크로서비스 아키텍처
+- **⚡ 간단 빌드**: makefile 을 이용하여 명령어 한줄로 빌드**
 
 ## 🏗️ 시스템 아키텍처
 
@@ -237,7 +238,7 @@ AI 통합:
 - **장애 대응**: 30초 이내 자동 재시작
 
 ## 🗄️ 데이터베이스 설계
-
+초기 dberd 설계 [erd 설계링크(erdcloud)](https://www.erdcloud.com/d/yW38rnYBJ5ZRdHp63)
 ### 핵심 테이블 구조
 ```sql
 -- 게임 테마 관리 (4가지 테마)
@@ -352,7 +353,7 @@ event_participants (
     joined_at TIMESTAMP
 );
 
--- AI 추천 시간대
+-- 추천 시간대
 recommended_times (
     id BIGINT PRIMARY KEY,
     event_id BINARY(16),           -- 이벤트 ID
@@ -547,5 +548,6 @@ crime-cat/
 
 
 **Crime-Cat**으로 더 스마트한 일정 관리를 경험해보세요! 🚀
+
 
 
