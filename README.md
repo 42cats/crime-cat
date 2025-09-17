@@ -540,8 +540,9 @@ crime-cat/
 
 ## 📞 연락처
 
-- **개발자**: [변상훈(Be,Bot,Infra), 이세미(Be,Infra), 윤성훈(Fe), 신형섭(Be)]
+- **개발자**: [변상훈(Be,Bot,Infra)](https://github.com/alsksssass), [정세미(Be,Infra)](https://github.com/smj53), [윤성훈(Fe)](https://github.com/SungHunYoon), [신형섭(Be)](https://github.com/hyeongsh), [최효원(Be,Infra)](https://github.com/chyo1)
 - **이메일**: [hoone0802@gmail.com]
 - **프로젝트 URL**: [https://mystery-place.com](https://mystery-place.com))
 
 ---
+
