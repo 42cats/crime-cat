@@ -5,8 +5,6 @@
 -- =========================================
 
 USE ${DB_DISCORD};
-START TRANSACTION;
-
 
 -- 1. 마이그레이션 시작
 SELECT 'Adding theme advertisement notification types...' as status;
@@ -38,4 +36,3 @@ SHOW CREATE TABLE notifications;
 -- 5. 완료 확인
 SELECT 'Migration completed successfully' as status;
 SELECT 'Added THEME_AD_EXPIRED, THEME_AD_ACTIVATED, THEME_AD_CANCELLED to notifications.type enum' as changes;
-COMMIT;

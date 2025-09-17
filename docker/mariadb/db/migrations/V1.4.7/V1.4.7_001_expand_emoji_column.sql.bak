@@ -5,4 +5,3 @@
 
 ALTER TABLE `group_items` 
 MODIFY COLUMN `emoji` varchar(500) DEFAULT NULL COMMENT 'Emoji for button/content display (Unicode or Discord custom emoji format, comma-separated for multiple emojis)';
-COMMIT;

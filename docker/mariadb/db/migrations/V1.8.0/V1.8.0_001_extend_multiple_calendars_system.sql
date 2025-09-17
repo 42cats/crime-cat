@@ -3,6 +3,7 @@
 -- Created: 2025-08-25 00:00:00
 
 USE ${DB_DISCORD};
+START TRANSACTION;
 
 -- 1) user_calendars 테이블 기존 UNIQUE 제약조건 제거 및 확장
 ALTER TABLE `user_calendars`
@@ -59,3 +60,5 @@ ALTER TABLE `user_calendars`
     CHECK (`display_name` IS NULL OR CHAR_LENGTH(`display_name`) <= 100),
   ADD CONSTRAINT `chk_sync_status_values`
     CHECK (`sync_status` IN ('PENDING', 'SUCCESS', 'ERROR'));
+
+COMMIT;

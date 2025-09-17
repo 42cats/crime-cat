@@ -5,6 +5,7 @@
 -- =========================================
 
 USE ${DB_DISCORD};
+START TRANSACTION;
 
 -- 마이그레이션 시작 로그
 SELECT 'Starting Simplified Button Automation System migration...' as status;
@@ -114,3 +115,5 @@ button_automations.config:
 
 SELECT 'Simplified Button automation system tables created successfully!' as status;
 SELECT 'Migration V1.4.0_001 completed. Only 2 tables created for maximum flexibility.' as result;
+
+COMMIT;

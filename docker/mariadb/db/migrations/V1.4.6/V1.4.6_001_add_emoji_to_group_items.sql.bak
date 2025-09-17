@@ -11,4 +11,3 @@ CREATE INDEX `idx_group_items_emoji` ON `group_items` (`emoji`);
 
 -- 컬럼 추가 확인
 DESCRIBE `group_items`;
-COMMIT;

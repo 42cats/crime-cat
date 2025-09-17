@@ -3,6 +3,7 @@
 -- Created: 2025-05-08 14:30:00
 
 USE ${DB_DISCORD};
+START TRANSACTION;
 
 -- 테이블 및 컬럼 확인
 SET @table_exists = (SELECT COUNT(*) FROM information_schema.tables 
@@ -38,3 +39,5 @@ SET FOREIGN_KEY_CHECKS=1;', 'SELECT "game_themes 테이블이 이미 최신 상�
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
+
+COMMIT;

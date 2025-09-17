@@ -3,6 +3,7 @@
 -- Created: 2025-08-13 00:00:00
 
 USE ${DB_DISCORD};
+START TRANSACTION;
 
 -- 1) events 테이블 생성
 CREATE TABLE IF NOT EXISTS `events` (
@@ -67,3 +68,5 @@ ALTER TABLE `event_participants`
 
 ALTER TABLE `user_calendars`
   ADD INDEX `idx_calendars_user_id` (`user_id`);
+
+COMMIT;

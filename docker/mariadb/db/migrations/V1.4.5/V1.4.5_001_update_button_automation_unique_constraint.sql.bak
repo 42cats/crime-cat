@@ -6,8 +6,6 @@
 -- =========================================
 
 USE ${DB_DISCORD};
-START TRANSACTION;
-
 
 -- 마이그레이션 시작 로그
 SELECT 'Starting Button Automation Unique Constraint Update Migration...' as status;
@@ -120,4 +118,3 @@ SELECT '
 - ButtonAutomationService의 복사 로직 업데이트
 - 프론트엔드 유효성 검사 로직 업데이트
 ' as next_steps;
-COMMIT;

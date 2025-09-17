@@ -5,8 +5,6 @@
 -- =========================================
 
 USE ${DB_DISCORD};
-START TRANSACTION;
-
 
 -- 1. 컬럼 추가 전 상태 확인
 SELECT 'Adding role_id column to group_items table...' as status;
@@ -24,4 +22,3 @@ SELECT 'Migration completed successfully' as status;
 SELECT COUNT(*) as total_items, 
        COUNT(role_id) as items_with_role 
 FROM group_items;
-COMMIT;
