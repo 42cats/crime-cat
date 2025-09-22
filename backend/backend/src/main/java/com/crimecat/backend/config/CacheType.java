@@ -77,7 +77,25 @@ public class CacheType {
   public static final String SITEMAP_COMMANDS = "sitemap:commands";
   public static final String SITEMAP_GAME_THEMES = "sitemap:game_themes";
   
-  // 일정 관리 관련 캐시 타입
+  // === Caffeine 로컬 캐시 전용 타입 (빠른 접근, 메모리 효율성) ===
+
+  // 봇 커맨드 관련 (Caffeine)
+  public static final String BOT_COMMANDS = "botCommands";
+
+  // 캘린더 관련 (Caffeine) - 개인 데이터, 빈번한 접근
+  public static final String USER_CALENDARS = "user-calendars";
+  public static final String PERSONAL_CALENDARS = "personal_calendars";
+  public static final String COLOR_PALETTE = "color_palette";
+  public static final String PERSONAL_CALENDAR_EVENTS = "personal_calendar_events";
+  public static final String PERSONAL_BLOCKED_DATES = "personal_blocked_dates";
+  public static final String UNIFIED_CALENDAR_EVENTS = "unified:calendar:events";
+
+  // 스케줄 iCal 데이터 (Caffeine) - 파싱 결과 캐싱
+  public static final String SCHEDULE_ICAL_DATA = "SCHEDULE_ICAL_DATA";
+
+  // === Redis 분산 캐시 전용 타입 (영속성, 분산 동기화) ===
+
+  // 일정 관리 관련 캐시 타입 (Redis)
   public static final String SCHEDULE_EVENT_LIST = "schedule:events";
   public static final String SCHEDULE_EVENT_DETAIL = "schedule:event";
   public static final String SCHEDULE_PARTICIPANTS = "schedule:participants";
@@ -136,6 +154,16 @@ public class CacheType {
       SITEMAP_NOTICES,
       SITEMAP_COMMANDS,
       SITEMAP_GAME_THEMES,
+      // === Caffeine 캐시들 ===
+      BOT_COMMANDS,
+      USER_CALENDARS,
+      PERSONAL_CALENDARS,
+      COLOR_PALETTE,
+      PERSONAL_CALENDAR_EVENTS,
+      PERSONAL_BLOCKED_DATES,
+      UNIFIED_CALENDAR_EVENTS,
+      SCHEDULE_ICAL_DATA,
+      // === Redis 캐시들 ===
       SCHEDULE_EVENT_LIST,
       SCHEDULE_EVENT_DETAIL,
       SCHEDULE_PARTICIPANTS,

@@ -1,5 +1,6 @@
 package com.crimecat.backend.schedule.service;
 
+import com.crimecat.backend.config.CacheType;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.schedule.dto.request.CalendarCreateRequest;
 import com.crimecat.backend.schedule.dto.request.CalendarUpdateRequest;
@@ -46,7 +47,7 @@ public class PersonalCalendarService {
      * 사용자의 등록된 캘린더 목록 조회
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = "user-calendars", key = "#userId")
+    @Cacheable(value = CacheType.USER_CALENDARS, key = "#userId")
     public List<CalendarResponse> getUserCalendars(UUID userId) {
         try {
             log.info("📅 [PERSONAL] 캘린더 목록 조회: userId={}", userId);
@@ -61,7 +62,7 @@ public class PersonalCalendarService {
      * 새 캘린더 추가
      */
     @Transactional
-    @CacheEvict(value = {"unified:calendar:events", "user-calendars"}, allEntries = true)
+    @CacheEvict(value = {CacheType.UNIFIED_CALENDAR_EVENTS, CacheType.USER_CALENDARS}, allEntries = true)
     public CalendarResponse addCalendar(UUID userId, CalendarCreateRequest request) {
         try {
             log.info("📅 [PERSONAL] 캘린더 추가: userId={}, url={}", userId, request.getIcalUrl());
@@ -76,7 +77,7 @@ public class PersonalCalendarService {
      * 캘린더 수정
      */
     @Transactional
-    @CacheEvict(value = {"unified:calendar:events", "user-calendars"}, allEntries = true)
+    @CacheEvict(value = {CacheType.UNIFIED_CALENDAR_EVENTS, CacheType.USER_CALENDARS}, allEntries = true)
     public CalendarResponse updateCalendar(UUID userId, UUID calendarId, CalendarUpdateRequest request) {
         try {
             log.info("📅 [PERSONAL] 캘린더 수정: userId={}, calendarId={}", userId, calendarId);
@@ -92,7 +93,7 @@ public class PersonalCalendarService {
      * 캘린더 삭제
      */
     @Transactional
-    @CacheEvict(value = {"unified:calendar:events", "user-calendars"}, allEntries = true)
+    @CacheEvict(value = {CacheType.UNIFIED_CALENDAR_EVENTS, CacheType.USER_CALENDARS}, allEntries = true)
     public void deleteCalendar(UUID userId, UUID calendarId) {
         try {
             log.info("📅 [PERSONAL] 캘린더 삭제: userId={}, calendarId={}", userId, calendarId);
@@ -117,10 +118,10 @@ public class PersonalCalendarService {
             // 순차적 캐시 무효화 (순서 중요)
             log.info("🗑️ [CACHE_ORDER] Step 1 - Spring Cache 무효화");
             if (caffeineCacheManager.getCache("user-calendars") != null) {
-                caffeineCacheManager.getCache("user-calendars").evict(userId);
+                caffeineCacheManager.getCache(CacheType.USER_CALENDARS).evict(userId);
             }
             if (caffeineCacheManager.getCache("unified:calendar:events") != null) {
-                caffeineCacheManager.getCache("unified:calendar:events").clear();
+                caffeineCacheManager.getCache(CacheType.UNIFIED_CALENDAR_EVENTS).clear();
             }
             
             log.info("🗑️ [CACHE_ORDER] Step 2 - UnifiedCalendarCacheService Redis 캐시 무효화");
@@ -150,10 +151,10 @@ public class PersonalCalendarService {
             // 순차적 캐시 무효화 (순서 중요)
             log.info("🗑️ [CACHE_ORDER] Step 1 - Spring Cache 전체 무효화");
             if (caffeineCacheManager.getCache("user-calendars") != null) {
-                caffeineCacheManager.getCache("user-calendars").clear();
+                caffeineCacheManager.getCache(CacheType.USER_CALENDARS).clear();
             }
             if (caffeineCacheManager.getCache("unified:calendar:events") != null) {
-                caffeineCacheManager.getCache("unified:calendar:events").clear();
+                caffeineCacheManager.getCache(CacheType.UNIFIED_CALENDAR_EVENTS).clear();
             }
             
             log.info("🗑️ [CACHE_ORDER] Step 2 - UnifiedCalendarCacheService Redis 캐시 무효화");
@@ -318,7 +319,7 @@ public class PersonalCalendarService {
      * 사용자 캘린더 캐시 무효화
      */
     @Transactional
-    @CacheEvict(value = {"unified:calendar:events", "user-calendars"}, allEntries = true)
+    @CacheEvict(value = {CacheType.UNIFIED_CALENDAR_EVENTS, CacheType.USER_CALENDARS}, allEntries = true)
     public Map<String, Object> invalidateUserCache(UUID userId) {
         try {
             log.info("📅 [PERSONAL] 캐시 무효화: userId={}", userId);
