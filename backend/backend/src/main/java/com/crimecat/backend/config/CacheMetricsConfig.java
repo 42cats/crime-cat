@@ -127,8 +127,54 @@ public class CacheMetricsConfig {
             var cache = caffeineCacheManager.getCache(cacheName);
             if (cache instanceof CaffeineCache) {
                 CacheStats stats = ((CaffeineCache) cache).getNativeCache().stats();
+
+                // 히트율 체크 (50% 미만시 경고)
                 if (stats.requestCount() > 100 && stats.hitRate() < 0.5) {
-                    log.warn("캐시 [{}] 히트율이 낮습니다: {:.2f}%", cacheName, stats.hitRate() * 100);
+                    log.warn("⚠️ [CACHE_HEALTH] 캐시 [{}] 히트율이 낮습니다: {:.2f}%",
+                            cacheName, stats.hitRate() * 100);
+                }
+
+                // 제거율 체크 (너무 많은 제거가 발생하는 경우)
+                if (stats.requestCount() > 100 && stats.evictionCount() > stats.requestCount() * 0.1) {
+                    log.warn("⚠️ [CACHE_HEALTH] 캐시 [{}] 제거율이 높습니다: {} 제거 / {} 요청",
+                            cacheName, stats.evictionCount(), stats.requestCount());
+                }
+
+                // 메모리 사용량 체크
+                long cacheSize = ((CaffeineCache) cache).getNativeCache().estimatedSize();
+                if (cacheSize > 8000) { // 80% of 10K max size
+                    log.warn("⚠️ [CACHE_HEALTH] 캐시 [{}] 크기가 큽니다: {} entries",
+                            cacheName, cacheSize);
+                }
+            }
+        });
+    }
+
+    /**
+     * 캐시 성능 최적화 제안 (30분마다)
+     */
+    @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.MINUTES)
+    public void suggestCacheOptimizations() {
+        log.info("🔍 [CACHE_OPTIMIZATION] 캐시 성능 분석 시작");
+
+        caffeineCacheManager.getCacheNames().forEach(cacheName -> {
+            var cache = caffeineCacheManager.getCache(cacheName);
+            if (cache instanceof CaffeineCache) {
+                CacheStats stats = ((CaffeineCache) cache).getNativeCache().stats();
+                long requestCount = stats.requestCount();
+
+                if (requestCount < 10) {
+                    log.info("💡 [CACHE_OPTIMIZATION] 캐시 [{}]는 사용량이 적습니다 ({}회). 필요성 검토 권장",
+                            cacheName, requestCount);
+                } else if (stats.hitRate() > 0.9) {
+                    log.info("✅ [CACHE_OPTIMIZATION] 캐시 [{}]는 매우 효율적입니다: {:.2f}% 히트율",
+                            cacheName, stats.hitRate() * 100);
+                } else if (stats.loadSuccessCount() > 0) {
+                    double avgLoadTime = stats.averageLoadPenalty() / 1_000_000.0; // 나노초를 밀리초로
+                    if (avgLoadTime > 100) {
+                        log.info("💡 [CACHE_OPTIMIZATION] 캐시 [{}] 로드 시간이 깁니다: {:.2f}ms. TTL 연장 고려",
+                                cacheName, avgLoadTime);
+                    }
                 }
             }
         });

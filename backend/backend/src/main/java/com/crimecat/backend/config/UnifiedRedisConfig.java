@@ -278,6 +278,12 @@ public class UnifiedRedisConfig {
 
         cacheConfigurations.put(CacheType.SCHEDULE_USER_CALENDAR,
                 defaultConfig.entryTtl(Duration.ofMinutes(10))); // 사용자 캘린더 정보 - 10분
+
+        cacheConfigurations.put(CacheType.SCHEDULE_USER_BLOCKED_DATES,
+                defaultConfig.entryTtl(Duration.ofMinutes(10))); // 사용자 차단 날짜 - 10분
+
+        cacheConfigurations.put(CacheType.SCHEDULE_RECOMMENDED_TIMES,
+                defaultConfig.entryTtl(Duration.ofMinutes(5))); // 추천 시간 - 5분 (계산 복잡도 높음)
         
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
