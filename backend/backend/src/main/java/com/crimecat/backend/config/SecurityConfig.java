@@ -12,7 +12,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,10 +37,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.NullSecurityContextRepository;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
-import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
-import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
 
 @RequiredArgsConstructor
 @Configuration
@@ -66,7 +62,7 @@ public class SecurityConfig {
     http.csrf(
             csrf ->
                 csrf.csrfTokenRepository(csrfTokenConfig.csrfTokenRepository())
-                    .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
+                    .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                     .ignoringRequestMatchers(
                         "/actuator/health", // 도커 컴포즈 헬스체크
                         "/actuator/info", // 도커 컴포즈 헬스체크
@@ -80,8 +76,7 @@ public class SecurityConfig {
                         "/api/sitemap/**", // 동적 사이트맵 (크롤러용)
                         "/api/v1/csrf/token" // csrf 인증경로
                         )
-                    .sessionAuthenticationStrategy((req, res, auth) -> {})
-        ) // crsf 사이트간 위조공격 보호 해제.
+                    .sessionAuthenticationStrategy((req, res, auth) -> {})) // crsf 사이트간 위조공격 보호 해제.
         .formLogin(AbstractHttpConfigurer::disable) // ← 기본 /login 폼 비활성화
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // / 세션인증 끔
@@ -100,8 +95,8 @@ public class SecurityConfig {
                         "/api/v1/auth/oauth2/error",
                         "/login/**",
                         "/api/v1/public/**",
-                        "/api/ssr/**",  // SSR 엔드포인트 (크롤러용)
-                        "/api/sitemap/**",  // 동적 사이트맵 (크롤러용)
+                        "/api/ssr/**", // SSR 엔드포인트 (크롤러용)
+                        "/api/sitemap/**", // 동적 사이트맵 (크롤러용)
                         "/api/v1/csrf/token")
                     .permitAll()
                     .anyRequest()
@@ -147,36 +142,50 @@ public class SecurityConfig {
             oauth2 ->
                 oauth2
                     .loginPage("/login") // 로그인 경로 설정
-                    .authorizationEndpoint(endpoint -> 
-                        endpoint.baseUri("/oauth2/authorization"))
-                    .userInfoEndpoint(userInfo -> 
-                        userInfo.userService(new DelegatingOAuth2UserService()))
+                    .authorizationEndpoint(endpoint -> endpoint.baseUri("/oauth2/authorization"))
+                    .userInfoEndpoint(
+                        userInfo -> userInfo.userService(new DelegatingOAuth2UserService()))
                     .successHandler(new DelegatingAuthenticationSuccessHandler())
-                    .failureHandler((request, response, exception) -> {
-                        // OAuth2 인증 실패 처리
-                        String errorType = "unknown_error";
-                        String blockInfo = "";
-                        
-                        if (exception instanceof OAuth2AuthenticationException) {
-                            OAuth2Error error = ((OAuth2AuthenticationException) exception).getError();
+                    .failureHandler(
+                        (request, response, exception) -> {
+                          // OAuth2 인증 실패 처리
+                          String errorType = "unknown_error";
+                          String blockInfo = "";
+
+                          if (exception instanceof OAuth2AuthenticationException) {
+                            OAuth2Error error =
+                                ((OAuth2AuthenticationException) exception).getError();
                             errorType = error.getErrorCode();
-                            
+
                             // 차단 정보가 있는 경우 URL에 포함
                             if ("account_blocked".equals(errorType) && error.getUri() != null) {
-                                blockInfo = "&blockInfo=" + java.net.URLEncoder.encode(error.getUri(), java.nio.charset.StandardCharsets.UTF_8);
+                              blockInfo =
+                                  "&blockInfo="
+                                      + java.net.URLEncoder.encode(
+                                          error.getUri(), java.nio.charset.StandardCharsets.UTF_8);
                             }
-                        }
-                        
-                        // 특정 에러 타입에 따라 다른 페이지로 리다이렉션
-                        if ("account_not_found".equals(errorType)) {
-                            response.sendRedirect("https://" + serviceUrlConfig.getDomain() + "/login-error?type=account_not_found");
-                        } else if ("account_blocked".equals(errorType)) {
-                            response.sendRedirect("https://" + serviceUrlConfig.getDomain() + "/login-error?type=account_blocked" + blockInfo);
-                        } else {
-                            response.sendRedirect("https://" + serviceUrlConfig.getDomain() + "/login-error?type=" + errorType);
-                        }
-                    })
-            )
+                          }
+
+                          // 특정 에러 타입에 따라 다른 페이지로 리다이렉션
+                          if ("account_not_found".equals(errorType)) {
+                            response.sendRedirect(
+                                "https://"
+                                    + serviceUrlConfig.getDomain()
+                                    + "/login-error?type=account_not_found");
+                          } else if ("account_blocked".equals(errorType)) {
+                            response.sendRedirect(
+                                "https://"
+                                    + serviceUrlConfig.getDomain()
+                                    + "/login-error?type=account_blocked"
+                                    + blockInfo);
+                          } else {
+                            response.sendRedirect(
+                                "https://"
+                                    + serviceUrlConfig.getDomain()
+                                    + "/login-error?type="
+                                    + errorType);
+                          }
+                        }))
         .addFilterBefore(discordBotTokenFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -223,31 +232,31 @@ public class SecurityConfig {
       }
     }
   }
-
-  final class SpaCsrfTokenRequestHandler implements CsrfTokenRequestHandler {
-    private final CsrfTokenRequestHandler plain =
-        new CsrfTokenRequestAttributeHandler();
-    private final CsrfTokenRequestHandler xor =
-        new XorCsrfTokenRequestAttributeHandler();
-
-    @Override
-    public void handle(HttpServletRequest request,
-        HttpServletResponse response,
-        Supplier<CsrfToken> csrfToken) {
-      // BREACH 보호용 XOR 처리
-      this.xor.handle(request, response, csrfToken);
-      // 토큰을 쿠키로 밀어내기 위해 실제 값 로드
-      csrfToken.get();
-    }
-
-    @Override
-    public String resolveCsrfTokenValue(HttpServletRequest request,
-        CsrfToken csrfToken) {
-      String headerValue = request.getHeader(csrfToken.getHeaderName());
-      return (org.springframework.util.StringUtils.hasText(headerValue)
-          ? this.plain
-          : this.xor).resolveCsrfTokenValue(request, csrfToken);
-    }
-  }
+//
+//  final class SpaCsrfTokenRequestHandler implements CsrfTokenRequestHandler {
+//    private final CsrfTokenRequestHandler plain =
+//        new CsrfTokenRequestAttributeHandler();
+//    private final CsrfTokenRequestHandler xor =
+//        new XorCsrfTokenRequestAttributeHandler();
+//
+//    @Override
+//    public void handle(HttpServletRequest request,
+//        HttpServletResponse response,
+//        Supplier<CsrfToken> csrfToken) {
+//      // BREACH 보호용 XOR 처리
+//      this.xor.handle(request, response, csrfToken);
+//      // 토큰을 쿠키로 밀어내기 위해 실제 값 로드
+//      csrfToken.get();
+//    }
+//
+//    @Override
+//    public String resolveCsrfTokenValue(HttpServletRequest request,
+//        CsrfToken csrfToken) {
+//      String headerValue = request.getHeader(csrfToken.getHeaderName());
+//      return (org.springframework.util.StringUtils.hasText(headerValue)
+//          ? this.plain
+//          : this.xor).resolveCsrfTokenValue(request, csrfToken);
+//    }
+//  }
 
 }
