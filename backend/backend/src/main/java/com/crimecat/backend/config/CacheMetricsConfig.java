@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.actuate.metrics.cache.CacheMetricsRegistrar;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.event.EventListener;
 import org.springframework.cache.caffeine.CaffeineCache;
@@ -34,7 +35,7 @@ import java.util.concurrent.TimeUnit;
     matchIfMissing = false
 )
 public class CacheMetricsConfig {
-    private final CacheManager cacheManager;
+    private final CacheManager caffeineCacheManager;
     private final MeterRegistry meterRegistry;
     private final RedisTemplate<String, String> redisTemplate;
 
@@ -43,15 +44,15 @@ public class CacheMetricsConfig {
         log.info("캐시 메트릭스 등록 시작");
         
         // Null check and defensive programming
-        if (cacheManager == null) {
+        if (caffeineCacheManager == null) {
             log.warn("CacheManager is null, skipping metrics registration");
             return;
         }
-        
+
         try {
             // Caffeine 캐시 메트릭스 등록
-            cacheManager.getCacheNames().forEach(cacheName -> {
-                var cache = cacheManager.getCache(cacheName);
+            caffeineCacheManager.getCacheNames().forEach(cacheName -> {
+                var cache = caffeineCacheManager.getCache(cacheName);
                 if (cache instanceof CaffeineCache) {
                     registerCaffeineMetrics(cacheName, ((CaffeineCache) cache).getNativeCache());
                 }
@@ -89,9 +90,9 @@ public class CacheMetricsConfig {
     @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.MINUTES)
     public void logCacheStatistics() {
         log.info("=== 캐시 통계 리포트 ===");
-        
-        cacheManager.getCacheNames().forEach(cacheName -> {
-            var cache = cacheManager.getCache(cacheName);
+
+        caffeineCacheManager.getCacheNames().forEach(cacheName -> {
+            var cache = caffeineCacheManager.getCache(cacheName);
             if (cache instanceof CaffeineCache) {
                 CacheStats stats = ((CaffeineCache) cache).getNativeCache().stats();
                 log.info("캐시 [{}] - 히트율: {:.2f}%, 미스율: {:.2f}%, 요청수: {}, 크기: {}",
@@ -122,8 +123,8 @@ public class CacheMetricsConfig {
      */
     @Scheduled(fixedDelay = 1, timeUnit = TimeUnit.MINUTES)
     public void checkCacheHealth() {
-        cacheManager.getCacheNames().forEach(cacheName -> {
-            var cache = cacheManager.getCache(cacheName);
+        caffeineCacheManager.getCacheNames().forEach(cacheName -> {
+            var cache = caffeineCacheManager.getCache(cacheName);
             if (cache instanceof CaffeineCache) {
                 CacheStats stats = ((CaffeineCache) cache).getNativeCache().stats();
                 if (stats.requestCount() > 100 && stats.hitRate() < 0.5) {

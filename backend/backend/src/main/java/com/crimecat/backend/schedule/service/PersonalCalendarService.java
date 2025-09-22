@@ -7,6 +7,7 @@ import com.crimecat.backend.schedule.dto.response.CalendarEventsResponse;
 import com.crimecat.backend.schedule.dto.response.CalendarResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -35,7 +36,7 @@ public class PersonalCalendarService {
     private final MultipleCalendarService multipleCalendarService;
     private final UnifiedCalendarCacheService unifiedCacheService;
     private final OptimizedBlockedDateService blockedDateService;
-    private final CacheManager cacheManager;
+    private final CacheManager caffeineCacheManager;
 
     // =================================================================================
     // 캘린더 관리 API
@@ -115,11 +116,11 @@ public class PersonalCalendarService {
             
             // 순차적 캐시 무효화 (순서 중요)
             log.info("🗑️ [CACHE_ORDER] Step 1 - Spring Cache 무효화");
-            if (cacheManager.getCache("user-calendars") != null) {
-                cacheManager.getCache("user-calendars").evict(userId);
+            if (caffeineCacheManager.getCache("user-calendars") != null) {
+                caffeineCacheManager.getCache("user-calendars").evict(userId);
             }
-            if (cacheManager.getCache("unified:calendar:events") != null) {
-                cacheManager.getCache("unified:calendar:events").clear();
+            if (caffeineCacheManager.getCache("unified:calendar:events") != null) {
+                caffeineCacheManager.getCache("unified:calendar:events").clear();
             }
             
             log.info("🗑️ [CACHE_ORDER] Step 2 - UnifiedCalendarCacheService Redis 캐시 무효화");
@@ -148,11 +149,11 @@ public class PersonalCalendarService {
             
             // 순차적 캐시 무효화 (순서 중요)
             log.info("🗑️ [CACHE_ORDER] Step 1 - Spring Cache 전체 무효화");
-            if (cacheManager.getCache("user-calendars") != null) {
-                cacheManager.getCache("user-calendars").clear();
+            if (caffeineCacheManager.getCache("user-calendars") != null) {
+                caffeineCacheManager.getCache("user-calendars").clear();
             }
-            if (cacheManager.getCache("unified:calendar:events") != null) {
-                cacheManager.getCache("unified:calendar:events").clear();
+            if (caffeineCacheManager.getCache("unified:calendar:events") != null) {
+                caffeineCacheManager.getCache("unified:calendar:events").clear();
             }
             
             log.info("🗑️ [CACHE_ORDER] Step 2 - UnifiedCalendarCacheService Redis 캐시 무효화");

@@ -144,10 +144,9 @@ public class UnifiedRedisConfig {
     }
 
     /**
-     * Redis 캐시 매니저
+     * Redis 캐시 매니저 - 분산 환경 및 영속성이 필요한 캐시용
      */
-    @Bean
-    @Primary
+    @Bean("redisCacheManager")
     public RedisCacheManager redisCacheManager(
             RedisConnectionFactory connectionFactory,
             @Qualifier("redisObjectMapper") ObjectMapper redisObjectMapper) {
