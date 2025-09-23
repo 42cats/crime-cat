@@ -1,5 +1,6 @@
 package com.crimecat.backend.schedule.facade;
 
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.schedule.dto.request.CalendarCreateRequest;
 import com.crimecat.backend.schedule.dto.request.CalendarUpdateRequest;
 import com.crimecat.backend.schedule.dto.response.CalendarEventsResponse;
@@ -40,7 +41,7 @@ public class PersonalCalendarFacade {
     /**
      * 사용자 캘린더 목록 조회 (캐싱 적용)
      */
-    @Cacheable(value = "personal_calendars", key = "#userId", unless = "#result == null")
+    @Cacheable(value = CacheNames.PERSONAL_CALENDARS, key = "#userId", unless = "#result == null")
     public List<CalendarResponse> getUserCalendars(UUID userId) {
         log.debug("🔍 [FACADE] 캘린더 목록 조회: userId={}", userId);
         return personalCalendarService.getUserCalendars(userId);
@@ -49,7 +50,7 @@ public class PersonalCalendarFacade {
     /**
      * 캘린더 추가 (캐시 무효화)
      */
-    @CacheEvict(value = {"personal_calendars", "personal_calendar_events"}, key = "#userId")
+    @CacheEvict(value = {CacheNames.PERSONAL_CALENDARS, "personal_calendar_events"}, key = "#userId")
     public CalendarResponse addCalendar(UUID userId, CalendarCreateRequest request) {
         log.debug("➕ [FACADE] 캘린더 추가: userId={}", userId);
         return personalCalendarService.addCalendar(userId, request);
@@ -58,7 +59,7 @@ public class PersonalCalendarFacade {
     /**
      * 캘린더 수정 (캐시 무효화)
      */
-    @CacheEvict(value = {"personal_calendars", "personal_calendar_events"}, key = "#userId")
+    @CacheEvict(value = {CacheNames.PERSONAL_CALENDARS, "personal_calendar_events"}, key = "#userId")
     public CalendarResponse updateCalendar(UUID userId, UUID calendarId, CalendarUpdateRequest request) {
         log.debug("✏️ [FACADE] 캘린더 수정: userId={}, calendarId={}", userId, calendarId);
         return personalCalendarService.updateCalendar(userId, calendarId, request);
@@ -67,7 +68,7 @@ public class PersonalCalendarFacade {
     /**
      * 캘린더 삭제 (캐시 무효화)
      */
-    @CacheEvict(value = {"personal_calendars", "personal_calendar_events"}, key = "#userId")
+    @CacheEvict(value = {CacheNames.PERSONAL_CALENDARS, "personal_calendar_events"}, key = "#userId")
     public void deleteCalendar(UUID userId, UUID calendarId) {
         log.debug("🗑️ [FACADE] 캘린더 삭제: userId={}, calendarId={}", userId, calendarId);
         personalCalendarService.deleteCalendar(userId, calendarId);
@@ -76,7 +77,7 @@ public class PersonalCalendarFacade {
     /**
      * 캘린더 동기화 (캐시 무효화)
      */
-    @CacheEvict(value = {"personal_calendars", "personal_calendar_events"}, key = "#userId")
+    @CacheEvict(value = {CacheNames.PERSONAL_CALENDARS, "personal_calendar_events"}, key = "#userId")
     public CalendarResponse syncCalendar(UUID userId, UUID calendarId) {
         log.debug("🔄 [FACADE] 캘린더 동기화: userId={}, calendarId={}", userId, calendarId);
         return personalCalendarService.syncCalendar(userId, calendarId);
@@ -85,7 +86,7 @@ public class PersonalCalendarFacade {
     /**
      * 전체 캘린더 동기화 (캐시 무효화)
      */
-    @CacheEvict(value = {"personal_calendars", "personal_calendar_events"}, key = "#userId")
+    @CacheEvict(value = {CacheNames.PERSONAL_CALENDARS, "personal_calendar_events"}, key = "#userId")
     public SyncAllResult syncAllCalendars(UUID userId) {
         log.debug("🔄 [FACADE] 전체 캘린더 동기화: userId={}", userId);
         
@@ -111,7 +112,7 @@ public class PersonalCalendarFacade {
      * 캘린더 상태 변경 (활성화/비활성화)
      * - 복잡한 비즈니스 로직: 기존 데이터 조회 → 업데이트 → 캐시 무효화
      */
-    @CacheEvict(value = {"personal_calendars", "personal_calendar_events"}, key = "#userId")
+    @CacheEvict(value = {CacheNames.PERSONAL_CALENDARS, "personal_calendar_events"}, key = "#userId")
     public CalendarStatusChangeResult toggleCalendarStatus(UUID userId, UUID calendarId, Boolean isActive) {
         log.debug("🔄 [FACADE] 캘린더 상태 변경: userId={}, calendarId={}, isActive={}", 
                 userId, calendarId, isActive);
@@ -139,7 +140,7 @@ public class PersonalCalendarFacade {
      * 캘린더 순서 변경
      * - 현재 PersonalCalendarService에 순서 변경 기능이 없어서 placeholder
      */
-    @CacheEvict(value = {"personal_calendars", "personal_calendar_events"}, key = "#userId")
+    @CacheEvict(value = {CacheNames.PERSONAL_CALENDARS, "personal_calendar_events"}, key = "#userId")
     public List<CalendarResponse> updateCalendarOrder(UUID userId, List<Map<String, Object>> calendarsOrder) {
         log.debug("🔄 [FACADE] 캘린더 순서 변경 요청: userId={}", userId);
         
@@ -258,7 +259,7 @@ public class PersonalCalendarFacade {
     /**
      * 사용자 전체 캐시 무효화
      */
-    @CacheEvict(value = {"personal_calendars", "personal_calendar_events", "personal_blocked_dates"}, key = "#userId")
+    @CacheEvict(value = {CacheNames.PERSONAL_CALENDARS, "personal_calendar_events", "personal_blocked_dates"}, key = "#userId")
     public Map<String, Object> invalidateUserCache(UUID userId) {
         log.debug("🗑️ [FACADE] 사용자 캐시 무효화: userId={}", userId);
         return personalCalendarService.invalidateUserCache(userId);

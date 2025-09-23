@@ -1,5 +1,6 @@
 package com.crimecat.backend.messagemacro.service;
 
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.config.CacheType;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.messagemacro.controller.BotButtonAutomationController;
@@ -561,7 +562,7 @@ public class ButtonAutomationService {
      * 변환된 DTO를 Spring Cache에 캐싱
      * @return 봇 커맨드 목록
      */
-    @Cacheable(value = CacheType.BOT_COMMANDS, key = "'all'")
+    @Cacheable(value = CacheNames.BOT_COMMANDS, key = "'all'")
     @Transactional(readOnly = true)
     public List<ButtonAutomationController.BotCommandDto> getBotCommands() {
         log.info("🔍 Redis에서 봇 커맨드 목록 조회 시작 (캐시 미스)");
@@ -582,7 +583,7 @@ public class ButtonAutomationService {
      * 봇 커맨드 캐시 무효화 (봇 재시작 시 호출)
      * Redis에서 새로운 커맨드 캐시가 생성되었을 때 Spring Cache를 갱신
      */
-    @CacheEvict(value = CacheType.BOT_COMMANDS, allEntries = true)
+    @CacheEvict(value = CacheNames.BOT_COMMANDS, allEntries = true)
     public void evictBotCommandsCache() {
         log.info("🗑️ 봇 커맨드 Spring Cache 무효화 완료");
     }
