@@ -50,6 +50,8 @@ public enum CaffeineCacheType {
 
     // === 봇 커맨드 관련 ===
     BOT_COMMANDS("bot:commands", 30, TimeUnit.MINUTES, 1000),
+    ALL_COMMANDS("commands:all", 24, TimeUnit.HOURS, 100),
+    COMMAND_CATEGORIES("commands:categories", 24, TimeUnit.HOURS, 50),
 
     // === 댓글 관련 ===
     GAME_THEME_COMMENTS("game:theme:comments", 5, TimeUnit.MINUTES, 2000),
@@ -57,6 +59,10 @@ public enum CaffeineCacheType {
     COMMENT_DETAIL("comment:detail", 3, TimeUnit.MINUTES, 1000),
     COMMENT_STATS("comment:stats", 15, TimeUnit.MINUTES, 500),
     USER_COMMENTS("user:comments", 10, TimeUnit.MINUTES, 1000),
+
+    // === 공지사항 관련 ===
+    ALL_NOTICES("notices:all", 24, TimeUnit.HOURS, 200),
+    NOTICE_CATEGORIES("notices:categories", 24, TimeUnit.HOURS, 20),
 
     // === 웹 통계 관련 (고성능 조회) ===
     TOTAL_SERVERS("totalServers", 30, TimeUnit.MINUTES, 10),
