@@ -1,6 +1,6 @@
 package com.crimecat.backend.schedule.service;
 
-import com.crimecat.backend.config.CacheType;
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.schedule.domain.*;
 import com.crimecat.backend.schedule.dto.EventCreateRequest;
@@ -37,7 +37,7 @@ public class ScheduleService {
     private final ICalParsingService icalParsingService;
     // private final NotificationService notificationService; // Assuming notification service exists
 
-    @CacheEvict(value = CacheType.SCHEDULE_EVENT_LIST, allEntries = true)
+    @CacheEvict(value = CacheNames.SCHEDULE_EVENT_LIST, allEntries = true)
     public Event createEvent(EventCreateRequest request, WebUser currentUser) {
         Event event = Event.builder()
                 .creator(currentUser)
@@ -51,9 +51,9 @@ public class ScheduleService {
     }
 
     @Caching(evict = {
-        @CacheEvict(value = CacheType.SCHEDULE_PARTICIPANTS, key = "#eventId.toString()"),
-        @CacheEvict(value = CacheType.SCHEDULE_AVAILABILITY, key = "#eventId.toString()"),
-        @CacheEvict(value = CacheType.SCHEDULE_EVENT_LIST, allEntries = true)
+        @CacheEvict(value = CacheNames.SCHEDULE_PARTICIPANTS, key = "#eventId.toString()"),
+        @CacheEvict(value = CacheNames.SCHEDULE_AVAILABILITY, key = "#eventId.toString()"),
+        @CacheEvict(value = CacheNames.SCHEDULE_EVENT_LIST, allEntries = true)
     })
     public void joinEvent(UUID eventId, WebUser currentUser) {
         Event event = eventRepository.findById(eventId)
@@ -92,7 +92,7 @@ public class ScheduleService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheType.SCHEDULE_EVENT_LIST, 
+    @Cacheable(value = CacheNames.SCHEDULE_EVENT_LIST,
                key = "(#category != null ? #category : 'ALL') + ':' + (#status != null ? #status.name() : 'ALL')")
     public List<EventResponse> getEvents(String category, EventStatus status) {
         List<Event> events;
@@ -112,7 +112,7 @@ public class ScheduleService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheType.SCHEDULE_EVENT_DETAIL, key = "#eventId.toString()")
+    @Cacheable(value = CacheNames.SCHEDULE_EVENT_DETAIL, key = "#eventId.toString()")
     public EventResponse getEvent(UUID eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> ErrorStatus.EVENT_NOT_FOUND.asServiceException());
@@ -120,9 +120,9 @@ public class ScheduleService {
     }
 
     @Caching(evict = {
-        @CacheEvict(value = CacheType.SCHEDULE_ICAL_PARSED, allEntries = true),
-        @CacheEvict(value = CacheType.SCHEDULE_AVAILABILITY, allEntries = true),
-        @CacheEvict(value = CacheType.SCHEDULE_USER_CALENDAR, key = "#currentUser.id.toString()")
+        @CacheEvict(value = CacheNames.SCHEDULE_ICAL_DATA, allEntries = true),
+        @CacheEvict(value = CacheNames.SCHEDULE_AVAILABILITY, allEntries = true),
+        @CacheEvict(value = CacheNames.USER_CALENDARS, key = "#currentUser.id.toString()")
     })
     public void saveUserCalendar(UserCalendarRequest request, WebUser currentUser) {
         // webcal:// -> https:// 변환하여 저장 (Apple Calendar 지원)
@@ -153,7 +153,7 @@ public class ScheduleService {
     // Delegate to ICalParsingService for parsing operations
 
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheType.SCHEDULE_AVAILABILITY, key = "#eventId.toString()")
+    @Cacheable(value = CacheNames.SCHEDULE_AVAILABILITY, key = "#eventId.toString()")
     public List<LocalDateTime[]> calculateAvailability(UUID eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> ErrorStatus.EVENT_NOT_FOUND.asServiceException());
@@ -238,7 +238,7 @@ public class ScheduleService {
      * 캐시 가능한 참여자 목록 조회 메서드
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheType.SCHEDULE_PARTICIPANTS, key = "#eventId.toString()")
+    @Cacheable(value = CacheNames.SCHEDULE_PARTICIPANTS, key = "#eventId.toString()")
     public List<EventParticipant> getEventParticipants(UUID eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> ErrorStatus.EVENT_NOT_FOUND.asServiceException());
@@ -249,7 +249,7 @@ public class ScheduleService {
      * 캐시 가능한 참여자 수 조회 메서드
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheType.SCHEDULE_PARTICIPANTS, key = "#eventId.toString() + ':count'")
+    @Cacheable(value = CacheNames.SCHEDULE_PARTICIPANTS, key = "#eventId.toString() + ':count'")
     public int getEventParticipantCount(UUID eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> ErrorStatus.EVENT_NOT_FOUND.asServiceException());
@@ -261,7 +261,7 @@ public class ScheduleService {
      * - 민감정보 제외한 공개 정보만 반환
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheType.SCHEDULE_EVENT_LIST, 
+    @Cacheable(value = CacheNames.SCHEDULE_EVENT_LIST,
                key = "'public:' + (#category != null ? #category : 'ALL') + ':' + (#status != null ? #status.name() : 'ALL')")
     public List<PublicEventResponse> getPublicEvents(String category, EventStatus status) {
         List<Event> events;
@@ -285,7 +285,7 @@ public class ScheduleService {
      * - 민감정보 제외한 공개 정보만 반환
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheType.SCHEDULE_EVENT_DETAIL, key = "'public:' + #eventId.toString()")
+    @Cacheable(value = CacheNames.SCHEDULE_EVENT_DETAIL, key = "'public:' + #eventId.toString()")
     public PublicEventResponse getPublicEvent(UUID eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> ErrorStatus.EVENT_NOT_FOUND.asServiceException());
@@ -298,7 +298,7 @@ public class ScheduleService {
      * - 기존 calculateAvailability 메서드 재사용
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheType.SCHEDULE_AVAILABILITY, key = "'public:' + #eventId.toString()")
+    @Cacheable(value = CacheNames.SCHEDULE_AVAILABILITY, key = "'public:' + #eventId.toString()")
     public List<LocalDateTime[]> getPublicAvailability(UUID eventId) {
         // 기존 메서드 재사용 - 이미 개인 식별 정보 포함하지 않음
         return calculateAvailability(eventId);
@@ -309,7 +309,7 @@ public class ScheduleService {
      * - 개인 식별 정보 제외하고 참여자 수만 반환
      */
     @Transactional(readOnly = true)  
-    @Cacheable(value = CacheType.SCHEDULE_PARTICIPANTS, key = "'public:' + #eventId.toString() + ':count'")
+    @Cacheable(value = CacheNames.SCHEDULE_PARTICIPANTS, key = "'public:' + #eventId.toString() + ':count'")
     public int getPublicParticipantCount(UUID eventId) {
         // 기존 메서드 재사용 - 개수만 반환하므로 안전
         return getEventParticipantCount(eventId);

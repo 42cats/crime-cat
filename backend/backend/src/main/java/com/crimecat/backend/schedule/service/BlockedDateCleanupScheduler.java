@@ -1,6 +1,6 @@
 package com.crimecat.backend.schedule.service;
 
-import com.crimecat.backend.config.CacheType;
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.schedule.repository.RecommendedTimeRepository;
 import com.crimecat.backend.schedule.repository.UserBlockedPeriodRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,9 +31,9 @@ public class BlockedDateCleanupScheduler {
     @Scheduled(cron = "0 0 2 1 * ?")
     @Transactional
     @CacheEvict(value = {
-        CacheType.SCHEDULE_USER_BLOCKED_DATES,
-        CacheType.SCHEDULE_RECOMMENDED_TIMES,
-        CacheType.SCHEDULE_AVAILABILITY
+        CacheNames.SCHEDULE_USER_BLOCKED_DATES,
+        CacheNames.SCHEDULE_RECOMMENDED_TIMES,
+        CacheNames.SCHEDULE_AVAILABILITY
     }, allEntries = true)
     public void cleanupExpiredPeriods() {
         log.info("Starting monthly cleanup of expired blocked date periods...");
@@ -69,8 +69,8 @@ public class BlockedDateCleanupScheduler {
     @Scheduled(cron = "0 0 3 * * SUN")
     @Transactional
     @CacheEvict(value = {
-        CacheType.SCHEDULE_RECOMMENDED_TIMES,
-        CacheType.SCHEDULE_AVAILABILITY
+        CacheNames.SCHEDULE_RECOMMENDED_TIMES,
+        CacheNames.SCHEDULE_AVAILABILITY
     }, allEntries = true)
     public void cleanupExpiredRecommendedTimes() {
         log.info("Starting weekly cleanup of expired recommended times...");
@@ -93,9 +93,9 @@ public class BlockedDateCleanupScheduler {
      */
     @Scheduled(cron = "0 0 6 * * ?")
     @CacheEvict(value = {
-        CacheType.SCHEDULE_USER_BLOCKED_DATES,
-        CacheType.SCHEDULE_RECOMMENDED_TIMES,
-        CacheType.SCHEDULE_AVAILABILITY
+        CacheNames.SCHEDULE_USER_BLOCKED_DATES,
+        CacheNames.SCHEDULE_RECOMMENDED_TIMES,
+        CacheNames.SCHEDULE_AVAILABILITY
     }, allEntries = true)
     public void dailyCacheWarmup() {
         log.debug("Performing daily cache cleanup and warmup");
@@ -115,9 +115,9 @@ public class BlockedDateCleanupScheduler {
      */
     @Transactional
     @CacheEvict(value = {
-        CacheType.SCHEDULE_USER_BLOCKED_DATES,
-        CacheType.SCHEDULE_RECOMMENDED_TIMES,
-        CacheType.SCHEDULE_AVAILABILITY
+        CacheNames.SCHEDULE_USER_BLOCKED_DATES,
+        CacheNames.SCHEDULE_RECOMMENDED_TIMES,
+        CacheNames.SCHEDULE_AVAILABILITY
     }, allEntries = true)
     public void manualCleanup() {
         log.info("Manual cleanup triggered by administrator");

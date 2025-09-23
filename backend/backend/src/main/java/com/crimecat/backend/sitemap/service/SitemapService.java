@@ -44,7 +44,7 @@ public class SitemapService {
     /**
      * 사이트맵 인덱스 생성
      */
-    @Cacheable(value = CacheType.SITEMAP_INDEX, key = "'index'")
+    @Cacheable(value = CacheType.SITEMAP_INDEX, key = "'index'", cacheManager = "redisCacheManager")
     public String generateSitemapIndex() {
         log.info("사이트맵 인덱스 생성 시작");
         
@@ -75,7 +75,7 @@ public class SitemapService {
     /**
      * 테마 사이트맵 생성
      */
-    @Cacheable(value = CacheType.SITEMAP_THEMES, key = "'themes'")
+    @Cacheable(value = CacheType.SITEMAP_THEMES, key = "'themes'", cacheManager = "redisCacheManager")
     public String generateThemesSitemap() {
         log.info("테마 사이트맵 생성 시작");
         
@@ -118,7 +118,7 @@ public class SitemapService {
     /**
      * 커뮤니티 게시글 사이트맵 생성
      */
-    @Cacheable(value = CacheType.SITEMAP_POSTS, key = "'posts'")
+    @Cacheable(value = CacheType.SITEMAP_POSTS, key = "'posts'", cacheManager = "redisCacheManager")
     public String generatePostsSitemap() {
         log.info("게시글 사이트맵 생성 시작");
         
@@ -150,7 +150,7 @@ public class SitemapService {
     /**
      * 프로필 사이트맵 생성
      */
-    @Cacheable(value = CacheType.SITEMAP_PROFILES, key = "'profiles'")
+    @Cacheable(value = CacheType.SITEMAP_PROFILES, key = "'profiles'", cacheManager = "redisCacheManager")
     public String generateProfilesSitemap() {
         log.info("프로필 사이트맵 생성 시작");
         
@@ -176,7 +176,7 @@ public class SitemapService {
     /**
      * SNS 게시물 사이트맵 생성
      */
-    @Cacheable(value = CacheType.SITEMAP_SNS, key = "'sns'")
+    @Cacheable(value = CacheType.SITEMAP_SNS, key = "'sns'", cacheManager = "redisCacheManager")
     public String generateSnsSitemap() {
         log.info("SNS 사이트맵 생성 시작");
         
@@ -201,7 +201,7 @@ public class SitemapService {
     /**
      * 공지사항 사이트맵 생성
      */
-    @Cacheable(value = CacheType.SITEMAP_NOTICES, key = "'notices'")
+    @Cacheable(value = CacheType.SITEMAP_NOTICES, key = "'notices'", cacheManager = "redisCacheManager")
     public String generateNoticesSitemap() {
         log.info("공지사항 사이트맵 생성 시작");
         
@@ -252,7 +252,7 @@ public class SitemapService {
     /**
      * 명령어 사이트맵 생성
      */
-    @Cacheable(value = CacheType.SITEMAP_COMMANDS, key = "'commands'")
+    @Cacheable(value = CacheType.SITEMAP_COMMANDS, key = "'commands'", cacheManager = "redisCacheManager")
     public String generateCommandsSitemap() {
         log.info("명령어 사이트맵 생성 시작");
         
@@ -280,7 +280,7 @@ public class SitemapService {
     /**
      * 게임테마 API 사이트맵 생성 (공개 API 엔드포인트용)
      */
-    @Cacheable(value = CacheType.SITEMAP_GAME_THEMES, key = "'game_themes'")
+    @Cacheable(value = CacheType.SITEMAP_GAME_THEMES, key = "'game_themes'", cacheManager = "redisCacheManager")
     public String generateGameThemesSitemap() {
         log.info("게임테마 API 사이트맵 생성 시작");
         
