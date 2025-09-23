@@ -7,6 +7,9 @@ import java.util.concurrent.TimeUnit;
  * - 각 캐시별 개별 TTL, 크기, 정책 설정
  * - 메모리 기반 로컬 캐시용
  * - Redis와 분리된 독립적인 캐시 관리
+ *
+ * Gradle generateCacheNames 태스크를 통해 CacheNames 클래스가 자동 생성됩니다.
+ * Spring @Cacheable, @CacheEvict 애너테이션에서 CacheNames.XXX 상수를 사용하세요.
  */
 public enum CaffeineCacheType {
 
@@ -28,6 +31,7 @@ public enum CaffeineCacheType {
 
     // === 스케줄 관련 (기존 유지) ===
     SCHEDULE_ICAL_DATA("schedule:ical:data", 30, TimeUnit.MINUTES, 500),
+    SCHEDULE_EVENTS("schedule:events", 15, TimeUnit.MINUTES, 1000),
 
     // === 캘린더 관련 (기존 유지) ===
     USER_CALENDARS("user:calendars", 10, TimeUnit.MINUTES, 1000),
