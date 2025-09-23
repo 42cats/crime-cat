@@ -81,15 +81,7 @@ public class CacheType {
 
   // === Redis 분산 캐시 전용 타입 (영속성, 분산 동기화) ===
 
-  // 일정 관리 관련 캐시 타입 (Redis)
-  public static final String SCHEDULE_EVENT_LIST = "schedule:events";
-  public static final String SCHEDULE_EVENT_DETAIL = "schedule:event";
-  public static final String SCHEDULE_PARTICIPANTS = "schedule:participants";
-  public static final String SCHEDULE_AVAILABILITY = "schedule:availability";
-  public static final String SCHEDULE_ICAL_PARSED = "schedule:ical:parsed";
-  public static final String SCHEDULE_USER_CALENDAR = "schedule:user:calendar";
-  public static final String SCHEDULE_USER_BLOCKED_DATES = "schedule:user:blocked:dates";
-  public static final String SCHEDULE_RECOMMENDED_TIMES = "schedule:recommended:times";
+  // 스케줄 관련 캐시는 CaffeineCacheType enum으로 이동됨
   
   public static final String [] CACHE_TYPE = {
       PERSONAL_DASHBOARD_INFO,
@@ -139,16 +131,8 @@ public class CacheType {
       SITEMAP_SNS,
       SITEMAP_NOTICES,
       SITEMAP_COMMANDS,
-      SITEMAP_GAME_THEMES,
+      SITEMAP_GAME_THEMES
       // === Caffeine 캐시들은 CaffeineCacheType enum에서 관리됨 ===
-      // === Redis 캐시들 ===
-      SCHEDULE_EVENT_LIST,
-      SCHEDULE_EVENT_DETAIL,
-      SCHEDULE_PARTICIPANTS,
-      SCHEDULE_AVAILABILITY,
-      SCHEDULE_ICAL_PARSED,
-      SCHEDULE_USER_CALENDAR,
-      SCHEDULE_USER_BLOCKED_DATES,
-      SCHEDULE_RECOMMENDED_TIMES
+      // === 스케줄 관련 캐시는 CaffeineCacheType enum으로 이동됨 ===
   };
 }

@@ -30,13 +30,19 @@ public enum CaffeineCacheType {
     VIEW_COUNT("view:count", 60, TimeUnit.MINUTES, 10000),
     WEB_STATS("web:stats", 60, TimeUnit.MINUTES, 100),
 
-    // === 스케줄 관련 (기존 유지) ===
+    // === 스케줄 관련 (Caffeine 캐시 전용) ===
     SCHEDULE_ICAL_DATA("schedule:ical:data", 30, TimeUnit.MINUTES, 500),
     SCHEDULE_EVENTS("schedule:events", 15, TimeUnit.MINUTES, 1000),
+    SCHEDULE_EVENT_LIST("schedule:event:list", 10, TimeUnit.MINUTES, 2000),
+    SCHEDULE_EVENT_DETAIL("schedule:event:detail", 15, TimeUnit.MINUTES, 3000),
+    SCHEDULE_AVAILABILITY("schedule:availability", 5, TimeUnit.MINUTES, 1500),
+    SCHEDULE_PARTICIPANTS("schedule:participants", 10, TimeUnit.MINUTES, 1000),
+    SCHEDULE_RECOMMENDED_TIMES("schedule:recommended:times", 30, TimeUnit.MINUTES, 500),
+    SCHEDULE_USER_BLOCKED_DATES("schedule:user:blocked:dates", 60, TimeUnit.MINUTES, 1000),
 
     // === 캘린더 관련 ===
     USER_CALENDARS("user:calendars", 10, TimeUnit.MINUTES, 1000),
-    UNIFIED_CALENDAR_EVENTS("unified_calendar_events", 10, TimeUnit.MINUTES, 2000),
+    UNIFIED_CALENDAR_EVENTS("unified:calendar:events", 10, TimeUnit.MINUTES, 2000),
     PERSONAL_CALENDAR_EVENTS("personal_calendar_events", 10, TimeUnit.MINUTES, 2000),
     PERSONAL_BLOCKED_DATES("personal_blocked_dates", 15, TimeUnit.MINUTES, 1000),
     COLOR_PALETTE("color_palette", 60, TimeUnit.MINUTES, 100),
