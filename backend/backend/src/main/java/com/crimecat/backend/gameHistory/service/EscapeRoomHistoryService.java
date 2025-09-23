@@ -1,6 +1,7 @@
 package com.crimecat.backend.gameHistory.service;
 
 import com.crimecat.backend.config.CacheType;
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
 import com.crimecat.backend.gameHistory.dto.EscapeRoomHistoryRequest;
@@ -228,7 +229,7 @@ public class EscapeRoomHistoryService {
     /**
      * 특정 테마의 통계 정보 조회
      */
-    @Cacheable(cacheNames = "escapeRoomThemeStats", key = "#themeId.toString()")
+    @Cacheable(cacheNames = CacheNames.ESCAPE_ROOM_THEME_STATS, key = "#themeId.toString()")
     public EscapeRoomHistoryStatsResponse getThemeStatistics(UUID themeId) {
         // 테마 존재 여부 확인
         escapeRoomThemeRepository.findById(themeId)

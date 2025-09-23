@@ -7,12 +7,12 @@ import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
 import com.crimecat.backend.gametheme.repository.CrimesceneThemeRepository;
 import com.crimecat.backend.gametheme.repository.EscapeRoomThemeRepository;
 import com.crimecat.backend.stats.proxy.WebStatsInfoServiceProxy;
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.webUser.domain.WebUser;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
@@ -45,32 +45,32 @@ public class WebStatsInfoService {
     return ResponseEntity.ok().body(result);
   }
 
-  @Cacheable(cacheNames = "totalServers")
+  @Cacheable(cacheNames = CacheNames.TOTAL_SERVERS)
   public String getTotalServers() {
     return String.valueOf(guildRepository.countAllActiveGuilds());
   }
 
-  @Cacheable(cacheNames = "totalUsers")
+  @Cacheable(cacheNames = CacheNames.TOTAL_USERS)
   public String getTotalUsers() {
     return String.valueOf(userRepository.countUsersWithDiscordAccount());
   }
 
-  @Cacheable(cacheNames = "totalPlayers")
+  @Cacheable(cacheNames = CacheNames.TOTAL_PLAYERS)
   public String getTotalPlayers() {
     return String.valueOf(gameHistoryRepository.count());
   }
 
-  @Cacheable(cacheNames = "totalCreators")
+  @Cacheable(cacheNames = CacheNames.TOTAL_CREATORS)
   public String getTotalCreators() {
     return String.valueOf(guildRepository.countUniqueGuildOwners());
   }
 
-  @Cacheable(cacheNames = "crimeThemes")
+  @Cacheable(cacheNames = CacheNames.CRIME_THEMES)
   public String getCrimeThemes() {
     return String.valueOf(crimesceneThemeRepository.countActiveThemes());
   }
 
-  @Cacheable(cacheNames = "escapeThemes")
+  @Cacheable(cacheNames = CacheNames.ESCAPE_THEMES)
   public String getEscapeThemes() {
     return String.valueOf(escapeRoomThemeRepository.countActiveThemes());
   }

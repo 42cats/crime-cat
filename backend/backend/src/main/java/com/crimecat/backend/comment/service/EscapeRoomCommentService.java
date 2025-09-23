@@ -7,6 +7,8 @@ import com.crimecat.backend.comment.dto.EscapeRoomCommentResponseDto;
 import com.crimecat.backend.comment.dto.EscapeRoomCommentUpdateDto;
 import com.crimecat.backend.comment.repository.EscapeRoomCommentRepository;
 import com.crimecat.backend.comment.repository.EscapeRoomCommentLikeRepository;
+import com.crimecat.backend.config.CacheInvalidationUtil;
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
 import com.crimecat.backend.gameHistory.repository.EscapeRoomHistoryRepository;
@@ -21,6 +23,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -49,6 +52,7 @@ public class EscapeRoomCommentService {
     private final WebUserRepository webUserRepository;
     private final EscapeRoomHistoryService escapeRoomHistoryService;
     private final NotificationEventPublisher notificationEventPublisher;
+    private final CacheInvalidationUtil cacheInvalidationUtil;
     
     /**
      * 댓글 생성
@@ -119,6 +123,11 @@ public class EscapeRoomCommentService {
         log.info("방탈출 댓글 생성 완료 - commentId: {}, userId: {}, themeId: {}",
                 savedComment.getId(), currentUserId, theme.getId());
 
+        // 댓글 생성 시 해당 테마의 모든 댓글 캐시 무효화
+        cacheInvalidationUtil.evictByKeyPrefix(CacheNames.ESCAPE_ROOM_COMMENTS, theme.getId() + "_");
+        cacheInvalidationUtil.evictByKeyPrefix(CacheNames.USER_COMMENTS, currentUserId + "_");
+        cacheInvalidationUtil.evictSpecificKey(CacheNames.COMMENT_STATS, theme.getId().toString());
+
         // 알림 발행 - 부모 댓글이 있는 경우에만
         if (parentComment != null) {
             WebUser parentCommentAuthor = parentComment.getWebUser();
@@ -149,6 +158,8 @@ public class EscapeRoomCommentService {
     /**
      * 특정 테마의 댓글 목록 조회 (계층 구조로 변환)
      */
+    @Cacheable(value = CacheNames.ESCAPE_ROOM_COMMENTS,
+               key = "#themeId + '_' + (#currentUserId != null ? #currentUserId : 'anonymous') + '_' + #pageable.pageNumber + '_' + #pageable.pageSize + '_' + (#spoilerOnly != null ? #spoilerOnly : 'all') + '_' + #pageable.sort.toString()")
     public Page<EscapeRoomCommentResponseDto> getCommentsByTheme(UUID themeId, UUID currentUserId, Pageable pageable, Boolean spoilerOnly) {
         // 테마 존재 확인
         if (!escapeRoomThemeRepository.existsById(themeId)) {
@@ -281,6 +292,11 @@ public class EscapeRoomCommentService {
         EscapeRoomComment updatedComment = escapeRoomCommentRepository.save(comment);
         log.info("방탈출 댓글 수정 완료 - commentId: {}", commentId);
 
+        // 댓글 수정 시 관련 캐시 무효화
+        cacheInvalidationUtil.evictByKeyPrefix(CacheNames.ESCAPE_ROOM_COMMENTS, comment.getEscapeRoomTheme().getId() + "_");
+        cacheInvalidationUtil.evictByKeyPrefix(CacheNames.COMMENT_DETAIL, commentId + "_");
+        cacheInvalidationUtil.evictByKeyPrefix(CacheNames.USER_COMMENTS, currentUserId + "_");
+
         // 작성자는 항상 자신의 댓글 내용을 볼 수 있음
         return EscapeRoomCommentResponseDto.forAuthor(updatedComment);
     }
@@ -308,6 +324,12 @@ public class EscapeRoomCommentService {
             comment.delete();
             escapeRoomCommentRepository.save(comment);
             log.info("게임 기록 댓글 삭제 완료 - commentId: {}", commentId);
+
+            // 댓글 삭제 시 관련 캐시 무효화
+            cacheInvalidationUtil.evictByKeyPrefix(CacheNames.ESCAPE_ROOM_COMMENTS, comment.getEscapeRoomTheme().getId() + "_");
+            cacheInvalidationUtil.evictByKeyPrefix(CacheNames.COMMENT_DETAIL, commentId + "_");
+            cacheInvalidationUtil.evictByKeyPrefix(CacheNames.USER_COMMENTS, currentUserId + "_");
+            cacheInvalidationUtil.evictSpecificKey(CacheNames.COMMENT_STATS, comment.getEscapeRoomTheme().getId().toString());
             return;
         }
 
@@ -321,11 +343,21 @@ public class EscapeRoomCommentService {
             comment.setIsDeleted(true);
             escapeRoomCommentRepository.save(comment);
             log.info("부모 댓글 내용 변경 완료 (자식 댓글 존재) - commentId: {}", commentId);
+
+            // 댓글 수정 시 관련 캐시 무효화
+            cacheInvalidationUtil.evictByKeyPrefix(CacheNames.ESCAPE_ROOM_COMMENTS, comment.getEscapeRoomTheme().getId() + "_");
+            cacheInvalidationUtil.evictByKeyPrefix(CacheNames.COMMENT_DETAIL, commentId + "_");
         } else {
             // 자식 댓글이 없으면 소프트 삭제
             comment.delete();
             escapeRoomCommentRepository.save(comment);
-            log.info("댓글 소프트 삭제 완료 - commentId: {}", commentId);
+            log.info("댓글 소프트 삭제 완룜 - commentId: {}", commentId);
+
+            // 댓글 삭제 시 관련 캐시 무효화
+            cacheInvalidationUtil.evictByKeyPrefix(CacheNames.ESCAPE_ROOM_COMMENTS, comment.getEscapeRoomTheme().getId() + "_");
+            cacheInvalidationUtil.evictByKeyPrefix(CacheNames.COMMENT_DETAIL, commentId + "_");
+            cacheInvalidationUtil.evictByKeyPrefix(CacheNames.USER_COMMENTS, currentUserId + "_");
+            cacheInvalidationUtil.evictSpecificKey(CacheNames.COMMENT_STATS, comment.getEscapeRoomTheme().getId().toString());
         }
     }
 
@@ -334,7 +366,12 @@ public class EscapeRoomCommentService {
      */
     public EscapeRoomCommentResponseDto getComment(UUID commentId) {
         UUID currentUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
+        return getCommentWithCache(commentId, currentUserId);
+    }
 
+    @Cacheable(value = CacheNames.COMMENT_DETAIL,
+               key = "#commentId + '_' + (#currentUserId != null ? #currentUserId : 'anonymous')")
+    public EscapeRoomCommentResponseDto getCommentWithCache(UUID commentId, UUID currentUserId) {
         // 댓글 조회
         EscapeRoomComment comment = escapeRoomCommentRepository.findByIdWithDetails(commentId)
                 .orElseThrow(ErrorStatus.COMMENT_NOT_FOUND::asServiceException);
@@ -392,6 +429,8 @@ public class EscapeRoomCommentService {
     /**
      * 사용자의 댓글 목록 조회
      */
+    @Cacheable(value = CacheNames.USER_COMMENTS,
+               key = "#userId + '_' + #pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
     public Page<EscapeRoomCommentResponseDto> getCommentsByUser(UUID userId, Pageable pageable) {
         UUID currentUserId = AuthenticationUtil.getCurrentWebUserIdOptional().orElse(null);
 
@@ -428,6 +467,7 @@ public class EscapeRoomCommentService {
     /**
      * 테마의 댓글 통계 조회
      */
+    @Cacheable(value = CacheNames.COMMENT_STATS, key = "#themeId")
     public EscapeRoomCommentStatsDto getCommentStats(UUID themeId) {
         long totalComments = escapeRoomCommentRepository
                 .countByEscapeRoomThemeId(themeId);
@@ -476,7 +516,11 @@ public class EscapeRoomCommentService {
         comment.increaseLikesCount();
         escapeRoomCommentRepository.save(comment);
 
-        log.info("댓글 좋아요 완료 - commentId: {}, userId: {}", commentId, currentUserId);
+        log.info("댓글 좋아요 완룼 - commentId: {}, userId: {}", commentId, currentUserId);
+
+        // 좋아요 시 해당 사용자의 관련 캐시만 무효화
+        cacheInvalidationUtil.evictByKeyPrefix(CacheNames.ESCAPE_ROOM_COMMENTS, comment.getEscapeRoomTheme().getId() + "_" + currentUserId);
+        cacheInvalidationUtil.evictByKeyPrefix(CacheNames.COMMENT_DETAIL, commentId + "_" + currentUserId);
     }
 
     /**
@@ -504,6 +548,10 @@ public class EscapeRoomCommentService {
         escapeRoomCommentRepository.save(comment);
 
         log.info("댓글 좋아요 취소 완료 - commentId: {}, userId: {}", commentId, currentUserId);
+
+        // 좋아요 취소 시 해당 사용자의 관련 캐시만 무효화
+        cacheInvalidationUtil.evictByKeyPrefix(CacheNames.ESCAPE_ROOM_COMMENTS, comment.getEscapeRoomTheme().getId() + "_" + currentUserId);
+        cacheInvalidationUtil.evictByKeyPrefix(CacheNames.COMMENT_DETAIL, commentId + "_" + currentUserId);
     }
 
     @Getter

@@ -7,6 +7,8 @@ import com.crimecat.backend.comment.dto.CommentResponse;
 import com.crimecat.backend.comment.repository.CommentLikeRepository;
 import com.crimecat.backend.comment.repository.CommentRepository;
 import com.crimecat.backend.comment.sort.CommentSortType;
+import com.crimecat.backend.config.CacheInvalidationUtil;
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gameHistory.repository.EscapeRoomHistoryRepository;
 import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
@@ -25,6 +27,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -44,10 +47,10 @@ public class CommentService {
     private final WebUserRepository webUserRepository;
     private final NotificationEventPublisher notificationEventPublisher;
     private final MakerTeamMemberRepository makerTeamMemberRepository;
+    private final CacheInvalidationUtil cacheInvalidationUtil;
     
     // 댓글 작성
     @Transactional
-    //@CacheEvict(value = {"comment:list", "comment:public"}, allEntries = true)
     public CommentResponse createComment(UUID gameThemeId, UUID userId, CommentRequest request) {
     GameTheme gameTheme = gameThemeRepository.findById(gameThemeId)
     .orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
@@ -153,13 +156,15 @@ public class CommentService {
                 }
             }
         }
-        
+
+        // 댓글 생성 시 해당 게임 테마의 모든 댓글 캐시 무효화
+        cacheInvalidationUtil.evictByKeyPrefix(CacheNames.GAME_THEME_COMMENTS, gameThemeId + "_");
+
         return response;
     }
     
     // 댓글 수정
     @Transactional
-    //@CacheEvict(value = {"comment:list", "comment:public"}, allEntries = true)
     public CommentResponse updateComment(UUID commentId, UUID userId, CommentRequest request) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("댓글을 찾을 수 없습니다"));
@@ -180,13 +185,15 @@ public class CommentService {
         
         boolean isLiked = commentLikeRepository.existsByUser_IdAndComment_Id(userId, commentId);
         boolean canViewSpoiler = hasPlayedGameTheme(userId, comment.getGameThemeId());
-        
+
+        // 댓글 수정 시 해당 게임 테마의 모든 댓글 캐시 무효화
+        cacheInvalidationUtil.evictByKeyPrefix(CacheNames.GAME_THEME_COMMENTS, comment.getGameThemeId() + "_");
+
         return CommentResponse.from(updatedComment, isLiked, true, canViewSpoiler, replies);
     }
     
     // 댓글 삭제
     @Transactional
-    //@CacheEvict(value = {"comment:list", "comment:public"}, allEntries = true)
     public void deleteComment(UUID commentId, UUID userId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(ErrorStatus.NOT_FOUND_COMMENT::asServiceException);
@@ -198,6 +205,9 @@ public class CommentService {
         
         comment.delete();
         commentRepository.save(comment);
+
+        // 댓글 삭제 시 해당 게임 테마의 모든 댓글 캐시 무효화
+        cacheInvalidationUtil.evictByKeyPrefix(CacheNames.GAME_THEME_COMMENTS, comment.getGameThemeId() + "_");
         
 //        // 대댓글도 함께 삭제 처리
 //        if (comment.getParentId() == null) {
@@ -211,7 +221,8 @@ public class CommentService {
     
     // 댓글 목록 조회 (SortType을 통한 정렬 옵션 적용)
     @Transactional(readOnly = true)
-    //@Cacheable(value = "comment:list", key = "'theme:' + #gameThemeId + ':page:' + #page + ':size:' + #size + ':sort:' + #sortType")
+    @Cacheable(value = CacheNames.GAME_THEME_COMMENTS,
+               key = "#gameThemeId + '_' + (#userId != null ? #userId : 'anonymous') + '_' + #page + '_' + #size + '_' + #sortType")
     public Page<CommentResponse> getComments(UUID gameThemeId, UUID userId, int page, int size, CommentSortType sortType) {
         Pageable pageable = PageRequest.of(page, size, sortType.getSort());
         Page<Comment> comments = commentRepository.findAllCommentsWithGameTheme(
@@ -230,7 +241,8 @@ public class CommentService {
     
     // 비로그인 사용자를 위한 댓글 목록 조회 (스포일러 아닌 댓글만 표시)
     @Transactional(readOnly = true)
-    //@Cacheable(value = "comment:public", key = "'theme:' + #gameThemeId + ':page:' + #page + ':size:' + #size + ':sort:' + #sortType")
+    @Cacheable(value = CacheNames.GAME_THEME_COMMENTS,
+               key = "#gameThemeId + '_anonymous_' + #page + '_' + #size + '_' + #sortType")
     public Page<CommentResponse> getPublicComments(UUID gameThemeId, int page, int size, CommentSortType sortType) {
         Pageable pageable = PageRequest.of(page, size, sortType.getSort());
         Page<Comment> comments = commentRepository.findAllCommentsWithGameTheme(
@@ -301,6 +313,9 @@ public class CommentService {
             commentLikeRepository.save(commentLike);
             comment.incrementLikes();
             commentRepository.save(comment);
+
+            // 좋아요 시 해당 사용자의 댓글 캐시만 무효화 (특정 사용자 키만)
+            cacheInvalidationUtil.evictByKeyPrefix(CacheNames.GAME_THEME_COMMENTS, comment.getGameThemeId() + "_" + userId);
         }
     }
     
@@ -316,6 +331,9 @@ public class CommentService {
             commentLikeRepository.delete(commentLike.get());
             comment.decrementLikes();
             commentRepository.save(comment);
+
+            // 좋아요 취소 시 해당 사용자의 댓글 캐시만 무효화 (특정 사용자 키만)
+            cacheInvalidationUtil.evictByKeyPrefix(CacheNames.GAME_THEME_COMMENTS, comment.getGameThemeId() + "_" + userId);
         }
     }
     
