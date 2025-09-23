@@ -34,16 +34,39 @@ public enum CaffeineCacheType {
     SCHEDULE_ICAL_DATA("schedule:ical:data", 30, TimeUnit.MINUTES, 500),
     SCHEDULE_EVENTS("schedule:events", 15, TimeUnit.MINUTES, 1000),
 
-    // === 캘린더 관련 (기존 유지) ===
+    // === 캘린더 관련 ===
     USER_CALENDARS("user:calendars", 10, TimeUnit.MINUTES, 1000),
-    UNIFIED_CALENDAR_EVENTS("unified:calendar:events", 5, TimeUnit.MINUTES, 2000),
-    PERSONAL_CALENDAR_EVENTS("personal:calendar:events", 10, TimeUnit.MINUTES, 1500),
-    PERSONAL_BLOCKED_DATES("personal:blocked:dates", 15, TimeUnit.MINUTES, 1000),
-    COLOR_PALETTE("color:palette", 30, TimeUnit.MINUTES, 500),
+    UNIFIED_CALENDAR_EVENTS("unified_calendar_events", 10, TimeUnit.MINUTES, 2000),
+    PERSONAL_CALENDAR_EVENTS("personal_calendar_events", 10, TimeUnit.MINUTES, 2000),
+    PERSONAL_BLOCKED_DATES("personal_blocked_dates", 15, TimeUnit.MINUTES, 1000),
+    COLOR_PALETTE("color_palette", 60, TimeUnit.MINUTES, 100),
     PERSONAL_CALENDARS("personal:calendars", 10, TimeUnit.MINUTES, 1000),
 
     // === 봇 커맨드 관련 ===
-    BOT_COMMANDS("bot:commands", 30, TimeUnit.MINUTES, 1000);
+    BOT_COMMANDS("bot:commands", 30, TimeUnit.MINUTES, 1000),
+
+    // === 댓글 관련 ===
+    GAME_THEME_COMMENTS("game:theme:comments", 5, TimeUnit.MINUTES, 2000),
+    ESCAPE_ROOM_COMMENTS("escape:room:comments", 5, TimeUnit.MINUTES, 1500),
+    COMMENT_DETAIL("comment:detail", 3, TimeUnit.MINUTES, 1000),
+    COMMENT_STATS("comment:stats", 15, TimeUnit.MINUTES, 500),
+    USER_COMMENTS("user:comments", 10, TimeUnit.MINUTES, 1000),
+
+    // === 웹 통계 관련 (고성능 조회) ===
+    TOTAL_SERVERS("totalServers", 30, TimeUnit.MINUTES, 10),
+    TOTAL_USERS("totalUsers", 10, TimeUnit.MINUTES, 10),
+    TOTAL_PLAYERS("totalPlayers", 10, TimeUnit.MINUTES, 10),
+    TOTAL_CREATORS("totalCreators", 10, TimeUnit.MINUTES, 10),
+    CRIME_THEMES("crimeThemes", 30, TimeUnit.MINUTES, 10),
+    ESCAPE_THEMES("escapeThemes", 30, TimeUnit.MINUTES, 10),
+
+    // === 게임 이력 관련 (사용자별 빠른 응답) ===
+    INTEGRATED_GAME_HISTORY("integratedGameHistory", 15, TimeUnit.MINUTES, 3000),
+    USER_GAME_STATISTICS("userGameStatistics", 20, TimeUnit.MINUTES, 2000),
+    ESCAPE_ROOM_THEME_STATS("escapeRoomThemeStats", 30, TimeUnit.MINUTES, 1000),
+
+    // === 사용자 프로필 통계 (개인화 데이터) ===
+    USER_PROFILE_STATS("userProfileStats", 15, TimeUnit.MINUTES, 2000);
 
     private final String cacheName;
     private final long duration;
