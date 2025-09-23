@@ -23,7 +23,8 @@ public enum CaffeineCacheType {
 
     // === 게시판 관련 (짧은 TTL - 새로 추가) ===
     POST_NAVIGATION("post:navigation", 5, TimeUnit.MINUTES, 1000),
-    BOARD_POST_DETAIL("board:post:detail", 3, TimeUnit.MINUTES, 2000),
+    BOARD_POST_DETAIL("board:post:detail", 3, TimeUnit.MINUTES, 3000),
+    BOARD_POST_COMMENTS("board:post:comments", 5, TimeUnit.MINUTES, 2000),
 
     // === 통계 관련 (매우 긴 TTL) ===
     VIEW_COUNT("view:count", 60, TimeUnit.MINUTES, 10000),
