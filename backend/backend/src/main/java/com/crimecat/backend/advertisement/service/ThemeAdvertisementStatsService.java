@@ -32,7 +32,7 @@ public class ThemeAdvertisementStatsService {
     /**
      * 사용자별 광고 상세 통계 조회
      */
-    @Cacheable(value = CacheType.THEME_AD_USER_STATS, key = "#userId")
+    @Cacheable(value = CacheType.THEME_AD_USER_STATS, key = "#userId", cacheManager = "redisCacheManager")
     public List<AdvertisementStatsResponse> getUserAdvertisementStats(UUID userId) {
         List<ThemeAdvertisementRequest> requests = requestRepository.findByUserIdOrderByRequestedAtDesc(userId);
         
@@ -44,7 +44,7 @@ public class ThemeAdvertisementStatsService {
     /**
      * 사용자별 광고 요약 통계
      */
-    @Cacheable(value = CacheType.THEME_AD_USER_SUMMARY, key = "#userId")
+    @Cacheable(value = CacheType.THEME_AD_USER_SUMMARY, key = "#userId", cacheManager = "redisCacheManager")
     public UserAdvertisementSummary getUserAdvertisementSummary(UUID userId) {
         // 기본 개수 통계
         Long totalAds = requestRepository.countByUserId(userId);
@@ -83,7 +83,7 @@ public class ThemeAdvertisementStatsService {
     /**
      * 플랫폼 전체 통계
      */
-    @Cacheable(value = CacheType.THEME_AD_PLATFORM_STATS)
+    @Cacheable(value = CacheType.THEME_AD_PLATFORM_STATS, cacheManager = "redisCacheManager")
     public PlatformAdvertisementStats getPlatformStats() {
         // 기본 개수 통계
         Long totalAds = requestRepository.count();
@@ -127,7 +127,7 @@ public class ThemeAdvertisementStatsService {
     /**
      * 특정 광고의 상세 통계
      */
-    @Cacheable(value = CacheType.THEME_AD_STATS, key = "#requestId")
+    @Cacheable(value = CacheType.THEME_AD_STATS, key = "#requestId", cacheManager = "redisCacheManager")
     public AdvertisementStatsResponse getAdvertisementStats(UUID requestId) {
         ThemeAdvertisementRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("광고 신청을 찾을 수 없습니다."));

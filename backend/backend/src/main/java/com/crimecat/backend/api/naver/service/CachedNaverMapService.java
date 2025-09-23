@@ -30,7 +30,7 @@ public class CachedNaverMapService {
      * @param display 표시할 결과 수
      * @return 검색 결과
      */
-    @Cacheable(value = CacheType.NAVER_LOCAL_SEARCH, key = "#query + ':' + #display")
+    @Cacheable(value = CacheType.NAVER_LOCAL_SEARCH, key = "#query + ':' + #display", cacheManager = "redisCacheManager")
     public Map searchLocal(String query, int display) {
         log.info("네이버 API 호출 - 지역 검색: query={}, display={}", query, display);
         try {
@@ -46,7 +46,7 @@ public class CachedNaverMapService {
      * @param query 검색어
      * @param display 표시할 결과 수
      */
-    @CacheEvict(value = CacheType.NAVER_LOCAL_SEARCH, key = "#query + ':' + #display")
+    @CacheEvict(value = CacheType.NAVER_LOCAL_SEARCH, key = "#query + ':' + #display", cacheManager = "redisCacheManager")
     public void evictSearchCache(String query, int display) {
         log.info("네이버 검색 캐시 무효화 - query: {}, display: {}", query, display);
     }
@@ -54,7 +54,7 @@ public class CachedNaverMapService {
     /**
      * 모든 네이버 검색 캐시 무효화
      */
-    @CacheEvict(value = CacheType.NAVER_LOCAL_SEARCH, allEntries = true)
+    @CacheEvict(value = CacheType.NAVER_LOCAL_SEARCH, allEntries = true, cacheManager = "redisCacheManager")
     public void evictAllSearchCache() {
         log.info("네이버 검색 캐시 전체 무효화");
     }
