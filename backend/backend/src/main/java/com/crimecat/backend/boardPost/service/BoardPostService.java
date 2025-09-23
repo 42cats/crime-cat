@@ -12,6 +12,8 @@ import com.crimecat.backend.boardPost.enums.BoardType;
 import com.crimecat.backend.boardPost.enums.PostType;
 import com.crimecat.backend.boardPost.repository.BoardPostLikeRepository;
 import com.crimecat.backend.boardPost.repository.BoardPostRepository;
+import com.crimecat.backend.config.CacheInvalidationUtil;
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.gametheme.service.ViewCountService;
 import com.crimecat.backend.utils.AuthenticationUtil;
@@ -29,6 +31,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +49,7 @@ public class BoardPostService {
     private final ViewCountService viewCountService;
     private final BoardPostAttachmentService boardPostAttachmentService;
     private final AudioAttachmentService audioAttachmentService;
+    private final CacheInvalidationUtil cacheInvalidationUtil;
 
     /**
      * 게시글 수정/삭제 권한 확인
@@ -118,6 +122,8 @@ public class BoardPostService {
     }
 
     @Transactional
+    @Cacheable(value = CacheNames.BOARD_POST_DETAIL,
+               key = "#postId + '_' + (#webUser != null ? #webUser.id : 'anonymous')")
     public BoardPostDetailResponse getBoardPostDetail(
             UUID postId,
             WebUser webUser
@@ -145,7 +151,6 @@ public class BoardPostService {
     }
 
     @Transactional
-    //@CacheEvict(value = "board:post:list", allEntries = true)
     public BoardPostDetailResponse createBoardPost(
             BoardPostRequest boardPostRequest,
             UUID userId
@@ -172,6 +177,10 @@ public class BoardPostService {
         savedBoardPost.updateContent(finalContent);
 
         BoardPost finalBoardPost = boardPostRepository.save(savedBoardPost);
+
+        // 새 게시글 생성 시 네비게이션 캐시 무효화 (순서 변경)
+        cacheInvalidationUtil.evictAllEntries(CacheNames.POST_NAVIGATION);
+
         return BoardPostDetailResponse.from(finalBoardPost, true, false);
     }
 
@@ -215,11 +224,13 @@ public class BoardPostService {
             isLikedByCurrentUser = true;
         }
 
+        // 좋아요 상태 변경 시 해당 사용자의 게시글 상세 캐시만 무효화
+        cacheInvalidationUtil.evictPostLikeCache(postId, user.getId());
+
         return BoardPostDetailResponse.from(boardPost, isOwnPost, isLikedByCurrentUser);
     }
 
     @Transactional
-    //@CacheEvict(value = "board:post:list", allEntries = true)
     public BoardPostDetailResponse updateBoardPost(
             BoardPostRequest boardPostRequest,
             UUID postId,
@@ -262,12 +273,15 @@ public class BoardPostService {
         boardPostAttachmentService.cleanupOrphanedAttachments(boardPost, finalContent);
 
         BoardPost updatedBoardPost = boardPostRepository.save(boardPost);
+
+        // 게시글 수정 시 해당 게시글과 관련된 모든 캐시 무효화
+        cacheInvalidationUtil.evictPostRelatedCaches(postId);
+
         Boolean isLikedByCurrentUser = boardPostLikeRepository.existsByUserIdAndPostId(userId, postId);
         return BoardPostDetailResponse.from(updatedBoardPost, true, isLikedByCurrentUser);
     }
 
     @Transactional
-    //@CacheEvict(value = "board:post:list", allEntries = true)
     public void deleteBoardPost(
             UUID postId,
             UUID userId
@@ -284,9 +298,14 @@ public class BoardPostService {
         // 2. 게시글 소프트 삭제
         boardPost.delete();
         boardPostRepository.save(boardPost);
+
+        // 게시글 삭제 시 관련된 모든 캐시 무효화
+        cacheInvalidationUtil.evictPostRelatedCaches(postId);
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = CacheNames.POST_NAVIGATION,
+               key = "#postId + '_' + #boardType")
     public PostNavigationResponse getPostNavigation(UUID postId, BoardType boardType) {
         // 현재 게시글 조회
         BoardPost currentPost = boardPostRepository.findByIdAndIsDeletedFalse(postId).orElseThrow(ErrorStatus.RESOURCE_NOT_FOUND::asServiceException);

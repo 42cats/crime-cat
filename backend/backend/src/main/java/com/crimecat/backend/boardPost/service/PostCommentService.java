@@ -8,6 +8,8 @@ import com.crimecat.backend.boardPost.dto.PostCommentResponse;
 import com.crimecat.backend.boardPost.repository.BoardPostRepository;
 import com.crimecat.backend.boardPost.repository.PostCommentLikeRepository;
 import com.crimecat.backend.boardPost.repository.PostCommentRepository;
+import com.crimecat.backend.config.CacheInvalidationUtil;
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.notification.event.NotificationEventPublisher;
 import com.crimecat.backend.webUser.domain.WebUser;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,8 +37,11 @@ public class PostCommentService {
     private final PostCommentLikeRepository postCommentLikeRepository;
     private final BoardPostRepository boardPostRepository;
     private final NotificationEventPublisher notificationEventPublisher;
+    private final CacheInvalidationUtil cacheInvalidationUtil;
 
     @Transactional(readOnly = true)
+    @Cacheable(value = CacheNames.BOARD_POST_COMMENTS,
+               key = "#postId + '_' + (#userId != null ? #userId : 'anonymous')")
     public List<PostCommentResponse> getCommentResponses(
             UUID postId,
             UUID userId
@@ -176,7 +182,10 @@ public class PostCommentService {
                 boardPost.getBoardType().name() // BoardType 전달
             );
         }
-        
+
+        // 댓글 생성 시 해당 게시글의 모든 댓글 캐시 무효화
+        cacheInvalidationUtil.evictPostCommentCaches(postId);
+
         return PostCommentResponse.from(savedComment, false, isOwnComment, canViewSecret, replies);
     }
 
@@ -201,7 +210,11 @@ public class PostCommentService {
         boolean isLiked = postCommentLikeRepository.existsByCommentIdAndUserId(updatedComment.getId(), userId);
         Sort sort = Sort.by(Sort.Direction.ASC, "createdAt");
         List<PostCommentResponse> replies = getCommentReplies(updatedComment.getId(), userId, sort, isOwnComment);
-        
+
+        // 댓글 수정 시 해당 게시글의 모든 댓글 캐시 무효화
+        UUID postId = updatedComment.getPostId();
+        cacheInvalidationUtil.evictPostCommentCaches(postId);
+
         return PostCommentResponse.from(updatedComment, isLiked, isOwnComment, canViewSecret, replies);
     }
 
@@ -214,10 +227,14 @@ public class PostCommentService {
         if (!postComment.getAuthorId().equals(userId)) {
             throw new AccessDeniedException("댓글을 삭제할 권한이 없습니다");
         }
+        UUID postId = postComment.getPostId();
         postComment.delete();
         postCommentRepository.save(postComment);
         postCommentRepository.flush();
-        boardPostRepository.updateComments(postComment.getPostId(), postCommentRepository.countAllByPostIdAndIsDeletedFalse(postComment.getPostId()));
+        boardPostRepository.updateComments(postId, postCommentRepository.countAllByPostIdAndIsDeletedFalse(postId));
+
+        // 댓글 삭제 시 해당 게시글의 모든 댓글 캐시 무효화
+        cacheInvalidationUtil.evictPostCommentCaches(postId);
     }
     
     @Transactional
@@ -241,7 +258,10 @@ public class PostCommentService {
             postCommentLikeRepository.save(newLike);
             comment.incrementLikes();
         }
-        
+
         postCommentRepository.save(comment);
+
+        // 댓글 좋아요 상태 변경 시 해당 사용자의 댓글 캐시만 무효화
+        cacheInvalidationUtil.evictCommentLikeCache(comment.getPostId(), userId);
     }
 }
