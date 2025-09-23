@@ -59,6 +59,7 @@ public class CacheType {
   
   // 광고 관련 캐시 타입
   public static final String THEME_AD_ACTIVE = "theme:ad:active";
+  public static final String THEME_AD_ACTIVE_CAROUSEL = "theme:ad:active_carousel";
   public static final String THEME_AD_QUEUE = "theme:ad:queue";
   public static final String THEME_AD_USER_REQUESTS = "theme:ad:user:requests";
   public static final String THEME_AD_STATS = "theme:ad:stats";
@@ -124,6 +125,7 @@ public class CacheType {
       DISCORD_GUILD_ROLES,
       NAVER_LOCAL_SEARCH,
       THEME_AD_ACTIVE,
+      THEME_AD_ACTIVE_CAROUSEL,
       THEME_AD_QUEUE,
       THEME_AD_USER_REQUESTS,
       THEME_AD_STATS,

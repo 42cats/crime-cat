@@ -215,6 +215,9 @@ public class UnifiedRedisConfig {
         cacheConfigurations.put(CacheType.THEME_AD_ACTIVE,
                 defaultConfig.entryTtl(Duration.ofMinutes(1))); // 활성 광고 - 1분
 
+        cacheConfigurations.put(CacheType.THEME_AD_ACTIVE_CAROUSEL,
+                defaultConfig.entryTtl(Duration.ofMinutes(1))); // 활성 광고 캐러셀 - 1분
+
         cacheConfigurations.put(CacheType.THEME_AD_QUEUE,
                 defaultConfig.entryTtl(Duration.ofMinutes(2))); // 광고 대기열 - 2분
 
