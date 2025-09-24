@@ -1,5 +1,6 @@
 package com.crimecat.backend.schedule.service;
 
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.schedule.dto.response.CalendarEventsResponse;
 import com.crimecat.backend.schedule.dto.MyScheduleResponse;
 import com.crimecat.backend.webUser.repository.WebUserRepository;
@@ -50,7 +51,6 @@ public class UnifiedCalendarCacheService {
     }
 
     // 캐시 설정
-    private static final String CACHE_PREFIX = "unified:calendar:events";
     private static final int CACHE_TTL_MINUTES = 30;
     private static final String CACHE_FORCE_REFRESH_KEY = "unified:calendar:force_refresh:%s";
 
@@ -61,8 +61,10 @@ public class UnifiedCalendarCacheService {
      * @param endDate 종료 날짜
      * @return 통합 캘린더 이벤트 응답
      */
-    @Cacheable(value = CACHE_PREFIX, key = "#userId + ':' + #startDate + ':' + #endDate")
-    @Transactional
+    @Cacheable(value = CacheNames.UNIFIED_CALENDAR_EVENTS,
+               key = "#userId + ':' + #startDate + ':' + #endDate",
+               cacheManager = "caffeineCacheManager")
+    @Transactional(readOnly = true)
     public CalendarEventsResponse getCachedCalendarEvents(UUID userId, LocalDate startDate, LocalDate endDate) {
         log.info("📊 [CACHE_MISS] iCal 동기화 및 캐시 생성: userId={}, range={} ~ {} (30분 캐싱)", userId, startDate, endDate);
         
@@ -181,7 +183,7 @@ public class UnifiedCalendarCacheService {
      * @param endDate 종료 날짜
      * @return 새로 조회된 이벤트 데이터
      */
-    @CacheEvict(value = CACHE_PREFIX, key = "#userId + ':' + #startDate + ':' + #endDate")
+    @CacheEvict(value = CacheNames.UNIFIED_CALENDAR_EVENTS, key = "#userId + ':' + #startDate + ':' + #endDate")
     public CalendarEventsResponse forceRefreshCalendarEvents(UUID userId, LocalDate startDate, LocalDate endDate) {
         log.info("🔄 [FORCE_REFRESH] 캘린더 이벤트 강제 새로고침: userId={}, range={} ~ {}", 
                 userId, startDate, endDate);
@@ -216,13 +218,13 @@ public class UnifiedCalendarCacheService {
      * 사용자별 캐시 전체 무효화
      * @param userId 사용자 ID
      */
-    @CacheEvict(value = {CACHE_PREFIX, "user-calendars"}, allEntries = true)  // 패턴 매칭이 어려워 전체 무효화
+    @CacheEvict(value = {CacheNames.UNIFIED_CALENDAR_EVENTS, CacheNames.USER_CALENDARS}, allEntries = true)  // 패턴 매칭이 어려워 전체 무효화
     public void invalidateUserCache(UUID userId) {
         log.info("🗑️ [CACHE_EVICT] 사용자 캐시 무효화: userId={}", userId);
         
         // Redis에서 해당 사용자의 캐시 키 패턴 삭제
         try {
-            String pattern = CACHE_PREFIX + "::" + userId + ":*";
+            String pattern = CacheNames.UNIFIED_CALENDAR_EVENTS + "::" + userId + ":*";
             Set<String> keys = redisTemplate.keys(pattern);
             
             if (keys != null && !keys.isEmpty()) {

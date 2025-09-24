@@ -1,5 +1,6 @@
 package com.crimecat.backend.command.service;
 
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.command.domain.Command;
 import com.crimecat.backend.command.dto.CommandDto;
@@ -11,6 +12,8 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -22,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommandService {
   private final CommandRepository commandRepository;
 
+  @Cacheable(value = CacheNames.ALL_COMMANDS, cacheManager = "caffeineCacheManager")
+  @Transactional(readOnly = true)
   public List<CommandSummaryDto> getCommandsList() {
     List<Command> allCommands =
         commandRepository.findAll(
@@ -61,6 +66,7 @@ public class CommandService {
   }
 
   @Transactional
+  @CacheEvict(value = CacheNames.ALL_COMMANDS, allEntries = true, cacheManager = "caffeineCacheManager")
   public void createCommand(CommandRequestDto requestDto) {
     try {
       Command newCommand =
@@ -83,6 +89,7 @@ public class CommandService {
   }
 
   @Transactional
+  @CacheEvict(value = CacheNames.ALL_COMMANDS, allEntries = true, cacheManager = "caffeineCacheManager")
   public void updateCommand(String commandId, CommandRequestDto requestDto) {
     try {
       // 1) 기존 엔티티 조회 (없으면 404)
@@ -112,6 +119,7 @@ public class CommandService {
   }
 
   @Transactional
+  @CacheEvict(value = CacheNames.ALL_COMMANDS, allEntries = true, cacheManager = "caffeineCacheManager")
   public void deleteCommand(String commandId) {
     try {
       UUID id = UUID.fromString(commandId);

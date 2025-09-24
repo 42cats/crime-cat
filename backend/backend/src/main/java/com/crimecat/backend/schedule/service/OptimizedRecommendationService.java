@@ -1,6 +1,6 @@
 package com.crimecat.backend.schedule.service;
 
-import com.crimecat.backend.config.CacheType;
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.schedule.domain.Event;
 import com.crimecat.backend.schedule.domain.EventParticipant;
 import com.crimecat.backend.schedule.domain.EventType;
@@ -59,7 +59,7 @@ public class OptimizedRecommendationService {
     /**
      * 이벤트에 대한 이중 추천 시스템 (현재 참여자 vs 나를 포함)
      */
-    @Cacheable(value = CacheType.SCHEDULE_RECOMMENDED_TIMES, 
+    @Cacheable(value = CacheNames.SCHEDULE_RECOMMENDED_TIMES,
                key = "#eventId.toString() + '_' + #requestUserId.toString()")
     public DualRecommendationResponse getDualRecommendations(UUID eventId, UUID requestUserId) {
         log.info("Starting dual recommendation calculation for event {} by user {}", eventId, requestUserId);

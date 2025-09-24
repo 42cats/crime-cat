@@ -1,6 +1,6 @@
 package com.crimecat.backend.schedule.service;
 
-import com.crimecat.backend.config.CacheType;
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.schedule.domain.Event;
 import com.crimecat.backend.schedule.domain.EventParticipant;
@@ -43,11 +43,11 @@ public class EventLeaveService {
      * - 캐시 무효화
      */
     @Caching(evict = {
-        @CacheEvict(value = CacheType.SCHEDULE_EVENT_LIST, allEntries = true),
-        @CacheEvict(value = CacheType.SCHEDULE_EVENT_DETAIL, key = "#eventId.toString()"),
-        @CacheEvict(value = CacheType.SCHEDULE_PARTICIPANTS, allEntries = true),
-        @CacheEvict(value = CacheType.SCHEDULE_AVAILABILITY, allEntries = true),
-        @CacheEvict(value = CacheType.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
+        @CacheEvict(value = CacheNames.SCHEDULE_EVENT_LIST, allEntries = true),
+        @CacheEvict(value = CacheNames.SCHEDULE_EVENT_DETAIL, key = "#eventId.toString()"),
+        @CacheEvict(value = CacheNames.SCHEDULE_PARTICIPANTS, allEntries = true),
+        @CacheEvict(value = CacheNames.SCHEDULE_AVAILABILITY, allEntries = true),
+        @CacheEvict(value = CacheNames.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
     })
     public LeaveResult leaveEvent(UUID eventId, UUID userId) {
         log.info("User {} attempting to leave event {}", userId, eventId);
@@ -103,11 +103,11 @@ public class EventLeaveService {
      * 이벤트 재참여 처리 (나갔던 사용자가 다시 참여)
      */
     @Caching(evict = {
-        @CacheEvict(value = CacheType.SCHEDULE_EVENT_LIST, allEntries = true),
-        @CacheEvict(value = CacheType.SCHEDULE_EVENT_DETAIL, key = "#eventId.toString()"),
-        @CacheEvict(value = CacheType.SCHEDULE_PARTICIPANTS, allEntries = true),
-        @CacheEvict(value = CacheType.SCHEDULE_AVAILABILITY, allEntries = true),
-        @CacheEvict(value = CacheType.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
+        @CacheEvict(value = CacheNames.SCHEDULE_EVENT_LIST, allEntries = true),
+        @CacheEvict(value = CacheNames.SCHEDULE_EVENT_DETAIL, key = "#eventId.toString()"),
+        @CacheEvict(value = CacheNames.SCHEDULE_PARTICIPANTS, allEntries = true),
+        @CacheEvict(value = CacheNames.SCHEDULE_AVAILABILITY, allEntries = true),
+        @CacheEvict(value = CacheNames.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
     })
     public RejoinResult rejoinEvent(UUID eventId, UUID userId) {
         log.info("User {} attempting to rejoin event {}", userId, eventId);

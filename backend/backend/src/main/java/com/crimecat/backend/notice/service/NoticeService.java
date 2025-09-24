@@ -1,5 +1,6 @@
 package com.crimecat.backend.notice.service;
 
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.exception.ErrorStatus;
 import com.crimecat.backend.notice.domain.Notice;
 import com.crimecat.backend.notice.dto.NoticeResponseDto;
@@ -8,6 +9,7 @@ import com.crimecat.backend.notice.dto.PageResultDto;
 import com.crimecat.backend.notice.repository.NoticeRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +24,7 @@ public class NoticeService {
 
 
 
+  @Cacheable(value = CacheNames.ALL_NOTICES, key = "#limit + ':' + #page", cacheManager = "caffeineCacheManager")
   @Transactional(readOnly = true)
   public PageResultDto<NoticeSummaryResponseDto> getNotice(Integer limit, Integer page){
     Pageable pageable = PageRequest.of(page,limit);
@@ -30,6 +33,7 @@ public class NoticeService {
     return PageResultDto.from(dtoPage);
   }
 
+  @Cacheable(value = CacheNames.ALL_NOTICES, key = "'detail:' + #id", cacheManager = "caffeineCacheManager")
   @Transactional(readOnly = true)
   public NoticeResponseDto getNoticeDetail(String id) {
       UUID uuid;

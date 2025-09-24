@@ -31,7 +31,7 @@ public class CachedDiscordBotService {
      * @param guildSnowflake 길드 ID
      * @return 길드 정보
      */
-    @Cacheable(value = CacheType.DISCORD_GUILD_INFO, key = "#guildSnowflake")
+    @Cacheable(value = CacheType.DISCORD_GUILD_INFO, key = "#guildSnowflake", cacheManager = "redisCacheManager")
     public ApiGetGuildInfoDto getGuildInfo(String guildSnowflake) {
         log.info("Discord API 호출 - 길드 정보 조회: {}", guildSnowflake);
         try {
@@ -48,7 +48,7 @@ public class CachedDiscordBotService {
      * @param guildSnowflake 길드 ID
      * @return 채널 목록
      */
-    @Cacheable(value = CacheType.DISCORD_GUILD_CHANNELS, key = "#guildSnowflake")
+    @Cacheable(value = CacheType.DISCORD_GUILD_CHANNELS, key = "#guildSnowflake", cacheManager = "redisCacheManager")
     public List<ChannelDto> getGuildChannels(String guildSnowflake) {
         log.info("Discord API 호출 - 채널 목록 조회: {}", guildSnowflake);
         try {
@@ -65,7 +65,7 @@ public class CachedDiscordBotService {
      * @param guildSnowflake 길드 ID
      * @return 역할 목록
      */
-    @Cacheable(value = CacheType.DISCORD_GUILD_ROLES, key = "#guildSnowflake")
+    @Cacheable(value = CacheType.DISCORD_GUILD_ROLES, key = "#guildSnowflake", cacheManager = "redisCacheManager")
     public List<RoleDto> getGuildRoles(String guildSnowflake) {
         log.info("Discord API 호출 - 역할 목록 조회: {}", guildSnowflake);
         try {
@@ -80,7 +80,7 @@ public class CachedDiscordBotService {
      * 특정 길드의 캐시 무효화
      * @param guildSnowflake 길드 ID
      */
-    @CacheEvict(value = {CacheType.DISCORD_GUILD_INFO, CacheType.DISCORD_GUILD_CHANNELS, CacheType.DISCORD_GUILD_ROLES}, key = "#guildSnowflake")
+    @CacheEvict(value = {CacheType.DISCORD_GUILD_INFO, CacheType.DISCORD_GUILD_CHANNELS, CacheType.DISCORD_GUILD_ROLES}, key = "#guildSnowflake", cacheManager="redisCacheManager")
     public void evictGuildCache(String guildSnowflake) {
         log.info("Discord 캐시 무효화 - 길드: {}", guildSnowflake);
     }
@@ -88,7 +88,7 @@ public class CachedDiscordBotService {
     /**
      * 모든 Discord 캐시 무효화
      */
-    @CacheEvict(value = {CacheType.DISCORD_GUILD_INFO, CacheType.DISCORD_GUILD_CHANNELS, CacheType.DISCORD_GUILD_ROLES}, allEntries = true)
+    @CacheEvict(value = {CacheType.DISCORD_GUILD_INFO, CacheType.DISCORD_GUILD_CHANNELS, CacheType.DISCORD_GUILD_ROLES}, allEntries = true, cacheManager="redisCacheManager")
     public void evictAllDiscordCache() {
         log.info("Discord 캐시 전체 무효화");
     }

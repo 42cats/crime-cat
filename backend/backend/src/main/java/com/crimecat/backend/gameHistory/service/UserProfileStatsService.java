@@ -1,6 +1,7 @@
 package com.crimecat.backend.gameHistory.service;
 
 import com.crimecat.backend.follow.repository.FollowRepository;
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.gameHistory.dto.UserProfileStatsResponse;
 import com.crimecat.backend.gameHistory.repository.EscapeRoomHistoryRepository;
 import com.crimecat.backend.gameHistory.repository.GameHistoryRepository;
@@ -36,7 +37,7 @@ public class UserProfileStatsService {
     /**
      * 특정 사용자의 프로필 통계 정보를 한 번에 조회 (조회하는 사용자 ID 포함)
      */
-    @Cacheable(cacheNames = "userProfileStats", key = "#userId + ':viewer:' + (#viewerId != null ? #viewerId : 'self')")
+    @Cacheable(cacheNames = CacheNames.USER_PROFILE_STATS, key = "#userId + ':viewer:' + (#viewerId != null ? #viewerId : 'self')")
     public UserProfileStatsResponse getUserProfileStats(String userId, String viewerId) {
         try {
             UUID userUuid = UUID.fromString(userId);

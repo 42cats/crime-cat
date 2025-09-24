@@ -1,6 +1,6 @@
 package com.crimecat.backend.schedule.service;
 
-import com.crimecat.backend.config.CacheType;
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.schedule.domain.UserBlockedPeriod;
 import com.crimecat.backend.schedule.repository.UserBlockedPeriodRepository;
 import com.crimecat.backend.webUser.domain.WebUser;
@@ -73,9 +73,9 @@ public class OptimizedBlockedDateService {
      * 특정 날짜를 비활성화 (O(1))
      */
     @Caching(evict = {
-        @CacheEvict(value = CacheType.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()"),
-        @CacheEvict(value = CacheType.SCHEDULE_AVAILABILITY, allEntries = true),
-        @CacheEvict(value = CacheType.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
+        @CacheEvict(value = CacheNames.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()"),
+        @CacheEvict(value = CacheNames.SCHEDULE_AVAILABILITY, allEntries = true),
+        @CacheEvict(value = CacheNames.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
     })
     public void blockDate(UUID userId, LocalDate date) {
         log.info("🔒 [BLOCK] Starting blockDate for user={} date={}", userId, date);
@@ -120,9 +120,9 @@ public class OptimizedBlockedDateService {
      * 날짜 범위 일괄 비활성화 (드래그 선택)
      */
     @Caching(evict = {
-        @CacheEvict(value = CacheType.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()"),
-        @CacheEvict(value = CacheType.SCHEDULE_AVAILABILITY, allEntries = true),
-        @CacheEvict(value = CacheType.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
+        @CacheEvict(value = CacheNames.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()"),
+        @CacheEvict(value = CacheNames.SCHEDULE_AVAILABILITY, allEntries = true),
+        @CacheEvict(value = CacheNames.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
     })
     public void blockDateRange(UUID userId, LocalDate startDate, LocalDate endDate) {
         log.info("🔒📅 [BLOCK_RANGE] Starting blockDateRange for user={} from={} to={}", userId, startDate, endDate);
@@ -166,9 +166,9 @@ public class OptimizedBlockedDateService {
      * 날짜 범위 일괄 활성화 (드래그 선택)
      */
     @Caching(evict = {
-        @CacheEvict(value = CacheType.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()"),
-        @CacheEvict(value = CacheType.SCHEDULE_AVAILABILITY, allEntries = true),
-        @CacheEvict(value = CacheType.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
+        @CacheEvict(value = CacheNames.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()"),
+        @CacheEvict(value = CacheNames.SCHEDULE_AVAILABILITY, allEntries = true),
+        @CacheEvict(value = CacheNames.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
     })
     public void unblockDateRange(UUID userId, LocalDate startDate, LocalDate endDate) {
         log.info("🔓📅 [UNBLOCK_RANGE] Starting unblockDateRange for user={} from={} to={}", userId, startDate, endDate);
@@ -212,9 +212,9 @@ public class OptimizedBlockedDateService {
      * 특정 날짜를 활성화 (O(1))
      */
     @Caching(evict = {
-        @CacheEvict(value = CacheType.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()"),
-        @CacheEvict(value = CacheType.SCHEDULE_AVAILABILITY, allEntries = true),
-        @CacheEvict(value = CacheType.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
+        @CacheEvict(value = CacheNames.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()"),
+        @CacheEvict(value = CacheNames.SCHEDULE_AVAILABILITY, allEntries = true),
+        @CacheEvict(value = CacheNames.SCHEDULE_RECOMMENDED_TIMES, allEntries = true)
     })
     public void unblockDate(UUID userId, LocalDate date) {
         LocalDate periodStart = getCurrentPeriodStart();
@@ -277,7 +277,7 @@ public class OptimizedBlockedDateService {
      * 사용자의 모든 비활성화 날짜 조회 (O(90) = O(1))
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheType.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()")
+    @Cacheable(value = CacheNames.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()")
     public Set<LocalDate> getUserBlockedDates(UUID userId) {
         LocalDate periodStart = getCurrentPeriodStart();
         
@@ -326,7 +326,7 @@ public class OptimizedBlockedDateService {
     /**
      * 사용자의 모든 비활성화 정보 초기화
      */
-    @CacheEvict(value = CacheType.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()")
+    @CacheEvict(value = CacheNames.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()")
     public void clearAllBlockedDates(UUID userId) {
         LocalDate periodStart = getCurrentPeriodStart();
         userBlockedPeriodRepository.deleteByUserIdAndPeriodStart(userId, periodStart);
@@ -337,7 +337,7 @@ public class OptimizedBlockedDateService {
      * 현재 기간으로 마이그레이션 (월 경계 넘어갈 때 사용)
      */
     @Transactional
-    @CacheEvict(value = CacheType.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()")
+    @CacheEvict(value = CacheNames.SCHEDULE_USER_BLOCKED_DATES, key = "#userId.toString()")
     public void migrateToCurrentPeriod(UUID userId) {
         LocalDate currentPeriodStart = getCurrentPeriodStart();
         LocalDate oldPeriodStart = currentPeriodStart.minusMonths(1);

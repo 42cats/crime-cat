@@ -26,10 +26,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 통합 Redis 설정
+ * Redis 기반 분산 캐시 설정
  * - Redis 연결 설정
  * - 직렬화 설정 (타입 정보 포함)
- * - 캐시 매니저 설정
+ * - 분산 환경 및 영속성이 필요한 캐시 전용
  */
 @Configuration
 @EnableCaching
@@ -144,10 +144,9 @@ public class UnifiedRedisConfig {
     }
 
     /**
-     * Redis 캐시 매니저
+     * Redis 캐시 매니저 - 분산 환경 및 영속성이 필요한 캐시용
      */
-    @Bean
-    @Primary
+    @Bean("redisCacheManager")
     public RedisCacheManager redisCacheManager(
             RedisConnectionFactory connectionFactory,
             @Qualifier("redisObjectMapper") ObjectMapper redisObjectMapper) {
@@ -164,154 +163,106 @@ public class UnifiedRedisConfig {
                         .fromSerializer(serializer))
                 .disableCachingNullValues();
         
-        // 캐시별 개별 TTL 설정
+        // === 분산 환경 및 영속성이 필요한 Redis 전용 캐시 ===
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-        
-        // 게임 테마 목록 - 5분
-        cacheConfigurations.put("game:theme:list", 
-                defaultConfig.entryTtl(Duration.ofMinutes(5)));
-        
-        // 게임 테마 상세 - 30분
-        cacheConfigurations.put("game:theme", 
-                defaultConfig.entryTtl(Duration.ofMinutes(30)));
-        
-        // 게임 테마 좋아요 - 10분
-        cacheConfigurations.put("game:theme:like", 
-                defaultConfig.entryTtl(Duration.ofMinutes(10)));
-        
-        // 사용자별 테마 요약 - 15분
-        cacheConfigurations.put("user:theme:summary", 
-                defaultConfig.entryTtl(Duration.ofMinutes(15)));
-        
-        // 사용자 프로필 - 10분
-        cacheConfigurations.put("user:profile", 
-                defaultConfig.entryTtl(Duration.ofMinutes(10)));
-        
-        // 사용자 권한 - 15분
-        cacheConfigurations.put("user:permissions", 
-                defaultConfig.entryTtl(Duration.ofMinutes(15)));
-        
-        // 통합 게임 기록 - 10분
-        cacheConfigurations.put(CacheType.INTEGRATED_HISTORIES, 
-                defaultConfig.entryTtl(Duration.ofMinutes(10)));
-        
-        // 게시판 목록 - 2분
-        cacheConfigurations.put("board:post:list", 
-                defaultConfig.entryTtl(Duration.ofMinutes(2)));
-        
-        // 검색 결과 - 5분
-        cacheConfigurations.put("search:users", 
-                defaultConfig.entryTtl(Duration.ofMinutes(5)));
-        
-        // 조회수 - 1분
-        cacheConfigurations.put(CacheType.VIEW_COUNT, 
-                defaultConfig.entryTtl(Duration.ofMinutes(1)));
-        
+
+        // === 외부 API 캐시 (높은 지연시간, 분산 공유 필요) ===
+
         // Discord API 캐시 - 길드 정보 30분
-        cacheConfigurations.put(CacheType.DISCORD_GUILD_INFO, 
+        cacheConfigurations.put(CacheType.DISCORD_GUILD_INFO,
                 defaultConfig.entryTtl(Duration.ofMinutes(30)));
-        
+
         // Discord API 캐시 - 채널 목록 15분
-        cacheConfigurations.put(CacheType.DISCORD_GUILD_CHANNELS, 
+        cacheConfigurations.put(CacheType.DISCORD_GUILD_CHANNELS,
                 defaultConfig.entryTtl(Duration.ofMinutes(15)));
-        
+
+        // Discord API 캐시 - 역할 목록 15분
+        cacheConfigurations.put(CacheType.DISCORD_GUILD_ROLES,
+                defaultConfig.entryTtl(Duration.ofMinutes(15)));
+
         // 네이버 API 캐시 - 지역 검색 1시간
-        cacheConfigurations.put(CacheType.NAVER_LOCAL_SEARCH, 
+        cacheConfigurations.put(CacheType.NAVER_LOCAL_SEARCH,
                 defaultConfig.entryTtl(Duration.ofHours(1)));
-        
-        // Stats API 캐시 설정
-        cacheConfigurations.put("totalServers", 
+
+        // === 통계 API 캐시 (무거운 집계 연산, 분산 동기화) ===
+
+        cacheConfigurations.put("totalServers",
                 defaultConfig.entryTtl(Duration.ofHours(1)));
-        cacheConfigurations.put("totalUsers", 
+        cacheConfigurations.put("totalUsers",
                 defaultConfig.entryTtl(Duration.ofHours(1)));
-        cacheConfigurations.put("totalPlayers", 
+        cacheConfigurations.put("totalPlayers",
                 defaultConfig.entryTtl(Duration.ofHours(1)));
-        cacheConfigurations.put("totalCreators", 
+        cacheConfigurations.put("totalCreators",
                 defaultConfig.entryTtl(Duration.ofHours(1)));
-        cacheConfigurations.put("crimeThemes", 
+        cacheConfigurations.put("crimeThemes",
                 defaultConfig.entryTtl(Duration.ofHours(1)));
-        cacheConfigurations.put("escapeThemes", 
+        cacheConfigurations.put("escapeThemes",
                 defaultConfig.entryTtl(Duration.ofHours(1)));
-        
-        // 게임 히스토리 캐시 설정
-        cacheConfigurations.put("integratedGameHistory", 
+
+        // === 복합 게임 히스토리 캐시 (복잡한 집계, 영속성 필요) ===
+
+        cacheConfigurations.put("integratedGameHistory",
                 defaultConfig.entryTtl(Duration.ofMinutes(10)));
-        cacheConfigurations.put("userGameStatistics", 
+        cacheConfigurations.put("userGameStatistics",
                 defaultConfig.entryTtl(Duration.ofMinutes(15)));
-        cacheConfigurations.put("userProfileStats", 
+        cacheConfigurations.put("userProfileStats",
                 defaultConfig.entryTtl(Duration.ofMinutes(10)));
-        cacheConfigurations.put("escapeRoomThemeStats", 
+        cacheConfigurations.put("escapeRoomThemeStats",
                 defaultConfig.entryTtl(Duration.ofMinutes(30)));
-        
-        // 테마 광고 캐시 설정 (실시간 업데이트를 위한 짧은 TTL)
-        cacheConfigurations.put(CacheType.THEME_AD_ACTIVE, 
+
+        // === 테마 광고 캐시 (실시간 업데이트, 분산 동기화 필요) ===
+
+        cacheConfigurations.put(CacheType.THEME_AD_ACTIVE,
                 defaultConfig.entryTtl(Duration.ofMinutes(1))); // 활성 광고 - 1분
-        
-        cacheConfigurations.put(CacheType.THEME_AD_QUEUE, 
+
+        cacheConfigurations.put(CacheType.THEME_AD_ACTIVE_CAROUSEL,
+                defaultConfig.entryTtl(Duration.ofMinutes(1))); // 활성 광고 캐러셀 - 1분
+
+        cacheConfigurations.put(CacheType.THEME_AD_QUEUE,
                 defaultConfig.entryTtl(Duration.ofMinutes(2))); // 광고 대기열 - 2분
-        
-        cacheConfigurations.put(CacheType.THEME_AD_USER_REQUESTS, 
+
+        cacheConfigurations.put(CacheType.THEME_AD_USER_REQUESTS,
                 defaultConfig.entryTtl(Duration.ofMinutes(3))); // 사용자 광고 요청 - 3분
-        
-        cacheConfigurations.put(CacheType.THEME_AD_STATS, 
+
+        cacheConfigurations.put(CacheType.THEME_AD_STATS,
                 defaultConfig.entryTtl(Duration.ofMinutes(5))); // 개별 광고 통계 - 5분
-        
-        cacheConfigurations.put(CacheType.THEME_AD_USER_STATS, 
+
+        cacheConfigurations.put(CacheType.THEME_AD_USER_STATS,
                 defaultConfig.entryTtl(Duration.ofMinutes(5))); // 사용자 광고 통계 - 5분
-        
-        cacheConfigurations.put(CacheType.THEME_AD_USER_SUMMARY, 
+
+        cacheConfigurations.put(CacheType.THEME_AD_USER_SUMMARY,
                 defaultConfig.entryTtl(Duration.ofMinutes(5))); // 사용자 광고 요약 - 5분
-        
-        cacheConfigurations.put(CacheType.THEME_AD_PLATFORM_STATS, 
+
+        cacheConfigurations.put(CacheType.THEME_AD_PLATFORM_STATS,
                 defaultConfig.entryTtl(Duration.ofMinutes(10))); // 플랫폼 통계 - 10분
-        
-        // 사이트맵 캐시 설정
-        cacheConfigurations.put(CacheType.SITEMAP_INDEX, 
+
+        // === 사이트맵 캐시 (SEO 최적화, 영속성 필요) ===
+
+        cacheConfigurations.put(CacheType.SITEMAP_INDEX,
                 defaultConfig.entryTtl(Duration.ofHours(1))); // 사이트맵 인덱스 - 1시간
-        
-        cacheConfigurations.put(CacheType.SITEMAP_THEMES, 
+
+        cacheConfigurations.put(CacheType.SITEMAP_THEMES,
                 defaultConfig.entryTtl(Duration.ofMinutes(30))); // 테마 사이트맵 - 30분
-        
-        cacheConfigurations.put(CacheType.SITEMAP_POSTS, 
+
+        cacheConfigurations.put(CacheType.SITEMAP_POSTS,
                 defaultConfig.entryTtl(Duration.ofMinutes(30))); // 게시글 사이트맵 - 30분
-        
-        cacheConfigurations.put(CacheType.SITEMAP_PROFILES, 
+
+        cacheConfigurations.put(CacheType.SITEMAP_PROFILES,
                 defaultConfig.entryTtl(Duration.ofHours(1))); // 프로필 사이트맵 - 1시간
-        
-        cacheConfigurations.put(CacheType.SITEMAP_SNS, 
+
+        cacheConfigurations.put(CacheType.SITEMAP_SNS,
                 defaultConfig.entryTtl(Duration.ofMinutes(30))); // SNS 사이트맵 - 30분
-        
-        cacheConfigurations.put(CacheType.SITEMAP_NOTICES, 
+
+        cacheConfigurations.put(CacheType.SITEMAP_NOTICES,
                 defaultConfig.entryTtl(Duration.ofHours(1))); // 공지사항 사이트맵 - 1시간
-        
-        cacheConfigurations.put(CacheType.SITEMAP_COMMANDS, 
+
+        cacheConfigurations.put(CacheType.SITEMAP_COMMANDS,
                 defaultConfig.entryTtl(Duration.ofHours(2))); // 명령어 사이트맵 - 2시간
-        
-        cacheConfigurations.put(CacheType.SITEMAP_GAME_THEMES, 
+
+        cacheConfigurations.put(CacheType.SITEMAP_GAME_THEMES,
                 defaultConfig.entryTtl(Duration.ofMinutes(30))); // 게임테마 사이트맵 - 30분
-        
-        // 일정 관리 캐시 설정
-        cacheConfigurations.put(CacheType.SCHEDULE_EVENT_LIST, 
-                defaultConfig.entryTtl(Duration.ofMinutes(2))); // 일정 목록 - 2분 (실시간성 중요)
-        
-        cacheConfigurations.put(CacheType.SCHEDULE_EVENT_DETAIL, 
-                defaultConfig.entryTtl(Duration.ofMinutes(10))); // 일정 상세 - 10분
-        
-        cacheConfigurations.put(CacheType.SCHEDULE_PARTICIPANTS, 
-                defaultConfig.entryTtl(Duration.ofMinutes(1))); // 참여자 목록 - 1분 (참여 상태 변경 빈도 높음)
-        
-        cacheConfigurations.put(CacheType.SCHEDULE_AVAILABILITY, 
-                defaultConfig.entryTtl(Duration.ofMinutes(15))); // 가용시간 계산 - 15분 (계산 복잡도 높음)
-        
-        cacheConfigurations.put(CacheType.SCHEDULE_ICAL_PARSED, 
-                defaultConfig.entryTtl(Duration.ofMinutes(30))); // iCalendar 파싱 결과 - 30분 (외부 API 호출 최소화)
-        
-        cacheConfigurations.put(CacheType.SCHEDULE_USER_CALENDAR, 
-                defaultConfig.entryTtl(Duration.ofMinutes(10))); // 사용자 캘린더 정보 - 10분
-        
-        // 봇 커맨드 목록 캐시 - 1시간 (봇 재시작 시에도 유효한 캐시 유지)
-        cacheConfigurations.put("botCommands", 
-                defaultConfig.entryTtl(Duration.ofHours(1))); // 봇 커맨드 - 1시간
+
+        // 스케줄 관련 캐시는 Caffeine으로 이동됨 (더 나은 성능을 위해)
         
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

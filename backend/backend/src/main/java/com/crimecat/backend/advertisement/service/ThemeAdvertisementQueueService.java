@@ -288,7 +288,7 @@ public class ThemeAdvertisementQueueService {
     /**
      * GameAdsCarousel과 호환되는 형식으로 활성 광고 목록 조회
      */
-    @Cacheable(value = CacheType.THEME_AD_ACTIVE + "_carousel")
+    @Cacheable(value = CacheType.THEME_AD_ACTIVE_CAROUSEL, cacheManager = "redisCacheManager")
     public List<PublicThemeAdvertisementResponse> getActiveAdvertisementsForCarousel() {
         List<ThemeAdvertisementRequest> activeAds = getActiveAdvertisements();
         log.info("활성 광고 조회 - 총 {}개 발견", activeAds.size());
@@ -331,12 +331,12 @@ public class ThemeAdvertisementQueueService {
                 .collect(Collectors.toList());
     }
     
-    @Cacheable(value = CacheType.THEME_AD_USER_REQUESTS, key = "#userId")
+    @Cacheable(value = CacheType.THEME_AD_USER_REQUESTS, key = "#userId", cacheManager = "redisCacheManager")
     public List<ThemeAdvertisementRequest> getUserAdvertisements(UUID userId) {
         return requestRepository.findByUserIdOrderByRequestedAtDesc(userId);
     }
     
-    @Cacheable(value = CacheType.THEME_AD_QUEUE)
+    @Cacheable(value = CacheType.THEME_AD_QUEUE, cacheManager = "redisCacheManager")
     public List<ThemeAdvertisementRequest> getQueuedAdvertisements() {
         return requestRepository.findByStatusOrderByQueuePositionAsc(AdvertisementStatus.PENDING_QUEUE);
     }

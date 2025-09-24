@@ -3,7 +3,6 @@ package com.crimecat.backend.config;
 
 public class CacheType {
   public static final String PERSONAL_DASHBOARD_INFO = "personal_dashboard_info";
-  public static final String VIEW_COUNT = "VIEW_COUNT";
   public static final String ESCAPE_ROOM_THEME_STATS = "escape_room_theme_stats";
   
   // 게임 기록 관련 캐시 타입 추가
@@ -60,6 +59,7 @@ public class CacheType {
   
   // 광고 관련 캐시 타입
   public static final String THEME_AD_ACTIVE = "theme:ad:active";
+  public static final String THEME_AD_ACTIVE_CAROUSEL = "theme:ad:active_carousel";
   public static final String THEME_AD_QUEUE = "theme:ad:queue";
   public static final String THEME_AD_USER_REQUESTS = "theme:ad:user:requests";
   public static final String THEME_AD_STATS = "theme:ad:stats";
@@ -77,19 +77,14 @@ public class CacheType {
   public static final String SITEMAP_COMMANDS = "sitemap:commands";
   public static final String SITEMAP_GAME_THEMES = "sitemap:game_themes";
   
-  // 일정 관리 관련 캐시 타입
-  public static final String SCHEDULE_EVENT_LIST = "schedule:events";
-  public static final String SCHEDULE_EVENT_DETAIL = "schedule:event";
-  public static final String SCHEDULE_PARTICIPANTS = "schedule:participants";
-  public static final String SCHEDULE_AVAILABILITY = "schedule:availability";
-  public static final String SCHEDULE_ICAL_PARSED = "schedule:ical:parsed";
-  public static final String SCHEDULE_USER_CALENDAR = "schedule:user:calendar";
-  public static final String SCHEDULE_USER_BLOCKED_DATES = "schedule:user:blocked:dates";
-  public static final String SCHEDULE_RECOMMENDED_TIMES = "schedule:recommended:times";
+  // === Caffeine 캐시는 이제 CaffeineCacheType enum에서 관리 ===
+
+  // === Redis 분산 캐시 전용 타입 (영속성, 분산 동기화) ===
+
+  // 스케줄 관련 캐시는 CaffeineCacheType enum으로 이동됨
   
   public static final String [] CACHE_TYPE = {
       PERSONAL_DASHBOARD_INFO,
-      VIEW_COUNT,
       ESCAPE_ROOM_THEME_STATS,
       INTEGRATED_HISTORIES,
       USER_STATISTICS,
@@ -122,6 +117,7 @@ public class CacheType {
       DISCORD_GUILD_ROLES,
       NAVER_LOCAL_SEARCH,
       THEME_AD_ACTIVE,
+      THEME_AD_ACTIVE_CAROUSEL,
       THEME_AD_QUEUE,
       THEME_AD_USER_REQUESTS,
       THEME_AD_STATS,
@@ -135,14 +131,8 @@ public class CacheType {
       SITEMAP_SNS,
       SITEMAP_NOTICES,
       SITEMAP_COMMANDS,
-      SITEMAP_GAME_THEMES,
-      SCHEDULE_EVENT_LIST,
-      SCHEDULE_EVENT_DETAIL,
-      SCHEDULE_PARTICIPANTS,
-      SCHEDULE_AVAILABILITY,
-      SCHEDULE_ICAL_PARSED,
-      SCHEDULE_USER_CALENDAR,
-      SCHEDULE_USER_BLOCKED_DATES,
-      SCHEDULE_RECOMMENDED_TIMES
+      SITEMAP_GAME_THEMES
+      // === Caffeine 캐시들은 CaffeineCacheType enum에서 관리됨 ===
+      // === 스케줄 관련 캐시는 CaffeineCacheType enum으로 이동됨 ===
   };
 }

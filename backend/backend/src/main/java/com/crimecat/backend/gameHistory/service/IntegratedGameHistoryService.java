@@ -1,6 +1,7 @@
 package com.crimecat.backend.gameHistory.service;
 
 import com.crimecat.backend.config.CacheType;
+import com.crimecat.backend.config.CacheNames;
 import com.crimecat.backend.gameHistory.domain.EscapeRoomHistory;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryDto;
 import com.crimecat.backend.gameHistory.dto.UserGameHistoryToUserDto;
@@ -53,7 +54,7 @@ public class IntegratedGameHistoryService {
     /**
      * 사용자의 통합 게임 기록 조회 (최적화 버전)
      */
-    @Cacheable(cacheNames = "integratedGameHistory", 
+    @Cacheable(cacheNames = CacheNames.INTEGRATED_GAME_HISTORY, 
               key = "#userId + ':' + #filter.gameType + ':' + #filter.page + ':' + #filter.size")
     public IntegratedGameHistoryResponse getUserGameHistories(
             String userId, 
@@ -272,7 +273,7 @@ public class IntegratedGameHistoryService {
     /**
      * 통계 정보 생성 (캐싱)
      */
-    @Cacheable(cacheNames = "userGameStatistics", key = "#userId.toString()")
+    @Cacheable(cacheNames = CacheNames.USER_GAME_STATISTICS, key = "#userId.toString()")
     public IntegratedGameHistoryResponse.GameStatistics createStatistics(UUID userId) {
         log.info("통계 정보 생성 (캐시 미스) - userId: {}", userId);
         // 크라임씬 통계 (중복 플레이 불가능)
