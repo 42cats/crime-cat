@@ -90,7 +90,7 @@ public interface ThemeAdvertisementRequestRepository extends JpaRepository<Theme
     
     // 사용자의 가장 성과 좋은 테마
     @Query("SELECT tar.themeName FROM ThemeAdvertisementRequest tar WHERE tar.userId = :userId AND tar.exposureCount > 0 ORDER BY (CAST(tar.clickCount AS double) / CAST(tar.exposureCount AS double)) DESC")
-    Optional<String> findBestPerformingThemeByUserId(@Param("userId") UUID userId);
+    Optional<String> findFirstBestPerformingThemeByUserId(@Param("userId") UUID userId);
     
     @Query("SELECT MAX(CASE WHEN tar.exposureCount > 0 THEN (CAST(tar.clickCount AS double) / CAST(tar.exposureCount AS double)) * 100.0 ELSE 0.0 END) FROM ThemeAdvertisementRequest tar WHERE tar.userId = :userId")
     Optional<Double> findBestPerformingCTRByUserId(@Param("userId") UUID userId);

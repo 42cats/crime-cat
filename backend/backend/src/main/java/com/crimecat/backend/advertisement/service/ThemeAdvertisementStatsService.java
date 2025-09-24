@@ -62,7 +62,7 @@ public class ThemeAdvertisementStatsService {
         Long totalClicks = requestRepository.sumClickCountByUserId(userId);
         
         // 최고 성과 테마
-        String bestTheme = requestRepository.findBestPerformingThemeByUserId(userId).orElse(null);
+        String bestTheme = requestRepository.findFirstBestPerformingThemeByUserId(userId).orElse(null);
         Double bestCTR = requestRepository.findBestPerformingCTRByUserId(userId).orElse(0.0);
         
         return UserAdvertisementSummary.builder()
