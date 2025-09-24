@@ -336,7 +336,7 @@ public class ThemeAdvertisementQueueService {
         return requestRepository.findByUserIdOrderByRequestedAtDesc(userId);
     }
     
-    @Cacheable(value = CacheType.THEME_AD_QUEUE, cacheManager = "redisCacheManager")
+    @Cacheable(value = CacheType.THEME_AD_QUEUE, key = "'all'", cacheManager = "redisCacheManager")
     public List<ThemeAdvertisementRequest> getQueuedAdvertisements() {
         return requestRepository.findByStatusOrderByQueuePositionAsc(AdvertisementStatus.PENDING_QUEUE);
     }
