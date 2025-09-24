@@ -48,14 +48,14 @@ public class ThemeAdvertisementQueueService {
     
     @Transactional
     @Caching(evict = {
-        @CacheEvict(value = CacheType.THEME_AD_QUEUE, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, key = "#userId"),
-        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_ACTIVE + "_carousel", allEntries = true),
+        @CacheEvict(value = CacheType.THEME_AD_QUEUE, allEntries = true, cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, key = "#userId", cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true, cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE_CAROUSEL, allEntries = true, cacheManager = "redisCacheManager"),
         // 새 광고 생성 시 통계 캐시도 무효화
-        @CacheEvict(value = CacheType.THEME_AD_USER_STATS, key = "#userId"),
-        @CacheEvict(value = CacheType.THEME_AD_USER_SUMMARY, key = "#userId"),
-        @CacheEvict(value = CacheType.THEME_AD_PLATFORM_STATS, allEntries = true)
+        @CacheEvict(value = CacheType.THEME_AD_USER_STATS, key = "#userId", cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_USER_SUMMARY, key = "#userId", cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_PLATFORM_STATS, allEntries = true, cacheManager = "redisCacheManager")
     })
     public ThemeAdvertisementRequest requestAdvertisement(UUID userId, UUID themeId, String themeName, 
                                                         ThemeAdvertisementRequest.ThemeType themeType, 
@@ -130,10 +130,10 @@ public class ThemeAdvertisementQueueService {
     
     @Transactional
     @Caching(evict = {
-        @CacheEvict(value = CacheType.THEME_AD_QUEUE, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, key = "#request.userId"),
-        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_ACTIVE + "_carousel", allEntries = true)
+        @CacheEvict(value = CacheType.THEME_AD_QUEUE, allEntries = true, cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, key = "#request.userId", cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true, cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE_CAROUSEL, allEntries = true, cacheManager = "redisCacheManager")
     })
     public void cancelQueuedAdvertisement(UUID requestId) {
         ThemeAdvertisementRequest request = requestRepository.findById(requestId)
@@ -168,10 +168,10 @@ public class ThemeAdvertisementQueueService {
     
     @Transactional
     @Caching(evict = {
-        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId"),
-        @CacheEvict(value = CacheType.THEME_AD_ACTIVE + "_carousel", allEntries = true)
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true, cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true, cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId", cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE_CAROUSEL, allEntries = true, cacheManager = "redisCacheManager")
     })
     public void cancelActiveAdvertisement(UUID requestId) {
         ThemeAdvertisementRequest request = requestRepository.findById(requestId)
@@ -220,7 +220,7 @@ public class ThemeAdvertisementQueueService {
     @Caching(evict = {
         @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true),
         @CacheEvict(value = CacheType.THEME_AD_QUEUE, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_ACTIVE + "_carousel", allEntries = true)
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE_CAROUSEL, allEntries = true)
     })
     public void processExpiredAds() {
         log.info("만료된 광고 처리 시작");
@@ -343,12 +343,12 @@ public class ThemeAdvertisementQueueService {
     
     @Transactional
     @Caching(evict = {
-        @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId"),
-        @CacheEvict(value = CacheType.THEME_AD_USER_STATS, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_USER_SUMMARY, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_PLATFORM_STATS, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true), // ThemeAdvertisements 페이지 캐시 삭제
-        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true) // 활성 광고 캐시 삭제
+        @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId", cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_USER_STATS, allEntries = true, cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_USER_SUMMARY, allEntries = true, cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_PLATFORM_STATS, allEntries = true, cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true, cacheManager = "redisCacheManager"), // ThemeAdvertisements 페이지 캐시 삭제
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true, cacheManager = "redisCacheManager") // 활성 광고 캐시 삭제
     })
     public void recordClick(UUID requestId) {
         requestRepository.incrementClickCount(requestId);
@@ -357,12 +357,12 @@ public class ThemeAdvertisementQueueService {
     
     @Transactional
     @Caching(evict = {
-        @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId"),
-        @CacheEvict(value = CacheType.THEME_AD_USER_STATS, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_USER_SUMMARY, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_PLATFORM_STATS, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true), // ThemeAdvertisements 페이지 캐시 삭제
-        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true) // 활성 광고 캐시 삭제
+        @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId", cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_USER_STATS, allEntries = true, cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_USER_SUMMARY, allEntries = true, cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_PLATFORM_STATS, allEntries = true, cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true, cacheManager = "redisCacheManager"), // ThemeAdvertisements 페이지 캐시 삭제
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true, cacheManager = "redisCacheManager") // 활성 광고 캐시 삭제
     })
     public void recordExposure(UUID requestId) {
         requestRepository.incrementExposureCount(requestId);
@@ -375,10 +375,10 @@ public class ThemeAdvertisementQueueService {
     
     @Transactional
     @Caching(evict = {
-        @CacheEvict(value = CacheType.THEME_AD_QUEUE, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true),
-        @CacheEvict(value = CacheType.THEME_AD_ACTIVE + "_carousel", allEntries = true)
+        @CacheEvict(value = CacheType.THEME_AD_QUEUE, allEntries = true, cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true, cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true, cacheManager = "redisCacheManager"),
+        @CacheEvict(value = CacheType.THEME_AD_ACTIVE_CAROUSEL, allEntries = true, cacheManager = "redisCacheManager")
     })
     public boolean forceCancelAdvertisement(UUID requestId, String reason, UUID adminUserId) {
         ThemeAdvertisementRequest request = requestRepository.findById(requestId)

@@ -27,7 +27,7 @@ public class ThemeCacheService {
      * 사용자의 테마 요약 캐시를 무효화
      * @param webUserId 사용자 ID
      */
-    @CacheEvict(value = CacheType.USER_THEME_SUMMARY, key = "#webUserId")
+    @CacheEvict(value = CacheType.USER_THEME_SUMMARY, key = "#webUserId", cacheManager = "redisCacheManager")
     public void evictUserThemeSummaryCache(UUID webUserId) {
         // 캐시 무효화만 수행
     }
