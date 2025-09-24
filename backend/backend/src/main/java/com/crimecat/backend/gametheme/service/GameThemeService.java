@@ -161,7 +161,7 @@ public class GameThemeService {
         }
     }
 
-    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_ENTITY, CacheType.GAME_THEME_RESPONSE, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
+    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_ENTITY, CacheType.GAME_THEME_RESPONSE, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()", cacheManager = "redisCacheManager")
     @Transactional
     public void deleteGameTheme(UUID themeId) {
         GameTheme gameTheme = themeRepository.findById(themeId).orElseThrow(ErrorStatus.GAME_THEME_NOT_FOUND::asServiceException);
@@ -215,7 +215,7 @@ public class GameThemeService {
      * @param themeId 테마 ID
      * @return 게임 테마 엔티티
      */
-    @Cacheable(value = CacheType.GAME_THEME_ENTITY, key = "#themeId.toString()")
+    @Cacheable(value = CacheType.GAME_THEME_ENTITY, key = "#themeId.toString()", cacheManager = "redisCacheManager")
     public GameTheme getGameThemeEntity(UUID themeId) {
         log.debug("🔍 테마 엔티티 조회 (캐시 체크) - ID: {}", themeId);
         
@@ -267,7 +267,7 @@ public class GameThemeService {
     // ================================
 
     @Transactional
-    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_ENTITY, CacheType.GAME_THEME_RESPONSE, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
+    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_ENTITY, CacheType.GAME_THEME_RESPONSE, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()", cacheManager = "redisCacheManager")
     public void updateCrimesceneTheme(UUID themeId, MultipartFile file, UpdateCrimesceneThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
 
@@ -305,7 +305,7 @@ public class GameThemeService {
     // ================================
 
     @Transactional
-    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_ENTITY, CacheType.GAME_THEME_RESPONSE, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
+    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_ENTITY, CacheType.GAME_THEME_RESPONSE, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()", cacheManager = "redisCacheManager")
     public void updateEscapeRoomTheme(UUID themeId, MultipartFile file, UpdateEscapeRoomThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
 
@@ -324,7 +324,7 @@ public class GameThemeService {
     // ================================
 
     @Transactional
-    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_ENTITY, CacheType.GAME_THEME_RESPONSE, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
+    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_ENTITY, CacheType.GAME_THEME_RESPONSE, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()", cacheManager = "redisCacheManager")
     public void updateMurderMysteryTheme(UUID themeId, MultipartFile file, UpdateGameThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
 
@@ -346,7 +346,7 @@ public class GameThemeService {
     // ================================
 
     @Transactional
-    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_ENTITY, CacheType.GAME_THEME_RESPONSE, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()")
+    @CacheEvict(value = {CacheType.GAME_THEME, CacheType.GAME_THEME_ENTITY, CacheType.GAME_THEME_RESPONSE, CacheType.GAME_THEME_LIST}, key = "#themeId.toString()", cacheManager = "redisCacheManager")
     public void updateRealWorldTheme(UUID themeId, MultipartFile file, UpdateGameThemeRequest request) {
         GameTheme gameTheme = getThemeForUpdate(themeId);
 
@@ -478,7 +478,7 @@ public class GameThemeService {
         return themeRecommendationRepository.findByWebUserIdAndThemeId(webUserId, themeId).isPresent();
     }
 
-    @Cacheable(value = CacheType.USER_THEME_SUMMARY, key = "#webUserId")
+    @Cacheable(value = CacheType.USER_THEME_SUMMARY, key = "#webUserId", cacheManager = "redisCacheManager")
     @Transactional(readOnly = true)
     public CrimesceneThemeSummeryListDto getGameThemeSummery(UUID webUserId) {
         // 사용자가 속한 팀 ID 목록 가져오기
@@ -587,7 +587,7 @@ public class GameThemeService {
      * @param limit 조회할 개수
      * @return 테마 목록
      */
-    @Cacheable(value = CacheType.GAME_THEME_LIST_BY_TYPE, key = "#discriminator + '_' + #limit")
+    @Cacheable(value = CacheType.GAME_THEME_LIST_BY_TYPE, key = "#discriminator + '_' + #limit", cacheManager = "redisCacheManager")
     public List<GameTheme> getThemesByType(String discriminator, int limit) {
         log.debug("Fetching themes with discriminator: {}", discriminator);
         Pageable pageable = PageRequest.of(0, limit);
