@@ -35,19 +35,33 @@ global.discordClient = client;
 (async () => {
 	// Redis 기본 연결
 	await client.redis.connect();
-	
+
+	// 🔍 Redis 연결 상태 디버깅 로그
+	console.log('🔍 Redis 연결 상태 확인:', {
+		isOpen: client.redis.client?.isOpen,
+		isReady: client.redis.client?.isReady,
+		status: client.redis.client?.status,
+		timestamp: new Date().toISOString()
+	});
+
 	// 통합 Pub/Sub 매니저 초기화
 	client.unifiedPubSub = new UnifiedPubSubManager(client);
 	await client.unifiedPubSub.initialize();
-	
+
 	// 광고 매니저 초기화 (통합 Pub/Sub 연동)
 	client.advertisementManager = new AdvertisementPubSubManager(client);
+
+	// 초기화 완료 콜백 설정 (updateActivity 호출 - 광고 데이터 직접 전달)
+	client.advertisementManager.setInitCompleteCallback(async (initialAds) => {
+		await updateActivity(client, messege, currentIndex, initialAds);
+	});
+
 	await client.advertisementManager.initialize();
-	
+
 	// 커맨드 캐시 매니저 초기화
 	client.commandsCacheManager = new CommandsCacheManager();
 	console.log('✅ 커맨드 캐시 매니저 초기화 완료');
-	
+
 	// Redis 키스페이스 이벤트 활성화
 	try {
 		await client.redis.client.configSet('notify-keyspace-events', 'Ex');
@@ -55,7 +69,7 @@ global.discordClient = client;
 	} catch (error) {
 		console.error('❌ Failed to enable Redis notifications:', error);
 	}
-	
+
 	console.log('✅ 통합 Pub/Sub 시스템 초기화 완료');
 })();
 
@@ -80,7 +94,6 @@ loadEvents(client, path.join(__dirname, 'Events'));
 // It makes some properties non-nullable.
 client.once(Events.ClientReady, async (readyClient) => {
 	console.log(`Ready! Logged in as !!${readyClient.user.tag}`);
-	await updateActivity(client, messege, currentIndex);
 	client.master = await client.users.fetch('317655426868969482');
 
 	// 커맨드 캐시 초기 업데이트
@@ -214,7 +227,7 @@ const handleExit = async (signal) => {
 				console.error('[EXIT] Pub/Sub 시스템 종료 중 오류:', pubsubErr);
 			}
 		}
-		
+
 		// Redis 연결 종료
 		if (client && client.redis) {
 			try {

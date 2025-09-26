@@ -36,18 +36,7 @@ public class ThemeAdvertisementBotController {
         return ResponseEntity.ok("디스코드 봇 캐시 업데이트 완료");
     }
     
-    /**
-     * 광고 노출 기록 (디스코드 봇용)
-     */
-    @PostMapping("/exposure/{requestId}")
-    public ResponseEntity<String> recordExposure(@PathVariable UUID requestId) {
-        try {
-            queueService.recordExposure(requestId);
-            return ResponseEntity.ok("노출 기록 완료");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("노출 기록 실패: " + e.getMessage());
-        }
-    }
+    // 노출 기록 API 제거됨 - 단순 수학적 계산으로 대체
     
     /**
      * 광고 클릭 기록 (디스코드 봇용)

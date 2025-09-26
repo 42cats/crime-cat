@@ -22,22 +22,28 @@ class AdvertisementPubSubManager {
     async initialize() {
         try {
             console.log('📡 Advertisement Manager 초기화 시작...');
-            
+
             // 통합 Pub/Sub 매니저 참조 설정
             this.unifiedPubSub = this.client.unifiedPubSub;
-            
+
             if (!this.unifiedPubSub) {
                 throw new Error('Unified Pub/Sub Manager가 초기화되지 않았습니다.');
             }
-            
+
             // 통합 Pub/Sub에 핸들러 등록
             this.registerWithUnifiedPubSub();
-            
+
             // 초기 광고 데이터 로드
             await this.loadInitialAds();
-            
+
             console.log('✅ Advertisement Manager 초기화 완료');
-            
+
+            // ✨ 초기화 완료 후 updateActivity 호출 (광고 데이터 직접 전달)
+            if (typeof this.initCompleteCallback === 'function') {
+                this.initCompleteCallback(this.activeAds);
+                console.log('✅ 초기화 완료 콜백 실행됨');
+            }
+
         } catch (error) {
             console.error('❌ Advertisement Manager 초기화 실패:', error);
             // 5초 후 재시도
@@ -68,34 +74,18 @@ class AdvertisementPubSubManager {
     }
 
     /**
-     * 광고 변경 이벤트 처리
-     * @param {string} message - Pub/Sub 메시지 (JSON 형태)
+     * 광고 변경 시그널 처리 (최적화된 버전)
+     * @param {string} message - Pub/Sub 시그널 (단순 문자열)
      */
     handleAdvertisementUpdate(message) {
         try {
-            console.log('📢 광고 업데이트 이벤트 수신:', message.substring(0, 200) + '...');
-            
-            const eventData = JSON.parse(message);
-            
-            // 이벤트 데이터 검증
-            if (!eventData || !eventData.adsData || !Array.isArray(eventData.adsData)) {
-                console.warn('⚠️ 유효하지 않은 광고 이벤트 데이터:', eventData);
-                return;
-            }
-            
-            // 인메모리 캐시 업데이트
-            this.activeAds = eventData.adsData;
-            this.lastUpdated = Date.now();
-            
-            console.log(`✅ 광고 캐시 업데이트 완료: ${this.activeAds.length}건 (이벤트 시간: ${new Date(eventData.timestamp).toLocaleString()})`);
-            
-            // Activity 메시지 재구성 콜백 호출
-            if (this.onUpdateCallback && typeof this.onUpdateCallback === 'function') {
-                this.onUpdateCallback(this.activeAds);
-            }
-            
+            console.log('📢 광고 업데이트 시그널 수신:', message);
+
+            // 시그널 수신 시 Redis에서 최신 데이터 조회 + 콜백 호출
+            this.loadInitialAds();
+
         } catch (error) {
-            console.error('❌ 광고 업데이트 이벤트 처리 실패:', error);
+            console.error('❌ 광고 업데이트 시그널 처리 실패:', error);
         }
     }
 
@@ -106,20 +96,48 @@ class AdvertisementPubSubManager {
     async loadInitialAds() {
         try {
             console.log('📥 초기 광고 데이터 로드 중...');
-            
+
+            // 🔍 Redis 클라이언트 상태 디버깅 로그
+            console.log('🔍 Redis 클라이언트 상태:', {
+                redisExists: !!this.client.redis,
+                clientExists: !!this.client.redis?.client,
+                clientIsOpen: this.client.redis?.client?.isOpen,
+                clientIsReady: this.client.redis?.client?.isReady,
+                clientStatus: this.client.redis?.client?.status,
+                timestamp: new Date().toISOString()
+            });
+
             // Redis에서 현재 활성 광고 조회
+            console.log('🔍 theme:ad:active 키 조회 시작...');
             const activeAdsData = await this.client.redis.getValue('theme:ad:active');
-            
+
+            // 🔍 Redis 조회 결과 디버깅 로그
+            console.log('🔍 Redis 조회 결과:', {
+                rawData: activeAdsData,
+                dataType: typeof activeAdsData,
+                isArray: Array.isArray(activeAdsData),
+                isNull: activeAdsData === null,
+                isUndefined: activeAdsData === undefined,
+                length: activeAdsData?.length,
+                stringified: JSON.stringify(activeAdsData)
+            });
+
             if (!activeAdsData || !Array.isArray(activeAdsData)) {
                 console.log('📭 활성 광고 없음 - 빈 배열로 초기화');
                 this.activeAds = [];
             } else {
                 this.activeAds = activeAdsData;
-                console.log(`📦 초기 광고 데이터 로드 완료: ${this.activeAds.length}건`);
+                console.log(`📦 광고 데이터 로드 완료: ${this.activeAds.length}건`);
             }
-            
+
             this.lastUpdated = Date.now();
-            
+
+            // ✨ 즉시 Activity 업데이트 콜백 호출 (시그널 기반 즉시 반응)
+            if (this.onUpdateCallback && typeof this.onUpdateCallback === 'function') {
+                this.onUpdateCallback(this.activeAds);
+                console.log('✅ Activity 업데이트 콜백 호출 완료');
+            }
+
         } catch (error) {
             console.error('❌ 초기 광고 데이터 로드 실패:', error);
             // 실패 시 빈 배열로 초기화
@@ -153,46 +171,13 @@ class AdvertisementPubSubManager {
     }
 
     /**
-     * 수동으로 광고 데이터 새로고침
+     * 초기화 완료 콜백 설정
+     * @param {Function} callback - 초기화 완료 시 호출될 콜백 함수
      */
-    async refreshAds() {
-        console.log('🔄 수동 광고 데이터 새로고침 시작...');
-        await this.loadInitialAds();
-        
-        if (this.onUpdateCallback) {
-            this.onUpdateCallback(this.activeAds);
-        }
+    setInitCompleteCallback(callback) {
+        this.initCompleteCallback = callback;
     }
 
-    /**
-     * 통합 Pub/Sub에서 핸들러를 통해 광고 업데이트 처리
-     * @param {Object} eventData - 통합 매니저에서 파싱된 이벤트 데이터
-     */
-    handleAdvertisementUpdateFromUnified(eventData) {
-        try {
-            // 인메모리 캐시 업데이트
-            this.activeAds = eventData.adsData;
-            this.lastUpdated = Date.now();
-            
-            console.log(`✅ 광고 캐시 업데이트 완료 (통합 매니저): ${this.activeAds.length}건 (이벤트 시간: ${new Date(eventData.timestamp).toLocaleString()})`);
-            
-            // Activity 메시지 재구성 콜백 호출
-            if (this.onUpdateCallback && typeof this.onUpdateCallback === 'function') {
-                this.onUpdateCallback(this.activeAds);
-            }
-            
-        } catch (error) {
-            console.error('❌ 통합 매니저 광고 업데이트 처리 실패:', error);
-        }
-    }
-
-    /**
-     * 연결 해제 (통합 시스템에서는 불필요)
-     */
-    async disconnect() {
-        console.log('📢 Advertisement Manager는 통합 Pub/Sub 시스템을 사용합니다.');
-        // 통합 시스템에서 관리하므로 별도 연결 해제 불필요
-    }
 
     /**
      * 상태 정보 반환 (디버깅용)

@@ -24,9 +24,25 @@ class RedisManager {
 
 	async connect() {
 		try {
+			console.log('🔍 Redis 연결 시작...', {
+				isOpen: this.client?.isOpen,
+				status: this.client?.status,
+				timestamp: new Date().toISOString()
+			});
+
 			if (!this.client.isOpen) {
 				await this.client.connect();
 				console.log('✅ Redis connected');
+
+				// 🔍 Redis 연결 후 상태 디버깅 로그
+				console.log('🔍 Redis 연결 후 상태:', {
+					isOpen: this.client.isOpen,
+					isReady: this.client.isReady,
+					status: this.client.status,
+					timestamp: new Date().toISOString()
+				});
+			} else {
+				console.log('✅ Redis already connected');
 			}
 		} catch (error) {
 			console.error('❌ Failed to connect to Redis:', error);
@@ -68,6 +84,16 @@ class RedisManager {
 	}
 
 	async getValue(key) {
+		// 🔍 Redis getValue 호출 디버깅 로그
+		console.log('🔍 Redis getValue 호출:', {
+			key: key,
+			clientExists: !!this.client,
+			clientIsOpen: this.client?.isOpen,
+			clientIsReady: this.client?.isReady,
+			clientStatus: this.client?.status,
+			timestamp: new Date().toISOString()
+		});
+
 		if (!this.client || typeof this.client.get !== 'function') {
 			console.error("❌ Invalid Redis client provided to redisGetKey");
 			throw new Error("Invalid Redis client");
@@ -75,7 +101,9 @@ class RedisManager {
 
 		try {
 			// 키의 데이터 타입 확인
+			console.log('🔍 Redis type 확인 중...', key);
 			const type = await this.client.type(key);
+			console.log('🔍 Redis 키 타입:', { key, type });
 
 			if (type === "hash") {
 				// Hash 타입이면 hGetAll 사용
@@ -84,12 +112,19 @@ class RedisManager {
 				return Object.keys(hashData).length ? hashData : null;
 			} else if (type === "string") {
 				// String 타입이면 기존 로직 유지
+				console.log('🔍 String 타입 데이터 조회 중...', key);
 				const jsonData = await this.client.get(key);
+				console.log('🔍 Raw JSON 데이터:', { key, jsonData, length: jsonData?.length });
+
 				if (!jsonData) {
+					console.log('🔍 JSON 데이터 없음 - null 반환');
 					return null;
 				}
-				// console.log(`✅ String data retrieved from Redis: ${jsonData}`);
-				return JSON.parse(jsonData);
+
+				console.log('🔍 JSON 파싱 시도 중...', jsonData);
+				const parsed = JSON.parse(jsonData);
+				console.log('🔍 JSON 파싱 결과:', { parsed, type: typeof parsed, isArray: Array.isArray(parsed) });
+				return parsed;
 			} else {
 				console.warn(`⚠️ Unsupported Redis data type (${type}) for key: ${key}`);
 				return null;

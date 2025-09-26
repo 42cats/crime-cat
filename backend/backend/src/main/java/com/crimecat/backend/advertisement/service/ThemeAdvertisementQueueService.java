@@ -10,6 +10,7 @@ import com.crimecat.backend.user.domain.User;
 import com.crimecat.backend.user.repository.UserRepository;
 import com.crimecat.backend.gametheme.service.GameThemeService;
 import com.crimecat.backend.gametheme.dto.GetGameThemeResponse;
+import com.crimecat.backend.advertisement.util.ExposureCalculationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -356,19 +357,6 @@ public class ThemeAdvertisementQueueService {
     }
     
     @Transactional
-    @Caching(evict = {
-        @CacheEvict(value = CacheType.THEME_AD_STATS, key = "#requestId", cacheManager = "redisCacheManager"),
-        @CacheEvict(value = CacheType.THEME_AD_USER_STATS, allEntries = true, cacheManager = "redisCacheManager"),
-        @CacheEvict(value = CacheType.THEME_AD_USER_SUMMARY, allEntries = true, cacheManager = "redisCacheManager"),
-        @CacheEvict(value = CacheType.THEME_AD_PLATFORM_STATS, allEntries = true, cacheManager = "redisCacheManager"),
-        @CacheEvict(value = CacheType.THEME_AD_USER_REQUESTS, allEntries = true, cacheManager = "redisCacheManager"), // ThemeAdvertisements 페이지 캐시 삭제
-        @CacheEvict(value = CacheType.THEME_AD_ACTIVE, allEntries = true, cacheManager = "redisCacheManager") // 활성 광고 캐시 삭제
-    })
-    public void recordExposure(UUID requestId) {
-        requestRepository.incrementExposureCount(requestId);
-        log.debug("노출 수 증가: requestId={}", requestId);
-    }
-    
     public Optional<ThemeAdvertisementRequest> getAdvertisementRequestById(UUID requestId) {
         return requestRepository.findById(requestId);
     }
@@ -520,6 +508,10 @@ public class ThemeAdvertisementQueueService {
             statistics.put("themeBreakdown", themeStats);
         }
         
+        // 활성 광고 수 조회 (노출 수 계산을 위함)
+        List<ThemeAdvertisementRequest> activeAds = requestRepository.findByStatusOrderByQueuePositionAsc(AdvertisementStatus.ACTIVE);
+        int activeAdsCount = activeAds.size();
+
         // 최근 활동 (최근 5개 광고)
         List<Map<String, Object>> recentActivity = userAds.stream()
             .limit(5)
@@ -532,7 +524,13 @@ public class ThemeAdvertisementQueueService {
                 activity.put("requestedAt", ad.getRequestedAt());
                 activity.put("totalCost", ad.getTotalCost());
                 activity.put("clickCount", ad.getClickCount());
-                activity.put("exposureCount", ad.getExposureCount());
+
+                // 단순 수학적 계산으로 예상 노출 수 설정 (DB 저장 대신)
+                long estimatedExposure = AdvertisementStatus.ACTIVE.equals(ad.getStatus())
+                    ? ExposureCalculationUtil.calculateEstimatedDailyExposure(activeAdsCount)
+                    : 0; // 비활성 광고는 노출 수 0
+                activity.put("exposureCount", estimatedExposure);
+
                 return activity;
             })
             .collect(Collectors.toList());

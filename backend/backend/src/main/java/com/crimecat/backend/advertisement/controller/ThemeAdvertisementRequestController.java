@@ -136,12 +136,6 @@ public class ThemeAdvertisementRequestController {
         return ResponseEntity.ok(new BasicResponseDto(true, "클릭이 기록되었습니다."));
     }
     
-    @PostMapping("/exposure/{requestId}")
-    public ResponseEntity<BasicResponseDto> recordExposure(@PathVariable UUID requestId) {
-        queueService.recordExposure(requestId);
-        return ResponseEntity.ok(new BasicResponseDto(true, "노출이 기록되었습니다."));
-    }
-    
     @PostMapping("/track-click/{requestId}")
     public ResponseEntity<Void> trackAdvertisementClick(@PathVariable UUID requestId) {
         try {
