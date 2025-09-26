@@ -52,9 +52,7 @@ public interface ThemeAdvertisementRequestRepository extends JpaRepository<Theme
     @Query("UPDATE ThemeAdvertisementRequest tar SET tar.clickCount = tar.clickCount + 1 WHERE tar.id = :id")
     void incrementClickCount(@Param("id") UUID id);
     
-    @Modifying
-    @Query("UPDATE ThemeAdvertisementRequest tar SET tar.exposureCount = tar.exposureCount + 1 WHERE tar.id = :id")
-    void incrementExposureCount(@Param("id") UUID id);
+    // incrementExposureCount 메서드 제거됨 - 단순 수학적 계산으로 대체
     
     // 남은 일수 업데이트
     @Modifying

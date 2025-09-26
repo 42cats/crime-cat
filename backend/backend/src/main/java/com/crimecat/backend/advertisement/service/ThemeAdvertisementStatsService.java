@@ -6,6 +6,7 @@ import com.crimecat.backend.advertisement.dto.AdvertisementStatsResponse;
 import com.crimecat.backend.advertisement.dto.PlatformAdvertisementStats;
 import com.crimecat.backend.advertisement.dto.UserAdvertisementSummary;
 import com.crimecat.backend.advertisement.repository.ThemeAdvertisementRequestRepository;
+import com.crimecat.backend.advertisement.util.ExposureCalculationUtil;
 import com.crimecat.backend.config.CacheType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -148,6 +149,15 @@ public class ThemeAdvertisementStatsService {
      * ThemeAdvertisementRequest를 AdvertisementStatsResponse로 변환
      */
     private AdvertisementStatsResponse convertToStatsResponse(ThemeAdvertisementRequest request) {
+        // 활성 광고 수 조회 (계산을 위함)
+        List<ThemeAdvertisementRequest> activeAds = requestRepository.findByStatusOrderByQueuePositionAsc(AdvertisementStatus.ACTIVE);
+        int activeAdsCount = activeAds.size();
+
+        // 단순 수학적 계산으로 예상 노출 수 산출
+        long estimatedExposure = AdvertisementStatus.ACTIVE.equals(request.getStatus())
+            ? ExposureCalculationUtil.calculateEstimatedDailyExposure(activeAdsCount)
+            : 0; // 비활성 광고는 노출 수 0
+
         return AdvertisementStatsResponse.builder()
                 .requestId(request.getId())
                 .themeName(request.getThemeName())
@@ -156,7 +166,7 @@ public class ThemeAdvertisementStatsService {
                 .totalCost(request.getTotalCost())
                 .requestedDays(request.getRequestedDays())
                 .remainingDays(request.getRemainingDays())
-                .exposureCount(request.getExposureCount() != null ? request.getExposureCount() : 0L)
+                .exposureCount(estimatedExposure) // 계산된 예상 노출 수 사용
                 .clickCount(request.getClickCount() != null ? request.getClickCount() : 0L)
                 .startedAt(request.getStartedAt())
                 .expiresAt(request.getExpiresAt())

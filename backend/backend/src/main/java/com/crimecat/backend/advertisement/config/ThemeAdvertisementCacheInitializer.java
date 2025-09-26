@@ -35,7 +35,7 @@ public class ThemeAdvertisementCacheInitializer {
     /**
      * 30분마다 캐시 갱신 (TTL이 1시간이므로 만료되기 전에 갱신)
      */
-    @Scheduled(fixedDelay = 30 * 60 * 1000) // 30분
+    @Scheduled(fixedDelay = 2 * 60 * 60 * 1000) // 30분
     public void refreshCachePeriodically() {
         log.debug("테마 광고 캐시 주기적 갱신 시작");
         try {
